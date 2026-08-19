@@ -64,7 +64,7 @@ def breadth(args):
         "attemptsPerCase": args.attempts,
         "caseCount": len(cases),
         "stages": list(q.STAGES),
-        "requiredStages": list(args.required_stages),
+        "requiredStages": list(q.REQUIRED_STAGES),
         "stageOutcomeVocabulary": list(q.STAGE_OUTCOMES),
         "cases": [{
             "id": case["id"],
@@ -360,9 +360,6 @@ def main():
     cmd.add_argument("--out", default=str(ROOT / "apps/showcase/campaigns/breadth.json"))
     cmd.add_argument("--id", default="breadth-67")
     cmd.add_argument("--attempts", type=int, default=10)
-    cmd.add_argument("--required-stages", nargs="+", default=list(q.REQUIRED_STAGES),
-                     help="stages every healthy attempt must reach; defaults to every stage "
-                          "except the optional retry branches")
     cmd.set_defaults(func=breadth)
 
     cmd = sub.add_parser("gold-template")

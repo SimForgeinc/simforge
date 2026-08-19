@@ -177,36 +177,9 @@ def vista_author(args):
     failures = []
     final_row = None
     final_template = None
-    # Recipe substitution is showcase-only: a benchmark attempt must measure the
-    # authoring system, so `--no-proven` forces a real authoring episode.
-    proven = None if args.no_proven else semantic.build_proven_product_variant(
-        author_contract, original_brief, ROOT)
-    proven_failures = semantic.validate_template(proven, author_contract) if proven else []
-    if proven and not proven_failures:
-        final_template = out / 'proven-product.template.json'
-        atomic_json(final_template, proven)
-        final_row = {
-            'admitted': False,
-            'actions': 0,
-            'implementation': 'semantic_contract.build_proven_product_variant',
-            'reason': 'recognized product mechanism specialized from a frozen-gate-proven recipe; downstream gate and product review remain authoritative',
-        }
-        attempts.append({
-            'attempt': 'proven-product',
-            'briefId': original_brief['id'],
-            'row': final_row,
-            'contractFailures': [],
-            'template': str(final_template),
-        })
-        atomic_json(out / 'contract-attempts.json', {
-            'contract': author_contract,
-            'attempts': attempts,
-            'acceptedAttempt': 'proven-product',
-        })
-    else:
-        run_vista2.preflight(args.model, args.effort)
+    run_vista2.preflight(args.model, args.effort)
 
-    for attempt_index in range(args.retries + 1) if final_template is None else ():
+    for attempt_index in range(args.retries + 1):
         attempt_dir = out / f'attempt-{attempt_index + 1:02d}'
         attempt_dir.mkdir(parents=True, exist_ok=True)
         guide_out = attempt_dir / 'GUIDE.md'
@@ -220,7 +193,7 @@ def vista_author(args):
         brief['brief'] = original_brief['brief'] + '\n\n' + semantic.repair_prompt(author_contract, failures)
         llm = vagent.LLM(args.model, args.effort, str(attempt_dir / 'llm.jsonl'))
         episode = vagent.Episode(brief, str(attempt_dir), llm, str(guide_out),
-                                 budget=args.budget, wall_cap_s=args.wall_cap)
+                                 budget=args.budget, wall_cap_s=2400)
         started = time.monotonic()
         row = episode.run()
         row['wallSAdapter'] = round(time.monotonic() - started, 3)
@@ -261,32 +234,7 @@ def vista_author(args):
             break
 
     if final_template is None:
-        fallback = None if args.no_proven else semantic.build_proven_ltap_variant(
-            author_contract, original_brief, ROOT)
-        fallback_failures = semantic.validate_template(fallback, author_contract) if fallback else failures
-        if fallback and not fallback_failures:
-            final_template = out / 'proven-ltap-fallback.template.json'
-            atomic_json(final_template, fallback)
-            final_row = {
-                'admitted': False,
-                'actions': 0,
-                'implementation': 'semantic_contract.build_proven_ltap_variant',
-                'reason': 'visual author exhausted; specialized the proven LTAP recipe before downstream gate evaluation',
-            }
-            attempts.append({
-                'attempt': 'proven-ltap-fallback',
-                'briefId': original_brief['id'],
-                'row': final_row,
-                'contractFailures': [],
-                'template': str(final_template),
-            })
-            atomic_json(out / 'contract-attempts.json', {
-                'contract': author_contract,
-                'attempts': attempts,
-                'acceptedAttempt': 'proven-ltap-fallback',
-            })
-        else:
-            raise RuntimeError('vista2 exhausted semantic-contract repairs: %s' % json.dumps(fallback_failures))
+        raise RuntimeError('vista2 exhausted semantic-contract repairs: %s' % json.dumps(failures))
     atomic_copy(final_template, out / 'template.json')
     atomic_json(out / 'transcript.json', {
         'contract': author_contract,
@@ -672,7 +620,9 @@ def review_3d(args):
     response, raw, wall = futil.responses_call(body, timeout=420)
     parsed = futil.parse_json_block(futil.output_text(response))
     # Only pass through what the reviewer actually answered: an omitted axis is unsupported
-    # evidence, never a silent 'no'.
+    # evidence, never a silent 'no'. The emission is evidence and nothing else -- the
+    # acceptance verdict is derived exactly once, by whoever consumes it, so there is no
+    # second copy for a normalization step to have to keep in agreement.
     emission = {'tier': review.FULL_TIER}
     for axis in ('mechanismFidelity', 'visualGrounding', 'actorFidelity', 'eventSequence'):
         if axis in parsed:
@@ -685,7 +635,6 @@ def review_3d(args):
         emission['confidence'] = review.clamp_number(parsed['confidence'], 0.0, 1.0)
     emission['defects'] = raw_defects(parsed.get('defects'))
     emission['explanation'] = str(parsed.get('explanation', ''))[:3000]
-    verdict = review.evaluate(emission)
     usage = response.get('usage') or {}
     emit({
         'cellId': args.cell_id,
@@ -695,13 +644,6 @@ def review_3d(args):
         'effort': args.effort,
         'visionAsserted': True,
         **emission,
-        **review.acceptance_fields(verdict),
-        'acceptance': {
-            'tier': verdict['tier'],
-            'axes': verdict['axes'],
-            'defects': verdict['defects'],
-            'contract': review.contract_identity(),
-        },
         'frameBasis': frame_basis,
         'framesUsed': [str(frame.relative_to(render)) for frame in frames],
         'latencyS': round(wall, 2),
@@ -754,9 +696,6 @@ def main():
     cmd.add_argument('--retries', type=int, default=2)
     cmd.add_argument('--effort', default='medium')
     cmd.add_argument('--budget', type=int, default=40)
-    cmd.add_argument('--wall-cap', type=int, default=2400)
-    cmd.add_argument('--no-proven', action='store_true',
-                     help='benchmark mode: never substitute a frozen-gate-proven recipe')
     cmd.set_defaults(func=vista_author)
 
     cmd = sub.add_parser('gate')

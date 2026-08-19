@@ -556,7 +556,7 @@ test('scheduler bounds four active jobs and preserves the legacy concurrency opt
     token: TOKEN,
     dataDir,
     engine,
-    concurrency: 4,
+    jobConcurrency: 4,
     env: {},
   });
   t.after(async () => rm(dataDir, { recursive: true, force: true }));

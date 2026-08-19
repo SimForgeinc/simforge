@@ -4,7 +4,6 @@
   "methodology": "production",
   "runtime": {
     "maxActiveJobs": 4,
-    "batchConcurrency": 3,
     "intervalMs": 30000,
     "submissionRecoveryMs": 300000,
     "submissionRampPerHeartbeat": 1,

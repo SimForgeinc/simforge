@@ -113,20 +113,6 @@ class SemanticContractTest(unittest.TestCase):
         }
         self.assertEqual(semantic.validate_template(template, contract), [])
 
-    def test_proven_motorcycle_fallback_executes_contract(self):
-        contract = semantic.derive_contract(
-            self.BRIEF, ["junction_any", "junction_signalized", "oncoming_lane"])
-        root = HERE.parents[2]
-        template = semantic.build_proven_ltap_variant(contract, self.BRIEF, root)
-        self.assertIsNotNone(template)
-        roles = {role["id"]: role for role in template["roles"]}
-        self.assertEqual(roles["motorcycle"]["kind"], "conflicting_gate")
-        self.assertEqual(roles["occluding_suv"]["kind"], "conflicting_gate")
-        self.assertEqual(roles["motorcycle"]["tFrac"], 0.45)
-        self.assertEqual(roles["occluding_suv"]["tFrac"], 0.3)
-        self.assertEqual(semantic.validate_template(template, contract), [])
-
-
 
 class ReviewContractTest(unittest.TestCase):
     """The acceptance contract is shared with JavaScript, so hash and verdicts are both frozen."""
@@ -175,20 +161,6 @@ class ReviewContractTest(unittest.TestCase):
         self.assertEqual(silent["defectCodes"], ["judge.uncertain"])
         self.assertIn("no explanatory text", silent["unsupportedReason"])
 
-    def test_retry_recommendation_and_historical_normalization(self):
-        self.assertEqual(review.retry_recommendation(["render.camera.framing", "scenario.gate"], 2),
-                         {"action": "reauthor", "codes": ["scenario.gate"],
-                          "reason": "dominant defect prefix scenario."})
-        self.assertEqual(review.retry_recommendation(["render.asset.lod"], 2)["action"], "recompose")
-        self.assertIsNone(review.retry_recommendation([], 2))
-        self.assertEqual(review.retry_recommendation([], 0)["action"], "reauthor")
-        legacy = review.normalize_historical(
-            {**FULL_REVIEW, "version": "showcase-3d-product-review-v4", "accepted": True})
-        self.assertTrue(legacy["semanticAccepted"])
-        self.assertTrue(legacy["presentationAccepted"])
-        self.assertIsNone(legacy["contract"], "a normalized verdict can never claim the current contract")
-        self.assertEqual(legacy["normalizedFrom"], "showcase-3d-product-review-v4")
-
     def test_review_emission_preserves_raw_defect_evidence(self):
         self.assertEqual(
             stages.raw_defects([{"code": " render.camera.framing ", "text": "cropped", "confidence": 2},
@@ -234,12 +206,9 @@ def _emission(**overrides):
                 "defects": [],
                 "explanation": "The requested mechanism happens on camera on solid ground."}
     answered.update(overrides)
-    verdict = review.evaluate({"tier": review.FULL_TIER, **answered})
     return {"cellId": "cell-a", "version": review.REVIEW_VERSION, "contract": review.contract_identity(),
             "model": "gpt-5.6-sol", "effort": "medium", "visionAsserted": True,
-            "tier": review.FULL_TIER, **answered, **review.acceptance_fields(verdict),
-            "acceptance": {"tier": verdict["tier"], "axes": verdict["axes"],
-                           "defects": verdict["defects"], "contract": review.contract_identity()},
+            "tier": review.FULL_TIER, **answered,
             "rawResponseSha256": "0" * 64}
 
 
@@ -328,12 +297,6 @@ class DecisionContractTest(unittest.TestCase):
         self.assertEqual(qual.contract_binding(),
                          {"version": review.CONTRACT_VERSION, "sha256": review.CONTRACT_SHA256,
                           "reviewVersion": review.REVIEW_VERSION})
-
-    def test_a_reviewer_cannot_declare_an_acceptance_the_contract_denies(self):
-        emission = {**_emission(mechanismFidelity="no"), "semanticAccepted": True,
-                    "presentationAccepted": True, "defectCodes": [], "unsupportedReason": None}
-        with self.assertRaisesRegex(qual.QualificationError, "the contract derives"):
-            qual.decision_from_review(emission)
 
     def test_decisions_that_contradict_the_contract_are_refused(self):
         with self.assertRaisesRegex(qual.QualificationError, "cannot also be accepted"):

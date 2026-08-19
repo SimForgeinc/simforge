@@ -2,12 +2,14 @@
 """Canonical showcase acceptance contract: semantic fidelity vs 3D presentation.
 
 `config/showcase-review-contract.json` is the single source of truth for the
-review prompt, the acceptance predicates, the defect taxonomy, and the retry
-policy.  `apps/showcase/server/review-contract.mjs` is the JavaScript mirror of
-this module: both hash the same canonical body and must agree on every
-conformance vector the contract carries.  `decision_contradictions` and
-`is_contract_code` are Python-side only because only Python reads decisions it did
-not derive -- the human gold labels the qualification workflow calibrates against.
+review prompt, the acceptance predicates, and the defect taxonomy.
+`apps/showcase/server/review-contract.mjs` is the JavaScript mirror of this
+module: both hash the same canonical body and must agree on every conformance
+vector the contract carries.  The retry policy is not mirrored here -- the
+pipeline is the only thing that runs retries, so it is derived once, in JS.
+`decision_contradictions` and `is_contract_code` are Python-side only because
+only Python reads decisions it did not derive -- the human gold labels the
+qualification workflow calibrates against.
 
 Semantic acceptance answers "does this render show the requested scenario".
 Presentation acceptance additionally answers "is this footage usable".  Every
@@ -68,7 +70,6 @@ _SEMANTIC = CONTRACT['acceptance']['semantic']
 _PRESENTATION = CONTRACT['acceptance']['presentation']
 _UNSUPPORTED = CONTRACT['acceptance']['unsupported']
 _DEFECTS = CONTRACT['defects']
-_RETRY = CONTRACT['retry']
 
 FALLBACK_CODE = _DEFECTS['fallbackCode']
 CODES = tuple(_DEFECTS['codes'])
@@ -108,16 +109,6 @@ def is_contract_code(code):
 def contract_identity():
     return {'version': CONTRACT_VERSION, 'sha256': CONTRACT_SHA256,
             'reviewVersion': REVIEW_VERSION, 'promptSha256': PROMPT_SHA256}
-
-
-def is_current_acceptance(document):
-    """Whether an artifact's acceptance was decided under the contract in force.
-
-    The frozen body hash is the only currency test: a version string can be
-    reused, but a superseded predicate cannot reproduce this digest.
-    """
-    identity = (document or {}).get('contract') if isinstance(document, dict) else None
-    return isinstance(identity, dict) and identity.get('sha256') == CONTRACT_SHA256
 
 
 def decision_contradictions(fields):
@@ -311,32 +302,6 @@ def evaluate(review, tier=None):
             (result['semanticAccepted'] or not PRESENTATION_REQUIRES_SEMANTIC)
             and not _blocked(codes, _PRESENTATION['blockingPrefixes']))
     return result
-
-
-def normalize_historical(review):
-    """Re-derive attributable verdicts from a pre-split review emission.
-
-    The verdict is honest about the evidence it had, and can never satisfy the
-    current contract: `contract` stays None so stale artifacts are never current.
-    """
-    result = evaluate(review)
-    result['normalizedFrom'] = str((review or {}).get('version') or '') or None
-    result['contract'] = None
-    return result
-
-
-def retry_recommendation(codes, reviewed=None):
-    """-> the cheapest retry that could fix the dominant defect, or None."""
-    values = [code for code in (codes or []) if isinstance(code, str)]
-    if reviewed is not None and int(reviewed) <= 0:
-        return {'action': _RETRY['noEvidenceAction'], 'codes': sorted(set(values)),
-                'reason': _RETRY['noEvidenceReason']}
-    for prefix in _RETRY['priority']:
-        matched = sorted({code for code in values if code.startswith(prefix)})
-        if matched:
-            return {'action': _RETRY['actions'][prefix], 'codes': matched,
-                    'reason': f'dominant defect prefix {prefix}'}
-    return None
 
 
 def acceptance_fields(result):

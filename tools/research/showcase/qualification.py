@@ -220,24 +220,13 @@ def assert_current_review(review, context="review"):
 def decision_from_review(review, context="review"):
     """Project one current-contract reviewer emission onto the shared decision.
 
-    `review_contract.evaluate` is the only predicate; this adds the fail-closed
-    check that the emission was produced under the contract in force, and the
-    parity check that a reviewer's own acceptance fields are the ones the contract
-    derives from the same evidence.
+    `review_contract.evaluate` is the only predicate, and the emission carries no
+    verdict of its own for it to disagree with: `stages.py review3d` emits the
+    reviewer's raw evidence and nothing derived from it.  What this adds is the
+    fail-closed check that the evidence came from the contract in force.
     """
     assert_current_review(review, context)
-    derived = normalize_decision(contract.acceptance_fields(contract.evaluate(review)), context)
-    for field in DECISION_FIELDS:
-        if field not in review:
-            continue
-        declared = review[field]
-        # Codes are a set in artifact form; sorting by text keeps the comparison total
-        # even when a model emits something that is not a string at all.
-        compared = sorted(declared, key=str) if field == "defectCodes" and isinstance(declared, list) else declared
-        if compared != derived[field]:
-            raise QualificationError(f"{context}.{field} is {declared!r} but the contract derives "
-                                     f"{derived[field]!r} from the same evidence")
-    return derived
+    return normalize_decision(contract.acceptance_fields(contract.evaluate(review)), context)
 
 
 def normalize_decision(value, context="decision"):
@@ -462,14 +451,14 @@ def carried_gold_labels(path):
 def review_row(review, *, gold_sha256, evidence_id, video_sha256, repetition):
     """One persisted calibration row: the canonical evaluator output and its provenance.
 
-    The reviewer emission arrives straight from `stages.py review3d`, so the row is
-    a projection of the contract's own verdict for that footage -- never a second
-    opinion computed here -- plus the identity of the contract that produced it.
+    The reviewer emission arrives from `stages.py review3d` as raw evidence, so the
+    contract's verdict over that evidence is derived here -- exactly once, with no
+    upstream copy to reconcile -- and stored beside the identity of the contract
+    that derived it.
     """
     decision = decision_from_review(review, f"review of {evidence_id}")
-    # The realism the contract itself recorded, clamped by it, never a raw model number.
-    axes = (review.get("acceptance") or {}).get("axes") or {}
-    realism = contract.clamp_number(axes.get("realism", review.get("realism")), 0.0, 10.0)
+    # Clamped by the contract's own bound, never a raw model number.
+    realism = contract.clamp_number(review.get("realism"), 0.0, 10.0)
     return {
         "goldSha256": gold_sha256,
         "evidenceId": evidence_id,

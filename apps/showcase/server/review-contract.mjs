@@ -100,9 +100,6 @@ export const GATE_DEFECT_CODE = DEFECTS.axisCodes.gate;
  */
 export const DEFECT_CODE_VOCABULARY = Object.freeze([...new Set([...DEFECTS.codes, FALLBACK_CODE])].sort());
 
-/** Codes the pipeline contributes itself, rather than attributing from reviewer prose. */
-export const PIPELINE_DEFECT_CODES = Object.freeze([...(DEFECTS.pipelineCodes ?? [])]);
-
 /** The review code whose change must invalidate a cached 70-judge artifact. */
 export const REVIEW_CODE_PATHS = Object.freeze([
   'apps/showcase/server/review-contract.mjs',

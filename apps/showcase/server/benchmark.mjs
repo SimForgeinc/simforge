@@ -54,19 +54,6 @@ export const GENERATOR_TERMINAL_STAGE = 'semantic-2d';
 const STAGE_INDEX = new Map(FUNNEL_STAGES.map((entry, index) => [entry.id, index]));
 const GENERATOR_TERMINAL_INDEX = STAGE_INDEX.get(GENERATOR_TERMINAL_STAGE);
 
-/**
- * Pipeline artifact stages, in execution order, used for the per-stage ledger.
- * `75-product` is written after the stage-local `80-*` retry branch, so the
- * ledger order follows execution rather than the numeric label.
- */
-export const PIPELINE_STAGES = Object.freeze([
-  '00-brief', '10-route', '15-precheck', '20-author', '30-sites', '40-cells',
-  '50-gate', '55-eligibility', '60-render2d', '62-semantic2d',
-  '62-mutation-01', '62-mutation-02', '62-fallback-author',
-  '65-render3d', '70-judge',
-  '80-presentation-retry', '80-reauthor', '75-product', '90-gallery',
-]);
-
 /** Pipeline stages whose wall time is attributed to the generator phase. */
 export const GENERATOR_PIPELINE_STAGES = Object.freeze([
   '00-brief', '10-route', '15-precheck', '20-author', '30-sites', '40-cells',
@@ -81,7 +68,7 @@ export const GENERATOR_PIPELINE_STAGES = Object.freeze([
  */
 export const PRODUCT_PIPELINE_STAGES = Object.freeze([
   '65-render3d', '70-judge',
-  '80-presentation-retry', '80-reauthor', '75-product', '90-gallery',
+  '80-presentation-retry', '75-product', '90-gallery',
 ]);
 
 export const CASE_OUTCOMES = Object.freeze(['accepted', 'attempting', 'exhausted', 'unsupported', 'pending']);

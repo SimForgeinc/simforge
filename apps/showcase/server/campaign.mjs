@@ -113,12 +113,12 @@ export function validateCampaignConfig(config) {
 }
 
 /** Bounded exponential backoff shared by the provider circuit and per-case retry pacing. */
-export function backoffDelayMs(failures, { baseMs, maxMs, factor = 2 } = {}) {
+export function backoffDelayMs(failures, { baseMs, maxMs } = {}) {
   const count = counter(failures);
   if (count <= 0) return 0;
   const base = Math.max(0, Number(baseMs) || 0);
   const ceiling = Math.max(base, Number(maxMs) || 0);
-  const raw = base * factor ** (count - 1);
+  const raw = base * 2 ** (count - 1);
   return Math.round(Math.min(ceiling, Number.isFinite(raw) ? raw : ceiling));
 }
 
@@ -510,7 +510,6 @@ export function resolveCampaignRuntime({ config, args = new Map(), env = {}, har
   return Object.freeze({
     requestedConcurrency,
     maxActive: Math.min(requestedConcurrency, hardware.logicalCpus),
-    batchConcurrency: boundedInteger(runtimeConfig.batchConcurrency, 3, 1, 16, 'batch concurrency'),
     intervalMs: boundedInteger(
       args.get('interval-ms') ?? env.SHOWCASE_CAMPAIGN_INTERVAL_MS ?? runtimeConfig.intervalMs,
       30_000, 5_000, 3_600_000, 'campaign interval-ms',
@@ -874,7 +873,6 @@ export async function runCampaign({ argv = [], env = {}, probe } = {}) {
       mode: initializeOnly ? 'initialize-only' : 'running',
       maxActiveJobs: settings.maxActive,
       requestedMaxActiveJobs: settings.requestedConcurrency,
-      batchConcurrency: settings.batchConcurrency,
       intervalMs: settings.intervalMs,
       submissionRecoveryMs: settings.submissionRecoveryMs,
       submissionRampPerHeartbeat: settings.submissionRampPerHeartbeat,

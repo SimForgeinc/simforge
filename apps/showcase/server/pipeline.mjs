@@ -167,12 +167,6 @@ function addUsage(total, usage, wallS = 0) {
   total.modelWallS += Number(usage.modelWallS ?? usage.wallS ?? usage.llmWallS ?? wallS ?? 0) || 0;
 }
 
-export function mergeUsage(total, usage) {
-  addUsage(total, usage);
-  total.modelWallS = Number(total.modelWallS.toFixed(3));
-  return total;
-}
-
 async function walkFiles(dir) {
   if (!(await exists(dir))) return [];
   const paths = [];
@@ -1308,9 +1302,9 @@ export class ShowcasePipeline {
           '--model', job.authorModel ?? 'gpt-5.6-sol',
           '--effort', job.authorEffort ?? 'medium',
         ];
-        // Every pipeline attempt is a measured attempt: a frozen recipe substituted
-        // for the authoring system would benchmark nothing, so it is banned here.
-        if (subcommand === 'vista-author') args.push('--contract', contractPath, '--retries', '2', '--no-proven');
+        // Every pipeline attempt is a measured attempt. The bridge has no recipe-substitution
+        // branch left to disable: `vista-author` always runs a real authoring episode.
+        if (subcommand === 'vista-author') args.push('--contract', contractPath, '--retries', '2');
         if (subcommand === 'author') {
           args.push('--draws', '1', '--probe-draws', '1', '--max-sites', String(Math.min(job.maxSitesPerMap, 3)), '--concurrency', String(context.scheduler.effectiveBatchConcurrency));
         }
@@ -1590,7 +1584,7 @@ export class ShowcasePipeline {
     // Brief-aware semantic review of the cheap 2D schematic footage. This is
     // where generation is accepted: 3D render spend and template repair both
     // key off this verdict, never off presentation review.
-    const semanticGateActive = job.judge === true && job.semantic2d !== false;
+    const semanticGateActive = job.judge === true;
     const semantic2dPath = join(context.jobDir, '62-semantic2d.json');
     const extraGateCells = [];
     let semanticRows = [];
@@ -1865,7 +1859,7 @@ export class ShowcasePipeline {
           const result = await command(this.python, [
             this.bridge, 'vista-author', '--brief', fallbackBriefPath, '--out', authorDirRound,
             '--model', job.authorModel ?? 'gpt-5.6-sol', '--effort', job.authorEffort ?? 'medium',
-            '--contract', contractPath, '--retries', '0', '--budget', '20', '--no-proven',
+            '--contract', contractPath, '--retries', '0', '--budget', '20',
           ], {
             cwd: this.root,
             timeout: 1_500_000,

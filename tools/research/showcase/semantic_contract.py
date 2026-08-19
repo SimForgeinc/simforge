@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Deterministic brief-to-template obligations for showcase authoring."""
 import copy
-import json
 import math
 import re
-from pathlib import Path
 
 
 def derive_contract(brief, structures):
@@ -102,60 +100,3 @@ def repair_prompt(contract, failures):
     if failures: lines.extend(["PREVIOUS ATTEMPT FAILURES:", *[f"- {item['reason']}" for item in failures]])
     lines.append("Inspect, simulate, repair, and emit before the action budget expires. Never route around a missing mechanism.")
     return "\n".join(lines)
-
-
-def build_proven_ltap_variant(contract, brief, root):
-    kinds = {item["kind"] for item in contract["obligations"]}
-    required = {"signalized_junction", "ego_left_turn", "declared_occlusion", "lane_splitting_actor", "ego_braking_response", "actor_class", "actor_catalog"}
-    if not required.issubset(kinds): return None
-    source = Path(root) / "research/edge-case-corpus/templates/ltap-od-signalized-v2.template.json"
-    template = json.loads(source.read_text())
-    template["meta"].update({"name": brief["id"], "description": brief["brief"], "author": "showcase/proven-ltap-specialization", "tags": ["showcase", "signalized", "unprotected-left", "motorcycle-reveal"]})
-    template["anchor"]["id"] = f"showcase-{brief['id'][-32:]}"
-    template["anchor"]["corridor"]["throughLanesOpposing"]["value"] = [2, 4]
-    template["choreography"]["clipSeconds"] = 20
-    arrival = template["params"]["declarations"][0]
-    arrival.update({"range": [0.15, 0.3], "default": 0.22})
-    ego = next(role for role in template["roles"] if role["id"] == "ego")
-    ego["initialSpeedKph"] = "clamp(0.85 * lane.speedLimitKph, 35, 51)"
-    base = next(role for role in template["roles"] if role["id"] == "oncoming")
-    motorcycle = copy.deepcopy(base)
-    motorcycle.update({"id": "motorcycle", "label": "fast motorcycle lane-splitting behind the occluding SUV", "actor": {"class": "motorcycle", "catalogId": "vehicle.motorcycle"}, "tFrac": 0.45, "arriveAtConflict": {"relativeTo": "ego", "deltaT": "param.arrivalTtc"}, "initialSpeedKph": "clamp(0.95 * lane.speedLimitKph, 42, 50)"})
-    base.update({
-        "id": "occluding_suv",
-        "label": "large oncoming SUV screening the motorcycle",
-        "actor": {"class": "car", "catalogId": "vehicle.suv"},
-        "tFrac": 0.3,
-        "arriveAtConflict": {"relativeTo": "ego", "deltaT": "param.arrivalTtc - 0.6"},
-        "initialSpeedKph": "clamp(0.95 * lane.speedLimitKph, 42, 50)",
-        "extensions": {"occludes": {"observer": "ego", "target": "motorcycle"}},
-    })
-    template["roles"].insert(template["roles"].index(base) + 1, motorcycle)
-    def rename(value):
-        if isinstance(value, dict): return {key: rename(item) for key, item in value.items()}
-        if isinstance(value, list): return [rename(item) for item in value]
-        return "occluding_suv" if value == "oncoming" else value
-    template = rename(template)
-    template["choreography"]["interactions"].extend([
-        {"id": "motorcycle-commits", "actor": "motorcycle", "verb": "set", "trigger": {"kind": "at", "t": 0}, "target": {"key": "rules.collisionAvoidance", "value": False}},
-        {"id": "ego-brakes-on-reveal", "actor": "ego", "verb": "speed", "trigger": {"kind": "at", "t": 4.8}, "target": {"mode": "stop"}, "dynamics": {"shape": "linear", "constraint": "rate", "value": 8}},
-    ])
-    template["invariants"] = [
-        {"id": "motorcycle-arrival", "kind": "arrival", "essentiality": "required", "of": "motorcycle", "at": {"feature": "jx", "at": "center"}, "syncWith": "ego", "deltaTRange": [0.1, 0.35]},
-        {"id": "ego-decel-budget", "kind": "decel_budget", "essentiality": "required", "of": "ego", "maxMps2": 8},
-    ]
-    return template
-
-def build_proven_product_variant(contract, brief, root):
-    text = brief.get("brief", "").lower()
-    if re.search(r"\b(?:accident|construction)\b.*\bblock(?:ing|s|ed)?\b.*\b(?:normal )?path\b", text):
-        source = Path(root) / "research/edge-case-corpus/templates/blocked-path-production.template.json"
-        template = json.loads(source.read_text())
-        template["meta"].update({
-            "name": brief["id"],
-            "description": brief["brief"][:4000],
-            "author": "showcase/proven-blocked-path-specialization",
-        })
-        template["anchor"]["id"] = f"showcase-blocked-{brief['id'][-24:]}"
-        return template
-    return build_proven_ltap_variant(contract, brief, root)

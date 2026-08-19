@@ -463,7 +463,6 @@ export async function createShowcaseServer({
   dataDir = join(REPO_ROOT, 'showcase-data'),
   webDir = join(REPO_ROOT, 'apps', 'showcase', 'web', 'dist'),
   engine,
-  concurrency,
   jobConcurrency,
   batchConcurrency,
   render2dConcurrency,
@@ -472,7 +471,7 @@ export async function createShowcaseServer({
   env = process.env,
 } = {}) {
   const scheduler = resolveSchedulerSettings({
-    jobConcurrency: jobConcurrency ?? concurrency,
+    jobConcurrency,
     batchConcurrency,
     render2dConcurrency,
     render3dConcurrency,
