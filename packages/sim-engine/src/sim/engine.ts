@@ -36,7 +36,6 @@ import {
   type RoutePose,
 } from '../map/route.js';
 import {
-  normalizeSimScenarioInput,
   resolvePhysicsConfig,
   isPedestrianLikeKind,
   isRoadActorKind,
@@ -89,7 +88,7 @@ import {
   sweptObbTimeOfImpact,
   type DoorName,
 } from './pairs.js';
-import { resolveOverlappingControlLanes, SignalBook } from './signals.js';
+import { SignalBook } from './signals.js';
 import { spatialCandidatePairs, type SpatialBounds } from './spatial.js';
 import {
   axisOf,
@@ -107,7 +106,8 @@ import { PerceptionRuntime, type PerceptionActorView } from '../perception/runti
 import { TRACE_FORMAT_VERSION, type ActorTrack, type SignalTrack, type SimEvent, type SimTrace } from '../trace/trace.js';
 import { computeMetrics, type MetricAccumulator, newMetricAccumulator, observeTick } from '../trace/metrics.js';
 import { checkFeasibility } from '../solve/guards.js';
-import { resolveArrivalTriggers, type ArrivalSolution } from '../solve/arrival.js';
+import { type ArrivalSolution } from '../solve/arrival.js';
+import { resolveSimScenarioInput } from '../solve/resolve.js';
 import type { StaticMapCollider } from './static-colliders.js';
 
 export interface RunOptions {
@@ -119,8 +119,6 @@ export interface RunOptions {
    * runs anyway and returns them, `skip` does not check.
    */
   readonly guards?: 'throw' | 'collect' | 'skip';
-  /** Pre-solve `arrival` triggers into fixed times + spawn-s offsets. */
-  readonly resolveArrival?: boolean;
   /**
    * Include negative warm-up samples in trace tracks. Metrics and authored
    * triggers remain scoped to the recorded clip; this is intended for exact
@@ -351,25 +349,11 @@ class Simulation {
   constructor(rawInput: SimScenarioInput, private readonly opts: RunOptions) {
     this.graph = opts.graph;
 
-    const normalized = normalizeSimScenarioInput(rawInput);
-    const controlResolution = resolveOverlappingControlLanes(normalized, this.graph);
-    const arrivalResult =
-      opts.resolveArrival === false
-        ? { input: controlResolution.input, solutions: [] as ArrivalSolution[], issues: [] as SimIssue[] }
-        : resolveArrivalTriggers(controlResolution.input, this.graph);
-    this.resolvedInput = arrivalResult.input;
-    this.arrivalSolutions = arrivalResult.solutions;
-    this.issues.push(...arrivalResult.issues);
-    for (const repair of controlResolution.repairs) {
-      this.issues.push(issue(
-        'traffic_control_binding_repaired',
-        `${repair.source}.${repair.controlId}`,
-        `A coincident OpenDRIVE lane was bound to ${repair.routeRsl} so this route can obey the physical control. Choose an unambiguous lane when portability matters.`,
-        { ...repair },
-        'warning',
-      ));
-    }
-    for (const actor of controlResolution.input.actors) {
+    const resolved = resolveSimScenarioInput(rawInput, this.graph);
+    this.resolvedInput = resolved.input;
+    this.arrivalSolutions = resolved.arrival;
+    this.issues.push(...resolved.issues);
+    for (const actor of resolved.input.actors) {
       if (!actor.static && actor.behavior.rules.obeySignals && actor.behavior.route.kind === 'polyline') {
         this.issues.push(issue(
           'traffic_control_route_unbound',

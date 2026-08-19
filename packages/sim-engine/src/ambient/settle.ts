@@ -164,7 +164,8 @@ export function settleAmbientTraffic(
     })),
   });
 
-  const result = runSimulation(settleInput, { graph, guards: 'skip', resolveArrival: false });
+  // `interactions: []` above means there is no `arrival` trigger to resolve.
+  const result = runSimulation(settleInput, { graph, guards: 'skip' });
   const ticks = result.trace.ticks;
   const last = ticks.t.length - 1;
   if (last < 0) {

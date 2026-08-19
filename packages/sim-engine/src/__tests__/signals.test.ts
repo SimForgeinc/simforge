@@ -10,6 +10,8 @@ import { describe, expect, it } from 'vitest';
 import { parseSimScenarioInput } from '../schema/input.js';
 import { runSimulation } from '../sim/engine.js';
 import { SignalBook, phaseForbidsEntry } from '../sim/signals.js';
+import { contentHash } from '../core/hash.js';
+import { resolveSimScenarioInput } from '../solve/resolve.js';
 import { LANE_LEFT, scenario, syntheticGraph, vehicle } from './fixtures/scenarios.js';
 
 const graph = syntheticGraph();
@@ -323,6 +325,18 @@ describe('signal compliance', () => {
     const { trace } = runSimulation(unrelated, { graph });
     expect(trace.ticks.actors['ego']!.x.at(-1)).toBeGreaterThan(STOP_LINE_S);
   }, 10_000);
+
+  it('leaves a document with no coincident control lane untouched', () => {
+    // Both hash sites (the materializer's `manifest.inputHash` and the engine's
+    // `trace.header.inputHash`) run `resolveSimScenarioInput`. A document that
+    // needs no resolution must come back byte-identical, so no historical
+    // digest moves.
+    const input = signalScenario(true);
+    const resolved = resolveSimScenarioInput(input, graph);
+    expect(resolved.issues).toEqual([]);
+    expect(resolved.arrival).toEqual([]);
+    expect(contentHash(resolved.input)).toBe(contentHash(input));
+  });
 });
 
 describe('rules.collisionAvoidance', () => {

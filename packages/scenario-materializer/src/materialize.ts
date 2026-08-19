@@ -82,7 +82,7 @@ import {
   solvePedestrianNearMiss,
   applyArrivalSolution,
   resolveArrivalTriggers,
-  resolveOverlappingControlLanes,
+  resolveSimScenarioInput,
   buildOccluders,
   blockingOccluder,
   localFromScene,
@@ -4368,28 +4368,17 @@ class Materializer {
       }
     }
 
-    // The engine applies `resolveOverlappingControlLanes` to whatever input it
-    // receives and hashes the REPAIRED document into `trace.header.inputHash`.
-    // Bake the same resolution here — after ambient placement, because ambient
-    // routes are exactly what introduces coincident control-lane traffic in
-    // practice — so the instance stays a fully resolved document and the
-    // evidence join (`manifest.inputHash` == `trace.header.inputHash`) holds.
-    // Idempotent on the engine side: every repaired binding is already present,
-    // so the engine repairs nothing and hashes the same bytes.
-    const controlResolution = resolveOverlappingControlLanes(
-      normalizeSimScenarioInput(input),
-      this.bundle.graph,
-    );
-    input = controlResolution.input;
-    for (const repair of controlResolution.repairs) {
-      issues.push({
-        code: 'traffic_control_binding_repaired',
-        path: `${repair.source}.${repair.controlId}`,
-        reason: `A coincident OpenDRIVE lane was bound to ${repair.routeRsl} so this route can obey the physical control. Choose an unambiguous lane when portability matters.`,
-        detail: { ...repair },
-        severity: 'warning',
-      });
-    }
+    // Resolve with the engine's OWN resolution, as the last act before the hash
+    // and after ambient placement (the last mutation). `runSimulation` applies
+    // `resolveSimScenarioInput` to whatever document it is handed and hashes the
+    // RESOLVED one into `trace.header.inputHash`; running it here means the
+    // engine is handed a fixed point, so `manifest.inputHash`, the instance file
+    // and the trace header are hashes of the same bytes. Defect TG-H1 was this
+    // call's absence: the engine bound coincident control lanes after the
+    // materializer had already hashed.
+    const engineResolution = resolveSimScenarioInput(input, this.bundle.graph);
+    input = engineResolution.input;
+    issues.push(...engineResolution.issues);
 
     const key: ReplayKey = {
       templateId: templateId(this.template),

@@ -17,11 +17,6 @@ export { ENGINE_VERSION } from './version.js';
 
 /* ------------------------------------------------------------- the contract */
 export {
-  resolveOverlappingControlLanes,
-  type ControlBindingRepair,
-} from './sim/signals.js';
-
-export {
   simScenarioInputSchema,
   parseSimScenarioInput,
   safeParseSimScenarioInput,
@@ -190,6 +185,8 @@ export { axisOf } from './sim/state.js';
 /* ------------------------------------------------------------------ solves */
 export { solveArrival, applyArrivalSolution, resolveArrivalTriggers, ARRIVAL_TOLERANCE_M } from './solve/arrival.js';
 export type { ArrivalSolution } from './solve/arrival.js';
+export { resolveSimScenarioInput } from './solve/resolve.js';
+export type { ResolvedSimScenarioInput } from './solve/resolve.js';
 export { solvePedestrianNearMiss } from './solve/pedestrian-near-miss.js';
 export type { PedestrianNearMissRequest, PedestrianNearMissResult, PedestrianNearMissSolution, PedestrianNearMissDiagnostic, PedestrianNearMissIssueCode, NearMissPass, TimedTrajectoryPoint } from './solve/pedestrian-near-miss.js';
 export { resolvePedestrianProjection } from './solve/pedestrian-projection.js';

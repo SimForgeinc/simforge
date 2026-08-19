@@ -14,7 +14,9 @@ import { gunzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { buildLaneGraph, ENDPOINT_TOL_M, type LaneGraph } from '../map/lane-graph.js';
-import { buildFollowRoute } from '../map/route.js';
+import { buildFollowRoute, buildLanePathRoute } from '../map/route.js';
+import { contentHash } from '../core/hash.js';
+import { resolveSimScenarioInput } from '../solve/resolve.js';
 import { runSimulation } from '../sim/engine.js';
 import { parseSimScenarioInput } from '../schema/input.js';
 import { toSceneXZ } from '../frames.js';
@@ -176,6 +178,66 @@ describe.skipIf(!HAVE_MAP)('yale-street topology', () => {
       maxCrossTrackM = Math.max(maxCrossTrackM, Math.abs(route.lateralOffsetAt(projected.s, point)));
     }
     expect(maxCrossTrackM).toBeLessThan(1.1);
+  });
+
+  /**
+   * Defect TG-H1: the engine bound coincident control lanes AFTER the
+   * materializer had hashed, so `manifest.inputHash` and
+   * `trace.header.inputHash` described different documents and 48 of 164
+   * junction cells banded `evidence-mismatch`. Both hash sites now run
+   * `resolveSimScenarioInput`, which only holds because it is a fixed point.
+   */
+  it('resolves coincident control bindings to a fixed point', () => {
+    // Pinned from a real materialized junction cell: `road-control:1499`
+    // publishes its stop line on `37:0:-1`, and the approach continues onto the
+    // coincident junction lane `952:0:-1` (measured separation 1.00 m), which is
+    // the identity this actor's route actually uses.
+    const lanes = ['37:0:-1', '952:0:-1', '49:0:-1'];
+    const built = buildLanePathRoute(graph, lanes);
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+    const start = built.route.poseAt(3);
+    const scene = toSceneXZ(start.point);
+    const input = parseSimScenarioInput({
+      mapId: 'yale-street',
+      clipSeconds: 10,
+      seed: 'tg-h1-fixed-point',
+      actors: [{
+        id: 'ego',
+        kind: 'vehicle',
+        dims: { l: 4.5, w: 1.9, h: 1.5 },
+        initial: {
+          laneRef: { rsl: start.rsl!, s: start.storageS, tFrac: 0 },
+          pose: { x: scene.x, z: scene.z, headingRad: start.headingRad },
+          speedMps: 8,
+        },
+        behavior: { route: { kind: 'lanePath', lanes }, cruiseSpeedMps: 8 },
+      }],
+      roadControls: [{
+        id: 'road-control:1499',
+        kind: 'stop',
+        dwellS: 1,
+        stopLines: [
+          { rsl: '37:0:-1', s: 81.03006145188616, connectingLaneRsls: ['945:0:-1'] },
+          { rsl: '37:0:-1', s: 81.03006145188616, connectingLaneRsls: ['952:0:-1'] },
+        ],
+      }],
+    });
+
+    const once = resolveSimScenarioInput(input, graph);
+    // Vacuity guard: if the map stops needing this repair the test proves
+    // nothing, so say so instead of passing silently.
+    expect(
+      once.issues.filter((issue) => issue.code === 'traffic_control_binding_repaired'),
+      'pinned site no longer needs a control-binding repair; pick a new one',
+    ).not.toEqual([]);
+    expect(contentHash(once.input)).not.toBe(contentHash(input));
+
+    // What the evidence join depends on: resolving the resolved document is a
+    // no-op, so the engine hashes exactly the bytes the instance file holds.
+    const twice = resolveSimScenarioInput(once.input, graph);
+    expect(twice.issues).toEqual([]);
+    expect(contentHash(twice.input)).toBe(contentHash(once.input));
   });
 });
 
