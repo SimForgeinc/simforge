@@ -40,7 +40,7 @@ import { chromium } from 'playwright-core';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, rename, rmdir, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rmdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { gunzipSync } from 'node:zlib';
@@ -770,16 +770,20 @@ async function exportScenario(page) {
         await canvas.screenshot({ path: file });
       }
     };
-    let screenshotBytes = 0;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    // A GPU context can die between the readiness gate above and the shutter —
+    // on a loaded machine the driver drops the device under VRAM pressure. The
+    // renderer reports the loss and the rebuild that follows through `loading`,
+    // so a frame is only trustworthy when nothing was outstanding as the
+    // shutter closed.
+    const sceneWasWhole = () => page.evaluate(() => window.__viewer.getStats().loading === 0);
+    let whole = false;
+    for (let attempt = 0; attempt < 3 && !whole; attempt += 1) {
+      if (attempt > 0) await waitForStreamIdle(page, 60_000);
       await capture();
-      screenshotBytes = (await stat(file)).size;
-      if (screenshotBytes >= 20_000) break;
-      await waitForStreamIdle(page, 60_000);
-      await settleFrames(page, 12);
+      whole = await sceneWasWhole();
     }
-    if (screenshotBytes < 20_000) {
-      throw new Error(`renderer captured an empty scene at t=${selected.t}: ${screenshotBytes} bytes`);
+    if (!whole) {
+      throw new Error(`renderer never held a complete scene through a capture at t=${selected.t}`);
     }
     stage('screenshot');
     return {

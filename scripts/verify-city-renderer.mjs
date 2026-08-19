@@ -4,7 +4,8 @@
  *
  * Drives system Chrome (headless SwiftShader lies about performance) against a
  * running `pnpm dev`, screenshots startup / settled / street level, fails on any
- * console error, and runs `window.__bench()`.
+ * console error, runs `window.__bench()`, and finally drops and restores the GL
+ * context to prove the scene comes back lit instead of black.
  *
  *   node scripts/verify-city-renderer.mjs [--url http://localhost:5199] [--out /tmp/...]
  */
@@ -49,8 +50,14 @@ const page = await context.newPage();
 
 const consoleErrors = [];
 const consoleWarnings = [];
+// The context-recovery step below loses the GL context on purpose, and both
+// Chrome and three report that on the console. Only the induced loss is exempt:
+// a spontaneous one still has to fail the run.
+let inducedContextLoss = false;
+const CONTEXT_LOSS_NOTICE = /CONTEXT_LOST_WEBGL|context lost|context was lost/i;
 page.on('console', (msg) => {
   const text = `${msg.type()}: ${msg.text()}`;
+  if (inducedContextLoss && CONTEXT_LOSS_NOTICE.test(text)) return;
   if (msg.type() === 'error') consoleErrors.push(text);
   else if (msg.type() === 'warning') consoleWarnings.push(text);
 });
@@ -195,6 +202,72 @@ await shot('05-interaction');
 console.log('> benchmark');
 const bench = await page.evaluate((ms) => window.__bench(ms), benchMs);
 await shot('04-post-bench');
+
+// 6. GPU context recovery. The driver drops the WebGL context whenever VRAM runs
+// short — co-tenant GPU work on the same machine is enough — and three then
+// re-initialises it and re-uploads every texture from its CPU copy. Streamed
+// tiles have none (the ImageBitmap is closed on first upload) and the PMREM
+// environment never had one, so an unhandled restore returns black albedo under
+// a black sky, which reads as a night render rather than as a fault. The viewer
+// must refetch, and must keep `loading` above zero for the whole window so that
+// capture gates hold their shutter until the scene is whole again.
+console.log('> gpu context loss recovery');
+const meanLuma = () => page.evaluate(() => new Promise((resolve) => {
+  // Sample inside a rAF so the frame the viewer just drew is still readable:
+  // the renderer runs without `preserveDrawingBuffer`.
+  requestAnimationFrame(() => {
+    const gl = window.__viewer.renderer.getContext();
+    const width = gl.drawingBufferWidth;
+    const height = gl.drawingBufferHeight;
+    const pixels = new Uint8Array(width * height * 4);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    let sum = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      sum += 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2];
+    }
+    resolve(sum / (width * height));
+  });
+}));
+const lumaBefore = await meanLuma();
+inducedContextLoss = true;
+await page.evaluate(() => {
+  const gl = window.__viewer.renderer.getContext();
+  window.__loseContext = gl.getExtension('WEBGL_lose_context');
+  if (!window.__loseContext) throw new Error('WEBGL_lose_context is unavailable');
+  window.__loseContext.loseContext();
+});
+const loadingWhileLost = await page
+  .waitForFunction(() => window.__viewer.getStats().loading, null, { timeout: 5000 })
+  .then((handle) => handle.jsonValue())
+  .catch(() => 0);
+await page.evaluate(() => window.__loseContext.restoreContext());
+await page.waitForFunction(
+  () => {
+    const s = window.__viewer?.getStats();
+    return s ? s.residentTiles > 0 && s.loading === 0 && s.uploading === 0 : false;
+  },
+  null,
+  { timeout: 120000 },
+);
+await page.waitForTimeout(1500);
+await shot('06-context-restored');
+const lumaAfter = await meanLuma();
+const contextRecovery = {
+  meanLumaBefore: lumaBefore,
+  meanLumaAfter: lumaAfter,
+  ratio: lumaAfter / lumaBefore,
+  loadingWhileLost,
+};
+console.log(`  mean luminance ${lumaBefore.toFixed(1)} -> ${lumaAfter.toFixed(1)} (${(lumaAfter / lumaBefore).toFixed(3)}x), loading while lost: ${loadingWhileLost}`);
+if (loadingWhileLost < 1) {
+  consoleErrors.push('renderer reported loading=0 while the GL context was lost');
+}
+if (lumaAfter < lumaBefore * 0.8) {
+  consoleErrors.push(
+    `scene stayed dark after context restore: mean luminance ${lumaBefore.toFixed(1)} -> ${lumaAfter.toFixed(1)}`,
+  );
+}
+inducedContextLoss = false;
 const finalStats = await stats();
 
 const report = {
@@ -208,6 +281,7 @@ const report = {
   streetStats,
   interaction,
   finalStats,
+  contextRecovery,
   bench,
   consoleErrors,
   consoleWarnings: consoleWarnings.slice(0, 20),

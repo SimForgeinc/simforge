@@ -206,6 +206,11 @@ export interface CityViewerStats {
   /** Decoded but not yet uploaded/swapped bytes; counts against the budget. */
   pendingBytes: number;
   byteBudget: number;
+  /**
+   * Outstanding work of any kind: tile fetches, a map load, a preset transition,
+   * and the rebuild that follows a lost GPU context. Zero means the scene on
+   * screen is the whole scene, which is what capture gates wait for.
+   */
   loading: number;
   queued: number;
   /** Assets parsed and waiting on the paced GPU upload. */

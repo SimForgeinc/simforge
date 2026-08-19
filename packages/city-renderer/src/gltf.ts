@@ -103,9 +103,16 @@ export function estimateResourceBytes(res: AssetResources): number {
  * Push one texture to the GPU and drop the CPU-side copy.
  *
  * ImageBitmaps stay resident in the renderer process until explicitly closed,
- * so an un-closed LOD0 tile would cost its texture footprint twice. Once
- * uploaded, three never reads `texture.image` again unless `needsUpdate` is set
- * (we never do for streamed assets).
+ * so an un-closed LOD0 tile would cost its texture footprint twice. Nothing in
+ * this package sets `needsUpdate` on a streamed texture, so three never re-reads
+ * `texture.image` during normal operation.
+ *
+ * It does re-read it after a lost GPU context: three re-initialises the context
+ * on `webglcontextrestored` and re-uploads every texture from `texture.image`,
+ * which here is a closed bitmap reporting 0x0 — the tile comes back with black
+ * albedo. Losing the CPU copy is still the right trade; the recovery is a
+ * refetch, which `CityViewer` performs on restore. Do not treat a closed bitmap
+ * as a reason to keep the second copy resident.
  */
 export function uploadTexture(renderer: WebGLRenderer, tex: Texture): void {
   renderer.initTexture(tex);

@@ -238,6 +238,7 @@ export class CityViewer {
   private mapLoadActive = false;
   private presetTransitions = 0;
   private auxiliaryLoads = 0;
+  private contextLost = false;
 
   private phaseSnapshot(): FramePhaseStats {
     return {
@@ -299,9 +300,56 @@ export class CityViewer {
     this.resizeObserver.observe(canvas);
     this.resize();
 
+    // Three installs its own context listeners in the WebGLRenderer constructor
+    // above, so by the time these run the GL context has already been
+    // re-initialised and is safe to rebuild against.
+    canvas.addEventListener('webglcontextlost', this.handleContextLost);
+    canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
+
     this.lastFrameTime = performance.now();
     this.rafHandle = requestAnimationFrame(this.tick);
   }
+
+  /**
+   * A lost GPU context is recoverable, but this scene is not self-healing.
+   *
+   * Three re-initialises the context on restore, which drops every GPU texture
+   * record, and then re-uploads each texture from `texture.image`. Streamed tile
+   * textures have no image left to re-upload — `uploadTexture` closes the
+   * ImageBitmap as soon as the first upload lands — and the environment is a
+   * PMREM render target that never had a CPU copy at all. Left alone the scene
+   * comes back with black albedo under a black sky, which reads as a night
+   * render rather than as a fault. Refetch the tiles and regenerate the IBL.
+   *
+   * The whole lost-and-rebuilding window is reported through `loading`, so every
+   * existing "wait for stream idle" gate blocks until the scene is whole again.
+   */
+  private readonly handleContextLost = (): void => {
+    this.contextLost = true;
+  };
+
+  private readonly handleContextRestored = (): void => {
+    if (this.disposed || !this.manifest) {
+      this.contextLost = false;
+      return;
+    }
+    // The old environment target died with the context. Drop it, the resolved
+    // promise that would otherwise hand the dead texture back, and the copies
+    // the ultra-low toggle stashed — a disposed texture must not be reachable.
+    this.disposeEnvironment?.();
+    this.disposeEnvironment = null;
+    this.savedEnvironment = null;
+    this.savedBackground = null;
+    this.visualResourcesPromise = null;
+    this.visualResourcesStarted = false;
+    // runPresetTransition raises the `loading` count synchronously, so the
+    // rebuild is already visible to callers before the lost flag clears.
+    void this.runPresetTransition(async () => {
+      if (!this.ultraLowFidelity) await this.ensureVisualResources();
+      await this.reloadAssetVariant();
+    });
+    this.contextLost = false;
+  };
 
   private aspect(): number {
     const w = this.canvas.clientWidth || 1;
@@ -1022,7 +1070,8 @@ export class CityViewer {
       residentBytes: this.residentBytes(),
       pendingBytes: this.totalBytes() - this.residentBytes(),
       byteBudget: this.options.byteBudget,
-      loading: sum((s) => s.loading) + Number(this.mapLoadActive) + this.presetTransitions + this.auxiliaryLoads,
+      loading: sum((s) => s.loading) + Number(this.mapLoadActive) + Number(this.contextLost)
+        + this.presetTransitions + this.auxiliaryLoads,
       queued: sum((s) => s.queued),
       uploading: sum((s) => s.uploading),
       jsHeapMB: jsHeapMB(),
@@ -1543,6 +1592,8 @@ export class CityViewer {
     this.abort.abort();
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
     this.controls.dispose();
     this.canvas.style.visibility = this.canvasVisibility;
     const layers = [this.cityLayer, this.vegLayer, this.roadLayer].filter(
