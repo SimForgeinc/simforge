@@ -35,10 +35,12 @@ import author_corpus as A                                                  # noq
 import vlm                                                                 # noqa: E402
 
 WARMUP = 2.0
+CLIP = 18.0                                          # A._base's recorded clip length.
+HESITATE_CLIP = 12.0                                 # see `_hesitating_crossing`.
 RUN_TAG = 'w7'
 
-FAMILIES = ('longitudinal_lead', 'crossing_vru', 'occluded_vru', 'junction_conflict',
-            'lateral_incursion', 'oncoming', 'parking_pullout', 'workzone')
+FAMILIES = ('longitudinal_lead', 'crossing_vru', 'hesitating_vru', 'occluded_vru',
+            'junction_conflict', 'lateral_incursion', 'oncoming', 'parking_pullout', 'workzone')
 VEHICLES = {'vehicle.sedan': 'car', 'vehicle.suv': 'car', 'vehicle.box_truck': 'truck',
             'vehicle.van': 'van', 'vehicle.bus': 'bus', 'vehicle.motorcycle': 'motorcycle',
             'vehicle.bicycle': 'bicycle'}
@@ -65,6 +67,13 @@ BOUNDS = {
   'closedWidthM':     (1.0, 2.2),
   'workerSpeedKph':   (3.0, 8.0),
   'corridorSpeedKph': (25.0, 90.0),
+  # Hesitating crossing. Every one of these is the EGO'S REMAINING DISTANCE to the
+  # pedestrian at the moment the phase begins, not a clip time: the phases are
+  # anchored to the ego's observed approach, so the hold costs the conflict nothing.
+  'hesitateAtM':      (24.0, 90.0),
+  'walkOutM':         (8.0, 40.0),
+  'approachM':        (8.0, 40.0),
+  'holdS':            (0.6, 3.0),
 }
 
 
@@ -148,7 +157,7 @@ def c_longitudinal_lead(brief, d):
       [], inter)
 
 
-def c_crossing_vru(brief, d, occluder=None):
+def c_crossing_vru(brief, d, occluder=None, hesitate=False):
     v_ego_kph = _scalar(d, 'egoSpeedKph', 40.0)
     v_ego = v_ego_kph / 3.6
     cat = d.get('challengerCatalog') if d.get('challengerCatalog') in VRUS else None
@@ -156,44 +165,127 @@ def c_crossing_vru(brief, d, occluder=None):
         cat, cls, top = A._vru_catalog(brief['brief'])
     else:
         cls, top = VRUS[cat], (14.0 if cat == 'vehicle.bicycle' else 7.0)
-    conflict = _window(d, 'conflictS', (45, 85))
     vspeed = _window(d, 'vruSpeedKph', (4.0, top))
-    lead = _window(d, 'eventLeadS', (1.4, 3.2))
-    step = 'clamp(param.conflictS / %.4f - param.crossLeadS, 0.2, 12)' % v_ego
+
+    if hesitate:
+        at, clip, params, inter = _hesitating_crossing(d, v_ego)
+        archetype = 'w7.hesitating.%s' % brief['id']
+    else:
+        at, clip, params, inter = _continuous_crossing(d, v_ego)
+        archetype = 'w7.crossing.%s' % brief['id']
+    params.append(A._p('vruSpeedKph', vspeed[0], vspeed[1], 'kph'))
+
     props = []
     if occluder:
         props.append({'id': 'occ', 'catalogId': occluder, 'label': 'roadside occluder',
                       'essentiality': 'required',
-                      'pose': {'laneOffset': 0, 's': 'param.conflictS',
+                      'pose': {'laneOffset': 0, 's': at,
                                'lateralM': -2.2, 'lateralRef': 'verge', 'headingOffsetRad': 0},
                       'headingOffsetRad': 0, 'scale': 1,
                       'occludes': {'observer': 'ego', 'target': 'vru'}})
     start_lat = ({'lateralM': -3.4, 'lateralRef': 'verge'} if occluder
                  else {'lateralM': -1.0, 'lateralRef': 'verge'})
     return A._base(
-      brief['id'], brief['brief'][:120], 'w7.crossing.%s' % brief['id'],
-      A._corridor(lanes=(1, 2), runway=220),
-      [A._p('conflictS', conflict[0], conflict[1], 'm'),
-       A._p('vruSpeedKph', vspeed[0], vspeed[1], 'kph'),
-       A._p('crossLeadS', lead[0], lead[1], 's')],
+      brief['id'], brief['brief'][:120], archetype,
+      A._corridor(lanes=(1, 2), runway=220), params,
       [{**A._ego(), 'initialSpeedKph': v_ego_kph},
        {'id': 'vru', 'kind': 'on_reference', 'label': 'crossing road user',
         'actor': {'class': cls, 'catalogId': cat},
-        'pose': {'laneOffset': 0, 's': 'param.conflictS', **start_lat, 'headingOffsetRad': 0},
+        'pose': {'laneOffset': 0, 's': at, **start_lat, 'headingOffsetRad': 0},
         'initialSpeedKph': 0}],
-      props,
-      [{'id': 'vru-crosses', 'actor': 'vru', 'verb': 'route',
-        'trigger': {'kind': 'at', 't': step},
-        'target': {'mode': 'polyline', 'points': [
-            {'laneOffset': 0, 's': 'param.conflictS', **start_lat, 'headingOffsetRad': 0},
-            {'laneOffset': 0, 's': 'param.conflictS + 1.2', 'lateralM': -0.2,
+      props, inter(start_lat), clip=clip)
+
+
+def _crossing_polyline(at, start_lat):
+    return [{'laneOffset': 0, 's': at, **start_lat, 'headingOffsetRad': 0},
+            {'laneOffset': 0, 's': '%s + 1.2' % at, 'lateralM': -0.2,
              'lateralRef': 'verge', 'headingOffsetRad': 0},
-            {'laneOffset': 0, 's': 'param.conflictS + 2.6', 'tFrac': 0, 'headingOffsetRad': 0},
-            {'laneOffset': 0, 's': 'param.conflictS + 4.0', 'tFrac': 1, 'headingOffsetRad': 0}]}},
-       {'id': 'vru-walks', 'actor': 'vru', 'verb': 'speed',
-        'trigger': {'kind': 'at', 't': step},
-        'target': {'mode': 'absolute', 'valueKph': 'param.vruSpeedKph'},
-        'dynamics': {'shape': 'linear', 'constraint': 'rate', 'value': 2.0}}])
+            {'laneOffset': 0, 's': '%s + 2.6' % at, 'tFrac': 0, 'headingOffsetRad': 0},
+            {'laneOffset': 0, 's': '%s + 4.0' % at, 'tFrac': 1, 'headingOffsetRad': 0}]
+
+
+def _continuous_crossing(d, v_ego):
+    """One monotone walk, started on a clip clock back-solved from the ego's nominal speed."""
+    conflict = _window(d, 'conflictS', (45, 85))
+    lead = _window(d, 'eventLeadS', (1.4, 3.2))
+    step = 'clamp(param.conflictS / %.4f - param.crossLeadS, 0.2, 12)' % v_ego
+    at = 'param.conflictS'
+    params = [A._p('conflictS', conflict[0], conflict[1], 'm'),
+              A._p('crossLeadS', lead[0], lead[1], 's')]
+
+    def inter(start_lat):
+        return [
+          {'id': 'vru-crosses', 'actor': 'vru', 'verb': 'route',
+           'trigger': {'kind': 'at', 't': step},
+           'target': {'mode': 'polyline', 'points': _crossing_polyline(at, start_lat)}},
+          {'id': 'vru-walks', 'actor': 'vru', 'verb': 'speed',
+           'trigger': {'kind': 'at', 't': step},
+           'target': {'mode': 'absolute', 'valueKph': 'param.vruSpeedKph'},
+           'dynamics': {'shape': 'linear', 'constraint': 'rate', 'value': 2.0}}]
+    return at, CLIP, params, inter
+
+
+def _hesitating_crossing(d, v_ego):
+    """Will-they-won't-they: step out, freeze in the road, then commit.
+
+    Every phase is triggered by the EGO'S REMAINING DISTANCE to the pedestrian rather
+    than by a clip time. That is what makes the pause authorable: a clip clock has to
+    be back-solved from an assumed ego speed and an assumed zero warm-up, and any hold
+    inserted afterwards shifts the pedestrian's arrival at the conflict by the hold plus
+    the walking ramps -- measured on this engine, a hand-timed 1 s pause took a crossing
+    from 4/16 admitted cells to 0/16. Anchored to the approach, the hold is free: the
+    pedestrian is in the road, stationary, exactly when the ego is `hesitateAtM` away,
+    and commits `holdS` later whatever the site's speed limit did to the ego.
+    A 12 s clip, not the family default 18 s. The mechanism runs from the step-out at
+    about 1.5 s to the far kerb at about 10 s, and the review surface spends a FIXED
+    budget of eight evenly spaced frames on whatever length the clip declares. At 18 s
+    those frames are 2.6 s apart, so a 2 s standstill lands in at most one of them and
+    is literally unobservable: measured here, the 2D oracle read frames-only evidence of
+    an 18 s clip as "crosses continuously without a visible hesitation". At 12 s they are
+    1.7 s apart and the hold spans two, which is what makes a standstill visible at all.
+    """
+    hes = _window(d, 'hesitateAtM', (44, 60))
+    walk = _window(d, 'walkOutM', (16, 26))
+    appr = _window(d, 'approachM', (14, 26))
+    hold = _window(d, 'holdS', (2.0, 2.8))
+    step_out = 'param.hesitateAtM + param.walkOutM'
+    # The ego has already driven WARMUP * v_ego metres when the clip starts, so the
+    # crossing sits that much further downstream for `stepOutM` to be an event at all.
+    at = '%s + param.approachM + %.2f' % (step_out, WARMUP * v_ego)
+    params = [A._p('hesitateAtM', hes[0], hes[1], 'm'),
+              A._p('walkOutM', walk[0], walk[1], 'm'),
+              A._p('approachM', appr[0], appr[1], 'm'),
+              A._p('holdS', hold[0], hold[1], 's')]
+
+    def near(m):
+        return {'kind': 'distance', 'from': 'ego', 'to': {'role': 'vru'},
+                'measure': 'euclidean', 'op': '<=', 'valueM': m}
+
+    def inter(start_lat):
+        return [
+          {'id': 'vru-a-steps-out', 'actor': 'vru', 'verb': 'route',
+           'trigger': {'kind': 'when', 'condition': near(step_out),
+                       'byLatest': HESITATE_CLIP - 4.0, 'ifNever': 'fire'},
+           'target': {'mode': 'polyline', 'points': _crossing_polyline(at, start_lat)}},
+          {'id': 'vru-b-walks', 'actor': 'vru', 'verb': 'speed',
+           'trigger': {'kind': 'after', 'of': 'vru-a-steps-out', 'event': 'start', 'delayS': 0},
+           'target': {'mode': 'absolute', 'valueKph': 'param.vruSpeedKph'},
+           'dynamics': {'shape': 'linear', 'constraint': 'rate', 'value': 2.0}},
+          {'id': 'vru-c-hesitates', 'actor': 'vru', 'verb': 'speed',
+           'trigger': {'kind': 'when', 'condition': near('param.hesitateAtM'),
+                       'byLatest': HESITATE_CLIP - 2.0, 'ifNever': 'fire'},
+           'target': {'mode': 'stop'},
+           'dynamics': {'shape': 'step', 'constraint': 'time', 'value': 0.1}},
+          {'id': 'vru-d-commits', 'actor': 'vru', 'verb': 'speed',
+           'trigger': {'kind': 'after', 'of': 'vru-c-hesitates', 'event': 'start',
+                       'delayS': 'param.holdS'},
+           'target': {'mode': 'absolute', 'valueKph': 'param.vruSpeedKph'},
+           'dynamics': {'shape': 'linear', 'constraint': 'rate', 'value': 2.0}}]
+    return at, HESITATE_CLIP, params, inter
+
+
+def c_hesitating_vru(brief, d):
+    return c_crossing_vru(brief, d, hesitate=True)
 
 
 def c_occluded_vru(brief, d):
@@ -400,6 +492,7 @@ def c_workzone(brief, d):
 COMPILERS = {
   'longitudinal_lead': c_longitudinal_lead,
   'crossing_vru':      c_crossing_vru,
+  'hesitating_vru':    c_hesitating_vru,
   'occluded_vru':      c_occluded_vru,
   'junction_conflict': c_junction_conflict,
   'lateral_incursion': c_lateral_incursion,
@@ -418,7 +511,11 @@ trace. You cannot change the compiler, the engine, or the gate.
 
 MECHANISM FAMILIES (pick exactly one as "family"):
 - longitudinal_lead: ego closes on a slower/stopped/braking lead in its own lane (rear-end class).
-- crossing_vru: a pedestrian/cyclist enters the ego lane from the roadside.
+- crossing_vru: a pedestrian/cyclist enters the ego lane from the roadside and keeps walking.
+- hesitating_vru: will-they-won't-they. The pedestrian steps off the kerb, FREEZES in the road
+  while the car bears down, then commits. Use it whenever the brief says hesitates, pauses,
+  wavers, thinks better of it, steps back, or is undecided. Its phases are triggered by the
+  ego's remaining distance, not by a clip clock, so the pause does not push the conflict away.
 - occluded_vru: crossing_vru, but the VRU starts hidden behind a roadside occluder and is
   revealed before the conflict.
 - junction_conflict: a conflicting movement (vehicle or VRU) arrives at a junction as ego crosses.
@@ -429,7 +526,7 @@ MECHANISM FAMILIES (pick exactly one as "family"):
 
 DECISION FIELDS (all optional except "family"; ranges are [lo, hi] windows the engine samples
 uniformly; every number is clamped into the physical bounds shown):
-  family              one of the eight names above
+  family              one of the nine names above
   egoSpeedKph         30..70 (scalar)
   challengerCatalog   vehicles: vehicle.sedan | vehicle.suv | vehicle.box_truck | vehicle.van |
                       vehicle.bus | vehicle.motorcycle | vehicle.bicycle
@@ -443,6 +540,12 @@ uniformly; every number is clamped into the physical bounds shown):
   brakeAtS            [2.6..6.0] when the braking lead brakes (longitudinal, leadBrakes)
   conflictS           [30..120] conflict point distance ahead of ego spawn (crossing/occluded)
   vruSpeedKph         [3..20] VRU crossing speed window
+  hesitateAtM         [24..90] hesitating_vru: ego's remaining distance when she FREEZES.
+                      This single number sets the criticality; smaller = later = more critical.
+  holdS               [0.6..3.0] hesitating_vru: how long she stands still in the road.
+  walkOutM            [8..40] hesitating_vru: extra ego distance covered while she walks out,
+                      i.e. how far into the road she gets before freezing.
+  approachM           [8..40] hesitating_vru: extra ego distance before she steps off the kerb.
   occluder            occluder.hedge_run | occluder.covered_car | occluder.dumpster |
                       street.bus_shelter (occluded_vru only)
   junctionControl     signalized | stop | any (junction_conflict only)

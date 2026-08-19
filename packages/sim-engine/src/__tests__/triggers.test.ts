@@ -442,4 +442,52 @@ describe('pedestrians', () => {
     expect(track.speedMps.at(-1)).toBe(0);
     expect(trace.events.some((e) => e.kind === 'despawn' && e.actorId === 'walker')).toBe(false);
   });
+
+  it('stays visible to conditions once her route motion has finished', () => {
+    // A pedestrian waiting for her crossing to be installed, or standing at the
+    // far kerb afterwards, is `retired` but still physically present and still
+    // recorded in the trace. Conditions must see her: "step out when the car is
+    // 30 m away" is the whole of a hesitating crossing, and it is unauthorable
+    // if a stationary pedestrian reads as absent.
+    const input = scenario(graph, {
+      clipSeconds: 8,
+      warmupSeconds: 0,
+      actors: [
+        vehicle(graph, { id: 'ego', rsl: LANE_LEFT, s: 20, speedMps: 12, cruiseSpeedMps: 12 }),
+        {
+          id: 'walker',
+          kind: 'pedestrian',
+          dims: { l: 0.6, w: 0.6, h: 1.75 },
+          // Spawned on the last metre of her path: she finishes it in the first
+          // second and is retired for the rest of the clip.
+          initial: { pose: { x: 120, z: 6, headingRad: Math.PI / 2 }, speedMps: 1.4 },
+          behavior: {
+            route: { kind: 'polyline', points: [{ x: 120, z: 6 }, { x: 120, z: 5 }] },
+            cruiseSpeedMps: 1.4,
+          },
+        },
+      ],
+      interactions: [{
+        id: 'horn',
+        actorId: 'ego',
+        trigger: {
+          kind: 'when',
+          condition: { kind: 'distance', a: 'ego', b: 'walker', mode: 'euclidean', cmp: 'lte', value: 30 },
+          byLatest: 7,
+          ifNever: 'skip',
+        },
+        verb: 'set',
+        target: { key: 'audio.horn', value: true },
+      }],
+    });
+    const { trace } = runSimulation(input, { graph, guards: 'collect' });
+    const walker = trace.ticks.actors['walker']!;
+    // Retired: present, parked at the end of her path, not moving.
+    expect(walker.present.at(-1)).toBe(1);
+    expect(walker.speedMps.at(-1)).toBe(0);
+    const fired = trace.events.find((e) => e.kind === 'trigger_fired' && e.interactionId === 'horn');
+    expect(fired).toBeDefined();
+    expect(fired!.t).toBeGreaterThan(1);
+    expect(trace.metrics.triggerNeverFired).toEqual([]);
+  });
 });

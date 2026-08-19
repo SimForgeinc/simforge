@@ -2684,17 +2684,22 @@ class Materializer {
     // Studio clip bounds form a half-open trigger eligibility window. A
     // continuous command that fires inside it completes according to its own
     // dynamics; the window end never truncates the physical manoeuvre.
-    const windowStartS = it.trigger.kind === 'at'
-      ? evalNum(it.trigger.t, scope, `${path}.trigger.t`)
-      : 0;
+    //
+    // Only an authored `until: at(t)` produces one. A `when` trigger's
+    // `byLatest` is a firing deadline owned by `ifNever`, not an eligibility
+    // window: deriving a window from it made the engine skip the trigger at
+    // `byLatest` (`window_elapsed`) one step before `ifNever: 'fire'` could
+    // force it, and silently released the fired command's axis at the same
+    // instant.
     const windowEndS = it.until?.kind === 'at'
       ? evalNum(it.until.t, scope, `${path}.until.t`)
-      : it.trigger.kind === 'when' && it.trigger.byLatest !== undefined
-        ? evalNum(it.trigger.byLatest, scope, `${path}.trigger.byLatest`)
-        : undefined;
+      : undefined;
     const window = windowEndS === undefined
       ? undefined
-      : { startS: windowStartS, endS: windowEndS };
+      : {
+          startS: it.trigger.kind === 'at' ? evalNum(it.trigger.t, scope, `${path}.trigger.t`) : 0,
+          endS: windowEndS,
+        };
 
     const base = {
       id: it.id,

@@ -43,9 +43,19 @@ export interface PerceptionQuery {
   hasSensor(observer: string, sensorId?: string): boolean;
 }
 
+/**
+ * The body a condition is asking about.
+ *
+ * Presence is the only test. `retired` means this actor's *route motion* has
+ * finished — a pedestrian waiting at the kerb before her crossing is installed,
+ * or standing at her terminal pose after it — not that the body left the world.
+ * The trace records her position on every one of those ticks, so a condition
+ * that refused to see her would disagree with the channel it is measured
+ * against, and "step out when the car is 40 m away" would be unauthorable.
+ */
 function actor(ctx: ConditionContext, id: string): ActorRuntime | undefined {
   const a = ctx.world.byId.get(id);
-  return a && a.present && !a.retired ? a : undefined;
+  return a?.present ? a : undefined;
 }
 
 function compare(cmp: 'lte' | 'gte', value: number, threshold: number): boolean {
@@ -152,13 +162,8 @@ export function evaluateCondition(ctx: ConditionContext, cond: Condition): boole
       // silently fire every `detected(..., value: false)` trigger in the clip.
       if (!ctx.perception) return false;
       const observer = actor(ctx, cond.by);
-      // The *target* is checked for presence only, not for `retired`. `retired`
-      // means route/interaction motion has finished, not that the body left the
-      // world — a pedestrian stays at her terminal pose. Perception reports
-      // what is physically there, so requiring `!retired` here would make
-      // `detected` disagree with the channel the trace recorded.
-      const target = ctx.world.byId.get(cond.a);
-      if (!observer || !target || !target.present) return false;
+      const target = actor(ctx, cond.a);
+      if (!observer || !target) return false;
       if (!ctx.perception.hasSensor(cond.by, cond.sensor)) return false;
       return ctx.perception.detects(cond.by, cond.a, cond.sensor) === cond.value;
     }
