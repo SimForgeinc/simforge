@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
+import { ScenarioTemplateV2Schema, evaluateExpr, type Expr, type ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
 
 import { OPEN_END_M, adaptTemplate, templateCrossingAngle } from '../adapt.js';
 
@@ -281,8 +281,8 @@ describe('adaptTemplate — policy and roles', () => {
     expect(notes.some((n) => n.reason.includes('not portable'))).toBe(true);
   });
 
-  it('falls back to 0 for a site-dependent spawn, because the structural pass has no site', () => {
-    const { roles } = adaptTemplate(
+  it('carries a site-dependent spawn through as an expression the matcher can resolve', () => {
+    const { roles, scope } = adaptTemplate(
       parse({
         anchor: { id: 'a', features: [] },
         roles: [
@@ -295,8 +295,11 @@ describe('adaptTemplate — policy and roles', () => {
         ],
       }),
     );
-    // Not an error: `materialize.ts` re-evaluates it against the bound site and
-    // extends the lane chain to reach it.
-    expect(roles[0]).toMatchObject({ dsM: 0 });
+    // Evaluating this here is what the matcher used to be handed instead: `0`,
+    // i.e. the ego at the frame origin, a reference path with no run-up, and a
+    // spawn the materializer then clamped onto the road end. The station is a
+    // function of the site, so it travels as one.
+    expect(typeof roles[0]!.dsM).toBe('object');
+    expect(evaluateExpr(roles[0]!.dsM as Expr, { ...scope, lane: { speedLimitKph: 64 } })).toBeCloseTo(-113.78, 2);
   });
 });

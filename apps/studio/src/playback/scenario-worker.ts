@@ -384,7 +384,7 @@ async function prepareUncached(request: ScenarioWorkerRequest): Promise<Scenario
   if (adapted.notes.length > 0) {
     throw new Error(`Scenario uses constructs the matcher cannot preserve: ${adapted.notes.map((note) => `${note.path}: ${note.reason}`).join(' · ')}`);
   }
-  const report = matchAnchorReport(adapted.anchor, index, { roles: adapted.roles });
+  const report = matchAnchorReport(adapted.anchor, index, { roles: adapted.roles, scope: adapted.scope });
   if (!report.sites.some((candidate) => candidate.degradation.intentPreserved)) {
     const summary = Object.entries(report.failureSummary).map(([key, value]) => `${key}: ${value}`).join(', ');
     throw new Error(`No intent-preserving site matches this scenario on ${request.map.id}${summary ? ` (${summary})` : ''}`);

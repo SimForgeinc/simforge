@@ -316,11 +316,23 @@ export function buildJunctionFrames(
 /**
  * Frame for a corridor-only anchor (no junction feature): the origin is the
  * head of a segment, which keeps `s` meaningful and the site id stable.
+ *
+ * The upstream span is walked exactly like a junction frame's. Without it a
+ * corridor frame started at its origin, so every negative station — the actor
+ * 45 m behind the parked car, the ego approaching the bus stop — fell before the
+ * reference path and was clamped onto the segment head at materialization. The
+ * old alternative was to shift the origin *into* the segment by the authored
+ * runway, which buys room by moving the scenario rather than by finding road.
  */
 export function buildCorridorFrame(
   index: DerivedMapIndex,
   segmentId: string,
-  options: { anchorFeatureId: string; runwayDownstreamM?: number; mirrored?: boolean },
+  options: {
+    anchorFeatureId: string;
+    runwayUpstreamM?: number;
+    runwayDownstreamM?: number;
+    mirrored?: boolean;
+  },
 ): AnchorFrame | null {
   const segment = index.segments.find((s) => s.id === segmentId);
   const entryRsl = segment?.laneRsls[0];
@@ -341,14 +353,17 @@ export function buildCorridorFrame(
     lengthM: segment.lengthM - entryLane.lengthM + forward.lengthM,
     contiguous: [...rest.map(() => true), ...forward.contiguous],
   };
-  // The corridor origin is the *head* of the segment, so there is no upstream
-  // span inside the frame; `s = 0` is the entry lane's start.
-  const { spans, sOfLane, sRange } = buildSpansAndS(
-    index,
-    { lanes: [], contiguous: [] },
-    entryRsl,
-    downstream,
-  );
+  const upNeed = Math.max(0, options.runwayUpstreamM ?? 0);
+  const upstream = (upNeed > 0 ? enumerateChains(index, entryRsl, upNeed, 'backward', 1)[0] : undefined) ?? {
+    lanes: [],
+    lengthM: 0,
+    contiguous: [],
+  };
+  // `s = 0` is the entry lane's start — the segment head — whether or not the
+  // frame reaches back past it.
+  const { spans, sOfLane, sRange } = buildSpansAndS(index, upstream, entryRsl, downstream);
+  // Shifting by the entry lane's own length puts its start — the segment head —
+  // at `s = 0`, which leaves the walked upstream span at negative stations.
   const shift = entryLane.lengthM;
   const shifted = spans.map((s) => ({ ...s, sStart: s.sStart + shift, sEnd: s.sEnd + shift }));
   const shiftedS: Record<LaneRsl, number> = {};
@@ -369,7 +384,7 @@ export function buildCorridorFrame(
     opposingLanes,
     handedness: index.handedness,
     mirrored: options.mirrored ?? false,
-    runwayUpstreamM: 0,
+    runwayUpstreamM: upstream.lengthM,
     runwayDownstreamM: downstream.lengthM + entryLane.lengthM,
   };
 }

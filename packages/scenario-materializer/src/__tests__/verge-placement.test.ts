@@ -103,8 +103,8 @@ function templateWithPropPose(pose: Record<string, unknown>): ScenarioTemplateV2
 
 function firstSite(template: ScenarioTemplateV2): { bundle: MapBundle; site: MatchedSite } {
   const loaded = loadBundle();
-  const { anchor, roles } = adaptTemplate(template);
-  const report = matchAnchorReport(anchor, loaded.index, { roles });
+  const { anchor, roles, scope } = adaptTemplate(template);
+  const report = matchAnchorReport(anchor, loaded.index, { roles, scope });
   const site = report.sites[0];
   expect(site, `${MAP_ID} should offer a one-lane corridor site`).toBeDefined();
   return { bundle: loaded, site: site! };

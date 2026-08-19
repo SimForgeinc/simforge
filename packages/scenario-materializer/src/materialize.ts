@@ -750,15 +750,12 @@ function routeFromChain(
 /**
  * Extend a lane chain **backwards** until the route actually contains `target`.
  *
- * The matcher builds a role's lane chain from the role's `dsM`, and `dsM` is
- * whatever the adapter could evaluate *statically*. A portable template writes
- * its spawn as `-(0.8 * lane.speedLimitKph / 3.6) * 8` — a site-dependent
- * expression, indeterminate before a site exists — so the structural pass sees
- * `0` and hands back a chain that starts at the stop line. Placing the actor at
- * the real, site-evaluated `s` then projects onto a route that does not reach
- * that far back, and `projectPoint` silently clamps to the route start: the ego
- * spawns *past* the junction it was supposed to approach, and every downstream
- * number is quietly wrong.
+ * The target is always inside the site's frame — the matcher rejects a site
+ * whose reference path cannot hold the template's actors, and `buildActor`
+ * refuses a station outside it. What is *not* guaranteed is that the actor's own
+ * lane chain reaches that far: a lateral or opposing lane can start later than
+ * the reference path does, and a chain built from it then begins downstream of
+ * the actor's station.
  *
  * So the materializer checks its own work: if the target point projects onto an
  * endpoint of the route rather than into its interior, the chain is too short
@@ -1829,10 +1826,10 @@ class Materializer {
       spawnS = built.startS;
     } else {
       // An actor on the reference lane drives the reference path, and the
-      // reference path is the one chain guaranteed to span the whole frame.
-      // The matcher's own chain for such a role starts at the *statically*
-      // evaluated `s`, which is 0 whenever the spawn is a site-dependent
-      // expression — using it would drop the entire approach.
+      // reference path is the one chain guaranteed to span the whole frame —
+      // including the road behind the actor, which the warm-up drives over.
+      // The matcher's per-role chain starts at the actor's own lane, so using it
+      // would cut the approach off at the spawn.
       const onReferencePath =
         binding.laneRsl !== undefined &&
         this.site.frame.referencePath.some((span) => span.laneRsl === binding.laneRsl);
@@ -1907,6 +1904,26 @@ class Materializer {
       } else {
         const pose = rolePose(role);
         const frameS = this.sampledFrameS(role, binding);
+        // `framePoint` converts a frame station through `Route.poseAt`, which
+        // saturates at the route ends: a station outside the frame silently
+        // becomes the road end, and every number derived from it is wrong. The
+        // matcher sizes each site's frame to the template's own longitudinal
+        // envelope (`requiredRunway`), so this is unreachable for a site it
+        // accepted — a param draw that reaches further than the envelope is the
+        // one way in, and it is a refusal, not an adjustment.
+        const [frameMinS, frameMaxS] = this.site.frame.sRange;
+        if (frameS < frameMinS || frameS > frameMaxS) {
+          throw new CliError(
+            'role_station_outside_frame',
+            `role "${role.id}" is placed at frame s=${frameS.toFixed(1)} m, outside this site's ` +
+              `reference path [${frameMinS.toFixed(1)}, ${frameMaxS.toFixed(1)}] m`,
+            {
+              path: `${path}.pose.s`,
+              detail: { frameS, sRange: [frameMinS, frameMaxS], siteId: this.site.siteId },
+              exitCode: 2,
+            },
+          );
+        }
         const frameAt = this.framePoint(frameS);
         const hasLocalSemanticConstraint =
           role.requiredSameSegmentAs !== undefined ||
@@ -1980,12 +1997,6 @@ class Materializer {
             route = covered.route;
           }
           spawnS = route.projectPoint({ x: frameAt.x, y: frameAt.y }).s;
-        }
-        if (!hasLocalSemanticConstraint && spawnS <= ENDPOINT_CLAMP_M) {
-          this.notes.push({
-            path: `${path}.pose.s`,
-            reason: `frame s=${frameS.toFixed(1)} m is upstream of every drivable lane at this site; the spawn was clamped to the start of the route`,
-          });
         }
         tFrac = pose ? evalTFrac(pose.tFrac, scope, `${path}.pose.tFrac`, 0) : (binding.pose?.tFrac ?? 0);
         // A role can also state its lateral offset in metres from a named reference. This is what

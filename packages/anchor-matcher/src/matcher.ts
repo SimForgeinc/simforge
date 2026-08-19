@@ -20,20 +20,87 @@
  * fan-out is iterated in sorted order.
  */
 
+import type { ExprScope } from '@uniscenarios/scenario-model';
+
 import { aggregateScore, evaluateAnchor, laneCountTransitions, sampleCorridor } from './clauses.js';
-import { bindRoles } from './bind.js';
+import { actorEnvelope, bindRoles, siteScope } from './bind.js';
 import { crossSectionAt } from './cross-section.js';
 import { degrade } from './degradation.js';
-import { buildCorridorFrame, buildJunctionFrames } from './frame.js';
+import {
+  DEFAULT_RUNWAY_DOWNSTREAM_M,
+  DEFAULT_RUNWAY_UPSTREAM_M,
+  buildCorridorFrame,
+  buildJunctionFrames,
+} from './frame.js';
 import { mirrorAnchor, mirrorRoleBindings } from './mirror.js';
 import { nearMissScore } from './scoring.js';
 import { computeSiteId } from './site-id.js';
 import { MATCH_SEMANTICS_VERSION } from './version.js';
 import { originFeature, resolvePolicy } from './types/anchor.js';
-import type { AnchorFeature, JunctionControl, LogicalAnchor } from './types/anchor.js';
+import type { AnchorFeature, Clause, JunctionControl, LogicalAnchor } from './types/anchor.js';
 import type { DerivedMapIndex, LaneRsl } from './types/map-index.js';
 import type { RoleBinding } from './types/roles.js';
 import type { AnchorFrame, MatchReport, MatchStats, MatchedSite } from './types/site.js';
+
+/**
+ * Required runway at one candidate site: whatever the author asked for, raised
+ * to whatever the template's own actors need.
+ *
+ * The derived floor is the point of this function. A template that spawns its
+ * ego 70 m upstream of the junction needs 70 m of upstream road, and until now
+ * nothing in the matcher knew that: `runwayUpstreamM` was an optional clause
+ * authors hand-wrote (or forgot), so sites with no run-up matched and the
+ * materializer clamped the ego onto the road end. Deriving it means the clause
+ * is a *consequence* of the roles rather than a second, hand-maintained copy of
+ * them — and a site that cannot host the actors is rejected here, where "no
+ * site" is an honest answer, instead of at spawn time where it was a silent
+ * adjustment.
+ */
+function requiredRunway(
+  anchor: LogicalAnchor,
+  roles: readonly RoleBinding[],
+  scope: ExprScope,
+): {
+  upstreamM: number;
+  downstreamM: number;
+  walkUpstreamM: number;
+  walkDownstreamM: number;
+  anchor: LogicalAnchor;
+} {
+  const envelope = actorEnvelope(roles, scope);
+  const authoredUp = anchor.corridor?.runwayUpstreamM;
+  const authoredDown = anchor.corridor?.runwayDownstreamM;
+  const upstreamM = Math.max(authoredUp?.value ?? 0, envelope.upstreamM);
+  const downstreamM = Math.max(authoredDown?.value ?? 0, envelope.downstreamM);
+  // Only replace the authored clause when the actors need more than it asks
+  // for: an author who wrote a *larger* runway meant it, and a template whose
+  // actors need nothing upstream keeps its (possibly absent) clause untouched.
+  const up: Clause<number> | undefined =
+    envelope.upstreamM > (authoredUp?.value ?? 0)
+      ? { value: upstreamM, essentiality: 'required' }
+      : authoredUp;
+  const down: Clause<number> | undefined =
+    envelope.downstreamM > (authoredDown?.value ?? 0)
+      ? { value: downstreamM, essentiality: 'required' }
+      : authoredDown;
+  return {
+    upstreamM,
+    downstreamM,
+    walkUpstreamM: Math.max(upstreamM, envelope.reachUpstreamM),
+    walkDownstreamM: Math.max(downstreamM, envelope.reachDownstreamM),
+    anchor:
+      up === authoredUp && down === authoredDown
+        ? anchor
+        : {
+            ...anchor,
+            corridor: {
+              ...anchor.corridor,
+              ...(up === undefined ? {} : { runwayUpstreamM: up }),
+              ...(down === undefined ? {} : { runwayDownstreamM: down }),
+            },
+          },
+  };
+}
 
 /**
  * Corridor segments are indexed from their head, while merge/lane-drop and
@@ -41,6 +108,13 @@ import type { AnchorFrame, MatchReport, MatchStats, MatchedSite } from './types/
  * Recenter those structural origins before evaluating runway and role bindings. This makes
  * `s=0` mean the mechanism site (as it already does for junction anchors), and
  * keeps the segment id as the stable map feature used by catalog closure.
+ * A **featureless** corridor has no physical zero, so its origin is placed after
+ * the required run-up: on an unmarked stretch of road, "where the scenario
+ * starts" is exactly "far enough in that the approach exists". That is real
+ * road — the segment's own first metres — which is why it stays. What it cannot
+ * do is give an actor road *behind the segment head*, and a corridor anchored on
+ * a parking zone or a bus stop has no shift available at all: those are what
+ * `buildCorridorFrame`'s upstream walk is for.
  */
 function recenterStructuralCorridor(
   index: DerivedMapIndex,
@@ -51,11 +125,8 @@ function recenterStructuralCorridor(
   const origin = originFeature(anchor);
   let shift: number;
   if (!origin) {
-    // A featureless corridor template still needs a meaningful zero station:
-    // place it after the requested approach runway so negative actor poses are
-    // genuine drivable positions rather than falling before the segment head.
     shift = anchor.corridor?.runwayUpstreamM?.value ?? 0;
-    if (shift <= frame.sRange[0] || shift >= frame.sRange[1]) return frame;
+    if (shift <= 0 || shift >= frame.sRange[1]) return frame;
   } else if (origin.kind === 'merge' || origin.kind === 'lane_drop') {
     const transitions = laneCountTransitions(index, sampleCorridor(index, frame, frame.sRange[0], frame.sRange[1]), frame)
       .filter((transition) => transition.kind === origin.kind);
@@ -112,6 +183,12 @@ function recenterStructuralCorridor(
 export interface MatchOptions {
   /** Roles to bind structurally at each site. Optional: clauses alone still match. */
   roles?: RoleBinding[];
+  /**
+   * Values the roles' station expressions read that are *not* site facts:
+   * parameters at their declared defaults and the clip length. The site facts
+   * (`lane.*`, `junction.*`) are filled in per candidate site.
+   */
+  scope?: ExprScope;
   /** Hard cap on candidate frames, as a guard against pathological anchors. */
   maxFrames?: number;
 }
@@ -236,10 +313,28 @@ function evaluateFrame(
   anchor: LogicalAnchor,
   roles: RoleBinding[],
   frame: AnchorFrame,
+  scope: ExprScope,
 ): MatchedSite {
+  // The runway the actors need is a fact about this site, because their
+  // stations can be: `-(0.8 * lane.speedLimitKph / 3.6) * 8` is 89 m at a 50 kph
+  // approach and 114 m at 64 kph. Resolve it here, where the entry lane is
+  // known, then let the ordinary clause machinery accept or reject the site.
+  const required = requiredRunway(
+    anchor,
+    roles,
+    siteScope(
+      index,
+      frame.entryLaneRsl,
+      frame.origin.mapFeatureId.startsWith('junction:')
+        ? frame.origin.mapFeatureId.slice('junction:'.length)
+        : undefined,
+      scope,
+    ),
+  );
+  anchor = required.anchor;
   frame = recenterStructuralCorridor(index, anchor, frame);
   const evaluation = evaluateAnchor({ index, frame, anchor });
-  const bindings = bindRoles(index, frame, roles, evaluation.featureMatches);
+  const bindings = bindRoles(index, frame, roles, evaluation.featureMatches, scope);
   const { score: softScore, failedRequired } = aggregateScore(evaluation.clauses);
   const { report, score } = degrade({
     anchor,
@@ -296,19 +391,25 @@ export function resolveExactCorridorSite(
   anchor: LogicalAnchor,
   index: DerivedMapIndex,
   segmentId: string,
-  options: Pick<MatchOptions, 'roles'> = {},
+  options: Pick<MatchOptions, 'roles' | 'scope'> = {},
 ): MatchedSite | null {
   const origin = originFeature(anchor);
   if (origin?.kind === 'junction') return null;
-  const downstreamNeed = anchor.corridor?.runwayDownstreamM?.value;
-  const frameDownstreamNeed = downstreamNeed === undefined
-    ? undefined
-    : downstreamNeed + (anchor.corridor?.runwayUpstreamM?.value ?? 0);
+  const roles = options.roles ?? [];
+  const scope = options.scope ?? {};
+  const entryLaneRsl = index.segments.find((segment) => segment.id === segmentId)?.laneRsls[0];
+  if (entryLaneRsl === undefined) return null;
+  const need = requiredRunway(anchor, roles, siteScope(index, entryLaneRsl, undefined, scope));
   const frame = buildCorridorFrame(index, segmentId, {
     anchorFeatureId: origin?.id ?? 'corridor',
-    ...(frameDownstreamNeed === undefined ? {} : { runwayDownstreamM: frameDownstreamNeed }),
+    runwayUpstreamM: need.walkUpstreamM,
+    runwayDownstreamM:
+      Math.max(
+        anchor.corridor?.runwayDownstreamM?.value ?? DEFAULT_RUNWAY_DOWNSTREAM_M,
+        need.walkDownstreamM,
+      ) + need.walkUpstreamM,
   });
-  return frame === null ? null : evaluateFrame(index, anchor, options.roles ?? [], frame);
+  return frame === null ? null : evaluateFrame(index, anchor, roles, frame, scope);
 }
 
 function diversityKey(
@@ -331,6 +432,7 @@ export function matchAnchorReport(
 ): MatchReport {
   const policy = resolvePolicy(anchor);
   const roles = options.roles ?? [];
+  const scope = options.scope ?? {};
   const maxFrames = options.maxFrames ?? DEFAULT_MAX_FRAMES;
   const warnings: string[] = [];
 
@@ -356,16 +458,24 @@ export function matchAnchorReport(
     const { ids, selectivityOrder } = junctionCandidates(index, origin);
     stats.selectivityOrder = selectivityOrder;
     stats.candidatesConsidered = ids.length;
-    const upstreamNeed = anchor.corridor?.runwayUpstreamM?.value;
-    const downstreamNeed = anchor.corridor?.runwayDownstreamM?.value;
     for (const junctionId of ids) {
       for (const laneRsl of approachLanesOf(index, junctionId)) {
         if (frames.length >= maxFrames) break;
+        // Walk far enough to hold the actors. The frame is the coordinate
+        // system every station is expressed in, so a frame shorter than the
+        // template's envelope cannot host it however much road the map has.
+        const need = requiredRunway(anchor, roles, siteScope(index, laneRsl, junctionId, scope));
         const build = (turn: AnchorFeature['junction'], mirrored: boolean): AnchorFrame[] =>
           buildJunctionFrames(index, junctionId, laneRsl, {
             ...(turn?.egoTurn ? { egoTurn: turn.egoTurn.value } : {}),
-            ...(upstreamNeed !== undefined ? { runwayUpstreamM: upstreamNeed } : {}),
-            ...(downstreamNeed !== undefined ? { runwayDownstreamM: downstreamNeed } : {}),
+            runwayUpstreamM: Math.max(
+              anchor.corridor?.runwayUpstreamM?.value ?? DEFAULT_RUNWAY_UPSTREAM_M,
+              need.walkUpstreamM,
+            ),
+            runwayDownstreamM: Math.max(
+              anchor.corridor?.runwayDownstreamM?.value ?? DEFAULT_RUNWAY_DOWNSTREAM_M,
+              need.walkDownstreamM,
+            ),
             anchorFeatureId: origin.id,
             mirrored,
           });
@@ -378,26 +488,32 @@ export function matchAnchorReport(
     stats.selectivityOrder = selectivityOrder;
     stats.candidatesConsidered = ids.length;
     const anchorFeatureId = origin?.id ?? 'corridor';
+    const segmentById = new Map(index.segments.map((segment) => [segment.id, segment]));
     for (const segmentId of ids) {
       if (frames.length >= maxFrames) break;
-      const downstreamNeed = anchor.corridor?.runwayDownstreamM?.value;
-      // Corridor frames are initially built from the segment head and only
-      // then recentered on the authored structural zero. Reserve the approach
-      // distance as well, otherwise a featureless `100 m upstream + 180 m
-      // downstream` anchor is built as 180 m total and necessarily loses its
-      // downstream runway when shifted by 100 m.
-      const frameDownstreamNeed = downstreamNeed === undefined
-        ? undefined
-        : downstreamNeed + (anchor.corridor?.runwayUpstreamM?.value ?? 0);
+      const entryLaneRsl = segmentById.get(segmentId)?.laneRsls[0];
+      if (entryLaneRsl === undefined) continue;
+      const need = requiredRunway(anchor, roles, siteScope(index, entryLaneRsl, undefined, scope));
+      // The downstream runway is stated from the origin, but the actor that
+      // needs it starts upstream of the origin and drives through it, so its own
+      // run-up has to be walked as well: a `100 m upstream + 180 m downstream`
+      // corridor is 280 m of road, not 180.
+      const frameDownstreamNeed =
+        Math.max(
+          anchor.corridor?.runwayDownstreamM?.value ?? DEFAULT_RUNWAY_DOWNSTREAM_M,
+          need.walkDownstreamM,
+        ) + need.walkUpstreamM;
       const frame = buildCorridorFrame(index, segmentId, {
         anchorFeatureId,
-        ...(frameDownstreamNeed !== undefined ? { runwayDownstreamM: frameDownstreamNeed } : {}),
+        runwayUpstreamM: need.walkUpstreamM,
+        runwayDownstreamM: frameDownstreamNeed,
       });
       if (frame) frames.push(frame);
       if (mirroredAnchor) {
         const mirroredFrame = buildCorridorFrame(index, segmentId, {
           anchorFeatureId,
-          ...(frameDownstreamNeed !== undefined ? { runwayDownstreamM: frameDownstreamNeed } : {}),
+          runwayUpstreamM: need.walkUpstreamM,
+          runwayDownstreamM: frameDownstreamNeed,
           mirrored: true,
         });
         if (mirroredFrame) mirroredFrames.push(mirroredFrame);
@@ -409,12 +525,12 @@ export function matchAnchorReport(
   // --- 2-4. frame evaluation, scoring, degradation -----------------------
   const scored: ScoredFrame[] = [];
   for (const frame of frames) {
-    scored.push({ site: evaluateFrame(index, anchor, roles, frame), mirrored: false });
+    scored.push({ site: evaluateFrame(index, anchor, roles, frame, scope), mirrored: false });
   }
   if (mirroredAnchor) {
     for (const frame of mirroredFrames) {
       scored.push({
-        site: evaluateFrame(index, mirroredAnchor, mirroredRoles, frame),
+        site: evaluateFrame(index, mirroredAnchor, mirroredRoles, frame, scope),
         mirrored: true,
       });
     }

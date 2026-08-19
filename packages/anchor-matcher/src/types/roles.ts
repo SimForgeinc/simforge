@@ -8,6 +8,7 @@
  * conflict points and route lane chains it needs.
  */
 
+import { NumberOrExprSchema } from '@uniscenarios/scenario-model';
 import { z } from 'zod';
 import { EssentialitySchema, TurnSchema, ApproachRelationSchema } from './anchor.js';
 
@@ -41,11 +42,21 @@ const base = {
   }).optional(),
 };
 
+/**
+ * A station (`dsM`) is `number | Expr` for the same reason an initial speed is:
+ * "eight seconds of run-up" is `-(0.8 * lane.speedLimitKph / 3.6) * 8`, and the
+ * posted limit is a fact about the *site*, not about the template. Collapsing
+ * that to a number before matching was the whole ENDPOINT_CLAMP defect class:
+ * the adapter evaluated it as `0`, the matcher bound the ego at the stop line,
+ * built a reference path with no run-up, and the materializer then clamped the
+ * real station onto the road end. The matcher resolves it per candidate site
+ * instead — see `roleStation` in `bind.ts`.
+ */
 export const RoleBindingSchema = z.discriminatedUnion('kind', [
   z.strictObject({
     ...base,
     kind: z.literal('on_reference'),
-    dsM: z.number().default(0),
+    dsM: NumberOrExprSchema.default(0),
     tFrac: z.number().default(0),
   }),
   z.strictObject({
@@ -54,7 +65,7 @@ export const RoleBindingSchema = z.discriminatedUnion('kind', [
     /** Signed same-direction lane index; +1 is one lane to the left of travel. */
     k: z.number().int(),
     onMissing: OnMissingSchema.default('fail'),
-    dsM: z.number().default(0),
+    dsM: NumberOrExprSchema.default(0),
     tFrac: z.number().default(0),
   }),
   z.strictObject({
@@ -63,7 +74,7 @@ export const RoleBindingSchema = z.discriminatedUnion('kind', [
     /** Anchor feature whose concrete identity is `lane_drop:<terminating-rsl>@<s>`. */
     feature: z.string().min(1),
     lane: z.enum(['terminating', 'continuing_sibling']),
-    dsM: z.number().default(0),
+    dsM: NumberOrExprSchema.default(0),
     tFrac: z.number().default(0),
   }),
   z.strictObject({
@@ -71,7 +82,7 @@ export const RoleBindingSchema = z.discriminatedUnion('kind', [
     kind: z.literal('opposing'),
     /** 0 = innermost opposing lane. */
     index: z.number().int().min(0).default(0),
-    dsM: z.number().default(0),
+    dsM: NumberOrExprSchema.default(0),
     tFrac: z.number().default(0),
   }),
   z.strictObject({
@@ -115,7 +126,7 @@ export const RoleBindingSchema = z.discriminatedUnion('kind', [
      * `lane_offset`: a `dLane` is a lane request, not a hint.
      */
     onMissing: OnMissingSchema.default('fail'),
-    dsM: z.number().default(0),
+    dsM: NumberOrExprSchema.default(0),
     tFrac: z.number().optional(),
   }),
 ]);

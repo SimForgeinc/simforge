@@ -490,7 +490,7 @@ describe('matchAnchor — corridor-only anchors', () => {
     expect(site.clauses.find((c) => c.path === 'corridor.throughLanesSameDir')!.actual).toBe(3);
   });
 
-  it('places featureless corridor zero after the required approach runway', () => {
+  it('keeps featureless corridor zero at the segment head and finds real upstream road', () => {
     const anchor = parseLogicalAnchor({
       id: 'featureless-with-approach',
       corridor: {
@@ -505,7 +505,10 @@ describe('matchAnchor — corridor-only anchors', () => {
     ]);
     const sites = matchAnchor(anchor, signalizedIndex, { roles });
     expect(sites.length).toBeGreaterThan(0);
-    expect(sites[0]!.frame.runwayUpstreamM).toBe(40);
+    // The run-up is road walked backwards from the segment head, not an origin
+    // shifted forward into the segment to make room.
+    expect(sites[0]!.frame.runwayUpstreamM).toBeGreaterThanOrEqual(40);
+    expect(sites[0]!.frame.sRange[0]).toBeLessThanOrEqual(-40);
     expect(sites[0]!.frame.runwayDownstreamM).toBeGreaterThanOrEqual(120);
     expect(sites[0]!.bindings[0]).toMatchObject({ role: 'ego', status: 'bound' });
     expect(sites[0]!.bindings[0]!.pose!.s).toBe(-30);
@@ -526,5 +529,64 @@ describe('matchAnchor — corridor-only anchors', () => {
     expect(grade.supported).toBe(false);
     expect(grade.score).toBe(0);
     expect(report.rejected[0]!.degradation.summary).toContain('gradePct');
+  });
+});
+
+/**
+ * The runway an anchor needs is a property of its actors, not a clause an author
+ * has to remember. These are the cases that used to reach `materialize.ts` and
+ * get clamped: a spawn station the reference path does not reach.
+ */
+describe('matchAnchor — runway derived from the actors', () => {
+  // -(0.8 * 56 / 3.6) * 8 = -99.56 m on the synthetic map's 56 kph approach:
+  // more than the anchor's authored 80 m, and the shape every portable template
+  // uses to say "eight seconds of run-up".
+  const runupRoles = (seconds: number) =>
+    parseRoleBindings([
+      {
+        role: 'ego',
+        kind: 'on_reference',
+        dsM: `-(0.8 * lane.speedLimitKph / 3.6) * ${seconds}`,
+      },
+    ]);
+
+  it('raises the authored requirement to what the site-resolved stations need', () => {
+    const sites = matchAnchor(workedExampleAnchor(), signalizedIndex, { roles: runupRoles(8) });
+    expect(sites).toHaveLength(1);
+    const upstream = sites[0]!.clauses.find((c) => c.path === 'corridor.runwayUpstreamM')!;
+    expect(upstream.required).toBeCloseTo(99.56, 2);
+    expect(upstream.essentiality).toBe('required');
+    expect(sites[0]!.frame.runwayUpstreamM).toBeGreaterThanOrEqual(99.56);
+    // The station is bound where the author put it, not at the frame origin.
+    expect(sites[0]!.bindings.find((b) => b.role === 'ego')!.pose!.s).toBeCloseTo(-99.56, 2);
+  });
+
+  it('reports no site when the map cannot hold the run-up, instead of clamping it', () => {
+    const report = matchAnchorReport(workedExampleAnchor(), signalizedIndex, {
+      roles: runupRoles(20),
+    });
+    expect(report.sites).toEqual([]);
+    const rejected = report.rejected[0]!;
+    const upstream = rejected.clauses.find((c) => c.path === 'corridor.runwayUpstreamM')!;
+    expect(upstream.required).toBeCloseTo(248.89, 2);
+    expect(upstream.score).toBeLessThan(1);
+    expect(rejected.degradation.verdict).toBe('infeasible');
+    expect(rejected.degradation.failedRequiredClauses).toContain('corridor.runwayUpstreamM');
+    expect(rejected.bindings.find((b) => b.role === 'ego')!.status).toBe('failed');
+  });
+
+  it('leaves an anchor whose actors need nothing upstream exactly as authored', () => {
+    const anchor = parseLogicalAnchor({
+      id: 'downstream-only',
+      corridor: {
+        throughLanesSameDir: { value: [3, 3], essentiality: 'required' },
+        runwayDownstreamM: { value: 100, essentiality: 'required' },
+      },
+      policy: { diversity: 'none', minScore: 0.3 },
+    });
+    const roles = parseRoleBindings([{ role: 'ego', kind: 'on_reference', dsM: 30 }]);
+    const sites = matchAnchor(anchor, signalizedIndex, { roles });
+    expect(sites.length).toBeGreaterThan(0);
+    expect(sites[0]!.clauses.some((c) => c.path === 'corridor.runwayUpstreamM')).toBe(false);
   });
 });

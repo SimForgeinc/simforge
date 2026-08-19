@@ -5,13 +5,19 @@
  *
  * Repairs are attempted in the order the research doc gives:
  *
- * 1. speed-clamp / runway-shorten (preserve the arrival invariant over the
- *    speed parameter)
+ * 1. speed-clamp (preserve the arrival invariant over the speed parameter)
  * 2. feature-distance relax within tolerance
  * 3. lane-offset clamp (non-required roles)
  * 4. junction-class substitute (near-miss table, preferred only)
  * 5. actor drop (cosmetic only)
  * 6. otherwise `infeasible`
+ *
+ * There is deliberately no runway repair. "Shorten the run-up to the road
+ * available" reads like a relaxation of presentation, but nothing downstream
+ * shortens anything: the actor keeps its authored station and the materializer
+ * clamps it onto the road end. Runway is now derived from the actors
+ * (`requiredRunway` in `matcher.ts`), so a site that is too short fails the
+ * required clause and is simply infeasible.
  *
  * The hard gate: **any repair that would touch a `required` clause or a
  * `required` role makes the site infeasible.** Relaxing a required clause is
@@ -27,7 +33,6 @@ import { passesRequired } from './scoring.js';
 /** Score multipliers for repairs whose cost is not already in a clause score. */
 const REPAIR_PENALTY: Record<Repair['kind'], number> = {
   speed_clamp: 0.97,
-  runway_shorten: 1, // already reflected in the runway clause score
   feature_distance_relax: 1, // already reflected in the atM clause score
   lane_offset_clamp: 0.95,
   junction_class_substitute: 1, // already reflected in the control clause score
@@ -95,19 +100,6 @@ export function degrade(input: DegradeInput): DegradeResult {
     });
   }
 
-  // 1b. runway shorten ----------------------------------------------------
-  for (const path of ['corridor.runwayUpstreamM', 'corridor.runwayDownstreamM']) {
-    const runway = clauseByPath(clauses, path);
-    if (!runway || !runway.supported || passesRequired(runway.score)) continue;
-    repairs.push({
-      kind: 'runway_shorten',
-      path,
-      requestedM: typeof runway.required === 'number' ? runway.required : 0,
-      availableM: typeof runway.actual === 'number' ? runway.actual : 0,
-      touchesRequired: runway.essentiality === 'required',
-      note: `run-up shortened to the ${fmt(runway.actual)} m available`,
-    });
-  }
 
   // 2. feature-distance relax --------------------------------------------
   for (const clause of clauses) {

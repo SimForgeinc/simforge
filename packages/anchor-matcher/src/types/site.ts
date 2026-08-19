@@ -136,14 +136,6 @@ export type Repair =
       note: string;
     }
   | {
-      kind: 'runway_shorten';
-      path: string;
-      requestedM: number;
-      availableM: number;
-      touchesRequired: boolean;
-      note: string;
-    }
-  | {
       kind: 'feature_distance_relax';
       path: string;
       requestedM: [number, number];

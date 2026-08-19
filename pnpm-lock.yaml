@@ -154,6 +154,9 @@ importers:
 
   packages/anchor-matcher:
     dependencies:
+      '@uniscenarios/scenario-model':
+        specifier: workspace:*
+        version: link:../scenario-model
       '@uniscenarios/xodr-tools':
         specifier: workspace:*
         version: link:../xodr-tools

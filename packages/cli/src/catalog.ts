@@ -806,14 +806,14 @@ export async function createScenarioCatalog(
       // This must remain identical to executor replay.  A persisted site is
       // an exact reservation, not a request to re-run the interactive site's
       // diversity/truncation policy.
-      const { anchor, roles, notes } = adaptTemplate(template);
+      const { anchor, roles, scope, notes } = adaptTemplate(template);
       // Same rule as `matchOnMap`: a catalog entry built from a template whose
       // requirement was discarded is a reservation of the wrong place.
       assertMatchableAnchor(notes);
       const matched = matchAnchorReport({
         ...anchor,
         policy: catalogExactMatcherPolicy(anchor.policy ?? {}),
-      }, context.matcherIndex, { roles }).sites;
+      }, context.matcherIndex, { roles, scope }).sites;
       const candidates: CatalogLocationSitePair[] = locations.flatMap((location) => matched.flatMap((matcherSite) =>
         matcherSiteClosesLocation(matcherSite, location, context.matcherIndex)
           ? [{

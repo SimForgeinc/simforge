@@ -1,18 +1,17 @@
 /**
- * The materializer's lane-offset resolution must fail rather than relocate.
+ * A spawn station the site's reference path does not reach is a refusal.
  *
- * `framePosePoint` is the one place every authored `laneOffset` is turned into
- * a world point: role poses, prop poses, `route` polyline vertices, arrival
- * triggers and `at.pose` invariants all pass through it. When the matched site
- * had no lane at the requested `k` it pushed a note and fell back to the
- * **reference** lane — so a prop authored one lane over materialised in the
- * ego's own lane, and an arrival invariant measured against a station the
- * scenario never described. A note is not a failure: `manifest.feasible` stayed
- * true and the cell ran.
+ * `framePoint` converts a frame station through `Route.poseAt`, which saturates
+ * at the route ends. A station past the end therefore produced a *valid-looking*
+ * world point at the road end, the actor materialised there, `manifest.feasible`
+ * stayed true, and every number measured from that pose — arrival TTC, headway,
+ * the recorded clip — described a scenario nobody authored. The matcher now
+ * sizes each site's frame to the template's own longitudinal envelope, so this
+ * is unreachable through matching; a parameter draw that reaches further than
+ * the envelope is the remaining way in, and it must stop the cell rather than
+ * quietly move the actor.
  *
- * This test uses a real dev map because the defect is a property of real
- * cross-sections: it only shows up where the corridor is narrower than the
- * template assumes, which is most of these maps.
+ * Uses a real dev map: the defect is a property of real reference-path extents.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -32,6 +31,7 @@ import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@uniscenarios
 import { buildLaneGraph, type TopologyIndex } from '@uniscenarios/sim-engine';
 
 import { adaptTemplate } from '../adapt.js';
+import { CliError } from '../errors.js';
 import { materialize } from '../materialize.js';
 import { topologyWithMapSpeedLimits } from '../map-signals.js';
 import type { MapBundle } from '../types.js';
@@ -75,26 +75,24 @@ function loadBundle(): MapBundle {
   return bundle;
 }
 
-const car = { class: 'car', catalogId: 'vehicle.sedan' } as const;
-
-/** A one-lane corridor template whose *prop* asks for a lane that is not there. */
-function templateWithPropAt(laneOffset: number): ScenarioTemplateV2 {
+/** A corridor template with one actor at `stationM` along the frame. */
+function templateAt(stationM: number): ScenarioTemplateV2 {
   return ScenarioTemplateV2Schema.parse({
     scenarioVersion: 2,
     meta: {
-      name: 'lane-offset resolution fixture',
+      name: 'station-outside-frame fixture',
       createdAt: '2026-08-01T00:00:00.000Z',
       modifiedAt: '2026-08-01T00:00:00.000Z',
       appVersion: 'uniscenarios/0.0.1',
-      archetype: 'test.lane-offset-resolution',
+      archetype: 'test.station-outside-frame',
       author: 'test',
     },
     params: { declarations: [], constraints: [] },
     environment: { weather: 'clear', timeOfDay: 'afternoon' },
     anchor: {
-      id: 'one-lane-corridor',
+      id: 'plain-corridor',
       corridor: {
-        throughLanesSameDir: { value: [1, 1], essentiality: 'required' },
+        throughLanesSameDir: { value: [1, 2], essentiality: 'required' },
         runwayDownstreamM: { value: [120, null], essentiality: 'required' },
       },
       features: [],
@@ -104,21 +102,12 @@ function templateWithPropAt(laneOffset: number): ScenarioTemplateV2 {
       {
         id: 'ego',
         kind: 'on_reference',
-        actor: car,
-        pose: { laneOffset: 0, s: 10, tFrac: 0, headingOffsetRad: 0 },
+        actor: { class: 'car', catalogId: 'vehicle.sedan' },
+        pose: { laneOffset: 0, s: stationM, tFrac: 0, headingOffsetRad: 0 },
         initialSpeedKph: 30,
       },
     ],
-    props: [
-      {
-        id: 'cone',
-        catalogId: 'prop.traffic_cone',
-        essentiality: 'required',
-        pose: { laneOffset, s: 40, tFrac: 0, headingOffsetRad: 0 },
-        headingOffsetRad: 0,
-        scale: 1,
-      },
-    ],
+    props: [],
     choreography: { clipSeconds: 8, warmupSeconds: 1, interactions: [] },
     invariants: [],
     variants: [],
@@ -131,27 +120,32 @@ function firstSite(template: ScenarioTemplateV2): { bundle: MapBundle; site: Mat
   const { anchor, roles, scope } = adaptTemplate(template);
   const report = matchAnchorReport(anchor, loaded.index, { roles, scope });
   const site = report.sites[0];
-  expect(site, `${MAP_ID} should offer a one-lane corridor site`).toBeDefined();
+  expect(site, `${MAP_ID} should offer a corridor site`).toBeDefined();
   return { bundle: loaded, site: site! };
 }
 
-describe.skipIf(!HAVE_MAP)('framePosePoint — a laneOffset the site cannot satisfy', () => {
-  it('materialises normally when the offset is the reference lane', () => {
-    const template = templateWithPropAt(0);
+describe.skipIf(!HAVE_MAP)('a station outside the matched frame', () => {
+  it('materialises the authored station when the frame holds it', () => {
+    const template = templateAt(20);
     const { bundle: loaded, site } = firstSite(template);
     const { input } = materialize(template, loaded, site, { drawIndex: 0 });
-    expect(input.props?.some((p) => p.id === 'cone')).toBe(true);
+    expect(input.actors.some((actor) => actor.id === 'ego')).toBe(true);
   });
 
-  it('fails loudly instead of quietly re-parking the prop on the reference lane', () => {
-    const template = templateWithPropAt(-1);
-    const { bundle: loaded, site } = firstSite(template);
-    expect(Object.keys(site.frame.lateralLanes).map(Number)).not.toContain(-1);
-    expect(() => materialize(template, loaded, site, { drawIndex: 0 })).toThrowError(
-      expect.objectContaining({
-        code: 'lane_offset_unavailable',
-        message: expect.stringMatching(/no lane at lane offset -1/),
-      }),
-    );
+  it('refuses instead of clamping the actor onto the road end', () => {
+    const matched = templateAt(20);
+    const { bundle: loaded, site } = firstSite(matched);
+    // Same site, a station the frame cannot hold: what a parameter draw wider
+    // than the matched envelope produces.
+    const beyond = site.frame.sRange[1] + 500;
+    let error: unknown;
+    try {
+      materialize(templateAt(beyond), loaded, site, { drawIndex: 0 });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(CliError);
+    expect((error as CliError).code).toBe('role_station_outside_frame');
+    expect((error as CliError).message).toContain('outside this site');
   });
 });

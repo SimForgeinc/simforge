@@ -126,7 +126,7 @@ describe('scene-absolute to portable variation lift', () => {
     expect(lifted.ok, JSON.stringify(lifted.issues)).toBe(true);
     expect(lifted.template!.roles.find((role) => role.id === 'challenger')).toMatchObject({ kind: 'conflicting_gate', from: 'from_right', turn: 'straight', tFrac: 0 });
     const adapted = adaptTemplate(lifted.template!);
-    const sites = matchAnchor(adapted.anchor, target, { roles: adapted.roles });
+    const sites = matchAnchor(adapted.anchor, target, { roles: adapted.roles, scope: adapted.scope });
     expect(sites.length).toBeGreaterThan(0);
     const bound = bindPortableVariation(lifted.template!, sites[0]!);
     expect(bound.template.roles).toEqual(lifted.template!.roles);
@@ -140,7 +140,7 @@ describe('scene-absolute to portable variation lift', () => {
     const oneLane = deriveMapIndexFromTopology(corridorTopology(1), { mapId: 'one-lane' });
     const lifted = liftMapBoundTemplate(template([absolute('ego', '1:0:-1', 80, 0), absolute('adjacent', '1:0:-2', 90, 3.5)]), source, { origin: 'corridor' });
     const adapted = adaptTemplate(lifted.template!);
-    expect(matchAnchor(adapted.anchor, oneLane, { roles: adapted.roles })).toHaveLength(0);
+    expect(matchAnchor(adapted.anchor, oneLane, { roles: adapted.roles, scope: adapted.scope })).toHaveLength(0);
     const failed = liftMapBoundTemplate(template([absolute('ego', undefined, 80, 0)]), source);
     expect(failed.ok).toBe(false);
     expect(failed.issues[0]).toMatchObject({ code: 'reference_lane_anchor_missing', retryable: true });

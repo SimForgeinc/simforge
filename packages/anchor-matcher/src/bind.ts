@@ -9,6 +9,8 @@
  * both routes) and the **route lane chains**.
  */
 
+import { tryEvaluateExpr, type ExprScope } from '@uniscenarios/scenario-model';
+
 import { enumerateChains, laneAtS } from './frame.js';
 import { crossSectionAt } from './cross-section.js';
 import { angleDiff, headingAtS, pointAtS, projectPoint, toDeg } from './geometry.js';
@@ -16,6 +18,101 @@ import type { ApproachRelation } from './types/anchor.js';
 import type { ConflictPair, DerivedMapIndex, LaneRsl } from './types/map-index.js';
 import type { OnMissing, RoleBinding } from './types/roles.js';
 import type { AnchorFrame, FeatureBinding, FramePose, MatchedSite } from './types/site.js';
+
+/**
+ * Site facts a station expression may read, for one candidate site.
+ *
+ * `lane.*` resolves against the **entry lane** rather than the actor's own
+ * lane: a station is what decides which lane the actor lands on, so reading the
+ * landed lane would be circular. The materializer's role scope agrees for every
+ * actor whose lane shares the entry lane's posted limit, which is every actor
+ * on the same road section.
+ */
+export function siteScope(
+  index: DerivedMapIndex,
+  entryLaneRsl: LaneRsl,
+  junctionId: string | undefined,
+  base: ExprScope,
+): ExprScope {
+  const lane = index.lanes[entryLaneRsl];
+  const junction = junctionId === undefined ? undefined : index.junctionDescriptors[junctionId];
+  return {
+    ...base,
+    lane: { speedLimitKph: lane?.speedLimitKph, widthM: lane?.representativeWidthM },
+    junction: { sizeM: junction?.sizeM },
+  };
+}
+
+/**
+ * The station a role asks for, in frame coordinates, or `null` when nothing
+ * finite can be said about it before a frame exists: an unbound parameter, a
+ * `junction.sizeM` on a corridor frame, a reference cycle — or a role bound to a
+ * *feature*, whose station is only known once the feature has matched.
+ */
+function roleStation(
+  role: RoleBinding,
+  roles: readonly RoleBinding[],
+  scope: ExprScope,
+  seen: ReadonlySet<string> = new Set(),
+): number | null {
+  if (role.kind === 'conflicting_gate' || role.kind === 'on_crossing' || role.kind === 'in_parking_zone') {
+    return null;
+  }
+  const outcome = tryEvaluateExpr(role.dsM, scope);
+  if (outcome.status !== 'value') return null;
+  if (role.kind !== 'relative_to') return outcome.value;
+  if (seen.has(role.role)) return null;
+  const ref = roles.find((candidate) => candidate.role === role.ref);
+  if (!ref) return null;
+  const refS = roleStation(ref, roles, scope, new Set([...seen, role.role]));
+  return refS === null ? null : refS + outcome.value;
+}
+
+/**
+ * The longitudinal room the template's own actors need, in metres up- and
+ * downstream of the frame origin.
+ *
+ * This is the constraint that used to be hand-written as `runwayUpstreamM` in
+ * every template that remembered to: the ego that spawns 70 m upstream needs
+ * 70 m of upstream road, and no author should have to say so twice.
+ * `conflicting_gate` actors are excluded — their run-up is walked along their
+ * own approach, not along this frame.
+ *
+ * Two answers, because they answer different questions.
+ * - `upstreamM` / `downstreamM` are what the site is *required* to provide. Only
+ *   stations that resolve to a number here contribute, so the requirement never
+ *   rejects a site over a station nobody could compute yet.
+ * - `reachUpstreamM` / `reachDownstreamM` are how far the frame is *walked*. A
+ *   role hung off a feature contributes its own offset: features match at
+ *   `s >= 0` along the path, so an actor 45 m behind one needs at worst 45 m
+ *   behind the origin. Walking further than necessary costs nothing; walking
+ *   short cannot be repaired later.
+ */
+export function actorEnvelope(
+  roles: readonly RoleBinding[],
+  scope: ExprScope,
+): { upstreamM: number; downstreamM: number; reachUpstreamM: number; reachDownstreamM: number } {
+  let upstreamM = 0;
+  let downstreamM = 0;
+  let reachUpstreamM = 0;
+  let reachDownstreamM = 0;
+  for (const role of roles) {
+    const station = roleStation(role, roles, scope);
+    if (station !== null) {
+      upstreamM = Math.max(upstreamM, -station);
+      downstreamM = Math.max(downstreamM, station);
+      reachUpstreamM = Math.max(reachUpstreamM, -station);
+      reachDownstreamM = Math.max(reachDownstreamM, station);
+      continue;
+    }
+    if (role.kind !== 'relative_to') continue;
+    const offset = tryEvaluateExpr(role.dsM, scope);
+    if (offset.status !== 'value') continue;
+    reachUpstreamM = Math.max(reachUpstreamM, -offset.value);
+    reachDownstreamM = Math.max(reachDownstreamM, offset.value);
+  }
+  return { upstreamM, downstreamM, reachUpstreamM, reachDownstreamM };
+}
 
 /** How far upstream a conflicting actor's route is walked for run-up. */
 export const CONFLICT_RUNUP_M = 150;
@@ -487,30 +584,53 @@ export function bindRoles(
   frame: AnchorFrame,
   roles: RoleBinding[],
   featureMatches: MatchedSite['featureMatches'],
+  scope: ExprScope = {},
 ): FeatureBinding[] {
   const ctx: BindContext = { index, frame, featureMatches };
   const bound = new Map<string, FeatureBinding>();
   const out: FeatureBinding[] = [];
+  const siteFacts = siteScope(
+    index,
+    frame.entryLaneRsl,
+    frame.origin.mapFeatureId.startsWith('junction:')
+      ? frame.origin.mapFeatureId.slice('junction:'.length)
+      : undefined,
+    scope,
+  );
 
   for (const role of roles) {
     const notes: string[] = [];
     let binding: FeatureBinding;
+    // The station this role asks for, resolved against this site: `dsM` is
+    // `number | Expr` and an Expr may read the site's posted limit. A station
+    // that cannot be resolved is not a station — the old behaviour was to
+    // evaluate it as zero, which put the actor at the frame origin and left the
+    // materializer to clamp the real one.
+    const resolvedStation = 'dsM' in role ? tryEvaluateExpr(role.dsM, siteFacts) : null;
+    if (resolvedStation !== null && resolvedStation.status !== 'value') {
+      out.push({
+        role: role.role,
+        kind: role.kind,
+        status: 'failed',
+        notes: [`station cannot be resolved at this site: ${resolvedStation.reason}`],
+      });
+      continue;
+    }
+    const dsM = resolvedStation === null ? 0 : resolvedStation.value;
 
     switch (role.kind) {
       case 'on_reference': {
-        const at = laneAtS(frame, role.dsM);
+        const at = laneAtS(frame, dsM);
         binding = {
           role: role.role,
           kind: role.kind,
-          status: at ? 'bound' : 'failed',
-          pose: poseAt(0, role.dsM, role.tFrac),
+          status: 'bound',
+          pose: poseAt(0, dsM, role.tFrac),
           notes,
         };
         if (at) {
           binding.laneRsl = at.span.laneRsl;
           binding.routeLaneChain = routeFrom(index, frame, at.span.laneRsl, 0);
-        } else {
-          notes.push(`s=${role.dsM} m is outside the reference path`);
         }
         break;
       }
@@ -526,7 +646,7 @@ export function bindRoles(
           notes,
         };
         if (resolved.status === 'bound' || resolved.status === 'clamped') {
-          binding.pose = poseAt(resolved.k, role.dsM, role.tFrac);
+          binding.pose = poseAt(resolved.k, dsM, role.tFrac);
           binding.laneRsl = resolved.laneRsl;
           binding.routeLaneChain = routeFrom(index, frame, resolved.laneRsl, resolved.k);
         }
@@ -549,7 +669,7 @@ export function bindRoles(
           notes,
         };
         if (selectedRsl !== undefined && selectedK !== undefined && resolved.pair) {
-          binding.pose = poseAt(selectedK, role.dsM, role.tFrac);
+          binding.pose = poseAt(selectedK, dsM, role.tFrac);
           binding.laneRsl = selectedRsl;
           binding.routeLaneChain = routeThrough(index, selectedRsl);
           notes.push(
@@ -570,7 +690,7 @@ export function bindRoles(
         if (laneRsl) {
           // Opposing traffic runs the other way: `s` is measured along the ego
           // frame, so a positive `dsM` is still "ahead of the ego origin".
-          binding.pose = poseAt(0, role.dsM, role.tFrac, Math.PI);
+          binding.pose = poseAt(0, dsM, role.tFrac, Math.PI);
           binding.laneRsl = laneRsl;
           binding.routeLaneChain = routeFrom(index, frame, laneRsl, 1);
         } else {
@@ -595,9 +715,14 @@ export function bindRoles(
           status: crossing ? 'bound' : 'failed',
           notes,
         };
-        if (crossing) {
-          const s = (frame.sOfLane[crossing.laneRsl] ?? 0) + crossing.s;
-          binding.pose = poseAt(0, s, role.startFrac * 2 - 1, Math.PI / 2);
+        if (crossing && match) {
+          // The station is the one the `atM` clause was judged against: the
+          // feature's point projected onto the reference path. Rebuilding it as
+          // `sOfLane[crossing.laneRsl] + crossing.s` silently yielded the raw
+          // lane station whenever the crossing's own lane was not *on* the
+          // reference path — which is the normal case — putting the actor tens of
+          // metres from the feature it was bound to.
+          binding.pose = poseAt(0, match.s, role.startFrac * 2 - 1, Math.PI / 2);
           binding.laneRsl = crossing.laneRsl;
           notes.push(`walks the crossing ${crossing.id} ${role.direction}`);
         } else {
@@ -621,9 +746,8 @@ export function bindRoles(
           status: zone ? 'bound' : 'failed',
           notes,
         };
-        if (zone) {
-          const s = (frame.sOfLane[zone.laneRsl] ?? 0) + zone.s;
-          binding.pose = poseAt(0, s, role.side === 'left' ? 1 : -1);
+        if (zone && match) {
+          binding.pose = poseAt(0, match.s, role.side === 'left' ? 1 : -1);
           binding.laneRsl = zone.laneRsl;
           notes.push(`parked in ${zone.id}, slot ${role.slotIndex}`);
         } else {
@@ -649,19 +773,25 @@ export function bindRoles(
         binding.requestedK = wantedK;
         binding.status = resolved.status;
         if (resolved.status !== 'bound' && resolved.status !== 'clamped') break;
-        binding.pose = poseAt(resolved.k, ref.pose.s + role.dsM, role.tFrac ?? ref.pose.tFrac);
+        binding.pose = poseAt(resolved.k, ref.pose.s + dsM, role.tFrac ?? ref.pose.tFrac);
         binding.laneRsl = resolved.laneRsl;
         binding.routeLaneChain = routeFrom(index, frame, resolved.laneRsl, resolved.k);
         break;
       }
     }
 
-    // A lane that exists in the frame but not at the actor's `s` is still worth
-    // flagging — the solver would otherwise spawn into thin air.
+    // An actor whose station falls off the end of the reference path has no
+    // position at this site. The frame is built to hold the template's own
+    // envelope, so reaching this is the site being too short — which is a
+    // rejection, not a note. It used to be a note, and the materializer then
+    // clamped the actor onto the road end and ran the cell anyway.
     if (binding.pose && binding.status !== 'dropped' && binding.status !== 'failed') {
-      const at = laneAtS(frame, binding.pose.s);
-      if (!at && binding.kind !== 'conflicting_gate') {
-        binding.notes.push(`pose s=${binding.pose.s} m is outside the reference path`);
+      if (!laneAtS(frame, binding.pose.s) && binding.kind !== 'conflicting_gate') {
+        binding.status = 'failed';
+        binding.notes.push(
+          `station s=${Math.round(binding.pose.s * 10) / 10} m is outside the reference path ` +
+            `[${Math.round(frame.sRange[0])}, ${Math.round(frame.sRange[1])}] m at this site`,
+        );
       }
       if (binding.laneRsl && !crossSectionAt(index.lanes, binding.laneRsl, 0)) {
         binding.notes.push('lane has no usable cross-section');

@@ -26,7 +26,7 @@ describe.skipIf(!haveArtifacts)('dooring cyclist — exact Yale runtime', () => 
     const template = await readTemplate(TEMPLATE);
     const bundle = await loadMap(MAP);
     const adapted = adaptTemplate(template);
-    const site = resolveExactCorridorSite(adapted.anchor, bundle.index, ORIGIN_SEGMENT, { roles: adapted.roles });
+    const site = resolveExactCorridorSite(adapted.anchor, bundle.index, ORIGIN_SEGMENT, { roles: adapted.roles, scope: adapted.scope });
     expect(site).toMatchObject({ siteId: SITE_ID, mapId: MAP, score: 1 });
     const { input, manifest } = materialize(template, bundle, site!, { drawIndex: 0, seed: SEED });
     expect(manifest.feasible).toBe(true);

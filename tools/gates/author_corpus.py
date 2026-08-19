@@ -288,12 +288,12 @@ def f_junction_conflict(brief):
     react = 'clamp(%.4f / %.4f - param.reactAtTtcS, 0.2, 12)' % (approach_m, EGO_MPS)
     return _base(
       brief['id'], brief['brief'][:120], 'auth.junction.%s' % brief['id'],
-      {**_corridor(lanes=(1, 8), runway=200),
-       # The ego spawns 70 m upstream of the junction. Without an explicit upstream-runway clause
-       # the matcher accepts sites that have no road there, the spawn is clamped to the route start
-       # (materialize.ts ENDPOINT_CLAMP), and the cell's own evidence stops agreeing with itself:
-       # `trace_input_hash_mismatch` on 16/48 cells without this clause, 8/48 with it.
-       'runwayUpstreamM': {'value': [110, None], 'essentiality': 'required'}},
+      {**_corridor(lanes=(1, 8), runway=200)},
+      # The ego's 70 m approach used to need an explicit `runwayUpstreamM` clause here:
+      # the matcher could not see a role's spawn station, accepted sites with no road
+      # there, and the spawn was clamped to the route start. The matcher now derives the
+      # required runway from the roles themselves, so stating it again would only
+      # over-constrain the corpus.
       [_p('arrivalTtc', 0.5, 2.2, 's'), _p('reactAtTtcS', 1.2, 2.6, 's')],
       [{**_ego(s=-approach_m)},
        {'id': 'chal', 'kind': 'conflicting_gate', 'label': 'conflicting movement',

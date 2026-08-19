@@ -96,7 +96,7 @@ function analyze(
   const adapted = adaptTemplate(binding.template);
   const requiredRoles = binding.template.roles.filter((role) => role.essentiality === 'required').map((role) => role.id);
   const pattern = inferPortableSitePattern(binding.sourceSite, bundle.index, { requiredRoles, authoredAnchor: adapted.anchor });
-  const search = searchScenarioVariations(pattern, [bundle.index], { roles: adapted.roles, requiredRoles });
+  const search = searchScenarioVariations(pattern, [bundle.index], { roles: adapted.roles, scope: adapted.scope, requiredRoles });
   const candidates = search.candidates.filter((candidate) => candidate.site.siteId !== binding.sourceSite.siteId);
   const exact = candidates.filter((candidate) => candidate.equivalence.verdict === 'equivalent').length;
   const degraded = candidates.filter((candidate) => candidate.equivalence.verdict === 'review').length;
@@ -203,7 +203,7 @@ function bindAlreadyPortable(template: ScenarioTemplateV2, bundle: MapBundle): P
   if (template.roles.length === 0 || template.roles.some((role) => role.kind === 'scene_absolute')) return null;
   const adapted = adaptTemplate(template);
   if (adapted.notes.length) throw new Error(`Portable binding is incomplete: ${adapted.notes.map((note) => `${note.path}: ${note.reason}`).join(' · ')}`);
-  const report = matchAnchorReport(adapted.anchor, bundle.index, { roles: adapted.roles });
+  const report = matchAnchorReport(adapted.anchor, bundle.index, { roles: adapted.roles, scope: adapted.scope });
   const sourceSite = report.sites.find((site) => site.degradation.intentPreserved);
   if (!sourceSite) throw new Error(`The authored source location no longer matches: ${report.failureSummary || 'zero intent-preserving sites'}`);
   return { template, sourceSite };

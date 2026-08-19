@@ -135,8 +135,8 @@ function templateWith(subject: ActorSpecInput, props: unknown[] = []): ScenarioT
 
 function run(template: ScenarioTemplateV2): ReturnType<typeof materialize> {
   const bundle = loadBundle();
-  const { anchor, roles } = adaptTemplate(template);
-  const report = matchAnchorReport(anchor, bundle.index, { roles });
+  const { anchor, roles, scope } = adaptTemplate(template);
+  const report = matchAnchorReport(anchor, bundle.index, { roles, scope });
   const site: MatchedSite | undefined = report.sites[0];
   expect(site, `${MAP_ID} should offer a corridor site`).toBeDefined();
   return materialize(template, bundle, site!, { drawIndex: 0 });

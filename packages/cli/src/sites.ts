@@ -156,7 +156,7 @@ export async function matchOnMap(
   if (hit) return hit;
 
   const bundle = await loadMap(mapId);
-  const { anchor, roles, notes } = adaptTemplate(template);
+  const { anchor, roles, scope, notes } = adaptTemplate(template);
   assertMatchableAnchor(notes);
   const policy = { ...(anchor.policy ?? {}) };
   if (options.minScore !== undefined) policy.minScore = options.minScore;
@@ -170,7 +170,7 @@ export async function matchOnMap(
   const report = filterExecutableMapControlSites(
     template,
     bundle,
-    matchAnchorReport({ ...anchor, policy }, bundle.index, { roles }),
+    matchAnchorReport({ ...anchor, policy }, bundle.index, { roles, scope }),
   );
   const result: SiteMatch = { mapId, bundle, report, notes };
   cache.set(key, result);

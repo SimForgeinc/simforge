@@ -24,7 +24,7 @@
  * | `from: 'same'` | (absent) | mapped to `merge` with a note |
  * | `adjacent: 'bike'\|'bus'\|'rail'\|'none'` | `'biking'\|'opposing'\|…` | `bike`→`biking`; `bus`/`rail`/`none` dropped |
  * | `policy.diversity: strict\|moderate\|off` | `junction\|road_direction\|none` | positional map |
- * | `pose.s: number \| Expr` | `dsM: number` | evaluated at param defaults (structural only — the materializer re-evaluates against the site) |
+ * | `pose.s: number \| Expr` | `dsM: number \| Expr` | carried through: only the matcher knows the site facts a station may read |
  * | `direction: near_to_far` | `left_to_right` | positional map |
  */
 
@@ -129,6 +129,14 @@ export function unmatchableNotes(notes: readonly AdaptNote[]): AdaptNote[] {
 export interface AdaptedAnchor {
   readonly anchor: MAnchor;
   readonly roles: MRole[];
+  /**
+   * Non-site values the roles' station expressions read: parameters at their
+   * declared defaults, and the clip length. Hand it to `matchAnchorReport` with
+   * the roles — a station like `-(0.8 * lane.speedLimitKph / 3.6) * 8` is
+   * resolved by the matcher against each candidate site, and cannot be resolved
+   * here.
+   */
+  readonly scope: ExprScope;
   readonly notes: AdaptNote[];
 }
 
@@ -573,14 +581,14 @@ function adaptRole(
           kind: 'lane_offset',
           k: authoredK,
           onMissing: 'fail',
-          dsM: numberish(role.pose.s, scope, 0),
+          dsM: role.pose.s,
           tFrac: numberish(role.pose.tFrac, scope, 0),
         };
       }
       return {
         ...base,
         kind: 'on_reference',
-        dsM: numberish(role.pose.s, scope, 0),
+        dsM: role.pose.s,
         tFrac: numberish(role.pose.tFrac, scope, 0),
       };
     }
@@ -590,7 +598,7 @@ function adaptRole(
         kind: 'lane_offset',
         k: role.k,
         onMissing: role.onMissing,
-        dsM: numberish(role.pose.s, scope, 0),
+        dsM: role.pose.s,
         tFrac: numberish(role.pose.tFrac, scope, 0),
       };
     case 'at_lane_drop':
@@ -599,7 +607,7 @@ function adaptRole(
         kind: 'at_lane_drop',
         feature: role.feature,
         lane: role.lane,
-        dsM: numberish(role.pose.s, scope, 0),
+        dsM: role.pose.s,
         tFrac: numberish(role.pose.tFrac, scope, 0),
       };
     case 'opposing':
@@ -607,7 +615,7 @@ function adaptRole(
         ...base,
         kind: 'opposing',
         index: role.k,
-        dsM: numberish(role.pose.s, scope, 0),
+        dsM: role.pose.s,
         tFrac: numberish(role.pose.tFrac, scope, 0),
       };
     case 'conflicting_gate': {
@@ -667,7 +675,7 @@ function adaptRole(
         // own lane. A `required` actor whose lane is absent means the site is
         // wrong; a non-required one is honestly absent rather than misplaced.
         onMissing: role.essentiality === 'required' ? 'fail' : 'drop',
-        dsM: numberish(role.dsM, scope, 0),
+        dsM: role.dsM,
         tFrac: role.tFrac,
       };
     case 'scene_absolute':
@@ -727,5 +735,5 @@ export function adaptTemplate(template: ScenarioTemplateV2): AdaptedAnchor {
     if (adapted) roles.push(adapted);
   }
 
-  return { anchor, roles, notes };
+  return { anchor, roles, scope, notes };
 }
