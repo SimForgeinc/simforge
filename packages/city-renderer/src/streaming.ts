@@ -132,7 +132,7 @@ export class TileStreamLayer {
    * until Three's readiness poll has finished during a map teardown.
    */
   private readonly compilationJobs = new Set<Promise<void>>();
-  private readonly compiling = new Set<PreparedAsset>();
+  private readonly compiling = new Map<PreparedAsset, { id: string; startedMs: number }>();
   private bytes = 0;
   private pending = 0;
   private disposed = false;
@@ -198,6 +198,24 @@ export class TileStreamLayer {
       queued,
       uploading: this.uploadQueue.length + this.compiling.size,
     };
+  }
+
+  /**
+   * Names the units behind a non-zero `uploading` stat: which tiles wait in the
+   * upload queue and which sit in shader compilation, with ages. Exists so a
+   * capture-readiness refusal can say *what* is stuck instead of a bare count -
+   * a compile that never resolves (e.g. across a lost GL context) is otherwise
+   * indistinguishable from a starved upload queue.
+   */
+  pendingDetail(now = performance.now()): string[] {
+    const detail: string[] = [];
+    for (const job of this.uploadQueue) {
+      detail.push(`upload ${job.entry.def.id}#lod${job.index} (${job.asset.pendingTextures.length} tex)`);
+    }
+    for (const [asset, meta] of this.compiling) {
+      detail.push(`compile ${meta.id} for ${((now - meta.startedMs) / 1000).toFixed(1)}s`);
+    }
+    return detail;
   }
 
   private finestResident(entry: Entry): number {
@@ -367,7 +385,7 @@ export class TileStreamLayer {
 
   private finishAsset(entry: Entry, index: number, asset: PreparedAsset, camera: Camera): void {
     asset.object.updateMatrixWorld(true);
-    this.compiling.add(asset);
+    this.compiling.set(asset, { id: `${entry.def.id}#lod${index}`, startedMs: performance.now() });
     this.pending += asset.bytes;
     const job = this.opts.renderer
       .compileAsync(asset.object, camera, this.opts.scene)

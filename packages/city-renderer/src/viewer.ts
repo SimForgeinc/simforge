@@ -911,7 +911,15 @@ export class CityViewer {
     phaseStart = performance.now();
     if (!this.renderingSuspended && (dt * 1000 <= ceiling || this.uploadSkips >= 4)) {
       this.uploadSkips = 0;
-      const deadline = now + this.options.uploadBudgetMs;
+      // Deadline measured from the pump itself, not from tick entry: on a frame
+      // whose earlier phases already spent more than uploadBudgetMs (routine
+      // under GPU contention), a tick-anchored deadline is pre-expired, the
+      // while loop never runs an iteration, and the forced pump every fifth
+      // frame "guarantees forward progress" while uploading nothing - a queued
+      // texture then starves indefinitely. Anchoring here guarantees at least
+      // one upload per pump and preserves the budget's meaning: time spent in
+      // the pacer, not time since the frame began.
+      const deadline = performance.now() + this.options.uploadBudgetMs;
       const pixelBudget = { remaining: this.options.uploadPixelsPerFrame };
       this.roadLayer?.pumpUploads(deadline, pixelBudget, this.camera);
       this.cityLayer?.pumpUploads(deadline, pixelBudget, this.camera);
@@ -996,7 +1004,10 @@ export class CityViewer {
     const { residentTiles, loading, queued, uploading } = this.residency();
     if (residentTiles === 0) return 'no tiles are resident';
     if (loading + queued + uploading > 0) {
-      return `renderer is still loading (${loading} loading, ${queued} queued, ${uploading} uploading)`;
+      const detail = [this.roadLayer, this.cityLayer, this.vegLayer]
+        .flatMap((layer) => layer?.pendingDetail() ?? []);
+      return `renderer is still loading (${loading} loading, ${queued} queued, ${uploading} uploading`
+        + (detail.length ? `: ${detail.join(', ')}` : '') + ')';
     }
     return null;
   }
