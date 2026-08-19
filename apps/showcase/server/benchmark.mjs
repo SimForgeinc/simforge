@@ -12,19 +12,19 @@
 // measurements; the module only arranges and summarises them.
 
 import { createHash } from 'node:crypto';
-import { DEFECT_CODE_VOCABULARY } from './review-contract.mjs';
+import { DEFECT_CODE_VOCABULARY } from './product-contract.mjs';
 
 export const ATTEMPT_RECORD_SCHEMA = 'showcase-benchmark-attempt/v1';
 export const BENCHMARK_REPORT_SCHEMA = 'showcase-benchmark-report/v1';
-export const ACCEPTANCE_SPLIT_SCHEMA = 'showcase-acceptance-split/v1';
 export const TRAJECTORY_FINGERPRINT_VERSION = 'showcase-trajectory-fingerprint/v1';
 
 /**
  * The generation funnel, in order. `phase: 'generator'` stages end at the 2D
  * semantic oracle: trace + gate + deterministic eligibility + brief-aware 2D
- * semantic match. `phase: 'product'` stages add the 3D render and product
- * review. Throughput is reported separately for the two phases because they
- * consume different hardware and fail for different reasons.
+ * semantic match. `phase: 'product'` stages add the deterministic 3D render and
+ * the product decision that reads the oracle's verdict beside it. Throughput is
+ * reported separately for the two phases because they consume different hardware
+ * and fail for different reasons.
  */
 export const FUNNEL_STAGES = Object.freeze([
   { id: 'submitted', label: 'attempt submitted', phase: 'generator', evidence: '00-brief.json' },
@@ -37,8 +37,7 @@ export const FUNNEL_STAGES = Object.freeze([
   { id: 'semantic-reviewed', label: 'blind 2D semantic review returned a verdict', phase: 'generator', evidence: '60-render2d/quality.json' },
   { id: 'semantic-2d', label: '2D schematic footage shows the requested semantics', phase: 'generator', evidence: '62-semantic2d.json' },
   { id: '3d-ok', label: '3D render completed', phase: 'product', evidence: '65-render3d/index.json' },
-  { id: 'semantic-3d', label: '3D footage shows the requested semantics', phase: 'product', evidence: '70-judge.json' },
-  { id: 'presentation', label: 'footage accepted for presentation', phase: 'product', evidence: '75-product.json' },
+  { id: 'accepted', label: 'the deterministic product decision accepted a cell', phase: 'product', evidence: '75-product.json' },
 ]);
 
 export const FUNNEL_STAGE_IDS = Object.freeze(FUNNEL_STAGES.map((entry) => entry.id));
@@ -64,11 +63,10 @@ export const GENERATOR_PIPELINE_STAGES = Object.freeze([
 /**
  * Pipeline stages whose wall time is attributed to the product phase. The
  * deterministic product decision is cheap but is paid for by the product phase,
- * because it exists only to ration renders and reviews.
+ * because it exists only to decide what the 3D render spend produced.
  */
 export const PRODUCT_PIPELINE_STAGES = Object.freeze([
-  '65-render3d', '70-judge',
-  '80-presentation-retry', '75-product', '90-gallery',
+  '65-render3d', '75-product', '90-gallery',
 ]);
 
 export const CASE_OUTCOMES = Object.freeze(['accepted', 'attempting', 'exhausted', 'unsupported', 'pending']);
@@ -187,31 +185,14 @@ export function balance(counts) {
 // ---------------------------------------------------------------------------
 
 /**
- * Defect codes come from `config/showcase-review-contract.json` by way of
- * `review-contract.mjs`, which attributes reviewer prose to a code under the
- * contract hash. This module therefore never re-attributes prose: a second
- * taxonomy beside the hashed one could disagree with the verdicts it is
- * summarising, and the disagreement would be invisible in the report.
- *
- * `judge.uncertain` is the contract's fallback code, so prose the contract could
- * not attribute is already visible as a code rather than silently swallowed. The
- * raw text is preserved per attempt in `outcome.unclassifiedDefects`.
+ * The defect vocabulary comes from `product-contract.mjs`, which assembles it from
+ * the stages that actually emit codes: the deterministic trace validators, the
+ * exporter's classified render failures, the 2D semantic oracle, and the frozen
+ * gate. This module therefore never attributes a code itself -- a second taxonomy
+ * beside the emitters' could disagree with the verdicts it is summarising, and the
+ * disagreement would be invisible in the report.
  */
 export const DEFECT_CODES = DEFECT_CODE_VOCABULARY;
-
-/**
- * Which acceptance decision a code blocks, read from the code's contract
- * namespace: `scenario.*` and `judge.*` bear on whether the requested behaviour
- * happened, everything else on whether the footage shows it well enough to ship.
- */
-export function defectClass(code) {
-  const value = String(code ?? '');
-  if (value.startsWith('scenario.') || value.startsWith('judge.')) return 'semantic';
-  if (value.startsWith('simulation.') || value.startsWith('render.') || value.startsWith('capture.')) {
-    return 'presentation';
-  }
-  return 'unclassified';
-}
 
 // ---------------------------------------------------------------------------
 // Operational failure classification
@@ -615,8 +596,8 @@ const tokenTotal = (records, key) => records.reduce(
  *
  * Generator throughput measures work that ends at trace + frozen gate +
  * deterministic eligibility — everything decided before a render is spent.
- * Product throughput measures the same attempts carried through render, review,
- * and the deterministic product decision. The two never share a denominator,
+ * Product throughput measures the same attempts carried through the deterministic
+ * 3D render and the product decision. The two never share a denominator,
  * because a provider outage removes attempts from the second without touching
  * the first.
  */
@@ -626,8 +607,7 @@ export function buildThroughput(records, { elapsedHours = null } = {}) {
   const gatePassed = generator.filter((record) => reachedStage(record, 'gate-pass'));
   const eligible = generator.filter((record) => reachedStage(record, 'eligible'));
   const semantic2d = generator.filter((record) => reachedStage(record, 'semantic-2d'));
-  const presented = product.filter((record) => reachedStage(record, 'presentation'));
-  const semantic3d = product.filter((record) => reachedStage(record, 'semantic-3d'));
+  const accepted = product.filter((record) => reachedStage(record, 'accepted'));
   const generatorWall = generator
     .map((record) => Number(record?.cost?.generatorWallS))
     .filter(Number.isFinite);
@@ -635,7 +615,7 @@ export function buildThroughput(records, { elapsedHours = null } = {}) {
     .map((record) => Number(record?.cost?.productWallS))
     .filter(Number.isFinite);
   const totalWall = product.map((record) => Number(record?.cost?.wallS)).filter(Number.isFinite);
-  const acceptedCells = product.reduce((sum, record) => sum + (Number(record?.counts?.presentationAccepted) || 0), 0);
+  const acceptedCells = product.reduce((sum, record) => sum + (Number(record?.counts?.accepted) || 0), 0);
   const gateCells = generator.reduce((sum, record) => sum + (Number(record?.counts?.gatePassed) || 0), 0);
   const eligibleCells = generator.reduce((sum, record) => sum + (Number(record?.counts?.eligibleCells) || 0), 0);
   return {
@@ -667,25 +647,24 @@ export function buildThroughput(records, { elapsedHours = null } = {}) {
         : null,
     },
     product: {
-      boundary: 'all generator stages plus 65-render3d, 70-judge, the stage-local 80-* retry, '
+      boundary: 'all generator stages plus 65-render3d, the bounded 80-reauthor branch, '
         + 'and the deterministic 75-product decision',
       attempts: product.length,
-      semantic3dAttempts: semantic3d.length,
-      presentationAcceptedAttempts: presented.length,
-      presentationAcceptedCells: acceptedCells,
-      yield: ratio(presented.length, product.length),
+      acceptedAttempts: accepted.length,
+      acceptedCells,
+      yield: ratio(accepted.length, product.length),
       wallS: summarize(totalWall),
-      renderReviewWallS: summarize(productWall),
+      renderWallS: summarize(productWall),
       stageWallS: stageWallSummary(product, PRODUCT_PIPELINE_STAGES),
       attemptsPerHour: perHour(product.length, elapsedHours),
-      presentationAcceptedAttemptsPerHour: perHour(presented.length, elapsedHours),
-      presentationAcceptedCellsPerHour: perHour(acceptedCells, elapsedHours),
+      acceptedAttemptsPerHour: perHour(accepted.length, elapsedHours),
+      acceptedCellsPerHour: perHour(acceptedCells, elapsedHours),
       tokensPerAcceptedCell: acceptedCells
         ? Math.round((tokenTotal(product, 'inputTokens') + tokenTotal(product, 'outputTokens')) / acceptedCells)
         : null,
     },
     note: 'Generator throughput ends at the brief-aware 2D semantic verdict, the last verdict reached before '
-      + 'a 3D render is spent. Product throughput adds the 3D render, product review, and the product decision, '
+      + 'a 3D render is spent. Product throughput adds the deterministic 3D render and the product decision, '
       + 'so its denominator is smaller whenever renderer or provider infrastructure censored an attempt.',
   };
 }
@@ -784,14 +763,9 @@ export function buildExecution(records) {
         const author = record?.models?.author;
         return author?.model ? `${author.model}/${author.effort ?? 'default'}` : null;
       })),
-      judge: histogram(all.map((record) => {
-        const judge = record?.models?.judge;
-        return judge?.model ? `${judge.model}/${judge.effort ?? 'default'}/${judge.strategy ?? 'default'}` : null;
-      })),
       engineRequested: histogram(all.map((record) => record?.models?.engineRequested)),
       engineResolved: histogram(all.map((record) => record?.models?.engineResolved)),
-      productReviewVersion: histogram(all.map((record) => record?.models?.productReviewVersion)),
-      note: 'Token and wall-time costs are only comparable within one model, effort, and review version. '
+      note: 'Token and wall-time costs are only comparable within one model and effort. '
         + 'A histogram with more than one key means the aggregate mixes them.',
     },
   };
@@ -970,8 +944,8 @@ export function buildBenchmarkReport({
       activeAttempts: Number(item.activeAttempts ?? 0) || 0,
       attemptBudget: maxGenerationAttempts,
       furthestStage: furthest >= 0 ? FUNNEL_STAGE_IDS[furthest] : null,
-      semanticAccepted: records.some((record) => record?.funnel?.['semantic-3d'] === true),
-      presentationAccepted: records.some((record) => record?.funnel?.presentation === true),
+      semanticAccepted: records.some((record) => record?.funnel?.['semantic-2d'] === true),
+      productAccepted: records.some((record) => record?.funnel?.accepted === true),
       defectCodes: [...new Set(records.flatMap((record) => record?.outcome?.defectCodes ?? []))].sort(),
       unsupportedReason: unsupported?.reason ?? null,
       unsupported,
@@ -1034,8 +1008,8 @@ export function buildBenchmarkReport({
         caseRows.filter((row) => row.outcome !== 'unsupported' && row.semanticAccepted).length,
         qualityDenominator,
       ),
-      presentationAcceptedOfSupported: ratio(
-        caseRows.filter((row) => row.outcome !== 'unsupported' && row.presentationAccepted).length,
+      productAcceptedOfSupported: ratio(
+        caseRows.filter((row) => row.outcome !== 'unsupported' && row.productAccepted).length,
         qualityDenominator,
       ),
     },
@@ -1052,17 +1026,14 @@ export function buildBenchmarkReport({
       note: 'Reported in full, censored from the stage where each failure happened onward.',
     },
     defects: {
-      taxonomy: 'config/showcase-review-contract.json',
+      taxonomy: 'apps/showcase/server/product-contract.mjs',
       vocabulary: DEFECT_CODES,
       attemptsByCode: defectCounts,
-      // Codes outside the contract vocabulary mean a report is summarising verdicts from a
-      // different contract than this runner loaded. That is surfaced, never folded away.
+      // Codes outside the vocabulary mean a report is summarising verdicts from stages this
+      // runner does not know about. That is surfaced, never folded away.
       unknownCodes: Object.keys(defectCounts).filter((code) => !DEFECT_CODES.includes(code)).sort(),
-      unclassifiedAttempts: allRecords
-        .filter((record) => (record?.outcome?.unclassifiedDefects ?? []).length > 0).length,
-      note: 'Codes are attributed by the hashed review contract, not by this module. '
-        + 'unclassifiedAttempts counts attempts whose reviewer prose the contract could not '
-        + 'attribute; the prose itself is kept verbatim on each attempt record.',
+      note: 'Every code is emitted by the stage that owns it -- the deterministic trace validators, '
+        + 'the exporter, the 2D semantic oracle, or the frozen gate -- and none is attributed here.',
     },
     unsupported: caseRows.filter((row) => row.unsupported).map((row) => ({
       id: row.id,

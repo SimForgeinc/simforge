@@ -21,31 +21,36 @@ directory is intentionally not committed.
 
 ## Acceptance contract
 
-`config/showcase-review-contract.json` is the single hashed source of truth for the review prompt,
-the acceptance predicates, the defect taxonomy, and the retry policy. `server/review-contract.mjs`
-and `tools/research/showcase/review_contract.py` are mirrors of it: both hash the canonical body
-(sorted keys, compact separators, ASCII escapes) and must agree on the conformance vectors the
-contract carries. Editing the contract requires refreshing its `sha256`, or both runtimes refuse to
-load it.
+`server/product-contract.mjs` is the whole acceptance contract, version
+`showcase-deterministic-product/v1`. Acceptance is deterministic and has exactly one semantic
+authority: the brief-aware 2D semantic oracle (`62-semantic2d`). The 2D-to-3D transfer is
+deterministic — the exporter replays the same recorded trace and fails closed on any instance,
+trace, or manifest identity mismatch — so a completed render *is* the proof that the footage shows
+the scenario the oracle reviewed. Nothing scores realism, materials, lighting, or camera framing:
+that was renderer telemetry, never a scenario verdict.
 
-Each `70-judge.json` cell carries four fields and the evidence behind them:
+Each `75-product.json` cell carries four fields and the evidence behind them:
 
-- `semanticAccepted` — the render shows the requested mechanism, actors, and sequence, is plausible,
-  clears the realism floor and the confidence floor, and has no `scenario.*` defect.
-- `presentationAccepted` — semantically accepted *and* free of `simulation.*`, `render.*`, and
-  `capture.*` defects. Only this verdict yields a deliverable video, and `topK` caps it.
-- `defectCodes` — attributed taxonomy codes (`scenario.*`, `simulation.*`, `render.camera.*`,
-  `render.asset.*`, `capture.*`, `judge.uncertain`); `acceptance.defects` keeps the raw reviewer text
-  and confidence for each one.
-- `unsupportedReason` — why no verdict could be attributed (missing evidence text, low confidence,
-  unattributable defect text, or a blind 2D review that cannot see the brief). Unsupported never
-  passes.
+- `semanticAccepted` — the `62-semantic2d` row for this cell has `semanticMatch === true`.
+- `accepted` — the frozen gate admitted the cell, `semanticAccepted` holds, and its deterministic
+  render completed (3D when `job.render3d`, else the 2D clip). Only this verdict yields a
+  deliverable video.
+- `defectCodes` — the codes the emitting stages attributed: deterministic trace-validity codes
+  (`simulation.*`), the exporter's classified render failures (`render.*`, `capture.*`), the
+  oracle's own `scenario.*` codes, and `scenario.gate` when the frozen gate rejected the cell. No
+  `judge.*` code can exist.
+- `unsupportedReason` — `never screened by the 2D semantic oracle` for a cell no oracle verdict
+  covers. A cell without evidence is reported unsupported, never given a verdict.
 
-`70-judge.json` also records `contract` and `cache`. The cache key binds the judgement to the
-contract hash, the prompt hash, the review code hash, the request text, the model, and the review
-flags; a mismatch retires the artifact into `<stage-dir>/.stale/` and re-reviews, so a judgement made
-under a superseded contract can never read as current. Documents written before the split are
-normalized on read, but keep a null contract identity and stay uncollectable by campaigns.
+`75-product.json` also records `contract`, so a decision made under the retired acceptance split
+can never read as current: `isCurrentAcceptance` compares the version string, and a campaign
+refuses to collect anything else. A `70-judge.json` left by a job from before the 3D product review
+was removed stays on disk and is served verbatim as evidence; nothing re-derives a verdict from it,
+and no stage writes one again.
+
+`config/showcase-review-contract.json` and `tools/research/showcase/review_contract.py` survive only
+for the deferred human-calibration workflow (gold manifest, reviewer flip rate) and for the field
+limits `stages.py semantic2d` reuses. No production decision reads them.
 
 ## Benchmark evidence
 
@@ -69,29 +74,29 @@ denominator or disagrees with it, when the corpus does not account for every
 entry exactly once, when the funnel is not monotone, or when benchmark evidence
 violates the report contract.
 
-Generator throughput ends at deterministic eligibility (`55-eligibility`), the
-last decision made before a render is spent. Product throughput adds rendering,
-review, and the deterministic `75-product` decision. The report's `execution`
-block records cold-vs-warm starts, host concurrency, and the models behind the
-numbers, because token and wall-time costs are comparable only within one set of
-execution conditions.
+Generator throughput ends at the brief-aware 2D semantic verdict
+(`62-semantic2d`), the last verdict reached before a 3D render is spent. Product
+throughput adds the deterministic render and the `75-product` decision. The
+report's `execution` block records cold-vs-warm starts, host concurrency, and the
+models behind the numbers, because token and wall-time costs are comparable only
+within one set of execution conditions.
 
-Two acceptance decisions are recorded separately for every reviewed cell.
-`semanticAccepted` asks whether the requested behaviour happened and is visible
-in the footage; `presentationAccepted` is the strict ship decision and is the
-only one that admits a video into a campaign case. Operational failures
-(provider outages, renderer infrastructure, host exhaustion) censor an attempt at
-the stage where they occurred: earlier stage outcomes stay in their denominators,
-so an outage cannot lower a generator conversion rate.
+Two verdicts are recorded separately for every decided cell. `semanticAccepted`
+asks whether the requested behaviour happened and is visible in the schematic
+footage; `accepted` additionally requires the frozen gate and a completed
+deterministic render, and is the only verdict that admits a video into a campaign
+case. Operational failures (provider outages, renderer infrastructure, host
+exhaustion) censor an attempt at the stage where they occurred: earlier stage
+outcomes stay in their denominators, so an outage cannot lower a generator
+conversion rate.
 
-Defect codes in the report are the review contract's own hashed vocabulary; the
-benchmark module never re-attributes reviewer prose itself, because a second
-taxonomy could disagree with the verdicts it summarises and the disagreement
-would be invisible. `defects.taxonomy` names the contract file,
-`defects.unknownCodes` lists any counted code outside it — non-empty means the
-report mixes verdicts from another contract — and reviewer prose the contract
-could not attribute is kept verbatim per attempt in
-`outcome.unclassifiedDefects`.
+Defect codes in the report come from the stages that emit them, assembled in
+`product-contract.mjs`; the benchmark module never attributes a code itself,
+because a second taxonomy could disagree with the verdicts it summarises and the
+disagreement would be invisible. `defects.taxonomy` names that module and
+`defects.unknownCodes` lists any counted code outside the vocabulary — non-empty
+means the report is summarising verdicts from a stage this runner does not know
+about.
 
 Set `SHOWCASE_BENCHMARK_GPU=0` to skip `nvidia-smi` sampling; GPU cost is then
 reported as `null` rather than estimated.

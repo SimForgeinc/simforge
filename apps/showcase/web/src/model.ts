@@ -2,7 +2,7 @@ import type { Artifact, CellVerdict, GalleryCard, IndexedFile, JobIndex, Rate, R
 
 export const STAGES = [
   ['00', 'Brief'], ['10', 'Route'], ['15', 'Precheck'], ['20', 'Author'], ['30', 'Sites'],
-  ['40', 'Simulate'], ['50', 'Gate'], ['60', 'Render 2D'], ['65', 'Render 3D'], ['70', 'Judge'], ['90', 'Gallery'],
+  ['40', 'Simulate'], ['50', 'Gate'], ['60', 'Render 2D'], ['62', 'Semantic'], ['65', 'Render 3D'], ['75', 'Decision'], ['90', 'Gallery'],
 ] as const;
 
 export function stageNumber(value: string): string {
@@ -28,7 +28,7 @@ export function cells(job: JobIndex | null): CellVerdict[] {
 export function threeDVideos(job: JobIndex | null): Array<{ cell: CellVerdict; artifact: Artifact }> {
   if (job?.status !== 'complete') return [];
   return cells(job).flatMap((cell) => {
-    if (cell.judge?.presentationAccepted !== true) return [];
+    if (cell.product?.accepted !== true) return [];
     const candidates = (cell.artifacts ?? []).filter((artifact) => {
       const path = artifact.path ?? artifact.url ?? '';
       return path.includes('/65-render3d/') && artifactKind(artifact) === 'video';
@@ -104,7 +104,7 @@ export function normalizeJob(raw: RawJobIndex | JobIndex): JobIndex {
   const route = fileJson(files, '10-route.json');
   const gallery = fileJson(files, '90-gallery.json');
   const gate = fileJson(files, '50-gate.json');
-  const judge = fileJson(files, '70-judge.json');
+  const product = fileJson(files, '75-product.json');
   const cellIndex = fileJson(files, '40-cells/index.json');
   const render2d = fileJson(files, '60-render2d/index.json');
   const render3d = fileJson(files, '65-render3d/index.json');
@@ -123,21 +123,21 @@ export function normalizeJob(raw: RawJobIndex | JobIndex): JobIndex {
   });
 
   const gateRows = Array.isArray(gate?.cells) ? gate.cells as CellVerdict[] : [];
-  const judgeRows = Array.isArray(judge?.cells) ? judge.cells as CellVerdict[] : [];
+  const productRows = Array.isArray(product?.cells) ? product.cells as CellVerdict[] : [];
   const renderedRows = [render2d, render3d].flatMap((index) => Array.isArray(index?.cells) ? index.cells as CellVerdict[] : []);
   const baseCells = Array.isArray(cellIndex?.cells) ? cellIndex.cells as CellVerdict[] : [];
-  const cellIds = new Set([...baseCells, ...gateRows, ...judgeRows, ...renderedRows].map((row) => row.cellId ?? row.id).filter(Boolean) as string[]);
+  const cellIds = new Set([...baseCells, ...gateRows, ...productRows, ...renderedRows].map((row) => row.cellId ?? row.id).filter(Boolean) as string[]);
   const normalizedCells = [...cellIds].map((cellId) => {
     const base = baseCells.find((row) => (row.cellId ?? row.id) === cellId) ?? {};
     const gateRow = gateRows.find((row) => (row.cellId ?? row.id) === cellId);
-    const judgeRow = judgeRows.find((row) => (row.cellId ?? row.id) === cellId);
+    const productRow = productRows.find((row) => (row.cellId ?? row.id) === cellId);
     const cellArtifacts = files.filter((file) => file.path.includes(`/${cellId}/`) && /\.(png|jpe?g|mp4|webm|json|gz)$/i.test(file.path));
     return {
       ...base,
       cellId,
       map: (base.map ?? base.mapId) as string | undefined,
       gate: gateRow ? { ...gateRow, pass: (gateRow.pass ?? gateRow.admitted) as boolean | undefined } : undefined,
-      judge: judgeRow,
+      product: productRow,
       artifacts: cellArtifacts.map((file) => jobArtifact(jobId, file.path)),
     } as CellVerdict;
   });

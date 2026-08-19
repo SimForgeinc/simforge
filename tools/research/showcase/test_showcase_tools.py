@@ -26,6 +26,7 @@ gallery = load("preseed_gallery")
 semantic = load("semantic_contract")
 review = load("review_contract")
 stages = load("stages")
+benchmark = load("benchmark_report")
 qual = load("qualification")
 qualify_cli = load("qualify")
 
@@ -200,7 +201,7 @@ def _human_label(semantic_accepted, presentation_accepted=True, codes=(), reason
 
 
 def _emission(**overrides):
-    """A canonical `stages.py review3d` emission under the contract in force."""
+    """A canonical calibration-reviewer emission under the review contract in force."""
     answered = {"mechanismFidelity": "yes", "visualGrounding": "pass", "actorFidelity": "pass",
                 "eventSequence": "pass", "plausible": True, "realism": 8.0, "confidence": 0.9,
                 "defects": [],
@@ -212,30 +213,53 @@ def _emission(**overrides):
             "rawResponseSha256": "0" * 64}
 
 
-def _judged_cell(cell_id, emission, **overrides):
-    """One judge or product row, exactly as `applyProductDecision` writes it."""
-    verdict = review.evaluate(emission)
-    return {"cellId": cell_id, "status": "complete", "threeDReview": emission,
-            **review.acceptance_fields(verdict),
-            "acceptance": {"tier": verdict["tier"], "axes": verdict["axes"],
-                           "defects": verdict["defects"], "contract": review.contract_identity(),
-                           "gatePassed": True, "cappedByTopK": False},
-            **overrides}
-
-
-def _judge_document(cells, **overrides):
-    return {"status": "complete", "contract": review.contract_identity(), "cells": cells, **overrides}
+def _product_cell(cell_id, semantic_accepted=True, accepted=None, codes=(), reason=None,
+                  **overrides):
+    """One deterministic product row, exactly as `75-product.json` carries it."""
+    accepted = semantic_accepted if accepted is None else accepted
+    return {
+        "cellId": cell_id,
+        "renderDir": f"65-render3d/{cell_id}",
+        "semanticAccepted": semantic_accepted,
+        "accepted": accepted,
+        "defectCodes": list(codes),
+        "unsupportedReason": reason,
+        "acceptance": {
+            "contract": {"version": qual.PRODUCT_CONTRACT_VERSION},
+            "gatePassed": True,
+            "semanticScreened": reason is None,
+            "semanticConfidence": 0.9 if reason is None else None,
+            "renderTier": "3d",
+            "renderStatus": "complete",
+        },
+        **overrides,
+    }
 
 
 def _product_document(cells, **overrides):
-    rows = [{"renderDir": f"65-render3d/{row['cellId']}", **row} for row in cells]
-    return {"schema": qual.PRODUCT_SCHEMA, "status": "complete", "contract": review.contract_identity(),
-            "acceptedAttempt": None, "acceptedCells": sum(1 for row in rows if row["presentationAccepted"]),
-            "defectCodes": sorted({code for row in rows for code in row["defectCodes"]}),
-            "cells": rows, **overrides}
+    return {
+        "schema": qual.PRODUCT_SCHEMA,
+        "status": "complete",
+        "contract": {"version": qual.PRODUCT_CONTRACT_VERSION},
+        "collisionPolicy": "reject",
+        "retry": {"kind": "none", "detail": "none", "reason": "accepted initial render",
+                  "authorisedBy": []},
+        "acceptedAttempt": None,
+        "acceptedCells": sum(1 for row in cells if row["accepted"]),
+        "semanticAcceptedCells": sum(1 for row in cells if row["semanticAccepted"]),
+        "screenedCells": sum(1 for row in cells if row["unsupportedReason"] is None),
+        "unsupportedCells": sum(1 for row in cells if row["unsupportedReason"] is not None),
+        "defectCodeCounts": {
+            code: sum(code in row["defectCodes"] for row in cells)
+            for code in sorted({code for row in cells for code in row["defectCodes"]})
+        },
+        "defectCodes": sorted({code for row in cells for code in row["defectCodes"]}),
+        "cells": cells,
+        **overrides,
+    }
 
 
-def _attempt_record(furthest="presentation", stages=(), **overrides):
+def _attempt_record(furthest="accepted", stages=(), **overrides):
     """An attempt record whose funnel is reached up to and including `furthest`."""
     limit = qual.FUNNEL_STAGES.index(furthest)
     return {"schema": qual.ATTEMPT_RECORD_SCHEMA,
@@ -325,6 +349,24 @@ class DecisionContractTest(unittest.TestCase):
         self.assertFalse(review.is_contract_code("legacy.collision"))
         self.assertFalse(review.is_contract_code("scenario."))
 
+    def test_product_decisions_validate_only_deterministic_invariants(self):
+        self.assertEqual(
+            qual.normalize_product_decision(
+                {"semanticAccepted": True, "accepted": False,
+                 "defectCodes": ["render.asset.grounding"], "unsupportedReason": None}),
+            {"semanticAccepted": True, "accepted": False,
+             "defectCodes": ["render.asset.grounding"], "unsupportedReason": None})
+        with self.assertRaisesRegex(qual.QualificationError,
+                                    "cannot be accepted without semantic acceptance"):
+            qual.normalize_product_decision(
+                {"semanticAccepted": False, "accepted": True,
+                 "defectCodes": [], "unsupportedReason": None})
+        with self.assertRaisesRegex(qual.QualificationError,
+                                    "outside the contract namespaces"):
+            qual.normalize_product_decision(
+                {"semanticAccepted": False, "accepted": False,
+                 "defectCodes": ["judge.uncertain"], "unsupportedReason": None})
+
 
 class StaleContractTest(unittest.TestCase):
     """A superseded contract can never be read as a current verdict."""
@@ -343,18 +385,19 @@ class StaleContractTest(unittest.TestCase):
         with self.assertRaisesRegex(qual.QualificationError, "no review contract identity"):
             qual.decision_from_review(anonymous)
 
-    def test_a_judge_document_from_a_superseded_contract_is_refused(self):
-        superseded = _judge_document([_judged_cell("cell-a", _emission())],
-                                     contract={**review.contract_identity(), "sha256": "0" * 64})
-        with self.assertRaisesRegex(qual.QualificationError, "names review contract hash"):
-            qual.attempt_outcome({"number": 1, "status": "complete"}, judge=superseded)
+    def test_no_product_document_yields_no_decision(self):
+        self.assertEqual(qual.decision_document(), (None, None))
+        row = qual.attempt_outcome({"number": 1, "status": "complete"})
+        self.assertEqual(row["outcome"], "operational-failure")
+        self.assertIsNone(row["decision"])
+        self.assertIsNone(row["evidence"])
 
     def test_a_product_decision_from_a_superseded_contract_is_refused(self):
-        stale = _product_document([_judged_cell("cell-a", _emission())],
-                                  contract={"version": "showcase-acceptance-contract-v0",
-                                            "sha256": "0" * 64,
-                                            "reviewVersion": "showcase-3d-product-review-v4"})
-        with self.assertRaisesRegex(qual.QualificationError, "showcase-3d-product-review-v4"):
+        stale = _product_document(
+            [_product_cell("cell-a")],
+            contract={"version": "showcase-deterministic-product/v0"})
+        with self.assertRaisesRegex(qual.QualificationError,
+                                    "showcase-deterministic-product/v0"):
             qual.attempt_outcome({"number": 1, "status": "complete"}, product=stale)
 
     def test_a_gold_manifest_bound_to_v4_is_refused(self):
@@ -536,6 +579,21 @@ class CalibrationTest(unittest.TestCase):
         self.assertGreater(realism["byEvidence"][digest_a], 0.0)
         self.assertEqual(realism["maxSd"], realism["byEvidence"][digest_a])
 
+    def test_funnel_list_matches_the_integrated_pipeline(self):
+        self.assertEqual(benchmark.FUNNEL_STAGES, (
+            ("submitted", "00-brief.json"),
+            ("author-ok", "20-author/template.json"),
+            ("contract-valid", "20-author/contract-verdict.json"),
+            ("cells-ok", "40-cells/index.json"),
+            ("gate-pass", "50-gate.json"),
+            ("eligible", "55-eligibility.json"),
+            ("2d-ok", "60-render2d/index.json"),
+            ("semantic-reviewed", "60-render2d/quality.json"),
+            ("semantic-2d", "62-semantic2d.json"),
+            ("3d-ok", "65-render3d/index.json"),
+            ("accepted", "75-product.json"),
+        ))
+
 
 class StageListTest(unittest.TestCase):
     """The stage lists must name the artifacts the integrated pipeline writes."""
@@ -545,12 +603,10 @@ class StageListTest(unittest.TestCase):
             "00-brief", "10-route", "15-precheck", "20-author", "30-sites", "40-cells", "50-gate",
             "55-eligibility", "60-render2d", "62-semantic2d",
             "62-mutation-01", "62-mutation-02", "62-fallback-author",
-            "65-render3d", "70-judge", "75-product",
-            "80-presentation-retry", "80-reauthor-01", "90-gallery", "95-benchmark"))
+            "65-render3d", "75-product", "80-reauthor-01", "90-gallery", "95-benchmark"))
         self.assertNotIn("80-repair", qual.STAGES)
         self.assertEqual(qual.OPTIONAL_STAGES, (
-            "62-mutation-01", "62-mutation-02", "62-fallback-author",
-            "80-presentation-retry", "80-reauthor-01"))
+            "62-mutation-01", "62-mutation-02", "62-fallback-author", "80-reauthor-01"))
         self.assertEqual(qual.REQUIRED_STAGES,
                          tuple(stage for stage in qual.STAGES if stage not in qual.OPTIONAL_STAGES))
         self.assertEqual(qual.STAGE_OUTCOMES,
@@ -572,14 +628,15 @@ class StageListTest(unittest.TestCase):
 
     def test_attempt_records_report_stages_in_the_current_vocabulary(self):
         facts = qual.attempt_record_facts(_attempt_record(
-            stages=(("55-eligibility", "complete"), ("70-judge", "reused"),
-                    ("80-reauthor", "failed"), ("75-product", "complete"))))
-        self.assertEqual(facts["stageOutcomes"], {"55-eligibility": "complete", "70-judge": "reused",
-                                                 "80-reauthor-01": "failed", "75-product": "complete"})
-        self.assertEqual(facts["furthestStage"], "presentation")
+            stages=(("55-eligibility", "complete"), ("80-reauthor", "failed"),
+                    ("75-product", "complete"))))
+        self.assertEqual(facts["stageOutcomes"], {"55-eligibility": "complete",
+                                                 "80-reauthor-01": "failed",
+                                                 "75-product": "complete"})
+        self.assertEqual(facts["furthestStage"], "accepted")
         self.assertEqual(facts["attemptRecord"], qual.ATTEMPT_RECORD_SCHEMA)
         with self.assertRaisesRegex(qual.QualificationError, "not a stage outcome"):
-            qual.attempt_record_facts(_attempt_record(stages=(("70-judge", "cached"),)))
+            qual.attempt_record_facts(_attempt_record(stages=(("75-product", "cached"),)))
         with self.assertRaisesRegex(qual.QualificationError, "not a pipeline stage"):
             qual.attempt_record_facts(_attempt_record(stages=(("80-repair", "complete"),)))
         with self.assertRaisesRegex(qual.QualificationError, "is not showcase-benchmark-attempt"):
@@ -642,72 +699,74 @@ class BreadthAndQualificationConfigTest(unittest.TestCase):
 
 
 class ProductAuthorityTest(unittest.TestCase):
-    """`75-product.json` is the deliverable decision; nothing outranks it."""
+    """`75-product.json` is the sole deliverable decision."""
 
     ATTEMPT = {"number": 1, "status": "complete", "jobId": "job-1"}
 
-    def test_product_decision_outranks_the_judge_verdict(self):
-        accepted = _judged_cell("cell-a", _emission())
-        # The gate rejected this cell before any reviewer saw it, and topK rationed the
-        # presentation: neither fact is expressible in the judge's own row.
-        product = _product_document([{**accepted, "semanticAccepted": False,
-                                      "presentationAccepted": False,
-                                      "defectCodes": ["scenario.gate"]}])
-        row = qual.attempt_outcome(self.ATTEMPT, product=product,
-                                   judge=_judge_document([accepted]),
-                                   record=_attempt_record("3d-ok"))
+    def test_product_decision_supplies_the_verdict(self):
+        product = _product_document([
+            _product_cell("cell-a", semantic_accepted=False, accepted=False,
+                          codes=("scenario.gate",))
+        ])
+        row = qual.attempt_outcome(
+            self.ATTEMPT, product=product, record=_attempt_record("3d-ok"))
         self.assertEqual(row["evidence"], "75-product.json")
         self.assertEqual(row["outcome"], "semantic-rejected")
         self.assertEqual(row["defectCodes"], ["scenario.gate"])
         self.assertFalse(row["decision"]["semanticAccepted"])
+        self.assertFalse(row["decision"]["accepted"])
 
-    def test_judge_is_read_only_when_no_product_decision_exists(self):
-        row = qual.attempt_outcome(self.ATTEMPT,
-                                   judge=_judge_document([_judged_cell("cell-a", _emission())]),
-                                   record=_attempt_record())
-        self.assertEqual(row["evidence"], "70-judge.json")
-        self.assertEqual(row["outcome"], "semantic-accepted")
-        self.assertTrue(row["decision"]["presentationAccepted"])
-        self.assertEqual(row["furthestStage"], "presentation")
+    def test_missing_product_decision_is_operational(self):
+        row = qual.attempt_outcome(self.ATTEMPT, record=_attempt_record("3d-ok"))
+        self.assertIsNone(row["evidence"])
+        self.assertEqual(row["outcome"], "operational-failure")
+        self.assertIsNone(row["decision"])
 
-    def test_a_promoted_retry_is_reported_from_the_product_decision(self):
-        cell = _judged_cell("cell-a", _emission())
-        product = _product_document([{**cell, "renderDir": "80-presentation-retry/65-render3d/cell-a"}],
-                                    acceptedAttempt="80-presentation-retry")
-        row = qual.attempt_outcome(self.ATTEMPT, product=product, judge=_judge_document([cell]),
-                                   record=_attempt_record(stages=(("80-presentation-retry", "complete"),
-                                                                  ("75-product", "complete"))))
+    def test_a_promoted_reauthor_is_reported_from_the_product_decision(self):
+        cell = _product_cell(
+            "cell-a", renderDir="80-reauthor-01/65-render3d/cell-a")
+        product = _product_document([cell], acceptedAttempt="80-reauthor-01")
+        row = qual.attempt_outcome(
+            self.ATTEMPT, product=product,
+            record=_attempt_record(stages=(("80-reauthor", "complete"),
+                                           ("75-product", "complete"))))
         self.assertEqual(row["outcome"], "semantic-accepted")
-        self.assertEqual(row["acceptedAttempt"], "80-presentation-retry")
-        self.assertEqual(row["renderDir"], "80-presentation-retry/65-render3d/cell-a")
-        self.assertEqual(row["stageOutcomes"]["80-presentation-retry"], "complete")
+        self.assertEqual(row["acceptedAttempt"], "80-reauthor-01")
+        self.assertEqual(row["renderDir"], "80-reauthor-01/65-render3d/cell-a")
+        self.assertEqual(row["stageOutcomes"]["80-reauthor-01"], "complete")
 
     def test_the_shipped_cell_decides_an_attempt_with_mixed_cells(self):
-        rejected = _judged_cell("cell-a", _emission(mechanismFidelity="no"))
-        accepted = _judged_cell("cell-b", _emission())
-        row = qual.attempt_outcome(self.ATTEMPT, product=_product_document([rejected, accepted]))
+        rejected = _product_cell(
+            "cell-a", semantic_accepted=False, accepted=False,
+            codes=("scenario.mechanism",))
+        accepted = _product_cell("cell-b")
+        row = qual.attempt_outcome(
+            self.ATTEMPT, product=_product_document([rejected, accepted]))
         self.assertEqual(row["outcome"], "semantic-accepted")
         self.assertEqual(row["renderDir"], "65-render3d/cell-b")
         # The rejected cell's codes stay visible as evidence beside the decision.
         self.assertEqual(row["defectCodes"], ["scenario.mechanism"])
         self.assertEqual(row["decision"]["defectCodes"], [])
 
-    def test_a_skipped_review_is_operational_not_a_rejection(self):
-        skipped = {"status": "skipped", "reason": "OpenAI gateway unavailable at 127.0.0.1:4141",
-                   "contract": review.contract_identity(), "cells": []}
-        row = qual.attempt_outcome(self.ATTEMPT, judge=skipped, record=_attempt_record("3d-ok"))
+    def test_product_with_no_decided_rows_is_operational(self):
+        product = _product_document([])
+        row = qual.attempt_outcome(
+            self.ATTEMPT, product=product, record=_attempt_record("3d-ok"))
         self.assertEqual(row["outcome"], "operational-failure")
         self.assertIsNone(row["decision"])
-        self.assertEqual(row["evidence"], "70-judge.json")
+        self.assertEqual(row["evidence"], "75-product.json")
 
     def test_a_censored_attempt_record_keeps_the_attempt_out_of_the_yield(self):
-        censored = _attempt_record("3d-ok", outcome={
-            "kind": "operational-failure", "censoredAtStage": "semantic-3d", "failedStage": "70-judge",
-            "operational": {"class": "model-access", "detail": "HTTP 429: rate_limit_error"}})
-        row = qual.attempt_outcome(self.ATTEMPT, record=censored,
-                                   product=_product_document([_judged_cell("cell-a", _emission())]))
+        censored = _attempt_record(
+            "3d-ok",
+            outcome={"kind": "operational-failure", "censoredAtStage": "3d-ok",
+                     "failedStage": "65-render3d",
+                     "operational": {"class": "renderer", "detail": "render failed"}})
+        row = qual.attempt_outcome(
+            self.ATTEMPT, record=censored,
+            product=_product_document([_product_cell("cell-a")]))
         self.assertEqual(row["outcome"], "operational-failure")
-        self.assertEqual(row["censoredAtStage"], "semantic-3d")
+        self.assertEqual(row["censoredAtStage"], "3d-ok")
         self.assertIsNone(row["decision"])
 
     def test_unsupported_attempts_carry_no_manufactured_defect_code(self):
@@ -718,13 +777,16 @@ class ProductAuthorityTest(unittest.TestCase):
         self.assertIsNone(row["decision"])
         self.assertEqual(row["defectCodes"], [])
 
-    def test_contract_reported_unsupported_evidence_is_representability_too(self):
-        blind = _judged_cell("cell-a", _emission(confidence=0.1))
-        row = qual.attempt_outcome(self.ATTEMPT, product=_product_document([blind]))
+    def test_oracle_unscreened_evidence_is_representability_too(self):
+        blind = _product_cell(
+            "cell-a", semantic_accepted=False, accepted=False,
+            reason="never screened by the 2D semantic oracle")
+        row = qual.attempt_outcome(
+            self.ATTEMPT, product=_product_document([blind]))
         self.assertEqual(row["outcome"], "unsupported")
-        self.assertIsNotNone(row["unsupportedReason"])
-        self.assertEqual(row["decision"]["defectCodes"], ["judge.uncertain"])
-
+        self.assertEqual(row["unsupportedReason"],
+                         "never screened by the 2D semantic oracle")
+        self.assertEqual(row["decision"]["defectCodes"], [])
 
 class ExitEvaluatorTest(unittest.TestCase):
     CALIBRATION = {"schema": qual.CALIBRATION_SCHEMA, "reviewContract": qual.contract_binding(),
@@ -744,12 +806,13 @@ class ExitEvaluatorTest(unittest.TestCase):
                 rows.append(qual.attempt_outcome({"number": number, "status": "failed"}))
                 continue
             good = number <= operational + accepted
-            cell = _judged_cell("cell-a", _emission(mechanismFidelity="yes" if good else "no",
-                                                    realism=8.0 if good else 3.0))
+            cell = _product_cell(
+                "cell-a", semantic_accepted=good, accepted=good,
+                codes=() if good else ("scenario.mechanism",))
             rows.append(qual.attempt_outcome(
                 {"number": number, "status": "complete", "jobId": f"job-{number}"},
                 product=_product_document([cell]),
-                record=_attempt_record("presentation" if good else "3d-ok",
+                record=_attempt_record("accepted" if good else "3d-ok",
                                        stages=(("75-product", "complete"),))))
         return rows
 
@@ -763,7 +826,7 @@ class ExitEvaluatorTest(unittest.TestCase):
         # The stage facts come from the attempt records, not from the decision.
         self.assertEqual(summary["attemptRecords"], 8)
         self.assertEqual(summary["productDecisions"], 8)
-        self.assertEqual(summary["furthestStages"], {"3d-ok": 5, "presentation": 3})
+        self.assertEqual(summary["furthestStages"], {"3d-ok": 5, "accepted": 3})
 
     def test_two_of_three_cases_at_thirty_percent_qualifies(self):
         config = self._config()
@@ -832,11 +895,6 @@ class ExitEvaluatorTest(unittest.TestCase):
                 "crossing-VRU": self._outcomes(accepted=5),
             })
 
-class ReviewFrameTimebaseTest(unittest.TestCase):
-    def test_clipped_video_seeks_are_relative_to_clip_start(self):
-        self.assertEqual(stages._video_seek_time(5.42, 5.42), 0.0)
-        self.assertAlmostEqual(stages._video_seek_time(7.68, 5.42), 2.26)
-        self.assertEqual(stages._video_seek_time(4.0, 5.42), 0.0)
 
 
 class HumanGoldLabelCommandTest(unittest.TestCase):

@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 
 import { atomicJson, exists, MAPS, ShowcasePipeline } from './pipeline.mjs';
 import { classifyFailure } from './failures.mjs';
-import { normalizeJudgeDocument } from './review-contract.mjs';
 
 const REPO_ROOT = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const MIME = {
@@ -80,7 +79,7 @@ const SCHEDULER_BOUNDS = Object.freeze({
   batchConcurrency: [1, 12],
   render2dConcurrency: [1, 8],
   render3dConcurrency: [1, 4],
-  judgeConcurrency: [1, 8],
+  reviewConcurrency: [1, 8],
 });
 
 function boundedSetting(value, fallback, name) {
@@ -98,7 +97,7 @@ export function resolveSchedulerSettings({
   batchConcurrency,
   render2dConcurrency,
   render3dConcurrency,
-  judgeConcurrency,
+  reviewConcurrency,
   env = process.env,
 } = {}) {
   return Object.freeze({
@@ -106,7 +105,7 @@ export function resolveSchedulerSettings({
     batchConcurrency: boundedSetting(batchConcurrency ?? env.SHOWCASE_BATCH_CONCURRENCY, 3, 'batchConcurrency'),
     render2dConcurrency: boundedSetting(render2dConcurrency ?? env.SHOWCASE_2D_CONCURRENCY, 4, 'render2dConcurrency'),
     render3dConcurrency: boundedSetting(render3dConcurrency ?? env.SHOWCASE_3D_CONCURRENCY, 2, 'render3dConcurrency'),
-    judgeConcurrency: boundedSetting(judgeConcurrency ?? env.SHOWCASE_JUDGE_CONCURRENCY, 4, 'judgeConcurrency'),
+    reviewConcurrency: boundedSetting(reviewConcurrency ?? env.SHOWCASE_REVIEW_CONCURRENCY, 4, 'reviewConcurrency'),
   });
 }
 
@@ -148,9 +147,6 @@ function normalizeJob(input, jobId) {
   if (input.render3d !== undefined && typeof input.render3d !== 'boolean') {
     throw Object.assign(new Error('render3d must be boolean'), { status: 400 });
   }
-  if (input.judge !== undefined && typeof input.judge !== 'boolean') {
-    throw Object.assign(new Error('judge must be boolean'), { status: 400 });
-  }
   if (input.seed !== undefined && !['string', 'number'].includes(typeof input.seed)) {
     throw Object.assign(new Error('seed must be a string or number'), { status: 400 });
   }
@@ -169,12 +165,8 @@ function normalizeJob(input, jobId) {
     seed: input.seed ?? jobId,
     render3d: production ? true : (input.render3d ?? false),
     topK,
-    judge: production ? true : (input.judge ?? true),
     authorModel: 'gpt-5.6-sol',
     authorEffort: production ? 'low' : 'medium',
-    judgeModel: 'gpt-5.6-sol',
-    judgeEffort: 'medium',
-    judgeStrategy: 'spread8',
     fallbackToVisual: production,
     campaignId: campaignValue(input.campaignId),
     campaignCaseId: campaignValue(input.campaignCaseId),
@@ -228,7 +220,6 @@ export class JobRunner {
         ['62-mutation-02', ['62-mutation-02/index.json']],
         ['62-fallback-author', ['62-fallback-author/index.json']],
         ['65-render3d', ['65-render3d/index.json']],
-        ['70-judge', ['70-judge.json']],
         ['75-product', ['75-product.json']],
         ['90-gallery', ['90-gallery.json']],
         ['95-benchmark', ['95-benchmark.json']],
@@ -236,7 +227,7 @@ export class JobRunner {
       for (const [stage, artifacts] of savedStages) {
         if ((await Promise.all(artifacts.map((artifact) => exists(join(jobDir, artifact))))).every(Boolean)) {
           let status = 'complete';
-          if (stage === '65-render3d' || stage === '70-judge' || stage === '62-semantic2d') {
+          if (stage === '65-render3d' || stage === '62-semantic2d') {
             const saved = JSON.parse(await readFile(join(jobDir, artifacts[0]), 'utf8'));
             if (saved.status === 'skipped') status = 'skipped';
           }
@@ -351,11 +342,10 @@ async function directoryIndex(root, current = root) {
       const item = { path: relative(root, path).split(sep).join('/'), size: info.size };
       if (entry.name.endsWith('.json') && info.size <= 2_000_000) {
         try {
+          // A `70-judge.json` left by a job from before the 3D product review was removed is
+          // served exactly as it was written: old evidence stays readable, and nothing
+          // re-derives a current verdict from it.
           item.json = JSON.parse(await readFile(path, 'utf8'));
-          // Historical normalization at the read boundary: a judgement written before the
-          // semantic/presentation split is re-derived so every client sees the current fields,
-          // while the artifact on disk stays untouched evidence.
-          if (item.path.endsWith('70-judge.json')) item.json = normalizeJudgeDocument(item.json);
         } catch {
           item.jsonError = true;
         }
@@ -467,7 +457,7 @@ export async function createShowcaseServer({
   batchConcurrency,
   render2dConcurrency,
   render3dConcurrency,
-  judgeConcurrency,
+  reviewConcurrency,
   env = process.env,
 } = {}) {
   const scheduler = resolveSchedulerSettings({
@@ -475,7 +465,7 @@ export async function createShowcaseServer({
     batchConcurrency,
     render2dConcurrency,
     render3dConcurrency,
-    judgeConcurrency,
+    reviewConcurrency,
     env,
   });
   if (typeof token !== 'string' || token.length === 0) throw new Error('SHOWCASE_TOKEN is required');

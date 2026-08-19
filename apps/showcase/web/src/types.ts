@@ -3,26 +3,22 @@ export type Status = 'pending' | 'running' | 'complete' | 'failed' | string;
 
 export interface Artifact { path?: string; url?: string; name?: string; type?: string }
 export interface StageEvent { stage: string; status: Status; artifacts?: Artifact[]; elapsedMs?: number; [key: string]: unknown }
-export interface ReviewDefect { code: string; text?: string; confidence?: number | null; source?: string }
 export interface CellAcceptance {
-  tier?: '2d' | '3d' | null; axes?: Record<string, string | number | boolean>;
-  defects?: ReviewDefect[]; gatePassed?: boolean; cappedByTopK?: boolean;
-  contract?: { version?: string | null; sha256?: string | null; reviewVersion?: string | null } | null;
-  normalizedFrom?: string | null;
+  contract?: { version?: string };
+  gatePassed?: boolean;
+  semanticScreened?: boolean;
+  semanticConfidence?: number | null;
+  renderTier?: '2d' | '3d';
+  renderStatus?: string | null;
 }
-export interface CellJudge {
-  realism?: number; dynamism?: number; plausible?: boolean;
-  semanticAccepted?: boolean; presentationAccepted?: boolean;
+export interface CellDecision {
+  semanticAccepted?: boolean; accepted?: boolean;
   defectCodes?: string[]; unsupportedReason?: string | null; acceptance?: CellAcceptance;
-  threeDReview?: {
-    mechanismFidelity?: string; visualGrounding?: string; actorFidelity?: string;
-    eventSequence?: string; realism?: number; confidence?: number; explanation?: string;
-  };
 }
 export interface CellVerdict {
   cellId?: string; id?: string; map?: string;
   gate?: { pass?: boolean; admitted?: boolean; firstFailure?: string } | boolean;
-  judge?: CellJudge;
+  product?: CellDecision;
   artifacts?: Artifact[]; [key: string]: unknown;
 }
 export interface JobIndex {
@@ -43,7 +39,7 @@ export interface SubmitPayload {
   brief: string; methodology: 'production' | 'custom'; engine: Engine; nScenarios: number;
   maps: string[]; maxSitesPerMap: number;
   ambient: 'off' | 'light' | 'moderate' | 'city' | 'heavy'; seed: number;
-  render3d: boolean; topK: number; judge: boolean;
+  render3d: boolean; topK: number;
 }
 
 export type CampaignAttemptStatus = 'queued' | 'running' | 'complete' | 'failed' | string;
@@ -105,16 +101,15 @@ export interface BenchmarkThroughput {
   product: {
     boundary: string;
     attempts: number;
-    semantic3dAttempts: number;
-    presentationAcceptedAttempts: number;
-    presentationAcceptedCells: number;
+    acceptedAttempts: number;
+    acceptedCells: number;
     yield: Rate;
     wallS: Distribution;
-    renderReviewWallS: Distribution;
+    renderWallS: Distribution;
     stageWallS: Record<string, Distribution>;
     attemptsPerHour: HourlyRate;
-    presentationAcceptedAttemptsPerHour: HourlyRate;
-    presentationAcceptedCellsPerHour: HourlyRate;
+    acceptedAttemptsPerHour: HourlyRate;
+    acceptedCellsPerHour: HourlyRate;
     tokensPerAcceptedCell: number | null;
   };
   note: string;
@@ -173,7 +168,7 @@ export interface BenchmarkCaseRow {
   attemptBudget: number;
   furthestStage: string | null;
   semanticAccepted: boolean;
-  presentationAccepted: boolean;
+  productAccepted: boolean;
   defectCodes: string[];
   unsupportedReason: string | null;
 }
@@ -192,10 +187,8 @@ export interface BenchmarkExecution {
   };
   models: {
     author: Record<string, number>;
-    judge: Record<string, number>;
     engineRequested: Record<string, number>;
     engineResolved: Record<string, number>;
-    productReviewVersion: Record<string, number>;
     note: string;
   };
 }
@@ -224,7 +217,7 @@ export interface CampaignBenchmark {
   quality: {
     acceptedOfSupported: Rate;
     semanticAcceptedOfSupported: Rate;
-    presentationAcceptedOfSupported: Rate;
+    productAcceptedOfSupported: Rate;
   };
   funnel: {
     stages: FunnelStage[];
@@ -273,9 +266,9 @@ export interface CampaignAttempt {
 }
 export interface CampaignVideo {
   sha256: string; jobId?: string; cellId?: string; source?: string; url: string;
-  mapId?: string | null; realism?: number | null; dynamism?: number | null; acceptedAt?: string;
-  semanticAccepted?: boolean; presentationAccepted?: boolean;
-  reviewContractVersion?: string; reviewContractSha256?: string; reviewVersion?: string;
+  mapId?: string | null; acceptedAt?: string;
+  semanticAccepted?: boolean; accepted?: boolean;
+  productContractVersion?: string;
 }
 export interface CampaignCase {
   id: string; title: string; index: number; attempts: CampaignAttempt[]; validVideos: CampaignVideo[];
@@ -291,13 +284,12 @@ export interface CampaignTotals {
   benchmark?: CampaignBenchmark;
 }
 export interface CampaignValidityContract {
-  semanticAcceptedRequired?: boolean; presentationAcceptedRequired?: boolean;
-  frozenGateRequired?: boolean; briefAware3dReviewRequired?: boolean;
+  semanticAcceptedRequired?: boolean; acceptedRequired?: boolean;
+  frozenGateRequired?: boolean; briefAware2dSemanticOracleRequired?: boolean;
   uniqueVideoSha256Required?: boolean; durableCampaignCopyRequired?: boolean;
-  currentReviewContractRequired?: boolean; reviewContractVersion?: string;
-  reviewContractSha256?: string; reviewVersion?: string; minimumPerCase?: number;
-  canonicalReviewFields?: string[]; maxGenerationAttempts?: number;
-  operationalFailuresConsumeAttempts?: boolean;
+  currentProductContractRequired?: boolean; productContractVersion?: string;
+  minimumPerCase?: number; canonicalDecisionFields?: string[];
+  maxGenerationAttempts?: number; operationalFailuresConsumeAttempts?: boolean;
   distinctTrajectoryFingerprintRequired?: boolean;
 }
 export interface CampaignReport {

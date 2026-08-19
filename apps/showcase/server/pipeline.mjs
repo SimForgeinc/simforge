@@ -26,23 +26,14 @@ import {
 } from '../../../scripts/trace-validity-lib.mjs';
 import { operationalFailure } from './failures.mjs';
 import {
-  acceptanceCache,
-  acceptanceFields,
-  blocksSemantic,
   contractIdentity,
-  evaluateReview,
   GATE_DEFECT_CODE,
-  judgeAcceptanceSummary,
-  normalizeJudgeDocument,
-  retryRecommendation,
-  retryRequiresAuthor,
-  reviewCodeDigest,
-  rowReview,
-  sha256Text,
-  withDefectCodes,
-} from './review-contract.mjs';
+  NEVER_SCREENED_REASON,
+  PRODUCT_CONTRACT_VERSION,
+  PRODUCT_DECISION_SCHEMA,
+  productAcceptanceSummary,
+} from './product-contract.mjs';
 import {
-  ACCEPTANCE_SPLIT_SCHEMA,
   ATTEMPT_RECORD_SCHEMA,
   FUNNEL_STAGE_IDS,
   GENERATOR_PIPELINE_STAGES,
@@ -132,6 +123,16 @@ export const MAPS = [
   'richmond-field-station',
 ];
 
+/**
+ * The vision model the two footage reviews run under. Both are observations, not
+ * knobs: the 2D semantic oracle is the pipeline's single acceptance authority and
+ * the blind 2D pass is the ranking signal for ungated 3D spend, so neither is a
+ * per-job choice a caller may vary between attempts of the same campaign.
+ */
+const REVIEW_MODEL = 'gpt-5.6-sol';
+const REVIEW_EFFORT = 'medium';
+const REVIEW_STRATEGY = 'spread8';
+
 const COMPILER_TERMS = /\b(brak|lead|vehicle|car|truck|bus|pedestrian|child|cycl|scooter|junction|intersection|cross|cut.?in|lane chang|swerve|oncoming|u.?turn|parking|pull.?out|work.?zone|road.?work|closure)/i;
 
 export async function exists(path) {
@@ -197,8 +198,9 @@ function authorUsageInto(document, usage) {
  *
  * Author usage is deduplicated by evidence-file content hash; vision usage is
  * deduplicated by the reviewer's `rawResponseSha256`, so the same verdict copied
- * from `60-render2d/quality.json` into `70-judge.json` (or promoted out of a
- * repair attempt) is billed exactly once.
+ * out of a repair attempt is billed exactly once. The `70-judge` bucket exists
+ * only for jobs recorded before the 3D product review was removed: no stage
+ * writes that artifact any more, and no new attempt bills the bucket.
  */
 export async function collectJobUsage(jobDir) {
   const byStage = {
@@ -288,9 +290,8 @@ async function cellTraceValidity(traceFile, collisionPolicy) {
     // reports for a trace that recorded no ticks: one code path, failing closed.
   }
   const { schema: _schema, semanticAccepted, ...validity } = evaluateTraceValidity(trace, { collisionPolicy });
-  // `eligible` is deliberately not the contract's `semanticAccepted`: under the shared contract a
-  // `simulation.*` defect blocks the presentation, not the scenario. This is the cheap gate that
-  // keeps a broken draw out of the renderer, and `evaluateReview` still owns both verdicts.
+  // `eligible` is not a semantic verdict: it is the cheap deterministic gate that keeps a
+  // physically broken draw out of the renderer. The 2D semantic oracle owns semantics.
   return { eligible: semanticAccepted, ...validity, retry: retryForDefectCodes(validity.defectCodes) };
 }
 
@@ -417,55 +418,12 @@ async function persistBenchmark(context) {
 }
 
 /**
- * Fold a `70-judge.json` document into the attempt record. Called for the
- * attempt's own judgement and again when a repair attempt's judgement is
- * promoted, so the record always describes the evidence that was actually kept.
- *
- * This records the semantic verdict only. Presentation acceptance is the
- * deliverable decision and is read from `75-product.json` by
- * `applyProductEvidence`, because the product stage is what rations `topK` and
- * promotes a repaired attempt.
- */
-function applyJudgeEvidence(context, judge) {
-  const record = context?.benchmark;
-  if (!record) return;
-  const rows = (judge?.cells ?? []).filter((row) => row?.status === 'complete');
-  const byId = new Map(rows.map((row) => [row.cellId, row]));
-  for (const cell of record.cells) {
-    const row = byId.get(cell.cellId);
-    if (!row) continue;
-    cell.semanticAccepted = row.semanticAccepted === true;
-    cell.presentationAccepted = row.presentationAccepted === true;
-    cell.defectCodes = row.defectCodes ?? [];
-    cell.realism = row.acceptance?.axes?.realism ?? row.threeDReview?.realism ?? row.realism ?? null;
-    cell.dynamism = row.dynamism ?? null;
-    cell.productReviewVersion = judge?.contract?.reviewVersion ?? null;
-  }
-  // The contract identity carried by the document is the only truthful review version:
-  // it is the hash-enforced one the verdict was actually produced under.
-  record.models.productReviewVersion = judge?.contract?.reviewVersion ?? null;
-  record.counts.productReviewed = rows.length;
-  record.counts.semanticAccepted = rows.filter((row) => row.semanticAccepted === true).length;
-  record.funnel['semantic-3d'] = record.counts.semanticAccepted > 0;
-  record.outcome.semanticAccepted = record.funnel['semantic-3d'];
-  record.outcome.defectCodes = [...new Set(rows.flatMap((row) => row.defectCodes ?? []))].sort();
-  // A defect the contract could not attribute keeps its raw reviewer text, so it is
-  // reported verbatim rather than counted under a code it was never given.
-  record.outcome.unclassifiedDefects = [...new Set(rows.flatMap((row) => (row.acceptance?.defects ?? [])
-    .filter((defect) => !defect?.code)
-    .map((defect) => String(defect?.text ?? '').slice(0, 200))
-    .filter(Boolean)))].slice(0, 16);
-  record.outcome.unsupportedReason = rows.find((row) => row.unsupportedReason)?.unsupportedReason ?? null;
-}
-
-/**
  * Fold `75-product.json` into the attempt record.
  *
- * The product decision is the deliverable verdict: it rations presentation to
- * `topK`, folds in the deterministic defect codes that rejected cells before any
- * reviewer saw them, and names the attempt whose render was promoted. Reading
- * presentation acceptance anywhere else would credit footage the product stage
- * never shipped.
+ * The product decision is the only verdict: it carries the oracle's semantic
+ * match, the deterministic render outcome, the defect codes every stage recorded,
+ * and the name of the attempt whose render was promoted. Reading acceptance
+ * anywhere else would credit footage the decision never accepted.
  */
 function applyProductEvidence(context, product) {
   const record = context?.benchmark;
@@ -475,17 +433,20 @@ function applyProductEvidence(context, product) {
   for (const cell of record.cells) {
     const row = byId.get(cell.cellId);
     if (!row) continue;
-    cell.presentationAccepted = row.presentationAccepted === true;
+    cell.semanticAccepted = row.semanticAccepted === true;
+    cell.accepted = row.accepted === true;
     cell.defectCodes = row.defectCodes ?? cell.defectCodes ?? [];
   }
-  record.counts.presentationAccepted = rows.filter((row) => row.presentationAccepted === true).length;
-  record.funnel.presentation = record.counts.presentationAccepted > 0;
-  record.outcome.presentationAccepted = record.funnel.presentation;
+  record.counts.accepted = rows.filter((row) => row.accepted === true).length;
+  record.funnel.accepted = record.counts.accepted > 0;
+  record.outcome.accepted = record.funnel.accepted;
+  record.outcome.semanticAccepted = record.funnel['semantic-2d'] === true;
   record.outcome.acceptedAttempt = product?.acceptedAttempt ?? null;
-  record.outcome.defectCodes = [...new Set([
-    ...(record.outcome.defectCodes ?? []),
-    ...(product?.defectCodes ?? []),
-  ])].sort();
+  record.outcome.defectCodes = mergeDefectCodes(
+    product?.defectCodes,
+    ...rows.map((row) => row.defectCodes),
+  );
+  record.outcome.unsupportedReason = rows.find((row) => row.unsupportedReason)?.unsupportedReason ?? null;
 }
 
 /**
@@ -502,9 +463,6 @@ function finalizeAttemptRecord(context, error) {
   record.execution.finishedAt = new Date().toISOString();
   record.execution.resumedStages = [...new Set(context.resumedStages ?? [])];
   record.execution.resumed = record.execution.resumedStages.length > 0;
-  // A retired artifact is evidence of a superseded contract, not of reuse: the stage was
-  // recomputed and billed, so the retirement is recorded separately from `resumedStages`.
-  record.execution.staleArtifacts = { ...(context.staleArtifacts ?? {}) };
   record.outcome.failedStage = context.failedStage ?? null;
   const paidStages = record.stages.filter((row) => Number.isFinite(row.wallS));
   const sumWall = (names) => {
@@ -539,9 +497,9 @@ function finalizeAttemptRecord(context, error) {
     attribution: 'host-wide',
   };
   if (!error) {
-    record.outcome.kind = record.funnel.presentation
-      ? 'presentation-accepted'
-      : record.funnel['semantic-3d'] ? 'semantics-only' : 'rejected';
+    record.outcome.kind = record.funnel.accepted
+      ? 'accepted'
+      : record.funnel['semantic-2d'] ? 'semantics-only' : 'rejected';
     return;
   }
   const message = String(error?.message ?? error);
@@ -554,45 +512,30 @@ function finalizeAttemptRecord(context, error) {
   record.outcome.censoredAtStage = firstUnreached ?? null;
 }
 
-export async function stage(context, name, artifacts, action, { cacheKey } = {}) {
+export async function stage(context, name, artifacts, action) {
   const present = await Promise.all(artifacts.map((path) => exists(path)));
   const relativeArtifacts = artifacts.map((p) => artifactPath(context.jobDir, p));
   const single = artifacts.length === 1 && artifacts[0].endsWith('.json') ? artifacts[0] : null;
   if (present.every(Boolean)) {
-    const cached = single ? await readJson(single) : undefined;
-    if (!cacheKey || cached?.cache?.key === cacheKey) {
-      // A genuine cache hit under the current key. This attempt did not pay for the
-      // stage, so it is recorded as reused with null durations rather than as a
-      // zero-second measurement that would flatter every throughput denominator.
-      context.emit({ stage: name, status: 'complete', artifacts: relativeArtifacts });
-      recordStage(context, {
-        name,
-        status: 'reused',
-        startedAt: null,
-        finishedAt: null,
-        wallS: null,
-        cpuS: null,
-        gpu: null,
-        artifacts: relativeArtifacts,
-        error: null,
-        note: 'artifacts already present; this attempt did not pay for the stage',
-      });
-      context.resumedStages?.push(name);
-      await persistBenchmark(context);
-      return cached;
-    }
-    // A verdict cached under a different contract, prompt, or review implementation is evidence
-    // about a contract that no longer exists. Retire it instead of letting it read as current.
-    const retired = join(dirname(single), '.stale', `${basename(single)}.${String(cached?.cache?.key ?? 'unkeyed').slice(0, 12)}`);
-    await mkdir(dirname(retired), { recursive: true });
-    await rename(single, retired);
-    if (context.staleArtifacts) context.staleArtifacts[name] = {
-      previousKey: cached?.cache?.key ?? null,
-      artifact: artifactPath(context.jobDir, retired),
-      retiredAt: new Date().toISOString(),
-    };
-    // The stage is about to be recomputed, so it is not reused: it falls through to the
-    // measured path below and is billed like any other fresh stage.
+    // This attempt did not pay for the stage, so it is recorded as reused with null
+    // durations rather than as a zero-second measurement that would flatter every
+    // throughput denominator.
+    context.emit({ stage: name, status: 'complete', artifacts: relativeArtifacts });
+    recordStage(context, {
+      name,
+      status: 'reused',
+      startedAt: null,
+      finishedAt: null,
+      wallS: null,
+      cpuS: null,
+      gpu: null,
+      artifacts: relativeArtifacts,
+      error: null,
+      note: 'artifacts already present; this attempt did not pay for the stage',
+    });
+    context.resumedStages?.push(name);
+    await persistBenchmark(context);
+    return single ? readJson(single) : undefined;
   }
   context.emit({ stage: name, status: 'running', artifacts: [] });
   const startedAt = new Date().toISOString();
@@ -768,134 +711,80 @@ export function rankCandidates(cells, qualityRows) {
 }
 
 /**
- * Decide both canonical verdicts for every row of one attempt, in place.
+ * Decide acceptance for every row of one attempt, in place.
  *
- * `evaluateReview` is the only acceptance predicate. This function's whole job is to hand it the
- * evidence the reviewer could not see -- the frozen gate verdict, the deterministic trace validity
- * codes, and a hard render failure -- and to ration the deliverable presentation quota to `topK`.
+ * The predicate is deterministic and has one semantic authority. A cell is accepted when the frozen
+ * gate admitted it, the 2D semantic oracle matched it, and its deterministic render completed --
+ * 3D when the job renders 3D, else the 2D clip. Nothing else is consulted, and nothing is rationed:
+ * `topK` limits how many cells a job pays to render, never how many true verdicts it may hold.
+ *
+ * A cell the oracle never screened is reported as unsupported rather than given a verdict no
+ * evidence backs.
  */
-export function applyProductDecision(rows, { job, passing, gateRows, validityByCell, renderByCell }) {
-  const evaluated = rows.map((row) => {
-    const evidence = rowReview(row);
-    const validity = validityByCell?.get(row.cellId);
-    const render = renderByCell?.get(row.cellId);
-    const renderCodes = render?.defectCodes ?? [];
-    const injected = [];
-    if (!passing.has(row.cellId)) {
-      injected.push({
-        code: GATE_DEFECT_CODE,
-        text: `frozen gate first failure ${gateRows?.get(row.cellId)?.firstFailure ?? 'NOGATE'}`,
-      });
-    }
-    if (row.renderError) {
-      // The exporter classified this failure itself, so its message is evidence text and not a
-      // defect to re-attribute: taxonomy rules written for reviewer prose would only guess at it.
-      evidence.explanation = [evidence.explanation, row.renderError].filter(Boolean).join('\n');
-      if (renderCodes.length === 0) injected.push({ text: row.renderError });
-    }
-    if (injected.length) {
-      evidence.defects = [...(Array.isArray(evidence.defects) ? evidence.defects : []), ...injected];
-    }
-    // The deterministic stages name their own defects exactly; only free text has to be attributed
-    // by the taxonomy rules, so their codes are folded in rather than reclassified.
-    return { row, result: withDefectCodes(evaluateReview(evidence), validity?.defectCodes, renderCodes) };
-  });
-  // Presentation acceptance is the deliverable quota, so topK caps it; semantic truth about the
-  // scenario is never rationed and stays attributable on every row.
-  const overflow = new Set(evaluated
-    .filter(({ result }) => result.presentationAccepted)
-    .sort((left, right) => Number(right.result.axes.realism ?? 0) - Number(left.result.axes.realism ?? 0)
-      || Number(right.result.axes.confidence ?? 0) - Number(left.result.axes.confidence ?? 0)
-      || String(left.row.cellId).localeCompare(String(right.row.cellId)))
-    .slice(Math.max(0, Number(job.topK ?? 0)))
-    .map(({ row }) => row.cellId));
-  for (const { row, result } of evaluated) {
-    const cappedByTopK = overflow.has(row.cellId);
-    Object.assign(row, acceptanceFields(result));
-    if (cappedByTopK) row.presentationAccepted = false;
+export function applyProductDecision(rows, { job, passing, gateRows, validityByCell, renderByCell, semanticByCell }) {
+  for (const row of rows) {
+    const semantic = semanticByCell?.get(row.cellId) ?? null;
+    const screened = semantic?.status === 'complete';
+    const gatePassed = passing.has(row.cellId);
+    const render = renderByCell?.get(row.cellId) ?? null;
+    const semanticAccepted = semantic?.semanticMatch === true;
+    row.semanticAccepted = semanticAccepted;
+    row.accepted = gatePassed && semanticAccepted && render?.status === 'complete';
+    // Every code the deterministic stages and the oracle actually attributed. The gate contributes
+    // its own verdict for a cell it rejected; nothing here re-attributes free text.
+    row.defectCodes = mergeDefectCodes(
+      validityByCell?.get(row.cellId)?.defectCodes,
+      render?.defectCodes,
+      screened ? semantic.scenarioDefectCodes : [],
+      gatePassed ? [] : [GATE_DEFECT_CODE],
+    );
+    row.unsupportedReason = screened ? null : NEVER_SCREENED_REASON;
     row.acceptance = {
-      tier: result.tier,
-      axes: result.axes,
-      defects: result.defects,
       contract: contractIdentity(),
-      gatePassed: passing.has(row.cellId),
-      cappedByTopK,
+      gatePassed,
+      gateFirstFailure: gateRows?.get(row.cellId)?.firstFailure ?? null,
+      semanticScreened: screened,
+      semanticConfidence: screened ? Number(semantic.confidence ?? 0) : null,
+      renderTier: job.render3d ? '3d' : '2d',
+      renderStatus: render?.status ?? null,
     };
   }
   return rows;
 }
 
 /**
- * The single stage-local control a rejected job authorises.
+ * The single control a rejected job authorises.
  *
- * The contract's own `retryRecommendation` names the namespace that has to be repaired, so the cost
- * order is the contract's and not this function's: a presentation blocker can never reach the
- * author. What lives here is the mapping from that namespace to the control this pipeline can
- * actually run, plus the one escalation the deterministic draws force -- re-running an identical
- * simulation repairs nothing, so a simulation blocker is a defect of the template.
+ * The 2D semantic oracle owns the repair budget. Once it has screened this job's footage, the
+ * bounded mutation loop upstream has already spent every authoring pass the attempt gets, so a
+ * rejection here is a finished verdict and not a budget to re-open. The bounded reauthor survives
+ * for exactly one case: a job the oracle could never screen, where no semantic evidence exists to
+ * repair against and authoring a new template is the only control left.
  */
-export function planRetry(route, job, judge, { semanticGated = false } = {}) {
-  const document = normalizeJudgeDocument(judge);
-  const rows = document?.cells ?? [];
-  const none = (reason) => ({
-    retry: 'none', kind: 'none', defectCodes: [], cellIds: [], reason, recommendation: null,
-  });
-  if (!job.render3d || !job.judge) return none('3D render or product review is disabled');
-  if (document?.status !== 'complete') return none(`product review was skipped: ${document?.reason ?? 'unknown reason'}`);
-  const summary = judgeAcceptanceSummary(document);
-  if (summary.presentationAcceptedCells > 0) return none('the job accepted a cell');
-
-  // Cells a presentation control could still rescue: the ones no scenario defect condemns. A cell
-  // whose render produced no footage belongs here -- its semantics are unproven, not rejected, and
-  // reading a missing verdict as a rejection would turn a camera fault into an authoring fault.
-  const repairable = rows.filter((row) => !blocksSemantic(row.defectCodes));
-  const observed = mergeDefectCodes(...(repairable.length > 0 ? repairable : rows).map((row) => row.defectCodes));
-  const authorised = (codes) => retryRecommendation(codes, repairable.length > 0 ? {} : { reviewed: summary.reviewed });
-  let defectCodes = observed;
-  let recommendation = authorised(defectCodes);
-  // No control short of authoring can change this outcome: either the only namespace left is the
-  // simulator and the recorded draws are deterministic, or nothing reviewable survived at all.
-  // Naming that as an attributable scenario code lets the contract's own order make the call.
-  const escalation = recommendation?.action === 'resimulate'
-    ? 'scenario.contract_violation'
-    : (recommendation === null || (repairable.length === 0 && !blocksSemantic(observed))
-      ? 'scenario.no_eligible_simulation'
-      : null);
-  if (escalation) {
-    defectCodes = mergeDefectCodes([escalation], observed);
-    recommendation = authorised(defectCodes);
+export function planRetry(route, job, semantic2d, rows) {
+  const observed = mergeDefectCodes(...rows.map((row) => row.defectCodes));
+  const plan = (retry, kind, reason, defectCodes = observed) => ({ retry, kind, defectCodes, reason });
+  const none = (kind, reason, defectCodes) => plan('none', kind, reason, defectCodes);
+  if (!job.render3d) return none('none', '3D render is disabled, so no product render was spent');
+  if (rows.some((row) => row.accepted === true)) return none('none', 'the job accepted a cell');
+  if (semantic2d?.status !== 'complete') {
+    return none('none', `the 2D semantic oracle did not run: ${semantic2d?.reason ?? 'unknown reason'}`);
   }
-  const cellIds = repairable.map((row) => row.cellId);
-  const plan = (retry, kind, reason) => ({
-    retry, kind, defectCodes, cellIds: retry === 'reauthor' ? [] : cellIds, reason, recommendation,
-  });
-  if (retryRequiresAuthor(recommendation)) {
-    if (semanticGated) {
-      // Generation was already accepted (or exhausted its repair budget) at the
-      // 2D semantic oracle. A 3D scenario disagreement is observability
-      // telemetry for a person, never another authoring episode.
-      return plan('manual-review', 'semantic-gated',
-        'the 2D semantic oracle owns the authoring budget; a 3D scenario disagreement stops for a person');
-    }
-    if (route.engine === 'compiler' && job.fallbackToVisual === true && Number(job._fallbackDepth ?? 0) < 1) {
-      return plan('reauthor', 'compiler-to-visual-fallback',
-        'compiler output produced no presentable scenario; visual authoring is the declared fallback');
-    }
-    if (Number(job._reauthorDepth ?? 0) < 1) {
-      return plan('reauthor', 'scenario-defect-reauthor',
-        'scenario defects can only be repaired by authoring a new template');
-    }
-    return plan('manual-review', 'exhausted', 'the single authorised reauthor is already spent');
+  if ((semantic2d.cells ?? []).some((row) => row?.status === 'complete')) {
+    return none('oracle-rejected',
+      'the 2D semantic oracle screened this job and the upstream mutation loop already spent its repair budget');
   }
-  if (recommendation.action === 'recompose' || recommendation.action === 'recapture') {
-    // Bounded by the retry stage's own cached artifact, not by a depth counter: the attempt runs
-    // once, and a resumed job reads what it already rendered.
-    return plan(recommendation.action, 'presentation-retry',
-      `every rejected cell is repairable where it failed: ${recommendation.reason}`);
+  // No admitted draw ever reached the oracle, so there is no semantic evidence to repair against.
+  const escalated = mergeDefectCodes(['scenario.no_eligible_simulation'], observed);
+  if (route.engine === 'compiler' && job.fallbackToVisual === true && Number(job._fallbackDepth ?? 0) < 1) {
+    return plan('reauthor', 'compiler-to-visual-fallback',
+      'compiler output produced no screenable cell; visual authoring is the declared fallback', escalated);
   }
-  // `rereview` is what the contract returns when only `judge.` codes are left. Running the same
-  // model over the same footage is not a repair, so the job stops for a person.
-  return plan('manual-review', recommendation.action, 'no automatic control repairs this rejection');
+  if (Number(job._reauthorDepth ?? 0) < 1) {
+    return plan('reauthor', 'scenario-defect-reauthor',
+      'no cell was screenable by the 2D semantic oracle; only a new template can change that', escalated);
+  }
+  return none('exhausted', 'the single authorised reauthor is already spent', escalated);
 }
 
 async function loadCells(cellsDir) {
@@ -1057,7 +946,7 @@ export class ShowcasePipeline {
     batchConcurrency = 3,
     render2dConcurrency = 4,
     render3dConcurrency = 2,
-    judgeConcurrency = 4,
+    reviewConcurrency = 4,
   } = {}) {
     this.root = root ?? resolve(import.meta.dirname, '../../..');
     this.python = python ?? join(this.root, '.venv', 'bin', 'python');
@@ -1068,12 +957,12 @@ export class ShowcasePipeline {
       batchConcurrency: concurrencySetting(batchConcurrency, 3, 'batchConcurrency', 12),
       render2dConcurrency: concurrencySetting(render2dConcurrency, 4, 'render2dConcurrency', 8),
       render3dConcurrency: concurrencySetting(render3dConcurrency, 2, 'render3dConcurrency', 4),
-      judgeConcurrency: concurrencySetting(judgeConcurrency, 4, 'judgeConcurrency', 8),
+      reviewConcurrency: concurrencySetting(reviewConcurrency, 4, 'reviewConcurrency', 8),
     });
     this.batchConcurrency = this.schedulerSettings.batchConcurrency;
     this.render2d = new Semaphore(this.schedulerSettings.render2dConcurrency);
     this.render3d = new Semaphore(this.schedulerSettings.render3dConcurrency);
-    this.judge = new Semaphore(this.schedulerSettings.judgeConcurrency);
+    this.review = new Semaphore(this.schedulerSettings.reviewConcurrency);
   }
 
   /**
@@ -1089,7 +978,6 @@ export class ShowcasePipeline {
       python: this.python,
       cli: this.cli,
       timings: {},
-      staleArtifacts: {},
       resumedStages: [],
       failedStage: null,
       scheduler: {
@@ -1103,7 +991,7 @@ export class ShowcasePipeline {
     context.baseline = null;
     context.benchmark = {
       schema: ATTEMPT_RECORD_SCHEMA,
-      acceptanceSchema: ACCEPTANCE_SPLIT_SCHEMA,
+      acceptanceContract: PRODUCT_CONTRACT_VERSION,
       jobId: job.jobId ?? null,
       briefId: job.briefId ?? null,
       campaign: {
@@ -1124,10 +1012,9 @@ export class ShowcasePipeline {
       },
       models: {
         author: { model: job.authorModel ?? null, effort: job.authorEffort ?? null },
-        judge: { model: job.judgeModel ?? null, effort: job.judgeEffort ?? null, strategy: job.judgeStrategy ?? null },
+        review: { model: REVIEW_MODEL, effort: REVIEW_EFFORT, strategy: REVIEW_STRATEGY },
         engineRequested: job.engine ?? 'auto',
         engineResolved: null,
-        productReviewVersion: null,
       },
       maps: [...(job.maps ?? [])],
       execution: {
@@ -1138,7 +1025,6 @@ export class ShowcasePipeline {
         processUptimeSAtStart: Number(process.uptime().toFixed(3)),
         resumed: false,
         resumedStages: [],
-        staleArtifacts: {},
         repair: null,
         coldWarmBasis: 'cold when this attempt is the first job executed by the server process; '
           + 'resumed lists stages whose artifacts already existed and were therefore not paid for again',
@@ -1165,21 +1051,20 @@ export class ShowcasePipeline {
         render2dAttempted: null,
         render2dComplete: null,
         semanticReviewed: null,
+        semantic2dReviewed: null,
+        semantic2dMatched: null,
         render3dAttempted: null,
         render3dComplete: null,
-        productReviewed: null,
-        semanticAccepted: null,
-        presentationAccepted: null,
+        accepted: null,
       },
       funnel: Object.fromEntries(FUNNEL_STAGE_IDS.map((id) => [id, id === 'submitted'])),
       cells: [],
       outcome: {
         kind: 'running',
         semanticAccepted: false,
-        presentationAccepted: false,
+        accepted: false,
         acceptedAttempt: null,
         defectCodes: [],
-        unclassifiedDefects: [],
         unsupportedReason: null,
         operational: null,
         censoredAtStage: null,
@@ -1238,7 +1123,6 @@ export class ShowcasePipeline {
     const render2dIndex = join(render2dDir, 'index.json');
     const render3dDir = join(context.jobDir, '65-render3d');
     const render3dIndex = join(render3dDir, 'index.json');
-    const judgePath = join(context.jobDir, '70-judge.json');
     const productPath = join(context.jobDir, '75-product.json');
     const authorContractPath = join(authorDir, 'contract-verdict.json');
     const galleryPath = join(context.jobDir, '90-gallery.json');
@@ -1277,7 +1161,7 @@ export class ShowcasePipeline {
         methodology: {
           profile: job.methodology ?? 'custom',
           author: { model: job.authorModel, effort: job.authorEffort },
-          judge: { model: job.judgeModel, effort: job.judgeEffort, strategy: job.judgeStrategy },
+          review: { model: REVIEW_MODEL, effort: REVIEW_EFFORT, strategy: REVIEW_STRATEGY },
           fallbackToVisual: job.fallbackToVisual === true,
         },
         semanticContract,
@@ -1439,7 +1323,7 @@ export class ShowcasePipeline {
       render2d: null,
       render3d: null,
       semanticAccepted: null,
-      presentationAccepted: null,
+      accepted: null,
       defectCodes: [],
     }));
     if (context.benchmark.counts.cellsWithTrace > 0) context.benchmark.funnel['cells-ok'] = true;
@@ -1503,6 +1387,11 @@ export class ShowcasePipeline {
     });
     if (eligible.size > 0) context.benchmark.funnel.eligible = true;
 
+    // Both footage reviews are vision calls, so the gateway is what decides whether
+    // they can run at all. Probed at most once, and only when a stage needs it.
+    let gatewayProbe = null;
+    const gateway = () => (gatewayProbe ??= gatewayAvailable());
+
     let render2d = await stage(context, '60-render2d', [render2dIndex], async () => {
       await mkdir(render2dDir, { recursive: true });
       const candidates = cells.filter((candidate) =>
@@ -1516,9 +1405,9 @@ export class ShowcasePipeline {
             await this.render2d.run(() => renderCell(context, cell, out, {
               tier: '2d', composition: context.renderComposition,
             }));
-            let redacted = null;
-            if (job.judge) {
-              redacted = join(out, 'redacted');
+            // The blind 2D pass reads redacted frames so no gate metric can bias it.
+            const redacted = await gateway() ? join(out, 'redacted') : null;
+            if (redacted) {
               await this.render2d.run(() => renderCell(context, cell, redacted, {
                 tier: '2d', redact: true, composition: context.renderComposition,
               }));
@@ -1548,22 +1437,24 @@ export class ShowcasePipeline {
     context.benchmark.counts.render2dComplete = render2d.filter((row) => row.status === 'complete').length;
     if (context.benchmark.counts.render2dComplete > 0) context.benchmark.funnel['2d-ok'] = true;
 
+    // The blind 2D footage pass: realism and dynamism over redacted frames. It ranks
+    // 3D spend for a job the oracle could not screen and decides nothing.
     let qualityRows = [];
-    if (job.judge && await gatewayAvailable()) {
+    if (await gateway()) {
       if (await exists(render2dQualityPath)) {
         qualityRows = (await readJson(render2dQualityPath)).cells ?? [];
       } else {
         qualityRows = await mapConcurrent(
           render2d.filter((row) => row.status === 'complete' && row.redacted),
-          this.schedulerSettings.judgeConcurrency,
-          async (item) => this.judge.run(async () => {
+          this.schedulerSettings.reviewConcurrency,
+          async (item) => this.review.run(async () => {
             const cell = cells.find((candidate) => candidate.cellId === item.cellId);
             const result = await command(this.python, [
               this.bridge, 'judge', '--cell', cell.cellDir,
               '--render', join(render2dDir, item.redacted),
-              '--model', job.judgeModel ?? 'gpt-5.6-sol',
-              '--effort', job.judgeEffort ?? 'medium',
-              '--strategy', job.judgeStrategy ?? 'spread8',
+              '--model', REVIEW_MODEL,
+              '--effort', REVIEW_EFFORT,
+              '--strategy', REVIEW_STRATEGY,
             ], {
               cwd: this.root,
               timeout: 600_000,
@@ -1586,11 +1477,10 @@ export class ShowcasePipeline {
     context.benchmark.counts.semanticReviewed = qualityRows.filter((row) => row.status === 'complete').length;
     if (context.benchmark.counts.semanticReviewed > 0) context.benchmark.funnel['semantic-reviewed'] = true;
 
-    // ---- 62-semantic2d: the generation oracle -------------------------------
-    // Brief-aware semantic review of the cheap 2D schematic footage. This is
-    // where generation is accepted: 3D render spend and template repair both
-    // key off this verdict, never off presentation review.
-    const semanticGateActive = job.judge === true;
+    // ---- 62-semantic2d: the acceptance oracle -------------------------------
+    // Brief-aware semantic review of the cheap 2D schematic footage. This is the
+    // pipeline's only semantic authority: 3D render spend, template repair, and
+    // product acceptance all key off this verdict.
     const semantic2dPath = join(context.jobDir, '62-semantic2d.json');
     const extraGateCells = [];
     let semanticRows = [];
@@ -1599,12 +1489,7 @@ export class ShowcasePipeline {
       .filter((cell) => eligibleSet.has(cell.cellId) && cell.traceFile && cell.instanceFile)
       .map((cell) => ({ cell, renderDir: join(renderRoot, cell.cellId) }));
     let semantic2d = await stage(context, '62-semantic2d', [semantic2dPath], async () => {
-      if (!semanticGateActive) {
-        const value = { status: 'skipped', reason: 'semantic 2D gate disabled', cells: [] };
-        await atomicJson(semantic2dPath, value);
-        return { value, status: 'skipped' };
-      }
-      if (!(await gatewayAvailable())) {
+      if (!(await gateway())) {
         const value = { status: 'skipped', reason: 'OpenAI gateway unavailable at 127.0.0.1:4141', cells: [] };
         await atomicJson(semantic2dPath, value);
         return { value, status: 'skipped' };
@@ -1811,7 +1696,7 @@ export class ShowcasePipeline {
           render2d: null,
           render3d: null,
           semanticAccepted: null,
-          presentationAccepted: null,
+          accepted: null,
           defectCodes: [],
           repairRound: roundName,
         });
@@ -1827,7 +1712,7 @@ export class ShowcasePipeline {
       return round;
     };
     let currentTemplatePath = templatePath;
-    if (semanticGateActive && semantic2d.status === 'complete'
+    if (semantic2d.status === 'complete'
       && matchedCells.length === 0 && semanticFeedback().length > 0) {
       for (const roundName of ['62-mutation-01', '62-mutation-02']) {
         const round = await runSemanticRound(roundName, async (roundDir, feedbackPath, roundTemplatePath) => {
@@ -1888,7 +1773,7 @@ export class ShowcasePipeline {
       if (benchCell) benchCell.semantic2dMatch = row.semanticMatch === true;
     }
     context.benchmark.execution.semanticRepair = adoptedRound
-      ?? (semanticGateActive && semantic2d.status === 'complete' && matchedCells.length === 0
+      ?? (semantic2d.status === 'complete' && matchedCells.length === 0
         && semanticRows.length > 0 ? 'exhausted' : null);
 
     let render3d = await stage(context, '65-render3d', [render3dIndex], async () => {
@@ -1898,17 +1783,17 @@ export class ShowcasePipeline {
         await atomicJson(render3dIndex, value);
         return { value, status: 'skipped' };
       }
-      if (semanticGateActive && semantic2d.status === 'complete' && matchedCells.length === 0) {
+      if (semantic2d.status === 'complete' && matchedCells.length === 0) {
         const value = { status: 'skipped', reason: 'no 2D semantic match; 3D spend is gated on the semantic oracle', cells: [] };
         await atomicJson(render3dIndex, value);
         return { value, status: 'skipped' };
       }
-      // Semantic gating rations 3D to the single best-matching cell; the legacy
-      // rank-and-render-topK path survives only for ungated jobs.
+      // The oracle rations 3D to the single best-matching cell. The rank-and-render-topK
+      // path survives only for a job the oracle could not screen at all.
       const semanticConfidence = new Map(semanticRows
         .filter((row) => row.semanticMatch === true)
         .map((row) => [row.cellId, Number(row.confidence ?? 0)]));
-      const candidates = semanticGateActive && semantic2d.status === 'complete'
+      const candidates = semantic2d.status === 'complete'
         ? [...matchedCells]
           .sort((a, b) => (semanticConfidence.get(b.cellId) ?? 0) - (semanticConfidence.get(a.cellId) ?? 0)
             || String(a.cellId).localeCompare(String(b.cellId)))
@@ -1937,179 +1822,45 @@ export class ShowcasePipeline {
       .filter((row) => row.status === 'complete').length;
     if (context.benchmark.counts.render3dComplete > 0) context.benchmark.funnel['3d-ok'] = true;
 
-    const judgeModel = job.judgeModel ?? 'gpt-5.6-sol';
-    const judgeEffort = job.judgeEffort ?? 'medium';
-    const judgeCache = acceptanceCache({
-      codeSha256: await reviewCodeDigest(this.root),
-      requestSha256: sha256Text(String(job.requestedBrief ?? job.brief ?? '')),
-      model: judgeModel,
-      effort: judgeEffort,
-      flags: {
-        judge: job.judge === true,
-        render3d: job.render3d === true,
-        topK: Number(job.topK ?? 0),
-        semantic2d: semanticGateActive,
-      },
-    });
+    // ---- the deterministic product decision --------------------------------
+    // Every cell the decision is accountable for: the ones the oracle screened and
+    // the ones a deterministic render was spent on. Nothing is reviewed here; the
+    // oracle's verdict and the render outcome are the whole evidence.
     const gateRows = new Map([...(gate.cells ?? []), ...extraGateCells].map((row) => [row.cellId, row]));
-    const judge = await stage(context, '70-judge', [judgePath], async () => {
-      if (!job.judge) {
-        const value = { status: 'skipped', reason: 'judge disabled', cells: [], contract: contractIdentity(), cache: judgeCache };
-        await atomicJson(judgePath, value);
-        return { value, status: 'skipped' };
-      }
-      if (!(await gatewayAvailable())) {
-        const value = { status: 'skipped', reason: 'OpenAI gateway unavailable at 127.0.0.1:4141', cells: [], contract: contractIdentity(), cache: judgeCache };
-        await atomicJson(judgePath, value);
-        return { value, status: 'skipped' };
-      }
-      const rows = qualityRows.map((row) => ({ ...row }));
-      const reviews = await this.review3dRenders(context, job, briefPath, render3dDir,
-        (render3d?.cells ?? []).filter((row) => row.status === 'complete'));
-      // A capture fault is not a verdict: a render whose frames could not be
-      // reviewed gets exactly one recapture before its failure becomes evidence.
-      for (let index = 0; index < reviews.length; index += 1) {
-        const item = reviews[index];
-        const captureFault = /no (?:2D|3D) review frames/i.test(String(item?.review?.error ?? ''));
-        if (!captureFault) continue;
-        const cell = cells.find((candidate) => candidate.cellId === item.cellId);
-        if (!cell) continue;
-        const recaptured = await this.render3dCell(context, cell, join(render3dDir, cell.cellId));
-        if (recaptured.status !== 'complete') continue;
-        const retried = await this.review3dRenders(context, job, briefPath, render3dDir, [recaptured]);
-        if (retried[0]?.review) reviews[index] = retried[0];
-      }
-      const reviewAccessFailure = reviews.find(operationalFailure);
-      if (reviewAccessFailure) {
-        throw new Error(`model access unavailable during 3D review: ${JSON.stringify(reviewAccessFailure).slice(-1000)}`);
-      }
-      for (const item of reviews) {
-        const existing = rows.find((row) => row.cellId === item.cellId);
-        const row = existing ?? { cellId: item.cellId, status: 'complete' };
-        if (!existing) rows.push(row);
-        row.threeDReview = item.review;
-      }
-      for (const item of render3d?.cells ?? []) {
-        if (item.status !== 'error') continue;
-        const existing = rows.find((row) => row.cellId === item.cellId);
-        const row = existing ?? { cellId: item.cellId, status: 'unavailable' };
-        if (!existing) rows.push(row);
-        row.renderError = String(item.error ?? 'render failed');
-      }
-      // One shared predicate decides both verdicts. The pipeline only contributes the evidence the
-      // reviewer cannot see: the frozen gate verdict, the deterministic trace validity codes, and
-      // the classified render failures.
-      applyProductDecision(rows, {
-        job,
-        passing,
-        gateRows,
-        validityByCell: eligibilityByCell,
-        renderByCell: new Map((job.render3d ? render3d?.cells ?? [] : render2d).map((row) => [row.cellId, row])),
-      });
-      const value = {
-        status: 'complete',
-        acceptanceSchema: ACCEPTANCE_SPLIT_SCHEMA,
-        model: judgeModel,
-        effort: judgeEffort,
-        strategy: job.judgeStrategy ?? 'spread8',
-        contract: contractIdentity(),
-        cache: { ...judgeCache, retired: context.staleArtifacts['70-judge'] ?? null },
-        ...judgeAcceptanceSummary({ contract: contractIdentity(), cells: rows }),
-        presentationTopK: job.topK,
-        cells: rows,
-      };
-      await atomicJson(judgePath, value);
-      return value;
-    }, { cacheKey: judgeCache.key });
-    applyJudgeEvidence(context, judge);
-
-    // One deterministic control per rejected job, chosen from the defect codes
-    // the stages recorded. Presentation faults are repaired where they happened;
-    // only a scenario defect is allowed to spend an authoring pass.
-    const plan = planRetry(route, job, judge, {
-      // The oracle owns the authoring budget only when it actually reviewed
-      // footage: a job whose cells were never screenable keeps the legacy
-      // bounded reauthor.
-      semanticGated: semanticGateActive && semantic2d.status === 'complete' && semanticRows.length > 0,
+    const semanticByCell = new Map(semanticRows.map((row) => [row.cellId, row]));
+    const renderByCell = new Map((job.render3d ? render3d?.cells ?? [] : render2d)
+      .map((row) => [row.cellId, row]));
+    let productRows = [...new Set([...semanticByCell.keys(), ...renderByCell.keys()])].sort()
+      .map((cellId) => ({
+        cellId,
+        // Where this cell's own render was written. A 2D-only job has none, and its
+        // accepted headline resolves from the 2D index instead.
+        renderDir: job.render3d && renderByCell.get(cellId)?.status === 'complete'
+          ? `65-render3d/${cellId}`
+          : null,
+      }));
+    applyProductDecision(productRows, {
+      job, passing, gateRows, validityByCell: eligibilityByCell, renderByCell, semanticByCell,
     });
-    // `renderDir` is where this cell's own 3D render was written. A 2D-only job
-    // has none, and its accepted headline resolves from the 2D index instead.
-    let productRows = (judge.cells ?? []).map((row) => ({
-      ...row,
-      renderDir: job.render3d ? `65-render3d/${row.cellId}` : null,
-    }));
+
+    const plan = planRetry(route, job, semantic2d, productRows);
     let acceptedAttempt = null;
 
-    if (plan.retry === 'recompose' || plan.retry === 'recapture') {
-      const attemptName = '80-presentation-retry';
-      const retryDir = join(context.jobDir, attemptName);
-      const retryIndex = join(retryDir, 'index.json');
-      // A cached stage, exactly like the ones upstream: a job resumed after a
-      // crash reads the attempt it already made instead of rendering it twice.
-      // That is what bounds this to one presentation retry per attempt.
-      const attempt = await stage(context, attemptName, [retryIndex], async () => {
-        const targets = cells.filter((cell) => plan.cellIds.includes(cell.cellId));
-        // A fresh output directory: the rejected render and its manifest stay
-        // exactly as they were captured.
-        const renderRows = await mapConcurrent(
-          targets,
-          this.schedulerSettings.render3dConcurrency,
-          async (cell) => this.render3dCell(context, cell, join(retryDir, '65-render3d', cell.cellId)),
-        );
-        const reviews = await this.review3dRenders(context, job, briefPath,
-          join(retryDir, '65-render3d'), renderRows.filter((row) => row.status === 'complete'));
-        const retryRows = renderRows.map((render) => {
-          const source = productRows.find((row) => row.cellId === render.cellId)
-            ?? { cellId: render.cellId, status: 'complete' };
-          const row = { ...source, renderDir: `${attemptName}/65-render3d/${render.cellId}` };
-          if (render.status === 'error') row.renderError = String(render.error ?? 'render failed');
-          else delete row.renderError;
-          // This attempt is judged on its own footage: the rejected attempt's verdict stays in its
-          // own artifact and is never carried forward as evidence for a render it does not describe.
-          row.threeDReview = reviews.find((item) => item.cellId === render.cellId)?.review ?? null;
-          return row;
-        });
-        applyProductDecision(retryRows, {
-          job,
-          passing,
-          gateRows,
-          validityByCell: eligibilityByCell,
-          renderByCell: new Map(renderRows.map((row) => [row.cellId, row])),
-        });
-        const value = {
-          kind: plan.retry,
-          reason: plan.reason,
-          authorisedBy: plan.defectCodes,
-          cells: renderRows,
-          review: retryRows,
-          acceptedCells: retryRows.filter((row) => row.presentationAccepted === true).length,
-        };
-        await atomicJson(retryIndex, value);
-        return { value, status: value.acceptedCells > 0 ? 'complete' : 'failed' };
-      });
-      if ((attempt?.acceptedCells ?? 0) > 0) {
-        acceptedAttempt = attemptName;
-        const retried = attempt.review ?? [];
-        productRows = [
-          ...productRows.filter((row) => !retried.some((item) => item.cellId === row.cellId)),
-          ...retried,
-        ];
-      }
-    } else if (plan.retry === 'reauthor') {
+    if (plan.retry === 'reauthor') {
       const attemptName = plan.kind === 'compiler-to-visual-fallback' ? '80-visual-fallback' : '80-reauthor-01';
       const repairDir = join(context.jobDir, attemptName);
       const eligibilityDefects = (eligibility.cells ?? [])
         .filter((row) => row.admitted && (row.defectCodes ?? []).length > 0)
         .map((row) => `${row.cellId}: ${row.defectCodes.join(', ')}`);
-      // Repair feedback is attributable: every line names the defect code it has to fix, and the
-      // deterministic rejections come first because they name defects no reviewer ever saw.
+      // Repair feedback is attributable: every line names the defect code it has to fix. The
+      // oracle screened nothing here, so the deterministic rejections are the whole evidence.
       const repairFeedback = [
         ...eligibilityDefects,
-        ...(judge.cells ?? []).flatMap((row) => [
-          ...(row.acceptance?.defects ?? []).map((defect) => `${defect.code}: ${defect.text}`),
-          ...(row.unsupportedReason ? [`${row.acceptance?.tier ?? 'unknown'} review unsupported: ${row.unsupportedReason}`] : []),
-          ...(row.threeDReview?.explanation ? [row.threeDReview.explanation] : []),
-        ]),
+        ...productRows.map((row) => [
+          row.cellId,
+          (row.defectCodes ?? []).join(', ') || 'no defect code',
+          row.unsupportedReason,
+        ].filter(Boolean).join(': ')),
       ].filter(Boolean).slice(0, 24);
       const repairJob = {
         ...job,
@@ -2160,11 +1911,6 @@ export class ShowcasePipeline {
             ...row,
             renderDir: row.renderDir ? `${attemptName}/${row.renderDir}` : null,
           }));
-          // The promoted attempt's own review is the evidence that was kept, so the
-          // attempt record is folded from the repair attempt's artifacts where they
-          // live. Nothing under the rejected attempt is overwritten, so both attempts
-          // stay auditable and `execution.repair` points at the promoted record.
-          applyJudgeEvidence(context, await readJson(join(repairDir, '70-judge.json')));
         }
         context.benchmark.execution.repair = {
           kind: plan.kind,
@@ -2195,10 +1941,10 @@ export class ShowcasePipeline {
     // The authoritative cross-attempt product decision. Stage artifacts stay
     // immutable, so this is the one file that says which cell won, where its
     // video actually lives, and every defect code the job recorded -- including
-    // the ones that rejected a cell before it could ever be reviewed.
-    const productSummary = judgeAcceptanceSummary({ contract: contractIdentity(), cells: productRows });
+    // the ones that rejected a cell before the oracle could ever screen it.
+    const productSummary = productAcceptanceSummary({ cells: productRows });
     const product = {
-      schema: 'uniscenarios.showcase-product-decision.v1',
+      schema: PRODUCT_DECISION_SCHEMA,
       status: 'complete',
       contract: contractIdentity(),
       collisionPolicy,
@@ -2207,15 +1953,9 @@ export class ShowcasePipeline {
         detail: plan.kind,
         reason: plan.reason,
         authorisedBy: plan.defectCodes,
-        cellIds: plan.cellIds,
-        recommendation: plan.recommendation,
       },
       acceptedAttempt,
-      acceptedCells: productRows.filter((row) => row.presentationAccepted === true).length,
-      semanticAcceptedCells: productSummary.semanticAcceptedCells,
-      unsupportedCells: productSummary.unsupportedCells,
-      reviewed: productSummary.reviewed,
-      defectCodeCounts: productSummary.defectCodeCounts,
+      ...productSummary,
       defectCodes: mergeDefectCodes(
         eligibility.defectCodes,
         plan.defectCodes,
@@ -2229,21 +1969,18 @@ export class ShowcasePipeline {
       await atomicJson(productPath, product);
       return product;
     }) ?? product;
-    // Presentation acceptance is read from the decision that was actually recorded, so a
-    // resumed job reports the attempt it shipped rather than recomputing a fresh verdict.
+    // Acceptance is read from the decision that was actually recorded, so a resumed job
+    // reports the attempt it shipped rather than recomputing a fresh verdict.
     applyProductEvidence(context, decision);
 
     await stage(context, '90-gallery', [galleryPath], async () => {
-      const judgeRows = decision.cells ?? [];
-      const summary = judgeAcceptanceSummary(decision);
-      const acceptedRows = judgeRows.filter((row) => row.presentationAccepted === true);
+      const decidedRows = decision.cells ?? [];
+      const summary = productAcceptanceSummary(decision);
+      const acceptedRows = decidedRows.filter((row) => row.accepted === true);
       const accepted = new Set(acceptedRows.map((row) => row.cellId));
       const accepted2d = render2d.find((row) => row.status === 'complete' && accepted.has(row.cellId));
       const fallback2d = render2d.find((row) => row.status === 'complete' && eligible.has(row.cellId))
         ?? render2d.find((row) => row.status === 'complete');
-      const average = (key) => acceptedRows.length
-        ? Number((acceptedRows.reduce((sum, row) => sum + Number(row.acceptance?.axes?.[key] ?? row[key] ?? 0), 0) / acceptedRows.length).toFixed(2))
-        : null;
       // An accepted cell names the directory its own render was written to, so a
       // promoted attempt is addressed where it lives instead of overwriting the
       // rejected attempt's artifacts.
@@ -2265,25 +2002,18 @@ export class ShowcasePipeline {
         admitted: passing.size > 0,
         eligible: eligible.size,
         accepted: accepted.size > 0,
-        semanticAccepted: judgeRows.some((row) => row.semanticAccepted === true),
-        presentationAccepted: judgeRows.some((row) => row.presentationAccepted === true),
+        semanticAccepted: decidedRows.some((row) => row.semanticAccepted === true),
         defectCodes: decision.defectCodes,
-        unsupportedReason: judgeRows.find((row) => row.unsupportedReason)?.unsupportedReason ?? null,
+        unsupportedReason: decidedRows.find((row) => row.unsupportedReason)?.unsupportedReason ?? null,
         retry: decision.retry,
         acceptedAttempt: decision.acceptedAttempt ?? null,
         gate: { passed: passing.size, cells: gate.cells?.length ?? 0 },
-        quality: { accepted: accepted.size, reviewed: judgeRows.length },
+        quality: { accepted: accepted.size, screened: summary.screenedCells },
         acceptance: {
           contract: contractIdentity(),
-          semanticCells: summary.semanticAcceptedCells,
-          presentationCells: summary.presentationAcceptedCells,
-          unsupportedCells: summary.unsupportedCells,
-          reviewed: summary.reviewed,
-          defectCodes: summary.defectCodeCounts,
-          retry: summary.retry,
+          ...summary,
         },
         benchmarkRecord: '95-benchmark.json',
-        scores: { realism: average('realism'), dynamism: average('dynamism') },
         headline,
         render3d: job.render3d,
         timings: context.timings,
@@ -2296,7 +2026,7 @@ export class ShowcasePipeline {
 
   /**
    * Render one cell in 3D with a bounded transient retry, classifying any
-   * failure into the presentation namespace that owns it.
+   * failure into the deterministic namespace that owns it.
    */
   async render3dCell(context, cell, outDir) {
     let lastError;
@@ -2332,14 +2062,14 @@ export class ShowcasePipeline {
    * repair rounds screen their own footage without touching the originals.
    */
   async reviewSemantic2d(context, job, briefPath, items) {
-    return mapConcurrent(items, this.schedulerSettings.judgeConcurrency, async (item) => this.judge.run(async () => {
+    return mapConcurrent(items, this.schedulerSettings.reviewConcurrency, async (item) => this.review.run(async () => {
       const result = await command(this.python, [
         this.bridge, 'semantic2d', '--brief', briefPath,
         '--render', item.renderDir, '--cell', item.cell.cellDir,
         '--cell-id', item.cell.cellId,
         '--request-text', job.requestedBrief ?? job.brief,
-        '--model', job.judgeModel ?? 'gpt-5.6-sol',
-        '--effort', job.judgeEffort ?? 'medium',
+        '--model', REVIEW_MODEL,
+        '--effort', REVIEW_EFFORT,
       ], {
         cwd: this.root,
         timeout: 600_000,
@@ -2350,28 +2080,6 @@ export class ShowcasePipeline {
       return verdict
         ? { status: 'complete', ...verdict }
         : { cellId: item.cell.cellId, status: 'error', semanticMatch: false, error: result.stderr.slice(-1000) };
-    }));
-  }
-
-  /** Brief-aware 3D product review of already rendered cells. */
-  async review3dRenders(context, job, briefPath, renderDir, items) {
-    return mapConcurrent(items, this.schedulerSettings.judgeConcurrency, async (item) => this.judge.run(async () => {
-      const result = await command(this.python, [
-        this.bridge, 'review3d', '--brief', briefPath,
-        '--render', join(renderDir, item.cellId), '--cell-id', item.cellId,
-        '--request-text', job.requestedBrief ?? job.brief,
-        '--model', job.judgeModel ?? 'gpt-5.6-sol',
-        '--effort', job.judgeEffort ?? 'medium',
-      ], {
-        cwd: this.root,
-        timeout: 600_000,
-        env: { ...process.env, OPENAI_BASE_URL: 'http://127.0.0.1:4141/v1', OPENAI_API_KEY: 'x' },
-        allowFailure: true,
-      });
-      return {
-        cellId: item.cellId,
-        review: lastJsonLine(result.stdout) ?? { tier: '3d', error: result.stderr.slice(-1000) },
-      };
     }));
   }
 }

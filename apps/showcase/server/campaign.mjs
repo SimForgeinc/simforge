@@ -17,11 +17,9 @@ import {
 import {
   acceptsCampaignVideo,
   campaignVideoRow,
-  CONTRACT_SHA256,
-  CONTRACT_VERSION,
   isCurrentAcceptance,
-  REVIEW_VERSION,
-} from './review-contract.mjs';
+  PRODUCT_CONTRACT_VERSION,
+} from './product-contract.mjs';
 
 import { classifyFailure, normalizeUnsupportedReason, OPERATIONAL_FAILURE_KINDS, truncateDetail } from './failures.mjs';
 import { MAPS, collectJobUsage, emptyUsage } from './pipeline.mjs';
@@ -30,8 +28,8 @@ const ROOT = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const execFileAsync = promisify(execFile);
 
 export const CAMPAIGN_STATE_VERSION = 3;
-/** Cross-stream review contract the campaign consumes for acceptance decisions. */
-export const CANONICAL_REVIEW_FIELDS = Object.freeze(['semanticAccepted', 'presentationAccepted', 'defectCodes', 'unsupportedReason']);
+/** The deterministic product decision the campaign consumes for acceptance. */
+export const CANONICAL_DECISION_FIELDS = Object.freeze(['semanticAccepted', 'accepted', 'defectCodes', 'unsupportedReason']);
 export const CIRCUIT_STATES = Object.freeze(['closed', 'open', 'probe']);
 export const SETTLED_CASE_STATUSES = Object.freeze(['complete', 'unsupported', 'exhausted']);
 export const DEFAULT_RELIABILITY = Object.freeze({
@@ -593,7 +591,7 @@ function projectAttemptRecord(record, acceptedCellIds) {
   if (!record) return null;
   return {
     schema: record.schema,
-    acceptanceSchema: record.acceptanceSchema ?? null,
+    acceptanceContract: record.acceptanceContract ?? null,
     jobId: record.jobId,
     campaign: record.campaign,
     seeds: record.seeds,
@@ -1026,18 +1024,16 @@ export async function runCampaign({ argv = [], env = {}, probe } = {}) {
       totals,
       validityContract: {
         semanticAcceptedRequired: true,
-        presentationAcceptedRequired: true,
+        acceptedRequired: true,
         frozenGateRequired: true,
-        briefAware3dReviewRequired: true,
+        briefAware2dSemanticOracleRequired: true,
         uniqueVideoSha256Required: true,
         distinctTrajectoryFingerprintRequired: true,
         durableCampaignCopyRequired: true,
-        currentReviewContractRequired: true,
-        reviewContractVersion: CONTRACT_VERSION,
-        reviewContractSha256: CONTRACT_SHA256,
-        reviewVersion: REVIEW_VERSION,
+        currentProductContractRequired: true,
+        productContractVersion: PRODUCT_CONTRACT_VERSION,
         minimumPerCase: state.targetValidVideos,
-        canonicalReviewFields: CANONICAL_REVIEW_FIELDS,
+        canonicalDecisionFields: CANONICAL_DECISION_FIELDS,
         maxGenerationAttempts: reliability.maxGenerationAttempts,
         operationalFailuresConsumeAttempts: false,
       },
@@ -1062,7 +1058,7 @@ export async function runCampaign({ argv = [], env = {}, probe } = {}) {
     const hourlyWindow = totals.validVideosPerHour.denominatorHours == null
       ? 'too short a window'
       : `${totals.validVideosPerHour.denominatorHours} h`;
-    const html = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="30"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(config.id)}</title><style>body{font:14px system-ui;background:#0b0e14;color:#e8edf5;margin:32px}h1{margin-bottom:4px}.muted,figcaption{color:#95a0b2}.metrics{display:flex;gap:12px;flex-wrap:wrap}.metric{padding:12px 16px;background:#151b25;border-radius:10px}table{border-collapse:collapse;width:100%;margin-top:24px}th,td{text-align:left;vertical-align:top;padding:9px;border-bottom:1px solid #29303c}.videos{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}video{width:100%;background:#000}figure{margin:0}a{color:#8de8c0}summary{cursor:pointer;margin-top:7px}h2{margin-top:32px;font-size:15px}</style></head><body><h1>${escapeHtml(config.id)}</h1><p class="muted">Strict frozen gate + brief-aware 3D product acceptance + per-case SHA-256 uniqueness + distinct trace fingerprint. Heartbeat ${escapeHtml(state.heartbeatAt)}. Provider circuit ${escapeHtml(capacity.provider.state)}.${throttle}</p><div class="metrics"><div class="metric"><b>${totals.validVideos}/${totals.targetVideos}</b><br>valid videos</div><div class="metric"><b>${totals.completeCases}/${totals.cases}</b><br>complete cases</div><div class="metric"><b>${totals.exhaustedCases}/${totals.unsupportedCases}</b><br>exhausted/unsupported</div><div class="metric"><b>${totals.activeJobs}/${capacity.effectiveMaxActiveJobs}</b><br>active/effective jobs</div><div class="metric"><b>${totals.generationAttempts}</b><br>generation attempts</div><div class="metric"><b>${totals.operationalFailures}</b><br>operational failures</div><div class="metric"><b>${capacity.load1}</b><br>load1</div><div class="metric"><b>${hourlyVideos}</b><br>videos/hour over ${hourlyWindow}</div><div class="metric"><b>${totals.tokens.inputTokens + totals.tokens.outputTokens}</b><br>tokens</div></div><h2>Corpus accounting (all ${benchmark.corpus.entries} entries)</h2><div class="metrics">${outcomeRows}</div><h2>Funnel — every rate carries its denominator</h2><table><thead><tr><th>stage</th><th>phase</th><th>reached/denominator</th><th>step rate</th><th>Wilson 95%</th><th>censored here</th></tr></thead><tbody>${funnelRows}</tbody></table><h2>Throughput — generator ends at deterministic eligibility</h2><div class="metrics"><div class="metric"><b>${benchmark.throughput.generator.eligibleAttempts}/${benchmark.throughput.generator.attempts}</b><br>generator yield</div><div class="metric"><b>${benchmark.throughput.generator.wallS.p50 ?? 'n/a'} / ${benchmark.throughput.generator.wallS.p90 ?? 'n/a'}</b><br>generator wall p50/p90 s</div><div class="metric"><b>${benchmark.throughput.product.presentationAcceptedAttempts}/${benchmark.throughput.product.attempts}</b><br>product yield</div><div class="metric"><b>${benchmark.throughput.product.wallS.p50 ?? 'n/a'} / ${benchmark.throughput.product.wallS.p90 ?? 'n/a'}</b><br>product wall p50/p90 s</div><div class="metric"><b>${benchmark.operational.attempts}</b><br>operational failures (censored)</div></div><h2>Diversity — keyed on trace fingerprint, not MP4 bytes</h2><div class="metrics"><div class="metric"><b>${benchmark.diversity.distinctTrajectoryFingerprints}/${benchmark.diversity.videos}</b><br>distinct trajectories</div><div class="metric"><b>${benchmark.diversity.reencodedOnlyVideos}</b><br>re-encode-only duplicates</div><div class="metric"><b>${benchmark.diversity.maps.distinct}/${MAPS.length}</b><br>maps covered</div><div class="metric"><b>${benchmark.diversity.sites.distinct}</b><br>distinct sites</div><div class="metric"><b>${benchmark.diversity.pairwise.shapeM.p50 ?? 'n/a'}</b><br>pairwise shape distance p50 m</div></div><p class="muted">Report consistency: ${benchmark.verification.consistent ? 'no violations' : escapeHtml(benchmark.verification.violations.join('; '))}</p><p><a href="report.json">Live report JSON</a></p><h2>Per-case ledger</h2><table><thead><tr><th>#</th><th>Case and attempt status</th><th>Accepted</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="30"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(config.id)}</title><style>body{font:14px system-ui;background:#0b0e14;color:#e8edf5;margin:32px}h1{margin-bottom:4px}.muted,figcaption{color:#95a0b2}.metrics{display:flex;gap:12px;flex-wrap:wrap}.metric{padding:12px 16px;background:#151b25;border-radius:10px}table{border-collapse:collapse;width:100%;margin-top:24px}th,td{text-align:left;vertical-align:top;padding:9px;border-bottom:1px solid #29303c}.videos{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}video{width:100%;background:#000}figure{margin:0}a{color:#8de8c0}summary{cursor:pointer;margin-top:7px}h2{margin-top:32px;font-size:15px}</style></head><body><h1>${escapeHtml(config.id)}</h1><p class="muted">Strict frozen gate + brief-aware 2D semantic acceptance + deterministic 3D render + per-case SHA-256 uniqueness + distinct trace fingerprint. Heartbeat ${escapeHtml(state.heartbeatAt)}. Provider circuit ${escapeHtml(capacity.provider.state)}.${throttle}</p><div class="metrics"><div class="metric"><b>${totals.validVideos}/${totals.targetVideos}</b><br>valid videos</div><div class="metric"><b>${totals.completeCases}/${totals.cases}</b><br>complete cases</div><div class="metric"><b>${totals.exhaustedCases}/${totals.unsupportedCases}</b><br>exhausted/unsupported</div><div class="metric"><b>${totals.activeJobs}/${capacity.effectiveMaxActiveJobs}</b><br>active/effective jobs</div><div class="metric"><b>${totals.generationAttempts}</b><br>generation attempts</div><div class="metric"><b>${totals.operationalFailures}</b><br>operational failures</div><div class="metric"><b>${capacity.load1}</b><br>load1</div><div class="metric"><b>${hourlyVideos}</b><br>videos/hour over ${hourlyWindow}</div><div class="metric"><b>${totals.tokens.inputTokens + totals.tokens.outputTokens}</b><br>tokens</div></div><h2>Corpus accounting (all ${benchmark.corpus.entries} entries)</h2><div class="metrics">${outcomeRows}</div><h2>Funnel — every rate carries its denominator</h2><table><thead><tr><th>stage</th><th>phase</th><th>reached/denominator</th><th>step rate</th><th>Wilson 95%</th><th>censored here</th></tr></thead><tbody>${funnelRows}</tbody></table><h2>Throughput — generator ends at deterministic eligibility</h2><div class="metrics"><div class="metric"><b>${benchmark.throughput.generator.eligibleAttempts}/${benchmark.throughput.generator.attempts}</b><br>generator yield</div><div class="metric"><b>${benchmark.throughput.generator.wallS.p50 ?? 'n/a'} / ${benchmark.throughput.generator.wallS.p90 ?? 'n/a'}</b><br>generator wall p50/p90 s</div><div class="metric"><b>${benchmark.throughput.product.acceptedAttempts}/${benchmark.throughput.product.attempts}</b><br>product yield</div><div class="metric"><b>${benchmark.throughput.product.wallS.p50 ?? 'n/a'} / ${benchmark.throughput.product.wallS.p90 ?? 'n/a'}</b><br>product wall p50/p90 s</div><div class="metric"><b>${benchmark.operational.attempts}</b><br>operational failures (censored)</div></div><h2>Diversity — keyed on trace fingerprint, not MP4 bytes</h2><div class="metrics"><div class="metric"><b>${benchmark.diversity.distinctTrajectoryFingerprints}/${benchmark.diversity.videos}</b><br>distinct trajectories</div><div class="metric"><b>${benchmark.diversity.reencodedOnlyVideos}</b><br>re-encode-only duplicates</div><div class="metric"><b>${benchmark.diversity.maps.distinct}/${MAPS.length}</b><br>maps covered</div><div class="metric"><b>${benchmark.diversity.sites.distinct}</b><br>distinct sites</div><div class="metric"><b>${benchmark.diversity.pairwise.shapeM.p50 ?? 'n/a'}</b><br>pairwise shape distance p50 m</div></div><p class="muted">Report consistency: ${benchmark.verification.consistent ? 'no violations' : escapeHtml(benchmark.verification.violations.join('; '))}</p><p><a href="report.json">Live report JSON</a></p><h2>Per-case ledger</h2><table><thead><tr><th>#</th><th>Case and attempt status</th><th>Accepted</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
     await atomicWrite(htmlPath, html);
     console.log(JSON.stringify({
       at: state.updatedAt,
@@ -1097,19 +1093,16 @@ export async function runCampaign({ argv = [], env = {}, probe } = {}) {
 
   async function collectAccepted(item, attempt, jobDir, gallery) {
     // `75-product.json` is the cross-attempt decision: it names the cell that won and the directory
-    // that cell's own render was written to, so a promoted presentation retry is collected from
-    // where it actually lives. A job written before that stage collects from its 70-judge verdict.
-    const product = await readJson(join(jobDir, '75-product.json')).catch(() => null);
-    const document = isCurrentAcceptance(product)
-      ? product
-      : await readJson(join(jobDir, '70-judge.json')).catch(() => null);
-    if (!document || item.validVideos.length >= state.targetValidVideos) return;
+    // that cell's own render was written to, so a promoted reauthor attempt is collected from where
+    // it actually lives. A decision recorded under any other contract version is not current.
+    const document = await readJson(join(jobDir, '75-product.json')).catch(() => null);
+    if (!isCurrentAcceptance(document) || item.validVideos.length >= state.targetValidVideos) return;
     let indexedCells = [];
     try { indexedCells = (await readJson(join(jobDir, '40-cells', 'index.json'))).cells ?? []; } catch { /* map id remains unknown */ }
     const known = new Set(item.validVideos.map((video) => video.sha256));
     for (const row of document.cells ?? []) {
-      // Both verdicts, nothing left unattributed, and the current contract hash. A decision from a
-      // superseded contract carries a stale identity and can never become a durable video.
+      // The decision accepted the cell under the current contract, which already carries the frozen
+      // gate, the oracle's match, and a completed deterministic render.
       if (!acceptsCampaignVideo(document, row) || item.validVideos.length >= state.targetValidVideos) continue;
       const cellId = safeCellId(row.cellId);
       const renderDir = cellId ? safeRenderDir(row.renderDir ?? `65-render3d/${cellId}`) : null;
@@ -1141,13 +1134,9 @@ export async function runCampaign({ argv = [], env = {}, probe } = {}) {
         trajectoryFingerprint: indexedCell?.trajectoryFingerprint ?? null,
         trajectoryFeatures: indexedCell?.trajectoryFeatures ?? null,
         traceSha256: indexedCell?.traceSha256 ?? null,
-        realism: row.acceptance?.axes?.realism ?? row.threeDReview?.realism ?? row.realism ?? null,
-        dynamism: row.dynamism ?? null,
         semanticAccepted: true,
-        presentationAccepted: true,
-        reviewContractVersion: document.contract?.version ?? CONTRACT_VERSION,
-        reviewContractSha256: document.contract?.sha256 ?? CONTRACT_SHA256,
-        reviewVersion: document.contract?.reviewVersion ?? REVIEW_VERSION,
+        accepted: true,
+        productContractVersion: document.contract?.version ?? PRODUCT_CONTRACT_VERSION,
         acceptedAt: now(),
       });
       known.add(digest);
@@ -1166,18 +1155,15 @@ export async function runCampaign({ argv = [], env = {}, probe } = {}) {
         if (accepted && (!attempt?.jobId || !safeCellId(video.cellId))) accepted = false;
         let document;
         if (accepted) {
-          const product = await readJson(join(jobsDir, attempt.jobId, '75-product.json')).catch(() => null);
-          document = isCurrentAcceptance(product)
-            ? product
-            : await readJson(join(jobsDir, attempt.jobId, '70-judge.json')).catch(() => null);
-          if (!document) accepted = false;
+          document = await readJson(join(jobsDir, attempt.jobId, '75-product.json')).catch(() => null);
+          if (!isCurrentAcceptance(document)) accepted = false;
         }
         const row = accepted ? campaignVideoRow(document, video.cellId) : null;
         if (accepted && !row) accepted = false;
         // The decision must still name the directory the saved bytes were copied from.
         const renderDir = row ? safeRenderDir(row.renderDir ?? `65-render3d/${video.cellId}`) : null;
         if (accepted && (video.renderDir ?? renderDir) !== renderDir) accepted = false;
-        if (accepted && video.reviewContractSha256 !== CONTRACT_SHA256) accepted = false;
+        if (accepted && video.productContractVersion !== PRODUCT_CONTRACT_VERSION) accepted = false;
         const target = accepted ? videoTarget(item, video.sha256) : null;
         if (accepted && (!(await nonemptyFile(target)) || await fileSha256(target) !== video.sha256)) accepted = false;
         if (!accepted) {

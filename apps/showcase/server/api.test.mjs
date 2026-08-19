@@ -14,7 +14,7 @@ import {
   rankCandidates,
 } from './pipeline.mjs';
 import { classifyFailure } from './failures.mjs';
-import { contractIdentity, CONTRACT_SHA256 } from './review-contract.mjs';
+import { NEVER_SCREENED_REASON, PRODUCT_CONTRACT_VERSION } from './product-contract.mjs';
 
 const TOKEN = 'test-showcase-token';
 
@@ -45,7 +45,13 @@ class StubEngine {
     await writeFile(join(context.jobDir, '60-render2d', 'stub-cell', 'rollout.mp4'), 'fake mp4');
     await write('60-render2d', '60-render2d/index.json', { cells: [{ cellId: 'stub-cell', status: 'complete' }] });
     await write('65-render3d', '65-render3d/index.json', { status: 'skipped', cells: [] });
-    await write('70-judge', '70-judge.json', { status: 'skipped', cells: [] });
+    await write('75-product', '75-product.json', {
+      schema: 'uniscenarios.showcase-product-decision.v2',
+      status: 'complete',
+      contract: { version: PRODUCT_CONTRACT_VERSION },
+      acceptedCells: 0,
+      cells: [],
+    });
     await write('90-gallery', '90-gallery.json', {
       id: job.jobId,
       jobId: job.jobId,
@@ -104,7 +110,7 @@ test('typed classification separates operational failures from product rejection
   assert.deepEqual([rejection.operational, rejection.kind, rejection.defectCodes], [false, 'generation', ['frozen_actor']]);
 });
 
-test('candidate ranking prefers judged quality while preserving site diversity', () => {
+test('candidate ranking prefers blind 2D quality while preserving site diversity', () => {
   const cells = [
     { cellId: 'a-0', mapId: 'map-a', siteId: 'site-a' },
     { cellId: 'a-1', mapId: 'map-a', siteId: 'site-a' },
@@ -127,34 +133,26 @@ const CRASHED_TRACE = new URL(
   import.meta.url,
 );
 
-/** A full 3D review that satisfies every axis the contract asks about. */
-const REVIEW_3D = Object.freeze({
-  tier: '3d',
-  mechanismFidelity: 'yes',
-  visualGrounding: 'pass',
-  actorFidelity: 'pass',
-  eventSequence: 'pass',
-  plausible: true,
-  realism: 8,
-  confidence: 0.9,
-  defects: [],
-  explanation: 'The requested mechanism happens on camera and every actor sits on the road.',
-});
+/** A matched 2D semantic oracle verdict: the only semantic authority the pipeline has. */
+const MATCHED = Object.freeze({ status: 'complete', semanticMatch: true, confidence: 0.9, scenarioDefectCodes: [] });
 
-/** One attempt decided by the shared contract, exactly as the 70-judge stage decides it. */
-function decide(rows, { topK = 1, passing, gateRows, validity, renders } = {}) {
+/** One attempt decided exactly as the 75-product stage decides it. */
+function decide(rows, { passing, gateRows, validity, renders, semantic } = {}) {
   return applyProductDecision(rows, {
-    job: { render3d: true, judge: true, topK },
+    job: { render3d: true, topK: 1 },
     passing: passing ?? new Set(rows.map((row) => row.cellId)),
     gateRows: gateRows ?? new Map(),
     validityByCell: new Map(Object.entries(validity ?? {})),
     renderByCell: new Map(Object.entries(renders ?? {})),
+    semanticByCell: new Map(Object.entries(semantic ?? {})),
   });
 }
 
-const judgeDocument = (cells) => ({ status: 'complete', contract: contractIdentity(), cells });
-const production = { render3d: true, judge: true, topK: 1, fallbackToVisual: false };
+const production = { render3d: true, topK: 1, fallbackToVisual: false };
 const rendered = (cellId) => ({ [cellId]: { cellId, status: 'complete' } });
+const screened = (cellId, overrides = {}) => ({ [cellId]: { cellId, ...MATCHED, ...overrides } });
+/** The oracle document `planRetry` reads: `cells` decides whether anything was screenable. */
+const oracle = (cells) => ({ status: 'complete', cells });
 
 test('product eligibility rejects broken physics before any render is spent', async (t) => {
   const cellsDir = await mkdtemp(join(tmpdir(), 'showcase-eligibility-test-'));
@@ -187,7 +185,7 @@ test('product eligibility rejects broken physics before any render is spent', as
   assert.equal(byCell.get('clean-0').retry, 'none');
 
   // A collided, aborted and frozen trace is rejected here, with simulation codes
-  // only, so no 3D export or product review is ever spent on it.
+  // only, so no 3D export is ever spent on it.
   const crashed = byCell.get('crashed-0');
   assert.equal(crashed.eligible, false);
   assert.ok(crashed.defectCodes.includes('simulation.collision.contract_violation'));
@@ -213,51 +211,45 @@ test('product eligibility rejects broken physics before any render is spent', as
     'simulation.trigger.never_fired',
   ]);
 
-  // Nothing survived eligibility, so no cell was ever rendered or reviewed. The job-level decision
-  // is an authoring pass, not a resimulation of the same deterministic draws.
-  const plan = planRetry({ engine: 'vista2' }, production, judgeDocument([]));
+  // Nothing survived eligibility, so no cell was ever rendered or screenable. The job-level
+  // decision is an authoring pass, not a resimulation of the same deterministic draws.
+  const plan = planRetry({ engine: 'vista2' }, production, oracle([]), []);
   assert.equal(plan.retry, 'reauthor');
   assert.equal(plan.kind, 'scenario-defect-reauthor');
   assert.deepEqual(plan.defectCodes, ['scenario.no_eligible_simulation']);
-  assert.equal(plan.recommendation.action, 'reauthor');
 });
 
-test('the product decision splits a cell verdict into semantics and presentation', () => {
-  const [accepted] = decide([{ cellId: 'a-0', status: 'complete', threeDReview: { ...REVIEW_3D } }],
-    { renders: rendered('a-0') });
+test('acceptance is the gate, the oracle, and a completed deterministic render — nothing else', () => {
+  const [accepted] = decide([{ cellId: 'a-0' }], { renders: rendered('a-0'), semantic: screened('a-0') });
   assert.equal(accepted.semanticAccepted, true);
-  assert.equal(accepted.presentationAccepted, true);
+  assert.equal(accepted.accepted, true);
   assert.deepEqual(accepted.defectCodes, []);
   assert.equal(accepted.unsupportedReason, null);
+  assert.equal(accepted.acceptance.contract.version, PRODUCT_CONTRACT_VERSION);
 
-  // A camera defect the reviewer did see: the scenario is right, the footage is not.
-  const [cameraDefect] = decide([{
-    cellId: 'a-1',
-    status: 'complete',
-    threeDReview: { ...REVIEW_3D, defects: [{ code: 'render.camera.framing', text: 'the conflict is cropped out of frame' }] },
-  }], { renders: rendered('a-1') });
-  assert.equal(cameraDefect.semanticAccepted, true);
-  assert.equal(cameraDefect.presentationAccepted, false);
-  assert.deepEqual(cameraDefect.defectCodes, ['render.camera.framing']);
+  // A render that produced no footage carries the exporter's own defect code. The oracle's
+  // semantic verdict still stands on its own: a camera fault is not a scenario fault.
+  const [renderFailure] = decide([{ cellId: 'a-1' }], {
+    renders: { 'a-1': { cellId: 'a-1', status: 'error', defectCodes: ['render.camera.composition_failed'] } },
+    semantic: screened('a-1'),
+  });
+  assert.equal(renderFailure.semanticAccepted, true);
+  assert.equal(renderFailure.accepted, false);
+  assert.deepEqual(renderFailure.defectCodes, ['render.camera.composition_failed']);
+  assert.equal(renderFailure.unsupportedReason, null);
 
-  // A render that produced no footage carries the exporter's own defect code, so the camera fault
-  // stays attributable even though no reviewer ever saw the cell. Its semantics are unproven: the
-  // contract never accepts a scenario it has no 3D evidence for. What keeps that fault away from the
-  // author is the retry plan, not a guessed verdict.
-  const [renderFailure] = decide([{
-    cellId: 'a-2',
-    status: 'unavailable',
-    renderError: 'incident composition failed at t=6.2 for every searched camera',
-  }], { renders: { 'a-2': { cellId: 'a-2', status: 'error', defectCodes: ['render.camera.composition_failed'] } } });
-  assert.equal(renderFailure.semanticAccepted, false);
-  assert.equal(renderFailure.presentationAccepted, false);
-  assert.ok(renderFailure.defectCodes.includes('render.camera.composition_failed'));
-  assert.equal(planRetry({ engine: 'vista2' }, production, judgeDocument([renderFailure])).retry, 'recompose');
+  // The oracle rejected the scenario: its own codes travel with the row.
+  const [mismatch] = decide([{ cellId: 'a-2' }], {
+    renders: rendered('a-2'),
+    semantic: screened('a-2', { semanticMatch: false, scenarioDefectCodes: ['scenario.mechanism'] }),
+  });
+  assert.equal(mismatch.semanticAccepted, false);
+  assert.equal(mismatch.accepted, false);
+  assert.deepEqual(mismatch.defectCodes, ['scenario.mechanism']);
 
-  // A deterministic simulation defect blocks the presentation without condemning the scenario, and
-  // the validator's unsupported note never becomes the canonical unsupported reason: only the
-  // reviewer's own inability to attribute a verdict does that.
-  const [invalidTrace] = decide([{ cellId: 'a-3', status: 'complete', threeDReview: { ...REVIEW_3D } }], {
+  // A deterministic simulation defect is folded in, and the validator's unsupported note never
+  // becomes the canonical unsupported reason: only the absence of an oracle verdict does that.
+  const [invalidTrace] = decide([{ cellId: 'a-3' }], {
     validity: {
       'a-3': {
         eligible: false,
@@ -266,110 +258,80 @@ test('the product decision splits a cell verdict into semantics and presentation
       },
     },
     renders: rendered('a-3'),
+    semantic: screened('a-3'),
   });
-  assert.equal(invalidTrace.semanticAccepted, true);
-  assert.equal(invalidTrace.presentationAccepted, false);
   assert.deepEqual(invalidTrace.defectCodes, ['simulation.actor.frozen_tail']);
   assert.equal(invalidTrace.unsupportedReason, null);
 
-  // An uncertain reviewer blocks both halves and names why, instead of passing for lack of evidence.
-  const [uncertain] = decide([{ cellId: 'a-4', status: 'complete', threeDReview: { ...REVIEW_3D, confidence: 0.2 } }],
-    { renders: rendered('a-4') });
-  assert.equal(uncertain.semanticAccepted, false);
-  assert.equal(uncertain.presentationAccepted, false);
-  assert.deepEqual(uncertain.defectCodes, ['judge.uncertain']);
-  assert.match(uncertain.unsupportedReason, /confidence/);
+  // A cell the oracle never screened is unsupported, not rejected and not accepted.
+  const [unscreened] = decide([{ cellId: 'a-4' }], { renders: rendered('a-4') });
+  assert.equal(unscreened.semanticAccepted, false);
+  assert.equal(unscreened.accepted, false);
+  assert.equal(unscreened.unsupportedReason, NEVER_SCREENED_REASON);
+  assert.equal(unscreened.acceptance.semanticScreened, false);
 
-  // The frozen gate's verdict is the pipeline's own contribution to the evidence.
-  const [gateRejected] = decide([{ cellId: 'a-5', status: 'complete', threeDReview: { ...REVIEW_3D } }], {
+  // The frozen gate's verdict is the pipeline's own contribution to the evidence, and it
+  // overrides an oracle match: an inadmissible cell is never a deliverable.
+  const [gateRejected] = decide([{ cellId: 'a-5' }], {
     passing: new Set(),
     gateRows: new Map([['a-5', { cellId: 'a-5', pass: false, firstFailure: 'C3' }]]),
     renders: rendered('a-5'),
+    semantic: screened('a-5'),
   });
-  assert.equal(gateRejected.semanticAccepted, false);
+  assert.equal(gateRejected.semanticAccepted, true);
+  assert.equal(gateRejected.accepted, false);
   assert.deepEqual(gateRejected.defectCodes, ['scenario.gate']);
   assert.equal(gateRejected.acceptance.gatePassed, false);
+  assert.equal(gateRejected.acceptance.gateFirstFailure, 'C3');
 
-  // topK rations the deliverable, never the semantic truth.
-  const capped = decide([
-    { cellId: 'b-0', status: 'complete', threeDReview: { ...REVIEW_3D, realism: 9 } },
-    { cellId: 'b-1', status: 'complete', threeDReview: { ...REVIEW_3D, realism: 7 } },
-  ], { renders: { ...rendered('b-0'), ...rendered('b-1') } });
-  assert.deepEqual(capped.map((row) => row.presentationAccepted), [true, false]);
+  // Semantic truth is never rationed: topK bounds render spend upstream, not acceptance.
+  const capped = decide([{ cellId: 'b-0' }, { cellId: 'b-1' }], {
+    renders: { ...rendered('b-0'), ...rendered('b-1') },
+    semantic: { ...screened('b-0'), ...screened('b-1') },
+  });
+  assert.deepEqual(capped.map((row) => row.accepted), [true, true]);
   assert.deepEqual(capped.map((row) => row.semanticAccepted), [true, true]);
-  assert.equal(capped[1].acceptance.cappedByTopK, true);
 });
 
-test('a presentation failure is repaired in the render stage, never by resimulating or reauthoring', () => {
-  const cameraOnly = judgeDocument(decide([{
-    cellId: 'a-0',
-    status: 'complete',
-    threeDReview: { ...REVIEW_3D, defects: [{ code: 'render.camera.framing', text: 'the conflict is cropped out of frame' }] },
-  }], { renders: rendered('a-0') }));
-  const plan = planRetry({ engine: 'vista2' }, production, cameraOnly);
-  assert.equal(plan.retry, 'recompose');
-  assert.equal(plan.kind, 'presentation-retry');
-  assert.deepEqual(plan.cellIds, ['a-0']);
-  assert.deepEqual(plan.defectCodes, ['render.camera.framing']);
+test('a screened job spends no retry, and only an unscreenable one may reauthor once', () => {
+  // The oracle screened this footage and rejected it, so the bounded mutation loop upstream
+  // already spent the repair budget. A render fault can never buy an authoring pass either.
+  const rejected = decide([{ cellId: 'a-0' }], {
+    renders: rendered('a-0'),
+    semantic: screened('a-0', { semanticMatch: false, scenarioDefectCodes: ['scenario.mechanism'] }),
+  });
+  const spentBudget = planRetry({ engine: 'vista2' }, production, oracle([{ status: 'complete' }]), rejected);
+  assert.equal(spentBudget.retry, 'none');
+  assert.equal(spentBudget.kind, 'oracle-rejected');
+  assert.deepEqual(spentBudget.defectCodes, ['scenario.mechanism']);
 
-  const captureOnly = judgeDocument(decide([{
-    cellId: 'a-0',
-    status: 'complete',
-    threeDReview: { ...REVIEW_3D, defects: [{ code: 'capture.empty', text: 'the clip is an empty scene' }] },
-  }], { renders: rendered('a-0') }));
-  assert.equal(planRetry({ engine: 'vista2' }, production, captureOnly).retry, 'recapture');
+  const cameraOnly = decide([{ cellId: 'a-0' }], {
+    renders: { 'a-0': { cellId: 'a-0', status: 'error', defectCodes: ['render.camera.framing'] } },
+    semantic: screened('a-0'),
+  });
+  const camera = planRetry({ engine: 'vista2' }, production, oracle([{ status: 'complete' }]), cameraOnly);
+  assert.equal(camera.retry, 'none');
+  assert.equal(camera.kind, 'oracle-rejected');
 
-  // A simulation defect on an otherwise sound cell owns the decision: re-rendering the same
-  // deterministic trace cannot clear it, so the plan escalates to the single authoring pass instead
-  // of spending a futile render.
-  const mixed = judgeDocument(decide([{
-    cellId: 'a-0',
-    status: 'complete',
-    threeDReview: {
-      ...REVIEW_3D,
-      defects: [
-        { code: 'render.camera.framing', text: 'the conflict is cropped out of frame' },
-        { code: 'simulation.collision', text: 'the ego rear-ends the lead vehicle' },
-      ],
-    },
-  }], { renders: rendered('a-0') }));
-  const escalated = planRetry({ engine: 'vista2' }, production, mixed);
-  assert.equal(escalated.retry, 'reauthor');
-  assert.ok(escalated.defectCodes.includes('scenario.contract_violation'));
-  assert.ok(escalated.defectCodes.includes('simulation.collision'));
-
-  // An uncertain reviewer is a human decision, not a machine retry.
-  const uncertain = judgeDocument(decide([{ cellId: 'a-0', status: 'complete', threeDReview: { ...REVIEW_3D, confidence: 0.2 } }],
-    { renders: rendered('a-0') }));
-  assert.equal(planRetry({ engine: 'vista2' }, production, uncertain).retry, 'manual-review');
-});
-
-test('a semantic failure may reauthor exactly once, and a skipped review never retries', () => {
-  const reviewRejected = judgeDocument(decide([{
-    cellId: 'a-0',
-    status: 'complete',
-    threeDReview: { ...REVIEW_3D, eventSequence: 'fail' },
-  }], { renders: rendered('a-0') }));
-  const first = planRetry({ engine: 'vista2' }, production, reviewRejected);
+  // Nothing was screenable: authoring a new template is the only control left, exactly once.
+  const unscreenable = oracle([]);
+  const first = planRetry({ engine: 'vista2' }, production, unscreenable, []);
   assert.equal(first.retry, 'reauthor');
   assert.equal(first.kind, 'scenario-defect-reauthor');
-  assert.deepEqual(first.defectCodes, ['scenario.sequence']);
-  assert.deepEqual(first.cellIds, [], 'a reauthored template draws its own cells');
-  const spent = planRetry({ engine: 'vista2' }, { ...production, _reauthorDepth: 1 }, reviewRejected);
-  assert.equal(spent.retry, 'manual-review');
+  const spent = planRetry({ engine: 'vista2' }, { ...production, _reauthorDepth: 1 }, unscreenable, []);
+  assert.equal(spent.retry, 'none');
   assert.equal(spent.kind, 'exhausted');
 
   // A compiler job spends its declared visual fallback before its reauthor.
-  const fallback = planRetry({ engine: 'compiler' }, { ...production, fallbackToVisual: true }, reviewRejected);
+  const fallback = planRetry({ engine: 'compiler' }, { ...production, fallbackToVisual: true }, unscreenable, []);
   assert.equal(fallback.retry, 'reauthor');
   assert.equal(fallback.kind, 'compiler-to-visual-fallback');
 
-  const accepted = judgeDocument(decide([{ cellId: 'a-0', status: 'complete', threeDReview: { ...REVIEW_3D } }],
-    { renders: rendered('a-0') }));
-  assert.equal(planRetry({ engine: 'vista2' }, production, accepted).retry, 'none');
-  assert.equal(planRetry({ engine: 'vista2' }, production, { status: 'skipped', reason: 'gateway unavailable', cells: [] }).retry, 'none');
-  assert.equal(planRetry({ engine: 'vista2' }, { ...production, judge: false }, reviewRejected).retry, 'none');
-  assert.equal(planRetry({ engine: 'vista2' }, { ...production, render3d: false }, reviewRejected).retry, 'none');
+  // An accepted job, a skipped oracle, and a 2D-only job all retry nothing.
+  const acceptedRows = decide([{ cellId: 'a-0' }], { renders: rendered('a-0'), semantic: screened('a-0') });
+  assert.equal(planRetry({ engine: 'vista2' }, production, oracle([{ status: 'complete' }]), acceptedRows).retry, 'none');
+  assert.equal(planRetry({ engine: 'vista2' }, production, { status: 'skipped', reason: 'gateway unavailable', cells: [] }, []).retry, 'none');
+  assert.equal(planRetry({ engine: 'vista2' }, { ...production, render3d: false }, unscreenable, []).retry, 'none');
 });
 
 async function fixture(t) {
@@ -427,7 +389,6 @@ test('frozen REST + SSE contract exposes each stage and gallery artifacts', asyn
       seed: 7,
       render3d: false,
       topK: 1,
-      judge: false,
     }),
   });
   assert.equal(submitted.status, 202);
@@ -439,7 +400,7 @@ test('frozen REST + SSE contract exposes each stage and gallery artifacts', asyn
     headers: { authorization: `Bearer ${TOKEN}` },
   }));
   const completed = new Set(events.filter((event) => event.status === 'complete').map((event) => event.stage));
-  for (const stage of ['00-brief', '10-route', '15-precheck', '20-author', '30-sites', '40-cells', '50-gate', '60-render2d', '65-render3d', '70-judge', '90-gallery']) {
+  for (const stage of ['00-brief', '10-route', '15-precheck', '20-author', '30-sites', '40-cells', '50-gate', '60-render2d', '65-render3d', '75-product', '90-gallery']) {
     assert.ok(completed.has(stage), `${stage} appeared in SSE`);
   }
   for (const event of events) assert.deepEqual(Object.keys(event), ['stage', 'status', 'artifacts']);
@@ -471,7 +432,6 @@ test('production methodology freezes the research-proven recipe', async (t) => {
       maxSitesPerMap: 1,
       ambient: 'off',
       render3d: false,
-      judge: false,
     }),
   });
   assert.equal(response.status, 202);
@@ -487,9 +447,7 @@ test('production methodology freezes the research-proven recipe', async (t) => {
     ambient: job.ambient,
     render3d: job.render3d,
     topK: job.topK,
-    judge: job.judge,
     author: `${job.authorModel}/${job.authorEffort}`,
-    judgeConfig: `${job.judgeModel}/${job.judgeEffort}/${job.judgeStrategy}`,
     fallbackToVisual: job.fallbackToVisual,
   }, {
     methodology: 'production',
@@ -506,9 +464,7 @@ test('production methodology freezes the research-proven recipe', async (t) => {
     ambient: 'light',
     render3d: true,
     topK: 3,
-    judge: true,
     author: 'gpt-5.6-sol/low',
-    judgeConfig: 'gpt-5.6-sol/medium/spread8',
     fallbackToVisual: true,
   });
 });
@@ -579,7 +535,7 @@ test('scheduler configuration uses bounded production defaults and rejects overs
     batchConcurrency: 3,
     render2dConcurrency: 4,
     render3dConcurrency: 2,
-    judgeConcurrency: 4,
+    reviewConcurrency: 4,
   });
   const configured = resolveSchedulerSettings({
     env: {
@@ -587,11 +543,11 @@ test('scheduler configuration uses bounded production defaults and rejects overs
       SHOWCASE_BATCH_CONCURRENCY: '6',
       SHOWCASE_2D_CONCURRENCY: '3',
       SHOWCASE_3D_CONCURRENCY: '4',
-      SHOWCASE_JUDGE_CONCURRENCY: '7',
+      SHOWCASE_REVIEW_CONCURRENCY: '7',
     },
   });
   assert.equal(configured.batchConcurrency, 6);
-  assert.equal(configured.judgeConcurrency, 7);
+  assert.equal(configured.reviewConcurrency, 7);
   assert.throws(
     () => resolveSchedulerSettings({ env: { SHOWCASE_JOB_CONCURRENCY: '999999' } }),
     /jobConcurrency must be an integer from 1 to 8/,
@@ -613,7 +569,7 @@ test('job evidence normalizes campaign metadata and records scheduler limits', a
     batchConcurrency: 5,
     render2dConcurrency: 3,
     render3dConcurrency: 2,
-    judgeConcurrency: 6,
+    reviewConcurrency: 6,
     env: {},
   });
   t.after(async () => rm(dataDir, { recursive: true, force: true }));
@@ -634,7 +590,7 @@ test('job evidence normalizes campaign metadata and records scheduler limits', a
     batchConcurrency: 5,
     render2dConcurrency: 3,
     render3dConcurrency: 2,
-    judgeConcurrency: 6,
+    reviewConcurrency: 6,
   });
   await eventually(() => runner.ensureState(jobId).done, 'metadata job completed');
 });
@@ -716,7 +672,7 @@ test('a failed job persists a declared unsupported reason instead of an operatio
   assert.deepEqual(document.defectCodes, ['unsupported_geometry']);
 });
 
-test('campaign endpoints publish the acceptance-split report and its benchmark block', async (t) => {
+test('campaign endpoints publish the deterministic product report and its benchmark block', async (t) => {
   const { base, runner } = await fixture(t);
   const campaignDir = join(runner.dataDir, 'campaigns', 'edge-cases-67x5');
   await mkdir(campaignDir, { recursive: true });
@@ -732,10 +688,10 @@ test('campaign endpoints publish the acceptance-split report and its benchmark b
     totals: { validVideos: 0, targetVideos: 335, benchmark },
     validityContract: {
       semanticAcceptedRequired: true,
-      presentationAcceptedRequired: true,
-      currentReviewContractRequired: true,
+      acceptedRequired: true,
+      currentProductContractRequired: true,
       uniqueVideoSha256Required: true,
-      reviewContractSha256: CONTRACT_SHA256,
+      productContractVersion: PRODUCT_CONTRACT_VERSION,
       distinctTrajectoryFingerprintRequired: true,
     },
   });
@@ -744,8 +700,8 @@ test('campaign endpoints publish the acceptance-split report and its benchmark b
   const report = await response.json();
   assert.equal(report.campaignId, 'edge-cases-67x5');
   assert.equal(report.validityContract.semanticAcceptedRequired, true);
-  assert.equal(report.validityContract.presentationAcceptedRequired, true);
-  assert.equal(report.validityContract.reviewContractSha256, CONTRACT_SHA256);
+  assert.equal(report.validityContract.acceptedRequired, true);
+  assert.equal(report.validityContract.productContractVersion, PRODUCT_CONTRACT_VERSION);
   assert.equal(report.validityContract.distinctTrajectoryFingerprintRequired, true);
   assert.equal(report.totals.benchmark.corpus.entries, 67);
   assert.equal((await fetch(`${base}/api/campaigns/missing?token=${TOKEN}`)).status, 404);

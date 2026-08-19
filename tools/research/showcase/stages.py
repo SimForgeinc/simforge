@@ -14,7 +14,6 @@ import os
 import pathlib
 import shutil
 import sys
-import subprocess
 import tempfile
 import time
 
@@ -290,10 +289,10 @@ def judge(args):
 
 
 # Loop-control oracle for the generation benchmark: brief-aware review of the
-# cheap 2D schematic footage. Deliberately NOT the hashed acceptance contract --
+# cheap 2D schematic footage. Deliberately NOT the hashed human-review contract --
 # schematic footage has no assets, camera, or lighting, so realism and every
-# presentation axis are out of scope here. `semanticMatch` gates 3D spend and
-# drives template mutation; contract acceptance still happens at 70-judge.
+# presentation axis are out of scope here. Its semantic verdict is the acceptance
+# authority, and a completed deterministic 3D render is the transfer proof.
 SEMANTIC2D_PROMPT = """You are reviewing a top-down SCHEMATIC 2D rendering of a simulated traffic scenario.
 The rendering is deliberately abstract: boxes for vehicles, dots for pedestrians, plain road geometry.
 Never judge visual quality, detail, lighting, or realism of the drawing itself.
@@ -505,157 +504,6 @@ def raw_defects(value):
         records.append(record)
     return records
 
-def _video_seek_time(simulation_t, video_start_t):
-    """Translate an absolute simulation timestamp into the clipped video's timebase."""
-    return max(0.0, float(simulation_t) - float(video_start_t))
-
-
-
-def review_3d(args):
-    sys.path.insert(0, str(FOOTAGE))
-    import futil
-
-    futil.assert_vision_session(args.model)
-    brief = load(args.brief)
-    render = pathlib.Path(args.render)
-    manifest = load(render / 'manifest.json')
-    video_records = manifest.get('videoSequence', {}).get('frames', [])
-    video_start_t = manifest.get('videoSequence', {}).get('startT', 0)
-    phase_times = [row.get('t') for row in manifest.get('frames', [])
-                   if isinstance(row.get('t'), (int, float))]
-    candidates = []
-    review_tmp = None
-    if video_records and phase_times and (render / 'video.mp4').is_file():
-        start_t, end_t = min(phase_times), max(phase_times)
-        targets = [start_t + (end_t - start_t) * index / 7 for index in range(8)]
-        selected = []
-        for target in targets:
-            record = min(video_records, key=lambda row: abs(row.get('t', target) - target))
-            if record.get('sequenceIndex') not in [row.get('sequenceIndex') for row in selected]:
-                selected.append(record)
-        review_tmp = tempfile.TemporaryDirectory(prefix='.review-frames-', dir=render)
-        try:
-            for ordinal, record in enumerate(selected):
-                retained = render / 'video-frames' / f'frame-{record["sequenceIndex"]:05d}.png'
-                if retained.is_file():
-                    candidates.append(retained)
-                    continue
-                frame = pathlib.Path(review_tmp.name) / f'frame-{ordinal:02d}.png'
-                seek_t = _video_seek_time(record['t'], video_start_t)
-                subprocess.run([
-                    'ffmpeg', '-y', '-hide_banner', '-loglevel', 'error',
-                    '-ss', str(seek_t), '-i', str(render / 'video.mp4'),
-                    '-frames:v', '1', str(frame),
-                ], check=True)
-                if not frame.is_file():
-                    raise FileNotFoundError(f'ffmpeg wrote no frame at video t={seek_t}')
-                candidates.append(frame)
-        except (OSError, subprocess.CalledProcessError, KeyError):
-            candidates = []
-    # A render whose encoded frame sequence is unavailable is still reviewable
-    # from the four named phase stills, but that is a weaker basis and the
-    # verdict has to say so rather than pretend otherwise.
-    frame_basis = 'video-sequence' if candidates else 'named-phase-stills'
-    if not candidates:
-        candidates = [
-            render / 'frames' / 'frame-000.png',
-            render / 'frames' / 'frame-001.png',
-            render / 'frame.png',
-            render / 'frames' / 'frame-003.png',
-        ]
-    frames = []
-    seen = set()
-    for frame in candidates:
-        if frame.is_file() and frame.resolve() not in seen:
-            seen.add(frame.resolve())
-            frames.append(frame)
-    if not frames:
-        raise RuntimeError(f'no 3D review frames in {render}')
-    instance = load(render / 'source' / 'instance.json')
-    authored_ids = [actor['id'] for actor in instance.get('input', {}).get('actors', [])
-                    if not actor.get('id', '').startswith('ambient:')]
-    frame_context = []
-    for record in manifest.get('frames', []):
-        visible = []
-        for actor in record.get('composition', {}).get('actors', []):
-            if actor.get('id') in authored_ids:
-                visible.append({'id': actor['id'], 'pixel': actor.get('pixel')})
-        frame_context.append({'phase': record.get('phase'), 't': record.get('t'), 'actors': visible})
-    trace_context = {}
-    trace_path = render / 'source' / 'trace.json.gz'
-    if trace_path.is_file():
-        with gzip.open(trace_path, 'rt', encoding='utf-8') as handle:
-            trace = json.load(handle)
-        metrics = trace.get('metrics', {})
-        trace_context = {
-            'declaredOcclusion': metrics.get('declaredOcclusion', []),
-            'collisions': metrics.get('collisions', []),
-            'events': [
-                event for event in trace.get('events', [])
-                if event.get('actorId') in authored_ids and event.get('kind') in
-                ('trigger_fired', 'trigger_skipped', 'released')
-            ],
-        }
-    evidence = {
-        'authoredActors': [
-            {'id': actor['id'], 'kind': actor.get('kind'), 'catalogId': actor.get('catalogId')}
-            for actor in instance.get('input', {}).get('actors', [])
-            if actor.get('id') in authored_ids
-        ],
-        'frameOrder': frame_context,
-        'traceFacts': trace_context,
-    }
-    request_text = args.request_text or brief['brief']
-    prompt = (f'{review.PROMPT}\n\nUSER REQUEST:\n{request_text}'
-              f'\n\nGROUND-TRUTH EVIDENCE:\n{json.dumps(evidence, separators=(",", ":"))}')
-    content = [{'type': 'input_text', 'text': prompt}]
-    content.extend({'type': 'input_image', 'image_url': futil.png_data_url(str(frame))}
-                   for frame in frames)
-    body = {
-        'model': args.model,
-        'reasoning': {'effort': args.effort},
-        'max_output_tokens': 4000,
-        'input': [{'role': 'user', 'content': content}],
-    }
-    response, raw, wall = futil.responses_call(body, timeout=420)
-    parsed = futil.parse_json_block(futil.output_text(response))
-    # Only pass through what the reviewer actually answered: an omitted axis is unsupported
-    # evidence, never a silent 'no'. The emission is evidence and nothing else -- the
-    # acceptance verdict is derived exactly once, by whoever consumes it, so there is no
-    # second copy for a normalization step to have to keep in agreement.
-    emission = {'tier': review.FULL_TIER}
-    for axis in ('mechanismFidelity', 'visualGrounding', 'actorFidelity', 'eventSequence'):
-        if axis in parsed:
-            emission[axis] = str(parsed.get(axis) or '').strip().lower()
-    if 'plausible' in parsed:
-        emission['plausible'] = bool(parsed['plausible'])
-    if 'realism' in parsed:
-        emission['realism'] = review.clamp_number(parsed['realism'], 0.0, 10.0)
-    if 'confidence' in parsed:
-        emission['confidence'] = review.clamp_number(parsed['confidence'], 0.0, 1.0)
-    emission['defects'] = raw_defects(parsed.get('defects'))
-    emission['explanation'] = str(parsed.get('explanation', ''))[:3000]
-    usage = response.get('usage') or {}
-    emit({
-        'cellId': args.cell_id,
-        'version': review.REVIEW_VERSION,
-        'contract': review.contract_identity(),
-        'model': args.model,
-        'effort': args.effort,
-        'visionAsserted': True,
-        **emission,
-        'frameBasis': frame_basis,
-        'framesUsed': [str(frame.relative_to(render)) for frame in frames],
-        'latencyS': round(wall, 2),
-        'tokens': {
-            'in': usage.get('input_tokens'),
-            'out': usage.get('output_tokens'),
-            'reasoning': (usage.get('output_tokens_details') or {}).get('reasoning_tokens'),
-        },
-        'rawResponseSha256': futil.sha256_text(raw),
-    })
-    if review_tmp is not None:
-        review_tmp.cleanup()
 
 
 
@@ -730,14 +578,6 @@ def main():
     cmd.add_argument('--effort', default='medium')
     cmd.set_defaults(func=mutate)
 
-    cmd = sub.add_parser('review3d')
-    cmd.add_argument('--brief', required=True)
-    cmd.add_argument('--render', required=True)
-    cmd.add_argument('--cell-id', required=True)
-    cmd.add_argument('--request-text')
-    cmd.add_argument('--model', default='gpt-5.6-sol')
-    cmd.add_argument('--effort', default='medium')
-    cmd.set_defaults(func=review_3d)
 
     args = parser.parse_args()
     args.func(args)

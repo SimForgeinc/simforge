@@ -2,10 +2,10 @@
  * Deterministic physical-validity validators for a recorded simulation trace,
  * plus the shared defect-code and retry vocabulary they feed.
  *
- * These checks are stage-specific controls that run BEFORE any GPU render or
- * model review: every fact is read from the trace the simulator already wrote,
- * so a physically broken execution is rejected without spending a 3D export or
- * a vision review on it.
+ * These checks are stage-specific deterministic controls that run before the
+ * GPU render. Every fact is read from the trace the simulator already wrote,
+ * so a physically broken execution is rejected before spending a 3D export
+ * on it.
  *
  * SCOPE. This is a downstream product-eligibility layer. It never touches the
  * frozen training-grade admission gate (`tools/gates/tg_gate.py`), which keeps
@@ -26,7 +26,6 @@ export const RETRY_KINDS = Object.freeze([
   'resimulate',
   'rerender',
   'recapture',
-  'manual-review',
   'none',
 ]);
 
@@ -42,14 +41,12 @@ const RETRY_BY_PREFIX = Object.freeze([
   ['render.camera.', 'rerender'],
   ['render.asset.', 'rerender'],
   ['capture.', 'recapture'],
-  ['judge.', 'manual-review'],
 ]);
 
 /** The complete registered defect vocabulary, with the stage that owns each code. */
 export const DEFECT_CODES = Object.freeze({
   'scenario.contract_violation': 'authored template violates the executable semantic contract',
   'scenario.no_eligible_simulation': 'no admitted draw survived deterministic product eligibility',
-  'scenario.review_rejected': 'product review rejected the scenario semantics, not its presentation',
   'simulation.trace.unreadable': 'trace could not be decoded, so no physical fact is available',
   'simulation.collision.contract_violation': 'authored-involved collision while the contract forbids collisions',
   'simulation.actor.frozen_tail': 'authored actor is frozen through the end of the clip after an engine-recorded failure',
@@ -66,7 +63,6 @@ export const DEFECT_CODES = Object.freeze({
   'capture.missing_manifest': 'renderer produced no render manifest',
   'capture.encoder_unavailable': 'frame encoder is unavailable or failed',
   'capture.transient_browser_failure': 'browser or transport failed mid-capture',
-  'judge.uncertain': 'reviewer could not assert a verdict at the required confidence',
 });
 
 // A tyre-scrub-free body still reports a few centimetres per second while it
@@ -115,7 +111,7 @@ function backendMode(trace, actorId) {
  *
  * Used twice: as physical-validity evidence, and to trim dead air off the end
  * of a presentation clip. It reports the span for every stopped actor; deciding
- * whether a span is a defect is a separate, cause-attributed judgement.
+ * whether a span is a defect is a separate, deterministic classification.
  */
 export function frozenTailSpan(trace, actorId) {
   const times = trace?.ticks?.t;

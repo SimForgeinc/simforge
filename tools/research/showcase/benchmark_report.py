@@ -22,8 +22,7 @@ FUNNEL_STAGES = (
     ("semantic-reviewed", "60-render2d/quality.json"),
     ("semantic-2d", "62-semantic2d.json"),
     ("3d-ok", "65-render3d/index.json"),
-    ("semantic-3d", "70-judge.json"),
-    ("presentation", "75-product.json"),
+    ("accepted", "75-product.json"),
 )
 
 
@@ -180,7 +179,7 @@ def verify(block, expect_entries=None):
     expected_stage_ids = [stage_id for stage_id, _evidence in FUNNEL_STAGES]
     if stage_ids != expected_stage_ids:
         violations.append(
-            f"funnel stages must be the twelve canonical ids in order; got {stage_ids!r}"
+            f"funnel stages must be the eleven canonical ids in order; got {stage_ids!r}"
         )
     stage_by_id = {
         stage.get("id"): stage for stage in stages if isinstance(stage, dict) and stage.get("id") is not None
@@ -288,7 +287,7 @@ def verify(block, expect_entries=None):
         violations.append("operational.excludedFromGenerationDenominator must be true")
 
     model_histograms = (block.get("execution") or {}).get("models") or {}
-    for name in ("author", "judge", "productReviewVersion"):
+    for name in ("author", "engineRequested", "engineResolved"):
         histogram = model_histograms.get(name) or {}
         populated = [key for key, count in histogram.items() if isinstance(count, (int, float)) and count > 0]
         if len(populated) > 1:
@@ -347,9 +346,8 @@ def render_throughput(lines, throughput):
         else:
             metrics.extend(
                 [
-                    ("semanticAccepted attempts", data.get("semantic3dAttempts")),
-                    ("presentationAccepted attempts", data.get("presentationAcceptedAttempts")),
-                    ("presentationAccepted cells", data.get("presentationAcceptedCells")),
+                    ("accepted attempts", data.get("acceptedAttempts")),
+                    ("accepted cells", data.get("acceptedCells")),
                     ("tokens per accepted cell", data.get("tokensPerAcceptedCell")),
                 ]
             )
@@ -367,11 +365,11 @@ def render_throughput(lines, throughput):
         )
         lines.append("")
         if key == "product":
-            render_review = data.get("renderReviewWallS") or {}
+            render_wall = data.get("renderWallS") or {}
             lines.extend(
                 table(
                     ["wall", "p50 seconds", "p90 seconds", "mean seconds"],
-                    [("render + review", render_review.get("p50"), render_review.get("p90"), render_review.get("mean"))],
+                    [("render", render_wall.get("p50"), render_wall.get("p90"), render_wall.get("mean"))],
                 )
             )
             lines.append("")
@@ -433,7 +431,7 @@ def render_execution(lines, execution):
         lines.extend(["", f"#### {name}", ""])
         lines.extend(table(["condition", "attempts"], sorted((concurrency.get(name) or {}).items())))
     lines.extend(["", str(concurrency.get("note", "")), "", "### Models", ""])
-    for name in ("author", "judge", "engineRequested", "engineResolved", "productReviewVersion"):
+    for name in ("author", "engineRequested", "engineResolved"):
         lines.extend([f"#### {name}", ""])
         lines.extend(table(["condition", "attempts"], sorted((models.get(name) or {}).items())))
         lines.append("")

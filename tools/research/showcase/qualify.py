@@ -4,15 +4,14 @@
     qualify.py breadth        refresh the 67-case breadth config from the campaign
     qualify.py gold-template  seal a hash-bound gold manifest for humans to label
     qualify.py label          validate human label patches and reseal the gold manifest
-    qualify.py review         review each identical video N times under the current contract
     qualify.py calibrate      confusion matrix, FPR/FNR, field flip rate, realism SD
     qualify.py evaluate       machine exit evaluator over a qualification run
 
-Every command binds `config/showcase-review-contract.json` and refuses evidence
-from a superseded contract.  `evaluate` reads each attempt the way the pipeline
-decides it: `75-product.json` is the deliverable decision, `70-judge.json` is the
-current-contract source evidence behind it, and `95-benchmark.json` supplies the
-stage and funnel facts.
+The human-review commands bind `config/showcase-review-contract.json` and refuse
+evidence from a superseded contract.  `evaluate` reads each attempt the way the
+pipeline decides it: `75-product.json` is the deliverable decision,
+`62-semantic2d.json` is the semantic source evidence it quotes, and
+`95-benchmark.json` supplies the stage and funnel facts.
 
 Exit codes follow the repository convention: 0 qualified, 1 fail-closed refusal
 or operational error, 2 the run completed but did not meet the exit criteria.
@@ -23,16 +22,13 @@ import argparse
 import json
 import os
 from pathlib import Path
-import subprocess
 import sys
-import tempfile
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(HERE))
 import qualification as q  # noqa: E402
 
-STAGES_CLI = HERE / "stages.py"
 
 
 def _relative(path, root):
@@ -198,79 +194,6 @@ def label(args):
 
 
 
-# --------------------------------------------------- repeated identical review
-
-def _stage_render(entry, root, staged):
-    """Reproduce the reviewer's render layout from hash-verified evidence."""
-    render = (Path(root) / entry["video"]["file"]).parent
-    (staged / "frames").mkdir(parents=True)
-    (staged / "source").mkdir(parents=True)
-    os.symlink(render / "manifest.json", staged / "manifest.json")
-    for frame in entry["frames"]:
-        source = Path(root) / frame["file"]
-        os.symlink(source, staged / "frames" / source.name)
-    os.symlink(Path(root) / entry["instance"]["file"], staged / "source" / "instance.json")
-    os.symlink(Path(root) / entry["trace"]["file"], staged / "source" / "trace.json.gz")
-    brief = staged / "brief.json"
-    brief.write_text(json.dumps({"id": entry["evidenceId"], "brief": entry["requestText"]}), encoding="utf-8")
-    return brief
-
-
-def _run_reviewer(entry, root, model, effort):
-    with tempfile.TemporaryDirectory(prefix="showcase-qualify-") as tmp:
-        staged = Path(tmp) / "render"
-        brief = _stage_render(entry, root, staged)
-        result = subprocess.run(
-            [sys.executable, str(STAGES_CLI), "review3d",
-             "--brief", str(brief), "--render", str(staged),
-             "--cell-id", entry["evidenceId"],
-             "--request-text", entry["requestText"],
-             "--model", model, "--effort", effort],
-            cwd=str(root), check=True, capture_output=True, text=True)
-    lines = [line for line in result.stdout.splitlines() if line.strip().startswith("{")]
-    if not lines:
-        raise q.QualificationError(f"reviewer produced no JSON for {entry['evidenceId']}: {result.stdout[-500:]}")
-    return json.loads(lines[-1])
-
-
-def review(args):
-    """Review each identical video --repetitions times; resumable, append-only."""
-    manifest = q.load_gold(args.gold, args.root)
-    eligible = q.eligible_gold(manifest)
-    if not eligible:
-        raise q.QualificationError("no labelled, supported gold entries to review")
-    out = Path(args.out)
-    done = set()
-    if out.is_file():
-        for line in out.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            record = json.loads(line)
-            if record.get("goldSha256") != manifest["manifestSha256"]:
-                raise q.QualificationError(f"{out} was produced against a different gold manifest")
-            done.add((record["videoSha256"], record["repetition"]))
-    out.parent.mkdir(parents=True, exist_ok=True)
-    written = 0
-    for digest in sorted(eligible):
-        entry = eligible[digest]
-        observed = q.sha256_file(Path(args.root) / entry["video"]["file"])
-        if observed != digest:
-            raise q.QualificationError(f"{entry['evidenceId']} footage changed on disk since the manifest was sealed")
-        for repetition in range(1, args.repetitions + 1):
-            if (digest, repetition) in done:
-                print(f"cached {entry['evidenceId']} #{repetition}", flush=True)
-                continue
-            raw = _run_reviewer(entry, args.root, args.model, args.effort)
-            record = q.review_row(raw, gold_sha256=manifest["manifestSha256"],
-                                  evidence_id=entry["evidenceId"], video_sha256=digest,
-                                  repetition=repetition)
-            with out.open("a", encoding="utf-8") as handle:
-                handle.write(json.dumps(record, sort_keys=True) + "\n")
-            written += 1
-            print(f"reviewed {entry['evidenceId']} #{repetition} "
-                  f"semantic={record['semanticAccepted']} realism={record['realism']}", flush=True)
-    _emit({"reviews": str(out), "evidence": len(eligible), "repetitions": args.repetitions,
-           "written": written, "cached": len(done)})
 
 
 def _read_reviews(path, gold_sha256):
@@ -299,17 +222,19 @@ def calibrate(args):
 # ------------------------------------------------------------ exit evaluation
 
 def _attempt_evidence(attempt, data_root):
-    """The three artifacts one attempt is classified from, or None where absent.
+    """The two artifacts one attempt is classified from, or None where absent.
 
-    `75-product.json` is the deliverable decision, `70-judge.json` is the source
-    evidence behind it, and `95-benchmark.json` is the attempt record. A job that
-    crashed before writing one of them is honestly missing it rather than defaulted.
+    `75-product.json` is the deliverable decision and `95-benchmark.json` is the
+    attempt record.  The product decision quotes `62-semantic2d.json` as its
+    semantic source evidence, so qualification does not load that source separately.
+    A job that crashed before writing either artifact is honestly missing it rather
+    than defaulted.
     """
     job_id = attempt.get("jobId")
     if not isinstance(job_id, str) or not job_id:
         return {}
     job_dir = Path(data_root) / "jobs" / job_id
-    names = {"product": "75-product.json", "judge": "70-judge.json", "record": "95-benchmark.json"}
+    names = {"product": "75-product.json", "record": "95-benchmark.json"}
     return {key: q.load_json(job_dir / name) for key, name in names.items()
             if (job_dir / name).is_file()}
 
@@ -374,13 +299,6 @@ def main():
                      help="human-authored JSON patches; model-produced labels are refused")
     cmd.set_defaults(func=label)
 
-    cmd = sub.add_parser("review")
-    cmd.add_argument("--gold", default=str(ROOT / "apps/showcase/campaigns/reviewer-gold.json"))
-    cmd.add_argument("--out", required=True)
-    cmd.add_argument("--repetitions", type=int, default=3)
-    cmd.add_argument("--model", default="gpt-5.6-sol")
-    cmd.add_argument("--effort", default="medium")
-    cmd.set_defaults(func=review)
 
     cmd = sub.add_parser("calibrate")
     cmd.add_argument("--gold", default=str(ROOT / "apps/showcase/campaigns/reviewer-gold.json"))

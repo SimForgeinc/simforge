@@ -41,7 +41,7 @@
   },
   "notes": [
     "semanticYield counts attempts whose contract decision has semanticAccepted true, over attempts that reached a decision. Operational failures are never a semantic verdict and stay out of the denominator; they are gated separately by maxOperationalFailures.",
-    "Attempt evidence authority follows the pipeline: 75-product.json is the deliverable decision, 70-judge.json is the current-contract source evidence consulted only when no product decision was written, and 95-benchmark.json supplies the stage and funnel facts.",
+    "Attempt evidence authority follows the pipeline: 75-product.json is the deliverable decision, 62-semantic2d.json is the semantic source evidence it quotes, and 95-benchmark.json supplies the stage and funnel facts.",
     "crossing-VRU keeps the qualification-facing name while breadthCaseId names the lowercase campaign slug that a runner submits.",
     "The exit evaluator refuses to run against calibration produced from a different gold manifest, a superseded review contract hash, or a different repetition count."
   ]

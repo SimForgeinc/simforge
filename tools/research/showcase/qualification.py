@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Qualification and reviewer calibration for the showcase production restart.
 
-`review_contract.py` is the only acceptance authority this workflow has.  It owns
-the review version, the frozen contract hash, both predicates, and the defect
-vocabulary, so nothing here re-derives an acceptance formula or a taxonomy.  What
-this module adds is the evidence discipline around that contract:
+Pipeline evidence and deferred human calibration use separate decision contracts.
+The deterministic product decision records:
 
-    semanticAccepted      the visible scene implements the requested mechanism
-    presentationAccepted  the footage is usable as delivered
-    defectCodes           sorted subset of the contract's defect vocabulary
-    unsupportedReason     non-null only when the evidence cannot be attributed
+    semanticAccepted      the 2D semantic oracle accepted the requested mechanism
+    accepted              the gate and semantic oracle passed and the 3D render completed
+    defectCodes           sorted subset of the shared defect-code namespaces
+    unsupportedReason     non-null only when the oracle never screened the cell
+
+The hashed review contract remains the authority for deferred human gold and
+calibration labels.  Those labels carry `semanticAccepted`, `presentationAccepted`,
+`defectCodes`, and `unsupportedReason`; this module does not re-derive their
+predicates or taxonomy.
 
 Gold decisions are immutable human labels.  The manifest is sealed with a digest
 over its contract binding and its entries, every entry is bound to the sha256 of
@@ -43,7 +46,8 @@ BREADTH_SCHEMA = "uniscenarios.showcase-breadth.v1"
 VERDICT_SCHEMA = "uniscenarios.showcase-qualification-verdict.v1"
 # Artifacts the integrated pipeline writes and this workflow reads as evidence:
 # the deliverable product decision and the per-attempt benchmark record.
-PRODUCT_SCHEMA = "uniscenarios.showcase-product-decision.v1"
+PRODUCT_SCHEMA = "uniscenarios.showcase-product-decision.v2"
+PRODUCT_CONTRACT_VERSION = "showcase-deterministic-product/v1"
 ATTEMPT_RECORD_SCHEMA = "showcase-benchmark-attempt/v1"
 
 # Every acceptance term below is the contract's, never this module's.
@@ -56,6 +60,8 @@ DEFECT_CODES = tuple(contract.CODES)
 
 DECISION_FIELDS = ("semanticAccepted", "presentationAccepted", "defectCodes", "unsupportedReason")
 BOOLEAN_DECISION_FIELDS = ("semanticAccepted", "presentationAccepted")
+
+PRODUCT_DECISION_FIELDS = ("semanticAccepted", "accepted", "defectCodes", "unsupportedReason")
 
 # Keys and labeller names that only a model-produced review can carry.  Their
 # presence proves the label was not hand-entered, so calibration must refuse it.
@@ -99,19 +105,17 @@ STAGES = (
     "62-mutation-02",
     "62-fallback-author",
     "65-render3d",
-    "70-judge",
     "75-product",
-    "80-presentation-retry",
     "80-reauthor-01",
     "90-gallery",
     "95-benchmark",
 )
 # Repair branches are bounded and only a rejected attempt reaches any of them,
-# so none may be required of a healthy attempt: the two 62-mutation rounds plus
-# the action-capped fallback author repair semantics before 3D, and the two
-# 80-* branches repair presentation or (ungated) semantics after 3D.
+# so none may be required of a healthy attempt: two 62-mutation rounds plus the
+# action-capped fallback author repair semantics before 3D, and one bounded
+# 80-reauthor branch for jobs the 2D semantic oracle could never screen.
 OPTIONAL_STAGES = ("62-mutation-01", "62-mutation-02", "62-fallback-author",
-                   "80-presentation-retry", "80-reauthor-01")
+                   "80-reauthor-01")
 REQUIRED_STAGES = tuple(stage for stage in STAGES if stage not in OPTIONAL_STAGES)
 # The attempt record's stage ledger names the reauthor branch by the control it
 # ran; the branch's artifacts live in the numbered directory the ledger above
@@ -218,12 +222,12 @@ def assert_current_review(review, context="review"):
 
 
 def decision_from_review(review, context="review"):
-    """Project one current-contract reviewer emission onto the shared decision.
+    """Project one current-contract calibration reviewer emission onto its decision.
 
-    `review_contract.evaluate` is the only predicate, and the emission carries no
-    verdict of its own for it to disagree with: `stages.py review3d` emits the
-    reviewer's raw evidence and nothing derived from it.  What this adds is the
-    fail-closed check that the evidence came from the contract in force.
+    `review_contract.evaluate` is the only predicate, and the calibration workflow
+    supplies raw reviewer evidence with no verdict of its own to disagree with.
+    What this adds is the fail-closed check that the evidence came from the contract
+    in force.
     """
     assert_current_review(review, context)
     return normalize_decision(contract.acceptance_fields(contract.evaluate(review)), context)
@@ -265,6 +269,57 @@ def normalize_decision(value, context="decision"):
 
 def decision_of(record, context="decision"):
     return normalize_decision({field: record.get(field) for field in DECISION_FIELDS}, context)
+
+
+def assert_current_product_contract(identity, context):
+    """Fail closed unless `identity` names the deterministic product contract."""
+    if not isinstance(identity, dict):
+        raise QualificationError(f"{context} carries no product contract identity")
+    version = identity.get("version")
+    if version != PRODUCT_CONTRACT_VERSION:
+        raise QualificationError(
+            f"{context} names product contract {version!r}, not the current "
+            f"{PRODUCT_CONTRACT_VERSION}")
+    return {"version": PRODUCT_CONTRACT_VERSION}
+
+
+def normalize_product_decision(value, context="product decision"):
+    """Validate the deterministic product decision fields in canonical form."""
+    if not isinstance(value, dict):
+        raise QualificationError(f"{context} must be an object")
+    unknown = sorted(set(value) - set(PRODUCT_DECISION_FIELDS))
+    if unknown:
+        raise QualificationError(
+            f"{context} carries fields outside the product contract: {', '.join(unknown)}")
+    missing = [field for field in PRODUCT_DECISION_FIELDS if field not in value]
+    if missing:
+        raise QualificationError(f"{context} is missing {', '.join(missing)}")
+    for field in ("semanticAccepted", "accepted"):
+        if not isinstance(value[field], bool):
+            raise QualificationError(f"{context}.{field} must be a boolean")
+    codes = value["defectCodes"]
+    if not isinstance(codes, list) or any(not isinstance(code, str) for code in codes):
+        raise QualificationError(f"{context}.defectCodes must be a list of strings")
+    if len(set(codes)) != len(codes):
+        raise QualificationError(f"{context}.defectCodes repeats a code")
+    unplaceable = sorted(
+        code for code in codes
+        if not contract.is_contract_code(code) or code.startswith("judge."))
+    if unplaceable:
+        raise QualificationError(
+            f"{context}.defectCodes carries codes outside the contract namespaces: "
+            f"{', '.join(unplaceable)}")
+    reason = value["unsupportedReason"]
+    if reason is not None and (not isinstance(reason, str) or not reason.strip()):
+        raise QualificationError(f"{context}.unsupportedReason must be null or a non-empty string")
+    if value["accepted"] and not value["semanticAccepted"]:
+        raise QualificationError(f"{context} cannot be accepted without semantic acceptance")
+    return {
+        "semanticAccepted": value["semanticAccepted"],
+        "accepted": value["accepted"],
+        "defectCodes": sorted(codes),
+        "unsupportedReason": reason,
+    }
 
 
 # ------------------------------------------------------------- gold manifest
@@ -451,9 +506,9 @@ def carried_gold_labels(path):
 def review_row(review, *, gold_sha256, evidence_id, video_sha256, repetition):
     """One persisted calibration row: the canonical evaluator output and its provenance.
 
-    The reviewer emission arrives from `stages.py review3d` as raw evidence, so the
-    contract's verdict over that evidence is derived here -- exactly once, with no
-    upstream copy to reconcile -- and stored beside the identity of the contract
+    The calibration workflow supplies the reviewer emission as raw evidence, so
+    the contract's verdict over that evidence is derived here -- exactly once, with
+    no upstream copy to reconcile -- and stored beside the identity of the contract
     that derived it.
     """
     decision = decision_from_review(review, f"review of {evidence_id}")
@@ -766,42 +821,38 @@ def attempt_record_facts(record, context="attempt record"):
     }
 
 
-def decision_document(product=None, judge=None, context="attempt"):
-    """The document whose acceptance decision governs one attempt.
+def decision_document(product=None, context="attempt"):
+    """Return the sole deliverable decision document for one attempt.
 
-    `75-product.json` is the deliverable decision: it rations presentation to the
-    job's `topK`, folds in the deterministic defect codes that rejected cells before
-    any reviewer saw them, and names the attempt whose render was promoted.
-    `70-judge.json` is consulted only when no product decision exists, and then only
-    as current-contract source evidence -- never as an acceptance of its own.
+    `75-product.json` is the deliverable decision, and `62-semantic2d.json` is the
+    semantic source evidence it quotes.  A missing product document means that no
+    decision exists.
     """
-    for name, document, schema in (("75-product.json", product, PRODUCT_SCHEMA),
-                                   ("70-judge.json", judge, None)):
-        if document is None:
-            continue
-        if not isinstance(document, dict):
-            raise QualificationError(f"{context} {name} must be an object")
-        if schema is not None and document.get("schema") != schema:
-            raise QualificationError(f"{context} {name} schema {document.get('schema')!r} is not {schema}")
-        assert_current_contract(document.get("contract"), f"{context} {name}")
-        return name, document
-    return None, None
+    if product is None:
+        return None, None
+    name = "75-product.json"
+    if not isinstance(product, dict):
+        raise QualificationError(f"{context} {name} must be an object")
+    if product.get("schema") != PRODUCT_SCHEMA:
+        raise QualificationError(
+            f"{context} {name} schema {product.get('schema')!r} is not {PRODUCT_SCHEMA}")
+    assert_current_product_contract(product.get("contract"), f"{context} {name}")
+    return name, product
 
 
 def _decided_rows(document):
-    """Rows the contract actually decided, in the document's own ranking order."""
+    """Rows the product contract actually decided, in document ranking order."""
     return [row for row in (document or {}).get("cells") or []
-            if isinstance(row, dict) and all(field in row for field in DECISION_FIELDS)]
-
+            if isinstance(row, dict) and all(field in row for field in PRODUCT_DECISION_FIELDS)]
 
 def _decisive_row(rows):
     """The row an attempt is judged on: the cell it shipped, else its best verdict.
 
-    Each row's decision is internally consistent because the contract derived it; a
-    union across cells would not be, so the attempt is judged on one row and the
-    other rows' codes travel beside it as evidence.
+    Each row's decision is internally consistent because the product contract
+    derived it; a union across cells would not be, so the attempt is judged on one
+    row and the other rows' codes travel beside it as evidence.
     """
-    for field in ("presentationAccepted", "semanticAccepted"):
+    for field in ("accepted", "semanticAccepted"):
         for row in rows:
             if row.get(field) is True:
                 return row
@@ -811,23 +862,25 @@ def _decisive_row(rows):
 def _evidence_codes(document, rows, context):
     codes = {code for row in rows for code in row.get("defectCodes") or []}
     codes.update(document.get("defectCodes") or [])
-    unplaceable = sorted(code for code in codes if not contract.is_contract_code(code))
+    unplaceable = sorted(
+        code for code in codes
+        if not contract.is_contract_code(code) or code.startswith("judge."))
     if unplaceable:
         raise QualificationError(
             f"{context} carries defect codes the contract cannot place: {', '.join(unplaceable)}")
     return sorted(codes)
 
 
-def attempt_outcome(attempt, product=None, judge=None, record=None):
+def attempt_outcome(attempt, product=None, record=None):
     """Classify one campaign attempt into exactly one qualification outcome.
 
-    Evidence authority is the pipeline's own.  `75-product.json` is the deliverable
-    decision and outranks everything; `70-judge.json` is source evidence when no
-    product decision was written; `95-benchmark.json` supplies the stage and funnel
-    facts.  Operational failures (infrastructure, gateway, crash) are never a
-    semantic verdict, so they stay out of the yield denominator and are counted on
-    their own.  An unsupported attempt is a representability result, not a defect,
-    and carries no manufactured defect code.
+    Evidence authority is the pipeline's own.  `75-product.json` is the decision,
+    `62-semantic2d.json` is the semantic source evidence it quotes, and
+    `95-benchmark.json` supplies the stage and funnel facts.  Operational failures
+    (infrastructure, gateway, crash) are never a semantic verdict, so they stay out
+    of the yield denominator and are counted on their own.  An unsupported attempt
+    is a representability result, not a defect, and carries no manufactured defect
+    code.
     """
     if not isinstance(attempt, dict):
         raise QualificationError("attempt must be an object")
@@ -845,7 +898,7 @@ def attempt_outcome(attempt, product=None, judge=None, record=None):
     if (attempt.get("status") != "complete" or row["operational"] is not None
             or row["censoredAtStage"] is not None):
         return {**row, "outcome": "operational-failure"}
-    name, document = decision_document(product, judge, context)
+    name, document = decision_document(product, context)
     rows = _decided_rows(document)
     if not rows:
         # No cell reached a verdict under this contract, so the attempt spent its
@@ -853,7 +906,9 @@ def attempt_outcome(attempt, product=None, judge=None, record=None):
         # outcome and never a statement about the requested scenario.
         return {**row, "outcome": "operational-failure", "evidence": name}
     decisive = _decisive_row(rows)
-    decision = decision_of(decisive, f"{context} {name} cell {decisive.get('cellId')}")
+    decision = normalize_product_decision(
+        {field: decisive.get(field) for field in PRODUCT_DECISION_FIELDS},
+        f"{context} {name} cell {decisive.get('cellId')}")
     outcome = ("unsupported" if decision["unsupportedReason"] is not None
                else "semantic-accepted" if decision["semanticAccepted"] else "semantic-rejected")
     return {**row, "outcome": outcome, "decision": decision, "evidence": name,

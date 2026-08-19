@@ -21,11 +21,8 @@ import { classifyFailure } from './failures.mjs';
 import {
   acceptsCampaignVideo,
   campaignVideoRow,
-  CONTRACT_SHA256,
-  CONTRACT_VERSION,
-  normalizeJudgeDocument,
-  REVIEW_VERSION,
-} from './review-contract.mjs';
+  PRODUCT_CONTRACT_VERSION,
+} from './product-contract.mjs';
 
 const CAMPAIGN_ID = 'edge-cases-67x5';
 const STAMP = '2026-08-18T00:00:00.000Z';
@@ -269,8 +266,8 @@ test('state migration preserves accepted hashes and refunds legacy operational f
       cellId: 'yale-street-site-0-0',
       url: `/artifacts/campaigns/${CAMPAIGN_ID}/videos/case-01/${'a'.repeat(64)}.mp4`,
       semanticAccepted: true,
-      presentationAccepted: true,
-      reviewContractSha256: CONTRACT_SHA256,
+      accepted: true,
+      productContractVersion: PRODUCT_CONTRACT_VERSION,
       acceptedAt: STAMP,
     },
     {
@@ -279,8 +276,8 @@ test('state migration preserves accepted hashes and refunds legacy operational f
       cellId: 'yale-street-site-0-1',
       url: `/artifacts/campaigns/${CAMPAIGN_ID}/videos/case-01/${'b'.repeat(64)}.mp4`,
       semanticAccepted: true,
-      presentationAccepted: true,
-      reviewContractSha256: CONTRACT_SHA256,
+      accepted: true,
+      productContractVersion: PRODUCT_CONTRACT_VERSION,
       acceptedAt: STAMP,
     },
   ];
@@ -356,48 +353,56 @@ test('state migration preserves accepted hashes and refunds legacy operational f
   assert.deepEqual(otherCampaign.cases.map((item) => item.validVideos.length), [0, 0, 0], 'state from another campaign is never adopted');
 });
 
-test('campaign collection requires both verdicts under the current review contract', () => {
-  const judge = {
-    contract: { version: CONTRACT_VERSION, sha256: CONTRACT_SHA256, reviewVersion: REVIEW_VERSION },
+test('campaign collection requires an accepted cell under the current product contract', () => {
+  const decision = {
+    schema: 'uniscenarios.showcase-product-decision.v2',
+    contract: { version: PRODUCT_CONTRACT_VERSION },
     cells: [
       {
         cellId: 'cell-1',
+        renderDir: '65-render3d/cell-1',
         semanticAccepted: true,
-        presentationAccepted: true,
+        accepted: true,
         defectCodes: [],
         unsupportedReason: null,
-        acceptance: { tier: '3d', axes: { realism: 8 } },
       },
       {
         cellId: 'cell-2',
+        renderDir: null,
         semanticAccepted: true,
-        presentationAccepted: false,
-        defectCodes: ['render.camera.framing'],
+        accepted: false,
+        defectCodes: ['render.camera.composition_failed'],
         unsupportedReason: null,
-        acceptance: { tier: '3d', axes: { realism: 8 } },
+      },
+      {
+        cellId: 'cell-3',
+        renderDir: '65-render3d/cell-3',
+        semanticAccepted: false,
+        accepted: false,
+        defectCodes: [],
+        unsupportedReason: 'never screened by the 2D semantic oracle',
       },
     ],
   };
-  assert.equal(acceptsCampaignVideo(judge, judge.cells[0]), true);
-  assert.equal(acceptsCampaignVideo(judge, judge.cells[1]), false, 'a presentation rejection yields no deliverable video');
-  assert.equal(campaignVideoRow(judge, 'cell-1').cellId, 'cell-1');
+  assert.equal(acceptsCampaignVideo(decision, decision.cells[0]), true);
+  assert.equal(acceptsCampaignVideo(decision, decision.cells[1]), false,
+    'a semantic match with no completed render yields no deliverable video');
+  assert.equal(acceptsCampaignVideo(decision, decision.cells[2]), false,
+    'a cell the oracle never screened is never a result');
+  assert.equal(campaignVideoRow(decision, 'cell-1').cellId, 'cell-1');
 
-  const superseded = { ...judge, contract: { ...judge.contract, sha256: 'f'.repeat(64) } };
-  assert.equal(campaignVideoRow(superseded, 'cell-1'), null, 'a verdict from a superseded contract is not a result');
+  const superseded = { ...decision, contract: { version: 'showcase-acceptance-contract-v1' } };
+  assert.equal(campaignVideoRow(superseded, 'cell-1'), null,
+    'a decision from the retired acceptance split is not a result');
 
-  // Pre-split product-review evidence is exactly what the campaign used to collect. It normalizes
-  // onto the current fields with a null contract identity, so it can never be collected again.
-  const historical = normalizeJudgeDocument({
+  // A `70-judge.json` verdict is exactly what the campaign used to collect. It carries no product
+  // contract version at all, so it can never read as current.
+  const historical = {
     productReviewVersion: 'showcase-3d-product-review-v4',
-    cells: [{
-      cellId: 'cell-1',
-      productAccepted: true,
-      threeDReview: { version: 'showcase-3d-product-review-v4', accepted: true, realism: 8 },
-    }],
-  });
-  assert.equal(historical.cells[0].productAccepted, undefined, 'the legacy flag is dropped on read');
-  assert.equal(historical.contract.sha256, null);
-  assert.equal(campaignVideoRow(historical, 'cell-1'), null, 'a historical video without the current contract hash is never accepted');
+    cells: [{ cellId: 'cell-1', productAccepted: true, presentationAccepted: true }],
+  };
+  assert.equal(campaignVideoRow(historical, 'cell-1'), null,
+    'a historical judge verdict is never collected under the deterministic contract');
 });
 
 test('an unsupported case is retired instead of retried', () => {

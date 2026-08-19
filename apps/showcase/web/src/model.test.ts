@@ -24,28 +24,29 @@ describe('showcase contract adapters', () => {
       { path: '40-cells/index.json', json: { cells: [{ cellId: 'cell-1', mapId: 'yale-street' }] } },
       { path: '50-gate.json', json: { cells: [{ cellId: 'cell-1', pass: true }] } },
       { path: '60-render2d/cell-1/rollout.mp4', size: 12 },
-      { path: '70-judge.json', json: { cells: [{ cellId: 'cell-1', realism: 8, dynamism: 7 }] } },
+      { path: '75-product.json', json: { cells: [{ cellId: 'cell-1', semanticAccepted: true, accepted: true }] } },
     ] });
     expect(job.brief).toBe('A real brief');
     expect(job.engine).toBe('compiler');
     expect(cells(job)[0].gate).toMatchObject({ pass: true });
+    expect(cells(job)[0].product).toMatchObject({ semanticAccepted: true, accepted: true });
     expect(cells(job)[0].artifacts?.[0].path).toBe('jobs/abc/60-render2d/cell-1/rollout.mp4');
   });
-  it('selects one preferred 3D rollout video only when presentationAccepted', () => {
+  it('selects one preferred 3D rollout video only when accepted', () => {
     const job = normalizeJob({ jobId: 'abc', files: [
       { path: '40-cells/index.json', json: { cells: [{ cellId: 'cell-1', mapId: 'el-camino-road' }, { cellId: 'cell-2', mapId: 'yale-street' }] } },
       { path: '65-render3d/cell-1/frame.png', size: 12 },
       { path: '65-render3d/cell-1/video.mp4', size: 13 },
       { path: '65-render3d/cell-1/rollout.mp4', size: 14 },
       { path: '60-render2d/cell-2/rollout.mp4', size: 15 },
-      { path: '70-judge.json', json: { cells: [{ cellId: 'cell-1', semanticAccepted: true, presentationAccepted: true }] } },
+      { path: '75-product.json', json: { cells: [{ cellId: 'cell-1', semanticAccepted: true, accepted: true }] } },
       { path: '90-gallery.json', json: { accepted: true } },
     ] });
     const videos = threeDVideos(job);
     expect(videos[0].cell.cellId).toBe('cell-1');
     expect(videos[0].artifact.path).toBe('jobs/abc/65-render3d/cell-1/rollout.mp4');
     expect(threeDVideos({ ...job, status: 'running' })).toHaveLength(0);
-    expect(threeDVideos({ ...job, cells: [{ ...cells(job)[0], judge: { semanticAccepted: true, presentationAccepted: false } }] })).toHaveLength(0);
+    expect(threeDVideos({ ...job, cells: [{ ...cells(job)[0], product: { semanticAccepted: true, accepted: false } }] })).toHaveLength(0);
   });
   it('normalizes nested gallery metrics and SSE paths from the real server', () => {
     const [card] = normalizeGallery([{ jobId: 'abc', headline: '/artifacts/jobs/abc/movie.mp4', gate: { passed: 2, cells: 3 }, scores: { realism: 8.2, dynamism: 7.4 } }]);
@@ -64,7 +65,7 @@ describe('campaign report contract', () => {
           { number: 2, jobId: 'job-2', status: 'running' },
         ],
         validVideos: [
-          { sha256: 'aa11', url: '/artifacts/campaigns/edge-cases-67x5/videos/unprotected-left-dense/aa11.mp4', jobId: 'job-1', realism: 8.2 },
+          { sha256: 'aa11', url: '/artifacts/campaigns/edge-cases-67x5/videos/unprotected-left-dense/aa11.mp4', jobId: 'job-1', semanticAccepted: true, accepted: true, productContractVersion: 'showcase-deterministic-product/v1' },
           { sha256: 'aa11', url: '/artifacts/campaigns/edge-cases-67x5/videos/unprotected-left-dense/aa11.mp4' },
           { sha256: 'bb22' },
         ] },
@@ -72,8 +73,8 @@ describe('campaign report contract', () => {
         attempts: [{ number: 1, jobId: 'job-3', status: 'failed', error: 'render crashed' }], validVideos: [] },
     ],
     validityContract: {
-      semanticAcceptedRequired: true, presentationAcceptedRequired: true,
-      currentReviewContractRequired: true, minimumPerCase: 5,
+      semanticAcceptedRequired: true, acceptedRequired: true,
+      briefAware2dSemanticOracleRequired: true, currentProductContractRequired: true, productContractVersion: 'showcase-deterministic-product/v1', minimumPerCase: 5,
     },
   };
   const report = normalizeCampaign(rawCampaign as Partial<CampaignReport>);

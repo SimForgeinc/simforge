@@ -7,15 +7,15 @@ const portArg = process.argv.find((value) => value.startsWith('--port='));
 const port = Number(portArg?.split('=')[1] ?? 4317);
 const serveStatic = process.argv.includes('--static');
 const root = fileURLToPath(new URL('../dist', import.meta.url));
-const stageDefs = [['00','brief'],['10','route'],['15','precheck'],['20','author'],['30','sites'],['40','cells'],['50','gate'],['60','render2d'],['65','render3d'],['70','judge'],['90','gallery']];
+const stageDefs = [['00','brief'],['10','route'],['15','precheck'],['20','author'],['30','sites'],['40','cells'],['50','gate'],['60','render2d'],['62','semantic'],['65','render3d'],['75','product'],['90','gallery']];
 
 const jobs = new Map();
 function mockJob(id = 'mock-night-crossing', brief = 'A cyclist emerges from behind a stopped delivery van while an oncoming car yields late.') {
   const artifacts = (stage) => stage === '20' ? [0,1,2,3].map((n) => ({ path: `${id}/20-author/action-${n}.png`, type: 'image' })) : stage === '60' ? [{ path: `${id}/60-render2d/cell-a/headline.png`, type: 'image' }, { path: `${id}/60-render2d/cell-a/rollout.mp4`, type: 'video' }] : stage === '65' ? [{ path: `${id}/65-render3d/cell-a/incident.png`, type: 'image' }] : [{ path: `${id}/${stage}-${stageDefs.find(([n]) => n === stage)?.[1]}.json`, type: 'json' }];
   return { jobId:id, brief, engine:'vista2', status:'complete', options:{ engine:'vista2', maps:['yale-street','el-camino-road'], ambient:'city' }, stages:stageDefs.map(([stage,name],i) => ({ stage:`${stage}-${name}`, status:'complete', elapsedMs:(i+1)*1380, artifacts:artifacts(stage), summary: stage === '50' ? { admitted:2, total:3 } : undefined })), cells:[
-    { cellId:'yale-junction-01-draw-0', map:'yale-street', gate:{pass:true}, judge:{realism:8.4,dynamism:7.8,plausible:true}, artifacts:[{path:`${id}/60-render2d/cell-a/headline.png`,type:'image'},{path:`${id}/60-render2d/cell-a/rollout.mp4`,type:'video'}] },
-    { cellId:'el-camino-corridor-04-draw-0', map:'el-camino-road', gate:{pass:true}, judge:{realism:7.9,dynamism:8.2,plausible:true} },
-    { cellId:'yale-junction-01-draw-1', map:'yale-street', gate:{pass:false,firstFailure:'C3 clearance below 5.0 m'}, judge:{realism:6.1,dynamism:7.2,plausible:true} },
+    { cellId:'yale-junction-01-draw-0', map:'yale-street', gate:{pass:true}, product:{semanticAccepted:true,accepted:true,defectCodes:[],unsupportedReason:null}, artifacts:[{path:`${id}/60-render2d/cell-a/headline.png`,type:'image'},{path:`${id}/60-render2d/cell-a/rollout.mp4`,type:'video'}] },
+    { cellId:'el-camino-corridor-04-draw-0', map:'el-camino-road', gate:{pass:true}, product:{semanticAccepted:true,accepted:true,defectCodes:[],unsupportedReason:null} },
+    { cellId:'yale-junction-01-draw-1', map:'yale-street', gate:{pass:false,firstFailure:'C3 clearance below 5.0 m'}, product:{semanticAccepted:false,accepted:false,defectCodes:['gate-failed'],unsupportedReason:'never screened by the 2D semantic oracle'} },
   ] };
 }
 jobs.set('mock-night-crossing', mockJob());

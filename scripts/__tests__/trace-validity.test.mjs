@@ -93,23 +93,23 @@ function freezeFrom(trace, actorId, fromT) {
 }
 
 test('the retry vocabulary is derived from the defect namespace, deepest cause first', () => {
-  assert.deepEqual(RETRY_KINDS, ['reauthor', 'resimulate', 'rerender', 'recapture', 'manual-review', 'none']);
+  assert.deepEqual(RETRY_KINDS, ['reauthor', 'resimulate', 'rerender', 'recapture', 'none']);
   for (const code of Object.keys(DEFECT_CODES)) {
     assert.ok(RETRY_KINDS.includes(retryForDefectCode(code)), `${code} maps to a known retry`);
   }
-  assert.equal(retryForDefectCode('scenario.review_rejected'), 'reauthor');
+  assert.equal(retryForDefectCode('scenario.no_eligible_simulation'), 'reauthor');
   assert.equal(retryForDefectCode('simulation.actor.off_road'), 'resimulate');
   assert.equal(retryForDefectCode('render.camera.composition_failed'), 'rerender');
   assert.equal(retryForDefectCode('render.asset.scene_mismatch'), 'rerender');
   assert.equal(retryForDefectCode('capture.missing_video'), 'recapture');
-  assert.equal(retryForDefectCode('judge.uncertain'), 'manual-review');
+  assert.throws(() => retryForDefectCode('judge.uncertain'), /unknown defect namespace/);
   assert.throws(() => retryForDefectCode('mystery.code'), /unknown defect namespace/);
   assert.equal(retryForDefectCodes([]), 'none');
   // Precedence: the deepest authorised cause wins, so a job that is both
   // mis-authored and mis-framed reauthors rather than re-rendering.
-  assert.equal(retryForDefectCodes(['render.camera.composition_failed', 'scenario.review_rejected']), 'reauthor');
+  assert.equal(retryForDefectCodes(['render.camera.composition_failed', 'scenario.no_eligible_simulation']), 'reauthor');
   assert.equal(retryForDefectCodes(['capture.missing_video', 'render.camera.clearance_violation']), 'rerender');
-  assert.equal(retryForDefectCodes(['capture.missing_video', 'judge.uncertain']), 'recapture');
+  assert.equal(retryForDefectCodes(['capture.missing_video']), 'recapture');
   assert.deepEqual(mergeDefectCodes(['b'], ['a', 'b'], undefined), ['a', 'b']);
 });
 
@@ -226,8 +226,8 @@ test('off-road is decided from the lane-corridor guard, and reported unsupported
   assert.ok(validity.defectCodes.includes('simulation.actor.frozen_tail'));
   assert.equal(validity.findings.frozenTails.find((row) => row.actorId === 'ego').cause, 'road-departure');
 
-  // An actor whose motion backend never runs the guard cannot be judged, and
-  // that is stated rather than assumed either way.
+  // An actor whose motion backend never runs the guard cannot be classified,
+  // and that is stated rather than assumed either way.
   const unguarded = syntheticTrace();
   unguarded.header.physics.actorBackends.lead = { mode: 'fixed-static-v1', profile: 'car' };
   const unsupported = evaluateTraceValidity(unguarded);

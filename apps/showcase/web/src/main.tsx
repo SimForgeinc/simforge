@@ -76,17 +76,17 @@ function StageCard({ event, index }: { event: StageEvent; index: number }) {
 function verdict(value?: boolean) { return value == null ? '—' : value ? 'PASS' : 'FAIL'; }
 function CellGrid({ job }: { job: JobIndex | null }) {
   const rows = cells(job); if (!rows.length) return <div class="empty small">Cells appear after simulation.</div>;
-  return <div class="cell-grid">{rows.map((cell) => { const gate = typeof cell.gate === 'boolean' ? cell.gate : cell.gate?.pass ?? cell.gate?.admitted; const judge = cell.judge; return <details class="cell" key={cell.cellId ?? cell.id}><summary><div><small>{cell.map ? mapLabel(cell.map) : 'map'}</small><b>{cell.cellId ?? cell.id}</b></div><Chip tone={gate === true ? 'pass' : gate === false ? 'fail' : ''}>{verdict(gate)}</Chip></summary><div class="cell-body"><div class="chip-row"><Score label="Realism" value={judge?.realism} /><Score label="Dynamism" value={judge?.dynamism} />{judge?.plausible != null && <Chip tone={judge.plausible ? 'pass' : 'fail'}>{judge.plausible ? 'plausible' : 'implausible'}</Chip>}</div>{judge && (judge.semanticAccepted != null || judge.presentationAccepted != null) && <div class="chip-row"><Chip tone={judge.semanticAccepted ? 'pass' : 'fail'}>scenario {judge.semanticAccepted ? 'accepted' : 'rejected'}</Chip><Chip tone={judge.presentationAccepted ? 'pass' : 'fail'}>presentation {judge.presentationAccepted ? 'accepted' : 'rejected'}</Chip>{judge.defectCodes?.map((code) => <Chip tone="fail" key={code}>{code}</Chip>)}</div>}{judge?.unsupportedReason && <p class="failure">Unsupported: {judge.unsupportedReason}</p>}{typeof cell.gate === 'object' && cell.gate.firstFailure && <p class="failure">First failure: {cell.gate.firstFailure}</p>}<div class="artifacts">{artifacts(cell).map((item, i) => <ArtifactView key={i} artifact={item} />)}</div><pre>{JSON.stringify(cell, null, 2)}</pre></div></details>; })}</div>;
+  return <div class="cell-grid">{rows.map((cell) => { const gate = typeof cell.gate === 'boolean' ? cell.gate : cell.gate?.pass ?? cell.gate?.admitted; const product = cell.product; return <details class="cell" key={cell.cellId ?? cell.id}><summary><div><small>{cell.map ? mapLabel(cell.map) : 'map'}</small><b>{cell.cellId ?? cell.id}</b></div><Chip tone={gate === true ? 'pass' : gate === false ? 'fail' : ''}>gate {verdict(gate)}</Chip></summary><div class="cell-body"><div class="chip-row"><Chip tone={gate === true ? 'pass' : gate === false ? 'fail' : ''}>gate {verdict(gate)}</Chip><Chip tone={product?.semanticAccepted === true ? 'pass' : product?.semanticAccepted === false ? 'fail' : ''}>semantic {verdict(product?.semanticAccepted)}</Chip><Chip tone={product?.accepted === true ? 'pass' : product?.accepted === false ? 'fail' : ''}>accepted {verdict(product?.accepted)}</Chip>{product?.defectCodes?.map((code) => <Chip tone="fail" key={code}>{code}</Chip>)}</div>{product?.unsupportedReason && <p class="failure">Unsupported: {product.unsupportedReason}</p>}{typeof cell.gate === 'object' && cell.gate.firstFailure && <p class="failure">First failure: {cell.gate.firstFailure}</p>}<div class="artifacts">{artifacts(cell).map((item, i) => <ArtifactView key={i} artifact={item} />)}</div><pre>{JSON.stringify(cell, null, 2)}</pre></div></details>; })}</div>;
 }
 
 function ThreeDGallery({ job, status }: { job: JobIndex | null; status: string }) {
   const videos = threeDVideos(job);
   if (!videos.length) {
     const message = status === 'running'
-      ? 'Candidate renders stay hidden until simulation, rendering, and the split scenario/presentation acceptance review all complete.'
+      ? 'Candidate renders stay hidden until simulation, semantic screening, and deterministic 3D rendering complete.'
       : status === 'complete'
-        ? 'No 3D candidate cleared both verdicts: the render must show the requested scenario and be usable footage. Inspect Pipeline details for the attributed defect codes.'
-        : 'Accepted 3D videos will appear after gate-passing scenarios finish rendering and review.';
+        ? 'No 3D candidate satisfied the product decision: the frozen gate and 2D semantic oracle must pass, and the deterministic render must complete. Inspect Pipeline details for defect codes.'
+        : 'Accepted 3D videos will appear after gate-passing, semantically matched scenarios finish rendering.';
     return <div class="empty video-empty"><div class="render-pulse" /><h2>Accepted 3D videos</h2><p>{message}</p></div>;
   }
   return <div class="job-video-gallery">{videos.map(({ cell, artifact }) => {
@@ -95,8 +95,7 @@ function ThreeDGallery({ job, status }: { job: JobIndex | null; status: string }
     return <article class="job-video-card" key={id}>
       <video src={artifactUrl(source)} aria-label={`Accepted 3D rollout for ${id}`} muted autoPlay loop playsInline controls preload="metadata" />
       <div class="job-video-meta"><div><small>{cell.map ? mapLabel(cell.map) : '3D scenario'}</small><h2>{id}</h2></div><div class="chip-row">
-        <Chip tone="pass">scenario + presentation accepted</Chip>
-        <Score label="Realism" value={cell.judge?.realism} /><Score label="Dynamism" value={cell.judge?.dynamism} />
+        <Chip tone="pass">2D semantic match + 3D render</Chip>
       </div></div>
     </article>;
   })}</div>;
@@ -128,7 +127,7 @@ function JobDetail({ id }: { id: string }) {
     <button class="details-toggle" aria-expanded={showDetails} onClick={() => setShowDetails((value) => !value)}>{showDetails ? 'Hide pipeline details' : 'Show pipeline details'} <span>{showDetails ? '↑' : '↓'}</span></button>
     {showDetails && <div class="pipeline-details">
       <section><div class="section-title"><div><p class="eyebrow">PIPELINE DETAILS</p><h2>Intermediate stages</h2></div><p>Optional diagnostics: inspect exact outputs and artifacts from every stage.</p></div><div class="timeline">{stages.map((event, i) => <StageCard event={event} index={i} key={STAGES[i][0]} />)}</div></section>
-      <section><div class="section-title"><div><p class="eyebrow">CELL DETAILS</p><h2>Gate and judge evidence</h2></div><p>Optional per-location gate and footage-judge verdicts.</p></div><CellGrid job={job} /></section>
+      <section><div class="section-title"><div><p class="eyebrow">CELL DETAILS</p><h2>Gate and semantic oracle evidence</h2></div><p>Optional per-location gate, semantic, and deterministic render verdicts.</p></div><CellGrid job={job} /></section>
     </div>}
   </main>;
 }
@@ -236,11 +235,11 @@ function BenchmarkPanel({ benchmark }: { benchmark?: CampaignBenchmark }) {
       </div>
       <div class="benchmark-block">
         <h3>Product</h3>
-        <p class="benchmark-boundary">product throughput adds render and review</p>
+        <p class="benchmark-boundary">product throughput adds semantic screening and rendering</p>
         <div class="stat-grid benchmark-stats">
           <Stat label="Yield" value={formatRate(throughput.product.yield)} />
-          <Stat label="Accepted attempts/hour" value={formatHourly(throughput.product.presentationAcceptedAttemptsPerHour, 'attempts/h')} hint={hourlyHint(throughput.product.presentationAcceptedAttemptsPerHour)} />
-          <Stat label="Accepted cells/hour" value={formatHourly(throughput.product.presentationAcceptedCellsPerHour, 'cells/h')} hint={hourlyHint(throughput.product.presentationAcceptedCellsPerHour)} />
+          <Stat label="Accepted attempts/hour" value={formatHourly(throughput.product.acceptedAttemptsPerHour, 'attempts/h')} hint={hourlyHint(throughput.product.acceptedAttemptsPerHour)} />
+          <Stat label="Accepted cells/hour" value={formatHourly(throughput.product.acceptedCellsPerHour, 'cells/h')} hint={hourlyHint(throughput.product.acceptedCellsPerHour)} />
           <Stat label="Wall p50" value={benchmarkSeconds(throughput.product.wallS.p50)} hint={`p90 ${benchmarkSeconds(throughput.product.wallS.p90)}`} />
         </div>
       </div>
@@ -260,10 +259,8 @@ function BenchmarkPanel({ benchmark }: { benchmark?: CampaignBenchmark }) {
       <BenchmarkHistogram label="Logical CPUs" values={execution.concurrency.logicalCpus} />
       <BenchmarkHistogram label="Schedulers" values={execution.concurrency.scheduler} />
       <BenchmarkHistogram label="Author model / effort" values={execution.models.author} />
-      <BenchmarkHistogram label="Judge model / effort / strategy" values={execution.models.judge} />
       <BenchmarkHistogram label="Engine requested" values={execution.models.engineRequested} />
       <BenchmarkHistogram label="Engine resolved" values={execution.models.engineResolved} />
-      <BenchmarkHistogram label="Product review version" values={execution.models.productReviewVersion} />
     </div>
     <div class="benchmark-block">
       <h3>Diversity</h3>
@@ -290,7 +287,7 @@ function AcceptedVideo({ video, caseTitle, heading }: { video: CampaignVideo; ca
     <video src={artifactUrl(video.url)} aria-label={`Accepted 3D video for ${caseTitle}`} controls playsInline preload="metadata" muted loop />
     <div class="job-video-meta">
       <div><small>{video.mapId ? mapLabel(video.mapId) : 'accepted 3D render'}</small><h2 title={heading}>{heading}</h2></div>
-      <div class="chip-row"><Chip tone="pass">strictly accepted</Chip>{video.realism != null && <Score label="Realism" value={video.realism} />}{video.dynamism != null && <Score label="Dynamism" value={video.dynamism} />}</div>
+      <div class="chip-row"><Chip tone="pass">2D semantic match + 3D render</Chip></div>
     </div>
     <div class="campaign-video-foot">
       <span title={`sha256 ${video.sha256}${video.acceptedAt ? ` · accepted ${new Date(video.acceptedAt).toLocaleString()}` : ''}`}>{video.acceptedAt ? `accepted ${ago(video.acceptedAt)} · ` : ''}sha {video.sha256.slice(0, 10)}</span>
@@ -347,11 +344,11 @@ function CampaignCaseRow({ item, target }: { item: CampaignCase; target: number 
 }
 
 const CONTRACT_LABELS: Record<string, string> = {
-  semanticAcceptedRequired: 'scenario fidelity accepted',
-  presentationAcceptedRequired: 'presentation accepted',
+  semanticAcceptedRequired: '2D semantic match',
+  acceptedRequired: 'product accepted',
   frozenGateRequired: 'frozen C1–C6 gate',
-  briefAware3dReviewRequired: 'brief-aware 3D review',
-  currentReviewContractRequired: 'current review contract',
+  briefAware2dSemanticOracleRequired: 'brief-aware 2D semantic oracle',
+  currentProductContractRequired: 'current product contract',
   uniqueVideoSha256Required: 'unique MP4 SHA-256',
   distinctTrajectoryFingerprintRequired: 'distinct trace fingerprint',
 };
@@ -391,7 +388,7 @@ function Campaign({ id }: { id: string }) {
       <div>
         <p class="eyebrow">STRICT-ACCEPTANCE CAMPAIGN</p>
         <h1>{totals ? `${totals.cases} edge cases, ${target} accepted videos each.` : 'Edge-case campaign progress.'}</h1>
-        <p>A render counts only when the frozen gate passes, the 3D review marks it <span class="mono">semanticAccepted</span> and <span class="mono">presentationAccepted</span> under the current review contract, and its MP4 hash is new within the case. Everything else stays an attempt—never a result.</p>
+        <p>A render counts only when the frozen gate passes, the brief-aware 2D semantic oracle marks it <span class="mono">semanticAccepted</span>, the deterministic 3D render completes, and the product decision marks it <span class="mono">accepted</span> under the current product contract. Its MP4 hash must also be new within the case. Everything else stays an attempt—never a result.</p>
       </div>
       <div class="campaign-sync">
         <Chip tone={error ? 'fail' : 'live'}><span class="live-dot" />{error ? 'refresh failing' : 'auto-refresh 30s'}</Chip>
@@ -432,7 +429,7 @@ function Campaign({ id }: { id: string }) {
         {latest.length
           ? <div class="job-video-gallery campaign-videos">{latest.map(({ video, title }) => <AcceptedVideo key={video.sha256} video={video} caseTitle={title} heading={title} />)}</div>
           : <div class="empty video-empty"><div class="render-pulse" /><h2>No accepted videos yet</h2><p>{totals.jobs
-            ? `${plainCount.format(totals.jobs)} attempts submitted, ${totals.activeJobs} still running. A video appears the moment it clears the gate and brief-aware 3D review.`
+            ? `${plainCount.format(totals.jobs)} attempts submitted, ${totals.activeJobs} still running. A video appears the moment it clears the gate, 2D semantic oracle, and deterministic 3D render.`
             : 'The campaign runner has not submitted its first attempt yet.'}</p></div>}
       </section>
       <section>
@@ -443,22 +440,22 @@ function Campaign({ id }: { id: string }) {
   </main>;
 }
 
-const initial: SubmitPayload = { brief: '', methodology: 'production', engine: 'auto', nScenarios: 3, maps: MAPS.map(([id]) => id), maxSitesPerMap: 3, ambient: 'light', seed: 42, render3d: true, topK: 3, judge: true };
+const initial: SubmitPayload = { brief: '', methodology: 'production', engine: 'auto', nScenarios: 3, maps: MAPS.map(([id]) => id), maxSitesPerMap: 3, ambient: 'light', seed: 42, render3d: true, topK: 3 };
 function Submit() {
   const [form, setForm] = useState(initial); const [busy, setBusy] = useState(false); const [error, setError] = useState<unknown>();
   const update = <K extends keyof SubmitPayload>(key: K, value: SubmitPayload[K]) => setForm((old) => ({ ...old, [key]: value }));
   const send = async (e: Event) => { e.preventDefault(); setBusy(true); setError(undefined); try { navigate(`#/jobs/${encodeURIComponent(await submitJob(form))}`); } catch (reason) { setError(reason); setBusy(false); } };
   const production = form.methodology === 'production';
   const cellCount = production ? 45 : form.maps.length * form.maxSitesPerMap * form.nScenarios;
-  return <main class="submit-page"><button class="back" onClick={() => navigate('#/')}>← Gallery</button><section class="submit-intro"><p class="eyebrow">NEW PIPELINE JOB</p><h1>Author an edge case.</h1><p>Production mode runs the measured development recipe—not a shortened demo path. Expect several minutes for compilation, simulation, judging, and 3D review; visual fallback can take longer.</p></section><ErrorBox error={error} /><form onSubmit={send}>
+  return <main class="submit-page"><button class="back" onClick={() => navigate('#/')}>← Gallery</button><section class="submit-intro"><p class="eyebrow">NEW PIPELINE JOB</p><h1>Author an edge case.</h1><p>Production mode runs the measured development recipe—not a shortened demo path. Expect several minutes for compilation, simulation, 2D semantic screening, and deterministic 3D rendering; visual fallback can take longer.</p></section><ErrorBox error={error} /><form onSubmit={send}>
     <fieldset class="wide"><legend>Run methodology</legend><div class="map-options">
-      <label class="check"><input type="radio" name="methodology" checked={production} onChange={() => update('methodology', 'production')} /><span><b>Production recipe</b><small>Research-proven routing, sampling, gate, footage judge, 3D acceptance, and defect-driven fallback.</small></span></label>
+      <label class="check"><input type="radio" name="methodology" checked={production} onChange={() => update('methodology', 'production')} /><span><b>Production recipe</b><small>Research-proven routing, sampling, gate, 2D semantic oracle, deterministic 3D rendering, and evidence-driven fallback.</small></span></label>
       <label class="check"><input type="radio" name="methodology" checked={!production} onChange={() => update('methodology', 'custom')} /><span><b>Custom experiment</b><small>Expose individual controls for debugging and ablations.</small></span></label>
     </div></fieldset>
     <label class="wide"><span>Scenario brief</span><textarea required minlength={12} value={form.brief} onInput={(e) => update('brief', e.currentTarget.value)} placeholder="A delivery van blocks the bike lane just before an intersection as a cyclist approaches…" /></label>
     {production ? <section class="wide methodology-card" aria-label="Production methodology">
       <p class="eyebrow">FROZEN PRODUCTION PROFILE</p><h2>Compiler first. Visual author for structural gaps.</h2>
-      <p>The server—not this browser—enforces all five maps, three sites per map, three deterministic draws, light ambient traffic, Sol/low authoring, the unchanged C1–C6 gate, Sol/medium spread-8 footage review, and strict brief-aware 3D acceptance. A rejected compiler result escalates to the visual author; a rejected visual result receives one evidence-driven repair.</p>
+      <p>The server—not this browser—enforces all five maps, three sites per map, three deterministic draws, light ambient traffic, Sol/low authoring, the unchanged C1–C6 gate, brief-aware 2D semantic screening, and deterministic 3D rendering. A rejected compiler result escalates to the visual author; a rejected visual result receives one evidence-driven repair.</p>
       <div class="chip-row"><Chip>5 maps</Chip><Chip>45 cells max</Chip><Chip>light ambient</Chip><Chip>3D top 3</Chip><Chip>visual fallback</Chip></div>
     </section> : <div class="form-grid"><label><span>Engine</span><select value={form.engine} onChange={(e) => update('engine', e.currentTarget.value as SubmitPayload['engine'])}><option value="auto">Auto route</option><option value="compiler">Compiler</option><option value="vista2">Vista2 visual agent</option></select></label>
       <label><span>Scenarios / site</span><input type="number" min="1" max="10" value={form.nScenarios} onInput={(e) => update('nScenarios', e.currentTarget.valueAsNumber)} /></label>
@@ -468,7 +465,6 @@ function Submit() {
       <fieldset class="wide"><legend>Maps</legend><div class="map-options">{MAPS.map(([id, label]) => <label class="check" key={id}><input type="checkbox" checked={form.maps.includes(id)} onChange={(e) => update('maps', e.currentTarget.checked ? [...form.maps, id] : form.maps.filter((value) => value !== id))} /><span>{label}</span></label>)}</div></fieldset>
       <label class="toggle"><input type="checkbox" checked={form.render3d} onChange={(e) => update('render3d', e.currentTarget.checked)} /><span><b>3D rendering</b><small>Render highest-ranked passing cells</small></span></label>
       <label><span>3D top K</span><input type="number" min="1" max="10" disabled={!form.render3d} value={form.topK} onInput={(e) => update('topK', e.currentTarget.valueAsNumber)} /></label>
-      <label class="toggle"><input type="checkbox" checked={form.judge} onChange={(e) => update('judge', e.currentTarget.checked)} /><span><b>Footage judge</b><small>Score realism and dynamism</small></span></label>
     </div>}<div class="submit-actions"><span>{production ? 'Frozen research recipe' : `${form.maps.length} maps`} · up to {cellCount} cells</span><button class="primary" disabled={busy || (!production && !form.maps.length)}>{busy ? 'Submitting…' : 'Start pipeline →'}</button></div>
   </form></main>;
 }

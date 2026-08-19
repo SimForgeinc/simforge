@@ -22,7 +22,6 @@ import {
   caseOutcome,
   caseResolved,
   classifyOperational,
-  defectClass,
   deterministicUnsupportedReason,
   percentile,
   perHour,
@@ -103,37 +102,37 @@ test('balance is null below two buckets and maximal when buckets are even', () =
 // Defect vocabulary
 // ---------------------------------------------------------------------------
 
-test('defect reporting uses only the hash-enforced review contract vocabulary', () => {
-  assert.equal(DEFECT_CODES.length, 25);
+test('defect reporting uses only the vocabulary the emitting stages declare', () => {
   assert.deepEqual(DEFECT_CODES, [...DEFECT_CODES].sort());
+  assert.deepEqual([...new Set(DEFECT_CODES)], DEFECT_CODES);
+  // The 2D semantic oracle's codes, the deterministic validators' codes, the exporter's
+  // classified render failures, and the frozen gate's own verdict.
   assert.ok(DEFECT_CODES.includes('scenario.mechanism'));
-  assert.ok(DEFECT_CODES.includes('render.camera.framing'));
-  assert.ok(DEFECT_CODES.includes('judge.uncertain'));
+  assert.ok(DEFECT_CODES.includes('scenario.gate'));
+  assert.ok(DEFECT_CODES.includes('simulation.actor.frozen_tail'));
+  assert.ok(DEFECT_CODES.includes('render.camera.composition_failed'));
+  assert.ok(DEFECT_CODES.includes('capture.missing_video'));
   assert.equal(DEFECT_CODES.includes('collision'), false, 'the obsolete flat taxonomy is gone');
-  assert.equal(DEFECT_CODES.includes('unclassified'), false, 'unknown prose is preserved, not folded into a fake code');
-  assert.equal(defectClass('scenario.mechanism'), 'semantic');
-  assert.equal(defectClass('judge.uncertain'), 'semantic');
-  assert.equal(defectClass('render.camera.framing'), 'presentation');
-  assert.equal(defectClass('legacy.collision'), 'unclassified');
+  assert.equal(DEFECT_CODES.includes('unclassified'), false, 'unknown prose is never folded into a fake code');
+  // No stage can produce a judge verdict any more, so no judge code may be reportable.
+  assert.equal(DEFECT_CODES.some((code) => code.startsWith('judge.')), false);
 });
 
-test('the report preserves unattributed prose and surfaces codes outside the current contract', () => {
+test('the report surfaces defect codes no emitting stage declares', () => {
   const current = record({
-    furthest: 'presentation',
+    furthest: 'accepted',
     outcome: {
       censoredAtStage: null,
       operational: null,
       defectCodes: ['scenario.mechanism'],
-      unclassifiedDefects: ['something indescribable happened'],
     },
   });
   const crossContract = record({
-    furthest: 'presentation',
+    furthest: 'accepted',
     outcome: {
       censoredAtStage: null,
       operational: null,
       defectCodes: ['legacy.collision'],
-      unclassifiedDefects: [],
     },
   });
   const report = buildBenchmarkReport({
@@ -141,10 +140,9 @@ test('the report preserves unattributed prose and surfaces codes outside the cur
     target: 5,
     maxGenerationAttempts: 12,
   });
-  assert.equal(report.defects.taxonomy, 'config/showcase-review-contract.json');
+  assert.equal(report.defects.taxonomy, 'apps/showcase/server/product-contract.mjs');
   assert.deepEqual(report.defects.vocabulary, DEFECT_CODES);
   assert.deepEqual(report.defects.unknownCodes, ['legacy.collision']);
-  assert.equal(report.defects.unclassifiedAttempts, 1);
   assert.equal(report.defects.attemptsByCode['scenario.mechanism'], 1);
   assert.equal(report.defects.attemptsByCode['legacy.collision'], 1);
 });
@@ -286,7 +284,7 @@ function record({ furthest, censoredAtStage = null, operationalClass = 'model-ac
     counts: {
       gatePassed: limit >= FUNNEL_STAGE_IDS.indexOf('gate-pass') ? 1 : 0,
       eligibleCells: limit >= FUNNEL_STAGE_IDS.indexOf('eligible') ? 1 : 0,
-      presentationAccepted: furthest === 'presentation' ? 1 : 0,
+      accepted: furthest === 'accepted' ? 1 : 0,
     },
     stages: [],
     cost: { wallS: 100, generatorWallS: 40, productWallS: 60, tokens: { inputTokens: 1000, outputTokens: 200 } },
@@ -301,7 +299,7 @@ function record({ furthest, censoredAtStage = null, operationalClass = 'model-ac
 
 test('the funnel is monotone and every stage row states which stage its denominator came from', () => {
   const funnel = buildFunnel([
-    record({ furthest: 'presentation' }),
+    record({ furthest: 'accepted' }),
     record({ furthest: 'gate-pass' }),
     record({ furthest: 'author-ok' }),
   ]);
@@ -323,17 +321,17 @@ test('the funnel is monotone and every stage row states which stage its denomina
 
 test('provider failures cannot lower the generator yield', () => {
   const clean = [
-    record({ furthest: 'presentation' }),
-    record({ furthest: 'presentation' }),
+    record({ furthest: 'accepted' }),
+    record({ furthest: 'accepted' }),
     record({ furthest: 'cells-ok' }),
   ];
   const baseline = buildFunnel(clean);
   const baselineGate = baseline.stages.find((stage) => stage.id === 'gate-pass');
   const baselineThroughput = buildThroughput(clean, { elapsedHours: 1 });
 
-  // Ten attempts that reached the gate and then hit a provider outage during 3D review.
+  // Ten attempts that reached the gate and then hit a provider outage at the product decision.
   const outage = [...clean, ...Array.from({ length: 10 }, () => record({
-    furthest: '3d-ok', censoredAtStage: 'semantic-3d',
+    furthest: '3d-ok', censoredAtStage: 'accepted',
   }))];
   const degraded = buildFunnel(outage);
   const degradedGate = degraded.stages.find((stage) => stage.id === 'gate-pass');
@@ -353,7 +351,7 @@ test('provider failures cannot lower the generator yield', () => {
 
   // The outage is reported, not hidden.
   assert.equal(degraded.denominators.operationalFailures, 10);
-  const censoredStage = degraded.stages.find((stage) => stage.id === 'semantic-3d');
+  const censoredStage = degraded.stages.find((stage) => stage.id === 'accepted');
   assert.equal(censoredStage.censoredHere, 10);
   assert.equal(censoredStage.denominator, 2, 'censored attempts leave the failing stage denominator');
 });
@@ -361,7 +359,7 @@ test('provider failures cannot lower the generator yield', () => {
 test('an attempt censored early keeps the stage outcomes it did observe', () => {
   const funnel = buildFunnel([
     record({ furthest: 'contract-valid', censoredAtStage: 'cells-ok', operationalClass: 'host-resource' }),
-    record({ furthest: 'presentation' }),
+    record({ furthest: 'accepted' }),
   ]);
   const author = funnel.stages.find((stage) => stage.id === 'author-ok');
   assert.equal(author.denominator, 2, 'both attempts were observed authoring');
@@ -374,9 +372,9 @@ test('an attempt censored early keeps the stage outcomes it did observe', () => 
 
 test('generator and product throughput are reported against separate boundaries', () => {
   const records = [
-    record({ furthest: 'presentation' }),
+    record({ furthest: 'accepted' }),
     record({ furthest: 'gate-pass' }),
-    record({ furthest: '3d-ok', censoredAtStage: 'semantic-3d' }),
+    record({ furthest: '3d-ok', censoredAtStage: 'accepted' }),
   ];
   const throughput = buildThroughput(records, { elapsedHours: 2 });
   assert.match(throughput.generator.boundary, /semantic-2d/);
@@ -399,7 +397,7 @@ test('generator and product throughput are reported against separate boundaries'
   assert.equal(Object.hasOwn(throughput.generator, 'gatePassedCellsPerHour'), false);
   assert.equal(Object.hasOwn(throughput.generator, 'tokensPerGatePassedAttempt'), false);
   assert.equal(throughput.product.attempts, 2);
-  assert.equal(throughput.product.presentationAcceptedAttempts, 1);
+  assert.equal(throughput.product.acceptedAttempts, 1);
   assert.equal(throughput.product.yield.denominator, 2);
   assert.equal(throughput.generator.attemptsPerHour.denominatorHours, 2);
   assert.equal(throughput.generator.attemptsPerHour.value, 1.5);
@@ -418,30 +416,26 @@ test('generator and product throughput are reported against separate boundaries'
 test('execution keeps measured denominators and buckets unmeasured model conditions as unknown', () => {
   const records = [
     record({
-      furthest: 'presentation',
+      furthest: 'accepted',
       execution: { cold: true, resumed: false, resumedStages: [], coldWarmBasis: 'process job index' },
       concurrency: { activeJobsAtStart: 1, logicalCpus: 8 },
       models: {
         author: { model: 'author-a', effort: 'high' },
-        judge: { model: 'judge-a', effort: 'medium', strategy: 'blind' },
         engineRequested: 'compiler',
         engineResolved: 'compiler',
-        productReviewVersion: 'review-v5',
       },
     }),
     record({
-      furthest: 'presentation',
+      furthest: 'accepted',
       execution: { cold: false, resumed: true, resumedStages: ['20-author'], coldWarmBasis: 'process job index' },
       concurrency: { activeJobsAtStart: 2, logicalCpus: 8 },
       models: {
         author: { model: 'author-a', effort: 'high' },
-        judge: { model: 'judge-a', effort: 'medium', strategy: 'blind' },
         engineRequested: 'vista2',
         engineResolved: 'vista2',
-        productReviewVersion: 'review-v5',
       },
     }),
-    record({ furthest: 'presentation' }),
+    record({ furthest: 'accepted' }),
   ];
   const report = buildBenchmarkReport({
     cases: [{ id: 'case', target: 5, submittedAttempts: 3, records, videos: [] }],
@@ -457,19 +451,17 @@ test('execution keeps measured denominators and buckets unmeasured model conditi
   assert.equal(execution.concurrency.load1AtStart.n, 0);
   assert.equal(execution.concurrency.load1AtStart.mean, null, 'an unmeasured load must not become zero');
   assert.equal(execution.models.author.unknown, 1);
-  assert.equal(execution.models.judge.unknown, 1);
   assert.equal(execution.models.engineRequested.unknown, 1);
   assert.equal(execution.models.engineResolved.unknown, 1);
-  assert.equal(execution.models.productReviewVersion.unknown, 1);
+  assert.equal(execution.models.judge, undefined, 'no judge model can be recorded any more');
+  assert.equal(execution.models.productReviewVersion, undefined, 'there is no product review to version');
   const histogramTotal = (histogram) => Object.values(histogram).reduce((sum, count) => sum + count, 0);
   for (const histogram of [
     execution.concurrency.logicalCpus,
     execution.concurrency.scheduler,
     execution.models.author,
-    execution.models.judge,
     execution.models.engineRequested,
     execution.models.engineResolved,
-    execution.models.productReviewVersion,
   ]) {
     assert.equal(histogramTotal(histogram), execution.attempts);
   }
@@ -595,7 +587,7 @@ function corpusFixture(entries = 67) {
         ...base,
         acceptedVideos: 5,
         submittedAttempts: 3,
-        records: [1, 2, 3].map(() => record({ furthest: 'presentation' })),
+        records: [1, 2, 3].map(() => record({ furthest: 'accepted' })),
         videos: Array.from({ length: 5 }, (_, video) => ({
           sha256: createHash('sha256').update(`${index}:${video}`).digest('hex'),
           cellId: `${mapId}-${siteId}-${video}`,
@@ -607,7 +599,7 @@ function corpusFixture(entries = 67) {
       };
     }
     if (index < 45) {
-      return { ...base, acceptedVideos: 1, submittedAttempts: 2, activeAttempts: 1, records: [record({ furthest: 'semantic-3d' })], videos: [] };
+      return { ...base, acceptedVideos: 1, submittedAttempts: 2, activeAttempts: 1, records: [record({ furthest: '3d-ok' })], videos: [] };
     }
     if (index < 52) {
       return {
@@ -719,10 +711,10 @@ test('report verification names the invariant that a doctored report breaks', ()
 });
 
 test('cost aggregation keeps CPU and GPU attribution attached to the numbers', () => {
-  const shared = record({ furthest: 'presentation' });
+  const shared = record({ furthest: 'accepted' });
   shared.cost.cpu = { totalS: 300, attribution: 'process-shared', clockTicksPerSecond: 100 };
   shared.cost.gpu = { samples: 6, meanUtilizationPct: 50, gpuSecondsEquivalent: 120, attribution: 'host-wide' };
-  const exclusive = record({ furthest: 'presentation' });
+  const exclusive = record({ furthest: 'accepted' });
   exclusive.cost.cpu = { totalS: 100, attribution: 'exclusive', clockTicksPerSecond: 100 };
   const report = buildBenchmarkReport({
     cases: [{ id: 'c', index: 0, target: 1, acceptedVideos: 1, submittedAttempts: 2, records: [shared, exclusive], videos: [] }],
@@ -742,7 +734,7 @@ test('cost aggregation keeps CPU and GPU attribution attached to the numbers', (
 // Token accounting on disk
 // ---------------------------------------------------------------------------
 
-test('vision usage is billed once even when the verdict is copied between artifacts', async (t) => {
+test('a historical job\'s vision usage is billed once even when the verdict is copied between artifacts', async (t) => {
   const jobDir = await mkdtemp(join(tmpdir(), 'showcase-usage-'));
   t.after(async () => rm(jobDir, { recursive: true, force: true }));
   await mkdir(join(jobDir, '20-author'), { recursive: true });
@@ -756,7 +748,8 @@ test('vision usage is billed once even when the verdict is copied between artifa
     _meta: { promptSha256: 'p1', latencyS: 4, tokens: { in: 500, out: 60, reasoning: 10 } },
   };
   await writeFile(join(jobDir, '60-render2d', 'quality.json'), JSON.stringify({ cells: [twoDRow] }));
-  // The same 2D verdict is carried into the judge document alongside a 3D review.
+  // A job recorded before the 3D product review was removed: its `70-judge.json` is still
+  // readable evidence and its tokens are still billed, but no new attempt writes one.
   await writeFile(join(jobDir, '70-judge.json'), JSON.stringify({
     cells: [{
       ...twoDRow,
@@ -783,7 +776,7 @@ test('vision usage is billed once even when the verdict is copied between artifa
   assert.equal(usage.tokenAccounting.dollarCost, null);
 });
 
-test('a repair attempt promoted into its parent job is not billed twice', async (t) => {
+test('a historical repair attempt promoted into its parent job is not billed twice', async (t) => {
   const jobDir = await mkdtemp(join(tmpdir(), 'showcase-usage-repair-'));
   t.after(async () => rm(jobDir, { recursive: true, force: true }));
   const review = {
