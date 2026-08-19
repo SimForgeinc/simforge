@@ -37,7 +37,7 @@ const GENERATION_RULES = Object.freeze([
   Object.freeze(['no_matching_sites', /no matching sites for authored template/i]),
   Object.freeze(['batch_failed', /batch wrote no summary/i]),
   Object.freeze(['gate_failed', /gate returned no json/i]),
-  Object.freeze(['render_failed', /renderer wrote no (?:mp4|manifest)|renderer captured an empty scene/i]),
+  Object.freeze(['render_failed', /renderer wrote no (?:mp4|manifest)|renderer is not capture-ready/i]),
   Object.freeze(['author_failed', /(?:precheck|semantic contract|site matcher) returned no json/i]),
 ]);
 

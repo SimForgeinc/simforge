@@ -40,7 +40,7 @@ import { chromium } from 'playwright-core';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, rename, rmdir, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rmdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { gunzipSync } from 'node:zlib';
@@ -197,28 +197,20 @@ async function waitForApp(page) {
   );
 }
 
-async function waitForStreamIdle(page, timeout = 120000) {
-  await page.waitForFunction(
-    () => {
-      const s = window.__viewer?.getStats?.();
-      return s ? s.residentTiles > 0 && s.loading === 0 && s.uploading === 0 : false;
-    },
-    null,
-    { timeout },
-  );
-  await settleFrames(page, 12);
-}
-
-async function settleFrames(page, count = 8) {
-  await page.evaluate((n) => new Promise((resolve) => {
-    let i = 0;
-    const step = () => {
-      i += 1;
-      if (i >= n) resolve(null);
-      else requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }), count);
+/**
+ * Block until the renderer itself reports the scene is fully resident for the
+ * live camera and has drawn it.
+ *
+ * The renderer owns this answer: it knows which LODs the current viewpoint wants,
+ * which are still queued, and whether its WebGL context is alive. Polling its
+ * counters from here and then counting animation frames guessed at all three and
+ * was wrong in the one case that matters -- a lost context reports a resident,
+ * fully idle scene while drawing nothing.
+ */
+async function waitForCaptureReady(page) {
+  await page.evaluate(async () => {
+    await window.__viewer.captureReady();
+  });
 }
 
 async function hideUiForExport(page) {
@@ -263,8 +255,9 @@ async function chooseStage(page) {
   });
 }
 
+/** Apply a viewpoint and return only once the renderer has drawn it complete. */
 async function setView(page, eye, target, fovDeg = null) {
-  await page.evaluate((v) => {
+  await page.evaluate(async (v) => {
     const viewer = window.__viewer;
     const V = viewer.camera.position.constructor;
     if (v.fovDeg !== null) {
@@ -272,8 +265,8 @@ async function setView(page, eye, target, fovDeg = null) {
       viewer.camera.updateProjectionMatrix();
     }
     viewer.controls.setView(new V(v.eye[0], v.eye[1], v.eye[2]), new V(v.target[0], v.target[1], v.target[2]));
+    await viewer.captureReady();
   }, { eye, target, fovDeg });
-  await settleFrames(page, 8);
 }
 
 /**
@@ -533,7 +526,7 @@ async function exportScenario(page) {
     throw new Error(`render-quality preference is ${qualityState.state}; the 3D world would never mount`);
   }
   await waitForApp(page);
-  await waitForStreamIdle(page);
+  await waitForCaptureReady(page);
   await page.evaluate(() => {
     // Lane polygons are an authoring/debug layer; the evidence render keeps
     // the real streamed road/map and real signal furniture without the cyan
@@ -601,7 +594,7 @@ async function exportScenario(page) {
   // Sticky across the whole export: an accepted orbit offset is retried first
   // on the next frame so the clip keeps one stable shot.
   let cameraOffset = CAMERA_SEARCH_OFFSETS[0];
-  const renderTraceFrame = async (selected, file, settleCount, clipCamera = false) => {
+  const renderTraceFrame = async (selected, file, clipCamera = false) => {
     // Stage timings on stderr make a stalled export diagnosable instead of a
     // silent multi-hour hang. They never enter the manifest.
     const stageStart = Date.now();
@@ -715,13 +708,10 @@ async function exportScenario(page) {
           [...evidence.actorModels, ...grounded.props],
         );
         if (clearance.clearanceM < 2) continue;
+        // The candidate must be judged in the state the capture will use: setView
+        // only returns once the renderer has drawn this viewpoint complete, so a
+        // not-yet-uploaded city tile can no longer read as clear line of sight.
         await setView(page, trial.eye, trial.target, trial.fovDeg);
-        // The candidate must be judged in the same fully-resident state the
-        // capture will use. Testing before stream-idle lets a not-yet-uploaded
-        // city tile read as clear line of sight, and the shot then fails the
-        // authoritative check after the tile lands.
-        await waitForStreamIdle(page, 60000);
-        await settleFrames(page, settleCount);
         const trialComposition = await inspectIncidentComposition(page, ...compositionArgs);
         lastComposition = trialComposition;
         if (trialComposition.passed) {
@@ -748,38 +738,18 @@ async function exportScenario(page) {
       }
       await setView(page, camera.eye, camera.target, camera.fovDeg);
       stage('setView');
-      // Catalog evidence must fail closed if the incident view never reaches a
-      // fully resident state. Capturing after a swallowed timeout can make a
-      // missing city tile look like clear line of sight.
-      await waitForStreamIdle(page, 60000);
-      stage('streamIdle');
-      await settleFrames(page, settleCount);
-      stage('settle');
       composition = await inspectIncidentComposition(page, ...compositionArgs);
       if (!composition.passed) {
         throw new Error(`incident composition failed at t=${selected.t}: ${describeFailure(composition)}`);
       }
     }
     stage('composition');
-    const capture = async () => {
-      if (includeUi) {
-        await page.screenshot({ path: file, fullPage: false });
-      } else {
-        const canvas = await page.$('canvas');
-        if (!canvas) throw new Error('viewer canvas not found');
-        await canvas.screenshot({ path: file });
-      }
-    };
-    let screenshotBytes = 0;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      await capture();
-      screenshotBytes = (await stat(file)).size;
-      if (screenshotBytes >= 20_000) break;
-      await waitForStreamIdle(page, 60_000);
-      await settleFrames(page, 12);
-    }
-    if (screenshotBytes < 20_000) {
-      throw new Error(`renderer captured an empty scene at t=${selected.t}: ${screenshotBytes} bytes`);
+    if (includeUi) {
+      await page.screenshot({ path: file, fullPage: false });
+    } else {
+      const canvas = await page.$('canvas');
+      if (!canvas) throw new Error('viewer canvas not found');
+      await canvas.screenshot({ path: file });
     }
     stage('screenshot');
     return {
@@ -812,7 +782,7 @@ async function exportScenario(page) {
       : path.join(framesDir, `frame-${String(frameNo).padStart(3, '0')}.png`);
     frameRecords.push({
       phase: selected.phase,
-      ...(await renderTraceFrame(selected, file, 16)),
+      ...(await renderTraceFrame(selected, file)),
     });
   }
 
@@ -829,7 +799,7 @@ async function exportScenario(page) {
     for (let frameNo = 0; frameNo < selection.frames.length; frameNo += 1) {
       const selected = selection.frames[frameNo];
       const file = path.join(videoFramesDir, `frame-${String(frameNo).padStart(5, '0')}.png`);
-      const record = await renderTraceFrame(selected, file, 3, corpusMode);
+      const record = await renderTraceFrame(selected, file, corpusMode);
       records.push({
         sequenceIndex: frameNo,
         index: record.index,
@@ -981,7 +951,7 @@ async function exportMap(page, map) {
   });
   await page.reload({ waitUntil: 'load' });
   await waitForApp(page);
-  await waitForStreamIdle(page);
+  await waitForCaptureReady(page);
   await hideUiForExport(page);
 
   const stage = await chooseStage(page);
@@ -993,8 +963,6 @@ async function exportMap(page, map) {
     const eye = [stage.x + Math.cos(theta) * radius, stage.y + elevation, stage.z + Math.sin(theta) * radius];
     const target = [stage.x, stage.y, stage.z];
     await setView(page, eye, target);
-    await waitForStreamIdle(page, 60000).catch(() => undefined);
-    await settleFrames(page, 24);
     const file = frames === 1 ? path.join(mapDir, 'still.png') : path.join(framesDir, `frame-${String(i).padStart(6, '0')}.png`);
     if (includeUi) {
       await page.screenshot({ path: file, fullPage: false });

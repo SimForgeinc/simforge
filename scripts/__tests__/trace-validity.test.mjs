@@ -101,15 +101,15 @@ test('the retry vocabulary is derived from the defect namespace, deepest cause f
   assert.equal(retryForDefectCode('simulation.actor.off_road'), 'resimulate');
   assert.equal(retryForDefectCode('render.camera.composition_failed'), 'rerender');
   assert.equal(retryForDefectCode('render.asset.scene_mismatch'), 'rerender');
-  assert.equal(retryForDefectCode('capture.empty_scene'), 'recapture');
+  assert.equal(retryForDefectCode('capture.missing_video'), 'recapture');
   assert.equal(retryForDefectCode('judge.uncertain'), 'manual-review');
   assert.throws(() => retryForDefectCode('mystery.code'), /unknown defect namespace/);
   assert.equal(retryForDefectCodes([]), 'none');
   // Precedence: the deepest authorised cause wins, so a job that is both
   // mis-authored and mis-framed reauthors rather than re-rendering.
   assert.equal(retryForDefectCodes(['render.camera.composition_failed', 'scenario.review_rejected']), 'reauthor');
-  assert.equal(retryForDefectCodes(['capture.empty_scene', 'render.camera.clearance_violation']), 'rerender');
-  assert.equal(retryForDefectCodes(['capture.empty_scene', 'judge.uncertain']), 'recapture');
+  assert.equal(retryForDefectCodes(['capture.missing_video', 'render.camera.clearance_violation']), 'rerender');
+  assert.equal(retryForDefectCodes(['capture.missing_video', 'judge.uncertain']), 'recapture');
   assert.deepEqual(mergeDefectCodes(['b'], ['a', 'b'], undefined), ['a', 'b']);
 });
 
@@ -127,7 +127,13 @@ test('renderer failures classify into the presentation namespace that owns them'
     'render.asset.map_evidence_missing',
   );
   assert.equal(classifyRenderFailure('Studio loaded map el-camino-road, expected yale-street'), 'render.asset.scene_mismatch');
-  assert.equal(classifyRenderFailure('renderer captured an empty scene at t=3.0: 812 bytes'), 'capture.empty_scene');
+  // The exporter now names the blocking condition instead of reporting a byte
+  // count, and a lost context or a stalled stream is exactly the transient a
+  // fresh browser fixes.
+  assert.equal(
+    classifyRenderFailure('renderer is not capture-ready: WebGL context is lost'),
+    'capture.transient_browser_failure',
+  );
   assert.equal(classifyRenderFailure('renderer wrote no mp4 in /tmp/out'), 'capture.missing_video');
   assert.equal(classifyRenderFailure('renderer wrote no manifest in /tmp/out'), 'capture.missing_manifest');
   assert.equal(classifyRenderFailure('ffprobe failed: no such file'), 'capture.encoder_unavailable');

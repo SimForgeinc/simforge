@@ -5,10 +5,11 @@
  * ## Ordering
  *
  * Overlay loading never competes with the map. {@link loadMapOverlays} waits for
- * the tile streamer to go quiet *and* for the road layer to be resident before
- * it fetches anything, so startup latency is untouched. If the map never
- * settles (slow link, aborted stream) the wait times out and the overlays load
- * anyway — late overlays beat no overlays.
+ * `viewer.captureReady()` — the renderer's own report that every asset the
+ * current viewpoint needs is resident and drawn — before it fetches anything, so
+ * startup latency is untouched. If the renderer never gets there (slow link,
+ * aborted stream) the wait rejects and the overlays load anyway — late overlays
+ * beat no overlays.
  *
  * ## Heights
  *
@@ -135,12 +136,6 @@ export interface MapOverlayHandle {
 
 /** Tuning for {@link loadMapOverlays}. */
 export interface MapOverlayOptions {
-  /** Give up waiting for a quiet streamer after this long and load anyway. Default `90_000` ms. */
-  settleTimeoutMs?: number;
-  /** Consecutive quiet polls required before the map counts as settled. Default `3`. */
-  quietPolls?: number;
-  /** Poll interval while waiting. Default `250` ms. */
-  pollMs?: number;
   /** Which layers start visible. Default `{ lanes: true, signals: false }`. */
   initialVisibility?: Partial<Record<MapOverlayLayer, boolean>>;
   /** Initial editor signal-marker presentation. */
@@ -155,58 +150,12 @@ function now(): number {
   return performance.now();
 }
 
-function delay(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) return reject(new DOMException('aborted', 'AbortError'));
-    const id = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort);
-      resolve();
-    }, ms);
-    const onAbort = (): void => {
-      clearTimeout(id);
-      reject(new DOMException('aborted', 'AbortError'));
-    };
-    signal?.addEventListener('abort', onAbort, { once: true });
-  });
-}
-
-/** Hand the frame loop a turn before the next synchronous chunk of work. */
-function nextFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
-}
-
-/**
- * Resolve once the tile streamer is quiet and the road layer is resident.
- *
- * @returns `'settled'`, or `'timeout'` when the deadline passed first.
- */
-export async function waitForMapSettle(
-  viewer: CityViewer,
-  options: { timeoutMs?: number; quietPolls?: number; pollMs?: number; signal?: AbortSignal } = {},
-): Promise<'settled' | 'timeout'> {
-  const { timeoutMs = 90_000, quietPolls = 3, pollMs = 250, signal } = options;
-  const start = now();
-  let quiet = 0;
-  for (;;) {
-    const stats = viewer.getStats();
-    const idle =
-      stats.loading === 0 &&
-      stats.queued === 0 &&
-      stats.uploading === 0 &&
-      stats.residentTiles > 0 &&
-      viewer.roadReady;
-    quiet = idle ? quiet + 1 : 0;
-    if (quiet >= quietPolls) return 'settled';
-    if (now() - start > timeoutMs) return 'timeout';
-    await delay(pollMs, signal);
-  }
-}
-
 /**
  * Load the lane and signal overlays and attach them to the viewer's scene.
  *
- * Waits for {@link waitForMapSettle} first. Every synchronous chunk (index bake,
- * triangulation) is separated by a frame yield so the viewer keeps rendering.
+ * Waits for the renderer to report a fully drawn map first. Every synchronous
+ * chunk (index bake, triangulation) is separated by a frame yield so the viewer
+ * keeps rendering.
  */
 export async function loadMapOverlays(
   viewer: CityViewer,
@@ -216,18 +165,12 @@ export async function loadMapOverlays(
   const { signal } = options;
   const t0 = now();
 
-  const settleOutcome = await waitForMapSettle(viewer, {
-    ...(options.settleTimeoutMs === undefined ? {} : { timeoutMs: options.settleTimeoutMs }),
-    ...(options.quietPolls === undefined ? {} : { quietPolls: options.quietPolls }),
-    ...(options.pollMs === undefined ? {} : { pollMs: options.pollMs }),
-    ...(signal ? { signal } : {}),
+  // The renderer answers this itself; polling its counters and requiring three
+  // quiet samples only estimated the same fact and could pass on stale residency.
+  await viewer.captureReady().catch((error: unknown) => {
+    console.warn(`[overlays] ${String(error)}; loading overlays anyway`);
   });
   const settleMs = now() - t0;
-  if (settleOutcome === 'timeout') {
-    console.warn(
-      `[overlays] map still streaming after ${settleMs.toFixed(0)} ms; loading overlays anyway`,
-    );
-  }
 
   // --- 1. sidecar fetches (a few hundred KB, all in parallel) -------------
   const tFetch = now();
@@ -252,7 +195,7 @@ export async function loadMapOverlays(
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
   // --- 2. bake the ground index -----------------------------------------
-  await nextFrame();
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   const tIndex = now();
   const index = viewer.buildGroundIndex();
   const indexMs = now() - tIndex;
@@ -261,7 +204,7 @@ export async function loadMapOverlays(
   const { datum, sampleHeight, heights } = makeSampler(viewer, index, manifest);
 
   // --- 3. build geometry -------------------------------------------------
-  await nextFrame();
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   const tBuild = now();
   const laneGroup = buildLaneOverlay(lanes, { heightSampler: sampleHeight });
   const signalGroup = buildSignalOverlay(signals, { heightSampler: sampleHeight });

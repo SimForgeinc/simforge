@@ -193,7 +193,9 @@ if (command === 'sites' && sub === 'match') {
     process.exit(1);
   }
   await mkdir(out, { recursive: true });
-  await writeFile(join(out, 'rollout.mp4'), 'fake mp4 for ' + out);
+  // The real 3D exporter writes video.mp4; only the 2D renderer writes
+  // rollout.mp4 itself. normalizeRender has to promote the former.
+  await writeFile(join(out, tier === '3d' ? 'video.mp4' : 'rollout.mp4'), 'fake mp4 for ' + out);
   await writeFile(join(out, 'render-manifest.json'), JSON.stringify({ frames: [{ t: 0, png: 'frame-000.png' }] }));
   emit({ ok: true });
 } else {
@@ -337,7 +339,7 @@ test('a resumed job reads the presentation retry it already rendered', async (t)
     cells: CELLS,
     gateRejects: [],
     renderFails: {
-      first: { 'yale-street-site-a-0': 'renderer captured an empty scene at t=3.0: 812 bytes' },
+      first: { 'yale-street-site-a-0': 'renderer is not capture-ready: WebGL context is lost' },
       retry: {},
     },
     review: { first: {}, retry: {} },

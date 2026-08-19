@@ -238,6 +238,18 @@ export class CityViewer {
   private mapLoadActive = false;
   private presetTransitions = 0;
   private auxiliaryLoads = 0;
+  /**
+   * Pending {@link captureReady} calls. Their presence also forces the streaming
+   * decision every frame instead of at 10 Hz, so a caller that just moved the
+   * camera is never answered from the previous viewpoint's residency.
+   */
+  private readonly captureWaiters: {
+    resolve: () => void;
+    reject: (error: Error) => void;
+    deadline: number;
+  }[] = [];
+  /** Consecutive drawn frames that found the scene fully resident. */
+  private captureReadyDraws = 0;
 
   private phaseSnapshot(): FramePhaseStats {
     return {
@@ -877,8 +889,11 @@ export class CityViewer {
       this.camera.getWorldPosition(_cameraPos);
     }
 
-    // Streaming decisions are cheap but not free: 10 Hz is plenty responsive.
-    if (!this.renderingSuspended && now - this.lastStreamUpdate > 100) {
+    // Streaming decisions are cheap but not free: 10 Hz is plenty responsive for
+    // interactive navigation. A pending captureReady() needs the decision for the
+    // camera as it stands *now*, so it lifts the throttle: otherwise residency
+    // counters can still describe the viewpoint of up to 100 ms ago.
+    if (!this.renderingSuspended && (this.captureWaiters.length > 0 || now - this.lastStreamUpdate > 100)) {
       phaseStart = performance.now();
       this.lastStreamUpdate = now;
       this.updateStreaming(_cameraPos);
@@ -927,10 +942,81 @@ export class CityViewer {
     this.onFrame?.(dt);
     this.phaseStats.integration.push(performance.now() - phaseStart);
     this.benchmarkFrameHook?.();
+    if (this.captureWaiters.length > 0) this.settleCaptureWaiters(now);
   };
 
   /** Optional per-frame hook (used by the benchmark and by integrations). */
   onFrame: ((dt: number) => void) | null = null;
+
+  /**
+   * Resolves once every asset the current viewpoint needs is resident and a frame
+   * has been drawn from it.
+   *
+   * This is the whole readiness contract for anything that captures pixels. It
+   * exists because every proxy for it is wrong in a way that yields a
+   * plausible-looking but wrong artifact:
+   *
+   * - Tile-layer counters alone miss the map load, which owns the environment IBL
+   *   and the baked shadow atlas: a frame drawn before those land shows the whole
+   *   city unlit against the clear colour. {@link residency} counts them.
+   * - `loading === 0 && uploading === 0` without `queued` reports idle while the
+   *   streamer still wants LODs it has not requested yet, and the streaming
+   *   decision itself is throttled to 10 Hz, so it can describe the viewpoint of
+   *   100 ms ago. A pending call lifts that throttle.
+   * - Counting animation frames measures elapsed frames, not delivered assets.
+   * - A lost WebGL context leaves every residency counter healthy — resident
+   *   tiles, no pending work, no streaming error — while the renderer draws
+   *   nothing at all, so only the context itself can report it.
+   *
+   * Readiness is asserted on two consecutive drawn frames. The first proves the
+   * scene was complete when it was drawn; the second proves that frame reached
+   * the compositor, which is what a screenshot reads.
+   *
+   * Rejects with the blocking reason if the deadline passes, so a caller reports
+   * the cause instead of a byte count.
+   */
+  captureReady(timeoutMs = 120_000): Promise<void> {
+    if (this.disposed) return Promise.reject(new Error('renderer is not capture-ready: viewer disposed'));
+    // Frames drawn before this call saw the caller's previous scene mutation, so
+    // they cannot count towards this request.
+    this.captureReadyDraws = 0;
+    // Executor form: the project's TypeScript lib target predates
+    // Promise.withResolvers, and the resolvers must outlive this call.
+    return new Promise<void>((resolve, reject) => {
+      this.captureWaiters.push({ resolve, reject, deadline: performance.now() + timeoutMs });
+    });
+  }
+
+  /** Why the scene cannot be captured right now, or `null` when it can. */
+  private captureBlocker(): string | null {
+    if (this.renderingSuspended) return 'rendering is suspended';
+    if (this.renderer.getContext().isContextLost()) return 'WebGL context is lost';
+    if (this.streamingError) return `streaming failed: ${this.streamingError}`;
+    if (!this.roadReady) return 'road layer has no geometry';
+    const { residentTiles, loading, queued, uploading } = this.residency();
+    if (residentTiles === 0) return 'no tiles are resident';
+    if (loading + queued + uploading > 0) {
+      return `renderer is still loading (${loading} loading, ${queued} queued, ${uploading} uploading)`;
+    }
+    return null;
+  }
+
+  private settleCaptureWaiters(now: number): void {
+    const blocker = this.captureBlocker();
+    if (blocker === null) {
+      this.captureReadyDraws += 1;
+      if (this.captureReadyDraws < 2) return;
+      for (const waiter of this.captureWaiters.splice(0, this.captureWaiters.length)) waiter.resolve();
+      return;
+    }
+    this.captureReadyDraws = 0;
+    for (let i = this.captureWaiters.length - 1; i >= 0; i -= 1) {
+      const waiter = this.captureWaiters[i]!;
+      if (now < waiter.deadline) continue;
+      this.captureWaiters.splice(i, 1);
+      waiter.reject(new Error(`renderer is not capture-ready: ${blocker}`));
+    }
+  }
 
   private updateStreaming(cameraPos: Vector3): void {
     const height = this.renderer.domElement.height || 1;
@@ -997,14 +1083,40 @@ export class CityViewer {
     );
   }
 
+  /**
+   * Streaming residency, summed over the tile layers in one pass. The single
+   * definition of "work still in flight": `loading` deliberately counts the map
+   * load itself, which owns the environment IBL and the baked shadow atlas that
+   * no tile-layer counter sees, and a frame drawn before those land renders the
+   * whole city unlit.
+   */
+  private residency(): {
+    residentTiles: number;
+    residentAssets: number;
+    loading: number;
+    queued: number;
+    uploading: number;
+  } {
+    let residentTiles = 0;
+    let residentAssets = 0;
+    let loading = Number(this.mapLoadActive) + this.presetTransitions + this.auxiliaryLoads;
+    let queued = 0;
+    let uploading = 0;
+    for (const layer of [this.cityLayer, this.vegLayer, this.roadLayer]) {
+      if (!layer) continue;
+      const stats = layer.stats();
+      residentTiles += stats.residentTiles;
+      residentAssets += stats.residentAssets;
+      loading += stats.loading;
+      queued += stats.queued;
+      uploading += stats.uploading;
+    }
+    return { residentTiles, residentAssets, loading, queued, uploading };
+  }
+
   // ------------------------------------------------------------- public API
 
   getStats(): CityViewerStats {
-    const city = this.cityLayer?.stats();
-    const veg = this.vegLayer?.stats();
-    const road = this.roadLayer?.stats();
-    const sum = (pick: (s: NonNullable<typeof city>) => number): number =>
-      (city ? pick(city) : 0) + (veg ? pick(veg) : 0) + (road ? pick(road) : 0);
     return {
       fps: this.fps,
       frameMsAvg: this.frameStats.avg(),
@@ -1017,14 +1129,10 @@ export class CityViewer {
       drawCalls: this.lastDrawCalls,
       triangles: this.lastTriangles,
       programs: this.renderer.info.programs?.length ?? 0,
-      residentTiles: sum((s) => s.residentTiles),
-      residentAssets: sum((s) => s.residentAssets),
+      ...this.residency(),
       residentBytes: this.residentBytes(),
       pendingBytes: this.totalBytes() - this.residentBytes(),
       byteBudget: this.options.byteBudget,
-      loading: sum((s) => s.loading) + Number(this.mapLoadActive) + this.presetTransitions + this.auxiliaryLoads,
-      queued: sum((s) => s.queued),
-      uploading: sum((s) => s.uploading),
       jsHeapMB: jsHeapMB(),
       cameraMode: this.controls.mode,
       renderingSuspended: this.renderingSuspended,
@@ -1540,6 +1648,10 @@ export class CityViewer {
     if (this.disposed) return;
     this.disposed = true;
     cancelAnimationFrame(this.rafHandle);
+    // The frame loop is gone, so nothing would ever settle a pending capture.
+    for (const waiter of this.captureWaiters.splice(0, this.captureWaiters.length)) {
+      waiter.reject(new Error('renderer is not capture-ready: viewer disposed'));
+    }
     this.abort.abort();
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;

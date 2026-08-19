@@ -62,7 +62,6 @@ export const DEFECT_CODES = Object.freeze({
   'render.camera.clearance_violation': 'camera eye intersects an actor footprint',
   'render.asset.map_evidence_missing': 'map or render-manifest evidence is absent for the scenario map',
   'render.asset.scene_mismatch': 'renderer mounted a different scene than the trace declares',
-  'capture.empty_scene': 'captured frame carries no rendered scene',
   'capture.missing_video': 'renderer produced no mp4',
   'capture.missing_manifest': 'renderer produced no render manifest',
   'capture.encoder_unavailable': 'frame encoder is unavailable or failed',
@@ -431,7 +430,6 @@ export function classifyRenderFailure(message) {
   if (/Studio loaded map|renderer is unavailable|render-quality preference|viewer canvas not found/i.test(text)) {
     return 'render.asset.scene_mismatch';
   }
-  if (/captured an empty scene/i.test(text)) return 'capture.empty_scene';
   if (/wrote no mp4|did not produce the requested H\.264|no mp4/i.test(text)) return 'capture.missing_video';
   if (/wrote no manifest|no manifest/i.test(text)) return 'capture.missing_manifest';
   if (/ffmpeg|ffprobe|encoded video mismatch/i.test(text)) return 'capture.encoder_unavailable';

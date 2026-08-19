@@ -241,7 +241,7 @@ export const OPERATIONAL_CLASSES = Object.freeze([
   { class: 'gateway-unavailable', pattern: /gateway unavailable|127\.0\.0\.1:4141|model gateway preflight failed|ECONNREFUSED/i },
   { class: 'provider-server-error', pattern: /\bHTTP 5\d\d\b|upstream error|bad gateway|service unavailable|overloaded_error|internal server error/i },
   { class: 'host-resource', pattern: /ENOSPC|ENOMEM|EMFILE|ENFILE|Cannot allocate memory|out of memory|JavaScript heap out of memory/i },
-  { class: 'renderer-infrastructure', pattern: /Execution context was destroyed|Target closed|Protocol error|Session closed|browser (?:has )?(?:disconnected|closed)|WebGL context|GPU process|renderer captured an empty scene|Navigation failed/i },
+  { class: 'renderer-infrastructure', pattern: /Execution context was destroyed|Target closed|Protocol error|Session closed|browser (?:has )?(?:disconnected|closed)|WebGL context|GPU process|Navigation failed/i },
   { class: 'submission', pattern: /submit .* failed|returned no jobId|submission outcome was not recoverable|fetch failed/i },
   { class: 'timeout', pattern: /ETIMEDOUT|\btimed out\b|timeout of \d+ms exceeded|SIGTERM/i },
 ]);

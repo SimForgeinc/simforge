@@ -916,7 +916,13 @@ async function loadCells(cellsDir) {
 
 async function normalizeRender(outDir, redact) {
   const names = await readdir(outDir);
-  const video = names.find((name) => name === 'rollout.mp4') ?? names.find((name) => name.endsWith('.mp4'));
+  // The 3D exporter writes `video.mp4`, the 2D renderer writes `rollout.mp4`.
+  // Prefer whatever this run just produced: preferring an existing `rollout.mp4`
+  // republished the previous attempt's clip after a recapture into the same
+  // directory, so a short or empty video survived its own replacement.
+  const video = names.find((name) => name === 'video.mp4')
+    ?? names.find((name) => name === 'rollout.mp4')
+    ?? names.find((name) => name.endsWith('.mp4'));
   if (!video) throw new Error(`renderer wrote no mp4 in ${outDir}`);
   if (video !== 'rollout.mp4') await copyFile(join(outDir, video), join(outDir, 'rollout.mp4'));
   const manifestName = names.includes('render-manifest.json')
@@ -1970,8 +1976,7 @@ export class ShowcasePipeline {
       // reviewed gets exactly one recapture before its failure becomes evidence.
       for (let index = 0; index < reviews.length; index += 1) {
         const item = reviews[index];
-        const captureFault = /no (?:2D|3D) review frames|renderer captured an empty scene/i
-          .test(String(item?.review?.error ?? ''));
+        const captureFault = /no (?:2D|3D) review frames/i.test(String(item?.review?.error ?? ''));
         if (!captureFault) continue;
         const cell = cells.find((candidate) => candidate.cellId === item.cellId);
         if (!cell) continue;
@@ -2310,7 +2315,11 @@ export class ShowcasePipeline {
       } catch (error) {
         lastError = error;
         const message = String(error?.message ?? error);
-        const transient = /Execution context was destroyed|navigation|Target closed|ECONNRESET|fetch failed|renderer captured an empty scene/i.test(message);
+        // A lost GPU context is the transient the exporter now names outright;
+        // it used to reach here as a blank capture. A fresh browser gets a fresh
+        // context, which is exactly what a second attempt provides.
+        const transient = /Execution context was destroyed|navigation|Target closed|ECONNRESET|fetch failed|is not capture-ready/i
+          .test(message);
         if (!transient || attempt === 2) break;
       }
     }
