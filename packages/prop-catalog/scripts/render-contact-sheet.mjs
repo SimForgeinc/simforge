@@ -55,18 +55,40 @@ const server = createServer((req, res) => {
 await new Promise((done) => server.listen(0, '127.0.0.1', done));
 const { port } = server.address();
 
-// --- find a chromium executable from the local playwright cache
+/**
+ * Chromium for the screenshot. Prefers an explicit override, then the
+ * Playwright cache for this platform, then a system Chrome — this used to look
+ * only in the macOS cache, so the script could not run on Linux at all.
+ */
 function findChromium() {
-  const cache = join(process.env.HOME ?? '', 'Library/Caches/ms-playwright');
-  if (!existsSync(cache)) throw new Error(`no playwright browser cache at ${cache}`);
-  const candidates = readdirSync(cache)
-    .filter((name) => name.startsWith('chromium-'))
-    .sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1]));
-  for (const name of candidates) {
-    const exe = join(cache, name, 'chrome-mac/Chromium.app/Contents/MacOS/Chromium');
-    if (existsSync(exe)) return exe;
+  const override = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
+  if (override) {
+    if (!existsSync(override)) throw new Error(`PLAYWRIGHT_CHROMIUM_EXECUTABLE not found: ${override}`);
+    return override;
   }
-  throw new Error('no chromium build found in the playwright cache');
+  const home = process.env.HOME ?? '';
+  const caches = [join(home, '.cache/ms-playwright'), join(home, 'Library/Caches/ms-playwright')];
+  const tails = [
+    'chrome-linux/chrome',
+    'chrome-mac/Chromium.app/Contents/MacOS/Chromium',
+    'chrome-mac-arm64/Chromium.app/Contents/MacOS/Chromium',
+    'chrome-win/chrome.exe',
+  ];
+  for (const cache of caches.filter((path) => existsSync(path))) {
+    const builds = readdirSync(cache)
+      .filter((name) => name.startsWith('chromium-'))
+      .sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1]));
+    for (const name of builds) {
+      for (const tail of tails) {
+        const exe = join(cache, name, tail);
+        if (existsSync(exe)) return exe;
+      }
+    }
+  }
+  for (const system of ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser']) {
+    if (existsSync(system)) return system;
+  }
+  throw new Error('no chromium build found; set PLAYWRIGHT_CHROMIUM_EXECUTABLE');
 }
 
 const browser = await chromium.launch({

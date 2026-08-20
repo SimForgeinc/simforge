@@ -62,7 +62,19 @@ const sections: { title: string; y: number }[] = [];
 let cursorY = HEADER;
 let column = 0;
 
-const classOrder = ['vehicle', 'pedestrian', 'construction', 'occluder', 'street', 'hazard'];
+// Every class the catalog defines. Robots, drones and animals were missing
+// from this list, so sixteen props were never in the review sheet at all.
+const classOrder = [
+  'vehicle',
+  'pedestrian',
+  'sidewalk_robot',
+  'drone',
+  'animal',
+  'construction',
+  'occluder',
+  'street',
+  'hazard',
+];
 const grouped = classOrder.map((cls) => ({
   cls,
   entries: CATALOG.filter((entry) => entry.class === cls),

@@ -65,7 +65,7 @@ export {
 
 // Direct builder access, for callers that want a specific parametric variant
 // without going through the catalog defaults.
-export type { VehicleParams } from './builders/vehicles';
+export type { VehicleParams } from './builders/shell';
 export type { PedestrianParams } from './builders/pedestrians';
 export type { RobotParams } from './builders/robots';
 export type { DroneParams } from './builders/drones';
