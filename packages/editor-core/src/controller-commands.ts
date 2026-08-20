@@ -37,11 +37,12 @@
  */
 
 import { Raycaster, Vector2, Vector3 } from 'three';
-import type { EditorViewer } from './viewer-contract';
+import { getViewerSurfaceRect, type EditorViewer } from './viewer-contract';
 import { getEntry, type CatalogId } from '@uniscenarios/prop-catalog';
 import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
 import type { SceneTrace, SimScenarioInput } from '@uniscenarios/sim-engine';
 import { ActorRenderer, GhostActor, type ActorView } from './actorRenderer';
+
 import {
   actorKindFor,
   type ActorRecord,
@@ -59,7 +60,18 @@ import {
 } from './laneIndex';
 import { VehicleRouteOverlayRenderer } from './routeOverlay';
 
+/**
+ * Screen-space radius, in pixels, within which clicking the last drawn point of a
+ * timed route repeats it as a one-second wait instead of adding a new position.
+ */
+const ROUTE_WAIT_SNAP_PX = 5;
+
+/** Ground-ray projection across an actor body still represents the actor seed. */
+const ROUTE_POINT_COINCIDENCE_EPSILON_M = 0.3;
+
+
 export type EditorMode = 'idle' | 'placing' | 'grab' | 'rotate' | 'drawingRoute';
+export type CustomRouteTool = 'add' | 'move';
 
 /** Everything the panels render from. Replaced wholesale on every change. */
 export interface EditorState {
@@ -82,6 +94,8 @@ export interface EditorState {
   /** Non-blocking route warning for the lane under the placement ghost. */
   readonly placementWarning: string | null;
   readonly customRoutePointCount: number;
+  readonly customRouteTool: CustomRouteTool | null;
+  readonly customRouteSelectedPointIndex: number | null;
   /** One-line status hint: mode plus the modifiers that apply to it. */
   readonly hint: string;
   /** Transient feedback (a refused placement, a broken anchor). */
@@ -208,10 +222,14 @@ export abstract class EditorControllerCommands {
   protected messageTimer: ReturnType<typeof setTimeout> | null = null;
   protected customRouteDraft: {
     interactionId: string;
-    points: Array<{ x: number; z: number }>;
+    points: Array<{ x: number; z: number; timeS?: number }>;
+    timed: boolean;
     cursor: { x: number; z: number } | null;
     removeOnCancel: boolean;
     seedLocked: boolean;
+    tool: CustomRouteTool;
+    selectedPointIndex: number | null;
+    draggingPointIndex: number | null;
   } | null = null;
 
   /** Pointer bookkeeping for the click-vs-drag discrimination. */
@@ -222,6 +240,7 @@ export abstract class EditorControllerCommands {
   protected headingDrag: { x: number; z: number } | null = null;
   protected freeHeading = 0;
   protected placementHeadingOffsetRad = 0;
+  protected placingFreeformStatic = false;
   protected altDown = false;
   protected shiftDown = false;
   protected lastGroundY = 0;
@@ -394,13 +413,15 @@ export abstract class EditorControllerCommands {
   // ---------------------------------------------------------- commands (UI)
 
   /** Enter placement mode with a catalog item, or leave it if it is already active. */
-  togglePlacement(catalogId: CatalogId): void {
+  togglePlacement(catalogId: CatalogId, options: { freeformStatic?: boolean } = {}): void {
     if (!this.authoringEnabled) return;
-    if (this.mode === 'placing' && this.placing === catalogId) {
+    const freeformStatic = Boolean(options.freeformStatic);
+    if (this.mode === 'placing' && this.placing === catalogId && this.placingFreeformStatic === freeformStatic) {
       this.cancel();
       return;
     }
     this.cancelModal();
+    this.placingFreeformStatic = freeformStatic;
     this.placingKind = null;
     this.pendingActorId = null;
     this.mode = 'placing';
@@ -458,7 +479,7 @@ export abstract class EditorControllerCommands {
   } = {}): boolean {
     if (!this.authoringEnabled) return false;
     const interaction = this.doc.data.choreography.interactions.find((item) => item.id === interactionId);
-    if (interaction?.verb !== 'route' || interaction.target.mode !== 'customRoute') return false;
+    if (interaction?.verb !== 'route' || (interaction.target.mode !== 'customRoute' && interaction.target.mode !== 'customTimedRoute')) return false;
     this.cancelModal();
     const actor = this.doc.actor(interaction.actor);
     const startPose = options.startPose;
@@ -475,12 +496,16 @@ export abstract class EditorControllerCommands {
     this.mode = 'drawingRoute';
     this.customRouteDraft = {
       interactionId,
+      timed: interaction.target.mode === 'customTimedRoute',
       points: startPose
         ? [{ x: Number(startPose.x.toFixed(3)), z: Number(startPose.z.toFixed(3)) }]
         : options.reset ? [] : interaction.target.points.map((point) => ({ ...point })),
       cursor: null,
       removeOnCancel: options.removeOnCancel ?? false,
       seedLocked: Boolean(startPose),
+      tool: startPose || options.reset ? 'add' : 'move',
+      selectedPointIndex: null,
+      draggingPointIndex: null,
     };
     this.selection = [interaction.actor];
     this.syncCustomRouteDraft();
@@ -491,23 +516,87 @@ export abstract class EditorControllerCommands {
 
   finishCustomRouteAuthoring(): boolean {
     const draft = this.customRouteDraft;
-    if (!draft || draft.points.length < 2) {
+    if (!draft) {
+      this.flash('Place at least two route points');
+      return false;
+    }
+    const cursor = draft.cursor
+      ? { x: Number(draft.cursor.x.toFixed(3)), z: Number(draft.cursor.z.toFixed(3)) }
+      : null;
+    const previous = draft.points.at(-1);
+    if (cursor && draft.points.length < 128 && (!previous || Math.hypot(previous.x - cursor.x, previous.z - cursor.z) >= 0.1)) {
+      draft.points.push(cursor);
+    }
+    if (draft.points.length < 2) {
       this.flash('Place at least two route points');
       return false;
     }
     const interaction = this.doc.data.choreography.interactions.find((item) => item.id === draft.interactionId);
-    if (interaction?.verb !== 'route' || interaction.target.mode !== 'customRoute') return false;
-    this.customRouteDraft = null;
-    this.mode = 'idle';
-    this.preview.clear();
-    this.routeRenderer.setDraftRoute(null);
-    this.doc.replaceInteraction(interaction.id, {
-      ...interaction,
-      target: { mode: 'customRoute', points: draft.points },
-    });
+    if (interaction?.verb !== 'route' || (interaction.target.mode !== 'customRoute' && interaction.target.mode !== 'customTimedRoute')) return false;
+    this.commitCustomRouteDraft(interaction);
+    draft.cursor = null;
+    draft.removeOnCancel = false;
+    draft.seedLocked = false;
+    draft.tool = 'move';
+    draft.selectedPointIndex = null;
+    draft.draggingPointIndex = null;
+    this.syncCustomRouteDraft();
     this.syncScene();
     this.notify();
     return true;
+  }
+
+  setCustomRouteTool(tool: CustomRouteTool): void {
+    const draft = this.customRouteDraft;
+    if (!draft) return;
+    draft.tool = tool;
+    draft.cursor = null;
+    draft.selectedPointIndex = null;
+    draft.draggingPointIndex = null;
+    this.viewer.controls.setEnabled(true);
+    this.syncCustomRouteDraft();
+    this.notify();
+  }
+
+  deleteSelectedCustomRoutePoint(): void {
+    const draft = this.customRouteDraft;
+    const index = draft?.selectedPointIndex;
+    if (!draft || index === null || index === undefined || index < 0) return;
+    if (draft.points.length <= 2) {
+      this.flash('A route needs at least two points');
+      return;
+    }
+    draft.points.splice(index, 1);
+    draft.selectedPointIndex = Math.min(index, draft.points.length - 1);
+    const interaction = this.doc.data.choreography.interactions.find((item) => item.id === draft.interactionId);
+    if (interaction?.verb === 'route' && (interaction.target.mode === 'customRoute' || interaction.target.mode === 'customTimedRoute')) {
+      this.commitCustomRouteDraft(interaction);
+    }
+    this.syncCustomRouteDraft();
+    this.syncScene();
+    this.notify();
+  }
+
+  protected commitCustomRouteDraft(interaction: Extract<ScenarioTemplateV2['choreography']['interactions'][number], { verb: 'route' }>): void {
+    const draft = this.customRouteDraft;
+    if (!draft) return;
+    const triggerStartS = interaction.trigger.kind === 'at' && typeof interaction.trigger.t === 'number'
+      ? interaction.trigger.t
+      : 0;
+    let previousTimeS = triggerStartS - 1;
+    this.doc.replaceInteraction(interaction.id, {
+      ...interaction,
+      target: draft.timed
+        ? {
+            mode: 'customTimedRoute',
+            points: draft.points.map((point) => {
+              const timeS = typeof point.timeS === 'number' ? point.timeS : previousTimeS + 1;
+              previousTimeS = timeS;
+              return { timeS: Number(timeS.toFixed(3)), x: point.x, z: point.z };
+            }),
+          }
+        : { mode: 'customRoute', points: draft.points.map(({ x, z }) => ({ x, z })) },
+    });
   }
 
   removeLastCustomRoutePoint(): void {
@@ -528,12 +617,61 @@ export abstract class EditorControllerCommands {
     this.syncScene();
   }
 
-  protected addCustomRoutePoint(point: Vector3): void {
+  /**
+   * Place one drawn route point at the end of the path.
+   *
+   * Drawing only ever appends. Measuring the click against every existing
+   * segment and splicing it in when it landed within a metre or so of one
+   * cannot work: that distance is computed from a projection clamped to the
+   * segment's ends, and past the final vertex it is just the stride length, so
+   * every stride shorter than the radius reads as a mid-path click. A straight
+   * path's segments are collinear and the earliest wins the tie, so each new
+   * point lands behind the first and the path draws itself backwards — worst on
+   * walkers, whose strides are shorter than the radius. A point in the wrong
+   * place is moved by dragging its handle, which acts on the point itself
+   * instead of guessing intent from proximity.
+   *
+   * ## Clicking the last point again is a wait, on timed routes only
+   *
+   * Two keyframes on one spot is how an author writes a dwell, so a click
+   * within a few pixels of the last point's screen position repeats that point
+   * exactly rather than sampling the ground under the cursor. The test is in
+   * screen space on purpose: at a grazing camera angle the ground point a few
+   * pixels away is tens of metres away, so a world-space radius would either
+   * miss the gesture or swallow deliberate nearby steps. An untimed route has
+   * no time axis and therefore no dwell to express, so it never snaps.
+   */
+  protected addCustomRoutePoint(point: Vector3, event?: { clientX: number; clientY: number }): void {
     const draft = this.customRouteDraft;
     if (!draft || draft.points.length >= 128) return;
-    const next = { x: Number(point.x.toFixed(3)), z: Number(point.z.toFixed(3)) };
-    const previous = draft.points.at(-1);
-    if (previous && Math.hypot(previous.x - next.x, previous.z - next.z) < .1) return;
+    const latest = draft.points.at(-1);
+    const bounds = getViewerSurfaceRect(this.viewer);
+    const projected = latest
+      ? new Vector3(
+          latest.x,
+          (this.sampleHeight(latest.x, latest.z) ?? this.lastGroundY) + .1,
+          latest.z,
+        ).project(this.viewer.camera)
+      : null;
+    const latestClientX = projected ? bounds.left + (projected.x + 1) * bounds.width / 2 : Infinity;
+    const latestClientY = projected ? bounds.top + (1 - projected.y) * bounds.height / 2 : Infinity;
+    const waiting = Boolean(
+      draft.timed && latest && event && projected && projected.z >= -1 && projected.z <= 1
+      && Math.hypot(event.clientX - latestClientX, event.clientY - latestClientY) <= ROUTE_WAIT_SNAP_PX,
+    );
+    const next = waiting
+      ? { x: latest!.x, z: latest!.z }
+      : { x: Number(point.x.toFixed(3)), z: Number(point.z.toFixed(3)) };
+    if (
+      !draft.timed
+      && latest
+      && Math.hypot(next.x - latest.x, next.z - latest.z) <= ROUTE_POINT_COINCIDENCE_EPSILON_M
+    ) {
+      draft.cursor = null;
+      this.syncCustomRouteDraft();
+      this.notify();
+      return;
+    }
     draft.points.push(next);
     this.syncCustomRouteDraft();
     this.notify();
@@ -542,15 +680,54 @@ export abstract class EditorControllerCommands {
   protected updateCustomRouteCursor(point: Vector3 | null): void {
     const draft = this.customRouteDraft;
     if (!draft) return;
-    draft.cursor = point ? { x: point.x, z: point.z } : null;
+    const cursor = point ? { x: point.x, z: point.z } : null;
+    const latest = draft.points.at(-1);
+    draft.cursor = cursor && latest
+      && Math.hypot(cursor.x - latest.x, cursor.z - latest.z) <= ROUTE_POINT_COINCIDENCE_EPSILON_M
+      ? null
+      : cursor;
     this.syncCustomRouteDraft();
   }
 
   protected syncCustomRouteDraft(): void {
     const draft = this.customRouteDraft;
-    this.routeRenderer.setDraftRoute(draft
-      ? [...draft.points, ...(draft.cursor && draft.points.length ? [draft.cursor] : [])]
-      : null);
+    if (!draft) {
+      this.routeRenderer.setDraftRoute(null);
+      return;
+    }
+    const interaction = this.doc.data.choreography.interactions.find((item) => item.id === draft.interactionId);
+    const triggerStartS = interaction?.trigger.kind === 'at' && typeof interaction.trigger.t === 'number'
+      ? interaction.trigger.t
+      : 0;
+    this.routeRenderer.setDraftRoute(
+      [...draft.points, ...(draft.tool === 'add' && draft.cursor && draft.points.length ? [draft.cursor] : [])],
+      {
+        // A run of points on one spot is a wait, and labelling each of them with
+        // its own second stacks unreadable text on a single marker. Label the
+        // run once, on its last point, with the span it covers; the earlier
+        // members render nothing.
+        timeLabels: draft.timed
+          ? draft.points.map((point, index) => {
+              let runStart = index;
+              let runEnd = index;
+              while (
+                runStart > 0
+                && Math.hypot(point.x - draft.points[runStart - 1]!.x, point.z - draft.points[runStart - 1]!.z) <= 1e-6
+              ) runStart--;
+              while (
+                runEnd + 1 < draft.points.length
+                && Math.hypot(point.x - draft.points[runEnd + 1]!.x, point.z - draft.points[runEnd + 1]!.z) <= 1e-6
+              ) runEnd++;
+              if (index !== runEnd) return '';
+              const startTimeS = Number((draft.points[runStart]!.timeS ?? triggerStartS + runStart).toFixed(3));
+              const endTimeS = Number((draft.points[runEnd]!.timeS ?? triggerStartS + runEnd).toFixed(3));
+              return runStart === runEnd ? `${endTimeS}s` : `${startTimeS}–${endTimeS}s`;
+            })
+          : undefined,
+        selectedPointIndex: draft.selectedPointIndex,
+        committedPointCount: draft.points.length,
+      },
+    );
   }
 
   setSelection(ids: readonly string[]): void {
@@ -690,7 +867,10 @@ export abstract class EditorControllerCommands {
       this.flash('select something first');
       return;
     }
-    if (this.selection.some((id) => this.doc.actor(id)?.kind === 'vehicle')) {
+    if (this.selection.some((id) => {
+      const actor = this.doc.actor(id);
+      return actor?.kind === 'vehicle' && !actor.static;
+    })) {
       this.flash('Vehicles follow lane travel direction and cannot be freely rotated');
       return;
     }
@@ -742,7 +922,7 @@ export abstract class EditorControllerCommands {
       patch.headingDeg === undefined
         ? actor.headingRad
         : normalizeHeading((patch.headingDeg * Math.PI) / 180);
-    if (isRoadBoundMotorVehicle(actor.catalogId)) {
+    if (!actor.static && isRoadBoundMotorVehicle(actor.catalogId)) {
       const snapped = this.snapMotorVehicle(actor.catalogId, new Vector3(x, actor.y, z), {
         lateralM: actor.laneRef?.t ?? 0,
         fallbackHeadingRad: actor.headingRad

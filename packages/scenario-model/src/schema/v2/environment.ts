@@ -129,8 +129,8 @@ export const SurfacePatchSchema = z.strictObject({
 
 /** The `environment` block. */
 export const EnvironmentSchema = z.strictObject({
-  weather: WeatherSchema.default('clear'),
-  timeOfDay: TimeOfDaySchema.default('noon'),
+  weather: WeatherSchema.default('cloudy'),
+  timeOfDay: TimeOfDaySchema.default('dusk'),
   /**
    * Tyre-road friction multiplier against the map's nominal value. 1 = dry
    * asphalt. Set it explicitly when the scenario is *about* friction; leave it

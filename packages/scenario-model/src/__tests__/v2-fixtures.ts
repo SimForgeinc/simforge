@@ -183,7 +183,7 @@ export function ltapMapContext(overrides: Partial<Parameters<typeof createFakeMa
       'jx/same/straight': { conflictS: 6 },
       'jx/same/left': { conflictS: 4 },
     },
-    signals: { 'jx:ego': ['green', 'yellow', 'red'] },
+    signals: { 'jx:subject': ['green', 'yellow', 'red'] },
     features: { jx: { kind: 'junction', atM: 0, sizeM: 26 } },
     ...overrides,
   });

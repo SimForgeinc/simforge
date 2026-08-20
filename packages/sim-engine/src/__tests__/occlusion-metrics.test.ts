@@ -27,6 +27,7 @@ function actor(id: string, x: number, speedMps = 0): ActorRuntime {
     cruiseOverrideMps: speedMps,
     route: {} as ActorRuntime['route'],
     routeS: x,
+    timedRoute: null,
     bestEffortWorldPath: false,
     remainingTurns: [],
     speedMps,

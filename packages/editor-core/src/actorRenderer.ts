@@ -29,6 +29,8 @@
  */
 
 import {
+  AnimationMixer,
+  Box3,
   BufferAttribute,
   BufferGeometry,
   BoxGeometry,
@@ -47,13 +49,23 @@ import {
   Quaternion,
   SphereGeometry,
   Vector3,
+  type AnimationClip,
   type Intersection,
   type Material,
   type Object3D
 } from 'three';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { LOW_FIDELITY_HIDDEN_ROLE } from './viewer-contract';
-import { buildProp, getEntry, type CatalogId, type Dims } from '@uniscenarios/prop-catalog';
+import { buildProp, getEntry, type CatalogId, type Dims, type ExternalModelBinding } from '@uniscenarios/prop-catalog';
 import type { ActorKind } from '@uniscenarios/sim-engine';
+import type { ActorSensor } from '@uniscenarios/scenario-model';
+import {
+  externalModelClips,
+  externalModelScene,
+  onExternalModelChange,
+  requestExternalModel,
+} from './externalModel';
+import { ActorSensorOverlay } from './sensorOverlay';
 
 export type DoorName = 'left' | 'right' | 'rear';
 export type DoorState = 'closed' | 'opening' | 'open' | 'closing';
@@ -92,6 +104,14 @@ export interface ActorView {
   /** Scenario clock and sampled speed drive procedural motion until a rigged GLB is installed. */
   readonly animationTimeS?: number;
   readonly speedMps?: number;
+  /** Physical sensors authored on this actor. Playback-only views omit them. */
+  readonly sensors?: readonly ActorSensor[];
+  /**
+   * How far through being knocked down this body is: 0 standing, 1 flat on the
+   * ground. Derived from the trace's `downSinceS`, so it is a presentation of a
+   * recorded fact rather than a second source of truth.
+   */
+  readonly downProgress?: number;
 }
 
 /** One material's worth of a merged prop. */
@@ -107,6 +127,8 @@ interface PropTemplate {
 }
 
 const templates = new Map<string, PropTemplate>();
+const proxyMaterials = new Map<string, MeshStandardMaterial>();
+
 
 const SEMANTIC_TEMPLATE_DIMS = {
   animal: { l: 1.2, w: 0.45, h: 0.9 },
@@ -117,17 +139,65 @@ const SEMANTIC_TEMPLATE_DIMS = {
 /**
  * Build (or fetch) the merged geometry set for a catalog id.
  *
- * Geometries are cloned into world space and concatenated per material, keeping
- * only `position` and `normal` — the only attributes `prop-catalog`'s materials
- * read (nothing in the palette enables `vertexColors` or maps).
+ * Procedural catalog props retain the compact position-and-normal path. Loaded
+ * GLBs additionally retain UVs and every material group so textured assets can
+ * share the same instanced batching path without losing their appearance.
  */
 export function propTemplate(catalogId: CatalogId): PropTemplate {
+  const entry = getEntry(catalogId);
+  const binding = entry.model;
+  if (binding?.kind === 'proxy') {
+    const key = `placeholder:${catalogId}`;
+    const cached = templates.get(key);
+    if (cached) return cached;
+    const root = buildProp(catalogId);
+    if (binding.tint) {
+      let material = proxyMaterials.get(binding.tint);
+      if (!material) {
+        material = new MeshStandardMaterial({
+          color: binding.tint,
+          roughness: 0.8,
+          metalness: 0,
+        });
+        proxyMaterials.set(binding.tint, material);
+      }
+      root.traverse((object) => {
+        const mesh = object as Mesh;
+        if (mesh.isMesh) mesh.material = material;
+      });
+    }
+    const template = mergeTemplate(root, entry.dims);
+    templates.set(key, template);
+    return template;
+  }
+  if (binding?.kind === 'glb') {
+    const scene = externalModelScene(binding.contentHash);
+    if (scene) {
+      const key = `external:${binding.contentHash}`;
+      const cached = templates.get(key);
+      if (cached) return cached;
+      const bounds = new Box3().setFromObject(scene);
+      const size = bounds.getSize(new Vector3());
+      const template = mergeTemplate(scene, { l: size.x, w: size.z, h: size.y }, {
+        preserveUv: true,
+        disposeSourceGeometry: false,
+      });
+      templates.set(key, template);
+      return template;
+    }
+    requestExternalModel(binding);
+    const key = `placeholder:${catalogId}`;
+    const cached = templates.get(key);
+    if (cached) return cached;
+    const template = mergeTemplate(buildProp(catalogId), entry.dims);
+    templates.set(key, template);
+    return template;
+  }
+
   const key = `catalog:${catalogId}`;
   const cached = templates.get(key);
   if (cached) return cached;
-
-  const root = buildProp(catalogId);
-  const template = mergeTemplate(root, getEntry(catalogId).dims);
+  const template = mergeTemplate(buildProp(catalogId), entry.dims);
   templates.set(key, template);
   return template;
 }
@@ -163,45 +233,77 @@ function templateFor(identity: ActorRenderIdentity): PropTemplate {
   return template;
 }
 
-function mergeTemplate(root: Object3D, dims: Dims): PropTemplate {
+interface MergeTemplateOptions {
+  preserveUv?: boolean;
+  disposeSourceGeometry?: boolean;
+}
+
+function mergeTemplate(
+  root: Object3D,
+  dims: Dims,
+  options: MergeTemplateOptions = {},
+): PropTemplate {
   root.updateMatrixWorld(true);
 
-  const byMaterial = new Map<string, { material: Material; positions: number[]; normals: number[] }>();
+  interface MaterialBucket {
+    material: Material;
+    positions: number[];
+    normals: number[];
+    uvs?: number[];
+  }
+  const byMaterial = new Map<string, MaterialBucket>();
   root.traverse((object) => {
     const mesh = object as Mesh;
     if (!mesh.isMesh) return;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    const material = materials[0];
-    if (!material) return;
     const flat = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
     flat.applyMatrix4(mesh.matrixWorld);
     if (!flat.attributes.normal) flat.computeVertexNormals();
     const position = flat.attributes.position as BufferAttribute;
     const normal = flat.attributes.normal as BufferAttribute;
+    const uv = flat.attributes.uv as BufferAttribute | undefined;
+    const groups = flat.groups.length > 0
+      ? flat.groups
+      : [{ start: 0, count: position.count, materialIndex: 0 }];
 
-    let bucket = byMaterial.get(material.uuid);
-    if (!bucket) {
-      bucket = { material, positions: [], normals: [] };
-      byMaterial.set(material.uuid, bucket);
-    }
-    for (let i = 0; i < position.count; i++) {
-      bucket.positions.push(position.getX(i), position.getY(i), position.getZ(i));
-      bucket.normals.push(normal.getX(i), normal.getY(i), normal.getZ(i));
+    for (const group of groups) {
+      const material = materials[group.materialIndex ?? 0] ?? materials[0];
+      if (!material) continue;
+      let bucket = byMaterial.get(material.uuid);
+      if (!bucket) {
+        bucket = {
+          material,
+          positions: [],
+          normals: [],
+          ...(options.preserveUv ? { uvs: [] } : {}),
+        };
+        byMaterial.set(material.uuid, bucket);
+      }
+      const end = Math.min(position.count, group.start + group.count);
+      for (let i = group.start; i < end; i++) {
+        bucket.positions.push(position.getX(i), position.getY(i), position.getZ(i));
+        bucket.normals.push(normal.getX(i), normal.getY(i), normal.getZ(i));
+        if (bucket.uvs) bucket.uvs.push(uv?.getX(i) ?? 0, uv?.getY(i) ?? 0);
+      }
     }
     flat.dispose();
   });
 
-  // The source prop was scratch: its geometries are not referenced again.
-  root.traverse((object) => {
-    const mesh = object as Mesh;
-    if (mesh.isMesh) mesh.geometry.dispose();
-  });
+  if (options.disposeSourceGeometry !== false) {
+    root.traverse((object) => {
+      const mesh = object as Mesh;
+      if (mesh.isMesh) mesh.geometry.dispose();
+    });
+  }
 
   const parts: TemplatePart[] = [];
   for (const bucket of byMaterial.values()) {
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(new Float32Array(bucket.positions), 3));
     geometry.setAttribute('normal', new BufferAttribute(new Float32Array(bucket.normals), 3));
+    if (bucket.uvs) {
+      geometry.setAttribute('uv', new BufferAttribute(new Float32Array(bucket.uvs), 2));
+    }
     geometry.computeBoundingBox();
     geometry.computeBoundingSphere();
     parts.push({ geometry, material: bucket.material });
@@ -272,11 +374,15 @@ function addMesh(
 
 /** Drop cached geometry and renderer-owned semantic materials. Catalog materials stay. */
 export function disposePropTemplates(): void {
-  for (const template of templates.values()) {
-    for (const part of template.parts) part.geometry.dispose();
-    for (const material of template.ownedMaterials ?? []) material.dispose();
-  }
+  for (const template of templates.values()) disposeTemplate(template);
   templates.clear();
+  for (const material of proxyMaterials.values()) material.dispose();
+  proxyMaterials.clear();
+}
+
+function disposeTemplate(template: PropTemplate): void {
+  for (const part of template.parts) part.geometry.dispose();
+  for (const material of template.ownedMaterials ?? []) material.dispose();
 }
 
 /** A soft dark blob, used as the contact shadow under every actor. */
@@ -304,11 +410,23 @@ interface Batch {
   capacity: number;
 }
 
+interface AnimatedClone {
+  bindingHash: string;
+  container: Group;
+  root: Object3D;
+  mixer: AnimationMixer;
+  templateDims: Dims;
+  activeClip: AnimationClip | null;
+  drawCalls: number;
+}
+
 const _matrix = new Matrix4();
 const _position = new Vector3();
 const _quaternion = new Quaternion();
 const _scale = new Vector3(1, 1, 1);
 const _up = new Vector3(0, 1, 0);
+/** Body lateral axis in model space: the axis a body pitches forward about. */
+const _lateral = new Vector3(0, 0, 1);
 const WHITE_INSTANCE_TINT = new Color('#ffffff');
 const instanceTintCache = new Map<string, Color>();
 
@@ -341,6 +459,9 @@ export class ActorRenderer {
   private readonly batches = new Map<string, Batch>();
   /** Actor id per instance slot, shared by every batch of one catalog id. */
   private readonly slots = new Map<string, string[]>();
+  private readonly animatedGroup = new Group();
+  private readonly animatedClones = new Map<string, AnimatedClone>();
+  private readonly unsubscribeExternalModelChanges: () => void;
   private readonly shadowTexture: CanvasTexture;
   private readonly shadowMaterial: MeshBasicMaterial;
   private readonly shadowGeometry: PlaneGeometry;
@@ -370,6 +491,7 @@ export class ActorRenderer {
   private readonly indicatorMaterial = new MeshBasicMaterial({ color: 0xffa21a, toneMapped: false });
   private readonly indicatorBatches = new Map<'left' | 'right', Batch>();
   private readonly selection: LineSegments;
+  private readonly sensorOverlay = new ActorSensorOverlay();
   private drawCalls = 0;
   private disposed = false;
   private readonly layers = new Map<string, readonly ActorView[]>();
@@ -377,6 +499,27 @@ export class ActorRenderer {
 
   constructor() {
     this.group.name = 'actors';
+    this.animatedGroup.name = 'animated-actors';
+    this.group.add(this.animatedGroup);
+    this.unsubscribeExternalModelChanges = onExternalModelChange((contentHash) => {
+      if (this.disposed) return;
+      if (!externalModelScene(contentHash)) return;
+      for (const key of [...templates.keys()]) {
+        if (!key.startsWith('placeholder:')) continue;
+        const catalogId = key.slice('placeholder:'.length);
+        try {
+          const model = getEntry(catalogId).model;
+          if (model?.kind === 'glb' && model.contentHash === contentHash) {
+            const placeholder = templates.get(key);
+            if (placeholder) disposeTemplate(placeholder);
+            templates.delete(key);
+          }
+        } catch {
+          // A concurrently unregistered gallery entry has no template to refresh.
+        }
+      }
+      this.syncLayers();
+    });
 
     this.shadowTexture = contactShadowTexture();
     this.shadowMaterial = new MeshBasicMaterial({
@@ -410,13 +553,14 @@ export class ActorRenderer {
     this.selection.renderOrder = 30;
     this.selection.frustumCulled = false;
     this.group.add(this.selection);
+    this.group.add(this.sensorOverlay.group);
   }
 
-  /** Draw calls this layer contributes when everything is visible. */
   get stats(): { batches: number; drawCalls: number } {
+    const sensorStats = this.sensorOverlay.stats;
     return {
-      batches: this.batches.size + this.doorBatches.size + this.indicatorBatches.size + (this.reverseLightBatch ? 1 : 0) + (this.emergencyRedBatch ? 1 : 0) + (this.emergencyBlueBatch ? 1 : 0),
-      drawCalls: this.drawCalls
+      batches: this.batches.size + this.doorBatches.size + this.indicatorBatches.size + (this.reverseLightBatch ? 1 : 0) + (this.emergencyRedBatch ? 1 : 0) + (this.emergencyBlueBatch ? 1 : 0) + sensorStats.housingDrawCalls,
+      drawCalls: this.drawCalls + sensorStats.housingDrawCalls + sensorStats.coverageDrawCalls
     };
   }
 
@@ -464,10 +608,27 @@ export class ActorRenderer {
 
     let draws = 0;
     const activeBatchKeys = new Set<string>();
+    const activeAnimatedIds = new Set<string>();
     for (const [identityKey, group] of [...byIdentity].sort(([a], [b]) => a.localeCompare(b))) {
       const list = group.actors.sort((a, b) => a.id.localeCompare(b.id));
+      const binding = group.identity.source === 'catalog'
+        ? getEntry(group.identity.catalogId).model
+        : undefined;
+      const animatedScene = binding?.kind === 'glb' && binding.animated
+        ? externalModelScene(binding.contentHash)
+        : null;
+      if (binding?.kind === 'glb' && binding.animated && animatedScene) {
+        const clips = externalModelClips(binding.contentHash);
+        for (const actor of list) {
+          activeAnimatedIds.add(actor.id);
+          draws += this.syncAnimatedActor(actor, binding, animatedScene, clips);
+        }
+        this.slots.delete(identityKey);
+        continue;
+      }
+
       const template = templateFor(group.identity);
-      const ids = list.map((a) => a.id);
+      const ids = list.map((actor) => actor.id);
       // A catalog prop has several material batches, but every part of an
       // actor has the same world transform and tint. Compute those once per
       // actor rather than once per material part (a sedan has seven parts).
@@ -493,6 +654,9 @@ export class ActorRenderer {
         draws++;
       }
     }
+    for (const [actorId, animated] of this.animatedClones) {
+      if (!activeAnimatedIds.has(actorId)) this.disposeAnimatedClone(actorId, animated);
+    }
 
     // Visuals that no longer have actors remain allocated because scrubbing and
     // editor placement commonly bring them back. Their identity stays stable.
@@ -508,6 +672,7 @@ export class ActorRenderer {
     draws += this.syncReverseLights(actors);
     draws += this.syncEmergencyLights(actors);
     draws += this.syncIndicators(actors);
+    this.sensorOverlay.sync(actors);
     this.drawCalls = draws + (actors.length > 0 ? 1 : 0);
   }
 
@@ -522,6 +687,7 @@ export class ActorRenderer {
     geometry.computeBoundingSphere();
     this.selection.geometry.dispose();
     this.selection.geometry = geometry;
+    this.sensorOverlay.setSelectedActorIds(new Set(actors.map((actor) => actor.id)));
     this.selection.visible = verts.length > 0;
   }
 
@@ -537,19 +703,30 @@ export class ActorRenderer {
     if (this.reverseLightBatch && this.reverseLightBatch.mesh.count > 0) {
       out.push(this.reverseLightBatch.mesh);
     }
+    for (const animated of this.animatedClones.values()) out.push(animated.root);
     return out;
   }
 
   /** Resolve a raycast hit against {@link pickables} to an actor id. */
   actorIdForHit(hit: Intersection): string | null {
     const ids = hit.object.userData.actorIds as string[] | undefined;
-    if (!ids || hit.instanceId === undefined) return null;
-    return ids[hit.instanceId] ?? null;
+    if (ids && hit.instanceId !== undefined) return ids[hit.instanceId] ?? null;
+    let object: Object3D | null = hit.object;
+    while (object) {
+      const actorId = object.userData.actorId;
+      if (typeof actorId === 'string') return actorId;
+      object = object.parent;
+    }
+    return null;
   }
 
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.unsubscribeExternalModelChanges();
+    for (const [actorId, animated] of this.animatedClones) {
+      this.disposeAnimatedClone(actorId, animated);
+    }
     this.layers.clear();
     this.hiddenLayers.clear();
     for (const batch of this.batches.values()) {
@@ -595,14 +772,87 @@ export class ActorRenderer {
     this.shadowTexture.dispose();
     this.selection.geometry.dispose();
     (this.selection.material as Material).dispose();
+    this.sensorOverlay.dispose();
     this.group.clear();
     this.group.removeFromParent();
     this.drawCalls = 0;
   }
 
+  private syncAnimatedActor(
+    actor: ActorView,
+    binding: Extract<ExternalModelBinding, { readonly kind: 'glb' }>,
+    scene: Group,
+    clips: readonly AnimationClip[],
+  ): number {
+    let animated = this.animatedClones.get(actor.id);
+    if (animated && animated.bindingHash !== binding.contentHash) {
+      this.disposeAnimatedClone(actor.id, animated);
+      animated = undefined;
+    }
+    if (!animated) {
+      const root = cloneSkeleton(scene);
+      root.traverse((object) => {
+        object.userData.actorId = actor.id;
+      });
+      const bounds = new Box3().setFromObject(scene);
+      const size = bounds.getSize(new Vector3());
+      const templateDims = { l: size.x, w: size.z, h: size.y };
+      const container = new Group();
+      container.name = `animated-actor.${actor.id}`;
+      container.matrixAutoUpdate = false;
+      container.userData.actorId = actor.id;
+      container.add(root);
+      this.animatedGroup.add(container);
+      let drawCalls = 0;
+      root.traverse((object) => {
+        const mesh = object as Mesh;
+        if (!mesh.isMesh) return;
+        drawCalls += Array.isArray(mesh.material) && mesh.geometry.groups.length > 0
+          ? mesh.geometry.groups.length
+          : 1;
+      });
+      animated = {
+        bindingHash: binding.contentHash,
+        container,
+        root,
+        mixer: new AnimationMixer(root),
+        activeClip: null,
+        drawCalls,
+        templateDims,
+      };
+      this.animatedClones.set(actor.id, animated);
+    }
+
+    animated.container.matrix.copy(poseMatrix(actor, animated.templateDims));
+    animated.container.matrixWorldNeedsUpdate = true;
+    const requestedName = (actor.speedMps ?? 0) > 0.1
+      ? binding.clips?.locomotion
+      : binding.clips?.idle;
+    const clip = clips.find((candidate) => candidate.name === requestedName) ?? clips[0] ?? null;
+    if (clip !== animated.activeClip) {
+      animated.mixer.stopAllAction();
+      if (clip) animated.mixer.clipAction(clip).reset().play();
+      animated.activeClip = clip;
+    }
+    animated.mixer.setTime(actor.animationTimeS ?? 0);
+    return animated.drawCalls;
+  }
+
+  private disposeAnimatedClone(actorId: string, animated: AnimatedClone): void {
+    animated.mixer.stopAllAction();
+    animated.mixer.uncacheRoot(animated.root);
+    animated.container.removeFromParent();
+    this.animatedClones.delete(actorId);
+  }
+
   private ensureBatch(key: string, spec: TemplatePart, needed: number): Batch {
     const existing = this.batches.get(key);
-    if (existing && existing.capacity >= needed) return existing;
+    if (
+      existing
+      && existing.capacity >= needed
+      && existing.mesh.geometry === spec.geometry
+      && existing.mesh.material === spec.material
+    ) return existing;
     if (existing) {
       this.group.remove(existing.mesh);
       existing.mesh.dispose();
@@ -830,6 +1080,27 @@ function indicatorMatrix(actor: ActorView, side: 'left' | 'right', front: boolea
   return new Matrix4().compose(local, new Quaternion().setFromAxisAngle(_up, actor.headingRad), new Vector3(0.12, 0.1, 0.16));
 }
 
+/**
+ * Lay a knocked-down body onto the ground.
+ *
+ * The engine is planar and keeps the yaw it was struck with, so the fall is
+ * purely presentational: pitch the model forward about its own lateral axis,
+ * pivoting on the ground-contact origin, which reads as being knocked off its
+ * feet in the direction of travel. Gait animation is suppressed by the caller
+ * passing no speed once down.
+ */
+function applyDownPose(actor: ActorView, dims: Dims): void {
+  const progress = Math.min(1, Math.max(0, actor.downProgress ?? 0));
+  if (progress <= 0) return;
+  // Ease out: the body drops fast and settles, rather than rotating linearly.
+  const eased = 1 - (1 - progress) * (1 - progress);
+  const angle = eased * Math.PI / 2;
+  _quaternion.multiply(new Quaternion().setFromAxisAngle(_lateral, angle));
+  // The origin is at the feet; rotating there would leave the body hanging off
+  // them. Lift toward half a body's width so it rests flat on the surface.
+  _position.y += Math.sin(angle) * Math.min(dims.h, dims.w) * 0.5;
+}
+
 export function poseMatrix(actor: ActorView, templateDims = getEntry(actor.catalogId).dims): Matrix4 {
   const animation = getEntry(actor.catalogId).animation;
   const time = actor.animationTimeS ?? 0;
@@ -842,6 +1113,7 @@ export function poseMatrix(actor: ActorView, templateDims = getEntry(actor.catal
       : 0;
   _position.set(actor.x, actor.y + hover + bob, actor.z);
   _quaternion.setFromAxisAngle(_up, actor.headingRad);
+  applyDownPose(actor, actor.dims);
   _scale.set(
     actor.dims.l / templateDims.l,
     actor.dims.h / templateDims.h,

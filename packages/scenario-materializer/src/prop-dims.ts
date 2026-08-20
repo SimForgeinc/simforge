@@ -1,11 +1,17 @@
+import {
+  actorClassesForCatalogEntry,
+  getEntry,
+  parseCatalog,
+  resolveCatalogId,
+  type CatalogEntry,
+} from '@uniscenarios/prop-catalog/metadata';
+
 /**
  * Browser-safe occluder footprints for `props[]`.
  *
- * `@uniscenarios/prop-catalog` owns the real dimensions, but it depends on
- * three.js — importing it here would drag a renderer into the headless CLI for
- * the sake of three numbers per prop. So the length/width/height of the full
- * catalog are mirrored here, and a template can always override them with
- * `extensions.dims`.
+ * `@uniscenarios/prop-catalog` owns the real dimensions. This table remains a
+ * browser-safe prop-placement snapshot, while actor validation below imports
+ * the catalog's metadata-only entry point (which does not load three.js).
  *
  * These values are copied from `packages/prop-catalog/src/catalog.ts`; the CLI
  * test suite pins the pairs it uses so a drift shows up as a failing test
@@ -225,71 +231,41 @@ export function propDims(catalogId: string, override?: Partial<PropDims>): PropD
 
 /* --------------------------------------------- actor class / catalog id agreement */
 
-/**
- * Which actor classes each catalog id may legitimately fill.
- *
- * ### Why this exists
- *
- * `roles[].actor` carries a semantic `class` *and* a `catalogId`, and nothing
- * checked that the two described the same object. A measured clip in this
- * repository reads `kind: 'animal'`, `tags: ['class:animal',
- * 'catalog:pedestrian.adult_walking']`: the trajectory is an animal's, the
- * model is a walking adult human. That scenario passed the admission gate, the
- * physics-quality layer and an independent intent critic, because every one of
- * those instruments reads trajectories or a top-down render, where a 0.6 m box
- * is a 0.6 m box whatever fills it. The only place the substitution is visible
- * is the catalog id — so the catalog id is where it has to be caught. A corpus
- * built from clips like that teaches a perception model that an animal looks
- * like a person.
- *
- * It is the same defect as `vehicle.boxTruck` (not a real id) materialising as
- * a sedan, so the rule is stated for every class, not for animals: **an actor's
- * class and its catalog model must describe the same kind of thing, or the
- * build fails.**
- *
- * ### The rule
- *
- * A catalog id's own class does most of the work, because ids are
- * `<class>.<name>` by schema. `vehicle.*` is the exception: "vehicle" covers a
- * hatchback and a 53-foot tractor-trailer, whose dynamics classes are not
- * interchangeable, so those are enumerated. `static_object` is accepted for
- * *any* id: a deer carcass, a parked car and a dumped mattress are all
- * legitimately inert scenery, and refusing that would forbid real scenarios.
- */
-const ACTOR_CLASSES_BY_CATALOG_ID: Readonly<Record<string, readonly string[]>> = {
-  'vehicle.sedan': ['car'],
-  'vehicle.hatchback': ['car'],
-  'vehicle.suv': ['car'],
-  'vehicle.pickup': ['car', 'truck'],
-  'vehicle.van': ['van'],
-  'vehicle.ambulance': ['van', 'truck'],
-  'vehicle.box_truck': ['truck'],
-  'vehicle.semi_truck': ['truck'],
-  'vehicle.bus': ['bus'],
-  'vehicle.tram': ['bus', 'truck'],
-  'vehicle.motorcycle': ['motorcycle'],
-  'vehicle.bicycle': ['bicycle'],
-  'vehicle.mobility_scooter': ['scooter'],
-  // A flagger and a marshal are people, filed under the work zone they belong to.
-  'construction.flagger': ['pedestrian'],
+/** Metadata resolver used by built-in and future user-imported asset catalogs. */
+export type ActorCatalogResolver = (catalogId: string) => CatalogEntry | null;
+
+export const builtInActorCatalogResolver: ActorCatalogResolver = (catalogId) => {
+  const resolved = resolveCatalogId(catalogId);
+  return resolved === null ? null : getEntry(resolved);
 };
 
-/** Actor classes acceptable for a catalog id, or `null` if the id is unknown. */
-export function actorClassesForCatalogId(catalogId: string): readonly string[] | null {
-  const id = resolvePropCatalogId(catalogId);
-  if (id === null) return null;
-  const explicit = ACTOR_CLASSES_BY_CATALOG_ID[id];
-  if (explicit) return [...explicit, 'static_object'];
-  const propClass = id.slice(0, id.indexOf('.'));
-  switch (propClass) {
-    case 'pedestrian':
-      return ['pedestrian', 'static_object'];
-    case 'animal':
-      return ['animal', 'static_object'];
-    default:
-      // construction / occluder / street / hazard props are inert scenery.
-      return ['static_object'];
+/**
+ * Overlay user-imported catalog entries without allowing them to shadow a
+ * built-in id. A custom vehicle therefore needs metadata, not a code release.
+ */
+export function createActorCatalogResolver(entries: readonly CatalogEntry[] = []): ActorCatalogResolver {
+  // Custom assets are optional. `parseCatalog` validates a complete catalog
+  // and deliberately rejects an empty array, so do not send the ordinary
+  // "no custom assets" case through that stronger boundary.
+  if (entries.length === 0) return builtInActorCatalogResolver;
+  const custom = new Map<string, CatalogEntry>();
+  for (const entry of parseCatalog(entries)) {
+    if (builtInActorCatalogResolver(entry.id) !== null) {
+      throw new Error(`custom catalog entry "${entry.id}" shadows a built-in catalog id`);
+    }
+    if (custom.has(entry.id)) throw new Error(`duplicate custom catalog id "${entry.id}"`);
+    custom.set(entry.id, entry);
   }
+  return (catalogId) => builtInActorCatalogResolver(catalogId) ?? custom.get(catalogId) ?? null;
+}
+
+/** Actor classes acceptable for a catalog id, or `null` if the id is unknown. */
+export function actorClassesForCatalogId(
+  catalogId: string,
+  resolveEntry: ActorCatalogResolver = builtInActorCatalogResolver,
+): readonly string[] | null {
+  const entry = resolveEntry(catalogId);
+  return entry === null ? null : actorClassesForCatalogEntry(entry);
 }
 
 /**
@@ -305,8 +281,12 @@ export function actorClassesForCatalogId(catalogId: string): readonly string[] |
  * catalog id table to be reachable from `scenario-model`, which today would
  * mean a new workspace dependency.
  */
-export function actorCatalogMismatch(actorClass: string, catalogId: string): string | null {
-  const allowed = actorClassesForCatalogId(catalogId);
+export function actorCatalogMismatch(
+  actorClass: string,
+  catalogId: string,
+  resolveEntry: ActorCatalogResolver = builtInActorCatalogResolver,
+): string | null {
+  const allowed = actorClassesForCatalogId(catalogId, resolveEntry);
   if (allowed === null) {
     return `catalog id "${catalogId}" does not exist; an unresolved id silently materialises as a default model`;
   }
@@ -318,10 +298,9 @@ export function actorCatalogMismatch(actorClass: string, catalogId: string): str
 /** The catalog model's own footprint, in the scenario-model dims convention. */
 export function catalogActorDims(
   catalogId: string,
+  resolveEntry: ActorCatalogResolver = builtInActorCatalogResolver,
 ): { length: number; width: number; height: number } | null {
-  const id = resolvePropCatalogId(catalogId);
-  if (id === null) return null;
-  const dims = PROP_DIMS[id];
-  if (!dims) return null;
-  return { length: dims.l, width: dims.w, height: dims.h };
+  const entry = resolveEntry(catalogId);
+  if (entry === null) return null;
+  return { length: entry.dims.l, width: entry.dims.w, height: entry.dims.h };
 }

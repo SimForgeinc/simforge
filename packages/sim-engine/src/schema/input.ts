@@ -108,6 +108,10 @@ export type TurnRelation = z.infer<typeof turnRelationSchema>;
  * - `polyline` — an explicit ground path in scene coordinates. The pedestrian
  *   escape hatch (crossings, jaywalk diagonals); vehicles may use it too but
  *   then have no lane identity in the trace.
+ * - `timedPolyline` — exact scene-space position constraints. Time, rather
+ *   than cruise speed, owns the actor through the final authored timestamp;
+ *   normal physics takes over and brakes immediately afterward (or on
+ *   material contact).
  */
 export const routeSpecSchema = z.discriminatedUnion('kind', [
   z.object({
@@ -122,10 +126,29 @@ export const routeSpecSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     kind: z.literal('polyline'),
-    points: z.array(scenePointSchema).min(2),
+    /** A single point is a zero-length route: the actor stays where it is. */
+    points: z.array(scenePointSchema).min(1),
+  }),
+  z.object({
+    kind: z.literal('timedPolyline'),
+    /** A single keyframe holds the actor on that spot for the whole clip. */
+    points: z.array(z.object({
+      timeS: nonNeg,
+      x: finite,
+      z: finite,
+    })).min(1),
   }),
 ]);
 export type RouteSpec = z.infer<typeof routeSpecSchema>;
+
+/** A route command resolved against the actor's live lane when it fires. */
+export const nextJunctionRouteTargetSchema = z.object({
+  kind: z.literal('nextJunction'),
+  turn: turnRelationSchema,
+  maxLengthM: positive.default(2000),
+});
+export const routeActionTargetSchema = z.union([routeSpecSchema, nextJunctionRouteTargetSchema]);
+export type RouteActionTarget = z.infer<typeof routeActionTargetSchema>;
 
 /* ------------------------------------------------------------------- rules */
 
@@ -200,6 +223,16 @@ export function isPedestrianLikeKind(kind: ActorKind): boolean {
   return kind === 'pedestrian' || kind === 'sidewalk_robot' || kind === 'drone' || kind === 'animal';
 }
 
+/**
+ * Kinds that can be taken off their feet by a contact.
+ *
+ * Pedestrian-like minus the drone: a quadrotor holds altitude and has no stance
+ * to lose, so a contact slows or stops it instead of putting it on the ground.
+ */
+export function isKnockdownVulnerableKind(kind: ActorKind): boolean {
+  return kind === 'pedestrian' || kind === 'animal' || kind === 'sidewalk_robot';
+}
+
 export function isRoadActorKind(kind: ActorKind): boolean {
   return !isPedestrianLikeKind(kind) && kind !== 'static_object';
 }
@@ -231,6 +264,11 @@ export const actorSchema = z.object({
       speedFactor: 1,
     }),
     route: routeSpecSchema,
+    /** Human comfort targets supplied by the authored actor profile. */
+    drivingProfile: z.strictObject({
+      comfortableLateralAccelerationMps2: positive,
+      comfortableDecelerationMps2: positive,
+    }).optional(),
     /**
      * Free-flow cruise speed override, m/s. Without it the actor cruises at
      * `speedFactor × laneSpeedLimit`.
@@ -323,7 +361,7 @@ export const verbSchema = z.discriminatedUnion('verb', [
   }),
   z.object({
     verb: z.literal('route'),
-    target: routeSpecSchema,
+    target: routeActionTargetSchema,
     /** Connect the actor's live pose to the first authored waypoint when the interaction fires. */
     joinFromCurrentPose: z.boolean().optional(),
     /** Follow literal world-space points without road, signal, or avoidance governors. */

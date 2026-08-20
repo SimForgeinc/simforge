@@ -20,3 +20,6 @@ campaigns/*/batches/
 campaigns/**/*.trace.json.gz
 campaigns/**/work/*.match.json
 .tools/
+
+# Python bytecode from running the adapter test suite locally.
+__pycache__/

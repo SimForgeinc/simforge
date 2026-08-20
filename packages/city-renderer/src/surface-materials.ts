@@ -12,6 +12,15 @@ export type SurfaceMaterialProfile = 'original' | 'enhanced' | 'presentation';
 export type SurfaceClass = 'asphalt' | 'grass' | 'concrete' | 'curb' | 'marking' | 'unknown';
 export type SurfaceLayer = 'road' | 'city' | 'vegetation';
 
+export interface SurfaceWeatherAppearance {
+  wetness: number;
+  snowCoverage: number;
+  /** Settled depth in metres; omitted preserves legacy visual-only snow. */
+  snowDepthM?: number;
+  /** 0 is loose fresh snow; 1 is compacted snow. */
+  snowCompaction?: number;
+}
+
 export interface MaterialPackProvenance {
   id: string;
   version: string;
@@ -166,10 +175,46 @@ interface MaterialRecord {
   originalMetalness: number | undefined;
   originalOnBeforeCompile: Material['onBeforeCompile'];
   originalProgramKey: Material['customProgramCacheKey'];
+  wetnessUniform: { value: number };
+  snowCoverageUniform: { value: number };
+  snowDepthUniform: { value: number };
+  snowCompactionUniform: { value: number };
+  snowMarkingRetentionUniform: { value: number };
+  snowDisplacementEnabledUniform: { value: number };
   refCount: number;
 }
 
 const SURFACE_VERTEX_DECL = /* glsl */ `\nvarying vec3 vSurfaceWorldPos;\n`;
+const SNOW_NOISE_FUNCTIONS = /* glsl */ `
+float surfaceSnowHash( vec2 p ) {
+\tvec3 p3 = fract( vec3( p.xyx ) * 0.1031 );
+\tp3 += dot( p3, p3.yzx + 33.33 );
+\treturn fract( ( p3.x + p3.y ) * p3.z );
+}
+float surfaceSnowNoise( vec2 p ) {
+\tvec2 cell = floor( p ); vec2 local = fract( p );
+\tlocal = local * local * ( 3.0 - 2.0 * local );
+\treturn mix( mix( surfaceSnowHash( cell ), surfaceSnowHash( cell + vec2( 1.0, 0.0 ) ), local.x ), mix( surfaceSnowHash( cell + vec2( 0.0, 1.0 ) ), surfaceSnowHash( cell + vec2( 1.0, 1.0 ) ), local.x ), local.y );
+}
+float surfaceSnowHeightBreakup( vec2 p ) {
+\treturn surfaceSnowNoise( p * 0.18 ) * 0.52 + surfaceSnowNoise( p * 0.62 + 17.0 ) * 0.31 + surfaceSnowNoise( p * 2.1 + 41.0 ) * 0.17;
+}
+`;
+const SNOW_VERTEX_DECL = /* glsl */ `
+uniform float surfaceSnowCoverage;
+uniform float surfaceSnowDepthM;
+uniform float surfaceSnowCompaction;
+uniform float surfaceSnowDisplacementEnabled;
+varying float vSurfaceSnowHeight;
+varying float vSurfaceSnowVertexEligible;
+${SNOW_NOISE_FUNCTIONS}`;
+const SNOW_FRAGMENT_DECL = /* glsl */ `
+varying float vSurfaceSnowHeight;
+varying float vSurfaceSnowVertexEligible;
+uniform float surfaceSnowCoverage;
+uniform float surfaceSnowCompaction;
+uniform float surfaceSnowMarkingRetention;
+${SNOW_NOISE_FUNCTIONS}`;
 const SURFACE_VERTEX_BODY = /* glsl */ `
 \tvec4 surfaceWorldPosition = vec4( transformed, 1.0 );
 \t#ifdef USE_INSTANCING
@@ -179,6 +224,17 @@ const SURFACE_VERTEX_BODY = /* glsl */ `
 `;
 const SURFACE_FRAGMENT_DECL = /* glsl */ `
 varying vec3 vSurfaceWorldPos;
+float surfaceHash( vec2 p );
+float surfaceSmoothNoise( vec2 p ) {
+\tvec2 cell = floor( p );
+\tvec2 local = fract( p );
+\tlocal = local * local * ( 3.0 - 2.0 * local );
+\treturn mix(
+\t\tmix( surfaceHash( cell ), surfaceHash( cell + vec2( 1.0, 0.0 ) ), local.x ),
+\t\tmix( surfaceHash( cell + vec2( 0.0, 1.0 ) ), surfaceHash( cell + vec2( 1.0, 1.0 ) ), local.x ),
+\t\tlocal.y
+\t);
+}
 float surfaceHash( vec2 p ) {
 \tvec3 p3 = fract( vec3( p.xyx ) * 0.1031 );
 \tp3 += dot( p3, p3.yzx + 33.33 );
@@ -186,31 +242,181 @@ float surfaceHash( vec2 p ) {
 }
 `;
 
-function injectProceduralSurface(shader: Shader, cellSize: number, variation: number, presentation: boolean): void {
-  const scale = Math.max(0.01, cellSize).toFixed(4);
-  const strength = (variation * (presentation ? 1.35 : 1)).toFixed(4);
-  shader.vertexShader = SURFACE_VERTEX_DECL + shader.vertexShader.replace(
+interface ProceduralSurfaceShaderOptions {
+  cellSize: number;
+  variation: number;
+  presentation: boolean;
+}
+
+interface SnowSurfaceShaderOptions {
+  coverageUniform: { value: number };
+  depthUniform: { value: number };
+  compactionUniform: { value: number };
+  markingRetentionUniform: { value: number };
+  displacementEnabledUniform: { value: number };
+}
+
+interface WetSurfaceShaderOptions {
+  wetnessUniform: { value: number };
+}
+
+function injectSurfaceAppearance(
+  shader: Shader,
+  procedural: ProceduralSurfaceShaderOptions | null,
+  snow: SnowSurfaceShaderOptions | null,
+  wet: WetSurfaceShaderOptions | null,
+): void {
+  let vertexPrefix = SURFACE_VERTEX_DECL;
+  if (snow) {
+    shader.uniforms.surfaceSnowCoverage = snow.coverageUniform;
+    shader.uniforms.surfaceSnowDepthM = snow.depthUniform;
+    shader.uniforms.surfaceSnowCompaction = snow.compactionUniform;
+    shader.uniforms.surfaceSnowDisplacementEnabled = snow.displacementEnabledUniform;
+    vertexPrefix += SNOW_VERTEX_DECL;
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+\t// A receiver shell owns deep drifts. This bounded contact coat prevents z-fighting.
+\tvec3 surfaceSnowObjectNormal = normalize( objectNormal );
+\tvec3 surfaceSnowWorldNormalRaw = mat3( modelMatrix ) * surfaceSnowObjectNormal;
+\t#ifdef USE_INSTANCING
+\t\tsurfaceSnowWorldNormalRaw = mat3( modelMatrix ) * mat3( instanceMatrix ) * surfaceSnowObjectNormal;
+\t#endif
+\tfloat surfaceSnowWorldScale = max( length( surfaceSnowWorldNormalRaw ), 1e-4 );
+\tvec3 surfaceSnowWorldNormal = surfaceSnowWorldNormalRaw / surfaceSnowWorldScale;
+\tfloat surfaceSnowTopFacing = smoothstep( 0.58, 0.90, surfaceSnowWorldNormal.y );
+\tvec4 surfaceSnowBaseWorldPosition = vec4( transformed, 1.0 );
+\t#ifdef USE_INSTANCING
+\t\tsurfaceSnowBaseWorldPosition = instanceMatrix * surfaceSnowBaseWorldPosition;
+\t#endif
+\tvec2 surfaceSnowBaseXZ = ( modelMatrix * surfaceSnowBaseWorldPosition ).xz;
+\tfloat surfaceSnowSettling = mix( 0.48, 1.0, surfaceSnowCompaction );
+\tvSurfaceSnowVertexEligible = surfaceSnowTopFacing * surfaceSnowDisplacementEnabled;
+\tvSurfaceSnowHeight = min( surfaceSnowDepthM, 0.002 ) * surfaceSnowCoverage * surfaceSnowSettling * mix( 0.66, 1.16, surfaceSnowHeightBreakup( surfaceSnowBaseXZ ) ) * vSurfaceSnowVertexEligible;
+\ttransformed += surfaceSnowObjectNormal * ( vSurfaceSnowHeight / surfaceSnowWorldScale );`,
+    );
+  }
+  shader.vertexShader = vertexPrefix + shader.vertexShader.replace(
     '#include <project_vertex>',
     `#include <project_vertex>\n${SURFACE_VERTEX_BODY}`,
   );
-  shader.fragmentShader = SURFACE_FRAGMENT_DECL + shader.fragmentShader.replace(
+
+  let surfaceColor = '';
+  if (procedural) {
+    const scale = Math.max(0.01, procedural.cellSize).toFixed(4);
+    const strength = (procedural.variation * (procedural.presentation ? 1.35 : 1)).toFixed(4);
+    surfaceColor += /* glsl */ `
+	vec2 surfaceCell = floor( vSurfaceWorldPos.xz / ${scale} );
+	float surfaceGrain = surfaceHash( surfaceCell ) - 0.5;
+	float surfaceMacro = surfaceHash( floor( vSurfaceWorldPos.xz / (${scale} * 11.0) ) ) - 0.5;
+	diffuseColor.rgb *= 1.0 + surfaceGrain * ${strength} + surfaceMacro * ${strength} * 0.55;`;
+  }
+  if (wet) {
+    shader.uniforms.surfaceWetness = wet.wetnessUniform;
+    surfaceColor += /* glsl */ `
+	// World-space film and puddles keep wet surfaces from reading as a uniform mirror.
+	vec3 surfaceWetWorldDx = dFdx( vSurfaceWorldPos );
+	vec3 surfaceWetWorldDy = dFdy( vSurfaceWorldPos );
+	vec3 surfaceWetWorldNormal = cross( surfaceWetWorldDx, surfaceWetWorldDy );
+	surfaceWetWorldNormal *= inversesqrt( max( dot( surfaceWetWorldNormal, surfaceWetWorldNormal ), 1e-8 ) );
+	float surfaceWetPuddleSlope = smoothstep( 0.50, 0.92, max( surfaceWetWorldNormal.y, 0.0 ) );
+	float surfaceWetFine = surfaceHash( floor( vSurfaceWorldPos.xz * 8.0 ) );
+	float surfaceWetBroad = surfaceSmoothNoise( vSurfaceWorldPos.xz * 0.23 + 57.0 );
+	float surfaceWetFilm = surfaceWetness * mix( 0.18, 0.58, surfaceWetFine );
+	float surfaceWetPuddle = surfaceWetness * smoothstep( 0.70, 0.93, surfaceWetBroad ) * smoothstep( 0.28, 0.86, surfaceWetness ) * surfaceWetPuddleSlope;
+	float surfaceWetAmount = clamp( surfaceWetFilm + surfaceWetPuddle * 0.62, 0.0, 1.0 );
+	float surfaceWetRipple = ( surfaceSmoothNoise( vSurfaceWorldPos.xz * 8.5 + 101.0 ) - 0.5 ) * ( surfaceWetFilm * surfaceWetPuddleSlope + surfaceWetPuddle );
+	diffuseColor.rgb *= 1.0 - surfaceWetAmount * 0.16;`;
+  }
+  if (snow) {
+    shader.uniforms.surfaceSnowMarkingRetention = snow.markingRetentionUniform;
+    surfaceColor += /* glsl */ `
+	vec3 surfaceSnowDx = dFdx( vSurfaceWorldPos );
+	vec3 surfaceSnowDy = dFdy( vSurfaceWorldPos );
+	vec3 surfaceSnowCross = cross( surfaceSnowDx, surfaceSnowDy );
+	vec3 surfaceSnowWorldNormal = surfaceSnowCross * inversesqrt( max( dot( surfaceSnowCross, surfaceSnowCross ), 1e-8 ) );
+	float surfaceSnowUp = max( surfaceSnowWorldNormal.y, 0.0 );
+	float surfaceSnowSlope = smoothstep( 0.28, 0.86, surfaceSnowUp );
+	float surfaceSnowFine = surfaceSnowNoise( vSurfaceWorldPos.xz * 2.7 );
+	float surfaceSnowBroad = surfaceSnowNoise( vSurfaceWorldPos.xz * 0.27 + 13.0 );
+	float surfaceSnowDrape = surfaceSnowNoise( vSurfaceWorldPos.xz * 0.68 + 29.0 );
+	float surfaceSnowBreakup = clamp( surfaceSnowFine * 0.24 + surfaceSnowBroad * 0.42 + surfaceSnowDrape * 0.20 + surfaceSnowSlope * 0.30, 0.0, 1.0 );
+	float surfaceSnowEffectiveCoverage = mix( surfaceSnowCoverage, pow( surfaceSnowCoverage, 1.7 ), surfaceSnowMarkingRetention );
+	float surfaceSnowThreshold = 1.0 - surfaceSnowEffectiveCoverage;
+	float surfaceSnowMask = smoothstep( surfaceSnowThreshold - 0.14, surfaceSnowThreshold + 0.08, surfaceSnowBreakup ) * surfaceSnowSlope;
+	float surfaceSnowGrain = surfaceHash( floor( vSurfaceWorldPos.xz * 36.0 ) ) - 0.5;
+	vec3 surfaceSnowColor = mix( vec3( 0.78, 0.84, 0.88 ), vec3( 0.96, 0.975, 0.99 ), surfaceSnowCompaction );
+	surfaceSnowColor *= 1.0 + surfaceSnowGrain * mix( 0.10, 0.026, surfaceSnowCompaction );
+	diffuseColor.rgb = mix( diffuseColor.rgb, surfaceSnowColor, surfaceSnowMask * 0.90 );`;
+  }
+
+  const snowDeclarations = snow ? SNOW_FRAGMENT_DECL : '';
+  const wetDeclarations = wet ? '\nuniform float surfaceWetness;\n' : '';
+  shader.fragmentShader = SURFACE_FRAGMENT_DECL + snowDeclarations + wetDeclarations + shader.fragmentShader.replace(
     '#include <map_fragment>',
-    /* glsl */ `#include <map_fragment>
-\tvec2 surfaceCell = floor( vSurfaceWorldPos.xz / ${scale} );
-\tfloat surfaceGrain = surfaceHash( surfaceCell ) - 0.5;
-\tfloat surfaceMacro = surfaceHash( floor( vSurfaceWorldPos.xz / (${scale} * 11.0) ) ) - 0.5;
-\tdiffuseColor.rgb *= 1.0 + surfaceGrain * ${strength} + surfaceMacro * ${strength} * 0.55;`,
+    `#include <map_fragment>${surfaceColor}`,
   );
+  if (snow || wet) {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <roughnessmap_fragment>',
+      /* glsl */ `#include <roughnessmap_fragment>
+${wet ? `
+	roughnessFactor = mix( roughnessFactor, 0.38, surfaceWetFilm * 0.64 );
+	roughnessFactor = mix( roughnessFactor, 0.12, surfaceWetPuddle * 0.78 );` : ''}${snow ? `
+	// Fresh snow is granular; compacted snow is denser and a little smoother.
+	float surfaceSnowRoughness = mix( 0.985, 0.89, surfaceSnowCompaction );
+	roughnessFactor = mix( roughnessFactor, surfaceSnowRoughness, surfaceSnowMask );` : ''}`,
+    );
+  }
+  if (snow || wet) {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <normal_fragment_maps>',
+      /* glsl */ `#include <normal_fragment_maps>
+${wet ? `
+	// Deterministic water-film height becomes a subtle lit-normal ripple.
+	vec3 surfaceWetViewDx = dFdx( vViewPosition );
+	vec3 surfaceWetViewDy = dFdy( vViewPosition );
+	vec3 surfaceWetGradient = surfaceWetViewDx * ( dFdx( surfaceWetRipple ) * 0.0018 / max( dot( surfaceWetViewDx, surfaceWetViewDx ), 1e-5 ) )
+		+ surfaceWetViewDy * ( dFdy( surfaceWetRipple ) * 0.0018 / max( dot( surfaceWetViewDy, surfaceWetViewDy ), 1e-5 ) );
+	normal = normalize( normal - surfaceWetGradient );` : ''}${snow ? `
+	// The multi-scale snow height field also perturbs the lighting normal.
+	float surfaceSnowNormalHeight = ( vSurfaceSnowHeight + ( surfaceSnowHeightBreakup( vSurfaceWorldPos.xz ) - 0.5 ) * mix( 0.006, 0.0015, surfaceSnowCompaction ) ) * surfaceSnowMask * vSurfaceSnowVertexEligible;
+	vec3 surfaceSnowViewDx = dFdx( vViewPosition );
+	vec3 surfaceSnowViewDy = dFdy( vViewPosition );
+	vec3 surfaceSnowGradient = surfaceSnowViewDx * ( dFdx( surfaceSnowNormalHeight ) / max( dot( surfaceSnowViewDx, surfaceSnowViewDx ), 1e-5 ) )
+		+ surfaceSnowViewDy * ( dFdy( surfaceSnowNormalHeight ) / max( dot( surfaceSnowViewDy, surfaceSnowViewDy ), 1e-5 ) );
+	normal = normalize( normal - surfaceSnowGradient );` : ''}`,
+    );
+  }
 }
 
 function canEnhance(material: CompilableMaterial): boolean {
   return Boolean(material.color?.isColor) && typeof material.roughness === 'number';
 }
 
+function canReceiveSnow(material: CompilableMaterial): boolean {
+  return Boolean(material.color?.isColor);
+}
+
+function clampUnit(value: number): number {
+  if (Number.isNaN(value)) return 0;
+  return Math.min(1, Math.max(0, value));
+}
+
+const WET_SURFACE_RESPONSE: Readonly<Record<SurfaceClass, { darkening: number; roughnessReduction: number }>> = {
+  asphalt: { darkening: 0.42, roughnessReduction: 0.60 },
+  concrete: { darkening: 0.34, roughnessReduction: 0.52 },
+  curb: { darkening: 0.32, roughnessReduction: 0.50 },
+  marking: { darkening: 0.27, roughnessReduction: 0.55 },
+  grass: { darkening: 0.18, roughnessReduction: 0.16 },
+  unknown: { darkening: 0.20, roughnessReduction: 0.24 },
+};
+
 export class SurfaceMaterialRegistry {
   private readonly records = new Map<Material, MaterialRecord>();
   private readonly treeMaterials = new WeakMap<Object3D, Material[]>();
   private profile: SurfaceMaterialProfile = 'original';
+  private weatherAppearance: SurfaceWeatherAppearance = { wetness: 0, snowCoverage: 0 };
   private lastApplyMs = 0;
 
   registerTree(root: Object3D, layer: SurfaceLayer): void {
@@ -244,6 +450,12 @@ export class SurfaceMaterialRegistry {
           originalMetalness: compilable.metalness,
           originalOnBeforeCompile: material.onBeforeCompile,
           originalProgramKey: material.customProgramCacheKey,
+          wetnessUniform: { value: this.weatherAppearance.wetness },
+          snowCoverageUniform: { value: this.weatherAppearance.snowCoverage },
+          snowDepthUniform: { value: this.weatherAppearance.snowDepthM ?? 0 },
+          snowCompactionUniform: { value: this.weatherAppearance.snowCompaction ?? 0.5 },
+          snowMarkingRetentionUniform: { value: classification.kind === 'marking' ? 1 : 0 },
+          snowDisplacementEnabledUniform: { value: classification.kind === 'marking' ? 0 : 1 },
           refCount: 1,
         };
         this.records.set(material, record);
@@ -274,6 +486,25 @@ export class SurfaceMaterialRegistry {
     return this.report();
   }
 
+  setWeatherAppearance(next: SurfaceWeatherAppearance): void {
+    const start = performance.now();
+    const normalized: SurfaceWeatherAppearance = {
+      wetness: clampUnit(next.wetness),
+      snowCoverage: clampUnit(next.snowCoverage),
+      snowDepthM: Math.min(5, Math.max(0, Number.isFinite(next.snowDepthM) ? next.snowDepthM! : 0)),
+      snowCompaction: clampUnit(next.snowCompaction ?? 0.5),
+    };
+    if (
+      normalized.wetness === this.weatherAppearance.wetness
+      && normalized.snowCoverage === this.weatherAppearance.snowCoverage
+      && normalized.snowDepthM === this.weatherAppearance.snowDepthM
+      && normalized.snowCompaction === this.weatherAppearance.snowCompaction
+    ) return;
+    this.weatherAppearance = normalized;
+    for (const record of this.records.values()) this.applyRecord(record, this.profile);
+    this.lastApplyMs = performance.now() - start;
+  }
+
   private applyRecord(record: MaterialRecord, profile: SurfaceMaterialProfile): void {
     const { material } = record;
     if (record.originalColor && material.color) material.color.copy(record.originalColor);
@@ -283,24 +514,62 @@ export class SurfaceMaterialRegistry {
     material.customProgramCacheKey = record.originalProgramKey;
 
     const kind = record.conflicts.size > 0 ? 'unknown' : record.classification.kind;
-    if (profile === 'original' || kind === 'unknown' || kind === 'marking' || !canEnhance(material)) {
-      material.needsUpdate = true;
-      return;
+    let procedural: ProceduralSurfaceShaderOptions | null = null;
+    let cacheKeySuffix = '';
+    if (profile !== 'original' && kind !== 'unknown' && kind !== 'marking' && canEnhance(material)) {
+      const style = BUILTIN_SURFACE_MATERIAL_PACK.classes[kind];
+      if (record.originalColor && material.color) {
+        const mix = profile === 'presentation' ? Math.min(0.32, style.tintMix * 1.35) : style.tintMix;
+        material.color.lerp(new Color(style.tint), mix);
+      }
+      material.roughness = Math.max(material.roughness ?? 0, style.roughness);
+      material.metalness = Math.min(material.metalness ?? 0, 0.04);
+      procedural = {
+        cellSize: style.metresPerCell,
+        variation: style.variation,
+        presentation: profile === 'presentation',
+      };
+      cacheKeySuffix += `|surface-${profile}-${kind}-v1`;
     }
-    const style = BUILTIN_SURFACE_MATERIAL_PACK.classes[kind];
-    if (record.originalColor && material.color) {
-      const mix = profile === 'presentation' ? Math.min(0.32, style.tintMix * 1.35) : style.tintMix;
-      material.color.lerp(new Color(style.tint), mix);
+
+    const wetness = this.weatherAppearance.wetness;
+    record.wetnessUniform.value = wetness;
+    if (wetness > 0 && canEnhance(material)) {
+      const response = WET_SURFACE_RESPONSE[kind];
+      material.color?.multiplyScalar(1 - response.darkening * wetness);
+      material.roughness = Math.max(0.08, (material.roughness ?? 0) * (1 - response.roughnessReduction * wetness));
     }
-    material.roughness = Math.max(material.roughness ?? 0, style.roughness);
-    material.metalness = Math.min(material.metalness ?? 0, 0.04);
-    const baseCompile = record.originalOnBeforeCompile;
-    material.onBeforeCompile = (shader, renderer) => {
-      baseCompile(shader, renderer);
-      injectProceduralSurface(shader, style.metresPerCell, style.variation, profile === 'presentation');
-    };
-    const baseKey = record.originalProgramKey.call(material);
-    material.customProgramCacheKey = () => `${baseKey}|surface-${profile}-${kind}-v1`;
+
+    record.snowCoverageUniform.value = this.weatherAppearance.snowCoverage;
+    record.snowDepthUniform.value = this.weatherAppearance.snowDepthM ?? 0;
+    record.snowCompactionUniform.value = this.weatherAppearance.snowCompaction ?? 0.5;
+    record.snowMarkingRetentionUniform.value = kind === 'marking' ? 1 : 0;
+    record.snowDisplacementEnabledUniform.value = kind === 'marking' || kind === 'unknown' ? 0 : 1;
+    const snow: SnowSurfaceShaderOptions | null = this.weatherAppearance.snowCoverage > 0 && canReceiveSnow(material)
+      ? {
+          coverageUniform: record.snowCoverageUniform,
+          depthUniform: record.snowDepthUniform,
+          compactionUniform: record.snowCompactionUniform,
+          markingRetentionUniform: record.snowMarkingRetentionUniform,
+          displacementEnabledUniform: record.snowDisplacementEnabledUniform,
+        }
+      : null;
+
+    const wet: WetSurfaceShaderOptions | null = wetness > 0 && canEnhance(material)
+      ? { wetnessUniform: record.wetnessUniform }
+      : null;
+
+    if (procedural || snow || wet) {
+      const baseCompile = record.originalOnBeforeCompile;
+      material.onBeforeCompile = (shader, renderer) => {
+        baseCompile.call(material, shader, renderer);
+        injectSurfaceAppearance(shader, procedural, snow, wet);
+      };
+      if (wet) cacheKeySuffix += '|surface-weather-wet-v2';
+      if (snow) cacheKeySuffix += '|surface-weather-snow-v2';
+      const baseKey = record.originalProgramKey.call(material);
+      material.customProgramCacheKey = () => `${baseKey}${cacheKeySuffix}`;
+    }
     material.needsUpdate = true;
   }
 
@@ -338,7 +607,9 @@ export class SurfaceMaterialRegistry {
   }
 
   dispose(): void {
-    this.apply('original');
+    this.profile = 'original';
+    this.weatherAppearance = { wetness: 0, snowCoverage: 0 };
+    for (const record of this.records.values()) this.applyRecord(record, 'original');
     this.records.clear();
   }
 }

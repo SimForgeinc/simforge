@@ -47,6 +47,20 @@ export function defaultCatalogIdForActorKind(kind: SimActor['kind']): CatalogId 
   return KIND_DEFAULTS[kind];
 }
 
+/** Resolve the render catalog identity shared by native traces and replay adapters. */
+export function resolvePlaybackCatalogId(
+  kind: SimActor['kind'],
+  explicit?: string | null,
+): { readonly catalogId: CatalogId; readonly modelBasis: PlaybackActor['modelBasis'] } | null {
+  const candidate = explicit ?? defaultCatalogIdForActorKind(kind);
+  if (!isCatalogId(candidate)) return null;
+  getEntry(candidate);
+  return {
+    catalogId: candidate,
+    modelBasis: explicit ? 'input-tag' : 'kind-default',
+  };
+}
+
 export interface PlaybackSource {
   readonly instanceName: string;
   readonly traceName: string;
@@ -69,6 +83,8 @@ export interface ConcreteInstance {
 
 export interface PlaybackActor {
   readonly id: string;
+  /** Original OpenSCENARIO entity identity, when playback came from XOSC evidence. */
+  readonly entityName?: string;
   readonly kind: SimActor['kind'];
   readonly static: boolean;
   readonly tags: readonly string[];
@@ -126,7 +142,9 @@ export interface CanonicalPreviewIdentity {
 
 export function canonicalPreviewIdentity(bundle: Pick<PlaybackBundle, 'instance' | 'trace'>): CanonicalPreviewIdentity {
   const endTimeS = bundle.trace.ticks.t.at(-1) ?? 0;
-  const inputHash = contentHash(bundle.instance.input);
+  const inputHash = bundle.trace.header.source === 'openscenario-replay'
+    ? bundle.trace.header.inputHash
+    : contentHash(bundle.instance.input);
   return {
     contractVersion: 1,
     inputHash,
@@ -178,6 +196,14 @@ export interface SampledActor {
   readonly static: boolean;
   /** Body motion direction; reverse motion must not be presented by flipping heading. */
   readonly motionDirection: -1 | 1;
+  /**
+   * 0 while on its feet, rising to 1 over `KNOCKDOWN_FALL_S` after `downSinceS`.
+   *
+   * Optional so a consumer hand-building a sampled actor for a test need not
+   * declare a presentation field with an obvious default. The sampler always
+   * sets it, and every reader treats absence as upright.
+   */
+  readonly downProgress?: number;
 }
 
 export interface SampledSignal extends PlaybackSignal {
@@ -682,21 +708,18 @@ function mapPlaybackActors(
       issues.push(`${name}: actor ${actor.id} has invalid Studio body color ${display(bodyColor)}`);
       continue;
     }
-    const catalogId = explicit ?? defaultCatalogIdForActorKind(actor.kind);
-    if (!isCatalogId(catalogId)) {
-      issues.push(`${name}: actor ${actor.id} requests unknown Studio catalog model ${display(catalogId)}`);
+    const visual = resolvePlaybackCatalogId(actor.kind, explicit);
+    if (!visual) {
+      issues.push(`${name}: actor ${actor.id} requests unknown Studio catalog model ${display(explicit)}`);
       continue;
     }
-    // Buildability and dimensions are checked by prop-catalog itself; calling
-    // getEntry here turns a stale registry id into an import diagnostic.
-    getEntry(catalogId);
     actors.push({
       id: actor.id,
       kind: actor.kind,
       static: actor.static,
       tags: [...actor.tags],
-      catalogId,
-      modelBasis: explicit ? 'input-tag' : 'kind-default',
+      catalogId: visual.catalogId,
+      modelBasis: visual.modelBasis,
       ...(bodyColor ? { bodyColor: bodyColor.toLowerCase() } : {}),
       dims: { l: actor.dims.l, w: actor.dims.w, h: actor.dims.h },
       initial: {
@@ -784,6 +807,25 @@ function hasCollisionBetween(times: readonly number[] | undefined, after: number
   return low < times.length && times[low]! <= through;
 }
 
+/**
+ * How long a body takes to go from upright to flat, in seconds.
+ *
+ * Presentation only: the engine's state is binary from `downSinceS` onward, and
+ * this is the ramp a renderer plays over it. Roughly a real fall from standing.
+ */
+export const KNOCKDOWN_FALL_S = 0.45;
+
+/**
+ * Fall progress at `time`, 0 upright and 1 flat.
+ *
+ * Monotonic and derived purely from the recorded timestamp, so scrubbing
+ * backwards through the clip stands the body back up exactly where it fell.
+ */
+export function knockdownProgress(downSinceS: number | undefined, time: number): number {
+  if (downSinceS == null || time < downSinceS) return 0;
+  return Math.min(1, (time - downSinceS) / KNOCKDOWN_FALL_S);
+}
+
 /** Interpolate dynamic poses; static actors always retain their authored instance pose. */
 export function samplePlaybackActors(bundle: PlaybackBundle, time: number): SampledActor[] {
   const bracket = sampleBracket(bundle.trace.ticks.t, time);
@@ -836,6 +878,7 @@ export function samplePlaybackActors(bundle: PlaybackBundle, time: number): Samp
       present,
       static: false,
       motionDirection,
+      downProgress: knockdownProgress(track.downSinceS, time),
     };
   });
 }

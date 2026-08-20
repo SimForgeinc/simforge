@@ -6,6 +6,7 @@ export * from './environment.js';
 export * from './anchor.js';
 export * from './sensors.js';
 export * from './roles.js';
+export * from './sensor-rigs.js';
 export * from './props.js';
 export * from './traffic-controls.js';
 export * from './map-signal-plans.js';

@@ -2551,3 +2551,46 @@ def test_entity_without_an_executable_position_is_still_rejected():
     )
     with pytest.raises(ContractError, match="lack an executable position or trajectory"):
         compile_xosc14(golden("actor-despawn").replace(b"</Entities>", ghost + b"</Entities>"))
+
+
+def _walker_xosc(knocked_down_at: str | None) -> bytes:
+    """The same trajectory-replay shape as XOSC, with one pedestrian."""
+    knockdown = (
+        f'<Property name="uniscenarios.trajectoryReplay.knockedDownAtS.walker" value="{knocked_down_at}"/>'
+        if knocked_down_at is not None else ''
+    )
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+  <FileHeader revMajor="1" revMinor="4" date="1970-01-01T00:00:00Z" description="test" author="test"><Properties><Property name="uniscenario.executionMode" value="trajectory-replay"/>{knockdown}</Properties></FileHeader>
+  <ParameterDeclarations/><CatalogLocations/><RoadNetwork><LogicFile filepath="map.xodr"/></RoadNetwork>
+  <Entities><ScenarioObject name="actor_walker"><Pedestrian name="uniscenarios_pedestrian" mass="80" pedestrianCategory="pedestrian"><Properties><Property name="uniscenario.actorId" value="walker"/><Property name="uniscenario.actorKind" value="pedestrian"/></Properties></Pedestrian></ScenarioObject></Entities>
+  <Storyboard>
+    <Init><Actions><Private entityRef="actor_walker"><PrivateAction><TeleportAction><Position><WorldPosition x="0" y="0" z="0" h="0" p="0" r="0"/></Position></TeleportAction></PrivateAction></Private></Actions></Init>
+    <Story name="story"><Act name="act"><ManeuverGroup name="group" maximumExecutionCount="1"><Actors selectTriggeringEntities="false"><EntityRef entityRef="actor_walker"/></Actors><Maneuver name="maneuver"><Event name="event" priority="overwrite"><Action name="follow"><PrivateAction><RoutingAction><FollowTrajectoryAction><TimeReference><Timing domainAbsoluteRelative="absolute" scale="1" offset="0"/></TimeReference><TrajectoryFollowingMode followingMode="position"/><TrajectoryRef><Trajectory name="trajectory_walker" closed="false"><Shape><Polyline>
+      <Vertex time="0"><Position><WorldPosition x="0" y="0" z="0" h="0" p="0" r="0"/></Position><Motion speed_longitudinal="1.4"/></Vertex>
+      <Vertex time="0.04"><Position><WorldPosition x="0.06" y="0" z="0" h="0" p="0" r="0"/></Position><Motion speed_longitudinal="1.4"/></Vertex>
+    </Polyline></Shape></Trajectory></TrajectoryRef></FollowTrajectoryAction></RoutingAction></PrivateAction></Action><StartTrigger><ConditionGroup><Condition name="start" delay="0" conditionEdge="rising"><ByValueCondition><SimulationTimeCondition value="0" rule="greaterOrEqual"/></ByValueCondition></Condition></ConditionGroup></StartTrigger></Event></Maneuver></ManeuverGroup><StartTrigger/><StopTrigger/></Act></Story><StopTrigger/>
+  </Storyboard>
+</OpenSCENARIO>'''.encode()
+
+
+def test_knockdown_header_marks_frames_from_the_recorded_time():
+    plan = compile_xosc14(_walker_xosc("0.02"))
+    downed = [frame.actors["walker"].downed for frame in plan.frames]
+    # Upright before the recorded time, down from it, and never back up.
+    assert downed[0] is False
+    assert all(downed[1:])
+
+
+def test_plans_without_a_knockdown_keep_their_digest():
+    # The digest line is appended only when a body is down, so every plan
+    # produced before knockdowns existed hashes exactly as it did.
+    without = compile_xosc14(_walker_xosc(None))
+    assert all(frame.actors["walker"].downed is False for frame in without.frames)
+    assert without.sha256 == compile_xosc14(_walker_xosc(None)).sha256
+    assert without.sha256 != compile_xosc14(_walker_xosc("0.02")).sha256
+
+
+def test_rejects_an_unparseable_knockdown_time():
+    with pytest.raises(ContractError):
+        compile_xosc14(_walker_xosc("not-a-time"))

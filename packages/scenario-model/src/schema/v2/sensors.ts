@@ -31,6 +31,29 @@ export const SensorMountSchema = z.strictObject({
   rotation: SensorRotationSchema.prefault({}),
 });
 
+/**
+ * A named point on an actor's authored bounding box. Rig presets use anchors
+ * instead of baking one vehicle's dimensions into every physical mount.
+ */
+export const VehicleAnchorSchema = z.strictObject({
+  longitudinal: z.enum(['front', 'center', 'rear']),
+  vertical: z.enum(['bottom', 'center', 'top']),
+  lateral: z.enum(['left', 'center', 'right']),
+});
+
+/**
+ * A preset-only mount. `offset` is in the canonical actor frame after the
+ * anchor has been resolved: +X forward, +Y up and +Z left.
+ */
+export const VehicleAnchorMountSchema = z.strictObject({
+  anchor: VehicleAnchorSchema,
+  offset: Vec3Schema.prefault({ x: 0, y: 0, z: 0 }),
+  rotation: SensorRotationSchema.prefault({}),
+});
+
+/** Serializable mount accepted by a rig template before actor dimensions are known. */
+export const SensorRigMountSchema = z.union([SensorMountSchema, VehicleAnchorMountSchema]);
+
 export const DashCameraIntrinsicsSchema = z.strictObject({
   horizontalFovDeg: z.number().min(10).max(170).default(90),
   /** Vertical half-extent matters for a low sun and for a tall near target. */
@@ -157,6 +180,9 @@ export const ActorSensorSchema = z.discriminatedUnion('type', [
 
 export type SensorRotation = z.infer<typeof SensorRotationSchema>;
 export type SensorMount = z.infer<typeof SensorMountSchema>;
+export type VehicleAnchor = z.infer<typeof VehicleAnchorSchema>;
+export type VehicleAnchorMount = z.infer<typeof VehicleAnchorMountSchema>;
+export type SensorRigMount = z.infer<typeof SensorRigMountSchema>;
 export type DashCameraIntrinsics = z.infer<typeof DashCameraIntrinsicsSchema>;
 export type DashCameraSensor = z.infer<typeof DashCameraSensorSchema>;
 export type LidarSensor = z.infer<typeof LidarSensorSchema>;
@@ -165,6 +191,27 @@ export type ActiveSensorField = z.infer<typeof ActiveSensorFieldSchema>;
 export type SensorDetectionModel = z.infer<typeof DetectionModelSchema>;
 export type SensorSensitivity = z.infer<typeof SensorSensitivitySchema>;
 export type ActorSensor = z.infer<typeof ActorSensorSchema>;
+
+/**
+ * Convert a resolved canonical mount into the Three.js scene frame.
+ *
+ * Reflecting +Z-left to scene -Z also conjugates the authored Euler rotations:
+ * yaw and roll change sign while pitch remains unchanged.
+ */
+export function sensorMountScenePose(mount: SensorMount): SensorMount {
+  return {
+    position: {
+      x: mount.position.x,
+      y: mount.position.y,
+      z: -mount.position.z,
+    },
+    rotation: {
+      yawRad: -mount.rotation.yawRad,
+      pitchRad: mount.rotation.pitchRad,
+      rollRad: -mount.rotation.rollRad,
+    },
+  };
+}
 
 /**
  * The angular/range envelope of any sensor, whatever its modality names the
@@ -330,38 +377,9 @@ export function supportsDashCamera(actor: Pick<ActorForDashCamera, 'class'>): bo
 }
 
 /** Stable, schema-legal sensor id. It is generated once when the sensor is added. */
-export function newSensorId(): string {
+export function newSensorId(type: ActorSensor['type']): string {
   const time = Date.now().toString(36);
   const random = Math.random().toString(36).slice(2, 10);
-  return `dash-camera-${time}-${random}`.slice(0, 64);
-}
-
-/** A forward-facing windscreen/dash mount scaled to the actor's authored box. */
-export function defaultDashCamera(actor: ActorForDashCamera, id: string = newSensorId()): DashCameraSensor {
-  if (!supportsDashCamera(actor)) {
-    throw new Error(`dash cameras are not supported on actor class "${actor.class}"`);
-  }
-  const length = actor.dims?.length ?? 4.8;
-  const height = actor.dims?.height ?? 1.5;
-  return {
-    id,
-    type: 'dash_camera',
-    enabled: true,
-    mount: {
-      position: {
-        x: Math.max(0, length / 2 - 0.35),
-        y: Math.max(0.5, height * 0.72),
-        z: 0,
-      },
-      rotation: { yawRad: 0, pitchRad: 0, rollRad: 0 },
-    },
-    camera: {
-      horizontalFovDeg: 90,
-      verticalFovDeg: 60,
-      nearM: 0.05,
-      farM: 1_000,
-      aspectRatio: 1.777778,
-    },
-    detection: DetectionModelSchema.parse({}),
-  };
+  const prefix = type === 'dash_camera' ? 'dash-camera' : type;
+  return `${prefix}-${time}-${random}`.slice(0, 64);
 }

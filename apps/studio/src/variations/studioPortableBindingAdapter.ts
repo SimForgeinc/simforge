@@ -74,7 +74,9 @@ function signalApproachesFrom(template: ScenarioTemplateV2): PortableLiftOptions
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
   const out: NonNullable<PortableLiftOptions['signalApproaches']> = {};
   for (const [handle, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (value === 'ego' || value === 'opposing' || value === 'left' || value === 'right') out[handle] = value;
+    // Persisted extension values used `ego`; normalize them before any lift can emit a new document.
+    if (value === 'ego') out[handle] = 'subject';
+    else if (value === 'subject' || value === 'opposing' || value === 'left' || value === 'right') out[handle] = value;
   }
   return Object.keys(out).length ? out : undefined;
 }

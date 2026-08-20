@@ -99,20 +99,33 @@ class _ExecutionFence:
             raise LeaseDeadlineExceeded(f"lease deadline exceeded during {stage}")
 
 
-def _attestation(validation: Mapping[str, object]) -> dict[str, object]:
+def _attestation(
+    validation: Mapping[str, object],
+    execution_mode: str,
+    runtime_evidence: Mapping[str, object],
+) -> dict[str, object]:
+    worker_image = os.environ.get("SIMFORGE_WORKER_IMAGE_DIGEST", "unavailable")
+    worker_revision = os.environ.get("SIMFORGE_WORKER_REVISION", "unavailable")
     return {
         "schema": "uniscenario.worker-attestation/v1",
-        "workerImageDigest": os.environ.get("SIMFORGE_WORKER_IMAGE_DIGEST", "unavailable"),
-        "workerRevision": os.environ.get("SIMFORGE_WORKER_REVISION", "unavailable"),
+        "workerImageDigest": worker_image,
+        "workerRevision": worker_revision,
         "carlaVersion": os.environ.get("SIMFORGE_CARLA_VERSION", "0.10.0"),
         "engineVersion": os.environ.get("SIMFORGE_ENGINE_VERSION", "UE5.5"),
         "pythonVersion": platform.python_version(),
+        "hostNode": platform.node(),
+        "hostPlatform": platform.platform(),
+        "executionMode": execution_mode,
+        "physicsAuthority": execution_mode == "native-physics",
+        "acceptanceEligible": execution_mode == "native-physics",
+        "workerIdentityComplete": worker_image != "unavailable" and worker_revision != "unavailable",
+        "runtimeEvidence": dict(runtime_evidence),
         "xoscValidation": dict(validation),
     }
 
 
-def _trace_to_path(plan: ExecutionPlan, readbacks: list[Mapping[str, Mapping[str, float]]], signal_readbacks: list[Mapping[str, str]], control_sha256: str, source_input_digest: str, materialized_traffic_digest: str, destination: Path, max_bytes: int, abort: Callable[[], None]) -> Path:
-    if len(readbacks) != len(plan.frames) or len(signal_readbacks) != len(plan.frames):
+def _trace_to_path(plan: ExecutionPlan, readbacks: list[Mapping[str, Mapping[str, object]]], signal_readbacks: list[Mapping[str, str]], collision_readbacks: list[list[Mapping[str, object]]], control_sha256: str, source_input_digest: str, materialized_traffic_digest: str, destination: Path, max_bytes: int, abort: Callable[[], None]) -> Path:
+    if len(readbacks) != len(plan.frames) or len(signal_readbacks) != len(plan.frames) or len(collision_readbacks) != len(plan.frames):
         raise RuntimeError("trace readbacks are not frame-closed")
     with destination.open("wb") as raw:
         bounded = _BoundedWriter(raw, max_bytes, "trace")
@@ -126,11 +139,11 @@ def _trace_to_path(plan: ExecutionPlan, readbacks: list[Mapping[str, Mapping[str
             encoded.write(b',"fixedTimestepS":')
             encoded.write(json.dumps(plan.fixed_timestep_s, separators=(",", ":")).encode())
             encoded.write(b',"frames":[')
-            for index, (frame, readback, signals) in enumerate(zip(plan.frames, readbacks, signal_readbacks)):
+            for index, (frame, readback, signals, collisions) in enumerate(zip(plan.frames, readbacks, signal_readbacks, collision_readbacks)):
                 abort()
                 if index:
                     encoded.write(b",")
-                encoded.write(json.dumps({"index": frame.index, "t": frame.t, "actors": readback, "signals": signals}, sort_keys=True, separators=(",", ":")).encode())
+                encoded.write(json.dumps({"index": frame.index, "t": frame.t, "actors": readback, "signals": signals, "collisions": collisions}, sort_keys=True, separators=(",", ":")).encode())
             encoded.write(b'],"planSha256":')
             encoded.write(json.dumps(plan.sha256).encode())
             encoded.write(b',"schema":"uniscenario.render-trace/v1","signalStateSource":"backend-verified"}')
@@ -323,12 +336,89 @@ def _appearance_capability(plan: ExecutionPlan, abort: Callable[[], None] | None
     }
 
 
+def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
+    """Reject semantics the selected execution mode cannot honestly execute."""
+    if lease.render_spec.execution_mode != "native-physics":
+        return
+    appearance = _appearance_capability(plan)
+    if appearance["unrenderedCues"]:
+        raise ContractError(
+            "native physics render contains unsupported appearance cues: "
+            + ", ".join(appearance["unrenderedCues"])
+        )
+    reverse_non_vehicles = sorted({
+        actor_id
+        for frame in plan.frames
+        for actor_id, state in frame.actors.items()
+        if state.speed_mps < -1e-6
+        and plan.actors[actor_id].kind not in {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
+    })
+    if reverse_non_vehicles:
+        raise ContractError(
+            "native physics cannot execute signed reverse motion for non-vehicle actors: "
+            + ", ".join(reverse_non_vehicles)
+        )
+    unsupported_moving = sorted({
+        actor_id
+        for frame in plan.frames
+        for actor_id, state in frame.actors.items()
+        if abs(state.speed_mps) > 1e-6
+        and plan.actors[actor_id].kind in {"animal", "static", "static_object"}
+    })
+    if unsupported_moving:
+        raise ContractError(
+            "native physics cannot execute moving non-actuated actors: "
+            + ", ".join(unsupported_moving)
+        )
+    vehicle_kinds = {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
+    invalid_vehicle_appearance = sorted({
+        actor_id
+        for frame in plan.frames
+        for actor_id, state in frame.actors.items()
+        if any(key.startswith(("light.", "door.")) for key in state.appearance)
+        and plan.actors[actor_id].kind not in vehicle_kinds
+    })
+    if invalid_vehicle_appearance:
+        raise ContractError(
+            "native physics vehicle appearance actions target non-vehicle actors: "
+            + ", ".join(invalid_vehicle_appearance)
+        )
+    despawned = set(appearance["despawnedActors"])
+    invalid_mounts = sorted({camera.attach_to for camera in lease.render_spec.cameras if camera.attach_to in despawned})
+    if invalid_mounts:
+        raise ContractError(
+            "camera sensors cannot remain frame-closed when their native parent is deleted: "
+            + ", ".join(invalid_mounts)
+        )
+
+
+def _optional_backend_call(backend: RenderBackend, name: str, *args: object, abort: Callable[[], None]) -> Any:
+    method = getattr(backend, name, None)
+    if not callable(method):
+        return None
+    return method(*args, abort=abort)
+
+
+def _preflight_asset_semantics(plan: ExecutionPlan, catalog: Mapping[str, Mapping[str, str]]) -> None:
+    vehicle_kinds = {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
+    for actor_id, binding in plan.actors.items():
+        entry = catalog.get(binding.catalog_name)
+        blueprint = entry.get("blueprintId") if entry else None
+        if not blueprint:
+            raise ContractError(f"asset catalog has no CARLA blueprint for {actor_id}")
+        if binding.kind in vehicle_kinds and not blueprint.startswith(("vehicle.", "bike.")):
+            raise ContractError(f"vehicle actor {actor_id} is bound to non-vehicle CARLA blueprint {blueprint}")
+        if binding.kind == "pedestrian" and not blueprint.startswith("walker."):
+            raise ContractError(f"pedestrian actor {actor_id} is bound to non-walker CARLA blueprint {blueprint}")
+
+
 def _manifest_to_path(
     lease: Lease,
     plan: ExecutionPlan,
     sensor_records: list[Mapping[str, Any]],
     validation: Mapping[str, object],
     parity: Mapping[str, object],
+    parity_evidence: Mapping[str, object],
     attestation: Mapping[str, object],
     artifacts: list[Mapping[str, object]],
     destination: Path,
@@ -359,6 +449,7 @@ def _manifest_to_path(
         "xoscValidation": dict(validation),
         "workerAttestation": dict(attestation),
         "parity": dict(parity),
+        "parityEvidence": dict(parity_evidence),
         "artifacts": [dict(item) for item in artifacts],
         "sensorFrames": sensor_records,
         "capture": {
@@ -380,6 +471,297 @@ def _manifest_to_path(
             bounded.write(chunk.encode())
         abort()
     return destination
+
+
+def _collision_onsets(events: object, fixed_timestep_s: float, *, authored: bool) -> dict[tuple[str, str], int]:
+    result: dict[tuple[str, str], int] = {}
+    if not isinstance(events, (list, tuple)):
+        return result
+    for item in events:
+        if not isinstance(item, Mapping):
+            continue
+        if authored:
+            if item.get("kind") != "collision":
+                continue
+            left, right = item.get("a"), item.get("b")
+            t = item.get("t")
+            if not isinstance(t, (int, float)):
+                continue
+            frame = round(float(t) / fixed_timestep_s)
+        else:
+            pair = item.get("pair")
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                continue
+            left, right = pair
+            frame = item.get("frame")
+            if not isinstance(frame, int):
+                continue
+        if not isinstance(left, str) or not left or not isinstance(right, str) or not right or left == right:
+            continue
+        pair_key = tuple(sorted((left, right)))
+        result[pair_key] = min(frame, result.get(pair_key, frame))
+    return result
+
+
+
+_ENVIRONMENT_FIELDS = (
+    "cloudiness",
+    "precipitation",
+    "precipitation_deposits",
+    "wind_intensity",
+    "sun_azimuth_angle",
+    "sun_altitude_angle",
+    "fog_density",
+    "fog_distance",
+    "wetness",
+)
+
+
+def _environment_values_match(
+    actual: object,
+    expected: Mapping[str, float],
+) -> bool:
+    if not isinstance(actual, Mapping) or set(actual) != set(_ENVIRONMENT_FIELDS):
+        return False
+    for field in _ENVIRONMENT_FIELDS:
+        value = actual.get(field)
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return False
+        difference = (
+            abs((float(expected[field]) - float(value) + 180.0) % 360.0 - 180.0)
+            if field == "sun_azimuth_angle"
+            else abs(float(expected[field]) - float(value))
+        )
+        if difference > 1e-4:
+            return False
+    return True
+
+
+def _environment_evidence_is_accepted(environment: object, requested: object) -> bool:
+    if not isinstance(environment, Mapping):
+        return False
+    expected = {field: float(getattr(requested, field)) for field in _ENVIRONMENT_FIELDS}
+    if environment.get("schema") != "uniscenario.environment-evidence/v1":
+        return False
+    if not _environment_values_match(environment.get("requested"), expected):
+        return False
+    if environment.get("available") is True:
+        return (
+            set(environment) == {"schema", "available", "exact", "requested", "observed"}
+            and environment.get("exact") is True
+            and _environment_values_match(environment.get("observed"), expected)
+        )
+    return (
+        set(environment) == {"schema", "available", "exact", "requested", "observed", "reason"}
+        and environment.get("available") is False
+        and environment.get("exact") is False
+        and environment.get("observed") is None
+        and environment.get("reason") == "carla-weather-disabled"
+    )
+
+def _parity_evidence(
+    lease: Lease,
+    plan: ExecutionPlan,
+    parity: object,
+    runtime_evidence: Mapping[str, object],
+    artifacts: list[Mapping[str, object]],
+    expected_capture_count: int,
+) -> dict[str, object]:
+    metadata = plan.semantic_metadata
+    semantic_failures: list[str] = []
+    if not metadata.get("complete"):
+        semantic_failures.append("semantic-metadata-incomplete")
+    for field, check_id in (
+        ("lifecycle_mismatches", "actor-lifecycle"),
+        ("signal_mismatches", "traffic-signal-state"),
+        ("discrete_mismatches", "actor-discrete-state"),
+    ):
+        if int(getattr(parity, field, 0)) > 0:
+            semantic_failures.append(check_id)
+    if lease.render_spec.execution_mode == "native-physics":
+        if (
+            runtime_evidence.get("available") is not True
+            or runtime_evidence.get("physicsAuthority") is not True
+            or runtime_evidence.get("motionApplication") != "native-controls"
+        ):
+            semantic_failures.append("native-physics-authority")
+        environment = runtime_evidence.get("environment")
+        if not _environment_evidence_is_accepted(environment, lease.render_spec.environment):
+            semantic_failures.append("environment-readback")
+        sensor_evidence = runtime_evidence.get("sensors")
+        expected_sensor_ids = {camera.id for camera in lease.render_spec.cameras}
+        if not isinstance(sensor_evidence, Mapping) or set(sensor_evidence) != expected_sensor_ids:
+            semantic_failures.append("sensor-identity-closure")
+        else:
+            for camera_id in sorted(expected_sensor_ids):
+                value = sensor_evidence[camera_id]
+                if not isinstance(value, Mapping) or value.get("capturedFrames") != expected_capture_count:
+                    semantic_failures.append(f"sensor-frame-closure:{camera_id}")
+
+    global_failed_actor_ids = list(getattr(parity, "failed_actor_ids", ()))
+    violation_counts = dict(getattr(parity, "violation_counts", {}))
+    reference_violation_counts = dict(getattr(parity, "reference_violation_counts", {}))
+    reference_thresholds = dict(getattr(parity, "reference_thresholds", {}))
+    acceptance_thresholds = dict(getattr(parity, "acceptance_thresholds", {}))
+    max_error = dict(getattr(parity, "max_error", {}))
+    expected_collisions = _collision_onsets(metadata.get("events"), plan.fixed_timestep_s, authored=True)
+    actual_collisions = _collision_onsets(getattr(parity, "collision_events", ()), plan.fixed_timestep_s, authored=False)
+    collision_pairs = sorted(set(expected_collisions) | set(actual_collisions))
+    failed_pairs = [
+        list(pair)
+        for pair in collision_pairs
+        if expected_collisions.get(pair) != actual_collisions.get(pair)
+    ]
+    collisions_passed = not failed_pairs
+
+    # Native contact response is intentionally CARLA-owned. Once every
+    # authored pair and onset matches exactly, trajectory acceptance remains
+    # strict through the first-contact frame and the later physics tail is
+    # evidence, not a replay requirement. A missing, unexpected, or mistimed
+    # contact disables this exception and keeps the full trajectory blocking.
+    segments = getattr(parity, "segments", {})
+    through_contact = segments.get("throughFirstContact", {}) if isinstance(segments, Mapping) else {}
+    post_contact = segments.get("postContact", {}) if isinstance(segments, Mapping) else {}
+    through_violations = dict(through_contact.get("violationCounts", {})) if isinstance(through_contact, Mapping) else {}
+    post_violations = dict(post_contact.get("violationCounts", {})) if isinstance(post_contact, Mapping) else {}
+    post_max_error = dict(post_contact.get("maxError", {})) if isinstance(post_contact, Mapping) else {}
+    segment_failed = getattr(parity, "segment_failed_actor_ids", {})
+    matched_authored_contact = bool(expected_collisions) and collisions_passed
+    if matched_authored_contact:
+        failed_actor_ids = list(segment_failed.get("throughFirstContact", ())) if isinstance(segment_failed, Mapping) else []
+        blocking_violations = through_violations
+        acceptance_gate = "through-first-contact"
+    else:
+        failed_actor_ids = global_failed_actor_ids
+        blocking_violations = violation_counts
+        acceptance_gate = "full-trajectory"
+    post_contact_failed_actor_ids = (
+        list(segment_failed.get("postContact", ())) if isinstance(segment_failed, Mapping) else []
+    )
+    trajectory_passed = not failed_actor_ids and not any(int(value) for value in blocking_violations.values())
+    trajectory_metrics: dict[str, float] = {"samples": float(getattr(parity, "samples", 0))}
+    for key, value in sorted(max_error.items()):
+        trajectory_metrics[f"max.{key}"] = float(value)
+    for key, value in sorted(violation_counts.items()):
+        trajectory_metrics[f"violations.{key}"] = float(value)
+    for key, value in sorted(reference_violation_counts.items()):
+        trajectory_metrics[f"referenceViolations.{key}"] = float(value)
+    for key, value in sorted(reference_thresholds.items()):
+        trajectory_metrics[f"referenceThreshold.{key}"] = float(value)
+    for key, value in sorted(acceptance_thresholds.items()):
+        trajectory_metrics[f"acceptanceThreshold.{key}"] = float(value)
+    for prefix, segment_value in (("throughFirstContact", through_contact), ("postContact", post_contact)):
+        if not isinstance(segment_value, Mapping):
+            continue
+        trajectory_metrics[f"{prefix}.samples"] = float(segment_value.get("samples", 0))
+        for key, value in sorted(dict(segment_value.get("maxError", {})).items()):
+            trajectory_metrics[f"{prefix}.max.{key}"] = float(value)
+        for key, value in sorted(dict(segment_value.get("violationCounts", {})).items()):
+            trajectory_metrics[f"{prefix}.violations.{key}"] = float(value)
+
+    produced_kinds = {
+        str(item.get("kind")) for item in artifacts
+        if isinstance(item.get("kind"), str)
+    }
+    expected_kinds: set[str] = set()
+    for output in lease.render_spec.outputs:
+        if output == "frames":
+            expected_kinds.update(f"framesArchive-{camera.id}" for camera in lease.render_spec.cameras)
+        else:
+            expected_kinds.add(output)
+    if lease.render_spec.execution_mode == "native-physics":
+        expected_kinds.update({"manifest", "parity-report"})
+    predicted_kinds = {
+        kind for kind in ("manifest", "parity-report")
+        if kind in lease.artifact_uploads
+    }
+    verified_kinds = sorted(produced_kinds | predicted_kinds)
+    missing_kinds = sorted(expected_kinds - set(verified_kinds))
+
+    divergences: list[dict[str, object]] = []
+    if matched_authored_contact:
+        for key, value in sorted(post_max_error.items()):
+            if float(value) > 0:
+                divergences.append({
+                    "code": f"native-physics:post-contact:{key}",
+                    "classification": "expected-carla-physics",
+                    "details": {
+                        "segment": "postContact",
+                        "maximum": float(value),
+                        "violationCount": int(post_violations.get(key, 0)),
+                    },
+                })
+    elif trajectory_passed:
+        for key, value in sorted(max_error.items()):
+            reference_violations = int(reference_violation_counts.get(key, 0))
+            if reference_violations > 0:
+                divergences.append({
+                    "code": f"native-physics:{key}",
+                    "classification": "expected-carla-physics",
+                    "details": {
+                        "maximum": float(value),
+                        "referenceThreshold": float(reference_thresholds[key]),
+                        "acceptanceThreshold": float(acceptance_thresholds[key]),
+                        "referenceViolationCount": reference_violations,
+                        "acceptanceViolationCount": int(violation_counts.get(key, 0)),
+                    },
+                })
+    if lease.render_spec.execution_mode != "native-physics":
+        divergences.append({
+            "code": "diagnostic-replay-not-acceptance-eligible",
+            "classification": "unclassified",
+        })
+
+    semantics_passed = not semantic_failures
+    artifacts_passed = not missing_kinds
+    overall = (
+        lease.render_spec.execution_mode == "native-physics"
+        and semantics_passed
+        and trajectory_passed
+        and collisions_passed
+        and artifacts_passed
+    )
+    return {
+        "schema": "uniscenario.parity-evidence/v1",
+        "identity": {
+            "revisionId": lease.execution_package.revision_id,
+            "executionPackageId": lease.execution_package.id,
+            "executionPackageControlSha256": lease.execution_package.control_sha256,
+            "sourceInputDigest": lease.execution_package.source_input_digest,
+            "planSha256": plan.sha256,
+        },
+        "execution": {
+            "mode": lease.render_spec.execution_mode,
+            "fixedTimestepS": plan.fixed_timestep_s,
+        },
+        "semantics": {
+            "verdict": "pass" if semantics_passed else "fail",
+            "evaluatedInteractionCount": len(metadata.get("interactionIds", [])),
+            "unclassifiedDifferenceCount": len(semantic_failures),
+            "failedCheckIds": sorted(set(semantic_failures)),
+        },
+        "trajectory": {
+            "verdict": "pass" if trajectory_passed else "fail",
+            "acceptanceGate": acceptance_gate,
+            "evaluatedActorCount": len(plan.actors),
+            "failedActorIds": sorted(failed_actor_ids),
+            "postContactFailedActorIds": sorted(post_contact_failed_actor_ids),
+            "postContactClassification": "expected-carla-physics" if matched_authored_contact else "blocking",
+            "metrics": trajectory_metrics,
+        },
+        "collisions": {
+            "verdict": "pass" if collisions_passed else "fail",
+            "evaluatedPairCount": len(collision_pairs),
+            "failedPairs": failed_pairs,
+        },
+        "artifacts": {
+            "verdict": "pass" if artifacts_passed else "fail",
+            "verifiedKinds": verified_kinds,
+            "missingKinds": missing_kinds,
+        },
+        "divergences": divergences,
+        "verdict": "pass" if overall else "fail",
+    }
 
 
 def _verify_execution_manifest(lease: Lease, body: bytes) -> Mapping[str, Any]:
@@ -680,6 +1062,7 @@ def execute_lease(
             frozenset(execution_manifest["materializedTraffic"]["overlapActorIds"]),
         )
     check_abort("compile_xosc")
+    _preflight_execution_semantics(lease, plan)
     actor_ids = set(plan.actors)
     unknown_mounts = sorted({camera.attach_to for camera in lease.render_spec.cameras if camera.attach_to and camera.attach_to not in actor_ids})
     if unknown_mounts:
@@ -696,9 +1079,11 @@ def execute_lease(
         abort=lambda: check_abort("index_asset_catalog"),
     )
     check_abort("index_asset_catalog")
+    _preflight_asset_semantics(plan, catalog)
     accumulator = ParityAccumulator(lease.parity_thresholds)
-    readbacks: list[Mapping[str, Mapping[str, float]]] = []
+    readbacks: list[Mapping[str, Mapping[str, object]]] = []
     signal_readbacks: list[Mapping[str, str]] = []
+    collision_readbacks: list[list[Mapping[str, object]]] = []
     capture_schedule = _capture_schedule(plan, lease.render_spec.fps, lambda: check_abort("schedule_capture")) if lease.job_mode == "full_render" else {}
     expected_capture_count = len(capture_schedule)
     _enforce_render_budgets(lease, plan, expected_capture_count)
@@ -712,6 +1097,13 @@ def execute_lease(
             annotation_schedule[frame.index] = (frame.index, frame.t)
     with tempfile.TemporaryDirectory(prefix="uniscenario-render-") as directory:
         output_dir = Path(directory) / "frames"
+        runtime_evidence: Mapping[str, object] = {
+            "schema": "uniscenario.carla-runtime-evidence/v1",
+            "available": False,
+            "executionMode": lease.render_spec.execution_mode,
+            "physicsAuthority": lease.render_spec.execution_mode == "native-physics",
+            "acceptanceEligible": lease.render_spec.execution_mode == "native-physics",
+        }
         try:
             check_abort("configure_execution")
             backend.configure_execution(lease.render_spec.execution_mode)
@@ -743,13 +1135,29 @@ def execute_lease(
                 actual = backend.tick(None if capture is None else {
                     "outputFrameIndex": capture[0], "scheduledTimeS": capture[1],
                 }, abort=lambda: backend_fence("execute", frame.index, len(plan.frames)))
-                accumulator.observe(frame, actual)
+                signals = backend.signal_readback(abort=lambda: backend_fence("execute", frame.index, len(plan.frames)))
+                collisions = _optional_backend_call(
+                    backend,
+                    "collision_readback",
+                    frame.index,
+                    frame.t,
+                    abort=lambda: backend_fence("execute", frame.index, len(plan.frames)),
+                ) or []
+                accumulator.observe(frame, actual, actual_signals=signals, collision_events=collisions)
                 readbacks.append(actual)
-                signal_readbacks.append(backend.signal_readback(abort=lambda: backend_fence("execute", frame.index, len(plan.frames))))
+                signal_readbacks.append(signals)
+                collision_readbacks.append(collisions)
                 if frame.index and frame.index % 250 == 0:
                     emit("progress", {"completedFrames": frame.index + 1, "totalFrames": len(plan.frames)})
             if lease.job_mode == "full_render":
                 backend.finalize_capture(expected_capture_count, abort=lambda: backend_fence("finalize_capture", expected_capture_count, expected_capture_count))
+            evidence = _optional_backend_call(
+                backend,
+                "runtime_evidence",
+                abort=lambda: backend_fence("collect_runtime_evidence", len(plan.frames), len(plan.frames)),
+            )
+            if evidence is not None:
+                runtime_evidence = evidence
         except BaseException as original_error:
             try:
                 backend.cleanup()
@@ -787,7 +1195,7 @@ def execute_lease(
                 if isinstance(body, Path):
                     body.unlink(missing_ok=True)
         if "trace" in lease.render_spec.outputs or "trace" in lease.artifact_uploads:
-            trace_body = _trace_to_path(plan, readbacks, signal_readbacks, package.control_sha256, package.source_input_digest, package.materialized_traffic_digest, Path(directory) / "trace.json.gz", min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes), lambda: check_abort("serialize_trace"))
+            trace_body = _trace_to_path(plan, readbacks, signal_readbacks, collision_readbacks, package.control_sha256, package.source_input_digest, package.materialized_traffic_digest, Path(directory) / "trace.json.gz", min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes), lambda: check_abort("serialize_trace"))
             add_artifact(make_artifact("trace", trace_body, "application/gzip", lease.artifact_uploads.get("trace"), {"format": "json", "contentEncoding": "gzip"}))
         if "frames" in lease.render_spec.outputs:
             for camera in lease.render_spec.cameras:
@@ -821,23 +1229,54 @@ def execute_lease(
             annotations_body = _annotations_to_path(plan, readbacks, annotation_schedule, Path(directory) / "annotations.ndjson", min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes), lambda: check_abort("serialize_annotations"))
             add_artifact(make_artifact("annotations", annotations_body, "application/x-ndjson", lease.artifact_uploads.get("annotations"), {"frameCount": len(annotation_schedule), "fps": lease.render_spec.fps, "durationS": plan.frames[-1].t}))
         parity = accumulator.report()
-        attestation = _attestation(validation)
+        acceptance_eligible = lease.render_spec.execution_mode == "native-physics"
+        attestation = _attestation(validation, lease.render_spec.execution_mode, runtime_evidence)
         if stability:
             attestation["nativeStability"] = stability
+        parity_evidence = _parity_evidence(
+            lease,
+            plan,
+            parity,
+            runtime_evidence,
+            artifacts,
+            expected_capture_count,
+        )
+        accepted = acceptance_eligible and parity_evidence["verdict"] == "pass"
+        parity_value = {
+            **asdict(parity),
+            "rawStrictAccepted": parity.reference_accepted,
+            "accepted": accepted,
+            "acceptanceEligible": acceptance_eligible,
+            "verdict": (
+                "accepted-native-physics" if accepted else
+                "failed-native-physics" if acceptance_eligible else
+                "diagnostic-only"
+            ),
+        }
+        if "parity-report" in lease.artifact_uploads:
+            parity_body = json.dumps(
+                parity_evidence,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+            add_artifact(make_artifact(
+                "parity-report",
+                parity_body,
+                "application/json",
+                lease.artifact_uploads.get("parity-report"),
+                {"schema": "uniscenario.parity-evidence/v1"},
+            ))
         if "manifest" in lease.render_spec.outputs:
-            manifest_body = _manifest_to_path(lease, plan, sensor_records, validation, asdict(parity), attestation, artifacts, Path(directory) / "manifest.json", min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes), lambda: check_abort("serialize_manifest"))
+            manifest_body = _manifest_to_path(lease, plan, sensor_records, validation, parity_value, parity_evidence, attestation, artifacts, Path(directory) / "manifest.json", min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes), lambda: check_abort("serialize_manifest"))
             add_artifact(make_artifact("manifest", manifest_body, "application/json", lease.artifact_uploads.get("manifest")))
     return {
-        "status": "succeeded" if parity.accepted else "failed-parity",
         "planSha256": plan.sha256,
         "sourceInputDigest": package.source_input_digest,
-        "materializedTrafficDigest": package.materialized_traffic_digest,
         "attestation": attestation,
-        "parity": asdict(parity),
+        "parityEvidence": parity_evidence,
         "artifacts": artifacts,
     }
 
 
 def filesystem_validator(xsd_path: Path) -> Validate:
     return lambda xml: validate_xosc14(xml, xsd_path)
-

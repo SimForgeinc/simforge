@@ -13,6 +13,7 @@ import { performance } from 'node:perf_hooks';
 import { materializeMapBound, type InstanceManifest } from '@uniscenarios/scenario-materializer';
 import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
 import {
+  buildLaneGraph,
   parseSimScenarioInput,
   runSimulation,
   traceDigest,
@@ -21,6 +22,7 @@ import {
   type SimEvent,
   type SimScenarioInput,
   type SimTrace,
+  type TopologyIndex,
 } from '@uniscenarios/sim-engine';
 
 import { CliError, EXIT } from '../errors.js';
@@ -107,6 +109,15 @@ interface DebugReport {
   };
 }
 
+const MAPLESS_GRAPH = buildLaneGraph({
+  schemaVersion: 1,
+  mapName: 'mapless-cli-debug',
+  source: { xodrSha256: 'mapless' },
+  lanes: {},
+  gates: [],
+  junctions: {},
+} satisfies TopologyIndex);
+
 export async function debugScenario(options: DebugOptions): Promise<number> {
   validateOptions(options);
   const resolvedFile = await resolveScenarioFile(options.file);
@@ -120,7 +131,10 @@ export async function debugScenario(options: DebugOptions): Promise<number> {
   const sampleSeconds = options.sampleSeconds ?? input.dt;
 
   const simulationAt = performance.now();
-  const result = runSimulation(input, { graph: compiled.bundle.graph, guards: 'collect' });
+  const result = runSimulation(input, {
+    graph: compiled.bundle?.graph ?? MAPLESS_GRAPH,
+    guards: 'collect',
+  });
   const nativeMilliseconds = performance.now() - simulationAt;
   const sceneTrace = traceToSceneFrame(result.trace);
   const sampleIndices = sampleIndexes(sceneTrace.ticks.t, sampleSeconds);
@@ -283,7 +297,7 @@ async function compileInput(options: DebugOptions): Promise<{
   kind: 'template' | 'instance';
   instance: InstanceFile;
   template: ScenarioTemplateV2 | null;
-  bundle: MapBundle;
+  bundle: MapBundle | null;
 }> {
   const kind = await detectKind(options.file);
   if (kind === 'instance') {
@@ -291,7 +305,13 @@ async function compileInput(options: DebugOptions): Promise<{
     if (options.mapId && options.mapId !== instance.input.mapId) {
       throw new CliError('map_mismatch', `input uses ${instance.input.mapId}, not ${options.mapId}`, { path: '--map' });
     }
-    return { kind, instance, template: null, bundle: await loadMap(instance.input.mapId) };
+    // Concrete polyline-only simulations have no lane/topology dependency.
+    // Keeping this path mapless lets the CLI author and execute basic smoke
+    // scenarios on any machine, before large map artifacts are downloaded.
+    const bundle = isMapIndependentInstance(instance.input, options.provider)
+      ? null
+      : await loadMap(instance.input.mapId);
+    return { kind, instance, template: null, bundle };
   }
   const template = await readTemplate(options.file);
   const pinnedMap = template.anchor.pin?.mapId;
@@ -308,6 +328,15 @@ async function compileInput(options: DebugOptions): Promise<{
         return materialize(template, matched.bundle, matched.site, materializeOptions(options));
       })();
   return { kind, instance: instanceFile(product), template, bundle };
+}
+
+function isMapIndependentInstance(input: SimScenarioInput, provider: DebugOptions['provider']): boolean {
+  if (provider !== 'native') return false;
+  return input.actors.every((actor) =>
+    actor.initial.laneRef === undefined
+    && actor.behavior.route.kind === 'polyline')
+    && input.interactions.every((interaction) =>
+      interaction.verb !== 'route' && interaction.verb !== 'changeLane');
 }
 
 function materializeOptions(options: DebugOptions): { drawIndex?: number; seed?: string } {

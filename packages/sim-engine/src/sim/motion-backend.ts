@@ -13,6 +13,12 @@ export interface MotionIntent {
   readonly targetAccelerationMps2: number;
   readonly previewPoint: Vec2;
   readonly previewHeadingRad: number;
+  /**
+   * The body is off its feet. A walker agent must stop steering toward
+   * `previewPoint` and let the contact impulse carry it, or the knock it just
+   * received is erased on the next substep.
+   */
+  readonly downed?: boolean;
 }
 
 /** Normalised actuator requests. */
@@ -76,6 +82,8 @@ export interface MotionBackend {
   readonly version: number;
   readonly substepS: number;
   register(input: MotionActorInitialization): void;
+  /** Replace body state when an authored exact-time trajectory owns motion. */
+  setState(actorId: string, state: VehicleMotionState): void;
   step(actorId: string, intent: MotionIntent, dtS: number, frictionScale: number): MotionStepResult;
   state(actorId: string): VehicleMotionState | undefined;
   telemetry(actorId: string): PhysicsTelemetrySample | undefined;

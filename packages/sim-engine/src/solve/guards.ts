@@ -4,11 +4,10 @@
  * These are the checks the research doc calls out as the ones that actually
  * catch generated garbage before it wastes a simulation:
  *
- * 1. **runway over the whole clip** — not just the labelled window — with
- *    geometrically verified successor adjacency (endpoints within 0.5 m, which
- *    `buildRoute` already enforces and this re-asserts explicitly);
- * 2. **required decel ≤ budget** — a `speed` verb whose dynamics imply harder
- *    than `HARD_DECEL_MPS2` is not a scenario, it is a typo;
+ * 1. **runway over the whole clip** — reported as a quality warning because
+ *    reaching a route endpoint is a supported terminal condition;
+ * 2. **required decel ≤ budget** — reported as a quality warning because the
+ *    longitudinal controller saturates at the actor's physical braking limit;
  * 3. **spawn OBBs disjoint** — real dimensions, not bounding circles;
  * 4. **spawn `s` within the lane** and **on the actor's route**;
  * 5. **route connected**.
@@ -148,6 +147,7 @@ function checkRunway(
         `actors.${r.spec.id}.behavior.route`,
         `route provides ${available.toFixed(1)} m ahead of the spawn but the actor covers ${need.toFixed(1)} m in ${input.clipSeconds} s`,
         { availableM: available, neededM: need, clipSeconds: input.clipSeconds },
+        'warning',
       ),
     );
   }
@@ -187,6 +187,7 @@ function checkDecelBudget(input: SimScenarioInput, issues: SimIssue[]): void {
           `interactions.${it.id}.dynamics`,
           `implies ${implied.toFixed(2)} m/s² of braking, above the ${HARD_DECEL_MPS2} m/s² hard limit`,
           { impliedDecel: implied, budget: HARD_DECEL_MPS2 },
+          'warning',
         ),
       );
     } else if (implied > COMFORT_DECEL_MPS2) {

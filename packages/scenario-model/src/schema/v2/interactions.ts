@@ -70,9 +70,16 @@ export const SIGNAL_PHASES = [
 export const SignalPhaseSchema = z.enum(SIGNAL_PHASES);
 
 /** Reference to a traffic signal: a map handle, or a junction feature + approach. */
+export const SignalApproachSchema = z.union([
+  z.enum(['subject', 'opposing', 'left', 'right']),
+  // Already-persisted documents used `ego`; accept it only at the read boundary.
+  z.literal('ego').transform(() => 'subject' as const),
+]);
+/** The junction arm a signal is read from, after the legacy spelling is normalized. */
+export type SignalApproach = z.output<typeof SignalApproachSchema>;
 export const SignalRefSchema = z.union([
   z.strictObject({ handle: z.string().min(1).max(200) }),
-  z.strictObject({ feature: FeatureRefSchema, approach: z.enum(['ego', 'opposing', 'left', 'right']) }),
+  z.strictObject({ feature: FeatureRefSchema, approach: SignalApproachSchema }),
   z.strictObject({ control: z.string().min(1).max(128) }),
 ]);
 
@@ -375,10 +382,32 @@ export const RouteTargetSchema = z.discriminatedUnion('mode', [
   /** Exact scene-space points authored against a pinned map revision. */
   z.strictObject({
     mode: z.literal('customRoute'),
+    /**
+     * One point is a complete route: the actor stands there. Time is not a
+     * factor here, so a second copy of the same point would say nothing extra.
+     */
     points: z.array(z.strictObject({
       x: z.number().finite(),
       z: z.number().finite(),
-    })).min(2).max(128),
+    })).min(1).max(128),
+  }),
+  /**
+   * Exact scene-space keyframes. Unlike `customRoute`, time owns motion: the
+   * actor is linearly interpolated between these positions and its inherent
+   * cruise speed and longitudinal commands are ignored until contact occurs.
+   */
+  z.strictObject({
+    mode: z.literal('customTimedRoute'),
+    /**
+     * One keyframe is a complete route: the actor holds that spot for the whole
+     * clip. Repeated positions at later times are meaningful here — unlike
+     * `customRoute`, they are how an author writes a dwell.
+     */
+    points: z.array(z.strictObject({
+      timeS: z.number().finite().min(0),
+      x: z.number().finite(),
+      z: z.number().finite(),
+    })).min(1).max(1024),
   }),
   /**
    * Exact map-bound lane chain authored by Studio placement. This target is

@@ -4,7 +4,7 @@ import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
 /** Presentation-only metadata. It is intentionally outside SimScenarioInput. */
 export const CAMERA_EXTENSION_KEY = 'studio.presentation.cameras.v1';
 
-export type CameraPolicy = 'editor' | 'all-actors' | 'ego-chase' | 'dash-camera' | 'authored' | 'auto-incident' | 'free';
+export type CameraPolicy = 'editor' | 'all-actors' | 'subject-chase' | 'dash-camera' | 'authored' | 'auto-incident' | 'free';
 
 export type CameraAttachment =
   | { kind: 'actor'; id: string }
@@ -32,7 +32,15 @@ export const EMPTY_CAMERA_PRESENTATION: CameraPresentation = {
   policy: 'editor',
 };
 
-const POLICIES = new Set<CameraPolicy>(['editor', 'all-actors', 'ego-chase', 'dash-camera', 'authored', 'auto-incident', 'free']);
+const POLICIES: Record<CameraPolicy, true> = {
+  editor: true,
+  'all-actors': true,
+  'subject-chase': true,
+  'dash-camera': true,
+  authored: true,
+  'auto-incident': true,
+  free: true,
+};
 
 /** Tolerant at the presentation-extension boundary: malformed data cannot break a scenario. */
 export function parseCameraPresentation(value: unknown): CameraPresentation {
@@ -41,9 +49,13 @@ export function parseCameraPresentation(value: unknown): CameraPresentation {
   const cameras = Array.isArray(raw.cameras)
     ? raw.cameras.map(parseCamera).filter((camera): camera is AuthoredCamera => camera !== null)
     : [];
-  const policy = typeof raw.policy === 'string' && POLICIES.has(raw.policy as CameraPolicy)
-    ? raw.policy as CameraPolicy
-    : 'editor';
+  // Persisted presentations used `ego-chase`; normalize it at the read boundary
+  // so every newly written presentation uses the sensor-derived vocabulary.
+  const policy = raw.policy === 'ego-chase'
+    ? 'subject-chase'
+    : typeof raw.policy === 'string' && POLICIES[raw.policy as CameraPolicy] === true
+      ? raw.policy as CameraPolicy
+      : 'editor';
   const active = typeof raw.activeCameraId === 'string'
     && cameras.some((camera) => camera.id === raw.activeCameraId)
     ? raw.activeCameraId

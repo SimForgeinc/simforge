@@ -1,6 +1,7 @@
-import type { Group } from 'three';
+import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
 
 import { type CatalogId, getEntry } from './catalog';
+import type { Dims } from './types';
 import type {
   ArrowBoardParams,
   BarrierParams,
@@ -317,6 +318,25 @@ const BUILDERS: Builders = {
   'hazard.debris': buildDebrisPile,
 };
 
+const EXTERNAL_PLACEHOLDER_MATERIAL = new MeshStandardMaterial({
+  color: 0x8b96a3,
+  roughness: 0.8,
+  metalness: 0,
+});
+
+function buildExternalPlaceholder(id: string, dims: Dims): Group {
+  const geometry = new BoxGeometry(dims.l, dims.h, dims.w);
+  const mesh = new Mesh(geometry, EXTERNAL_PLACEHOLDER_MATERIAL);
+  mesh.position.y = dims.h / 2;
+
+  const group = new Group();
+  group.name = id;
+  group.userData.catalogId = id;
+  group.add(mesh);
+  return group;
+}
+
+
 /**
  * Build a prop by catalog id.
  *
@@ -325,14 +345,21 @@ const BUILDERS: Builders = {
  * returned group is ground-centred, faces +X and carries
  * `userData.catalogId` for round-tripping back to the catalog.
  */
-export function buildProp<K extends CatalogId>(
+export function buildProp<K extends string>(
   id: K,
-  params?: Partial<PropParamMap[K]>,
+  params?: K extends CatalogId ? Partial<PropParamMap[K]> : never,
 ): Group {
-  const builder = BUILDERS[id];
-  if (!builder) throw new Error(`Unknown catalog id: ${id}`);
   const entry = getEntry(id);
-  const merged = { ...entry.defaultParams, ...params } as PropParamMap[K];
+  if (entry.model) return buildExternalPlaceholder(id, entry.dims);
+
+  const builder = (
+    BUILDERS as unknown as Record<
+      string,
+      ((params: PropParamMap[CatalogId]) => Group) | undefined
+    >
+  )[id];
+  if (!builder) throw new Error(`Unknown catalog id: ${id}`);
+  const merged = { ...entry.defaultParams, ...params } as PropParamMap[CatalogId];
   const group = builder(merged);
   group.name = id;
   group.userData.catalogId = id;

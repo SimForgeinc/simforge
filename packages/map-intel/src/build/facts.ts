@@ -283,7 +283,13 @@ export const DECLARED_FACT_KEYS: readonly FactKeySpec[] = [
   {
     key: 'exit_road_name',
     type: 'string',
-    scope: 'always',
+    // Conditional, because its producer is conditional: junction-movements
+    // writes this key only `if (exitRoad)`, and a road only has a name when the
+    // search index, a street-name sign, or an authored road-name table supplied
+    // one. Every hand-built map happened to carry names, so declaring it
+    // `always` never fired — until an uploaded map arrived with unnamed roads
+    // and failed a whole catalog build over a display-only string.
+    scope: 'conditional',
     producedBy: 'densify/junction-movements',
     description: 'Road the movement exits onto. Display only.',
   },

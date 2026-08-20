@@ -6,8 +6,8 @@
  * spawned on a sidewalk, lane changes into lanes that do not exist, triggers
  * bound to signals the map does not have, and — the expensive one —
  * **runway_insufficient**, checked over the *whole clip* rather than the
- * labelled event window, because "there was road for the interesting part" is
- * how actors end up driving off the end of a map at second 17.
+ * labelled event window. It is a quality warning: reaching the end of an
+ * authored route is a supported terminal condition and the actor stops there.
  *
  * Every check degrades to silence when the context cannot answer. A validator
  * that reports failures caused by an incomplete map index would be worse than
@@ -138,7 +138,7 @@ export function mapIssues(template: ScenarioTemplateV2, map: MapContext): Clause
       if (haveM < needM) {
         out.push(
           issue(
-            'error',
+            'warning',
             'runway_insufficient',
             path,
             `role "${role.id}" needs ${needM.toFixed(0)} m of road ahead to travel the whole ${template.choreography.clipSeconds}s clip at ${speedKph.toFixed(0)} kph, but only ${haveM.toFixed(0)} m is drivable`,

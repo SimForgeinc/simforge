@@ -41,6 +41,23 @@ has a reference-backed validation gate.
   depenetration. Resting penetration is at most 2 cm in the acceptance fixture,
   and isolated impacts must not create momentum or energy. Impulse magnitude
   is telemetry, not a certified crash-load or damage prediction.
+- Knockdown: a contact whose normal impulse implies a velocity change above
+  `BALANCE_RECOVERY_DELTA_V_MPS` (0.6 m/s) takes a pedestrian, animal, or
+  sidewalk robot off its feet. The threshold is a balance-recovery limit, not an
+  injury or crash-load claim: below it a walker absorbs the shove and keeps its
+  route, above it the agent stops steering, keeps the impulse the solver gave it,
+  and slides to rest under a 0.55 sliding-friction coefficient. Drones are
+  excluded. The state is monotonic within a clip — nothing stands a body back up
+  — and is recorded as `downSinceS` on the actor track plus a `knocked_down`
+  event carrying the impulse. Posture is not simulated: the engine stays planar
+  and holds the yaw the body was struck with, so lying down is presentation
+  derived from `downSinceS` in the browser renderer. The CARLA adapter drives
+  walkers kinematically and does not present the posture yet, so a managed
+  render shows the body sliding to rest upright while the trace, the metrics and
+  the browser preview agree it is down. OpenSCENARIO carries the translation in the replay
+  polyline and declares the time in a
+  `uniscenarios.trajectoryReplay.knockedDownAtS.*` header property, because the
+  standard has no element for a body on the ground.
 - Performance: 10 dynamic actors for 20 simulated seconds in at most 1 second
   offline (at least 20x real time) on the declared benchmark machine.
 - Existing baked OpenSCENARIO replay: position RMSE at most 0.1 m, position p95

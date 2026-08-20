@@ -47,6 +47,7 @@ function pathActor(
     cruiseOverrideMps: speedMps,
     route,
     routeS: 0,
+    timedRoute: null,
     bestEffortWorldPath: false,
     remainingTurns: [],
     speedMps,

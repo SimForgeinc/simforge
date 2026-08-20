@@ -143,7 +143,7 @@ function summarizeEvent(e: SimEvent): BehaviorSummary['events'][number] {
   const actorId = 'actorId' in e ? e.actorId : e.kind === 'collision' ? `${e.a}/${e.b}` : undefined;
   const interactionId = eventIdentity(e);
   const detail = e.kind === 'state_set' ? `${e.key}=${String(e.value)}`
-    : e.kind === 'trigger_skipped' || e.kind === 'lane_change_rejected' ? e.reason
+    : e.kind === 'trigger_skipped' || e.kind === 'lane_change_rejected' || e.kind === 'route_change_rejected' ? e.reason
       : e.kind === 'lane_change' ? `${e.fromRsl ?? 'none'}→${e.toRsl ?? 'none'}`
         : undefined;
   return { t: round(e.t), kind: e.kind, ...(actorId ? { actorId } : {}), ...(interactionId ? { interactionId } : {}), ...(detail ? { detail } : {}) };

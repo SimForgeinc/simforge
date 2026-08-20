@@ -597,6 +597,34 @@ class Lease:
     job_mode: str
 
 
+NATIVE_PHYSICS_PARITY_LIMITS = {
+    "positionM": 2.0,
+    "headingDeg": 5.0,
+    "speedMps": 1.0,
+}
+
+
+def _parse_parity_thresholds(value: Any) -> Mapping[str, float]:
+    if not isinstance(value, Mapping):
+        raise ContractError("parityThresholds must be an object")
+    parsed = {key: float(item) for key, item in value.items()}
+    unsupported = sorted(set(parsed) - set(NATIVE_PHYSICS_PARITY_LIMITS))
+    if unsupported:
+        raise ContractError(f"unsupported parity thresholds: {', '.join(unsupported)}")
+    if any(not math.isfinite(item) or item < 0 for item in parsed.values()):
+        raise ContractError("parity thresholds must be finite and non-negative")
+    exceeded = sorted(
+        key for key, item in parsed.items()
+        if item > NATIVE_PHYSICS_PARITY_LIMITS[key]
+    )
+    if exceeded:
+        raise ContractError(
+            "parity thresholds cannot exceed the native-physics acceptance limits: "
+            + ", ".join(exceeded)
+        )
+    return parsed
+
+
 def parse_lease(value: Any) -> Lease:
     if not isinstance(value, Mapping) or not isinstance(value.get("job"), Mapping):
         raise ContractError("lease must contain a job object")
@@ -606,11 +634,9 @@ def parse_lease(value: Any) -> Lease:
         raise ContractError("job.attempt must be a positive integer")
     thresholds = job.get("parityThresholds", {})
     uploads = job.get("artifactUploads", {})
-    if not isinstance(thresholds, Mapping) or not isinstance(uploads, Mapping):
-        raise ContractError("parityThresholds and artifactUploads must be objects")
-    parsed_thresholds = {key: float(value) for key, value in thresholds.items()}
-    if any(not math.isfinite(item) or item < 0 for item in parsed_thresholds.values()):
-        raise ContractError("parity thresholds must be finite and non-negative")
+    if not isinstance(uploads, Mapping):
+        raise ContractError("artifactUploads must be an object")
+    parsed_thresholds = _parse_parity_thresholds(thresholds)
     job_mode = job.get("mode")
     if job_mode not in {"interaction_2d", "full_render"}:
         raise ContractError("job.mode must be interaction_2d or full_render")

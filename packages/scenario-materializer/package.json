@@ -1,29 +1,43 @@
 {
   "name": "@uniscenarios/scenario-materializer",
-  "version": "0.1.0-rc.9",
-  "repository": { "type": "git", "url": "git+https://github.com/SimForgeinc/UniScenarios.git", "directory": "packages/scenario-materializer" },
-  "publishConfig": { "access": "public", "provenance": true },
+  "version": "0.1.0-rc.37",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "directory": "packages/scenario-materializer"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "files": ["dist"],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
-    "prepack": "pnpm run build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
-    "@uniscenarios/anchor-matcher": "workspace:*",
     "@uniscenarios/map-intel": "workspace:*",
     "@uniscenarios/scenario-model": "workspace:*",
+    "@uniscenarios/anchor-matcher": "workspace:*",
+    "@uniscenarios/prop-catalog": "workspace:*",
     "@uniscenarios/sim-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   }
 }

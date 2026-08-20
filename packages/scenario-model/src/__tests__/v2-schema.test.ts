@@ -431,7 +431,7 @@ describe('triggers', () => {
       { kind: 'reaches', of: 'a', region: { pose: { s: 20 } }, toleranceM: 2 },
       { kind: 'speed', of: 'a', op: '>=', valueKph: 40 },
       { kind: 'signal', signal: { handle: 'sig-1' }, phase: 'green', minDurationS: 1 },
-      { kind: 'signal', signal: { feature: 'jx', approach: 'ego' }, phase: 'red' },
+      { kind: 'signal', signal: { feature: 'jx', approach: 'subject' }, phase: 'red' },
       { kind: 'visible', of: 'ped', to: 'ego', visible: false, minFraction: 0.2 },
       { kind: 'standstill', of: 'a', forS: 2 },
       { kind: 'collision', of: 'a', with: 'b' },
@@ -439,6 +439,13 @@ describe('triggers', () => {
     for (const condition of conditions) {
       expect(ConditionSchema.safeParse(condition).success, JSON.stringify(condition)).toBe(true);
     }
+  });
+
+  it('normalizes the persisted signal approach to the subject approach', () => {
+    const parsed = ConditionSchema.parse({
+      kind: 'signal', signal: { feature: 'jx', approach: 'ego' }, phase: 'red',
+    });
+    expect(parsed).toMatchObject({ signal: { feature: 'jx', approach: 'subject' } });
   });
 
   it('allows one level of and/or/not and rejects nesting', () => {

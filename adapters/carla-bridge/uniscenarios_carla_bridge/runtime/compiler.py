@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -71,6 +72,11 @@ class ActorFrame:
     #: Latched appearance state, keyed `light.<vehicleLightType>`,
     #: `door.<vehicleComponentType>` or `cue.<userDefinedAnimationType>`.
     appearance: Mapping[str, str] = field(default_factory=dict)
+    #: The body was knocked off its feet before this frame. OpenSCENARIO carries
+    #: where it slid to but has no posture for it, so the export declares the
+    #: time in a `uniscenarios.trajectoryReplay.knockedDownAtS.*` header property
+    #: and the backend lays the actor down from here.
+    downed: bool = False
 
 
 @dataclass(frozen=True)
@@ -88,6 +94,127 @@ class ExecutionPlan:
     actors: Mapping[str, ActorBinding]
     frames: tuple[PlanFrame, ...]
     sha256: str
+    semantic_metadata: Mapping[str, object] = field(default_factory=dict)
+
+
+def _semantic_metadata(
+    properties: Mapping[str, str],
+    actors: Mapping[str, ActorBinding],
+) -> Mapping[str, object]:
+    """Parse the exporter-owned semantic ledger embedded in FileHeader.
+
+    Older local fixtures intentionally remain compilable, but are marked
+    incomplete so they can never produce acceptance-eligible managed parity
+    evidence. Once any v1 ledger property is present, the complete set is
+    mandatory and malformed or identity-drifting metadata fails closed.
+    """
+    prefix = "uniscenarios.trajectoryReplay."
+    required = {
+        "actorIds": f"{prefix}actorIds.v1",
+        "authoredActorIds": f"{prefix}authoredActorIds.v1",
+        "interactions": f"{prefix}interactions.v1",
+        "events": f"{prefix}events.v1",
+        "signals": f"{prefix}signals.v1",
+        "environment": f"{prefix}environment.v1",
+        "surfacePatches": f"{prefix}surfacePatches.v1",
+        "occluders": f"{prefix}occluders.v1",
+    }
+    present = [name for name in required.values() if name in properties]
+    if not present:
+        return {
+            "complete": False,
+            "actorIds": sorted(actors),
+            "authoredActorIds": sorted(actors),
+            "interactionIds": [],
+            "events": [],
+            "signals": [],
+            "environment": {},
+            "surfacePatchIds": [],
+            "occluderIds": [],
+            "hasPerception": False,
+            "sha256": hashlib.sha256(b"legacy-incomplete-semantic-metadata").hexdigest(),
+        }
+    missing = [name for name in required.values() if name not in properties]
+    if missing:
+        raise ContractError(f"trajectory replay semantic metadata is incomplete: {', '.join(sorted(missing))}")
+
+    parsed: dict[str, object] = {}
+    for key, name in required.items():
+        try:
+            parsed[key] = json.loads(properties[name])
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise ContractError(f"trajectory replay semantic metadata {name} is invalid JSON") from exc
+    actor_ids = parsed["actorIds"]
+    authored_actor_ids = parsed["authoredActorIds"]
+    if (
+        not isinstance(actor_ids, list)
+        or any(not isinstance(item, str) or not item for item in actor_ids)
+        or len(set(actor_ids)) != len(actor_ids)
+        or set(actor_ids) != set(actors)
+    ):
+        raise ContractError("trajectory replay actor identity ledger differs from executable actors")
+    if (
+        not isinstance(authored_actor_ids, list)
+        or any(not isinstance(item, str) or not item for item in authored_actor_ids)
+        or len(set(authored_actor_ids)) != len(authored_actor_ids)
+        or set(authored_actor_ids) != set(actor_ids)
+    ):
+        raise ContractError("trajectory replay authored actor identity ledger is invalid")
+
+    def ledger_ids(value: object, label: str) -> list[str]:
+        if not isinstance(value, list):
+            raise ContractError(f"trajectory replay {label} ledger must be an array")
+        ids: list[str] = []
+        for index, item in enumerate(value):
+            if not isinstance(item, Mapping):
+                raise ContractError(f"trajectory replay {label}[{index}] must be an object")
+            identifier = item.get("id")
+            if not isinstance(identifier, str) or not identifier:
+                raise ContractError(f"trajectory replay {label}[{index}].id is required")
+            ids.append(identifier)
+        if len(set(ids)) != len(ids):
+            raise ContractError(f"trajectory replay {label} ledger contains duplicate ids")
+        return ids
+
+    interaction_ids = ledger_ids(parsed["interactions"], "interactions")
+    surface_patch_ids = ledger_ids(parsed["surfacePatches"], "surface patches")
+    occluder_ids = ledger_ids(parsed["occluders"], "occluders")
+    events = parsed["events"]
+    signals = parsed["signals"]
+    environment = parsed["environment"]
+    if not isinstance(events, list) or any(not isinstance(item, Mapping) for item in events):
+        raise ContractError("trajectory replay events ledger must be an array of objects")
+    if not isinstance(signals, list) or any(not isinstance(item, Mapping) for item in signals):
+        raise ContractError("trajectory replay signals ledger must be an array of objects")
+    if not isinstance(environment, Mapping):
+        raise ContractError("trajectory replay environment ledger must be an object")
+    perception_name = f"{prefix}perception.v1"
+    perception: object | None = None
+    if perception_name in properties:
+        try:
+            perception = json.loads(properties[perception_name])
+        except json.JSONDecodeError as exc:
+            raise ContractError("trajectory replay perception metadata is invalid JSON") from exc
+
+    canonical = {
+        "actorIds": actor_ids,
+        "authoredActorIds": authored_actor_ids,
+        "interactionIds": interaction_ids,
+        "events": events,
+        "signals": signals,
+        "environment": environment,
+        "surfacePatchIds": surface_patch_ids,
+        "occluderIds": occluder_ids,
+        "perception": perception,
+    }
+    return {
+        "complete": True,
+        **canonical,
+        "hasPerception": perception_name in properties,
+        "sha256": hashlib.sha256(
+            json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest(),
+    }
 
 
 def _finite(raw: str | None, label: str) -> float:
@@ -361,12 +488,30 @@ def _appearance_and_lifecycle(
     return settings, despawn_at
 
 
+def _derived_longitudinal_speed(
+    left: tuple[float, ...],
+    right: tuple[float, ...],
+    heading: float,
+) -> float:
+    velocity_x = (right[1] - left[1]) / (right[0] - left[0])
+    velocity_y = (right[2] - left[2]) / (right[0] - left[0])
+    return velocity_x * math.cos(heading) + velocity_y * math.sin(heading)
+
+
 def _sample(points: list[tuple[float, ...]], t: float, abort: Callable[[], None]) -> tuple[float, ...]:
     abort()
     if t <= points[0][0]:
-        return points[0][1:]
+        value = points[0][1:]
+        speed = value[4]
+        if math.isnan(speed):
+            speed = _derived_longitudinal_speed(points[0], points[1], value[3]) if len(points) > 1 else 0.0
+        return (*value[:4], speed)
     if t >= points[-1][0]:
-        return points[-1][1:]
+        value = points[-1][1:]
+        speed = value[4]
+        if math.isnan(speed):
+            speed = _derived_longitudinal_speed(points[-2], points[-1], value[3]) if len(points) > 1 else 0.0
+        return (*value[:4], speed)
     low, high = 0, len(points) - 1
     while high - low > 1:
         abort()
@@ -382,12 +527,21 @@ def _sample(points: list[tuple[float, ...]], t: float, abort: Callable[[], None]
     heading = left[4] + heading_delta * ratio
     speed = left[5] + (right[5] - left[5]) * ratio
     if math.isnan(speed):
-        distance = math.hypot(right[1] - left[1], right[2] - left[2])
-        speed = distance / (right[0] - left[0])
+        # OpenSCENARIO longitudinal speed is signed.  When an exporter omits
+        # Motion.speed_longitudinal, recover that sign by projecting the
+        # segment velocity onto the actor's authored forward axis.  Using the
+        # old Euclidean magnitude silently turned reverse trajectories into
+        # forward throttle requests in native CARLA execution.
+        speed = _derived_longitudinal_speed(left, right, heading)
     return (*values, heading, speed)
 
 
-def _canonical_plan_sha256(actors: Mapping[str, ActorBinding], frames: tuple[PlanFrame, ...], abort: Callable[[], None]) -> str:
+def _canonical_plan_sha256(
+    actors: Mapping[str, ActorBinding],
+    frames: tuple[PlanFrame, ...],
+    semantic_metadata: Mapping[str, object],
+    abort: Callable[[], None],
+) -> str:
     digest = hashlib.sha256()
     first = True
     def add(part: str) -> None:
@@ -398,6 +552,8 @@ def _canonical_plan_sha256(actors: Mapping[str, ActorBinding], frames: tuple[Pla
         first = False
     add("uniscenario.execution-plan/v1")
     add(str(STEP_SECONDS))
+    if semantic_metadata.get("complete"):
+        add(f"M|{semantic_metadata['sha256']}")
     for actor_id in sorted(actors):
         abort()
         actor = actors[actor_id]
@@ -409,6 +565,10 @@ def _canonical_plan_sha256(actors: Mapping[str, ActorBinding], frames: tuple[Pla
             abort()
             state = frame.actors[actor_id]
             add(f"S|{actor_id}|{state.lifecycle}|{state.x:.9f}|{state.y:.9f}|{state.z:.9f}|{state.heading_deg:.9f}|{state.speed_mps:.9f}")
+            if state.downed:
+                # Appended only when a body went down, so every plan that came
+                # before knockdowns existed keeps its exact digest.
+                add(f"D|{actor_id}")
             if state.appearance:
                 # Appended only when present, so plans without appearance state
                 # keep the exact digest they had before appearance existed.
@@ -438,6 +598,18 @@ def compile_xosc14(xml_bytes: bytes, abort: Callable[[], None] | None = None) ->
         raise ContractError("FileHeader must declare OpenSCENARIO XML 1.4")
     header_properties = _property_map(header)
     execution_mode = header_properties.get("uniscenario.executionMode") or header_properties.get("uniscenarios.executionMode")
+    # A knocked-down body is a simulation outcome with no OpenSCENARIO element,
+    # so the exporter declares it per actor in the header. Absent for every
+    # scenario where nobody was run over.
+    knocked_down_at: dict[str, float] = {}
+    for name, value in header_properties.items():
+        for prefix in ("uniscenario.trajectoryReplay.knockedDownAtS.", "uniscenarios.trajectoryReplay.knockedDownAtS."):
+            if not name.startswith(prefix):
+                continue
+            try:
+                knocked_down_at[name[len(prefix):]] = float(value)
+            except ValueError as exc:
+                raise ContractError(f"invalid knockdown time for {name[len(prefix):]}: {value!r}") from exc
     if execution_mode != "trajectory-replay":
         raise ContractError("render worker requires the OpenSCENARIO 1.4 trajectory-replay export profile")
     if root.findall(".//UserDefinedAction"):
@@ -461,6 +633,7 @@ def compile_xosc14(xml_bytes: bytes, abort: Callable[[], None] | None = None) ->
     actors = _entities(root, check)
     if len(actors) > MAX_ACTOR_COUNT:
         raise ContractError(f"compiled plan exceeds {MAX_ACTOR_COUNT} actors")
+    semantic_metadata = _semantic_metadata(header_properties, actors)
     check()
     initial = _initial_positions(root, actors, check)
     check()
@@ -511,13 +684,21 @@ def compile_xosc14(xml_bytes: bytes, abort: Callable[[], None] | None = None) ->
                 lifecycle = LIFECYCLE_ABSENT
             else:
                 lifecycle = LIFECYCLE_SPAWN if index == 0 else LIFECYCLE_ACTIVE
+            downed_at = knocked_down_at.get(actor_id)
             states[actor_id] = ActorFrame(
-                lifecycle, raw[0], raw[1], raw[2], math.degrees(raw[3]), abs(raw[4]),
+                lifecycle, raw[0], raw[1], raw[2], math.degrees(raw[3]), raw[4],
                 dict(appearance_state.get(actor_id, {})),
+                downed_at is not None and t >= downed_at - 1e-9,
             )
         frames.append(PlanFrame(index, t, states, dict(signal_state)))
     immutable = tuple(frames)
     check()
-    digest = _canonical_plan_sha256(actors, immutable, check)
-    return ExecutionPlan("uniscenario.execution-plan/v1", STEP_SECONDS, actors, immutable, digest)
-
+    digest = _canonical_plan_sha256(actors, immutable, semantic_metadata, check)
+    return ExecutionPlan(
+        "uniscenario.execution-plan/v1",
+        STEP_SECONDS,
+        actors,
+        immutable,
+        digest,
+        semantic_metadata,
+    )

@@ -68,7 +68,7 @@ export interface PortableLiftOptions {
   maxProjectionDistanceM?: number;
   corridorExtentM?: number;
   /** Required to turn map signal handles into feature-relative references. */
-  signalApproaches?: Record<string, 'ego' | 'opposing' | 'left' | 'right'>;
+  signalApproaches?: Record<string, 'subject' | 'opposing' | 'left' | 'right'>;
 }
 
 export interface PortableLiftResult {
@@ -367,7 +367,7 @@ function portableChoreography(
       if (typeof signal['handle'] === 'string') {
         const approach = signalApproaches?.[signal['handle']];
         if (!approach) {
-          issues.push({ code: 'role_binding_ambiguous', severity: 'error', path: `${path}.signal`, message: `signal handle "${signal['handle']}" has no portable approach binding`, dependency: `supply signalApproaches["${signal['handle']}"] as ego/opposing/left/right`, retryable: true });
+          issues.push({ code: 'role_binding_ambiguous', severity: 'error', path: `${path}.signal`, message: `signal handle "${signal['handle']}" has no portable approach binding`, dependency: `supply signalApproaches["${signal['handle']}"] as subject/opposing/left/right`, retryable: true });
         } else {
           return { ...object, signal: { feature: originFeatureId, approach } };
         }
@@ -378,7 +378,7 @@ function portableChoreography(
       if (match) {
         const approach = signalApproaches?.[match[1]!];
         if (!approach) {
-          issues.push({ code: 'role_binding_ambiguous', severity: 'error', path: `${path}.key`, message: `signal set key "${object['key']}" has no portable approach binding`, dependency: `supply signalApproaches["${match[1]}"] as ego/opposing/left/right`, retryable: true });
+          issues.push({ code: 'role_binding_ambiguous', severity: 'error', path: `${path}.key`, message: `signal set key "${object['key']}" has no portable approach binding`, dependency: `supply signalApproaches["${match[1]}"] as subject/opposing/left/right`, retryable: true });
         } else {
           return { ...object, key: `signal:feature:${originFeatureId}:${approach}.${match[2]}` };
         }

@@ -21,8 +21,10 @@
 
 export type {
   CatalogEntry,
+  CatalogActorClass,
   CatalogAnimationProfile,
   Dims,
+  ExternalModelBinding,
   ParamValue,
   PropClass,
   PropTag,
@@ -34,12 +36,23 @@ export {
   CATALOG_ALIASES,
   CATALOG_IDS,
   AUTHORING_CATALOG,
+  EXTERNAL_CATALOG_PREFIXES,
+  actorClassForCatalogEntry,
+  actorClassesForCatalogEntry,
+  clearExternalCatalogEntries,
+  externalModelBinding,
+  type ExternalCatalogEntry,
   type CatalogId,
   type CatalogQuery,
   getEntry,
+  isExternalCatalogId,
+  listExternalCatalogEntries,
+  onExternalCatalogChange,
   isCatalogId,
   queryCatalog,
   resolveCatalogId,
+  registerExternalCatalogEntry,
+  unregisterExternalCatalogEntry,
 } from './catalog';
 
 export { BUILDER_IDS, buildProp, type PropParamMap } from './registry';

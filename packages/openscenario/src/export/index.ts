@@ -26,6 +26,8 @@ export {
   AsamExportError,
   type AsamCapabilityEntry,
   type AsamCapabilityReport,
+  type AsamConstructCapabilityEntry,
+  type AsamConstructKind,
   type AsamExportIntent,
   type AsamExportIssue,
   type AsamExportOptions,

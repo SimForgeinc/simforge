@@ -72,7 +72,7 @@ export function buildVegetation(
     const group: VegPrototypeGroup = { name, meshes: [], keepPerBand };
     for (const sourceMesh of sourceMeshes) {
       const instanced = new InstancedMesh(sourceMesh.geometry, sourceMesh.material, count);
-      instanced.name = `${name}:${sourceMesh.name}`;
+      instanced.name = sourceMesh.name ? `${sourceMesh.name}_instanced` : `${name}_instanced`;
       instanced.castShadow = false;
       instanced.receiveShadow = false;
       for (let i = 0; i < count; i++) {

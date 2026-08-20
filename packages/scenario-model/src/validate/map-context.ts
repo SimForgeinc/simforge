@@ -23,6 +23,8 @@
  * knows a road id, templates stop being portable.
  */
 
+import type { SignalApproach } from '../schema/v2/interactions.js';
+
 /**
  * Opaque lane handle in the implementer's own coordinates.
  *
@@ -122,7 +124,7 @@ export interface MapContext {
   /** The movement through `featureId` entering from `from` and leaving via `turn`. */
   gate(featureId: string, from: string, turn: string): GateFacts | undefined;
   /** A signal by map handle, or by feature + approach. */
-  signal(ref: { handle: string } | { featureId: string; approach: string }): SignalFacts | undefined;
+  signal(ref: { handle: string } | { featureId: string; approach: SignalApproach }): SignalFacts | undefined;
   /** A site feature bound to a template feature id. */
   feature(featureId: string): FeatureFacts | undefined;
   /**

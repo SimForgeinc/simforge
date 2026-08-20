@@ -35,13 +35,21 @@ export interface TopologyLane {
   predecessors: string[];
   successors: string[];
   speedLimitKph: number | null;
-  representativeWidthM: number;
-  widthSamples: { s: number; widthM: number }[];
-  adjacentLanes: {
-    left: TopologyAdjacency;
-    right: TopologyAdjacency;
+  // The four fields below match what actually reaches this package. The builder
+  // that writes topology-index.json declares them omittable, and the reference
+  // lane of every road has no width samples at all, so it writes
+  // `representativeWidthM: null`. This package's own readers already cope —
+  // `representativeWidthM ?? 0`, `widthSamples` guarded by `!samples`,
+  // `adjacentLanes?.[side]`, `laneChangePermissions ?? []` — and sim-engine's
+  // equivalent TopologyLane has always declared them optional. This
+  // declaration was the outlier, and it rejected valid on-disk indexes.
+  representativeWidthM?: number | null;
+  widthSamples?: { s: number; widthM: number }[];
+  adjacentLanes?: {
+    left?: TopologyAdjacency;
+    right?: TopologyAdjacency;
   };
-  laneChangePermissions: TopologyLaneChangePermission[];
+  laneChangePermissions?: TopologyLaneChangePermission[];
   polyline: { x: number; y: number }[];
 }
 

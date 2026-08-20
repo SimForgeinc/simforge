@@ -10,7 +10,6 @@ import {
 
 export type MapSignalPlanCompileErrorCode =
   | 'map_signal_plan_map_mismatch'
-  | 'map_signal_plan_stale_binding'
   | 'map_signal_plan_junction_unbound'
   | 'map_signal_plan_reference_unbound'
   | 'map_signal_plan_dual_ownership'
@@ -29,13 +28,9 @@ export class MapSignalPlanCompileError extends Error {
 
 export interface CompileMapSignalPlansOptions {
   readonly mapId: string;
-  readonly controlDigest: string;
   readonly clipSeconds: number;
   readonly warmupSeconds: number;
   readonly signalCatalog: MapSignalCatalog;
-  readonly topology: TopologyIndex;
-  /** Derived gate conflicts keyed by physical junction id. */
-  readonly conflictPairsByJunction: Readonly<Record<string, readonly { gateA: string; gateB: string }[]>>;
   /** Resolved engine signal ids owned by legacy `@world set(signal:*.phase)`. */
   readonly worldSignalSetIds?: readonly string[];
 }
@@ -81,15 +76,6 @@ function addBaselineBoundaries(
   }
 }
 
-function controllerStagePrograms(
-  programs: readonly SignalProgram[],
-  controllerId: string,
-): SignalProgram[] {
-  return programs.filter((program) => program.mapBinding?.controllerHeadGroups?.some(
-    (group) => group.controllerId === controllerId,
-  ));
-}
-
 function validateControllerStage(
   plan: MapSignalPlan,
   clip: MapSignalPlanClip,
@@ -127,22 +113,6 @@ function validateControllerStage(
     );
   }
 
-  const active = controllerStagePrograms(programs, clip.reference.controllerId);
-  const activeConnectingLanes = new Set(active.flatMap((program) =>
-    program.stopLines.flatMap((line) => line.connectingLaneRsls),
-  ));
-  const gateById = new Map(options.topology.gates.map((gate) => [gate.id, gate]));
-  for (const pair of options.conflictPairsByJunction[plan.binding.junctionId] ?? []) {
-    const a = gateById.get(pair.gateA)?.connectingLaneRsl;
-    const b = gateById.get(pair.gateB)?.connectingLaneRsl;
-    if (a && b && activeConnectingLanes.has(a) && activeConnectingLanes.has(b)) {
-      throw new MapSignalPlanCompileError(
-        'map_signal_plan_controller_conflict',
-        `controller "${clip.reference.controllerId}" contains conflicting movements ${pair.gateA} and ${pair.gateB}`,
-        `${path}.reference.controllerId`,
-      );
-    }
-  }
   return referenceProgram;
 }
 
@@ -158,13 +128,6 @@ function compileJunction(
       'map_signal_plan_map_mismatch',
       `signal plan is bound to map "${plan.binding.mapId}", not "${options.mapId}"`,
       `${prefix}.binding.mapId`,
-    );
-  }
-  if (plan.binding.controlDigest !== options.controlDigest) {
-    throw new MapSignalPlanCompileError(
-      'map_signal_plan_stale_binding',
-      'physical traffic-control metadata changed; reselect the intersection before playback',
-      `${prefix}.binding.controlDigest`,
     );
   }
   const junctionPrograms = programs.filter((program) => program.mapBinding?.junctionId === plan.binding.junctionId);

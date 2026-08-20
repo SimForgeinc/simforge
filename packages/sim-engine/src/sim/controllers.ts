@@ -41,6 +41,8 @@ const LEGACY_DRIVER = {
   comfortBrakeScale: 1,
   reactionTimeS: 0,
   startDelayS: 0,
+  comfortableLateralAccelerationMps2: 2.2,
+  comfortableDecelerationMps2: 2.5,
 } as const;
 
 function driverFor(a: ActorRuntime): NonNullable<ActorRuntime['driver']> {

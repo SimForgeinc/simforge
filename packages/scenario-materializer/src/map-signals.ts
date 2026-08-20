@@ -576,7 +576,7 @@ export function buildMapControlPlan(bundle: SignalMapBundle): MapControlPlan {
 
 export type SiteSignalRef =
   | { readonly handle: string }
-  | { readonly featureId: string; readonly approach: string };
+  | { readonly featureId: string; readonly approach: 'subject' | 'opposing' | 'left' | 'right' };
 
 /** Resolve an authored signal reference against the concrete map movement.
  * Multiple physical heads can protect one movement; the stable program id sort
@@ -603,7 +603,7 @@ export function resolveSiteSignalProgram(
 
   const gateById = new Map(bundle.index.gates.map((gate) => [gate.id, gate]));
   let gateId: string | undefined;
-  if (ref.approach === 'ego') {
+  if (ref.approach === 'subject') {
     gateId = site.frame.egoGateId;
   } else {
     const relation = ref.approach === 'opposing' ? 'opposing' : `from_${ref.approach}`;

@@ -100,6 +100,8 @@ export interface DriverBehaviorProfile {
   readonly comfortBrakeScale: number;
   readonly reactionTimeS: number;
   readonly startDelayS: number;
+  readonly comfortableLateralAccelerationMps2: number;
+  readonly comfortableDecelerationMps2: number;
 }
 
 export interface ActorRuntime {
@@ -117,6 +119,8 @@ export interface ActorRuntime {
 
   route: Route;
   routeS: number;
+  /** Exact absolute-time world keyframes; cleared permanently on collision. */
+  timedRoute: readonly { timeS: number; point: Vec2 }[] | null;
   /** Literal editor-authored polyline: bypass traffic governors, but not physical contact. */
   bestEffortWorldPath: boolean;
   /** Remaining turn preferences, consumed when a route is rebuilt. */
@@ -198,6 +202,20 @@ export interface ActorRuntime {
   /** Latched after the first material contact; propulsion never resumes. */
   crashDisabledAtS?: number | null;
   crashDisabledReason?: string | null;
+  /**
+   * When a vulnerable body was knocked off its feet, or `null`/absent while it
+   * is still standing.
+   *
+   * `crashDisabledAtS` already stops propulsion on contact, but a walker is a
+   * bounded point agent that re-asserts its own velocity every substep: it
+   * absorbs any impulse and keeps facing its route. That is right for a shove
+   * it could recover from and wrong for being run over, so past a balance
+   * threshold the body stops steering and carries the impulse instead. Renderers
+   * derive fall progress from this timestamp; the engine keeps the body planar.
+   */
+  downedAtS?: number | null;
+  /** The other body in the contact that took this one down. */
+  downedByActorId?: string | null;
 }
 
 /** Circumscribed radius used by the coarse pair metrics (TTC, min distance). */

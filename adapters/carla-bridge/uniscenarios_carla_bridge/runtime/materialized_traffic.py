@@ -298,5 +298,11 @@ def merge_materialized_traffic(
         ],
     }
     sha256 = hashlib.sha256(canonical_json(digest_value).encode("utf-8")).hexdigest()
-    return ExecutionPlan(plan.schema, plan.fixed_timestep_s, actors, immutable, sha256)
-
+    return ExecutionPlan(
+        plan.schema,
+        plan.fixed_timestep_s,
+        actors,
+        immutable,
+        sha256,
+        plan.semantic_metadata,
+    )

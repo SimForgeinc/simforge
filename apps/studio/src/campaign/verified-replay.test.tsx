@@ -25,7 +25,7 @@ function state(time: number, playing: boolean): PlaybackState {
     inputHash: 'verified-hash',
     cameraPolicy: 'all-actors',
     cameraSelectionId: 'all-actors',
-    cameraReason: 'All actors overview: this scenario has no designated ego.',
+    cameraReason: 'All actors overview: this scenario has no sensor-bearing camera vehicle.',
   };
 }
 

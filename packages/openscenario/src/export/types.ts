@@ -27,6 +27,42 @@ export interface AsamCapabilityEntry {
   readonly reason: string;
 }
 
+export type AsamConstructKind =
+  | 'actor'
+  | 'interaction'
+  | 'signal-program'
+  | 'environment'
+  | 'surface-patch'
+  | 'occluder'
+  | 'perception'
+  | 'physics';
+
+/**
+ * Machine-readable disposition for one concrete authored construct.
+ *
+ * Field-level capability entries answer whether a profile generally supports a
+ * part of SimScenarioInput. Construct entries answer the operationally useful
+ * question: what happened to this exact actor/action/signal/environment value
+ * in this exact export?
+ */
+export interface AsamConstructCapabilityEntry {
+  readonly sourcePath: string;
+  readonly sourceId?: string | undefined;
+  readonly kind: AsamConstructKind;
+  readonly disposition: 'preserved' | 'derived' | 'extension';
+  readonly fidelity: 'exact' | 'approximate' | 'metadata-only';
+  readonly representation:
+    | 'standard-entity'
+    | 'standard-trajectory'
+    | 'standard-environment'
+    | 'standard-signal-state'
+    | 'profile-action'
+    | 'profile-signal-controller'
+    | 'simulated-outcome'
+    | 'uniscenarios-property';
+  readonly reason: string;
+}
+
 export interface AsamCapabilityReport {
   readonly profile: AsamExportProfile;
   readonly intent: AsamExportIntent;
@@ -34,6 +70,8 @@ export interface AsamCapabilityReport {
   readonly roundTrip: 'not-supported';
   /** One entry for every top-level SimScenarioInput field. */
   readonly fields: readonly AsamCapabilityEntry[];
+  /** One disposition for every material authored construct in this instance. */
+  readonly constructs?: readonly AsamConstructCapabilityEntry[] | undefined;
   readonly summary: Readonly<Record<AsamCapabilityEntry['disposition'], number>>;
   readonly externalSimulatorValidation: 'not-verified';
 }

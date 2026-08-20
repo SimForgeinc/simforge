@@ -1,4 +1,5 @@
 export * from "./actorRenderer";
+export * from "./externalModel";
 export * from "./controller";
 export * from "./document";
 export * from "./keyboard";
@@ -6,6 +7,9 @@ export * from "./laneIndex";
 export * from "./map";
 export * from "./map-identity";
 export * from "./obb";
+export * from "./sensorOverlay";
 export * from "./routeOverlay";
 export * from "./timeline-actions";
+export * from "./route-placeholder";
+export * from "./interaction-palette";
 export * from "./viewer-contract";

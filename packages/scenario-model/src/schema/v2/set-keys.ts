@@ -254,7 +254,7 @@ export const SET_KEY_REGISTRY: readonly SetKeyDecl[] = [
   }),
   decl({
     key: 'signal:feature:<feature>:<approach>.phase',
-    pattern: '^signal:feature:[A-Za-z][A-Za-z0-9_-]{0,63}:(ego|opposing|left|right)\\.phase$',
+    pattern: '^signal:feature:[A-Za-z][A-Za-z0-9_-]{0,63}:(subject|ego|opposing|left|right)\\.phase$',
     valueType: 'enum',
     values: [
       'green', 'yellow', 'red', 'flashing_yellow', 'flashing_red', 'off',
@@ -265,7 +265,7 @@ export const SET_KEY_REGISTRY: readonly SetKeyDecl[] = [
   }),
   decl({
     key: 'signal:feature:<feature>:<approach>.program',
-    pattern: '^signal:feature:[A-Za-z][A-Za-z0-9_-]{0,63}:(ego|opposing|left|right)\\.program$',
+    pattern: '^signal:feature:[A-Za-z][A-Za-z0-9_-]{0,63}:(subject|ego|opposing|left|right)\\.program$',
     valueType: 'string',
     appliesTo: 'world',
     description: 'Switch the signal bound to a portable junction feature and relative approach to a named program.',

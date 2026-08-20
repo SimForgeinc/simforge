@@ -136,7 +136,7 @@ describe('remaining mechanism templates', () => {
       kind: 'when', condition: { kind: 'signal', signal: { feature: 'signal-junction', approach: 'left' }, phase: 'red' },
     });
     expect(doc.choreography.interactions.find((item) => item.id === 'ego-released')?.trigger).toMatchObject({
-      kind: 'when', condition: { kind: 'signal', signal: { feature: 'signal-junction', approach: 'ego' }, phase: 'green' },
+      kind: 'when', condition: { kind: 'signal', signal: { feature: 'signal-junction', approach: 'subject' }, phase: 'green' },
     });
   });
 

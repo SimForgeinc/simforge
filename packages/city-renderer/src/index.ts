@@ -18,6 +18,8 @@ export {
 } from './camera-drag';
 export type { CameraControlPreferences, CameraDragButton, EyeOrbitDelta } from './camera-drag';
 export { FrameStats } from './frame-stats';
+export { AssetDownloadTracker, readResponseBufferWithProgress } from './download-progress';
+export type { AssetDownloadStats } from './download-progress';
 export { GroundIndex, isGroundSurfaceMesh } from './ground-index';
 export type { GroundIndexOptions, GroundIndexStats } from './ground-index';
 export { indexedWorldHeightSampler } from './indexed-height-sampler';
@@ -50,6 +52,7 @@ export type {
 } from './surface-materials';
 export { buildVegetation } from './vegetation';
 export type { VegetationBuildResult, VegPrototypeGroup } from './vegetation';
+export * from './weather';
 export { boundsToBox3, normalizeLods, resolveUrl, estimateLodBytes } from './manifest';
 export type {
   BenchResult,

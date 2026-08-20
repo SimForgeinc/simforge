@@ -500,7 +500,7 @@ export function structuralIssues(template: ScenarioTemplateV2): ClauseResult[] {
               'an exact lanePath is map-bound and may only drive a pinned scene_absolute actor',
             ));
           }
-        } else if (interaction.target.mode === 'customRoute') {
+        } else if (interaction.target.mode === 'customRoute' || interaction.target.mode === 'customTimedRoute') {
           const actor = roles.get(interaction.actor);
           if (!actor || actor.kind !== 'scene_absolute' || !template.anchor.pin) {
             out.push(issue(
@@ -509,6 +509,19 @@ export function structuralIssues(template: ScenarioTemplateV2): ClauseResult[] {
               joinPath(base, 'target'),
               'a custom route is map-bound and may only drive a pinned scene_absolute actor',
             ));
+          }
+          if (interaction.target.mode === 'customTimedRoute') {
+            const points = interaction.target.points;
+            for (let index = 1; index < points.length; index += 1) {
+              if (points[index]!.timeS <= points[index - 1]!.timeS) {
+                out.push(issue(
+                  'error',
+                  'route_disconnected',
+                  joinPath(base, 'target', 'points', index, 'timeS'),
+                  'custom timed route times must be strictly increasing',
+                ));
+              }
+            }
           }
         } else if (interaction.target.mode === 'nearMiss') {
           needRole(interaction.target.target, joinPath(base, 'target', 'target'));

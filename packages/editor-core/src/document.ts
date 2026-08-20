@@ -40,9 +40,15 @@ import {
   type DriverProfile,
 } from '@uniscenarios/scenario-model';
 import { reconcileTemplateMapIdentity } from './map-identity';
-import { getEntry, type CatalogId, type Dims } from '@uniscenarios/prop-catalog';
+import { actorClassForCatalogEntry, getEntry, type CatalogActorClass, type CatalogId, type Dims } from '@uniscenarios/prop-catalog';
 import { editorMapVersionId, editorSourceMapId, type MapEntry } from './map';
 import { defaultSpeedKph, isActionCompatible } from './timeline-actions';
+import { routePlaceholderOnActor } from './route-placeholder';
+
+/** Resolve sensor-derived subject identity in canonical authoring order. */
+export function sensorSubjectRole(template: Pick<ScenarioTemplateV2, 'roles'>): string | undefined {
+  return template.roles.find((role) => role.actor.sensors.length > 0)?.id;
+}
 
 /** Where an actor is stored. */
 export type ActorSource = 'role' | 'prop';
@@ -104,6 +110,8 @@ export interface NewActor {
   initialSpeedKph?: number;
   bodyColor?: string;
   driverProfile?: DriverProfile;
+  /** Place the actor as a fixed body with no inherent motion. */
+  static?: boolean;
 }
 
 /** A partial edit of one actor. `laneRef: null` clears the anchor. */
@@ -138,20 +146,8 @@ export function actorKindFor(catalogId: CatalogId): ActorKind {
 }
 
 /** Preserve the semantic simulation class for specialized catalog actors. */
-export function simulationClassFor(catalogId: CatalogId): 'car' | 'truck' | 'bus' | 'van' | 'motorcycle' | 'bicycle' | 'scooter' | 'pedestrian' | 'sidewalk_robot' | 'drone' | 'animal' | 'static_object' {
-  if (catalogId === 'vehicle.tram') return 'bus';
-  if (catalogId === 'vehicle.bus') return 'bus';
-  if (catalogId === 'vehicle.van' || catalogId === 'vehicle.ambulance' || catalogId === 'vehicle.minivan' || catalogId === 'vehicle.delivery_van') return 'van';
-  if (['vehicle.pickup', 'vehicle.box_truck', 'vehicle.semi_truck', 'vehicle.fire_engine', 'vehicle.dump_truck', 'vehicle.garbage_truck', 'vehicle.tow_truck', 'vehicle.cement_mixer', 'vehicle.utility_bucket_truck', 'vehicle.tanker_truck', 'vehicle.flatbed_truck'].includes(catalogId)) return 'truck';
-  if (catalogId === 'vehicle.school_bus' || catalogId === 'vehicle.shuttle_bus') return 'bus';
-  if (catalogId === 'vehicle.motorcycle') return 'motorcycle';
-  if (catalogId === 'vehicle.bicycle') return 'bicycle';
-  if (catalogId === 'vehicle.mobility_scooter' || catalogId === 'street.shopping_cart') return 'scooter';
-  const kind = actorKindFor(catalogId);
-  if (kind === 'pedestrian') return 'pedestrian';
-  if (kind === 'sidewalk_robot' || kind === 'drone' || kind === 'animal') return kind;
-  if (kind === 'prop') return 'static_object';
-  return 'car';
+export function simulationClassFor(catalogId: CatalogId): CatalogActorClass {
+  return actorClassForCatalogEntry(getEntry(catalogId));
 }
 
 export interface AuthoringGraphPrunePlan {
@@ -647,7 +643,7 @@ export class EditorDocument {
             class: simulationClassFor(input.catalogId),
             catalogId: input.catalogId,
             dims: { length: dims.l, width: dims.w, height: dims.h },
-            static: kind === 'prop',
+            static: kind === 'prop' || input.static === true,
             sensors: [],
           },
           pose: {
@@ -655,7 +651,7 @@ export class EditorDocument {
             headingRad: q(input.headingRad),
           },
           ...(input.label === undefined ? {} : { label: input.label }),
-          initialSpeedKph: q(Math.max(0, input.initialSpeedKph ?? defaultSpeedKph(simulationClassFor(input.catalogId), input.catalogId))),
+          initialSpeedKph: input.static === true ? 0 : q(Math.max(0, input.initialSpeedKph ?? defaultSpeedKph(simulationClassFor(input.catalogId), input.catalogId))),
           ...(kind === 'vehicle' ? { driverProfile: input.driverProfile ?? 'lawful' } : {}),
           ...(input.laneRef ? { laneRef: quantizeAnchor(input.laneRef) } : {}),
           essentiality: kind === 'prop' ? 'preferred' : 'required',
@@ -739,6 +735,26 @@ export class EditorDocument {
     });
   }
 
+  /**
+   * Replace one actor's complete physical sensor suite as one undoable edit.
+   *
+   * Sensor ids are authored identity, so the supplied records are installed
+   * unchanged rather than regenerated or merged by modality.
+   */
+  replaceActorSensors(actorId: string, sensors: readonly ActorSensor[]): void {
+    const current = this.#doc.role(actorId);
+    if (!current || current.kind !== 'scene_absolute') {
+      throw new Error(`actor "${actorId}" does not exist`);
+    }
+    this.#transaction(() => {
+      this.#doc.replaceRole(actorId, {
+        ...current,
+        actor: { ...current.actor, sensors: [...sensors] },
+      });
+      this.#reconcileSensorSubject(actorId);
+    });
+  }
+
   /** Delete actors and every now-orphaned authored reference as one gesture. */
   remove(ids: readonly string[]): void {
     const deleting = [...new Set(ids)].filter((id) => this.#doc.role(id) !== undefined);
@@ -805,9 +821,16 @@ export class EditorDocument {
     this.#emit();
   }
 
-  /** Add one semantic timeline interaction as an undoable/autosaved gesture. */
+  /**
+   * Add one semantic timeline interaction as an undoable/autosaved gesture.
+   *
+   * An unconfigured custom route is seeded on its actor first. Doing it here
+   * rather than at each call site makes it an invariant of the document: no
+   * caller can add a route that starts somewhere its actor is not.
+   */
   addInteraction(interaction: Interaction): void {
-    this.#transaction(() => { this.#doc.addInteraction(interaction); });
+    const seeded = routePlaceholderOnActor(interaction, this.actor(interaction.actor));
+    this.#transaction(() => { this.#doc.addInteraction(seeded); });
   }
 
   /**
@@ -854,9 +877,17 @@ export class EditorDocument {
     });
   }
 
-  /** Replace one timeline interaction while retaining its stable identity. */
+  /**
+   * Replace one timeline interaction while retaining its stable identity.
+   *
+   * Seeds an unconfigured custom route on its actor for the same reason
+   * `addInteraction` does: switching an existing interaction's target mode
+   * produces a fresh placeholder, and it must not land at the scene origin
+   * either. Drawn geometry covers ground, so committing a gesture is untouched.
+   */
   replaceInteraction(id: string, interaction: Interaction): void {
-    this.#transaction(() => { this.#doc.replaceInteraction(id, interaction); });
+    const seeded = routePlaceholderOnActor(interaction, this.actor(interaction.actor));
+    this.#transaction(() => { this.#doc.replaceInteraction(id, seeded); });
   }
 
   /** Commit a timeline gesture's semantic edit and presentation layout as one
@@ -881,7 +912,11 @@ export class EditorDocument {
     this.#transaction(() => { this.#doc.removeInteraction(id); });
   }
 
-  /** Designate the ego role. Trace annotations belong only to the active ego. */
+  /**
+   * Change the metric subject and discard trace annotations owned by any
+   * previous subject. Sensor commands call the underlying document operation
+   * directly so removing hardware can never erase authored trace work.
+   */
   setMetricSubject(roleId: string | null): void {
     this.#transaction(() => {
       for (const segment of this.#doc.data.reasoningTrace) {
@@ -975,7 +1010,10 @@ export class EditorDocument {
   /** Add one validated actor-attached sensor as an undoable/autosaved gesture. */
   addActorSensor(actorId: string, sensor: ActorSensor): string {
     let id = sensor.id;
-    this.#transaction(() => { id = this.#doc.addActorSensor(actorId, sensor); });
+    this.#transaction(() => {
+      id = this.#doc.addActorSensor(actorId, sensor);
+      this.#reconcileSensorSubject(actorId);
+    });
     return id;
   }
 
@@ -987,7 +1025,26 @@ export class EditorDocument {
 
   /** Remove one actor-attached sensor. */
   removeActorSensor(actorId: string, sensorId: string): void {
-    this.#transaction(() => { this.#doc.removeActorSensor(actorId, sensorId); });
+    this.#transaction(() => {
+      this.#doc.removeActorSensor(actorId, sensorId);
+      this.#reconcileSensorSubject(actorId);
+    });
+  }
+
+  #reconcileSensorSubject(actorId: string): void {
+    const sensors = this.#doc.role(actorId)?.actor.sensors ?? [];
+    if (sensors.length > 0) {
+      if (this.#doc.data.metricSubject === undefined) {
+        this.#doc.setMetricSubject(sensorSubjectRole(this.#doc.data) ?? null);
+      }
+      return;
+    }
+    if (
+      this.#doc.data.metricSubject === actorId
+      && !this.#doc.data.reasoningTrace.some((segment) => segment.actor === actorId)
+    ) {
+      this.#doc.setMetricSubject(null);
+    }
   }
 
   /** Set recorded/warm-up duration as one editor gesture. */

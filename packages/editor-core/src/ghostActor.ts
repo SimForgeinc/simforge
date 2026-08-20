@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry, DoubleSide, Group, LineBasicMaterial, LineSegments, type Material, Mesh, MeshBasicMaterial } from "three";
-import type { CatalogId } from "@uniscenarios/prop-catalog";
+import { getEntry, type CatalogId } from "@uniscenarios/prop-catalog";
 import { propTemplate } from "./actorRenderer";
+import { externalModelScene, onExternalModelChange } from "./externalModel";
 
 /**
  * The translucent preview that follows the cursor during placement.
@@ -18,6 +19,7 @@ export class GhostActor {
   private readonly arrow: LineSegments;
   private catalogId: CatalogId | null = null;
   private valid = true;
+  private readonly unsubscribeExternalModelChanges: () => void;
 
   constructor() {
     this.group.name = 'placement-ghost';
@@ -40,22 +42,23 @@ export class GhostActor {
     this.arrow.renderOrder = 26;
     this.arrow.frustumCulled = false;
     this.group.add(this.arrow);
+    this.unsubscribeExternalModelChanges = onExternalModelChange((contentHash) => {
+      if (!this.catalogId || !externalModelScene(contentHash)) return;
+      try {
+        const model = getEntry(this.catalogId).model;
+        if (model?.kind === 'glb' && model.contentHash === contentHash) {
+          this.rebuild(this.catalogId);
+        }
+      } catch {
+        // The gallery entry may have been unregistered while its fetch completed.
+      }
+    });
   }
 
   /** Swap the previewed prop. No-op when it is already showing. */
   show(catalogId: CatalogId): void {
     if (this.catalogId !== catalogId) {
-      for (const mesh of this.meshes) this.group.remove(mesh);
-      this.meshes.length = 0;
-      const template = propTemplate(catalogId);
-      for (const part of template.parts) {
-        const mesh = new Mesh(part.geometry, this.material());
-        mesh.frustumCulled = false;
-        mesh.renderOrder = 25;
-        this.meshes.push(mesh);
-        this.group.add(mesh);
-      }
-      this.setArrow(template.dims.l);
+      this.rebuild(catalogId);
       this.catalogId = catalogId;
     }
     this.group.visible = true;
@@ -78,12 +81,27 @@ export class GhostActor {
   }
 
   dispose(): void {
+    this.unsubscribeExternalModelChanges();
     this.validMaterial.dispose();
     this.invalidMaterial.dispose();
     this.arrow.geometry.dispose();
     (this.arrow.material as Material).dispose();
     this.group.clear();
     this.group.removeFromParent();
+  }
+
+  private rebuild(catalogId: CatalogId): void {
+    for (const mesh of this.meshes) this.group.remove(mesh);
+    this.meshes.length = 0;
+    const template = propTemplate(catalogId);
+    for (const part of template.parts) {
+      const mesh = new Mesh(part.geometry, this.material());
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 25;
+      this.meshes.push(mesh);
+      this.group.add(mesh);
+    }
+    this.setArrow(template.dims.l);
   }
 
   private material(): MeshBasicMaterial {

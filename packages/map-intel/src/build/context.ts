@@ -102,6 +102,14 @@ export function createBuildContext(sources: MapSources): BuildContext {
       if (roadId && !roadNameByRoadId.has(roadId)) roadNameByRoadId.set(roadId, name);
     }
   }
+  // An authored `roadNames` table is the weakest claim of the three, so it only
+  // fills roads the search index left unnamed — but it must be applied before
+  // the propagation below, or the names would never reach individual lanes.
+  for (const [roadId, rawName] of Object.entries(sources.roadNames ?? {})) {
+    const name = rawName.trim();
+    if (!name || roadNameByRoadId.has(roadId)) continue;
+    roadNameByRoadId.set(roadId, name);
+  }
   // Propagate a road's name to every lane on that road, including the lanes the
   // search index did not enumerate (shoulders, bike lanes, sidewalks).
   for (const lane of graph.allLanes()) {

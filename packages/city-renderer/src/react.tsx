@@ -14,6 +14,8 @@ export interface CityViewProps {
   /** Called after this manifest has replaced the previous streamed map. */
   onMapLoaded?: (manifestUrl: string) => void;
   onError?: (error: unknown, manifestUrl: string) => void;
+  /** Reports capabilities backed by metadata that loaded and validated. */
+  onCapabilitiesChange?: (capabilities: readonly string[]) => void;
   /**
    * Accessible name for the scene. A `<canvas>` has no implicit name and no
    * inner text to fall back on, so without this the whole 3D surface announces
@@ -43,6 +45,7 @@ export function CityView({
   onReady,
   onMapLoaded,
   onError,
+  onCapabilitiesChange,
   ariaLabel,
   role,
   tabIndex,
@@ -56,9 +59,11 @@ export function CityView({
   const onReadyRef = useRef(onReady);
   const onErrorRef = useRef(onError);
   const onMapLoadedRef = useRef(onMapLoaded);
+  const onCapabilitiesChangeRef = useRef(onCapabilitiesChange);
   onReadyRef.current = onReady;
   onErrorRef.current = onError;
   onMapLoadedRef.current = onMapLoaded;
+  onCapabilitiesChangeRef.current = onCapabilitiesChange;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -77,10 +82,12 @@ export function CityView({
     if (!viewer) return;
     const generation = ++loadGenerationRef.current;
     setError(null);
+    onCapabilitiesChangeRef.current?.([]);
     viewer.loadMap(manifestUrl)
       .then(() => {
         if (generation !== loadGenerationRef.current) return;
         onMapLoadedRef.current?.(manifestUrl);
+        onCapabilitiesChangeRef.current?.(viewer.getCapabilities());
       })
       .catch((err: unknown) => {
         if (generation !== loadGenerationRef.current) return;

@@ -14,6 +14,7 @@
  */
 
 import { quantize } from '../core/math.js';
+import type { SemanticLedger } from '@uniscenarios/scenario-model';
 import { toSceneXZ } from '../frames.js';
 import type { ActorKind, ControlIndication, Dims, MotionPhysicsMode, OperationalConditions, StaticProp } from '../schema/input.js';
 import {
@@ -65,6 +66,16 @@ export interface ActorTrack {
   readonly present: number[];
   /** Optional force-based backend telemetry; absent for kinematic-v1. */
   readonly physics?: ActorPhysicsTrack;
+  /**
+   * Clip time at which this body was knocked off its feet, absent while it
+   * stayed on them.
+   *
+   * A scalar rather than a per-tick lane: the state is monotonic — nothing in a
+   * planar engine stands a body back up — so consumers derive "down at t" as
+   * `t >= downSinceS`, and a renderer gets fall progress from the same number
+   * without the trace carrying a boolean for every tick.
+   */
+  readonly downSinceS?: number;
 }
 
 export interface ActorPhysicsTrack {
@@ -104,6 +115,7 @@ export type SimEvent =
   | { t: number; kind: 'lateral_maneuver_planned'; actorId: string; interactionId: string; requestedDurationS: number; effectiveDurationS: number; displacementM: number }
   | { t: number; kind: 'lane_change'; actorId: string; fromRsl: string | null; toRsl: string | null; legal: boolean }
   | { t: number; kind: 'lane_change_rejected'; actorId: string; interactionId: string; reason: string }
+  | { t: number; kind: 'route_change_rejected'; actorId: string; interactionId: string; reason: string; requestedTurn?: string }
   | { t: number; kind: 'collision'; a: string; b: string; colliderA?: string; colliderB?: string }
   | {
       t: number;
@@ -114,6 +126,11 @@ export type SimEvent =
       allowedCenterOffsetM: number;
     }
   | { t: number; kind: 'crash_disabled'; actorId: string; otherId: string; reason: 'material-collision' }
+  /**
+   * A vulnerable body was taken off its feet. `normalImpulseNs` is the solver's
+   * own contact impulse — telemetry, never a crash-load or injury claim.
+   */
+  | { t: number; kind: 'knocked_down'; actorId: string; otherId: string; normalImpulseNs: number }
   | { t: number; kind: 'spawn'; actorId: string }
   | { t: number; kind: 'despawn'; actorId: string; reason: 'route_end' | 'interaction' | 'clip_end' }
   | { t: number; kind: 'state_set'; actorId: string; key: string; value: boolean | number | string };
@@ -283,6 +300,10 @@ export interface TraceHeader {
   readonly engineVersion: string;
   /** `sha256(canonicalJson(parsedInput))`. */
   readonly inputHash: string;
+  /** Origin of an adapted immutable trace. Absent on native sim-engine traces for hash stability. */
+  readonly source?: 'sim-engine' | 'openscenario-replay';
+  /** Exact XOSC bytes decoded into this trace, when `source` is `openscenario-replay`. */
+  readonly sourceXoscSha256?: string;
   /** Exact canonical materialized-traffic bytes merged into browser/worker evidence. */
   readonly materializedTrafficDigest?: string;
   readonly seed: number | string;
@@ -377,6 +398,12 @@ export interface SimTrace {
   };
   readonly events: SimEvent[];
   readonly metrics: EpisodeMetrics;
+  /**
+   * Runtime-neutral behavioral evidence for browser/OpenSCENARIO/CARLA parity.
+   * Optional only for read compatibility with traces written before ledger v1;
+   * every trace produced by the current engine includes it.
+   */
+  readonly semanticLedger?: SemanticLedger;
 }
 
 function quantizeMetricValue(value: unknown): unknown {
@@ -448,6 +475,9 @@ export function quantizeTrace(trace: SimTrace): SimTrace {
     },
     events: trace.events.map((event) => ({ ...event, t: quantize(event.t, TRACE_PRECISION.event) })),
     metrics: quantizeMetrics(trace.metrics),
+    ...(trace.semanticLedger
+      ? { semanticLedger: quantizeMetricValue(trace.semanticLedger) as SemanticLedger }
+      : {}),
   };
 }
 
@@ -464,6 +494,8 @@ export interface SceneTrace {
   };
   readonly events: SimEvent[];
   readonly metrics: EpisodeMetrics;
+  /** Canonical ledger remains in its declared frame (`xodr-local`). */
+  readonly semanticLedger?: SemanticLedger;
 }
 
 /** A copy with `ticks` rewritten into the y-up scene frame (`x`, `z`). */
@@ -514,6 +546,7 @@ export function traceToSceneFrame(trace: SimTrace): SceneTrace {
     },
     events: trace.events,
     metrics: trace.metrics,
+    ...(trace.semanticLedger ? { semanticLedger: trace.semanticLedger } : {}),
   };
 }
 

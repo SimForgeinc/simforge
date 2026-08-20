@@ -5,14 +5,18 @@ import {
   Group,
   LineBasicMaterial,
   LineSegments,
+  Mesh,
+  MeshBasicMaterial,
   Points,
   PointsMaterial,
+  SphereGeometry,
   Sprite,
   SpriteMaterial,
   CanvasTexture,
   LinearFilter,
   SRGBColorSpace,
   type Texture,
+  type Raycaster,
 } from 'three';
 import {
   buildRoute,
@@ -61,6 +65,13 @@ export interface RouteOverlayOptions {
   readonly selectedActorIds: ReadonlySet<string>;
   /** In a multi-selection, only the primary actor receives gold emphasis/text. */
   readonly primarySelectedActorId?: string | null;
+}
+
+export interface DraftRouteOptions {
+  /** Labels for committed points; a trailing cursor preview intentionally has none. */
+  readonly timeLabels?: readonly string[];
+  readonly selectedPointIndex?: number | null;
+  readonly committedPointCount?: number;
 }
 
 export type RouteHeightSampler = (x: number, z: number) => number | null;
@@ -285,6 +296,39 @@ function actionMarkers(actorId: string, interactions: readonly SimScenarioInput[
   return result;
 }
 
+function authoredTimedRouteAnnotations(
+  actor: SimActor,
+  interactions: readonly SimScenarioInput['interactions'][number][],
+): RouteTimeAnnotation[] {
+  const interactionPoints = interactions.flatMap((interaction) =>
+    interaction.actorId === actor.id
+      && interaction.verb === 'route'
+      && interaction.target.kind === 'timedPolyline'
+      ? interaction.target.points
+      : []);
+  const points = interactionPoints.length
+    ? interactionPoints
+    : actor.behavior.route.kind === 'timedPolyline' ? actor.behavior.route.points : [];
+  const clusterIndices = new Map<string, number[]>();
+  points.forEach((point, index) => {
+    const key = `${point.x.toFixed(3)},${point.z.toFixed(3)}`;
+    const cluster = clusterIndices.get(key);
+    if (cluster) cluster.push(index); else clusterIndices.set(key, [index]);
+  });
+  const stack = new Map<number, { index: number; count: number }>();
+  for (const indices of clusterIndices.values()) {
+    indices.forEach((pointIndex, stackIndex) => stack.set(pointIndex, { index: stackIndex, count: indices.length }));
+  }
+  return points.map((point, index) => ({
+    startTimeS: point.timeS,
+    endTimeS: point.timeS,
+    label: compactTime(point.timeS),
+    point: { x: point.x, z: point.z },
+    stackIndex: stack.get(index)?.index ?? 0,
+    stackCount: stack.get(index)?.count ?? 1,
+  }));
+}
+
 /** Build overlays from the exact concrete simulator input. Static actors and pedestrians are excluded. */
 export function routesFromSimulation(
   input: Pick<SimScenarioInput, 'actors' | 'interactions' | 'nearMissCriteria'>,
@@ -298,6 +342,7 @@ export function routesFromSimulation(
     .map((actor) => {
       const planned = routePoints(actor, index);
       const canonical = canonicalTracePath(actor.id, trace);
+      const authoredTimedAnnotations = authoredTimedRouteAnnotations(actor, input.interactions);
       const actual = canonical.points;
       const nearMiss = input.nearMissCriteria?.find((criterion) => criterion.pedestrianId === actor.id);
       let nearMissPoint: RoutePoint | undefined;
@@ -315,7 +360,10 @@ export function routesFromSimulation(
         color: routeColor(actor.id, authoredColors.get(actor.id)),
         planned,
         actual,
-        ...(canonical.spans.length ? { canonicalSpans: canonical.spans, timeAnnotations: canonical.annotations } : {}),
+        ...(canonical.spans.length ? {
+          canonicalSpans: canonical.spans,
+          timeAnnotations: authoredTimedAnnotations.length ? authoredTimedAnnotations : canonical.annotations,
+        } : {}),
         markers: [...turnMarkers(planned), ...actionMarkers(actor.id, input.interactions, trace)],
         ...(nearMissPoint && nearMiss ? { triggerPoint: nearMissPoint, triggerRadiusM: nearMiss.clearanceM } : {}),
       };
@@ -425,10 +473,21 @@ export function authoringRoutes(
       ? role.extensions['studio.presentation.bodyColor'] as string
       : undefined,
   ]));
-  return routesFromSimulation(concrete, index, trace, authoredColors).map((route) => ({
-    ...route,
-    planned: route.actual,
-  }));
+  return routesFromSimulation(concrete, index, trace, authoredColors).map((route) => {
+    const customRoute = template.choreography.interactions.find((interaction) =>
+      interaction.actor === route.actorId &&
+      interaction.verb === 'route' &&
+      (interaction.target.mode === 'customRoute' || interaction.target.mode === 'customTimedRoute'),
+    );
+    const customRoutePoints = customRoute?.verb === 'route' &&
+      (customRoute.target.mode === 'customRoute' || customRoute.target.mode === 'customTimedRoute')
+      ? customRoute.target.points.map((point) => ({ x: point.x, z: point.z }))
+      : null;
+    return {
+      ...route,
+      planned: customRoutePoints ?? route.actual,
+    };
+  });
 }
 
 /**
@@ -576,9 +635,14 @@ function cachedArrowSegments(points: readonly RoutePoint[]): readonly number[] {
 export class VehicleRouteOverlayRenderer {
   readonly group = new Group();
   private objects: Array<LineSegments | Points | Sprite> = [];
-  private draftObjects: Array<LineSegments | Points> = [];
+  private draftObjects: Array<LineSegments | Mesh | Points | Sprite> = [];
+  private draftPointHandles: Mesh[] = [];
   private textures: Texture[] = [];
+  private draftTextures: Texture[] = [];
   private draftRoute: readonly RoutePoint[] | null = null;
+  private draftTimeLabels: readonly string[] = [];
+  private draftSelectedPointIndex: number | null = null;
+  private draftCommittedPointCount = 0;
   private labelGeneration = 0;
 
   constructor(private readonly sampleHeight?: RouteHeightSampler) {
@@ -740,10 +804,21 @@ export class VehicleRouteOverlayRenderer {
   }
 
   /** Show the exact in-progress points captured by the custom-route map tool. */
-  setDraftRoute(points: readonly RoutePoint[] | null): void {
+  setDraftRoute(points: readonly RoutePoint[] | null, options: DraftRouteOptions = {}): void {
     this.clearDraftRoute();
     this.draftRoute = points ? [...points] : null;
+    this.draftTimeLabels = points ? [...(options.timeLabels ?? [])] : [];
+    this.draftSelectedPointIndex = options.selectedPointIndex ?? null;
+    this.draftCommittedPointCount = points ? Math.min(points.length, options.committedPointCount ?? points.length) : 0;
     this.renderDraftRoute();
+  }
+
+  /** Pick an individually editable 3D waypoint handle. */
+  draftPointIndexAt(raycaster: Raycaster): number | null {
+    const hit = raycaster.intersectObjects(this.draftPointHandles, false)[0];
+    return typeof hit?.object.userData.routePointIndex === 'number'
+      ? hit.object.userData.routePointIndex
+      : null;
   }
 
   dispose(): void {
@@ -760,7 +835,7 @@ export class VehicleRouteOverlayRenderer {
     name = 'route-lines',
     linewidth = 1,
     renderOrder = opacity > .9 ? 22 : 21,
-    collection: Array<LineSegments | Points | Sprite> = this.objects,
+    collection: Array<LineSegments | Mesh | Points | Sprite> = this.objects,
   ): void {
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(Float32Array.from(positions), 3));
@@ -799,12 +874,50 @@ export class VehicleRouteOverlayRenderer {
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(Float32Array.from(pointPositions), 3));
     geometry.setAttribute('color', new BufferAttribute(Float32Array.from(pointColors), 3));
-    const markers = new Points(geometry, new PointsMaterial({ size: .95, vertexColors: true, depthTest: false, depthWrite: false }));
+    // Half the original .95. These sit on the ground the author is aiming at,
+    // so at the zoom used to place a point accurately the old dots covered the
+    // spot being picked.
+    const markers = new Points(geometry, new PointsMaterial({ size: .475, vertexColors: true, depthTest: false, depthWrite: false }));
     markers.name = 'custom-route-waypoints';
     markers.renderOrder = 35;
     markers.raycast = () => undefined;
     this.group.add(markers);
     this.draftObjects.push(markers);
+    points.slice(0, this.draftCommittedPointCount).forEach((point, index) => {
+      const selected = index === this.draftSelectedPointIndex;
+      // Half of .48/.36, matching the dots above so the grab handle stays the
+      // same size as the mark it belongs to.
+      const geometry = new SphereGeometry(selected ? .24 : .18, 16, 10);
+      const material = new MeshBasicMaterial({ color: selected ? '#ffffff' : '#E8E044', depthTest: false, depthWrite: false });
+      const handle = new Mesh(geometry, material);
+      handle.position.set(point.x, (this.sampleHeight?.(point.x, point.z) ?? 0) + .72, point.z);
+      handle.name = index === 0 ? 'custom-route-waypoints-3d' : 'custom-route-waypoint-3d';
+      handle.renderOrder = 37;
+      handle.userData.routePointIndex = index;
+      this.group.add(handle);
+      this.draftObjects.push(handle);
+      this.draftPointHandles.push(handle);
+    });
+    for (let index = 0; index < Math.min(points.length, this.draftTimeLabels.length); index += 1) {
+      const label = this.draftTimeLabels[index]!;
+      // A point inside a wait carries an empty label: the run is labelled once,
+      // on its last point. Rendering the blanks would stack invisible sprites
+      // on the marker the author is trying to see past.
+      if (!label) continue;
+      this.addTimeLabel({
+        startTimeS: 0,
+        endTimeS: 0,
+        label,
+        point: points[index]!,
+        stackIndex: 0,
+        stackCount: 1,
+      }, {
+        name: 'custom-route-time-label',
+        renderOrder: 36,
+        objects: this.draftObjects,
+        textures: this.draftTextures,
+      });
+    }
   }
 
   private clearDraftRoute(): void {
@@ -815,9 +928,28 @@ export class VehicleRouteOverlayRenderer {
       for (const material of materials) material.dispose();
     }
     this.draftObjects = [];
+    this.draftPointHandles = [];
+    for (const texture of this.draftTextures) texture.dispose();
+    this.draftTextures = [];
+    this.draftTimeLabels = [];
+    this.draftSelectedPointIndex = null;
+    this.draftCommittedPointCount = 0;
   }
 
-  private addTimeLabel(annotation: RouteTimeAnnotation): void {
+  private addTimeLabel(
+    annotation: RouteTimeAnnotation,
+    destination: {
+      readonly name: string;
+      readonly renderOrder: number;
+      readonly objects: Array<LineSegments | Mesh | Points | Sprite>;
+      readonly textures: Texture[];
+    } = {
+      name: 'selected-route-time-label',
+      renderOrder: 31 + annotation.stackIndex,
+      objects: this.objects,
+      textures: this.textures,
+    },
+  ): void {
     if (typeof document === 'undefined') return;
     const canvas = document.createElement('canvas');
     canvas.width = 256;
@@ -851,14 +983,14 @@ export class VehicleRouteOverlayRenderer {
     const baseY = (this.sampleHeight?.(annotation.point.x, annotation.point.z) ?? 0) + 1.25;
     sprite.position.set(annotation.point.x, baseY + annotation.stackIndex * .62, annotation.point.z);
     sprite.scale.set(2.35, .88, 1);
-    sprite.name = 'selected-route-time-label';
-    sprite.renderOrder = 31 + annotation.stackIndex;
+    sprite.name = destination.name;
+    sprite.renderOrder = destination.renderOrder;
     sprite.frustumCulled = true;
     sprite.userData.routeTimeAnnotation = annotation;
     sprite.raycast = () => undefined;
     this.group.add(sprite);
-    this.objects.push(sprite);
-    this.textures.push(texture);
+    destination.objects.push(sprite);
+    destination.textures.push(texture);
   }
 
   private clear(): void {

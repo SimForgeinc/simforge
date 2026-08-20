@@ -176,3 +176,60 @@ describe('ActorRenderer semantic transforms', () => {
 function assertSamePoint(a: Vector3, b: Vector3): void {
   expect(a.distanceTo(b)).toBeLessThan(1e-9);
 }
+
+describe('knocked-down bodies', () => {
+  const walker: ActorView = {
+    id: 'walker',
+    catalogId: 'pedestrian.adult',
+    dims: { l: 0.6, w: 0.6, h: 1.75 },
+    x: 4,
+    y: 0,
+    z: 2,
+    headingRad: 0,
+  };
+
+  it('leaves an upright body upright', () => {
+    const upright = new Quaternion();
+    poseMatrix(walker).decompose(new Vector3(), upright, new Vector3());
+    const down = new Quaternion();
+    poseMatrix({ ...walker, downProgress: 0 }).decompose(new Vector3(), down, new Vector3());
+    expect(down.angleTo(upright)).toBeCloseTo(0, 9);
+  });
+
+  it('pitches a fully downed body flat and lifts it off its feet', () => {
+    const upright = new Quaternion();
+    const uprightPosition = new Vector3();
+    poseMatrix(walker).decompose(uprightPosition, upright, new Vector3());
+
+    const rotation = new Quaternion();
+    const position = new Vector3();
+    poseMatrix({ ...walker, downProgress: 1 }).decompose(position, rotation, new Vector3());
+
+    // A quarter turn: standing to lying.
+    expect(rotation.angleTo(upright)).toBeCloseTo(Math.PI / 2, 6);
+    // Rotating about the ground-contact origin alone would bury or float it;
+    // the body rises by half its narrow dimension so it rests on the surface.
+    expect(position.y - uprightPosition.y).toBeCloseTo(0.3, 6);
+    // It does not slide horizontally while falling.
+    expect(position.x).toBeCloseTo(walker.x, 9);
+    expect(position.z).toBeCloseTo(walker.z, 9);
+  });
+
+  it('falls monotonically and never past flat', () => {
+    const upright = new Quaternion();
+    poseMatrix(walker).decompose(new Vector3(), upright, new Vector3());
+    const angles = [0, 0.25, 0.5, 0.75, 1].map((downProgress) => {
+      const rotation = new Quaternion();
+      poseMatrix({ ...walker, downProgress }).decompose(new Vector3(), rotation, new Vector3());
+      return rotation.angleTo(upright);
+    });
+    for (let i = 1; i < angles.length; i += 1) {
+      expect(angles[i]!).toBeGreaterThan(angles[i - 1]!);
+    }
+    expect(angles.at(-1)!).toBeCloseTo(Math.PI / 2, 6);
+    // Out-of-range input cannot over-rotate the body.
+    const clamped = new Quaternion();
+    poseMatrix({ ...walker, downProgress: 4 }).decompose(new Vector3(), clamped, new Vector3());
+    expect(clamped.angleTo(upright)).toBeCloseTo(Math.PI / 2, 6);
+  });
+});

@@ -19,7 +19,7 @@ import {
 import { StudioTransport } from './transport';
 
 /** Presentation policy shared by local Studio and cloud product adapters. */
-export type CameraPolicy = 'editor' | 'all-actors' | 'ego-chase' | 'dash-camera' | 'authored' | 'auto-incident' | 'free';
+export type CameraPolicy = 'editor' | 'all-actors' | 'subject-chase' | 'dash-camera' | 'authored' | 'auto-incident' | 'free';
 
 function isInternalTrafficActor(actor: { readonly id: string }): boolean {
   return actor.id === 'ambient-world-seed';
@@ -134,42 +134,38 @@ export interface AllActorsCameraPlan {
 }
 
 export interface GalleryCameraChoice {
-  readonly policy: 'ego-chase' | 'all-actors';
+  readonly policy: 'subject-chase' | 'all-actors';
   readonly selectionId: string;
   readonly label: string;
   readonly reason: string;
-  readonly egoActorId: string | null;
+  readonly subjectActorId: string | null;
 }
 
-/** Resolve Gallery presentation from explicit scenario metadata, never names or inferred roles. */
+/** Resolve Gallery presentation from physical sensor ownership in authoring order. */
 export function galleryCameraChoice(bundle: PlaybackBundle): GalleryCameraChoice {
-  const egoIds = bundle.actors
-    .filter((actor) => actor.tags.includes('role:ego'))
-    .map((actor) => actor.id)
-    .sort();
-  if (egoIds.length === 1) {
-    const egoActorId = egoIds[0]!;
+  const subjectActorId = bundle.instance.input.actors.find(
+    (actor) => (actor.sensors?.length ?? 0) > 0
+      && bundle.actors.some((metadata) => metadata.id === actor.id),
+  )?.id;
+  if (subjectActorId) {
     return {
-      policy: 'ego-chase',
-      selectionId: `ego-chase:${egoActorId}`,
-      label: `Trailing ego · ${egoActorId}`,
-      reason: `Following the designated ego actor “${egoActorId}”.`,
-      egoActorId,
+      policy: 'subject-chase',
+      selectionId: `subject-chase:${subjectActorId}`,
+      label: `Trailing camera vehicle · ${subjectActorId}`,
+      reason: `Following the sensor-bearing camera vehicle “${subjectActorId}”.`,
+      subjectActorId,
     };
   }
-  const reason = egoIds.length === 0
-    ? 'All actors overview: this scenario has no designated ego.'
-    : `All actors overview: ${egoIds.length} actors are designated as ego (${egoIds.join(', ')}).`;
   return {
     policy: 'all-actors',
     selectionId: 'all-actors',
     label: 'All actors overview',
-    reason,
-    egoActorId: null,
+    reason: 'All actors overview: this scenario has no sensor-bearing camera vehicle.',
+    subjectActorId: null,
   };
 }
 
-/** Full-timeline authored bounds. Ego identity is deliberately irrelevant. */
+/** Full-timeline authored bounds are independent of sensor ownership. */
 export function buildAllActorsCameraPlan(
   bundle: PlaybackBundle,
   actorIds?: readonly string[],
@@ -390,7 +386,7 @@ export class PlaybackController {
     this.metadataByActor = new Map(this.bundle.actors.map((actor) => [actor.id, actor]));
     this.cameraPolicy = options.cameraPolicy ?? 'free';
     this.galleryCameraChoice = galleryCameraChoice(this.bundle);
-    this.cameraSelectionId = this.cameraPolicy === 'ego-chase'
+    this.cameraSelectionId = this.cameraPolicy === 'subject-chase'
       ? this.galleryCameraChoice.selectionId
       : this.cameraPolicy;
     this.allActorsCameraPlan = buildAllActorsCameraPlan(this.bundle, options.cameraActorIds);
@@ -424,8 +420,8 @@ export class PlaybackController {
     this.syncScene();
     if (this.cameraPolicy === 'all-actors') {
       this.frameAllActors();
-    } else if (this.cameraPolicy === 'ego-chase') {
-      this.frameEgoChase();
+    } else if (this.cameraPolicy === 'subject-chase') {
+      this.frameSubjectChase();
     } else if (this.cameraPolicy === 'authored' && options.cameraView) {
       this.viewer.controls.applyView(options.cameraView);
     } else if (this.cameraPolicy === 'auto-incident') {
@@ -513,7 +509,7 @@ export class PlaybackController {
       this.viewer.setCameraPoseConstraintsEnabled(policy !== 'dash-camera');
     }
     if (this.cameraPolicy === 'all-actors') this.frameAllActors();
-    else if (this.cameraPolicy === 'ego-chase') this.frameEgoChase();
+    else if (this.cameraPolicy === 'subject-chase') this.frameSubjectChase();
     else if (this.cameraPolicy === 'auto-incident') this.frameActors();
     else if (this.cameraPolicy === 'authored' && view) this.viewer.controls.applyView(view);
     else if (this.cameraPolicy === 'dash-camera') this.frameDashCamera();
@@ -527,7 +523,7 @@ export class PlaybackController {
     // The all-actors camera is an initial composition, not a playhead-owned
     // camera. Scrubbing must preserve any view the author established after
     // entering playback. Explicit following cameras still track their subject.
-    if (this.cameraPolicy === 'ego-chase') this.frameEgoChase();
+    if (this.cameraPolicy === 'subject-chase') this.frameSubjectChase();
     else if (this.cameraPolicy === 'auto-incident') this.frameActors();
     else if (this.cameraPolicy === 'dash-camera') this.frameDashCamera();
     this.publish();
@@ -538,7 +534,7 @@ export class PlaybackController {
     this.time = Math.max(this.bundle.startTime, Math.min(this.bundle.endTime, time));
     this.syncScene();
     if (this.cameraPolicy === 'auto-incident') this.frameActors();
-    else if (this.cameraPolicy === 'ego-chase') this.frameEgoChase();
+    else if (this.cameraPolicy === 'subject-chase') this.frameSubjectChase();
     else if (this.cameraPolicy === 'dash-camera') this.frameDashCamera();
   }
 
@@ -608,8 +604,11 @@ export class PlaybackController {
           z: actor.z,
           headingRad: actor.headingRad,
           animationTimeS: this.time,
-          speedMps: actor.speedMps,
+          // A body on the ground has no gait: leaving speed here would keep the
+          // walk cycle and the bob running while it slides.
+          speedMps: (actor.downProgress ?? 0) > 0 ? 0 : actor.speedMps,
           reversing: actor.motionDirection === -1,
+          ...((actor.downProgress ?? 0) > 0 ? { downProgress: actor.downProgress } : {}),
           ...(metadata ? { kind: metadata.kind } : {}),
           ...(metadata?.modelBasis === 'input-tag' ? { catalogIdAuthored: true } : {}),
           ...(metadata?.bodyColor ? { bodyColor: metadata.bodyColor } : {}),
@@ -693,21 +692,21 @@ export class PlaybackController {
     this.viewer.controls.applyView(allActorsCameraView(plan, this.sampleHeight(plan.centerX, plan.centerZ) ?? 0));
   }
 
-  private frameEgoChase(): void {
-    const egoId = this.galleryCameraChoice.egoActorId;
-    if (!egoId) {
+  private frameSubjectChase(): void {
+    const subjectActorId = this.galleryCameraChoice.subjectActorId;
+    if (!subjectActorId) {
       this.frameAllActors();
       return;
     }
-    const ego = this.sampled.find((actor) => actor.id === egoId && actor.present);
-    const metadata = this.bundle.actors.find((actor) => actor.id === egoId);
-    if (!ego || !metadata) return;
-    const forwardX = Math.cos(ego.headingRad);
-    const forwardZ = -Math.sin(ego.headingRad);
+    const subject = this.sampled.find((actor) => actor.id === subjectActorId && actor.present);
+    const metadata = this.bundle.actors.find((actor) => actor.id === subjectActorId);
+    if (!subject || !metadata) return;
+    const forwardX = Math.cos(subject.headingRad);
+    const forwardZ = -Math.sin(subject.headingRad);
     const distance = Math.max(7.5, metadata.dims.l * 1.7);
-    const ground = this.sampleHeight(ego.x, ego.z) ?? 0;
-    const eyeX = ego.x - forwardX * distance;
-    const eyeZ = ego.z - forwardZ * distance;
+    const ground = this.sampleHeight(subject.x, subject.z) ?? 0;
+    const eyeX = subject.x - forwardX * distance;
+    const eyeZ = subject.z - forwardZ * distance;
     const eyeGround = this.sampleHeight(eyeX, eyeZ) ?? ground;
     const camera = this.viewer.camera;
     if (camera.isPerspectiveCamera) {
@@ -717,9 +716,9 @@ export class PlaybackController {
     this.viewer.controls.setView(
       new Vector3(eyeX, eyeGround + Math.max(3.2, metadata.dims.h + 1.7), eyeZ),
       new Vector3(
-        ego.x + forwardX * Math.max(5, metadata.dims.l),
+        subject.x + forwardX * Math.max(5, metadata.dims.l),
         ground + Math.max(1.2, metadata.dims.h * 0.65),
-        ego.z + forwardZ * Math.max(5, metadata.dims.l),
+        subject.z + forwardZ * Math.max(5, metadata.dims.l),
       ),
     );
   }
@@ -772,7 +771,7 @@ export class PlaybackController {
       inputHash: this.bundle.instance.manifest.inputHash,
       cameraPolicy: this.cameraPolicy,
       cameraSelectionId: this.cameraSelectionId,
-      cameraReason: this.cameraPolicy === 'ego-chase' || this.cameraPolicy === 'all-actors'
+      cameraReason: this.cameraPolicy === 'subject-chase' || this.cameraPolicy === 'all-actors'
         ? this.galleryCameraChoice.reason
         : '',
     };

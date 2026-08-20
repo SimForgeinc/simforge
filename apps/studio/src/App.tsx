@@ -835,8 +835,8 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
     [playbackBundle],
   );
   const playbackCameraOptions = useMemo<readonly PlaybackCameraOption[]>(() => {
-    const galleryDefault: PlaybackCameraOption[] = galleryCamera?.policy === 'ego-chase'
-      ? [{ id: galleryCamera.selectionId, label: galleryCamera.label, policy: 'ego-chase' }]
+    const galleryDefault: PlaybackCameraOption[] = galleryCamera?.policy === 'subject-chase'
+      ? [{ id: galleryCamera.selectionId, label: galleryCamera.label, policy: 'subject-chase' }]
       : [];
     return [
       ...galleryDefault,

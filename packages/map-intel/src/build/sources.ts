@@ -50,6 +50,17 @@ export interface MapSources {
   lanePolygons: GeoFeatureCollection<LanePolygonProperties> | null;
   mapGeojson: GeoFeatureCollection<MapGeojsonProperties> | null;
   overlay: OverlayPayload | null;
+  /**
+   * `roadId → display name`, for callers that already parsed the OpenDRIVE and
+   * can hand over its `<road name>` attributes.
+   *
+   * The search index and street-name signs are the only other name sources, and
+   * a map assembled from a bare `.xodr` plus geometry has neither — its road
+   * names would otherwise be silently discarded even though the source file
+   * states them. `loadMapSources` deliberately leaves this undefined so disk
+   * builds of already-published maps keep their existing catalog identities.
+   */
+  roadNames?: Record<string, string>;
   /** `artifact name → sha256`. Feeds `catalogRevision`. */
   sourceHashes: Record<string, string>;
 }

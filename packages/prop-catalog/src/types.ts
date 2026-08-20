@@ -125,8 +125,57 @@ export interface Dims {
   h: number;
 }
 
+/** Physics/controller family used when a catalog model becomes an actor. */
+export type CatalogActorClass =
+  | 'car'
+  | 'truck'
+  | 'bus'
+  | 'van'
+  | 'motorcycle'
+  | 'bicycle'
+  | 'scooter'
+  | 'pedestrian'
+  | 'sidewalk_robot'
+  | 'drone'
+  | 'animal'
+  | 'static_object';
+
+export const CATALOG_ACTOR_CLASSES: readonly CatalogActorClass[] = [
+  'car',
+  'truck',
+  'bus',
+  'van',
+  'motorcycle',
+  'bicycle',
+  'scooter',
+  'pedestrian',
+  'sidewalk_robot',
+  'drone',
+  'animal',
+  'static_object',
+] as const;
+
 /** Build parameters are plain JSON so the catalog can round-trip as data. */
 export type ParamValue = number | string | boolean;
+
+/** A model that is not procedurally built. */
+export type ExternalModelBinding =
+  | {
+      readonly kind: 'glb';
+      /** Fetchable URL for the GLB. May be signed and short-lived; never persisted in a scenario. */
+      readonly url: string;
+      /** Lowercase sha256 hex of the GLB bytes. The cache key; stable across signed URL rotation. */
+      readonly contentHash: string;
+      /** Uniform scale applied to the loaded scene before normalisation. Defaults to 1. */
+      readonly scale?: number;
+      /** Yaw applied about +Y before normalisation, radians. Defaults to 0. */
+      readonly yawRad?: number;
+      /** The GLB carries animation clips and must render as an animated clone, not an instance. */
+      readonly animated?: boolean;
+      /** Clip names, when animated. */
+      readonly clips?: { readonly idle?: string; readonly locomotion?: string };
+    }
+  | { readonly kind: 'proxy'; readonly tint?: string };
 
 export interface CatalogEntry {
   /** Stable `<class>.<name>` identifier. The contract other packages hold. */
@@ -134,6 +183,13 @@ export interface CatalogEntry {
   /** Human label for pickers. */
   readonly label: string;
   readonly class: PropClass;
+  /**
+   * Authoritative simulation/physics class. Vehicle entries must declare it;
+   * other classes may override their broad catalog class for mobile exceptions.
+   */
+  readonly actorClass?: CatalogActorClass;
+  /** Additional legacy or deliberately interchangeable actor classes. */
+  readonly compatibleActorClasses?: readonly CatalogActorClass[];
   /**
    * One sentence, written for an LLM choosing props for a scenario: what it is
    * and what it is useful for in a driving scene.
@@ -151,4 +207,5 @@ export interface CatalogEntry {
   readonly legacyAliasOf?: string;
   /** Present for every actor whose authored model must ship with animation. */
   readonly animation?: CatalogAnimationProfile;
+  readonly model?: ExternalModelBinding;
 }

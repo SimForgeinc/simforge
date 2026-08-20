@@ -4,7 +4,7 @@ import type { CityViewer } from '@uniscenarios/city-renderer';
 import { MemoryStorage, WebTemplateFileStore } from '@uniscenarios/scenario-model';
 import type { CatalogId } from '@uniscenarios/prop-catalog';
 import { MAPS } from '../../maps';
-import { EditorController, isRoadBoundMotorVehicle } from '../controller';
+import { actionsForActor, EditorController, interactionForAction, isRoadBoundMotorVehicle } from '../controller';
 import { EditorDocument } from '../document';
 import { LaneIndex } from '../laneIndex';
 
@@ -256,6 +256,34 @@ describe('direct authored-actor manipulation', () => {
     internals.onPointerUp(pointer(canvas, 90, 100, { altKey: true }));
     expect(document.revision).toBe(revision);
     expect(document.actor('ego')).toEqual(before);
+    controller.dispose(); document.dispose();
+  });
+});
+
+describe('custom route actor seed', () => {
+  it('keeps the actor seed as the only point when the initiating click lands visually on it', async () => {
+    const { controller, document, internals, canvas } = await fixture([
+      { id: 'ego', catalogId: 'vehicle.sedan', x: 10, z: 0, lane: true },
+    ]);
+    const definition = actionsForActor('car').find((candidate) => candidate.id === 'custom_route')!;
+    const interaction = interactionForAction(definition, 'ego', 0, 1);
+    document.addInteraction(interaction);
+
+    expect(controller.beginCustomRouteAuthoring(interaction.id, {
+      reset: true,
+      startPose: { x: 10, z: 0, headingRad: 0 },
+    })).toBe(true);
+    internals.publish();
+    expect(controller.state.customRoutePointCount).toBe(1);
+
+    internals.onPointerDown(pointer(canvas, 10.2));
+    internals.publish();
+
+    expect(controller.state.customRoutePointCount).toBe(1);
+
+    internals.onPointerDown(pointer(canvas, 20));
+    internals.publish();
+    expect(controller.state.customRoutePointCount).toBe(2);
     controller.dispose(); document.dispose();
   });
 });

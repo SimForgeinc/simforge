@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { PROP_CLASSES, PROP_TAGS } from './types';
+import { CATALOG_ACTOR_CLASSES, PROP_CLASSES, PROP_TAGS } from './types';
 import type { CatalogEntry } from './types';
 
 /**
@@ -36,6 +36,8 @@ const catalogEntrySchema = z.object({
     .regex(/^[a-z_]+\.[a-z0-9_]+$/, 'id must be <class>.<snake_case_name>'),
   label: z.string().min(1),
   class: z.enum(PROP_CLASSES as unknown as [string, ...string[]]),
+  actorClass: z.enum(CATALOG_ACTOR_CLASSES as unknown as [string, ...string[]]).optional(),
+  compatibleActorClasses: z.array(z.enum(CATALOG_ACTOR_CLASSES as unknown as [string, ...string[]])).optional(),
   description: z.string().min(20),
   dims: dimsSchema,
   tags: z.array(z.enum(PROP_TAGS as unknown as [string, ...string[]])).min(1),
@@ -64,6 +66,19 @@ export const catalogSchema = z
         ctx.addIssue({
           code: 'custom',
           message: `id ${entry.id} does not match class ${entry.class}`,
+        });
+      }
+      if (entry.class === 'vehicle' && entry.actorClass === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${entry.id} must declare actorClass so its driving physics do not depend on its id`,
+        });
+      }
+      if (entry.actorClass !== undefined
+        && entry.compatibleActorClasses?.some((candidate) => candidate === entry.actorClass)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${entry.id} repeats actorClass in compatibleActorClasses`,
         });
       }
       const tagged = entry.tags.filter((tag) => tag.startsWith('occlusion:'));

@@ -193,6 +193,8 @@ export {
 export * from './schema/v2/index.js';
 
 export * from './expr/index.js';
+export * from './semantic-ledger.js';
+export * from './render-spec.js';
 
 export {
   CURRENT_TEMPLATE_VERSION,

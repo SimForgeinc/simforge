@@ -25,7 +25,7 @@ function rotr(x: number, n: number): number {
 export function sha256Bytes(input: Uint8Array): string {
   const len = input.length;
   const bitLen = len * 8;
-  const paddedLen = (((len + 9) >> 6) + 1) << 6;
+  const paddedLen = (((len + 8) >> 6) + 1) << 6;
   const msg = new Uint8Array(paddedLen);
   msg.set(input);
   msg[len] = 0x80;

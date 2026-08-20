@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 from dataclasses import dataclass
-from math import isfinite, sqrt
+from math import atan2, cos, degrees, isfinite, radians, sin, sqrt
 import os
 from threading import Condition, Lock
-from time import monotonic
+from time import monotonic, sleep
 from typing import Any, Callable, Mapping, Protocol
 
 from .compiler import LIFECYCLE_ABSENT, ActorBinding, PlanFrame
@@ -84,8 +84,19 @@ VEHICLE_DOOR_MEMBERS: Mapping[str, str] = {
     "doorFrontRight": "FR",
 }
 
-#: How far below its last authored pose an actor is parked once it goes absent.
-DESPAWN_SINK_M = 1000.0
+ENVIRONMENT_FIELDS = (
+    "cloudiness", "precipitation", "precipitation_deposits", "wind_intensity",
+    "sun_azimuth_angle", "sun_altitude_angle", "fog_density", "fog_distance", "wetness",
+)
+
+ENVIRONMENT_READBACK_TIMEOUT_S = 2.0
+
+#: A body on the ground is pitched a quarter turn from standing, matching the
+#: browser renderer so a recording and its preview agree.
+DOWNED_BODY_PITCH_DEG = 90.0
+#: Half a pedestrian's depth. The transform sits at the feet, so pitching alone
+#: would leave the body cutting through the surface it is lying on.
+DOWNED_BODY_LIFT_M = 0.3
 
 
 def flash_on(t: float) -> bool:
@@ -162,11 +173,13 @@ class RenderBackend(Protocol):
     def prepare_scenario(self, first_frame: PlanFrame, abort: Callable[[], None] | None = None) -> Mapping[str, Any] | None: ...
     def configure_cameras(self, spec: RenderSpec, output_dir: Path, max_capture_disk_bytes: int, abort: Callable[[], None] | None = None) -> None: ...
     def apply(self, frame: PlanFrame, abort: Callable[[], None] | None = None) -> None: ...
-    def tick(self, capture: Mapping[str, float | int] | None = None, abort: Callable[[], None] | None = None) -> Mapping[str, Mapping[str, float]]: ...
+    def tick(self, capture: Mapping[str, float | int] | None = None, abort: Callable[[], None] | None = None) -> Mapping[str, Mapping[str, Any]]: ...
     def finalize_capture(self, expected_frame_count: int, abort: Callable[[], None] | None = None) -> None: ...
     def cleanup(self) -> None: ...
     def sensor_manifest(self, abort: Callable[[], None] | None = None) -> list[Mapping[str, Any]]: ...
     def signal_readback(self, abort: Callable[[], None] | None = None) -> Mapping[str, str]: ...
+    def collision_readback(self, frame_index: int, t: float, abort: Callable[[], None] | None = None) -> list[Mapping[str, Any]]: ...
+    def runtime_evidence(self, abort: Callable[[], None] | None = None) -> Mapping[str, Any]: ...
 
 
 class CarlaBackend:
@@ -205,6 +218,19 @@ class CarlaBackend:
         self.speed_integrals: dict[str, float] = {}
         self.absent_actors: set[str] = set()
         self.door_states: dict[tuple[str, str], str] = {}
+        self.actor_lifecycle: dict[str, str] = {}
+        self.applied_appearance: dict[str, dict[str, str]] = {}
+        self.appearance_verification: dict[str, dict[str, str]] = {}
+        self.environment_evidence: dict[str, Any] = {"available": False}
+        self.collision_sensors: list[Any] = []
+        self.collision_lock = Lock()
+        self.collision_pending: list[dict[str, Any]] = []
+        self.collision_history: list[dict[str, Any]] = []
+        self.actor_id_by_runtime_id: dict[int, str] = {}
+        self.last_carla_frame: int | None = None
+        self.current_plan_frame: tuple[int, float] | None = None
+        self.carla_to_plan_frame: dict[int, tuple[int, float]] = {}
+        self.last_controls: dict[str, dict[str, Any]] = {}
 
     def configure_execution(self, mode: str) -> None:
         if mode not in {"native-physics", "diagnostic-replay"}:
@@ -218,17 +244,53 @@ class CarlaBackend:
 
     def configure_environment(self, environment: Environment) -> None:
         assert self.world is not None
-        self.world.set_weather(self.carla.WeatherParameters(
-            cloudiness=environment.cloudiness,
-            precipitation=environment.precipitation,
-            precipitation_deposits=environment.precipitation_deposits,
-            wind_intensity=environment.wind_intensity,
-            sun_azimuth_angle=environment.sun_azimuth_angle,
-            sun_altitude_angle=environment.sun_altitude_angle,
-            fog_density=environment.fog_density,
-            fog_distance=environment.fog_distance,
-            wetness=environment.wetness,
-        ))
+        self.environment_evidence = {"available": False}
+        requested = {field: float(getattr(environment, field)) for field in ENVIRONMENT_FIELDS}
+        enabled = getattr(self.world, "is_weather_enabled", None)
+        if not callable(enabled):
+            raise RuntimeError("CARLA weather availability API is unavailable")
+        if not enabled():
+            self.environment_evidence = {
+                "schema": "uniscenario.environment-evidence/v1",
+                "available": False,
+                "exact": False,
+                "requested": requested,
+                "observed": None,
+                "reason": "carla-weather-disabled",
+            }
+            return
+        setter = getattr(self.world, "set_weather", None)
+        getter = getattr(self.world, "get_weather", None)
+        if not callable(setter) or not callable(getter):
+            raise RuntimeError("CARLA environment mutation/readback API is unavailable")
+        setter(self.carla.WeatherParameters(**requested))
+        deadline = monotonic() + ENVIRONMENT_READBACK_TIMEOUT_S
+        while True:
+            observed_weather = getter()
+            observed = {field: float(getattr(observed_weather, field)) for field in ENVIRONMENT_FIELDS}
+            mismatches = {
+                field: {"requested": requested[field], "observed": observed[field]}
+                for field in ENVIRONMENT_FIELDS
+                if (
+                    abs((requested[field] - observed[field] + 180.0) % 360.0 - 180.0)
+                    if field == "sun_azimuth_angle"
+                    else abs(requested[field] - observed[field])
+                ) > 1e-4
+            }
+            if not mismatches:
+                self.environment_evidence = {
+                    "schema": "uniscenario.environment-evidence/v1",
+                    "available": True,
+                    "requested": requested,
+                    "observed": observed,
+                    "exact": True,
+                }
+                return
+            if monotonic() >= deadline:
+                raise RuntimeError(
+                    f"CARLA environment readback differs from the render specification: {mismatches}"
+                )
+            sleep(0.01)
 
     def load_opendrive(self, map_name: str, xodr: bytes, fixed_timestep_s: float) -> None:
         del map_name
@@ -245,6 +307,12 @@ class CarlaBackend:
         assert self.world is not None
         check = abort or (lambda: None)
         check()
+        # A few pure unit fakes construct the backend without importing CARLA.
+        # Keep the production state initialized here as well as in __init__ so
+        # those tests exercise the same spawn path without a more-capable mock.
+        self.actor_id_by_runtime_id = getattr(self, "actor_id_by_runtime_id", {})
+        self.actor_lifecycle = getattr(self, "actor_lifecycle", {})
+        self.collision_sensors = getattr(self, "collision_sensors", [])
         library = self.world.get_blueprint_library()
         for actor_id, binding in actors.items():
             check()
@@ -268,13 +336,59 @@ class CarlaBackend:
             if actor is None:
                 raise RuntimeError(f"CARLA failed to spawn {actor_id} as {blueprint_id}")
             self.actors[actor_id] = actor
+            runtime_id = getattr(actor, "id", None)
+            if isinstance(runtime_id, int):
+                self.actor_id_by_runtime_id[runtime_id] = actor_id
+            self.actor_lifecycle[actor_id] = state.lifecycle
+        self._configure_collision_sensors(library, check)
+
+    def _configure_collision_sensors(self, library: Any, abort: Callable[[], None]) -> None:
+        """Attach passive collision observation without affecting vehicle motion."""
+        spawn_actor = getattr(self.world, "spawn_actor", None)
+        if not callable(spawn_actor):
+            return
+        try:
+            blueprint = library.find("sensor.other.collision")
+        except (KeyError, RuntimeError):
+            return
+        for actor_id, actor in self.actors.items():
+            abort()
+            sensor = spawn_actor(blueprint, self.carla.Transform(), attach_to=actor)
+            if sensor is None:
+                raise RuntimeError(f"CARLA failed to attach collision observation to {actor_id}")
+            sensor.listen(lambda event, owner=actor_id: self._receive_collision(owner, event))
+            self.collision_sensors.append(sensor)
+
+    def _receive_collision(self, actor_id: str, event: Any) -> None:
+        other = getattr(event, "other_actor", None)
+        other_runtime_id = getattr(other, "id", None)
+        other_id = self.actor_id_by_runtime_id.get(other_runtime_id)
+        if other_id is None:
+            suffix = f"#{other_runtime_id}" if isinstance(other_runtime_id, int) else ""
+            other_id = f"carla:{getattr(other, 'type_id', 'unknown')}{suffix}"
+        pair = tuple(sorted((actor_id, other_id)))
+        impulse = getattr(event, "normal_impulse", None)
+        impulse_magnitude = sqrt(
+            float(getattr(impulse, "x", 0.0)) ** 2
+            + float(getattr(impulse, "y", 0.0)) ** 2
+            + float(getattr(impulse, "z", 0.0)) ** 2
+        )
+        item = {
+            "carlaFrame": int(getattr(event, "frame")),
+            "carlaTimestamp": float(getattr(event, "timestamp", 0.0)),
+            "pair": pair,
+            "normalImpulse": impulse_magnitude,
+        }
+        with self.collision_lock:
+            key = (item["carlaFrame"], pair)
+            prior_events = [*self.collision_pending, *self.collision_history]
+            if not any((prior["carlaFrame"], tuple(prior["pair"])) == key for prior in prior_events):
+                self.collision_pending.append(item)
 
     def bind_signals(self, signal_ids: tuple[str, ...], abort: Callable[[], None] | None = None) -> None:
-        """Take complete, reversible ownership of the map's traffic lights."""
+        """Own every runtime light while requiring every authored head to resolve."""
         check = abort or (lambda: None)
         check()
-        if not signal_ids:
-            return
         assert self.world is not None
         authored = set(signal_ids)
         try:
@@ -300,22 +414,25 @@ class CarlaBackend:
             resolved[signal_id] = light
         runtime_ids = set(resolved)
         missing = sorted(authored - runtime_ids)
-        extra = sorted(runtime_ids - authored)
-        if missing or extra or unbound or duplicate_ids:
+        if missing or unbound or duplicate_ids:
             details = []
             if missing:
                 details.append(f"missing: {', '.join(missing)}")
-            if extra:
-                details.append(f"extra: {', '.join(extra)}")
             if unbound:
                 details.append(f"unbound actor ids: {', '.join(sorted(unbound))}")
             if duplicate_ids:
                 details.append(f"duplicate OpenDRIVE ids: {', '.join(sorted(set(duplicate_ids)))}")
             raise RuntimeError(
-                "authored OpenDRIVE traffic signal heads do not exactly match instantiated CARLA lights ("
+                "authored OpenDRIVE traffic signal heads cannot be safely owned in CARLA ("
                 + "; ".join(details)
                 + ")"
             )
+        if not lights:
+            self.signals = {}
+            self.signal_snapshots = {}
+            self.executed_signals = {}
+            self.executed_signal_lamps = {}
+            return
 
         snapshots: dict[int, _OwnedSignalSnapshot] = {}
         for light in lights:
@@ -330,14 +447,28 @@ class CarlaBackend:
                 getattr(light, "get_yellow_time", None),
                 getattr(light, "get_red_time", None),
             )
-            if not callable(get_state) or not all(callable(getter) for getter in duration_getters):
-                raise RuntimeError("CARLA traffic light snapshot API is incomplete before ownership")
+            mutation_methods = (
+                getattr(light, "set_state", None),
+                getattr(light, "freeze", None),
+                getattr(light, "set_green_time", None),
+                getattr(light, "set_yellow_time", None),
+                getattr(light, "set_red_time", None),
+            )
+            if (
+                not callable(get_state)
+                or not callable(is_frozen)
+                or not all(callable(getter) for getter in duration_getters)
+                or not all(callable(method) for method in mutation_methods)
+            ):
+                raise RuntimeError("CARLA traffic light ownership API is incomplete before mutation")
             try:
                 state = get_state()
-                frozen = bool(is_frozen()) if callable(is_frozen) else None
+                frozen = bool(is_frozen())
                 green_time, yellow_time, red_time = (float(getter()) for getter in duration_getters)
             except Exception as exc:  # noqa: BLE001 - reject before taking ownership.
                 raise RuntimeError("CARLA traffic signal state snapshot failed before ownership") from exc
+            if not all(isfinite(value) and value >= 0 for value in (green_time, yellow_time, red_time)):
+                raise RuntimeError("CARLA traffic light timing snapshot is invalid before mutation")
             snapshots[key] = _OwnedSignalSnapshot(
                 light, state, frozen, green_time, yellow_time, red_time,
             )
@@ -442,11 +573,17 @@ class CarlaBackend:
             check()
             state = first_frame.actors[actor_id]
             settled = actor.get_transform()
-            actor.set_transform(self.carla.Transform(
+            initial = self.carla.Transform(
                 self.carla.Location(x=state.x, y=-state.y, z=settled.location.z),
                 self.carla.Rotation(yaw=-state.heading_deg),
+            )
+            actor.set_transform(initial)
+            forward = self._forward_vector(initial)
+            actor.set_target_velocity(self.carla.Vector3D(
+                x=forward[0] * state.speed_mps,
+                y=forward[1] * state.speed_mps,
+                z=forward[2] * state.speed_mps,
             ))
-            actor.set_target_velocity(zero)
             actor.set_target_angular_velocity(zero)
         return {
             "schema": "uniscenario.native-stability/v1",
@@ -458,6 +595,9 @@ class CarlaBackend:
                 "verticalDriftM": 0.001,
                 "yawDriftDeg": 0.02,
                 "consecutiveTicks": 5,
+            },
+            "initialVelocityMps": {
+                actor_id: first_frame.actors[actor_id].speed_mps for actor_id in sorted(self.actors)
             },
             "phases": reports,
         }
@@ -528,6 +668,12 @@ class CarlaBackend:
         """
         target = max(0.0, target_speed)
         error = target - speed
+        # Do not apply throttle against a vehicle that is still rolling in the
+        # opposite direction. Brake first and let CARLA's native transmission
+        # engage the requested direction near standstill.
+        if speed < -0.02:
+            self.speed_integrals[actor_id] = 0.0
+            return 0.0, min(1.0, 0.2 + (-speed) * 0.8)
         if target <= 1e-4:
             self.speed_integrals[actor_id] = 0.0
             return 0.0, min(1.0, 0.15 + speed * 0.8) if speed > 1e-3 else 1.0
@@ -598,6 +744,8 @@ class CarlaBackend:
             self.sensor_configs[camera.id] = {
                 "target": camera_dir, "kind": camera.kind, "converter": converters.get(camera.kind),
                 "attachTo": resolved_attach_to, "mount": camera.mount,
+                "width": spec.width, "height": spec.height, "fov": camera.fov,
+                "transform": dict(camera.transform),
             }
             sensor.listen(lambda image, camera_id=camera.id: self._receive_sensor_frame(camera_id, image))
             self.sensors.append(sensor)
@@ -684,6 +832,12 @@ class CarlaBackend:
     def apply(self, frame: PlanFrame, abort: Callable[[], None] | None = None) -> None:
         check = abort or (lambda: None)
         check()
+        self.absent_actors = getattr(self, "absent_actors", set())
+        self.actor_lifecycle = getattr(self, "actor_lifecycle", {})
+        self.applied_appearance = getattr(self, "applied_appearance", {})
+        self.appearance_verification = getattr(self, "appearance_verification", {})
+        self.last_controls = getattr(self, "last_controls", {})
+        self.current_plan_frame = (frame.index, frame.t)
         if not set(frame.signals).issubset(self.signals):
             missing = sorted(set(frame.signals) - set(self.signals))
             raise RuntimeError(f"authored OpenDRIVE traffic signal heads were not preflighted: {', '.join(missing)}")
@@ -702,10 +856,13 @@ class CarlaBackend:
                 self.executed_signal_lamps[signal_id] = lamp
         for actor_id, state in frame.actors.items():
             check()
-            actor = self.actors[actor_id]
             if state.lifecycle == LIFECYCLE_ABSENT:
-                self._sink_absent_actor(actor_id, actor, state)
+                self._destroy_absent_actor(actor_id)
                 continue
+            actor = self.actors.get(actor_id)
+            if actor is None:
+                raise RuntimeError(f"active actor {actor_id} is missing from CARLA")
+            self.actor_lifecycle[actor_id] = state.lifecycle
             self._apply_appearance(actor_id, actor, state.appearance, frame.t)
             target = self.carla.Transform(self.carla.Location(x=state.x, y=-state.y, z=state.z), self.carla.Rotation(yaw=-state.heading_deg))
             if self.execution_mode == "diagnostic-replay":
@@ -713,44 +870,80 @@ class CarlaBackend:
                 actor.set_target_velocity(target.transform_vector(self.carla.Vector3D(x=state.speed_mps, y=0, z=0)))
                 continue
             velocity = actor.get_velocity()
-            speed = (velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2) ** 0.5
             if actor.type_id.startswith("walker."):
+                if state.speed_mps < -1e-6:
+                    raise RuntimeError(f"native physics does not support reverse pedestrian motion for {actor_id}")
+                if state.downed:
+                    # Walkers are kinematic here: native physics owns vehicle
+                    # motion only, so CARLA will not topple one for us. The plan
+                    # pose already carries where the body slid to; pitch it onto
+                    # the ground and stop the gait so the recording shows what
+                    # the trace says happened.
+                    actor.apply_control(self.carla.WalkerControl(speed=0.0, jump=False))
+                    actor.set_transform(self.carla.Transform(
+                        self.carla.Location(x=state.x, y=-state.y, z=state.z + DOWNED_BODY_LIFT_M),
+                        self.carla.Rotation(pitch=DOWNED_BODY_PITCH_DEG, yaw=-state.heading_deg),
+                    ))
+                    continue
                 direction = target.get_forward_vector()
                 actor.apply_control(self.carla.WalkerControl(direction=direction, speed=state.speed_mps, jump=False))
                 continue
             if actor.type_id.startswith(("vehicle.", "bike.")):
-                current_yaw = actor.get_transform().rotation.yaw
+                current_transform = actor.get_transform()
+                current_yaw = current_transform.rotation.yaw
                 yaw_error = ((-state.heading_deg - current_yaw + 180) % 360) - 180
-                throttle, brake = self._vehicle_longitudinal_control(actor_id, state.speed_mps, speed)
-                steer = min(1.0, max(-1.0, yaw_error / 35.0))
-                actor.apply_control(self.carla.VehicleControl(throttle=throttle, brake=brake, steer=steer))
+                forward = self._forward_vector(current_transform)
+                signed_speed = velocity.x * forward[0] + velocity.y * forward[1] + velocity.z * forward[2]
+                reverse = state.speed_mps < -1e-6
+                progress_speed = -signed_speed if reverse else signed_speed
+                delta_x = state.x - current_transform.location.x
+                delta_y = -state.y - current_transform.location.y
+                along_error = delta_x * forward[0] + delta_y * forward[1]
+                movement_sign = -1.0 if reverse else 1.0
+                requested_progress = max(
+                    0.0,
+                    abs(state.speed_mps) + max(-2.0, min(2.0, movement_sign * along_error * 0.45)),
+                )
+                throttle, brake = self._vehicle_longitudinal_control(actor_id, requested_progress, progress_speed)
+                lateral_error = -forward[1] * delta_x + forward[0] * delta_y
+                lookahead = max(2.0, abs(state.speed_mps) * 0.8)
+                path_correction_deg = degrees(atan2(lateral_error, lookahead))
+                steer_sign = -1.0 if reverse else 1.0
+                steer = min(1.0, max(-1.0, steer_sign * (yaw_error + path_correction_deg) / 35.0))
+                control = self.carla.VehicleControl(throttle=throttle, brake=brake, steer=steer)
+                try:
+                    control.reverse = reverse
+                except (AttributeError, TypeError) as exc:
+                    if reverse:
+                        raise RuntimeError("CARLA VehicleControl cannot express reverse motion") from exc
+                actor.apply_control(control)
+                self.last_controls[actor_id] = {
+                    "targetSpeedMps": state.speed_mps,
+                    "observedSignedSpeedMps": signed_speed,
+                    "alongTrackErrorM": along_error,
+                    "lateralErrorM": lateral_error,
+                    "headingErrorDeg": yaw_error,
+                    "throttle": throttle,
+                    "brake": brake,
+                    "steer": steer,
+                    "reverse": reverse,
+                }
                 continue
-            if state.speed_mps > 1e-6:
+            if abs(state.speed_mps) > 1e-6:
                 raise RuntimeError(f"native physics does not support moving actor type {actor.type_id}")
         check()
 
-    def _sink_absent_actor(self, actor_id: str, actor: Any, state: Any) -> None:
-        """Retire an actor whose `.xosc` DeleteEntityAction has fired.
-
-        The actor is parked far below its last authored pose with physics off
-        rather than destroyed. `Actor.destroy()` would also destroy any sensor
-        attached to it, which breaks the frame-closure contract
-        `finalize_capture` enforces, and would invalidate the handle `tick()`
-        reads back every frame. Parking keeps the readback and the parity closure
-        intact; `ParityAccumulator` skips absent actors, and `cleanup()` still
-        destroys the handle at the end of the run.
-        """
+    def _destroy_absent_actor(self, actor_id: str) -> None:
+        """Execute DeleteEntityAction without teleporting a native actor."""
         if actor_id in self.absent_actors:
             return
+        actor = self.actors.pop(actor_id, None)
+        if actor is None:
+            raise RuntimeError(f"DeleteEntityAction references missing CARLA actor {actor_id}")
         self.absent_actors.add(actor_id)
-        zero = self.carla.Vector3D(x=0.0, y=0.0, z=0.0)
-        actor.set_simulate_physics(False)
-        actor.set_target_velocity(zero)
-        actor.set_target_angular_velocity(zero)
-        actor.set_transform(self.carla.Transform(
-            self.carla.Location(x=state.x, y=-state.y, z=state.z - DESPAWN_SINK_M),
-            self.carla.Rotation(yaw=-state.heading_deg),
-        ))
+        self.actor_lifecycle[actor_id] = LIFECYCLE_ABSENT
+        if actor.destroy() is False:
+            raise RuntimeError(f"CARLA failed to destroy absent actor {actor_id}")
 
     def _apply_appearance(self, actor_id: str, actor: Any, appearance: Mapping[str, str], t: float) -> None:
         """Drive the authored appearance state CARLA can physically render.
@@ -770,14 +963,18 @@ class CarlaBackend:
         real feature, not an impossibility; until it exists these are deliberately
         not applied here and the render manifest reports them as unrendered cues.
         """
+        self.applied_appearance = getattr(self, "applied_appearance", {})
+        self.appearance_verification = getattr(self, "appearance_verification", {})
+        self.door_states = getattr(self, "door_states", {})
         lights = {key[len("light."):]: value for key, value in appearance.items() if key.startswith("light.")}
         doors = {key[len("door."):]: value for key, value in appearance.items() if key.startswith("door.")}
         if lights:
-            self._apply_vehicle_lights(actor, lights, t)
+            self._apply_vehicle_lights(actor_id, actor, lights, t)
         if doors:
             self._apply_vehicle_doors(actor_id, actor, doors)
+        self.applied_appearance[actor_id] = dict(appearance)
 
-    def _apply_vehicle_lights(self, actor: Any, lights: Mapping[str, str], t: float) -> None:
+    def _apply_vehicle_lights(self, actor_id: str, actor: Any, lights: Mapping[str, str], t: float) -> None:
         """Write the authored light bits, leaving every unowned bit untouched.
 
         This method is the ONLY writer of the vehicle light mask in this worker.
@@ -819,6 +1016,12 @@ class CarlaBackend:
         wanted = (current & ~owned) | wanted_bits
         if wanted != current:
             actor.set_light_state(light_state_cls(wanted))
+        observed = int(actor.get_light_state())
+        if observed & owned != wanted & owned:
+            raise RuntimeError("CARLA vehicle light readback differs from the authored state")
+        verification = self.appearance_verification.setdefault(actor_id, {})
+        for light_type in lights:
+            verification[f"light.{light_type}"] = "runtime-readback"
 
     def _apply_vehicle_doors(self, actor_id: str, actor: Any, doors: Mapping[str, str]) -> None:
         door_cls = getattr(self.carla, "VehicleDoor", None)
@@ -834,12 +1037,27 @@ class CarlaBackend:
                 raise RuntimeError(f"the CARLA runtime has no VehicleDoor.{VEHICLE_DOOR_MEMBERS[component]}")
             (opener if state == "open" else closer)(member)
             self.door_states[(actor_id, component)] = state
+            self.appearance_verification.setdefault(actor_id, {})[f"door.{component}"] = "command-confirmed"
 
-    def tick(self, capture: Mapping[str, float | int] | None = None, abort: Callable[[], None] | None = None) -> Mapping[str, Mapping[str, float]]:
+    @staticmethod
+    def _forward_vector(transform: Any) -> tuple[float, float, float]:
+        getter = getattr(transform, "get_forward_vector", None)
+        if callable(getter):
+            value = getter()
+            return float(value.x), float(value.y), float(value.z)
+        yaw = radians(float(transform.rotation.yaw))
+        return cos(yaw), sin(yaw), 0.0
+
+    def tick(self, capture: Mapping[str, float | int] | None = None, abort: Callable[[], None] | None = None) -> Mapping[str, Mapping[str, Any]]:
         assert self.world is not None
         check = abort or (lambda: None)
         check()
+        self.current_plan_frame = getattr(self, "current_plan_frame", None)
+        self.carla_to_plan_frame = getattr(self, "carla_to_plan_frame", {})
         carla_frame = int(self.world.tick())
+        self.last_carla_frame = carla_frame
+        if self.current_plan_frame is not None:
+            self.carla_to_plan_frame[carla_frame] = self.current_plan_frame
         check()
         if capture is not None:
             self._capture_world_frame(carla_frame, capture, abort)
@@ -854,8 +1072,91 @@ class CarlaBackend:
         for actor_id, actor in self.actors.items():
             check()
             transform, velocity = actor.get_transform(), actor.get_velocity()
-            result[actor_id] = {"x": transform.location.x, "y": -transform.location.y, "z": transform.location.z, "headingDeg": -transform.rotation.yaw, "speedMps": (velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2) ** 0.5}
+            forward = self._forward_vector(transform)
+            signed_speed = velocity.x * forward[0] + velocity.y * forward[1] + velocity.z * forward[2]
+            acceleration_getter = getattr(actor, "get_acceleration", None)
+            acceleration = acceleration_getter() if callable(acceleration_getter) else None
+            signed_acceleration = (
+                acceleration.x * forward[0] + acceleration.y * forward[1] + acceleration.z * forward[2]
+                if acceleration is not None else None
+            )
+            result[actor_id] = {
+                "x": transform.location.x,
+                "y": -transform.location.y,
+                "z": transform.location.z,
+                "headingDeg": -transform.rotation.yaw,
+                "speedMps": signed_speed,
+                "speedMagnitudeMps": sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2),
+                "accelerationMps2": signed_acceleration,
+                "present": True,
+                "lifecycle": self.actor_lifecycle.get(actor_id, "active"),
+                "appearance": dict(self.applied_appearance.get(actor_id, {})),
+            }
         return result
+
+    def collision_readback(self, frame_index: int, t: float, abort: Callable[[], None] | None = None) -> list[Mapping[str, Any]]:
+        check = abort or (lambda: None)
+        check()
+        boundary = self.last_carla_frame
+        if boundary is None:
+            return []
+        with self.collision_lock:
+            ready = [item for item in self.collision_pending if int(item["carlaFrame"]) <= boundary]
+            self.collision_pending = [item for item in self.collision_pending if int(item["carlaFrame"]) > boundary]
+        result = []
+        for item in sorted(ready, key=lambda value: (value["carlaFrame"], tuple(value["pair"]))):
+            check()
+            source_frame, source_t = self.carla_to_plan_frame.get(int(item["carlaFrame"]), (frame_index, t))
+            normalized = {**item, "frame": source_frame, "t": source_t, "pair": list(item["pair"])}
+            result.append(normalized)
+            self.collision_history.append(normalized)
+        check()
+        return result
+
+    def runtime_evidence(self, abort: Callable[[], None] | None = None) -> Mapping[str, Any]:
+        check = abort or (lambda: None)
+        check()
+        client_version = getattr(self.client, "get_client_version", lambda: "unavailable")()
+        server_version = getattr(self.client, "get_server_version", lambda: "unavailable")()
+        check()
+        return {
+            "schema": "uniscenario.carla-runtime-evidence/v1",
+            "available": True,
+            "executionMode": self.execution_mode,
+            "physicsAuthority": self.execution_mode == "native-physics",
+            "acceptanceEligible": self.execution_mode == "native-physics",
+            "motionApplication": "native-controls" if self.execution_mode == "native-physics" else "diagnostic-teleport-replay",
+            "carlaClientVersion": str(client_version),
+            "carlaServerVersion": str(server_version),
+            "environment": dict(self.environment_evidence),
+            "lifecycle": dict(sorted(self.actor_lifecycle.items())),
+            "appearance": {
+                actor_id: {
+                    "applied": dict(sorted(values.items())),
+                    "verification": dict(sorted(self.appearance_verification.get(actor_id, {}).items())),
+                }
+                for actor_id, values in sorted(self.applied_appearance.items())
+            },
+            "signals": {
+                signal_id: {"authored": indication, "verification": "runtime-readback"}
+                for signal_id, indication in sorted(self.executed_signals.items())
+            },
+            "nativeControls": {
+                actor_id: dict(values) for actor_id, values in sorted(self.last_controls.items())
+            },
+            "collisions": list(self.collision_history),
+            "sensors": {
+                camera_id: {
+                    **{
+                        key: value for key, value in config.items()
+                        if key in {"kind", "attachTo", "mount", "width", "height", "fov", "transform"}
+                    },
+                    "capturedFrames": sum(1 for item in self.sensor_records if item["sensorId"] == camera_id),
+                    "verification": "frame-closed-runtime-readback",
+                }
+                for camera_id, config in sorted(self.sensor_configs.items())
+            },
+        }
 
     def finalize_capture(self, expected_frame_count: int, abort: Callable[[], None] | None = None) -> None:
         check = abort or (lambda: None)
@@ -897,13 +1198,14 @@ class CarlaBackend:
             self._restore_owned_signals()
         except Exception as exc:  # noqa: BLE001 - continue the rest of cleanup.
             errors.append(exc)
-        for actor in [*getattr(self, "sensors", []), *getattr(self, "actors", {}).values()]:
+        for actor in [*getattr(self, "sensors", []), *getattr(self, "collision_sensors", []), *getattr(self, "actors", {}).values()]:
             try:
                 actor.stop() if hasattr(actor, "stop") else None
                 actor.destroy()
             except Exception as exc:  # noqa: BLE001
                 errors.append(exc)
         self.sensors = []
+        self.collision_sensors = []
         self.actors = {}
         self.executed_signals = {}
         self.executed_signal_lamps = {}
@@ -917,4 +1219,3 @@ class CarlaBackend:
                 errors.append(exc)
         if errors:
             raise RuntimeError(f"CARLA cleanup failed in {len(errors)} operation(s)") from errors[0]
-

@@ -147,8 +147,8 @@ describe('map signal controller parsing', () => {
       controllerHeadGroups: [{ controllerId: 'c1', headIds: ['h1'] }],
       timingSource: 'synthetic-default',
     });
-    expect(resolveSiteSignalProgram(bundle, site, plan, { featureId: 'jx', approach: 'ego' })).toBe('signal:h1');
-    expect(createMapContext(bundle, site).signal({ featureId: 'jx', approach: 'ego' })).toEqual({
+    expect(resolveSiteSignalProgram(bundle, site, plan, { featureId: 'jx', approach: 'subject' })).toBe('signal:h1');
+    expect(createMapContext(bundle, site).signal({ featureId: 'jx', approach: 'subject' })).toEqual({
       handle: 'signal:h1',
       phases: ['green', 'yellow', 'red'],
     });
@@ -307,7 +307,7 @@ describe.skipIf(!haveMaps)('real map signal materialization', () => {
       verb: 'set',
       trigger: {
         kind: 'when',
-        condition: { kind: 'signal', signal: { feature: 'jx', approach: 'ego' }, phase: 'green' },
+        condition: { kind: 'signal', signal: { feature: 'jx', approach: 'subject' }, phase: 'green' },
         byLatest: 10,
         ifNever: 'skip',
       },
@@ -377,7 +377,7 @@ describe.skipIf(!haveMaps)('real map signal materialization', () => {
 
     const incompletePlan = buildSiteSignalPlan(bundle, incomplete!);
     expect(resolveSiteSignalProgram(bundle, incomplete!, incompletePlan, {
-      featureId: 'signal-junction', approach: 'ego',
+      featureId: 'signal-junction', approach: 'subject',
     })).toBeDefined();
     expect(resolveSiteSignalProgram(bundle, incomplete!, incompletePlan, {
       featureId: 'signal-junction', approach: 'left',
@@ -386,7 +386,7 @@ describe.skipIf(!haveMaps)('real map signal materialization', () => {
 
     const viablePlan = buildSiteSignalPlan(bundle, viable!);
     expect(resolveSiteSignalProgram(bundle, viable!, viablePlan, {
-      featureId: 'signal-junction', approach: 'ego',
+      featureId: 'signal-junction', approach: 'subject',
     })).toBeDefined();
     expect(resolveSiteSignalProgram(bundle, viable!, viablePlan, {
       featureId: 'signal-junction', approach: 'left',

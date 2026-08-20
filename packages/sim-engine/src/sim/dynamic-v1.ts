@@ -18,6 +18,23 @@ import {
 
 const G = 9.80665;
 export const DYNAMIC_V1_DEFAULT_SUBSTEP_S = 0.005;
+/**
+ * Clothed body sliding on asphalt. Chosen to be recognisably slower than a
+ * braking tyre and faster than ice; it governs how far a struck body travels
+ * after the impulse, not any injury or damage claim.
+ */
+const SLIDING_FRICTION_COEFFICIENT = 0.55;
+/**
+ * The sideways velocity a walker can still catch itself from, in m/s. A contact
+ * that *adds* more than this takes the body down.
+ *
+ * Human balance recovery, not a crash-load threshold: a stumble is recoverable,
+ * being hit by a car at any real speed is not. It is measured against the
+ * velocity the contact added rather than the impulse it carried, so a walker who
+ * strides into a parked car — same order of impulse, but only their own momentum
+ * being arrested — keeps their feet.
+ */
+export const BALANCE_RECOVERY_DELTA_V_MPS = 0.6;
 
 export interface ResolvedVehiclePhysicsProfile {
   readonly kind: ActorKind;
@@ -323,6 +340,14 @@ export class DynamicV1Backend implements MotionBackend {
     return value ? { ...value } : undefined;
   }
 
+  setState(actorId: string, state: VehicleMotionState): void {
+    const entry = this.vehicles.get(actorId);
+    if (!entry) throw new Error(`dynamic-v1 actor is not registered: ${actorId}`);
+    entry.previous = { x: state.x, y: state.y, yawRad: state.yawRad };
+    Object.assign(entry.state, state);
+    entry.commandedAccelerationMps2 = state.longitudinalAccelerationMps2;
+  }
+
   telemetry(actorId: string): PhysicsTelemetrySample | undefined {
     const value = this.vehicles.get(actorId)?.telemetry;
     return value ? { ...value, control: { ...value.control } } : undefined;
@@ -427,7 +452,9 @@ export class DynamicV1Backend implements MotionBackend {
     frictionScale: number,
   ): PhysicsTelemetrySample {
     if (entry.profile.dynamicsModel === 'pedestrian-agent') {
-      return this.integratePedestrian(entry, intent, h, frictionScale);
+      return intent.downed
+        ? this.integrateDowned(entry, h, frictionScale)
+        : this.integratePedestrian(entry, intent, h, frictionScale);
     }
     const s = entry.state;
     const p = entry.profile;
@@ -565,6 +592,50 @@ export class DynamicV1Backend implements MotionBackend {
     const delta = clamp(requested - entry.commandedAccelerationMps2, -p.maxJerkMps3 * h, p.maxJerkMps3 * h);
     entry.commandedAccelerationMps2 += delta;
     return { ...intent, targetAccelerationMps2: entry.commandedAccelerationMps2 };
+  }
+
+  /**
+   * A body that is off its feet. It has no gait and no route: whatever the
+   * contact impulse gave it is carried in the plane and rubbed off by sliding
+   * friction against the ground, in body axes so the solver's lateral component
+   * survives. Yaw is held — a planar state has no roll axis to fall about, so
+   * the pose stays the one it was struck in and renderers lay the model down
+   * from `downedAtS`.
+   */
+  private integrateDowned(
+    entry: VehicleEntry,
+    h: number,
+    frictionScale: number,
+  ): PhysicsTelemetrySample {
+    const s = entry.state;
+    const p = entry.profile;
+    const startSpeed = Math.hypot(s.longitudinalVelocityMps, s.lateralVelocityMps);
+    // Sliding body against asphalt, not a shoe pushing off it.
+    const decel = SLIDING_FRICTION_COEFFICIENT * G * Math.max(0.05, frictionScale);
+    const endSpeed = Math.max(0, startSpeed - decel * h);
+    const scale = startSpeed > 1e-9 ? endSpeed / startSpeed : 0;
+    // Midpoint of the interval, so coming to rest does not overshoot.
+    const averageScale = startSpeed > 1e-9 ? 0.5 * (1 + scale) : 0;
+    const vxBody = s.longitudinalVelocityMps * averageScale;
+    const vyBody = s.lateralVelocityMps * averageScale;
+    const cos = Math.cos(s.yawRad);
+    const sin = Math.sin(s.yawRad);
+    s.x += (vxBody * cos - vyBody * sin) * h;
+    s.y += (vxBody * sin + vyBody * cos) * h;
+    s.longitudinalVelocityMps *= scale;
+    s.lateralVelocityMps *= scale;
+    s.longitudinalAccelerationMps2 = (endSpeed - startSpeed) / h;
+    s.yawRateRadps = 0;
+    s.steerRad = 0;
+    s.wheelAngularSpeedRadps = 0;
+    return {
+      control: { throttle: 0, brake: 0, steer: 0 },
+      longitudinalForceN: s.longitudinalAccelerationMps2 * p.massKg,
+      frontLateralForceN: 0, rearLateralForceN: 0,
+      frontNormalForceN: p.massKg * G, rearNormalForceN: 0,
+      tireUtilization: 0, substeps: 1, substepS: h,
+      collisionImpulseNs: 0, collisionCount: 0,
+    };
   }
 
   /** Bounded social-force-style point agent for walkers and animals. It owns

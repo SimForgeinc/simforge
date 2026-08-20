@@ -93,6 +93,7 @@ describe('ActorSensorsPanel', () => {
       present: true,
       static: false,
       motionDirection: 1,
+      downProgress: 0,
     };
     const record = actorRecordForRole(role, sampled);
     expect(record).toMatchObject({ id: role.id, x: 42, z: -17, headingRad: 0.5, sensors: [] });

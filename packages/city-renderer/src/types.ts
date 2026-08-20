@@ -64,6 +64,10 @@ export interface ManifestScene {
   coordinateSystem: string;
 }
 
+export interface StaticSemanticsReference {
+  file: string;
+}
+
 export interface CityManifest {
   version: string;
   scene: ManifestScene;
@@ -77,6 +81,8 @@ export interface CityManifest {
     method?: string;
   };
   actorCounts?: Record<string, number>;
+  /** Optional static semantic metadata for browser sensor passes. */
+  staticSemantics?: StaticSemanticsReference;
 }
 
 /**
@@ -210,6 +216,8 @@ export interface CityViewerStats {
   queued: number;
   /** Assets parsed and waiting on the paced GPU upload. */
   uploading: number;
+  /** Live byte-level network telemetry for the current map or preset load. */
+  downloads: import('./download-progress').AssetDownloadStats;
   jsHeapMB: number | null;
   cameraMode: 'orbit' | 'fly';
   /** True when GPU rendering and scene streaming are bypassed but integrations still tick. */
@@ -224,6 +232,8 @@ export interface CityViewerStats {
   uiTicksPerSecond: number;
   /** Runtime semantic material classification and shader-application telemetry. */
   surfaceMaterials: import('./surface-materials').SurfaceMaterialReport;
+  /** Runtime snow-overlay residency and coverage telemetry. */
+  snowCover: import('./snow-cover').SnowCoverStats;
   assetVariants: {
     manifest: boolean;
     loaded: Record<'original' | 'geometry-only' | 'roads-only' | 'ktx2', number>;

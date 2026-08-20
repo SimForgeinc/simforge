@@ -342,23 +342,23 @@ describe('all-actors playback camera', () => {
     }
   });
 
-  it('selects a trailing camera only for exactly one explicitly designated ego', () => {
+  it('selects a trailing camera for the first sensor-bearing actor', () => {
     const base = cameraBundle({ subject: 'driver', pair: ['driver', 'pedestrian'], tracks: { driver: [[0, 0], [20, 0]], pedestrian: [[4, 2], [8, 2]] } });
-    const zero = { ...base, actors: base.actors.map((actor) => ({ ...actor, tags: [] })) };
-    const one = { ...base, actors: base.actors.map((actor) => ({ ...actor, tags: actor.id === 'driver' ? ['role:ego'] : [] })) };
-    const multiple = { ...base, actors: base.actors.map((actor) => ({ ...actor, tags: ['role:ego'] })) };
+    const one = withSensorActors(base, ['driver']);
+    const multiple = withSensorActors(base, ['pedestrian', 'driver']);
 
     expect(galleryCameraChoice(one)).toEqual({
-      policy: 'ego-chase', selectionId: 'ego-chase:driver', label: 'Trailing ego · driver',
-      reason: 'Following the designated ego actor “driver”.', egoActorId: 'driver',
+      policy: 'subject-chase', selectionId: 'subject-chase:driver', label: 'Trailing camera vehicle · driver',
+      reason: 'Following the sensor-bearing camera vehicle “driver”.', subjectActorId: 'driver',
     });
-    expect(galleryCameraChoice(zero)).toMatchObject({ policy: 'all-actors', egoActorId: null });
-    expect(galleryCameraChoice(zero).reason).toContain('no designated ego');
-    expect(galleryCameraChoice(multiple)).toMatchObject({ policy: 'all-actors', egoActorId: null });
-    expect(galleryCameraChoice(multiple).reason).toContain('2 actors are designated as ego');
+    expect(galleryCameraChoice(base)).toMatchObject({ policy: 'all-actors', subjectActorId: null });
+    expect(galleryCameraChoice(base).reason).toContain('no sensor-bearing camera vehicle');
+    expect(galleryCameraChoice(multiple)).toMatchObject({
+      policy: 'subject-chase', subjectActorId: 'driver',
+    });
   });
 
-  it('tracks the single ego from behind without affecting the verified time envelope', () => {
+  it('tracks the sensor-derived subject from behind without affecting the verified time envelope', () => {
     const originalDocument = globalThis.document;
     Object.defineProperty(globalThis, 'document', {
       configurable: true,
@@ -370,7 +370,7 @@ describe('all-actors playback camera', () => {
     const now = vi.spyOn(performance, 'now').mockReturnValue(0);
     const views: Array<{ position: Vector3; target: Vector3 }> = [];
     const base = cameraBundle({ subject: 'driver', pair: ['driver', 'pedestrian'], tracks: { driver: [[0, 0], [10, 0], [20, 0]], pedestrian: [[4, 2], [8, 2], [12, 2]] } });
-    const bundle = { ...base, actors: base.actors.map((actor) => ({ ...actor, tags: actor.id === 'driver' ? ['role:ego'] : [] })) };
+    const bundle = withSensorActors(base, ['driver']);
     const controller = new PlaybackController({
       viewer: {
         camera: new PerspectiveCamera(55, 16 / 9, 0.1, 2000), scene: new Scene(),
@@ -379,15 +379,15 @@ describe('all-actors playback camera', () => {
           setView: (position: Vector3, target: Vector3) => views.push({ position: position.clone(), target: target.clone() }),
         },
       } as never,
-      bundle, sampleHeight: () => 0, cameraPolicy: 'ego-chase', loop: false,
+      bundle, sampleHeight: () => 0, cameraPolicy: 'subject-chase', loop: false,
     });
     try {
-      expect(controller.state).toMatchObject({ cameraPolicy: 'ego-chase', cameraSelectionId: 'ego-chase:driver' });
+      expect(controller.state).toMatchObject({ cameraPolicy: 'subject-chase', cameraSelectionId: 'subject-chase:driver' });
       expect(views.at(-1)!.position.x).toBeLessThan(0);
       expect(views.at(-1)!.target.x).toBeGreaterThan(0);
       controller.play();
       (nextFrame as FrameRequestCallback | null)!(20_250);
-      expect(controller.state).toMatchObject({ time: 20, playing: false, cameraPolicy: 'ego-chase' });
+      expect(controller.state).toMatchObject({ time: 20, playing: false, cameraPolicy: 'subject-chase' });
       expect(views.at(-1)!.position.x).toBeLessThan(20);
       expect(views.at(-1)!.target.x).toBeGreaterThan(20);
     } finally {
@@ -396,17 +396,16 @@ describe('all-actors playback camera', () => {
     }
   });
 
-  it('is identical for zero, one, or multiple ego designations', () => {
+  it('keeps overview framing independent of sensor ownership', () => {
     const base = cameraBundle({ subject: 'driver', pair: ['driver', 'pedestrian'], tracks: { driver: [[0, 0], [20, 0]], pedestrian: [[4, 2], [8, 2]] } });
-    const one = { ...base, actors: base.actors.map((actor) => ({ ...actor, tags: actor.id === 'driver' ? ['role:ego'] : [] })) };
-    const zero = { ...base, actors: base.actors.map((actor) => ({ ...actor, tags: [] })) };
-    const multiple = { ...one, actors: one.actors.map((actor) => ({ ...actor, tags: ['role:ego'] })) };
+    const one = withSensorActors(base, ['driver']);
+    const multiple = withSensorActors(base, ['driver', 'pedestrian']);
     const view = (bundle: PlaybackBundle) => allActorsCameraView(buildAllActorsCameraPlan(bundle)!, 0);
-    expect(view(zero)).toEqual(view(one));
+    expect(view(base)).toEqual(view(one));
     expect(view(multiple)).toEqual(view(one));
   });
 
-  it('plays a zero-ego bundle to the exact 20-second envelope with All actors overview', () => {
+  it('plays a sensor-free bundle to the exact 20-second envelope with All actors overview', () => {
     const originalDocument = globalThis.document;
     Object.defineProperty(globalThis, 'document', {
       configurable: true,
@@ -455,9 +454,9 @@ describe('all-actors playback camera', () => {
 });
 
 describe('editor free-camera playback', () => {
-  it.each(['zero', 'multiple'] as const)(
-    'never mutates the viewport through start, pause/resume, completion, Stop/Escape disposal with %s ego tags',
-    (egoMode) => {
+  it.each(['none', 'multiple'] as const)(
+    'never mutates the viewport through start, pause/resume, completion, Stop/Escape disposal with %s sensor owners',
+    (sensorMode) => {
       const originalDocument = globalThis.document;
       Object.defineProperty(globalThis, 'document', {
         configurable: true,
@@ -485,13 +484,9 @@ describe('editor free-camera playback', () => {
         pair: ['driver', 'pedestrian'],
         tracks: { driver: [[0, 0], [10, 0], [20, 0]], pedestrian: [[4, 2], [8, 2], [12, 2]] },
       });
-      const bundle: PlaybackBundle = {
-        ...base,
-        actors: base.actors.map((actor) => ({
-          ...actor,
-          tags: egoMode === 'multiple' ? ['role:ego'] : [],
-        })),
-      };
+      const bundle = sensorMode === 'multiple'
+        ? withSensorActors(base, ['driver', 'pedestrian'])
+        : base;
       const controller = new PlaybackController({
         viewer: {
           camera,
@@ -555,7 +550,12 @@ function cameraBundle(options: {
       dims: { l: 4.5, w: 1.8, h: 1.5 }, initial: { x: 0, z: 0, headingRad: 0 },
     })),
     props: [], signals: [], source: { instanceName: 'instance', traceName: 'trace' },
-    instance: { kind: 'scenario-instance', version: 1, manifest: { instanceId: 'camera-test', inputHash: 'hash', replayKey: { mapId: 'test' }, actors: actorIds.map((id) => ({ id })) }, input: { mapId: 'test' } as never },
+    instance: {
+      kind: 'scenario-instance',
+      version: 1,
+      manifest: { instanceId: 'camera-test', inputHash: 'hash', replayKey: { mapId: 'test' }, actors: actorIds.map((id) => ({ id })) },
+      input: { mapId: 'test', actors: actorIds.map((id) => ({ id, sensors: [] })) } as never,
+    },
     trace: {
       header: { metricSubject: options.subject } as never,
       ticks: {
@@ -577,4 +577,21 @@ function cameraBundle(options: {
       },
     } as never,
   } as PlaybackBundle;
+}
+
+function withSensorActors(bundle: PlaybackBundle, actorIds: readonly string[]): PlaybackBundle {
+  const owners = new Set(actorIds);
+  return {
+    ...bundle,
+    instance: {
+      ...bundle.instance,
+      input: {
+        ...bundle.instance.input,
+        actors: bundle.instance.input.actors.map((actor) => ({
+          ...actor,
+          ...(owners.has(actor.id) ? { sensors: [{} as never] } : { sensors: [] }),
+        })),
+      },
+    },
+  };
 }

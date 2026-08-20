@@ -93,7 +93,7 @@ describe('verified materialization recovery identity', () => {
     expect(simulationSourceHash(behaviorExtension)).not.toBe(simulationSourceHash(baseline));
 
     const documentBehaviorExtension = structuredClone(baseline);
-    documentBehaviorExtension.extensions = { 'studio.variation.signalApproaches': { approach: 'ego' } };
+    documentBehaviorExtension.extensions = { 'studio.variation.signalApproaches': { approach: 'subject' } };
     expect(simulationSourceHash(documentBehaviorExtension)).not.toBe(simulationSourceHash(baseline));
   });
 });

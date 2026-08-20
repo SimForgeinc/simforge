@@ -19,8 +19,10 @@ import type { CameraView } from './camera-controls';
 import type { CameraControlPreferences } from './camera-drag';
 import { cameraEnvelopeFromBounds, constrainCameraToEnvelope, initialEditorCameraPose } from './camera-envelope';
 import { FrameStats, jsHeapMB } from './frame-stats';
+import { AssetDownloadTracker, readResponseBufferWithProgress } from './download-progress';
 import {
   collectResources,
+  disposeResources,
   estimateResourceBytes,
   getGLTFLoader,
 } from './gltf';
@@ -30,9 +32,17 @@ import { isLowFidelityHiddenHelper, keepInRoadsOnly } from './roads-only';
 import { boundsToBox3, normalizeLods, resolveUrl } from './manifest';
 import { patchTree, type ShadowPatchOptions } from './materials';
 import { SurfaceMaterialRegistry, type SurfaceMaterialProfile } from './surface-materials';
+import { SnowCoverController } from './snow-cover';
+import { WeatherController, type CityWeatherAppearance } from './weather';
 import { UltraLowMaterialCache, type UltraLowLayer } from './ultra-low-materials';
 import { ShadowAtlas } from './shadow-atlas';
-import { allowsSourceAssetFallback, isCityAssetVariantManifest, selectAssetVariant, type CityAssetVariantManifest } from './asset-variants';
+import { allowsSourceAssetFallback, isCityAssetVariantManifest, resolveSnowCoverVariant, selectAssetVariant, type CityAssetVariantManifest } from './asset-variants';
+import {
+  applyStaticSemantics,
+  parseStaticSemantics,
+  staticSemanticsCapabilities,
+  type StaticSemantics,
+} from './static-semantics';
 import {
   TileStreamLayer,
   boxOf,
@@ -120,6 +130,50 @@ const _rayOrigin = new Vector3();
 const _down = new Vector3(0, -1, 0);
 const _cameraPos = new Vector3();
 
+export function isRendererOwnedVisualRoot(object: Object3D): boolean {
+  const role = object.userData.uniscenariosRole;
+  return role === 'city-weather' || role === 'city-snow-cover';
+}
+
+export function snowStreamingContribution(stats: import('./snow-cover').SnowCoverStats): {
+  loading: number;
+  queued: number;
+} {
+  return {
+    loading: stats.pendingDerivatives,
+    queued: stats.queuedDerivatives + stats.queuedFallbacks,
+  };
+}
+
+export function admitSnowWithinBudget(
+  bytes: number,
+  byteBudget: number,
+  admit: (bytes: number) => boolean,
+): boolean {
+  return Number.isFinite(bytes) && bytes > 0 && bytes <= byteBudget
+    ? admit(bytes)
+    : false;
+}
+
+/** Reduced renderer modes keep static snow while shedding animated/reflective weather cost. */
+export function weatherAppearanceForFidelity(
+  appearance: CityWeatherAppearance,
+  lowFidelity: boolean,
+): CityWeatherAppearance {
+  if (!lowFidelity) return appearance;
+  return {
+    ...appearance,
+    clouds: null,
+    fog: appearance.fog
+      ? { ...appearance.fog, haze: Math.min(appearance.fog.haze, 0.12) }
+      : null,
+    precipitation: appearance.precipitation
+      ? { ...appearance.precipitation, budget: 'off' }
+      : null,
+    surface: { ...appearance.surface, wetness: 0 },
+  };
+}
+
 function smoothStep(value: number): number {
   const clamped = Math.max(0, Math.min(1, value));
   return clamped * clamped * (3 - 2 * clamped);
@@ -171,6 +225,7 @@ export class CityViewer {
   private readonly canvas: HTMLCanvasElement;
   private readonly options: Required<CityViewerOptions>;
   private readonly frameStats = new FrameStats(150);
+  private readonly downloadTracker = new AssetDownloadTracker();
   private readonly phaseStats = {
     controls: new FrameStats(150),
     streaming: new FrameStats(150),
@@ -185,6 +240,8 @@ export class CityViewer {
 
   private manifest: CityManifest | null = null;
   private variantManifest: CityAssetVariantManifest | null = null;
+  private staticSemantics: StaticSemantics | null = null;
+  private capabilities: readonly string[] = [];
   private assetBase = '';
   private atlas: ShadowAtlas | null = null;
   private cityLayer: TileStreamLayer | null = null;
@@ -231,6 +288,9 @@ export class CityViewer {
   private savedBackground: Scene['background'] = null;
   private ultraRefreshCounter = 0;
   private readonly surfaceMaterials = new SurfaceMaterialRegistry();
+  private readonly snowCover: SnowCoverController;
+  private readonly weather: WeatherController;
+  private weatherAppearance: CityWeatherAppearance | null = null;
   private readonly variantLoads = { original: 0, 'geometry-only': 0, 'roads-only': 0, ktx2: 0 };
   private variantFallbacks = 0;
   private assetVariantReloadGeneration = 0;
@@ -292,6 +352,35 @@ export class CityViewer {
 
     this.camera = new PerspectiveCamera(55, this.aspect(), 0.5, 6000);
     this.camera.position.set(0, 200, 400);
+    this.snowCover = new SnowCoverController(this.scene, {
+      admit: (bytes) => admitSnowWithinBudget(
+        bytes,
+        this.options.byteBudget,
+        (admittedBytes) => this.memory.admit(admittedBytes, -Infinity),
+      ),
+      maxConcurrentDerivatives: 2,
+      loadDerivative: async (derivative, signal) => {
+        const loader = getGLTFLoader(this.renderer);
+        const buffer = await this.fetchBuffer(resolveUrl(this.assetBase, derivative.file), signal, derivative.bytes);
+        const gltf = await loader.parseAsync(buffer, '');
+        const root = gltf.scene;
+        this.prepareTree(root);
+        const resources = collectResources(root);
+        return {
+          root,
+          bytes: estimateResourceBytes(resources) || derivative.bytes,
+          dispose: () => disposeResources(resources),
+        };
+      },
+    });
+    this.weather = new WeatherController(
+      this.scene,
+      this.camera,
+      this.renderer,
+      (positions) => positions.map((position) => this.manifest
+        ? (this.cameraGroundIndex?.sample(position.x, position.z) ?? this.localGroundY)
+        : null),
+    );
     this.controls = new CameraRig(this.camera, canvas);
     this.controls.setPoseConstraint((camera, target) => this.constrainCameraPose(camera, target));
 
@@ -334,6 +423,7 @@ export class CityViewer {
       if (this.disposed) return;
       if (this.mapLoaded) this.releaseMapResources();
       this.mapLoaded = true;
+      this.downloadTracker.reset();
       this.mapLoadActive = true;
       try {
         await this.loadMapInner(manifestUrl);
@@ -349,6 +439,10 @@ export class CityViewer {
     return load;
   }
 
+  getCapabilities(): readonly string[] {
+    return this.capabilities;
+  }
+
   private async loadMapInner(manifestUrl: string): Promise<void> {
     const url = this.options.baseUrl ? resolveUrl(this.options.baseUrl, manifestUrl) : manifestUrl;
     this.assetBase = url.replace(/[^/]*$/, '');
@@ -358,6 +452,9 @@ export class CityViewer {
     })) as CityManifest;
     if (this.disposed) return;
     this.manifest = manifest;
+    this.staticSemantics = await this.loadStaticSemantics(manifest);
+    this.capabilities = staticSemanticsCapabilities(this.staticSemantics);
+    if (this.disposed) return;
     this.variantManifest = await this.loadVariantManifest();
     if (this.disposed) return;
 
@@ -375,6 +472,7 @@ export class CityViewer {
     this.scene.add(this.sun, this.sun.target);
 
     this.atlas = new ShadowAtlas(manifest, this.options.shadowAtlasCellSize);
+    this.snowCover.setShadowOptions(this.shadowOptions(this.sceneBox, 20, 40));
 
     const visualResourcesPromise = this.ultraLowFidelity ? Promise.resolve() : this.ensureVisualResources();
     if (this.sun) this.sun.visible = !this.ultraLowFidelity;
@@ -392,6 +490,7 @@ export class CityViewer {
     if (!this.roadsOnlyFidelity && this.options.vegetationMaxDistance > 0) this.createVegetationLayer(manifest);
 
     await visualResourcesPromise;
+    this.refreshWeatherAppearance();
   }
 
   private ensureVisualResources(): Promise<void> {
@@ -540,10 +639,14 @@ export class CityViewer {
     };
   }
 
-  private async fetchBuffer(url: string, signal: AbortSignal): Promise<ArrayBuffer> {
+  private async fetchBuffer(
+    url: string,
+    signal: AbortSignal,
+    expectedBytes?: number | null,
+  ): Promise<ArrayBuffer> {
     const res = await fetch(url, { signal });
     if (!res.ok) throw new Error(`${res.status} ${url}`);
-    return res.arrayBuffer();
+    return readResponseBufferWithProgress(res, this.downloadTracker, expectedBytes);
   }
 
   private async loadVariantManifest(): Promise<CityAssetVariantManifest | null> {
@@ -559,8 +662,27 @@ export class CityViewer {
     }
   }
 
+  private async loadStaticSemantics(manifest: CityManifest): Promise<StaticSemantics | null> {
+    const reference = manifest.staticSemantics;
+    if (!reference) return null;
+    try {
+      if (typeof reference.file !== 'string' || reference.file.length === 0) {
+        throw new Error('Static semantics manifest reference requires a non-empty file');
+      }
+      const response = await fetch(resolveUrl(this.assetBase, reference.file), {
+        signal: this.abort.signal,
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return parseStaticSemantics(await response.json());
+    } catch (error) {
+      if ((error as { name?: string } | null)?.name === 'AbortError') throw error;
+      console.warn('[CityViewer] Static semantics unavailable:', error);
+      return null;
+    }
+  }
+
   /** Parse an optimized local derivative, then retry source unless Ultra Low forbids textures. */
-  private async parseAsset(sourceFile: string, signal: AbortSignal) {
+  private async parseAsset(sourceFile: string, signal: AbortSignal, sourceBytes?: number | null) {
     const declaredKtxPath = this.variantManifest?.variants.ktx2?.runtime?.ktx2TranscoderPath ?? '';
     const ktx2TranscoderPath = this.options.ktx2TranscoderPath
       || (declaredKtxPath ? resolveUrl(this.assetBase, declaredKtxPath) : '');
@@ -569,6 +691,9 @@ export class CityViewer {
       roadsOnly: this.roadsOnlyFidelity,
       ktx2Ready: Boolean(ktx2TranscoderPath),
     });
+    const selectedBytes = selected.variant === 'original'
+      ? sourceBytes
+      : this.variantManifest?.variants[selected.variant]?.files[sourceFile]?.bytes;
     const requiredVariant = this.roadsOnlyFidelity ? 'roads-only' : this.ultraLowFidelity ? 'geometry-only' : null;
     if (requiredVariant && selected.variant !== requiredVariant) {
       this.canvas.dataset.assetVariant = `${requiredVariant}-unavailable`;
@@ -576,7 +701,11 @@ export class CityViewer {
     }
     const loader = getGLTFLoader(this.renderer, ktx2TranscoderPath);
     try {
-      const buffer = await this.fetchBuffer(resolveUrl(this.assetBase, selected.file), signal);
+      const buffer = await this.fetchBuffer(
+        resolveUrl(this.assetBase, selected.file),
+        signal,
+        selectedBytes,
+      );
       const parsed = await loader.parseAsync(buffer, '');
       this.variantLoads[selected.variant]++;
       this.canvas.dataset.assetVariant = selected.variant;
@@ -594,7 +723,7 @@ export class CityViewer {
       if (!allowsSourceAssetFallback(selected.variant, this.ultraLowFidelity)
         || (error as { name?: string } | null)?.name === 'AbortError') throw error;
       this.variantFallbacks++;
-      const source = await this.fetchBuffer(resolveUrl(this.assetBase, sourceFile), signal);
+      const source = await this.fetchBuffer(resolveUrl(this.assetBase, sourceFile), signal, sourceBytes);
       const parsed = await loader.parseAsync(source, '');
       this.variantLoads.original++;
       this.canvas.dataset.assetVariant = 'original-fallback';
@@ -607,12 +736,13 @@ export class CityViewer {
     file: string,
     signal: AbortSignal,
     variant: 'geometry-only' | 'roads-only' | 'ktx2',
+    expectedBytes?: number | null,
   ) {
     const declaredKtxPath = this.variantManifest?.variants.ktx2?.runtime?.ktx2TranscoderPath ?? '';
     const ktx2TranscoderPath = this.options.ktx2TranscoderPath
       || (declaredKtxPath ? resolveUrl(this.assetBase, declaredKtxPath) : '');
     const loader = getGLTFLoader(this.renderer, ktx2TranscoderPath);
-    const buffer = await this.fetchBuffer(resolveUrl(this.assetBase, file), signal);
+    const buffer = await this.fetchBuffer(resolveUrl(this.assetBase, file), signal, expectedBytes);
     const parsed = await loader.parseAsync(buffer, '');
     this.variantLoads[variant]++;
     this.canvas.dataset.assetVariant = variant;
@@ -693,9 +823,10 @@ export class CityViewer {
       maxDesiredIndex: () => this.ultraLowFidelity ? 0 : progressiveRoad.length - 1,
       build: async (tileDef, lod, signal) => {
         const gltf = lod.level === -1 && !this.ultraLowFidelity
-          ? await this.parseResolvedAsset(lod.file, signal, 'geometry-only')
-          : await this.parseAsset(road.file, signal);
+          ? await this.parseResolvedAsset(lod.file, signal, 'geometry-only', lod.fileSize)
+          : await this.parseAsset(road.file, signal, road.fileSize);
         const root = gltf.scene;
+        applyStaticSemantics(root, this.staticSemantics);
         root.name = tileDef.id;
         this.prepareTree(root);
         const box = new Box3().setFromObject(root);
@@ -706,12 +837,19 @@ export class CityViewer {
         const resources = collectResources(root);
         if (this.ultraLowFidelity) this.simplifyTree(root, 'road');
         if (this.roadsOnlyFidelity) this.applyRoadsOnlyVisibility(root);
+        this.snowCover.registerTree(
+          root,
+          'road',
+          resolveSnowCoverVariant(this.variantManifest, road.file),
+          'road',
+        );
         return {
           object: root,
           resources,
           bytes: estimateResourceBytes(resources),
           pendingTextures: this.ultraLowFidelity ? [] : [...resources.textures],
           dispose: () => {
+            this.snowCover.unregisterTree(root);
             this.surfaceMaterials.unregisterTree(root);
             this.releaseSimplifiedTree(root);
           },
@@ -737,8 +875,9 @@ export class CityViewer {
       pinCoarsest: true,
       want: () => !this.roadsOnlyFidelity,
       build: async (def, lod, signal) => {
-        const gltf = await this.parseAsset(lod.file, signal);
+        const gltf = await this.parseAsset(lod.file, signal, lod.fileSize);
         const root = gltf.scene;
+        applyStaticSemantics(root, this.staticSemantics);
         root.name = `${def.id}.lod${lod.level}`;
         this.prepareTree(root);
         const box = new Box3().setFromObject(root);
@@ -746,12 +885,19 @@ export class CityViewer {
         this.surfaceMaterials.registerTree(root, 'city');
         const resources = collectResources(root);
         if (this.ultraLowFidelity) this.simplifyTree(root, 'city');
+        this.snowCover.registerTree(
+          root,
+          'city',
+          resolveSnowCoverVariant(this.variantManifest, lod.file),
+          `city:${def.id}`,
+        );
         return {
           object: root,
           resources,
           bytes: estimateResourceBytes(resources),
           pendingTextures: this.ultraLowFidelity ? [] : [...resources.textures],
           dispose: () => {
+            this.snowCover.unregisterTree(root);
             this.surfaceMaterials.unregisterTree(root);
             this.releaseSimplifiedTree(root);
           },
@@ -802,9 +948,10 @@ export class CityViewer {
       build: async (def, lod, signal) => {
         const data = this.vegetationData.get(def.id);
         if (!data) throw new Error(`no instance data for ${def.id}`);
-        const gltf = await this.parseAsset(lod.file, signal);
+        const gltf = await this.parseAsset(lod.file, signal, lod.fileSize);
         this.prepareTree(gltf.scene);
         const built = buildVegetation(gltf.scene, data, VEG_BAND_KEEP_ROW);
+        applyStaticSemantics(built.object, this.staticSemantics);
         built.object.name = `${def.id}.lod${lod.level}`;
         built.object.userData.prototypes = built.prototypes;
         if (this.visualResourcesStarted && !this.ultraLowFidelity) patchTree(built.object, this.shadowOptions(def.box, 6, 14));
@@ -862,7 +1009,8 @@ export class CityViewer {
 
     if (this.ultraLowFidelity && ++this.ultraRefreshCounter % 60 === 0) {
       for (const child of this.scene.children) {
-        if (child !== this.cityGroup && child !== this.roadGroup && child !== this.vegetationGroup) {
+        if (child !== this.cityGroup && child !== this.roadGroup && child !== this.vegetationGroup
+          && !isRendererOwnedVisualRoot(child)) {
           this.simplifyTree(child, 'actor');
         }
       }
@@ -887,6 +1035,7 @@ export class CityViewer {
       this.phaseStats.streaming.push(0);
     }
     if (!this.renderingSuspended) this.vegLayer?.tickDisplayed();
+    if (!this.renderingSuspended) this.snowCover.tick();
 
     // Adaptive upload backoff: a 2048px texture costs ~30 ms of GPU time on
     // this class of machine, so after a frame that already ran long we skip the
@@ -984,7 +1133,8 @@ export class CityViewer {
     return (
       (this.cityLayer?.residentBytes ?? 0) +
       (this.vegLayer?.residentBytes ?? 0) +
-      (this.roadLayer?.residentBytes ?? 0)
+      (this.roadLayer?.residentBytes ?? 0) +
+      this.snowCover.stats().residentBytes
     );
   }
 
@@ -993,7 +1143,8 @@ export class CityViewer {
       this.residentBytes() +
       (this.cityLayer?.pendingBytes ?? 0) +
       (this.vegLayer?.pendingBytes ?? 0) +
-      (this.roadLayer?.pendingBytes ?? 0)
+      (this.roadLayer?.pendingBytes ?? 0) +
+      this.snowCover.stats().pendingBytes
     );
   }
 
@@ -1003,6 +1154,8 @@ export class CityViewer {
     const city = this.cityLayer?.stats();
     const veg = this.vegLayer?.stats();
     const road = this.roadLayer?.stats();
+    const snow = this.snowCover.stats();
+    const snowStreaming = snowStreamingContribution(snow);
     const sum = (pick: (s: NonNullable<typeof city>) => number): number =>
       (city ? pick(city) : 0) + (veg ? pick(veg) : 0) + (road ? pick(road) : 0);
     return {
@@ -1022,9 +1175,11 @@ export class CityViewer {
       residentBytes: this.residentBytes(),
       pendingBytes: this.totalBytes() - this.residentBytes(),
       byteBudget: this.options.byteBudget,
-      loading: sum((s) => s.loading) + Number(this.mapLoadActive) + this.presetTransitions + this.auxiliaryLoads,
-      queued: sum((s) => s.queued),
+      loading: sum((s) => s.loading) + Number(this.mapLoadActive) + this.presetTransitions
+        + this.auxiliaryLoads + snowStreaming.loading,
+      queued: sum((s) => s.queued) + snowStreaming.queued,
       uploading: sum((s) => s.uploading),
+      downloads: this.downloadTracker.snapshot(),
       jsHeapMB: jsHeapMB(),
       cameraMode: this.controls.mode,
       renderingSuspended: this.renderingSuspended,
@@ -1034,6 +1189,7 @@ export class CityViewer {
       streamingError: this.streamingError,
       uiTicksPerSecond: this.fps,
       surfaceMaterials: this.surfaceMaterials.report(),
+      snowCover: snow,
       assetVariants: { manifest: Boolean(this.variantManifest), loaded: { ...this.variantLoads }, fallbacks: this.variantFallbacks },
     };
   }
@@ -1124,6 +1280,13 @@ export class CityViewer {
     const ultraChanged = enabled !== this.ultraLowFidelity;
     const roadsChanged = roadsOnly !== this.roadsOnlyFidelity;
     if (!ultraChanged && !roadsChanged) return;
+    // Restore the unweathered scene before swapping renderer-owned materials or
+    // environment resources. The desired appearance is reapplied atomically at
+    // the end of the transition.
+    this.weather.clear();
+    if (this.weatherAppearance) {
+      this.surfaceMaterials.setWeatherAppearance({ wetness: 0, snowCoverage: 0 });
+    }
     this.ultraLowFidelity = enabled;
     this.roadsOnlyFidelity = roadsOnly;
     this.streamingError = null;
@@ -1132,7 +1295,8 @@ export class CityViewer {
       this.simplifyTree(this.roadGroup, 'road');
       // Actors and editor helpers are scene children outside the map groups.
       for (const child of this.scene.children) {
-        if (child !== this.cityGroup && child !== this.roadGroup && child !== this.vegetationGroup) {
+        if (child !== this.cityGroup && child !== this.roadGroup && child !== this.vegetationGroup
+          && !isRendererOwnedVisualRoot(child)) {
           this.simplifyTree(child, 'actor');
         }
       }
@@ -1152,6 +1316,7 @@ export class CityViewer {
       if (this.sun) this.sun.visible = true;
       if (!this.visualResourcesStarted) {
         void this.ensureVisualResources().then(() => {
+          this.refreshWeatherAppearance();
           if (!this.disposed && !this.ultraLowFidelity && this.variantManifest?.variants['geometry-only']) {
             void this.runPresetTransition(() => this.reloadAssetVariant());
           }
@@ -1167,6 +1332,7 @@ export class CityViewer {
     } else if (roadsChanged) {
       void this.runPresetTransition(() => this.reloadRoadsOnlyLayers());
     }
+    this.refreshWeatherAppearance();
   }
 
   private async runPresetTransition(operation: () => Promise<void>): Promise<void> {
@@ -1272,6 +1438,53 @@ export class CityViewer {
     return this.surfaceMaterials.report();
   }
 
+  /**
+   * Apply one visual weather appearance to the complete streamed world.
+   *
+   * The controller owns fog, haze and precipitation while the surface registry
+   * carries wetness and snow onto every tile that streams in later. Passing
+   * `null` restores the exact pre-weather scene state.
+   */
+  setWeatherAppearance(appearance: CityWeatherAppearance | null): void {
+    this.weatherAppearance = appearance === null ? null : {
+      ...appearance,
+      fog: appearance.fog ? { ...appearance.fog } : null,
+      precipitation: appearance.precipitation ? { ...appearance.precipitation } : null,
+      surface: { ...appearance.surface },
+    };
+    this.refreshWeatherAppearance();
+  }
+
+  /**
+   * Pin animated weather to an explicit scenario time during fixed-step capture.
+   * Pass `null` to resume interactive wall-clock animation.
+   */
+  setWeatherTimeSeconds(timeSeconds: number | null): void {
+    this.weather.setTimeSeconds(timeSeconds);
+  }
+
+  private refreshWeatherAppearance(): void {
+    this.weather.clear();
+    const appearance = this.weatherAppearance;
+    if (!appearance) {
+      this.surfaceMaterials.setWeatherAppearance({ wetness: 0, snowCoverage: 0 });
+      this.snowCover.setAppearance({ coverage: 0 });
+      return;
+    }
+    const lowFidelity = this.ultraLowFidelity || this.roadsOnlyFidelity;
+    // Physical snow remains part of the authored scene in low modes; staged
+    // admission keeps it within the byte budget while wet film and animated
+    // atmosphere stay disabled.
+    const effective = weatherAppearanceForFidelity(appearance, lowFidelity);
+    this.surfaceMaterials.setWeatherAppearance(effective.surface);
+    this.snowCover.setAppearance({
+      coverage: effective.surface.snowCoverage,
+      depthM: effective.surface.snowDepthM,
+      compaction: effective.surface.snowCompaction,
+    });
+    this.weather.apply(effective, this.sun);
+  }
+
   private simplifyTree(root: Object3D, layer: UltraLowLayer): void {
     if (layer === 'actor') {
       root.traverse((object) => {
@@ -1300,6 +1513,7 @@ export class CityViewer {
 
   /** Apply authoring quality without rebuilding the renderer or reloading the map. */
   setLiveQuality(next: Partial<CityViewerLiveQuality>): CityViewerLiveQuality {
+    if (this.weatherAppearance) this.weather.clear();
     const finite = (value: number | undefined, fallback: number, min: number, max: number) =>
       value === undefined || !Number.isFinite(value)
         ? fallback
@@ -1343,11 +1557,13 @@ export class CityViewer {
       this.roadLayer?.clearBudgetBlocks();
       this.cityLayer?.clearBudgetBlocks();
       this.vegLayer?.clearBudgetBlocks();
+      if (this.options.byteBudget > previousByteBudget) this.snowCover.retryRejected();
     }
     if (previousVegetationDistance <= 0 && this.options.vegetationMaxDistance > 0) {
       void this.ensureVegetationLayer();
     }
     this.renderer.toneMappingExposure = this.options.exposure;
+    if (this.weatherAppearance) this.refreshWeatherAppearance();
     this.resize();
     this.camera.getWorldPosition(_cameraPos);
     this.updateStreaming(_cameraPos);
@@ -1373,8 +1589,10 @@ export class CityViewer {
   }
 
   setExposure(exposure: number): void {
+    if (this.weatherAppearance) this.weather.clear();
     this.options.exposure = exposure;
     this.renderer.toneMappingExposure = exposure;
+    if (this.weatherAppearance) this.refreshWeatherAppearance();
   }
 
   /**
@@ -1550,6 +1768,8 @@ export class CityViewer {
     );
     for (const layer of layers) layer.dispose();
     this.atlas?.dispose();
+    this.weather.dispose();
+    this.snowCover.dispose();
     this.disposeEnvironment?.();
     this.vegetationData.clear();
     this.surfaceMaterials.dispose();
@@ -1568,6 +1788,10 @@ export class CityViewer {
   }
 
   private releaseMapResources(): void {
+    // Release scene-owned weather first so its baseline textures/lights are
+    // restored before the map environment itself is disposed.
+    this.weather.clear();
+    this.snowCover.setShadowOptions(null);
     const layers = [this.cityLayer, this.vegLayer, this.roadLayer].filter(
       (layer): layer is TileStreamLayer => layer !== null,
     );
@@ -1589,6 +1813,8 @@ export class CityViewer {
     this.vegetationData.clear();
     this.manifest = null;
     this.variantManifest = null;
+    this.staticSemantics = null;
+    this.capabilities = [];
     this.cameraGroundIndex = null;
     this.localEnvelopeBounds = null;
     this.lastStreamUpdate = 0;

@@ -17,6 +17,11 @@ describe('camera presentation metadata', () => {
     expect(parsed.cameras[0]?.attachment).toEqual({ kind: 'traffic-signal', id: 'signal-a', approach: 'north' });
   });
 
+  it('normalizes the persisted chase policy to the sensor-derived policy', () => {
+    // `ego-chase` remains accepted only while reading already-persisted presentations.
+    expect(parseCameraPresentation({ cameras: [], policy: 'ego-chase' }).policy).toBe('subject-chase');
+  });
+
   it('labels camera export as companion metadata rather than ASAM support', () => {
     const presentation = parseCameraPresentation({ cameras: [], policy: 'free' });
     const companion = createCameraCompanion(presentation, 'input-hash');

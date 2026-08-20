@@ -48,7 +48,8 @@ export interface RouteBuildError {
     | 'route_lane_missing'
     | 'route_disconnected'
     | 'route_empty'
-    | 'route_orientation_ambiguous';
+    | 'route_orientation_ambiguous'
+    | 'route_turn_unavailable';
   reason: string;
   detail?: Record<string, unknown>;
 }
@@ -479,6 +480,7 @@ export function buildFollowRoute(
   turns: readonly TurnRelation[],
   maxLengthM: number,
   startReversed?: boolean,
+  options: { strictTurns?: boolean } = {},
 ): { ok: true; route: Route } | { ok: false; error: RouteBuildError } {
   if (!graph.geometry(startRsl)) {
     return {
@@ -533,6 +535,20 @@ export function buildFollowRoute(
           routeDirectedKey(a.lane).localeCompare(routeDirectedKey(b.lane)) ||
           a.gate.id.localeCompare(b.gate.id));
       }
+      if (want !== undefined && options.strictTurns && !byRelation.get(want)?.[0]) {
+        return {
+          ok: false,
+          error: {
+            code: 'route_turn_unavailable',
+            reason: `${want} is not a legal movement at the next junction from lane ${current.rsl}`,
+            detail: {
+              rsl: current.rsl,
+              requestedTurn: want,
+              availableTurns: [...byRelation.keys()].sort(),
+            },
+          },
+        };
+      }
       const pick = (want !== undefined ? byRelation.get(want)?.[0] : undefined) ??
         TURN_FALLBACK_ORDER.map((r) => byRelation.get(r)?.[0]).find((candidate) => candidate !== undefined);
       if (pick) {
@@ -561,6 +577,17 @@ export function buildFollowRoute(
         legs.push(legFrom(graph, gateExit, connectorLeg.sStart + connectorLeg.lengthM));
       }
     }
+  }
+  if (options.strictTurns && turnIdx < turns.length) {
+    const want = turns[turnIdx]!;
+    return {
+      ok: false,
+      error: {
+        code: 'route_turn_unavailable',
+        reason: `no junction offering ${want} is reachable from lane ${startRsl} within the route horizon`,
+        detail: { rsl: startRsl, requestedTurn: want, availableTurns: [] },
+      },
+    };
   }
   return { ok: true, route: Route.fromLegs(graph, legs) };
 }
@@ -612,6 +639,8 @@ export function buildRoute(
     case 'follow':
       return buildFollowRoute(graph, spec.startRsl, spec.turns, spec.maxLengthM);
     case 'polyline':
+      return { ok: true, route: Route.fromPolyline(spec.points.map(localFromScene)) };
+    case 'timedPolyline':
       return { ok: true, route: Route.fromPolyline(spec.points.map(localFromScene)) };
   }
 }

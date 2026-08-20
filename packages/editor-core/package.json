@@ -1,6 +1,6 @@
 {
   "name": "@uniscenarios/editor-core",
-  "version": "0.1.0-rc.9",
+  "version": "0.1.0-rc.37",
   "description": "Framework-neutral UniScenarios v2 authoring document, interaction controller, route overlays, and editor contracts.",
   "repository": {
     "type": "git",
@@ -24,21 +24,20 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
-    "prepack": "pnpm run build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
   "dependencies": {
+    "three": "^0.182.0",
     "@uniscenarios/prop-catalog": "workspace:*",
     "@uniscenarios/scenario-model": "workspace:*",
-    "@uniscenarios/sim-engine": "workspace:*",
-    "three": "^0.182.0"
+    "@uniscenarios/sim-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/three": "^0.182.0",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   }
 }

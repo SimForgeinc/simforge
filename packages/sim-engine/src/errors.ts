@@ -13,9 +13,13 @@ export type SimIssueCode =
   | 'route_disconnected'
   | 'route_empty'
   | 'route_orientation_ambiguous'
+  | 'route_turn_unavailable'
   // feasibility guards
   | 'runway_insufficient'
   | 'decel_budget_exceeded'
+  | 'timed_route_speed_unreachable'
+  | 'timed_route_acceleration_unreachable'
+  | 'timed_route_turn_unreachable'
   | 'spawn_overlap'
   | 'spawn_off_lane'
   | 'spawn_lane_not_on_route'

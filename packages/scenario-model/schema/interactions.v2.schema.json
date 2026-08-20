@@ -517,11 +517,33 @@
                       "const": "customRoute"
                     },
                     "points": {
-                      "minItems": 2,
+                      "minItems": 1,
                       "maxItems": 128,
                       "type": "array",
                       "items": {
                         "$ref": "#/$defs/__schema19"
+                      }
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "points"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "const": "customTimedRoute"
+                    },
+                    "points": {
+                      "minItems": 1,
+                      "maxItems": 1024,
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/__schema20"
                       }
                     }
                   },
@@ -543,7 +565,7 @@
                       "maxItems": 128,
                       "type": "array",
                       "items": {
-                        "$ref": "#/$defs/__schema20"
+                        "$ref": "#/$defs/__schema21"
                       }
                     }
                   },
@@ -1257,12 +1279,20 @@
                       "$ref": "#/$defs/__schema10"
                     },
                     "approach": {
-                      "type": "string",
-                      "enum": [
-                        "ego",
-                        "opposing",
-                        "left",
-                        "right"
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "subject",
+                            "opposing",
+                            "left",
+                            "right"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "const": "ego"
+                        }
                       ]
                     }
                   },
@@ -1601,6 +1631,27 @@
       "additionalProperties": false
     },
     "__schema20": {
+      "type": "object",
+      "properties": {
+        "timeS": {
+          "type": "number",
+          "minimum": 0
+        },
+        "x": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "timeS",
+        "x",
+        "z"
+      ],
+      "additionalProperties": false
+    },
+    "__schema21": {
       "type": "string",
       "minLength": 1
     }

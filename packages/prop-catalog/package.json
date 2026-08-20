@@ -1,28 +1,34 @@
 {
   "name": "@uniscenarios/prop-catalog",
-  "version": "0.1.0-rc.9",
-  "repository": { "type": "git", "url": "git+https://github.com/SimForgeinc/UniScenarios.git", "directory": "packages/prop-catalog" },
-  "publishConfig": { "access": "public", "provenance": true },
+  "version": "0.1.0-rc.37",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "directory": "packages/prop-catalog"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./metadata": {
+      "types": "./dist/metadata.d.ts",
+      "default": "./dist/metadata.js"
+    },
     "./catalog.json": "./catalog.json"
   },
   "files": [
     "dist",
     "catalog.json"
   ],
-  "scripts": {
-    "build": "pnpm run catalog && tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
-    "prepack": "pnpm run build",
-    "catalog": "tsx scripts/generate-catalog.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "sheet": "node scripts/render-contact-sheet.mjs"
-  },
   "dependencies": {
     "three": "^0.182.0",
     "zod": "^4.4.3"
@@ -35,5 +41,12 @@
     "typescript": "^5.6.0",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "build": "pnpm run catalog && tsup src/index.ts src/metadata.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "catalog": "tsx scripts/generate-catalog.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sheet": "node scripts/render-contact-sheet.mjs"
   }
 }

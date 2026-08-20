@@ -12,6 +12,7 @@ import {
   type AsamExportIssue,
   type AsamCapabilityEntry,
   type AsamCapabilityReport,
+  type AsamConstructCapabilityEntry,
   type AsamExportOptions,
   type AsamExportProfile,
   type AsamExportWarning,
@@ -47,13 +48,13 @@ function capabilityDecisions(profile: AsamExportProfile): Record<keyof SimScenar
       : decision('omitted', 'none', 'engine random seed has no portable editable ASAM action equivalent'),
     physics: decision('extension', 'metadata-only', 'motion/physics mode and solver provenance are retained in UniScenarios Properties; editable ASAM behavior is not claimed to preserve the selected solver'),
     operationalConditions: replay
-      ? decision('derived', 'approximate', 'effects are baked into sampled motion but weather/time/traffic intent is not editable')
+      ? decision('derived', 'approximate', 'weather, time, visibility and scene friction use standard Environment fields plus exact extension metadata; traffic effects are baked into sampled motion')
       : decision('omitted', 'none', 'this profile does not emit environment/weather/traffic declarations'),
     // Localised surface patches (ice/water/gravel over a bounded region) have no ASAM equivalent:
     // OpenSCENARIO road conditions are scene-wide, so a per-region friction field cannot be expressed
     // without silently promoting it to the whole scene, which would change the scenario.
     surfacePatches: replay
-      ? decision('derived', 'approximate', 'reduced-grip regions are baked into the sampled motion, but the patch geometry and its friction field are not recoverable from the trajectory')
+      ? decision('derived', 'approximate', 'reduced-grip regions are baked into sampled motion and retained as exact extension metadata; localized grip is not a standard OpenSCENARIO road condition')
       : decision('omitted', 'none', 'ASAM road conditions are scene-wide; a bounded low-grip region has no portable equivalent and promoting it to the whole scene would alter the scenario'),
     metricSubject: decision('omitted', 'none', 'UniScenarios metric evaluation is outside the exported execution model'),
     actors: replay
@@ -101,6 +102,111 @@ function fieldHasMaterialValue(input: SimScenarioInput, path: keyof SimScenarioI
   }
 }
 
+function constructCapabilities(
+  input: SimScenarioInput,
+  profile: AsamExportProfile,
+): AsamConstructCapabilityEntry[] {
+  const replay = profile === 'xml-1.4-trajectory-replay' || profile === 'xml-1.3-esmini-trajectory-replay';
+  const xml = profile.startsWith('xml-');
+  const constructs: AsamConstructCapabilityEntry[] = [];
+
+  for (const [index, actor] of input.actors.entries()) {
+    constructs.push({
+      sourcePath: `actors.${index}`,
+      sourceId: actor.id,
+      kind: 'actor',
+      disposition: replay ? 'derived' : 'preserved',
+      fidelity: replay ? 'approximate' : 'approximate',
+      representation: replay ? 'standard-trajectory' : 'standard-entity',
+      reason: replay
+        ? 'exact actor identity and sampled signed motion are emitted; controller intent is replaced by the authoritative simulation outcome'
+        : 'identity, dimensions, initial state and supported controller semantics are emitted as standard OpenSCENARIO constructs',
+    });
+  }
+  for (const [index, interaction] of input.interactions.entries()) {
+    constructs.push({
+      sourcePath: `interactions.${index}`,
+      sourceId: interaction.id,
+      kind: 'interaction',
+      disposition: replay ? 'derived' : 'preserved',
+      fidelity: 'approximate',
+      representation: replay ? 'simulated-outcome' : 'profile-action',
+      reason: replay
+        ? 'the interaction id, actor, verb and exact trace events are retained while its physical result is represented by sampled trajectories'
+        : 'the supported action and trigger are lowered to the selected editable profile',
+    });
+  }
+  for (const [index, program] of input.signalPrograms.entries()) {
+    constructs.push({
+      sourcePath: `signalPrograms.${index}`,
+      sourceId: program.id,
+      kind: 'signal-program',
+      disposition: replay ? 'derived' : 'preserved',
+      fidelity: replay ? 'approximate' : 'approximate',
+      representation: replay ? 'standard-signal-state' : 'profile-signal-controller',
+      reason: replay
+        ? 'exact logical indications and physical-head state transitions are retained; authored cycle causality is flattened'
+        : 'the authored cycle is represented by standard traffic-signal controller phases after validation',
+    });
+  }
+
+  constructs.push({
+    sourcePath: 'operationalConditions',
+    kind: 'environment',
+    disposition: replay && xml ? 'derived' : 'extension',
+    fidelity: replay && xml ? 'approximate' : 'metadata-only',
+    representation: replay && xml ? 'standard-environment' : 'uniscenarios-property',
+    reason: replay && xml
+      ? 'weather, time of day, visibility and scene friction are emitted as standard Environment fields and exact UniScenarios metadata; traffic density effects remain baked into motion'
+      : 'environment intent is retained only as UniScenarios metadata in this profile',
+  });
+  for (const [index, patch] of input.surfacePatches.entries()) {
+    constructs.push({
+      sourcePath: `surfacePatches.${index}`,
+      sourceId: patch.id,
+      kind: 'surface-patch',
+      disposition: replay ? 'derived' : 'extension',
+      fidelity: replay ? 'approximate' : 'metadata-only',
+      representation: replay ? 'simulated-outcome' : 'uniscenarios-property',
+      reason: replay
+        ? 'localized grip effects are baked into sampled motion and the exact authored patch is retained as metadata because OpenSCENARIO has only scene-wide road friction'
+        : 'the exact authored patch is metadata-only because OpenSCENARIO has no localized road-friction field',
+    });
+  }
+  for (const [index, occluder] of input.occluders.entries()) {
+    constructs.push({
+      sourcePath: `occluders.${index}`,
+      sourceId: occluder.id,
+      kind: 'occluder',
+      disposition: 'preserved',
+      fidelity: 'approximate',
+      representation: 'standard-entity',
+      reason: 'identity, pose and collision dimensions are emitted; catalog appearance is not portable',
+    });
+  }
+  if (input.perception) {
+    constructs.push({
+      sourcePath: 'perception',
+      kind: 'perception',
+      disposition: replay ? 'derived' : 'extension',
+      fidelity: replay ? 'approximate' : 'metadata-only',
+      representation: replay ? 'simulated-outcome' : 'uniscenarios-property',
+      reason: replay
+        ? 'perception-driven reactions are baked into trajectories and the authored configuration is retained as exact metadata'
+        : 'OpenSCENARIO has no portable sensor-detection execution model; the authored configuration is retained as metadata',
+    });
+  }
+  constructs.push({
+    sourcePath: 'physics',
+    kind: 'physics',
+    disposition: 'extension',
+    fidelity: 'metadata-only',
+    representation: 'uniscenarios-property',
+    reason: 'the selected UniScenarios solver and resolved backend provenance are retained without claiming equivalent external-simulator physics',
+  });
+  return constructs;
+}
+
 export function analyzeAsamCapabilities(
   input: SimScenarioInput,
   profile: AsamExportProfile,
@@ -119,6 +225,7 @@ export function analyzeAsamCapabilities(
   for (const field of fields) summary[field.disposition] += 1;
   const replay = profile === 'xml-1.4-trajectory-replay' || profile === 'xml-1.3-esmini-trajectory-replay';
   const intent = replay ? 'trajectory-replay' : 'editable-semantic';
+  const constructs = constructCapabilities(input, profile);
   const warnings = fields.flatMap((field): AsamExportWarning[] => {
     if (!fieldHasMaterialValue(input, field.path)) return [];
     if (field.disposition === 'omitted') {
@@ -173,6 +280,7 @@ export function analyzeAsamCapabilities(
       intent,
       roundTrip: 'not-supported',
       fields,
+      constructs,
       summary,
       externalSimulatorValidation: 'not-verified',
     },

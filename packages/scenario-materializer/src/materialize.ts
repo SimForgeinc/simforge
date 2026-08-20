@@ -95,7 +95,6 @@ import {
   type Interaction as SimInteraction,
   type LaneGraph,
   type NearMissCriterion,
-  type TurnRelation,
   type Occluder,
   type OcclusionPair,
   type RoadControl,
@@ -109,6 +108,7 @@ import {
   type Trigger as SimTrigger,
   pruneDanglingAfterInteractions,
 } from '@uniscenarios/sim-engine';
+import type { CatalogEntry } from '@uniscenarios/prop-catalog/metadata';
 
 import { CliError } from './errors.js';
 import {
@@ -119,7 +119,14 @@ import {
 } from './perception.js';
 import type { MapBundle } from './types.js';
 import { paramsVersion, resolveParams, templateId, type ParamDraw } from './params.js';
-import { actorCatalogMismatch, catalogActorDims, propBehavior, propDims } from './prop-dims.js';
+import {
+  actorCatalogMismatch,
+  catalogActorDims,
+  createActorCatalogResolver,
+  propBehavior,
+  propDims,
+  type ActorCatalogResolver,
+} from './prop-dims.js';
 import {
   buildMapControlPlan,
   buildSiteSignalPlan,
@@ -412,6 +419,11 @@ export interface MaterializeOptions {
    * `0` or absent reproduces the un-settled behaviour exactly.
    */
   readonly ambientSettleSeconds?: number | undefined;
+  /**
+   * Validated user-imported asset metadata. Entries cannot shadow built-ins;
+   * vehicle actorClass and dimensions come from the import manifest.
+   */
+  readonly catalogEntries?: readonly CatalogEntry[] | undefined;
 }
 
 export interface CatalogVariantApplication {
@@ -1306,6 +1318,7 @@ class Materializer {
     private readonly bundle: MapBundle,
     private readonly site: MatchedSite,
     private readonly draw: ParamDraw,
+    private readonly resolveCatalogEntry: ActorCatalogResolver,
   ) {
     for (const binding of site.bindings) this.bindingByRole.set(binding.role, binding);
     for (const role of template.roles) this.roleById.set(role.id, role);
@@ -1612,7 +1625,7 @@ class Materializer {
     // from there needs a new workspace dependency.)
     const catalogMismatch = role.actor.catalogId === undefined
       ? null
-      : actorCatalogMismatch(role.actor.class, role.actor.catalogId);
+      : actorCatalogMismatch(role.actor.class, role.actor.catalogId, this.resolveCatalogEntry);
     if (catalogMismatch !== null) {
       throw new CliError('actor_catalog_class_mismatch', `role "${role.id}": ${catalogMismatch}`, {
         path: `${path}.actor.catalogId`,
@@ -1624,7 +1637,7 @@ class Materializer {
     // `ActorSpecSchema.dims` is documented as "overriding the catalog model's
     // own", which only means anything if the catalog's dims are used otherwise.
     const dims = role.actor.dims
-      ?? (role.actor.catalogId === undefined ? null : catalogActorDims(role.actor.catalogId))
+      ?? (role.actor.catalogId === undefined ? null : catalogActorDims(role.actor.catalogId, this.resolveCatalogEntry))
       ?? DEFAULT_ACTOR_DIMS[role.actor.class];
     const kind = actorKindForClass(role.actor.class);
 
@@ -1684,6 +1697,7 @@ class Materializer {
         },
         behavior: {
           rules: this.rulesFor(role.id),
+          drivingProfile: this.drivingProfileFor(role.id),
           route: routeSpec,
           cruiseSpeedMps: speedMps,
         },
@@ -1950,6 +1964,7 @@ class Materializer {
       },
       behavior: {
         rules: this.rulesFor(role.id),
+        drivingProfile: this.drivingProfileFor(role.id),
         route: route.isFreeform
           ? { kind: 'polyline', points: polylinePointsOf(route) }
           : { kind: 'lanePath', lanes: route.legs.map((leg) => leg.rsl) },
@@ -2228,6 +2243,16 @@ class Materializer {
     return { ...profile.rules, ...(this.initialRules.get(roleId) ?? {}) };
   }
 
+  /** Actor-local human comfort targets; traffic rules remain independently authored. */
+  private drivingProfileFor(roleId: string): {
+    comfortableLateralAccelerationMps2: number;
+    comfortableDecelerationMps2: number;
+  } | undefined {
+    const role = this.roleById.get(roleId);
+    if (!role || !supportsDriverProfile(role.actor.class)) return undefined;
+    return { ...driverProfileDefinition(role.driverProfile).dynamics };
+  }
+
   private foldInitialRules(): void {
     for (const interaction of this.template.choreography.interactions) {
       if (interaction.verb !== 'set') continue;
@@ -2472,10 +2497,12 @@ class Materializer {
     const ids = new Set<string>();
     for (const interaction of this.template.choreography.interactions) {
       if (interaction.actor !== '@world' || interaction.verb !== 'set') continue;
-      const semantic = /^signal:feature:([A-Za-z][A-Za-z0-9_-]{0,63}):(ego|opposing|left|right)\.phase$/.exec(interaction.target.key);
+      // `ego` remains in this reader only for already-persisted semantic signal keys.
+      const semantic = /^signal:feature:([A-Za-z][A-Za-z0-9_-]{0,63}):(subject|ego|opposing|left|right)\.phase$/.exec(interaction.target.key);
       if (semantic) {
+        const approach = semantic[2] === 'ego' ? 'subject' : semantic[2] as 'subject' | 'opposing' | 'left' | 'right';
         const id = resolveSiteSignalProgram(this.bundle, this.site, this.signalPlan!, {
-          featureId: semantic[1]!, approach: semantic[2]!,
+          featureId: semantic[1]!, approach,
         });
         if (id) ids.add(id);
         continue;
@@ -2500,14 +2527,9 @@ class Materializer {
         this.template.mapSignalPlans,
         {
           mapId: this.bundle.mapId,
-          controlDigest: contentHash(controls),
           clipSeconds: this.template.choreography.clipSeconds,
           warmupSeconds: this.template.choreography.warmupSeconds,
           signalCatalog: this.bundle.signalCatalog,
-          topology: this.bundle.topology,
-          conflictPairsByJunction: Object.fromEntries(
-            Object.entries(this.bundle.index.junctionDescriptors).map(([id, descriptor]) => [id, descriptor.conflictPairs]),
-          ),
           worldSignalSetIds: this.worldSignalSetIds(controls.signalPrograms),
         },
       );
@@ -2686,54 +2708,27 @@ class Materializer {
         const t = it.target;
         if (t.mode === 'nextJunction') {
           const actor = this.actors.find((candidate) => candidate.id === it.actor);
-          const startRsl = actor?.initial.laneRef?.rsl;
-          if (!actor || !startRsl) {
+          if (!actor?.initial.laneRef?.rsl) {
             throw new CliError(
               'route_turn_unbindable',
               `next-junction route for "${it.actor}" needs a lane-bound actor`,
               { path: `${path}.target` },
             );
           }
-          const ordered = this.template.choreography.interactions
-            .map((candidate, index) => ({ candidate, index }))
-            .filter(({ candidate }) =>
-              candidate.actor === it.actor &&
-              candidate.verb === 'route' &&
-              candidate.target.mode === 'nextJunction')
-            .sort((a, b) => {
-              const time = (candidate: V2Interaction): number =>
-                candidate.trigger.kind === 'at'
-                  ? evalNum(candidate.trigger.t, scope, `choreography.${candidate.id}.trigger.t`)
-                  : Number.POSITIVE_INFINITY;
-              return time(a.candidate) - time(b.candidate) || a.index - b.index;
-            });
-          const through = ordered.findIndex(({ candidate }) => candidate.id === it.id);
-          const turns: TurnRelation[] = ordered.slice(0, through + 1).map(({ candidate }) => {
-            if (candidate.verb !== 'route' || candidate.target.mode !== 'nextJunction') {
-              throw new Error('filtered next-junction interaction lost its type');
-            }
-            return candidate.target.turn === 'straight'
-              ? 'Straight'
-              : candidate.target.turn === 'left'
-                ? 'Left'
-                : 'Right';
-          });
           const distance = Math.max(
             100,
             actor.initial.speedMps *
               (this.template.choreography.clipSeconds + this.template.choreography.warmupSeconds) *
               1.6,
           );
-          const built = buildFollowRoute(this.bundle.graph, startRsl, turns, distance);
-          if (!built.ok) {
-            throw new CliError(built.error.code, built.error.reason, {
-              path: `${path}.target`, detail: built.error.detail,
-            });
-          }
           return parseInteraction({
             ...base,
             verb: 'route',
-            target: { kind: 'lanePath', lanes: built.route.legs.map((leg) => leg.rsl) },
+            target: {
+              kind: 'nextJunction',
+              turn: t.turn === 'straight' ? 'Straight' : t.turn === 'left' ? 'Left' : 'Right',
+              maxLengthM: distance,
+            },
           });
         }
         if (t.mode === 'lanePath') {
@@ -2753,6 +2748,14 @@ class Materializer {
             verb: 'route',
             target: { kind: 'polyline', points: t.points },
             joinFromCurrentPose: true,
+            bestEffortWorldPath: true,
+          });
+        }
+        if (t.mode === 'customTimedRoute') {
+          return parseInteraction({
+            ...base,
+            verb: 'route',
+            target: { kind: 'timedPolyline', points: t.points },
             bestEffortWorldPath: true,
           });
         }
@@ -2797,10 +2800,12 @@ class Materializer {
           }
           return parseInteraction({ ...base, verb: 'set', target: { key: `signal:control:${id}.phase`, value: it.target.value } });
         }
-        const semanticSignalKey = /^signal:feature:([A-Za-z][A-Za-z0-9_-]{0,63}):(ego|opposing|left|right)\.(phase|program)$/.exec(it.target.key);
+        // `ego` remains in this reader only for already-persisted semantic signal keys.
+        const semanticSignalKey = /^signal:feature:([A-Za-z][A-Za-z0-9_-]{0,63}):(subject|ego|opposing|left|right)\.(phase|program)$/.exec(it.target.key);
         const signalKey = semanticSignalKey ? null : /^signal:(.+)\.phase$/.exec(it.target.key);
+        const semanticApproach = semanticSignalKey?.[2] === 'ego' ? 'subject' : semanticSignalKey?.[2];
         const signalProgram = semanticSignalKey
-            ? this.resolveSignalProgram({ feature: semanticSignalKey[1]!, approach: semanticSignalKey[2] as 'ego' | 'opposing' | 'left' | 'right' }, `${path}.target`)
+            ? this.resolveSignalProgram({ feature: semanticSignalKey[1]!, approach: semanticApproach as 'subject' | 'opposing' | 'left' | 'right' }, `${path}.target`)
           : signalKey
             ? this.resolveSignalProgram({ handle: signalKey[1]! }, `${path}.target`)
           : null;
@@ -3371,7 +3376,7 @@ class Materializer {
       }
       const seen = new Set<string>();
       for (const window of windows) {
-        const key = `${window.rsl} ${window.sMin.toFixed(3)} ${window.sMax.toFixed(3)}`;
+        const key = `${window.rsl}${window.sMin.toFixed(3)}${window.sMax.toFixed(3)}`;
         if (seen.has(key)) continue;
         seen.add(key);
         patches.push({
@@ -4149,7 +4154,8 @@ export function materialize(
     drawIndex,
     seedOverride: options.seed,
   });
-  return new Materializer(template, bundle, site, draw).run({ ...options, drawIndex });
+  const resolveCatalogEntry = createActorCatalogResolver(options.catalogEntries);
+  return new Materializer(template, bundle, site, draw, resolveCatalogEntry).run({ ...options, drawIndex });
 }
 
 export { paramsVersion };

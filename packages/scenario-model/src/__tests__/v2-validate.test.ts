@@ -819,7 +819,7 @@ describe('map-dependent checks', () => {
           kind: 'when',
           condition: {
             kind: 'signal',
-            signal: { feature: 'jx', approach: 'ego' },
+            signal: { feature: 'jx', approach: 'subject' },
             phase: 'flashing_yellow',
           },
           byLatest: 10,

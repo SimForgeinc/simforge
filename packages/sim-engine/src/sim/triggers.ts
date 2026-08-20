@@ -192,6 +192,33 @@ export function makeTriggerRuntime(interaction: Interaction): TriggerRuntime {
 }
 
 /**
+ * Truth value of the authored trigger predicate at this tick, independent of
+ * eligibility windows, forced deadlines, and route-commit delays.  Recording
+ * this separately is what lets an external runtime distinguish "condition
+ * became true" from "the action happened to start".
+ */
+export function triggerPredicateValue(
+  ctx: ConditionContext,
+  tr: TriggerRuntime,
+  byId: ReadonlyMap<string, TriggerRuntime>,
+): boolean {
+  const trigger = tr.interaction.trigger;
+  switch (trigger.kind) {
+    case 'at':
+    case 'arrival':
+      return tr.fixedTime !== null && ctx.t >= tr.fixedTime - 1e-9;
+    case 'after': {
+      const ref = byId.get(trigger.interactionId);
+      if (!ref || ref.status === 'skipped') return false;
+      const referenceTime = trigger.event === 'end' ? ref.endedAt : ref.firedAt;
+      return referenceTime !== null && ctx.t >= referenceTime + trigger.delayS - 1e-9;
+    }
+    case 'when':
+      return evaluateCondition(ctx, trigger.condition);
+  }
+}
+
+/**
  * Decide whether a pending trigger fires on this tick. Only `pending` triggers
  * are ever passed here, so "first tick at or past the time" is the whole rule —
  * no edge bookkeeping is needed for time-based kinds.

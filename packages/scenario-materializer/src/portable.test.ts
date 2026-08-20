@@ -163,11 +163,11 @@ describe('scene-absolute to portable variation lift', () => {
     const blocked = liftMapBoundTemplate(signaled, source, { origin: 'junction' });
     expect(blocked.ok).toBe(false);
     expect(blocked.issues).toEqual(expect.arrayContaining([expect.objectContaining({ retryable: true, dependency: expect.stringContaining('signalApproaches') })]));
-    const lifted = liftMapBoundTemplate(signaled, source, { origin: 'junction', signalApproaches: { 'source-head-7': 'ego' } });
+    const lifted = liftMapBoundTemplate(signaled, source, { origin: 'junction', signalApproaches: { 'source-head-7': 'subject' } });
     expect(lifted.ok, JSON.stringify(lifted.issues)).toBe(true);
     expect(JSON.stringify(lifted.template!.choreography)).not.toContain('source-head-7');
-    expect(JSON.stringify(lifted.template!.choreography)).toContain('signal:feature:transferOrigin:ego.phase');
-    expect(JSON.stringify(lifted.template!.choreography)).toContain('"feature":"transferOrigin","approach":"ego"');
+    expect(JSON.stringify(lifted.template!.choreography)).toContain('signal:feature:transferOrigin:subject.phase');
+    expect(JSON.stringify(lifted.template!.choreography)).toContain('"feature":"transferOrigin","approach":"subject"');
   });
 
   it('uses anchored crossing evidence for pedestrian transfer instead of a guessed offset', () => {
