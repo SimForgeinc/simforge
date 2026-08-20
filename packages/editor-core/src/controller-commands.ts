@@ -725,6 +725,9 @@ export abstract class EditorControllerCommands {
             })
           : undefined,
         selectedPointIndex: draft.selectedPointIndex,
+        // A timed route's 0th point is where the simulation starts the actor, which
+        // makes it the actor's position rather than a waypoint of its own.
+        pinnedPointIndex: draft.timed ? 0 : null,
         committedPointCount: draft.points.length,
       },
     );

@@ -297,9 +297,17 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
         const draft = this.customRouteDraft;
         if (draft?.tool === 'move') {
           const pointIndex = this.routePointIndexAt(event);
-          draft.selectedPointIndex = pointIndex;
-          draft.draggingPointIndex = pointIndex;
-          if (pointIndex !== null) {
+          // The 0th point of a timed route is the actor's own position: the simulation
+          // starts it from there, so dragging the two apart would put the car in two
+          // places at t=0. Moving the car carries the whole route instead, which is what
+          // the message points the author at. Selection is refused as well, because a
+          // selected point is a deletable one and deleting this one hands the start to a
+          // waypoint that is not the car.
+          const pinned = draft.timed === true && pointIndex === 0;
+          if (pinned) this.flash("The first point is the car's position — move the car to move it");
+          draft.selectedPointIndex = pinned ? null : pointIndex;
+          draft.draggingPointIndex = pinned ? null : pointIndex;
+          if (!pinned && pointIndex !== null) {
             try { this.viewer.renderer.domElement.setPointerCapture(event.pointerId); } catch { /* optional */ }
             this.viewer.controls.setEnabled(false);
           }

@@ -71,6 +71,12 @@ export interface DraftRouteOptions {
   /** Labels for committed points; a trailing cursor preview intentionally has none. */
   readonly timeLabels?: readonly string[];
   readonly selectedPointIndex?: number | null;
+  /**
+   * A point the author cannot move. On a timed route the 0th point is the actor's own
+   * position rather than an independently editable waypoint, so it is drawn as a mark
+   * instead of a grab handle. It stays pickable so a click on it can say why.
+   */
+  readonly pinnedPointIndex?: number | null;
   readonly committedPointCount?: number;
 }
 
@@ -642,6 +648,7 @@ export class VehicleRouteOverlayRenderer {
   private draftRoute: readonly RoutePoint[] | null = null;
   private draftTimeLabels: readonly string[] = [];
   private draftSelectedPointIndex: number | null = null;
+  private draftPinnedPointIndex: number | null = null;
   private draftCommittedPointCount = 0;
   private labelGeneration = 0;
 
@@ -809,6 +816,7 @@ export class VehicleRouteOverlayRenderer {
     this.draftRoute = points ? [...points] : null;
     this.draftTimeLabels = points ? [...(options.timeLabels ?? [])] : [];
     this.draftSelectedPointIndex = options.selectedPointIndex ?? null;
+    this.draftPinnedPointIndex = options.pinnedPointIndex ?? null;
     this.draftCommittedPointCount = points ? Math.min(points.length, options.committedPointCount ?? points.length) : 0;
     this.renderDraftRoute();
   }
@@ -884,11 +892,14 @@ export class VehicleRouteOverlayRenderer {
     this.group.add(markers);
     this.draftObjects.push(markers);
     points.slice(0, this.draftCommittedPointCount).forEach((point, index) => {
-      const selected = index === this.draftSelectedPointIndex;
+      const pinned = index === this.draftPinnedPointIndex;
+      const selected = !pinned && index === this.draftSelectedPointIndex;
       // Half of .48/.36, matching the dots above so the grab handle stays the
-      // same size as the mark it belongs to.
-      const geometry = new SphereGeometry(selected ? .24 : .18, 16, 10);
-      const material = new MeshBasicMaterial({ color: selected ? '#ffffff' : '#E8E044', depthTest: false, depthWrite: false });
+      // same size as the mark it belongs to. A pinned point is drawn smaller and
+      // duller than any handle: it is the actor's position showing through, and an
+      // identical sphere that refuses to drag reads as a broken handle.
+      const geometry = new SphereGeometry(pinned ? .12 : selected ? .24 : .18, 16, 10);
+      const material = new MeshBasicMaterial({ color: pinned ? '#8f8a3c' : selected ? '#ffffff' : '#E8E044', depthTest: false, depthWrite: false });
       const handle = new Mesh(geometry, material);
       handle.position.set(point.x, (this.sampleHeight?.(point.x, point.z) ?? 0) + .72, point.z);
       handle.name = index === 0 ? 'custom-route-waypoints-3d' : 'custom-route-waypoint-3d';
@@ -933,6 +944,7 @@ export class VehicleRouteOverlayRenderer {
     this.draftTextures = [];
     this.draftTimeLabels = [];
     this.draftSelectedPointIndex = null;
+    this.draftPinnedPointIndex = null;
     this.draftCommittedPointCount = 0;
   }
 

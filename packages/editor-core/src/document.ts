@@ -737,8 +737,14 @@ export class EditorDocument {
           // Rigidly, not by dragging `points[0]` alone onto the new pose: the simple-mode
           // timeline is locked to one point per second, so moving the first point without
           // the rest demands the entire displacement inside that first second at an
-          // arbitrary speed. Translation keeps the authored shape and timing, and when the
-          // route was seeded at the actor it lands `points[0]` exactly on the new position.
+          // arbitrary speed. Translation keeps the authored shape and timing.
+          //
+          // `points[0]` is then pinned to the pose outright. It is not an authored waypoint
+          // at all — it is where the simulation starts the actor, so it is the actor's own
+          // position, and the map tool refuses to drag it for the same reason. Translation
+          // alone lands it there whenever the route was seeded at the actor; pinning also
+          // repairs the imported and legacy routes that start somewhere else, which are
+          // exactly the ones that teleport the car on the first tick.
           //
           // Here rather than in the drag commit because every pose write arrives here -
           // drag, grab, the inspector's world-pose and lane-station fields - and because
@@ -758,11 +764,13 @@ export class EditorDocument {
                 ...interaction,
                 target: {
                   ...interaction.target,
-                  points: interaction.target.points.map((point) => ({
-                    ...point,
-                    x: Number((point.x + timedRouteDx).toFixed(3)),
-                    z: Number((point.z + timedRouteDz).toFixed(3)),
-                  })),
+                  points: interaction.target.points.map((point, index) => (index === 0
+                    ? { ...point, x: role.pose.position.x, z: role.pose.position.z }
+                    : {
+                      ...point,
+                      x: Number((point.x + timedRouteDx).toFixed(3)),
+                      z: Number((point.z + timedRouteDz).toFixed(3)),
+                    })),
                 },
               });
             }
