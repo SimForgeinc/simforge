@@ -114,6 +114,8 @@ KIA_CARNIVAL_CLASS_PATH = (
 KIA_CARNIVAL_MAKE = "Kia"
 KIA_CARNIVAL_MODEL = "Carnival"
 KIA_CARNIVAL_BASE_TYPE = "van"
+# Mirrors PRONTO_CHASE_CAMERA_SENSOR_ID in @uniscenarios/scenario-model.
+PRONTO_CHASE_CAMERA_SENSOR_ID = "chase-cam-trailing"
 
 ENVIRONMENT_READBACK_TIMEOUT_S = 2.0
 DEFAULT_RGB_CAMERA_GRADE: Mapping[str, str] = {
@@ -987,12 +989,18 @@ class CarlaBackend:
         self.sensor_configs = {}
         output_dir.mkdir(parents=True, exist_ok=True)
         camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
+        # The trailing chase camera is a presentation view authored on the host; it rides
+        # outside the 8/6/4 measurement rig and must not disturb the Pronto attestation.
+        rig_sensors = [
+            sensor for sensor in spec.sensors
+            if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
+        ]
         pronto_counts = (
-            sum(sensor.modality in camera_modalities for sensor in spec.sensors),
-            sum(sensor.modality in {"lidar", "semantic-lidar"} for sensor in spec.sensors),
-            sum(sensor.modality == "radar" for sensor in spec.sensors),
+            sum(sensor.modality in camera_modalities for sensor in rig_sensors),
+            sum(sensor.modality in {"lidar", "semantic-lidar"} for sensor in rig_sensors),
+            sum(sensor.modality == "radar" for sensor in rig_sensors),
         )
-        if pronto_counts == (8, 6, 4) and len(spec.sensors) == 18:
+        if pronto_counts == (8, 6, 4) and len(rig_sensors) == 18:
             host_ids = {sensor.actor_id for sensor in spec.sensors}
             if len(host_ids) != 1 or None in host_ids:
                 raise ContractError("the Pronto 8-camera/6-LiDAR/4-radar rig must attach to one actor")
@@ -1008,7 +1016,7 @@ class CarlaBackend:
                     "the Pronto sensor host must be exact catalog/blueprint vehicle.kia.carnival"
                 )
             self.pronto_sensor_host_actor_id = host_actor_id
-        elif len(spec.sensors) == 18:
+        elif len(rig_sensors) == 18:
             raise ContractError(
                 "an 18-sensor CARLA rig must contain exactly 8 cameras, 6 LiDARs, and 4 radars"
             )

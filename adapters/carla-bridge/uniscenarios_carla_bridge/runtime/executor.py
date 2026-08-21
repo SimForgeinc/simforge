@@ -19,6 +19,7 @@ from .transport import download, upload
 from .backend import (
     KIA_CARNIVAL_BLUEPRINT_ID,
     KIA_CARNIVAL_CATALOG_ID,
+    PRONTO_CHASE_CAMERA_SENSOR_ID,
     RenderBackend,
     runtime_asset_bindings,
 )
@@ -226,6 +227,14 @@ def _archive_and_hash(
         lambda: check_abort("hash_frames_archive", expected_frame_count, expected_frame_count),
     )
     return archive, digest
+
+
+def _pronto_rig_sensor_count(lease: Lease) -> int:
+    """Measurement devices only: the trailing chase camera is a presentation view."""
+    return sum(
+        1 for sensor in lease.render_spec.sensors
+        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
+    )
 
 
 def _encode_video(
@@ -474,7 +483,7 @@ def _preflight_asset_semantics(
             raise ContractError(f"vehicle actor {actor_id} is bound to non-vehicle CARLA blueprint {blueprint}")
         if binding.kind == "pedestrian" and not blueprint.startswith("walker."):
             raise ContractError(f"pedestrian actor {actor_id} is bound to non-walker CARLA blueprint {blueprint}")
-    if len(lease.render_spec.sensors) == 18:
+    if _pronto_rig_sensor_count(lease) == 18:
         host_ids = {sensor.actor_id for sensor in lease.render_spec.sensors}
         if len(host_ids) != 1 or None in host_ids:
             raise ContractError("the Pronto rig must bind to exactly one sensor host actor")
@@ -678,7 +687,7 @@ def _parity_evidence(
             or runtime_evidence.get("motionApplication") != "native-controls"
         ):
             semantic_failures.append("native-physics-authority")
-        if len(lease.render_spec.sensors) == 18:
+        if _pronto_rig_sensor_count(lease) == 18:
             runtime_image = runtime_evidence.get("runtimeImage")
             sensor_host = runtime_evidence.get("prontoSensorHost")
             if not isinstance(runtime_image, Mapping) or runtime_image.get("exact") is not True:

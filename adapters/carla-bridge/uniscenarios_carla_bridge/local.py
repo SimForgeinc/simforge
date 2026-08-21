@@ -19,6 +19,7 @@ from .runtime.backend import (
     KIA_CARNIVAL_CLASS_PATH,
     KIA_CARNIVAL_MAKE,
     KIA_CARNIVAL_MODEL,
+    PRONTO_CHASE_CAMERA_SENSOR_ID,
     CarlaBackend,
 )
 from .runtime.contract import (
@@ -422,17 +423,28 @@ def _intent_lease(
     }:
         raise ContractError("render intent sensorHost.sensorRig must identify the exact Pronto 8/6/4 rig")
     camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
+    # The trailing chase camera is an authored presentation view outside the measurement rig.
+    chase_sensors = [
+        sensor for sensor in parsed_spec.sensors
+        if sensor.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID
+    ]
+    rig_sensors = [
+        sensor for sensor in parsed_spec.sensors
+        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
+    ]
     actual_rig = (
-        sum(sensor.modality in camera_modalities for sensor in parsed_spec.sensors),
-        sum(sensor.modality in {"lidar", "semantic-lidar"} for sensor in parsed_spec.sensors),
-        sum(sensor.modality == "radar" for sensor in parsed_spec.sensors),
+        sum(sensor.modality in camera_modalities for sensor in rig_sensors),
+        sum(sensor.modality in {"lidar", "semantic-lidar"} for sensor in rig_sensors),
+        sum(sensor.modality == "radar" for sensor in rig_sensors),
     )
     if (
-        len(parsed_spec.sensors) != 18
+        len(rig_sensors) != 18
         or actual_rig != (8, 6, 4)
         or {sensor.actor_id for sensor in parsed_spec.sensors} != {host_actor_id}
     ):
         raise ContractError("all exact Pronto sensors must attach to render intent sensorHost.actorId")
+    if len(chase_sensors) > 1 or any(sensor.modality != "rgb" for sensor in chase_sensors):
+        raise ContractError("a render carries at most one RGB trailing chase camera")
     xosc_path = inputs.get("scenario.xosc")
     if xosc_path is None:
         raise ContractError("input package is missing scenario.xosc")

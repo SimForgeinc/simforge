@@ -15,6 +15,11 @@ export const PRONTO_CARLA_IMAGE_INDEX_SHA256 =
 export const PRONTO_CARLA_IMAGE_AMD64_SHA256 =
   'baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64' as const;
 export const PRONTO_SENSOR_RIG_ID = 'pronto.8-camera-6-lidar-4-radar' as const;
+/**
+ * A trailing presentation camera authored on the sensor host. It rides outside the 8/6/4
+ * measurement rig so a render can ship a drive-along view without restating the rig counts.
+ */
+export const PRONTO_CHASE_CAMERA_SENSOR_ID = 'chase-cam-trailing' as const;
 
 export const RenderSha256Schema = z.string().regex(
   /^[0-9a-f]{64}$/,
@@ -106,8 +111,13 @@ export const RenderIntentV1Schema = z.strictObject({
       input: ctx.value.renderSpec.sources,
     });
   }
+  const chaseCameras = hostSources.filter(
+    (source) => source.sensorId === PRONTO_CHASE_CAMERA_SENSOR_ID,
+  );
   const cameras = hostSources.filter(
-    (source) => source.modality !== 'lidar' && source.modality !== 'radar',
+    (source) => source.modality !== 'lidar'
+      && source.modality !== 'radar'
+      && source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID,
   ).length;
   const lidars = hostSources.filter((source) => source.modality === 'lidar').length;
   const radars = hostSources.filter((source) => source.modality === 'radar').length;
@@ -116,6 +126,14 @@ export const RenderIntentV1Schema = z.strictObject({
       code: 'custom',
       path: ['renderSpec', 'sources'],
       message: `Pronto rig requires 8 cameras, 6 LiDARs, and 4 radars; got ${cameras}/${lidars}/${radars}`,
+      input: ctx.value.renderSpec.sources,
+    });
+  }
+  if (chaseCameras.length > 1 || chaseCameras.some((source) => source.modality !== 'rgb')) {
+    ctx.issues.push({
+      code: 'custom',
+      path: ['renderSpec', 'sources'],
+      message: 'a render carries at most one RGB trailing chase camera',
       input: ctx.value.renderSpec.sources,
     });
   }
