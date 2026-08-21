@@ -1067,7 +1067,7 @@ def test_executes_hash_closed_lease_and_uploads_trace():
     assert backend.calls[0] == ("mode", "native-physics")
     assert backend.calls.index(("signals", ())) < backend.calls.index(("environment", 0.0))
     assert backend.calls.index(("signals", ())) < backend.calls.index(("spawn", ["ego"]))
-    assert backend.calls.index(("sensors", 1)) < backend.calls.index(("prepare", 0))
+    assert backend.calls.index(("prepare", 0)) < backend.calls.index(("sensors", 1))
 
 
 def test_mode_is_explicit_and_parity_tolerance_gates_result():
@@ -1888,7 +1888,7 @@ def test_expiry_inside_native_stability_cleans_up_without_binding_or_upload(monk
             deadline_monotonic=lambda: 1.0,
         )
     assert backend.calls[-1] == ("cleanup",)
-    assert any(call[0] == "sensors" for call in backend.calls)
+    assert not any(call[0] == "sensors" for call in backend.calls)
     assert not any(call[0] == "apply" for call in backend.calls)
 
 

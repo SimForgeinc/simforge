@@ -779,8 +779,8 @@ class CarlaBackend:
         spawn consequently records the short gravity-driven drop as scenario
         motion.  Pre-rolling with deterministic braking lets native suspension
         and contacts settle without weakening parity or replaying kinematics.
-        Sensors are attached before this method runs so their asynchronous
-        streams warm during pre-roll; warm-up frames are discarded before t=0.
+        Sensors are attached after this pre-roll so 18 high-bandwidth streams
+        do not render and discard hundreds of setup frames.
         """
         if self.execution_mode != "native-physics":
             return None

@@ -1283,11 +1283,11 @@ def execute_lease(
             check_abort("configure_environment")
             backend.spawn(plan.actors, plan.frames[0], catalog, abort=lambda: backend_fence("spawn_actors"))
             check_abort("spawn_actors")
+            stability = backend.prepare_scenario(plan.frames[0], abort=lambda: backend_fence("prepare_scenario"))
+            check_abort("prepare_scenario")
             if lease.job_mode == "full_render":
                 backend.configure_sensors(lease.render_spec, output_dir, MAX_OUTPUT_BYTES, abort=lambda: backend_fence("configure_sensors"))
                 check_abort("configure_sensors")
-            stability = backend.prepare_scenario(plan.frames[0], abort=lambda: backend_fence("prepare_scenario"))
-            check_abort("prepare_scenario")
             emit("interaction_started" if lease.job_mode == "interaction_2d" else "render_started", {"frames": len(plan.frames), "executionMode": lease.render_spec.execution_mode})
             for frame in plan.frames:
                 check_abort("execute", frame.index, len(plan.frames))
