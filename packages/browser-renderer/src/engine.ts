@@ -43,7 +43,7 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
     maxHeight: 8192,
     maxFramesPerSecond: 240,
   },
-  requiresGpu: false,
+  requiresGpu: true,
 };
 
 /** Runtime package entrypoint discovered internally for public `--engine browser`. */
@@ -80,11 +80,21 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       };
       const outputs = new Map<string, OutputFile>();
       const browser = await chromium.launch({
-        headless: options.headless ?? true,
+        // GPU-backed Chromium currently requires a display server. Container
+        // images provide an isolated Xvfb display; local callers without one
+        // retain headless mode for diagnostics and tests.
+        headless: options.headless ?? !process.env.DISPLAY,
         ...(options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH
           ? { executablePath: options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH }
           : {}),
-        args: ['--enable-webgl', '--ignore-gpu-blocklist', '--enable-features=Vulkan', '--allow-file-access-from-files'],
+        args: [
+          '--enable-webgl',
+          '--ignore-gpu-blocklist',
+          '--enable-features=Vulkan,VulkanFromANGLE',
+          '--use-angle=vulkan',
+          '--disable-software-rasterizer',
+          '--allow-file-access-from-files',
+        ],
       });
       try {
         const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -140,6 +150,23 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         try {
           await page.goto(harnessUrl, { waitUntil: 'networkidle' });
           await page.waitForFunction(() => globalThis.__uniscenariosBrowserRender?.engine === 'browser');
+          const webgl = await page.evaluate(() => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
+            const extension = context?.getExtension('WEBGL_debug_renderer_info');
+            return {
+              available: context !== null,
+              renderer: context && extension
+                ? String(context.getParameter(extension.UNMASKED_RENDERER_WEBGL))
+                : null,
+            };
+          });
+          if (!webgl.available || webgl.renderer === null) {
+            throw new Error('Browser render requires an inspectable hardware WebGL context.');
+          }
+          if (/swiftshader|llvmpipe|software/i.test(webgl.renderer)) {
+            throw new Error(`Browser render refused software WebGL renderer: ${webgl.renderer}`);
+          }
           const result = await page.evaluate(async (intent) => {
             if (!globalThis.__uniscenariosBrowserRender) throw new Error('Browser render harness did not install its adapter.');
             return globalThis.__uniscenariosBrowserRender.render(intent);

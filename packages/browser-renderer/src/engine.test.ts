@@ -13,7 +13,7 @@ describe('browser render engine registration', () => {
       backend: 'browser',
       protocolVersion: 1,
       modalities: ['rgb', 'depth', 'semantic', 'instance', 'lidar', 'radar'],
-      requiresGpu: false,
+      requiresGpu: true,
     });
   });
 });
