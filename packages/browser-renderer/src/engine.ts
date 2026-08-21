@@ -3,6 +3,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { chromium } from 'playwright-core';
+import { parsePlaybackPair, type PlaybackBundle } from '@uniscenarios/playback';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration, type RenderArtifactManifest, type RenderEngineAdapter, type RenderExecutionContext } from '@uniscenarios/render-runtime';
 import { BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import type { ArtifactIdentity } from './artifacts.js';
@@ -47,6 +48,44 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
   requiresGpu: true,
 };
 
+const SAVED_PREVIEW_SCHEMA = 'simforge.uniscenario-browser-preview/v2';
+
+/** Accept both a direct worker bundle and SimCloud's persisted preview envelope. */
+export function decodePlaybackArtifact(value: unknown): PlaybackBundle {
+  if (!value || typeof value !== 'object') throw new Error('Browser playback artifact must be an object.');
+  if ('schema' in value && value.schema === SAVED_PREVIEW_SCHEMA) {
+    if (!('instance' in value) || !('trace' in value)) {
+      throw new Error('Saved browser preview omits its scenario instance or trace.');
+    }
+    const base = parsePlaybackPair(value.instance, value.trace, {
+      instanceName: 'saved scenario',
+      traceName: 'saved simulation',
+    });
+    const ambientTraffic = 'ambientTraffic' in value && value.ambientTraffic && typeof value.ambientTraffic === 'object'
+      ? value.ambientTraffic as PlaybackBundle['ambientTraffic']
+      : undefined;
+    const mapCollisions = 'mapCollisions' in value && value.mapCollisions && typeof value.mapCollisions === 'object'
+      ? value.mapCollisions as PlaybackBundle['mapCollisions']
+      : undefined;
+    const openScenario = 'openScenario' in value && value.openScenario && typeof value.openScenario === 'object'
+      ? value.openScenario as PlaybackBundle['openScenario']
+      : undefined;
+    return {
+      ...base,
+      ...(ambientTraffic ? { ambientTraffic } : {}),
+      ...(mapCollisions ? { mapCollisions } : {}),
+      ...(openScenario ? { openScenario } : {}),
+    };
+  }
+  if (!('actors' in value) || !Array.isArray(value.actors)) {
+    throw new Error('Direct browser playback bundle omits actor metadata.');
+  }
+  // The direct bundle is produced by the pinned browser compiler; the actor
+  // closure above distinguishes it from the persisted preview envelope.
+  return value as PlaybackBundle;
+}
+
+
 /** Runtime package entrypoint discovered internally for public `--engine browser`. */
 export function createRenderEngine(options: BrowserRenderEngineOptions = {}): RenderEngineAdapter {
   const capabilities: EngineCapabilityDeclaration = options.engineVersion
@@ -81,7 +120,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         intentSha256: context.intentSha256,
         intent,
         mapManifestUrl: pathToFileURL(mapInput.path).href,
-        playbackBundle: JSON.parse(playbackJson),
+        playbackBundle: decodePlaybackArtifact(JSON.parse(playbackJson)),
       };
       const outputs = new Map<string, OutputFile>();
       const browser = await chromium.launch({
