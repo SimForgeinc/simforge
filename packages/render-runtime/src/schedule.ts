@@ -19,21 +19,22 @@ export const FixedScheduleSchema = z.strictObject({
 
 export type FixedSchedule = z.infer<typeof FixedScheduleSchema>;
 
-function sourceRate(source: RenderSourceV3, videoRate: number | undefined): number {
+function sourceRate(source: RenderSourceV3, radarRate: number): number {
   if (source.modality === 'lidar') return source.attributes.rotationFrequencyHz;
-  if (source.modality === 'radar') {
-    if (videoRate === undefined) {
-      throw new Error(`radar source ${source.outputName} requires renderSpec.video.fps to define its fixed sample schedule`);
-    }
-    return videoRate;
-  }
+  if (source.modality === 'radar') return radarRate;
   return source.attributes.fps;
 }
 
 export function createFixedSchedules(intent: RenderIntentV1): readonly FixedSchedule[] {
   const { startSeconds, endSeconds } = intent.renderSpec.clip;
+  const nativeRates = intent.renderSpec.sources.flatMap((source) => {
+    if (source.modality === 'lidar') return [source.attributes.rotationFrequencyHz];
+    if (source.modality === 'radar') return [];
+    return [source.attributes.fps];
+  });
+  const radarRate = intent.renderSpec.video?.fps ?? (nativeRates.length > 0 ? Math.max(...nativeRates) : 1);
   return intent.renderSpec.sources.map((source) => {
-    const framesPerSecond = sourceRate(source, intent.renderSpec.video?.fps);
+    const framesPerSecond = sourceRate(source, radarRate);
     const exactFrames = (endSeconds - startSeconds) * framesPerSecond;
     const nearestInteger = Math.round(exactFrames);
     const frameCount = Math.abs(exactFrames - nearestInteger) <= Number.EPSILON * Math.max(1, exactFrames) * 8
