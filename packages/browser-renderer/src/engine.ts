@@ -221,7 +221,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
             const sensor = artifact.actorId !== null && artifact.sensorId !== null && ['rgb', 'depth', 'semantic', 'instance', 'lidar', 'radar'].includes(artifact.modality);
             const role = artifact.role === 'sensor-archive'
               ? 'sensorArchive' as const
-              : artifact.role === 'sensor-video'
+              : artifact.role === 'sensor-video' || artifact.role === 'render-video'
                 ? 'video' as const
                 : artifact.role === 'render-manifest'
                   ? 'manifest' as const
@@ -229,7 +229,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
             return {
               identity: sensor
                 ? { role: role as 'video' | 'sensorArchive', actorId: artifact.actorId, sensorId: artifact.sensorId, modality: artifact.modality as 'rgb' | 'depth' | 'semantic' | 'instance' | 'lidar' | 'radar' }
-                : { role: role as 'manifest' | 'diagnostics', actorId: null, sensorId: null, modality: null },
+                : { role: role as 'video' | 'manifest' | 'diagnostics', actorId: null, sensorId: null, modality: null },
               relativePath: output.relativePath,
               sha256: artifact.sha256,
               sizeBytes: artifact.byteLength,

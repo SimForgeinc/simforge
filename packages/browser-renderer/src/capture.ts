@@ -13,7 +13,7 @@ import { captureInstanceIdCube, captureRadarFrame, type TraceVelocity } from './
 import { RenderResourcePool, renderOffscreenRgba } from './sensors/render-targets.js';
 import { encodeRadarCsv, type RadarDetection } from './sensors/csv.js';
 import { encodeLidarPly, type LidarPoint } from './sensors/ply.js';
-import { StreamingSensorVideoEncoder } from './video.js';
+import { StreamingRgbaVideoEncoder, StreamingSensorVideoEncoder } from './video.js';
 
 export const BROWSER_RENDER_ENGINE_ID = 'browser' as const;
 export type RenderStage = 'worldUpdate' | 'scenePass' | 'readback' | 'encoding' | 'artifactWrite' | 'visualization';
@@ -66,8 +66,38 @@ export async function captureBrowserArtifacts(input: {
   const framesSink = await hashedSink(input.createArtifactSink, { role: 'sensor-frames', actorId: null, sensorId: null, modality: 'frames' }, 'application/x-ndjson');
   openAbortables.push(framesSink);
   const encoder = new TextEncoder();
+  let presentationVideo: StreamingRgbaVideoEncoder | null = null;
+  let presentationPass: BrowserRenderPass | null = null;
 
   try {
+    if (input.renderSpec.video) {
+      const host = plan.passes[0]!;
+      const config = {
+        width: input.renderSpec.video.width,
+        height: input.renderSpec.video.height,
+        fps: input.renderSpec.video.fps,
+        quality: input.renderSpec.video.quality === 'lossless' ? 'high' as const : input.renderSpec.video.quality,
+      };
+      presentationPass = {
+        actorId: host.actorId,
+        sensorId: 'presentation-trailing-camera',
+        outputName: 'presentation-trailing-camera',
+        modality: 'rgb',
+        transform: {
+          position: { x: -8, y: 4, z: 0 },
+          rotation: { pitchRad: -20 * Math.PI / 180, yawRad: 0, rollRad: 0 },
+        },
+        width: config.width,
+        height: config.height,
+        fps: config.fps,
+        horizontalFovDeg: 70,
+        nearM: 0.1,
+        farM: 500,
+      };
+      const sink = await hashedSink(input.createArtifactSink, { role: 'render-video', actorId: null, sensorId: null, modality: 'rgb' }, 'video/webm');
+      presentationVideo = await StreamingRgbaVideoEncoder.create({ schedule: input.schedule, config, sink, signal: input.signal });
+      openAbortables.push(presentationVideo);
+    }
     for (const pass of plan.passes) {
       const identity = { role: 'sensor-archive', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality } as const;
       const sink = await hashedSink(input.createArtifactSink, identity, 'application/zip');
@@ -91,6 +121,16 @@ export async function captureBrowserArtifacts(input: {
       const actors = samplePlaybackActors(input.bundle, frame.sourceTimeSeconds);
       addTiming(timings, 'worldUpdate', performance.now() - started);
       const work: Promise<void>[] = [];
+      if (presentationPass && presentationVideo) {
+        const actor = actors.find((candidate) => candidate.id === presentationPass!.actorId && candidate.present);
+        if (!actor) throw new Error(`Presentation actor ${presentationPass.actorId} is absent at ${frame.sourceTimeSeconds}.`);
+        const world = worldMatrices.get(passKey(presentationPass)) ?? new Matrix4();
+        worldMatrices.set(passKey(presentationPass), world);
+        sensorWorldMatrix(world, presentationPass, actor.x, actor.z, actor.headingRad);
+        const captured = capturePass({ pass: presentationPass, frameIndex: frame.index, fps: input.renderSpec.video!.fps, viewer: input.viewer, world, actors, actor, resources, cubeCameras, cameras, timings });
+        if (!captured.pixels) throw new Error('Presentation camera did not produce RGBA pixels.');
+        await presentationVideo.encode(frame, captured.pixels, input.signal);
+      }
       for (const pass of plan.passes) {
         throwIfAborted(input.signal);
         const actor = actors.find((candidate) => candidate.id === pass.actorId && candidate.present);
@@ -143,6 +183,11 @@ export async function captureBrowserArtifacts(input: {
       if (archive) { const receipt = await archive.close(input.signal); receipts.push(receipt); emitProgress(input, timings, { event: 'artifact', completedFrames: input.schedule.frameCount, artifact: receipt }); }
       const video = videos.get(passKey(pass));
       if (video) { const receipt = await video.close(input.signal); receipts.push(receipt); emitProgress(input, timings, { event: 'artifact', completedFrames: input.schedule.frameCount, artifact: receipt }); }
+    }
+    if (presentationVideo) {
+      const receipt = await presentationVideo.close(input.signal);
+      receipts.push(receipt);
+      emitProgress(input, timings, { event: 'artifact', completedFrames: input.schedule.frameCount, artifact: receipt });
     }
     const manifestSink = await hashedSink(input.createArtifactSink, { role: 'render-manifest', actorId: null, sensorId: null, modality: 'manifest' }, 'application/json');
     const manifest = { schema: 'uniscenario.browser-render-manifest/v1', engine: BROWSER_RENDER_ENGINE_ID, intentSha256: input.intentSha256, frameMajor: true, schedule: input.schedule, artifacts: receipts, timings };

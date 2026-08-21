@@ -89,6 +89,87 @@ export class StreamingSensorVideoEncoder {
   }
 }
 
+/** Encodes renderer-owned RGBA frames as the primary presentation video. */
+export class StreamingRgbaVideoEncoder {
+  private writes = Promise.resolve();
+  private failure: Error | null = null;
+  private frames = 0;
+  private closed = false;
+
+  private constructor(
+    readonly schedule: Readonly<ResolvedFrameSchedule>,
+    readonly config: BrowserVideoConfig,
+    private readonly sink: HashedArtifactSink,
+    private readonly context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
+    private readonly encoder: VideoEncoder,
+  ) {}
+
+  static async create(input: { schedule: Readonly<ResolvedFrameSchedule>; config: BrowserVideoConfig; sink: HashedArtifactSink; signal?: AbortSignal }): Promise<StreamingRgbaVideoEncoder> {
+    throwIfAborted(input.signal);
+    if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') throw new Error('Headless Chromium does not provide WebCodecs VP9 encoding.');
+    const pixels = Math.max(1, input.config.width * input.config.height);
+    const encoderConfig: VideoEncoderConfig = {
+      codec: 'vp09.00.10.08', width: input.config.width, height: input.config.height, framerate: input.config.fps,
+      bitrate: Math.round(BITRATE[input.config.quality] * Math.max(0.45, Math.min(2.4, pixels / (1280 * 720)))), latencyMode: 'quality',
+    };
+    if (!(await VideoEncoder.isConfigSupported(encoderConfig)).supported) throw new Error('Headless Chromium cannot encode the required VP9 WebM profile.');
+    const canvas = typeof OffscreenCanvas !== 'undefined'
+      ? new OffscreenCanvas(input.config.width, input.config.height)
+      : Object.assign(document.createElement('canvas'), { width: input.config.width, height: input.config.height });
+    const context = canvas.getContext('2d', { alpha: false }) as OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null;
+    if (!context) throw new Error('A 2D canvas is required for presentation video.');
+    let instance: StreamingRgbaVideoEncoder;
+    const encoder = new VideoEncoder({
+      error: (reason) => { instance.failure = reason instanceof Error ? reason : new Error(String(reason)); },
+      output: (chunk) => instance.enqueue(chunk),
+    });
+    instance = new StreamingRgbaVideoEncoder(input.schedule, input.config, input.sink, context, encoder);
+    await input.sink.write(webmHeader(input.config, input.schedule), input.signal);
+    encoder.configure(encoderConfig);
+    return instance;
+  }
+
+  async encode(timing: FixedStepCaptureFrame, pixels: Uint8Array, signal?: AbortSignal): Promise<void> {
+    throwIfAborted(signal);
+    if (this.closed || timing.index !== this.frames) throw new Error(`Presentation video expected frame ${this.frames}, received ${timing.index}.`);
+    if (pixels.byteLength !== this.config.width * this.config.height * 4) throw new Error(`Presentation video received ${pixels.byteLength} RGBA bytes.`);
+    const rgba = new Uint8ClampedArray(pixels.byteLength);
+    rgba.set(pixels);
+    this.context.putImageData(new ImageData(rgba, this.config.width, this.config.height), 0, 0);
+    const frame = new VideoFrame(this.context.canvas, { timestamp: timing.timestampUs, duration: timing.durationUs });
+    try { this.encoder.encode(frame, { keyFrame: timing.index % Math.max(1, this.config.fps * 2) === 0 }); } finally { frame.close(); }
+    this.frames += 1;
+    if (this.encoder.encodeQueueSize > 3) {
+      await this.encoder.flush(); await this.writes;
+      if (this.failure) throw this.failure;
+    }
+  }
+
+  async close(signal?: AbortSignal) {
+    throwIfAborted(signal);
+    if (this.closed) throw new Error('Presentation video was closed more than once.');
+    this.closed = true;
+    try {
+      await this.encoder.flush(); await this.writes;
+      if (this.failure) throw this.failure;
+      if (this.frames !== this.schedule.frameCount) throw new Error(`Presentation video encoded ${this.frames} of ${this.schedule.frameCount} frames.`);
+      return await this.sink.close(signal);
+    } finally { if (this.encoder.state !== 'closed') this.encoder.close(); }
+  }
+
+  async abort(reason: unknown): Promise<void> {
+    this.closed = true;
+    if (this.encoder.state !== 'closed') this.encoder.close();
+    await this.sink.abort(reason);
+  }
+
+  private enqueue(chunk: EncodedVideoChunk): void {
+    const data = new Uint8Array(chunk.byteLength); chunk.copyTo(data);
+    const bytes = element(0x1f43b675, concat(element(0xe7, uint(chunk.timestamp)), element(0xa3, concat(new Uint8Array([0x81, 0, 0, chunk.type === 'key' ? 0x80 : 0]), data))));
+    this.writes = this.writes.then(() => this.sink.write(bytes)).catch((reason) => { this.failure = reason instanceof Error ? reason : new Error(String(reason)); });
+  }
+}
+
 function drawLidar(context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, pass: Extract<ActiveSensorPass, { modality: 'lidar' }>, points: readonly LidarPoint[], timing: FixedStepCaptureFrame): void {
   const width = context.canvas.width; const height = context.canvas.height; const range = Math.min(pass.rangeM, 80);
   background(context, width, height); const scale = Math.min(width / (range * 2.35), height / (range * 0.82));
