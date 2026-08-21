@@ -47,6 +47,10 @@
       "role": "editor-core"
     },
     {
+      "path": "packages/editor-ui",
+      "role": "editor-presentation"
+    },
+    {
       "path": "packages/camera-rig",
       "role": "camera-presentation"
     },
