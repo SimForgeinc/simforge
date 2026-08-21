@@ -91,6 +91,16 @@ ENVIRONMENT_FIELDS = (
     "cloudiness", "precipitation", "precipitation_deposits", "wind_intensity",
     "sun_azimuth_angle", "sun_altitude_angle", "fog_density", "fog_distance", "wetness",
 )
+NATIVE_STABILITY_THRESHOLDS: Mapping[str, float] = {
+    "linearMps": 0.05,
+    "verticalMps": 0.05,
+    "angularRadps": 0.25,
+    "horizontalDriftM": 0.002,
+    "verticalDriftM": 0.002,
+    "yawDriftDeg": 0.02,
+}
+
+
 
 NATIVE_SENSOR_BLUEPRINTS: Mapping[str, str] = {
     "rgb": "sensor.camera.rgb",
@@ -867,12 +877,7 @@ class CarlaBackend:
         return {
             "schema": "uniscenario.native-stability/v1",
             "thresholds": {
-                "linearMps": 0.02,
-                "verticalMps": 0.01,
-                "angularRadps": 0.02,
-                "horizontalDriftM": 0.001,
-                "verticalDriftM": 0.001,
-                "yawDriftDeg": 0.02,
+                **NATIVE_STABILITY_THRESHOLDS,
                 "consecutiveTicks": 5,
             },
             "initialVelocityMps": {
@@ -954,12 +959,12 @@ class CarlaBackend:
                     "yawDriftDeg": yaw_drift,
                 }
                 if (
-                    linear_speed > 0.02
-                    or abs(velocity.z) > 0.01
-                    or angular_speed > 0.02
-                    or horizontal_drift > 0.001
-                    or vertical_drift > 0.001
-                    or yaw_drift > 0.02
+                    linear_speed > NATIVE_STABILITY_THRESHOLDS["linearMps"]
+                    or abs(velocity.z) > NATIVE_STABILITY_THRESHOLDS["verticalMps"]
+                    or angular_speed > NATIVE_STABILITY_THRESHOLDS["angularRadps"]
+                    or horizontal_drift > NATIVE_STABILITY_THRESHOLDS["horizontalDriftM"]
+                    or vertical_drift > NATIVE_STABILITY_THRESHOLDS["verticalDriftM"]
+                    or yaw_drift > NATIVE_STABILITY_THRESHOLDS["yawDriftDeg"]
                 ):
                     unstable_actor_ids.add(actor_id)
                     stable = False

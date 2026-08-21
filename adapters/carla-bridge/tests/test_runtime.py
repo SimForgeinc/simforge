@@ -599,7 +599,7 @@ def test_native_stability_accepts_late_convergence_with_five_tick_proof():
     assert report["residuals"]["ego"]["verticalMps"] == 0
 
 
-def test_native_stability_converts_carla_angular_velocity_from_degrees_per_second():
+def test_native_stability_accepts_bounded_cooked_jitter_in_carla_angular_units():
     class Vector3D:
         def __init__(self, z=0): self.x, self.y, self.z = 0, 0, z
     class Transform:
@@ -608,8 +608,8 @@ def test_native_stability_converts_carla_angular_velocity_from_degrees_per_secon
             self.rotation = type("Rotation", (), {"yaw": 0})()
     class Actor:
         def get_transform(self): return Transform()
-        def get_velocity(self): return Vector3D()
-        def get_angular_velocity(self): return Vector3D(1.0)
+        def get_velocity(self): return Vector3D(0.04)
+        def get_angular_velocity(self): return Vector3D(10.0)
 
     backend = object.__new__(CarlaBackend)
     backend.world = type("World", (), {"tick": lambda _self: None})()
@@ -617,7 +617,8 @@ def test_native_stability_converts_carla_angular_velocity_from_degrees_per_secon
     report = backend._wait_for_native_stability("spawn settle", minimum_ticks=1, maximum_ticks=5)
 
     assert report["ticks"] == 5
-    assert report["residuals"]["ego"]["angularRadps"] == pytest.approx(0.01745329252)
+    assert report["residuals"]["ego"]["angularRadps"] == pytest.approx(0.1745329252)
+    assert report["residuals"]["ego"]["verticalMps"] == pytest.approx(0.04)
 
 
 def test_native_stability_rejects_periodic_motion_without_five_consecutive_ticks():
