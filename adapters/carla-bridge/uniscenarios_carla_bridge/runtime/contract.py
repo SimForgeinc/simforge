@@ -21,6 +21,7 @@ MAX_ACTOR_COUNT = 256
 MAX_DURATION_SECONDS = 300.0
 MAX_CAPTURE_FRAMES = 18_000
 MAX_SENSOR_PIXELS = 2_000_000_000
+MAX_SENSOR_SAMPLES = 2 ** 53
 MAX_ACTOR_FRAME_STATES = 2_000_000
 MAX_ARTIFACT_BYTES = 4 * 1024 * 1024 * 1024
 MAX_OUTPUT_BYTES = 8 * 1024 * 1024 * 1024
@@ -266,7 +267,7 @@ class RenderResourceRequest:
         capture_frames = bounded_integer("captureFrames", 0, MAX_CAPTURE_FRAMES)
         actors = bounded_integer("actors", 1, MAX_ACTOR_COUNT)
         actor_frame_states = bounded_integer("actorFrameStates", 1, MAX_ACTOR_FRAME_STATES)
-        sensor_samples = bounded_integer("sensorSamples", 0, MAX_SENSOR_PIXELS)
+        sensor_samples = bounded_integer("sensorSamples", 0, MAX_SENSOR_SAMPLES)
         output_bytes = bounded_integer("outputBytes", 1, MAX_OUTPUT_BYTES)
         max_frame_width = bounded_integer("maxFrameWidth", 0, MAX_SENSOR_PIXELS)
         max_frame_height = bounded_integer("maxFrameHeight", 0, MAX_SENSOR_PIXELS)
