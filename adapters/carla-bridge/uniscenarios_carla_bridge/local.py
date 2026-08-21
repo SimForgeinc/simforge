@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -39,6 +40,31 @@ from .runtime.executor import execute_lease, filesystem_validator
 DEFAULT_XSD = Path(__file__).parent / "assets" / "OpenSCENARIO.xsd"
 INTENT_SCHEMA = "uniscenario.render-intent/v1"
 INPUT_PACKAGE_SCHEMA_FIELDS = {"intentSha256", "inputs"}
+
+def _runtime_map_name(map_id: str) -> str:
+    raw = os.environ.get("UNISCENARIO_CARLA_COOKED_MAPS_JSON")
+    if raw is None:
+        return map_id
+    try:
+        configured = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ContractError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must be valid JSON") from exc
+    if (
+        not isinstance(configured, Mapping)
+        or any(
+            not isinstance(key, str)
+            or not key
+            or not isinstance(value, str)
+            or not value
+            for key, value in configured.items()
+        )
+    ):
+        raise ContractError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must map non-empty strings")
+    cooked = configured.get(map_id)
+    if cooked is None:
+        raise ContractError(f"no approved cooked CARLA map is configured for {map_id}")
+    return cooked
+
 
 
 def _probe(host: str, port: int) -> dict[str, object]:
@@ -637,7 +663,7 @@ def _intent_lease(
         "mapVersionId": map_identity["revisionId"],
         "manifest": {"url": "local:manifest", "sha256": hashlib.sha256(manifest_body).hexdigest(), "sizeBytes": len(manifest_body)},
         "xosc": {"url": "local:xosc", "sha256": open_scenario["sha256"], "sizeBytes": open_scenario["sizeBytes"], "xsdSha256": OFFICIAL_XSD_SHA256},
-        "xodr": {"url": "local:xodr", "sha256": map_asset["sha256"], "sizeBytes": map_asset["sizeBytes"], "mapName": map_identity["mapId"]},
+        "xodr": {"url": "local:xodr", "sha256": map_asset["sha256"], "sizeBytes": map_asset["sizeBytes"], "mapName": _runtime_map_name(str(map_identity["mapId"]))},
         "assetCatalog": {"url": "local:catalog", "sha256": catalog_asset["sha256"], "sizeBytes": catalog_asset["sizeBytes"], "contractVersion": ASSET_CATALOG_SCHEMA, "catalogVersionId": catalog_version},
         "ambient": ambient, "runtimeRequirements": runtime_requirements,
     }

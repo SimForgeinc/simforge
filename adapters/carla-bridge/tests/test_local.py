@@ -72,3 +72,19 @@ def test_probe_cleans_up_when_server_version_probe_fails(monkeypatch: pytest.Mon
     with pytest.raises(RuntimeError, match="offline"):
         local._probe("carla.test", 2000)
     assert cleaned == [True]
+
+
+def test_runtime_map_name_uses_exact_deployment_binding(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        "UNISCENARIO_CARLA_COOKED_MAPS_JSON",
+        '{"el-camino-road_20260416-014537":"El_Camino_Rd_Palo_Alto_CA"}',
+    )
+    assert local._runtime_map_name("el-camino-road_20260416-014537") == "El_Camino_Rd_Palo_Alto_CA"
+    with pytest.raises(local.ContractError, match="no approved cooked CARLA map"):
+        local._runtime_map_name("unknown-map")
+
+
+def test_runtime_map_name_rejects_invalid_deployment_binding(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", "[]")
+    with pytest.raises(local.ContractError, match="must map non-empty strings"):
+        local._runtime_map_name("el-camino-road_20260416-014537")
