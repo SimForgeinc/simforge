@@ -112,6 +112,11 @@ NATIVE_SENSOR_BLUEPRINTS: Mapping[str, str] = {
     "semantic-lidar": "sensor.lidar.ray_cast_semantic",
     "radar": "sensor.other.radar",
 }
+RUNTIME_BLUEPRINT_FALLBACKS: Mapping[str, str] = {
+    "static.uniscenario.construction.traffic_cone": "static.prop.constructioncone",
+}
+
+
 
 CARLA_IMAGE_INDEX_DIGEST = "sha256:f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5"
 CARLA_IMAGE_AMD64_MANIFEST_DIGEST = "sha256:baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64"
@@ -507,11 +512,13 @@ class CarlaBackend:
             blueprint_id = entry.get("blueprintId") if isinstance(entry, Mapping) else None
             if not isinstance(blueprint_id, str) or not blueprint_id:
                 raise RuntimeError(f"asset catalog has no exact CARLA binding for {actor_id} ({binding.catalog_name})")
+            runtime_blueprint_id = RUNTIME_BLUEPRINT_FALLBACKS.get(blueprint_id, blueprint_id)
             try:
-                blueprint = library.find(blueprint_id)
+                blueprint = library.find(runtime_blueprint_id)
             except RuntimeError as exc:
                 raise RuntimeError(
-                    f"CARLA runtime is missing required catalog blueprint for {actor_id} ({blueprint_id}, {binding.kind})"
+                    f"CARLA runtime is missing required catalog blueprint for {actor_id} "
+                    f"({runtime_blueprint_id}, {binding.kind})"
                 ) from exc
             entry_dims = entry.get("dims") if isinstance(entry, Mapping) else None
             entry_height = (
@@ -541,13 +548,13 @@ class CarlaBackend:
             if actor is None:
                 raise RuntimeError(f"CARLA failed to spawn {actor_id} as {blueprint_id}")
             observed_type_id = str(getattr(actor, "type_id", ""))
-            if observed_type_id != blueprint_id:
+            if observed_type_id != runtime_blueprint_id:
                 try:
                     actor.destroy()
                 finally:
                     raise RuntimeError(
                         f"CARLA actor {actor_id} spawned as {observed_type_id!r}, "
-                        f"expected exact blueprint {blueprint_id!r}"
+                        f"expected runtime blueprint {runtime_blueprint_id!r}"
                     )
             if (
                 blueprint_id.startswith("walker.")
@@ -560,6 +567,7 @@ class CarlaBackend:
                 set_gravity(False)
             self.actor_asset_evidence[actor_id] = {
                 "catalogId": binding.catalog_name,
+                "resolvedBlueprintId": runtime_blueprint_id,
                 "requestedBlueprintId": blueprint_id,
                 "observedBlueprintId": observed_type_id,
                 "verification": "runtime-type-id-readback",
