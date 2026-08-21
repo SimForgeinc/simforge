@@ -1,4 +1,4 @@
-import { parseRenderSpecV3, ProntoSensorHostSchema, type ProntoSensorHost, type RenderSpecV3, type ResolvedFrameSchedule } from '@uniscenarios/scenario-model';
+import { fixedStepFrameCount, parseRenderSpecV3, ProntoSensorHostSchema, type ProntoSensorHost, type RenderSpecV3, type ResolvedFrameSchedule } from '@uniscenarios/scenario-model';
 import type { PlaybackBundle } from '@uniscenarios/playback';
 
 export const RENDER_INTENT_V1_SCHEMA = 'uniscenario.render-intent/v1' as const;
@@ -14,11 +14,13 @@ export interface PortableRenderAsset {
 /** Portable immutable intent: no URLs, local paths, signed transfers, or module names. */
 export interface BrowserRenderIntentV1 {
   readonly schema: typeof RENDER_INTENT_V1_SCHEMA;
-  readonly engine: 'browser';
+  readonly intentId: string;
+  readonly scenarioRevision: Readonly<Record<string, unknown>>;
   readonly sensorHost: ProntoSensorHost;
   readonly assets: readonly PortableRenderAsset[];
   readonly renderSpec: RenderSpecV3;
   readonly schedule: ResolvedFrameSchedule;
+  readonly seed: number;
 }
 
 /** Internal browser-process request resolved from the worker's verified input map. */
@@ -33,12 +35,25 @@ export interface ResolvedBrowserRenderRequest {
 export function parseBrowserRenderIntent(value: unknown): BrowserRenderIntentV1 {
   if (!value || typeof value !== 'object') throw new Error('Browser render intent must be an object.');
   const input = value as Record<string, unknown>;
-  if (input.schema !== RENDER_INTENT_V1_SCHEMA || input.engine !== 'browser') throw new Error(`Browser engine requires ${RENDER_INTENT_V1_SCHEMA} with engine "browser".`);
+  if (input.schema !== RENDER_INTENT_V1_SCHEMA) throw new Error(`Browser engine requires ${RENDER_INTENT_V1_SCHEMA}.`);
+  if (typeof input.intentId !== 'string' || input.intentId.length === 0) throw new Error('Browser render intent is missing intentId.');
+  if (!input.scenarioRevision || typeof input.scenarioRevision !== 'object') throw new Error('Browser render intent is missing scenarioRevision.');
+  if (!Number.isSafeInteger(input.seed) || (input.seed as number) < 0) throw new Error('Browser render intent has an invalid seed.');
   if (!Array.isArray(input.assets)) throw new Error('Browser render intent is missing assets.');
   const assets = input.assets.map((asset, index) => parseAsset(asset, index));
   if (new Set(assets.map((asset) => asset.assetId)).size !== assets.length) throw new Error('Browser render intent contains duplicate assetId values.');
   const sensorHost = ProntoSensorHostSchema.parse(input.sensorHost);
-  return Object.freeze({ schema: RENDER_INTENT_V1_SCHEMA, engine: 'browser', assets: Object.freeze(assets), sensorHost, renderSpec: parseRenderSpecV3(input.renderSpec), schedule: parseSchedule(input.schedule) });
+  const renderSpec = parseRenderSpecV3(input.renderSpec);
+  return Object.freeze({
+    schema: RENDER_INTENT_V1_SCHEMA,
+    intentId: input.intentId,
+    scenarioRevision: Object.freeze({ ...(input.scenarioRevision as Record<string, unknown>) }),
+    assets: Object.freeze(assets),
+    sensorHost,
+    renderSpec,
+    schedule: captureSchedule(renderSpec),
+    seed: input.seed as number,
+  });
 }
 
 export function parseResolvedBrowserRenderRequest(value: unknown): ResolvedBrowserRenderRequest {
@@ -61,11 +76,21 @@ function parseAsset(value: unknown, index: number): PortableRenderAsset {
   return Object.freeze({ assetId: asset.assetId, kind: asset.kind, sha256: asset.sha256, sizeBytes: asset.sizeBytes }) as PortableRenderAsset;
 }
 
-function parseSchedule(value: unknown): ResolvedFrameSchedule {
-  if (!value || typeof value !== 'object') throw new Error('Browser render intent is missing its fixed-step schedule.');
-  const schedule = value as Record<string, unknown>;
-  for (const key of ['startSeconds', 'endSeconds', 'fps'] as const) if (typeof schedule[key] !== 'number' || !Number.isFinite(schedule[key]) || (schedule[key] as number) < 0) throw new Error(`Capture schedule ${key} must be a non-negative finite number.`);
-  for (const key of ['frameCount', 'firstTimestampUs', 'endTimestampUs'] as const) if (!Number.isSafeInteger(schedule[key]) || (schedule[key] as number) < 0) throw new Error(`Capture schedule ${key} must be a non-negative safe integer.`);
-  if (schedule.timestampUnit !== 'microseconds' || schedule.firstTimestampUs !== 0 || (schedule.fps as number) <= 0 || (schedule.frameCount as number) <= 0 || (schedule.endSeconds as number) <= (schedule.startSeconds as number) || (schedule.endTimestampUs as number) <= 0) throw new Error('Capture schedule bounds are invalid.');
-  return Object.freeze({ ...schedule }) as ResolvedFrameSchedule;
+function captureSchedule(renderSpec: RenderSpecV3): ResolvedFrameSchedule {
+  const sourceRates = renderSpec.sources.flatMap((source) => {
+    if (source.modality === 'lidar') return [source.attributes.rotationFrequencyHz];
+    if (source.modality === 'radar') return [];
+    return [source.attributes.fps];
+  });
+  const fps = renderSpec.video?.fps ?? (sourceRates.length === 0 ? 1 : Math.max(...sourceRates));
+  const frameCount = fixedStepFrameCount(renderSpec.clip.startSeconds, renderSpec.clip.endSeconds, fps);
+  return Object.freeze({
+    startSeconds: renderSpec.clip.startSeconds,
+    endSeconds: renderSpec.clip.endSeconds,
+    fps,
+    frameCount,
+    timestampUnit: 'microseconds',
+    firstTimestampUs: 0,
+    endTimestampUs: Math.round(frameCount * 1_000_000 / fps),
+  });
 }
