@@ -33,7 +33,7 @@ describe("panel width clamping", () => {
 describe("anchored popover placement", () => {
   it("returns a placement inside the viewport for a mid-screen anchor", () => {
     const placement = computeAnchoredPopoverPlacement({
-      anchor: { left: 500, top: 300, right: 560, bottom: 330 },
+      anchor: { left: 500, top: 300, width: 60, bottom: 330 },
       viewport: { width: 1000, height: 600 },
       preferredWidth: 240,
       panelHeight: 120,
