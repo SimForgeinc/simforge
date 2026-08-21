@@ -429,6 +429,22 @@ def test_cooked_xodr_deployment_binding_is_exact_and_fail_closed(monkeypatch):
         _approved_cooked_xodr_sha256("Richmond_Field_Station_Richmond_CA", digest)
 
 
+def test_map_load_releases_a_prior_synchronous_world():
+    settings = type("Settings", (), {"synchronous_mode": True, "fixed_delta_seconds": 0.02})()
+    class World:
+        def __init__(self): self.applied = []
+        def get_settings(self): return settings
+        def apply_settings(self, value): self.applied.append(value)
+    world = World()
+    backend = object.__new__(CarlaBackend)
+    backend.client = type("Client", (), {"get_world": lambda _self: world})()
+
+    assert backend._release_synchronous_world_before_load() is True
+    assert settings.synchronous_mode is False
+    assert settings.fixed_delta_seconds is None
+    assert world.applied == [settings]
+
+
 def test_carla_spawn_preserves_absolute_xosc_elevation_and_coordinate_sign():
     class Location:
         def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
@@ -716,6 +732,15 @@ class _SensorImage:
     def save_to_disk(self, target):
         Path(target).write_bytes(b"png")
 
+
+
+def test_sensor_callback_retains_only_the_newest_bounded_world_frames(tmp_path):
+    backend = _capture_backend(tmp_path, lambda _value: None)
+    for frame in range(1, 7):
+        backend._receive_sensor_frame("hero", _SensorImage(frame))
+
+    assert sorted(backend.sensor_pending) == [3, 4, 5, 6]
+    assert backend.sensor_error is None
 
 def test_capture_waits_for_all_delayed_sensors_on_the_exact_world_frame(tmp_path):
     threads = []

@@ -425,12 +425,24 @@ class CarlaBackend:
                 )
             sleep(0.01)
 
+    def _release_synchronous_world_before_load(self) -> bool:
+        current_world = self.client.get_world()
+        settings = current_world.get_settings()
+        if not bool(getattr(settings, "synchronous_mode", False)):
+            return False
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        current_world.apply_settings(settings)
+        return True
+
+
     def load_opendrive(self, map_name: str, xodr: bytes, fixed_timestep_s: float) -> None:
         requested_name = _normalized_map_name(map_name)
         if not requested_name or requested_name != map_name or any(
             token in requested_name for token in ("/", "\\", "..")
         ):
             raise RuntimeError("execution package must name one exact cooked CARLA map")
+        self._release_synchronous_world_before_load()
         available_getter = getattr(self.client, "get_available_maps", None)
         available = list(available_getter() or ()) if callable(available_getter) else []
         matching = [value for value in available if _normalized_map_name(value) == requested_name]
@@ -1341,8 +1353,8 @@ class CarlaBackend:
             else:
                 self.sensor_last_frame[sensor_key] = frame
                 self.sensor_pending[frame][sensor_key] = data
-                if len(self.sensor_pending) > 4:
-                    self.sensor_error = RuntimeError("CARLA sensor callback backpressure exceeded four world frames")
+                while len(self.sensor_pending) > 4:
+                    del self.sensor_pending[min(self.sensor_pending)]
             self.sensor_condition.notify_all()
 
     @staticmethod
