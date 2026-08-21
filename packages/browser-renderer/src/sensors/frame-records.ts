@@ -159,7 +159,9 @@ function canonicalMatrix(value: Matrix4 | CanonicalMatrix): CanonicalMatrix {
   const values = value instanceof Matrix4
     ? value.clone().transpose().toArray()
     : [...value];
-  if (values.length !== 16 || values.some((item) => !Number.isFinite(item))) throw new Error("Canonical transforms must contain 16 finite values.");
+  if (values.length !== 16 || values.some((item) => !Number.isFinite(item))) {
+    throw new Error(`Canonical transforms must contain 16 finite values; received ${JSON.stringify(values)}.`);
+  }
   return Object.freeze(values) as unknown as CanonicalMatrix;
 }
 
