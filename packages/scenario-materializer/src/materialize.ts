@@ -138,6 +138,73 @@ import { compileMapSignalPlans, MapSignalPlanCompileError } from './map-signal-p
 
 const KPH_TO_MPS = 1 / 3.6;
 
+export const STUDIO_BODY_COLOR_TAG_PREFIX = 'studio:body-color:';
+
+/**
+ * Normalize the editor's presentation color into the tag format consumed by
+ * playback. Invalid presentation metadata is ignored by materialization.
+ */
+export function normalizeStudioBodyColor(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  let text = value.trim().toLowerCase();
+  if (!text) return null;
+
+  if (text.startsWith('#')) {
+    const hex = text.slice(1);
+    const expanded = hex.length === 3
+      ? Array.from(hex, (channel) => `${channel}${channel}`).join('')
+      : hex;
+    return /^[0-9a-f]{6}$/.test(expanded) ? `#${expanded}` : null;
+  }
+
+  if (text.startsWith('rgb(') && text.endsWith(')')) text = text.slice(4, -1);
+  const channels = text.split(',');
+  if (channels.length !== 3) return null;
+  const bytes: number[] = [];
+  for (const channel of channels) {
+    const parsed = Number(channel.trim());
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 255) return null;
+    bytes.push(parsed);
+  }
+  return `#${bytes.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Playback tag emitted for a valid authored Studio presentation color. */
+export function studioBodyColorTag(value: unknown): string | null {
+  const color = normalizeStudioBodyColor(value);
+  return color ? `${STUDIO_BODY_COLOR_TAG_PREFIX}${color}` : null;
+}
+
+/**
+ * Reconcile authored Studio paint onto an already-materialized input. This is
+ * useful when an editor replays a stored base input while changing presentation
+ * metadata; fresh materialization emits the same tag directly.
+ */
+export function withStudioBodyColorTags(
+  input: SimScenarioInput,
+  template: ScenarioTemplateV2,
+): SimScenarioInput {
+  const colors = new Map<string, string>();
+  for (const role of template.roles) {
+    const color = normalizeStudioBodyColor(role.extensions?.['studio.presentation.bodyColor']);
+    if (color) colors.set(role.id, color);
+  }
+
+  let changed = false;
+  const actors = input.actors.map((actor) => {
+    const roleTag = actor.tags.find((tag) => tag.startsWith('role:'));
+    const color = roleTag ? colors.get(roleTag.slice('role:'.length)) : undefined;
+    const tags = actor.tags.filter((tag) => !tag.startsWith(STUDIO_BODY_COLOR_TAG_PREFIX));
+    if (color) tags.push(`${STUDIO_BODY_COLOR_TAG_PREFIX}${color}`);
+    if (tags.length === actor.tags.length && tags.every((tag, index) => tag === actor.tags[index])) {
+      return actor;
+    }
+    changed = true;
+    return { ...actor, tags };
+  });
+  return changed ? { ...input, actors } : input;
+}
+
 type Point2 = { readonly x: number; readonly y: number };
 
 function pointSegmentDistance(point: Point2, a: Point2, b: Point2): number {
@@ -1949,6 +2016,7 @@ class Materializer {
     this.laneByRole.set(role.id, routePose.rsl ?? binding.laneRsl);
     this.spawnSByRole.set(role.id, spawnS);
 
+    const bodyColorTag = studioBodyColorTag(role.extensions?.['studio.presentation.bodyColor']);
     const laneRef = routePose.rsl
       ? { rsl: routePose.rsl, s: routePose.storageS, tFrac }
       : undefined;
@@ -1984,6 +2052,7 @@ class Materializer {
         ...(supportsDriverProfile(role.actor.class) ? [`driver-profile:${role.driverProfile ?? 'lawful'}`] : []),
         `binding:${role.kind}`,
         ...(role.extensions?.['motionSemantics'] === 'reverse' ? ['motion:reverse'] : []),
+        ...(bodyColorTag ? [bodyColorTag] : []),
         ...(role.actor.catalogId ? [`catalog:${role.actor.catalogId}`] : []),
       ],
     });
@@ -2530,11 +2599,6 @@ class Materializer {
           clipSeconds: this.template.choreography.clipSeconds,
           warmupSeconds: this.template.choreography.warmupSeconds,
           signalCatalog: this.bundle.signalCatalog,
-          topology: this.bundle.topology,
-          conflictPairsByJunction: Object.fromEntries(
-            Object.entries(this.bundle.index.junctionDescriptors).map(([id, descriptor]) => [id, descriptor.conflictPairs]),
-          ),
-          worldSignalSetIds: this.worldSignalSetIds(controls.signalPrograms),
         },
       );
       this.notes.push({

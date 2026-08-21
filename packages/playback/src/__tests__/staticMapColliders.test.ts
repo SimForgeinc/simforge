@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { loadStaticMapColliders, resetStaticColliderCacheForTests } from '../staticMapColliders';
+import {
+  alignLegacyStaticCollidersToScene,
+  loadStaticMapColliders,
+  requireReadyStaticColliderBundle,
+  resetStaticColliderCacheForTests,
+  type StaticColliderBundle,
+} from '../staticMapColliders';
 
 const SOURCE_BYTES = new TextEncoder().encode('{"map":"test"}\n');
 const SOURCE_HASH = createHash('sha256').update(SOURCE_BYTES).digest('hex');
@@ -77,5 +83,66 @@ describe('precomputed static map colliders', () => {
     expect(result.colliders).toEqual([]);
     expect(result.diagnostics.warning).toContain('different map bundle');
     expect(calls).toHaveLength(3);
+  });
+});
+
+describe('legacy static map collider runtime', () => {
+  const readyBundle = {
+    colliders: [{
+      id: 'building-1',
+      class: 'building',
+      obb: { center: { x: 12, z: 4 }, lengthM: 10, widthM: 8, headingRad: 0 },
+    }],
+    diagnostics: {
+      digest: 'sha256-ready',
+      status: 'ready',
+      sourceTiles: 1,
+      accepted: 1,
+      rejectedRoadOverlap: 0,
+      ignored: 0,
+      classes: { building: 1, wall: 0, barrier: 0, prop: 0, 'road-boundary': 0 },
+    },
+  } satisfies StaticColliderBundle;
+
+  it('fails closed when verified collision data is unavailable', () => {
+    const unavailable = {
+      colliders: [],
+      diagnostics: {
+        ...readyBundle.diagnostics,
+        status: 'unavailable',
+        warning: 'Static collision derivative is not published for this map',
+        accepted: 0,
+        classes: { building: 0, wall: 0, barrier: 0, prop: 0, 'road-boundary': 0 },
+      },
+    } satisfies StaticColliderBundle;
+    expect(() => requireReadyStaticColliderBundle(unavailable, {} as never)).toThrow(
+      'Static map collision data is unavailable: Static collision derivative is not published for this map',
+    );
+  });
+
+  it('repairs the legacy scene axis and carves coarse proxies off travel lanes', () => {
+    const bundle = {
+      ...readyBundle,
+      colliders: [{
+        id: 'building-1',
+        class: 'building',
+        obb: { center: { x: 0, z: 10 }, lengthM: 40, widthM: 20, headingRad: 0 },
+      }],
+    } satisfies StaticColliderBundle;
+    const graph = {
+      laneRsls: () => ['lane-1'],
+      geometry: () => ({
+        points: [-20, -10, 0, 10, 20].map((x) => ({ x, y: 10 })),
+        widthM: 4,
+        lane: { laneType: 'driving' },
+      }),
+    };
+
+    const repaired = alignLegacyStaticCollidersToScene(bundle, graph as never);
+    expect(repaired.colliders.length).toBeGreaterThan(0);
+    expect(repaired.colliders.every((collider) => collider.id.startsWith('building-1#'))).toBe(true);
+    for (const collider of repaired.colliders) {
+      expect(Math.abs(collider.obb.center.z + 10)).toBeGreaterThan(collider.obb.widthM / 2 + 2.75);
+    }
   });
 });

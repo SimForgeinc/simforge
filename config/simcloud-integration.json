@@ -98,7 +98,8 @@
     "services"
   ],
   "importScanIgnoreFiles": [
-    "scripts/verify-uniscenarios-vendor.mjs"
+    "scripts/verify-uniscenarios-vendor.mjs",
+    "scripts/agent/check-legacy-carla-retired.mjs"
   ],
   "forbiddenImportPatterns": [
     "@simforge/uniscenario-(model|sim-engine|materializer|map-intel|anchor-matcher|xodr-tools|openscenario)",

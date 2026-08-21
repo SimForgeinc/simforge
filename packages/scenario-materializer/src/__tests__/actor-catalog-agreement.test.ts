@@ -87,7 +87,7 @@ interface ActorSpecInput {
 }
 
 /** Ego plus one roadside actor whose class/catalog pair is under test. */
-function templateWith(subject: ActorSpecInput, props: unknown[] = []): ScenarioTemplateV2 {
+function templateWith(subject: ActorSpecInput, props: unknown[] = [], bodyColor?: string): ScenarioTemplateV2 {
   return ScenarioTemplateV2Schema.parse({
     scenarioVersion: 2,
     meta: {
@@ -123,6 +123,7 @@ function templateWith(subject: ActorSpecInput, props: unknown[] = []): ScenarioT
         actor: subject,
         pose: { laneOffset: 0, s: 60, tFrac: -0.9, headingOffsetRad: 0 },
         initialSpeedKph: 0,
+        ...(bodyColor ? { extensions: { 'studio.presentation.bodyColor': bodyColor } } : {}),
       },
     ],
     props,
@@ -170,6 +171,11 @@ describe.skipIf(!HAVE_MAP)('actor class / catalog id agreement', () => {
     expect(() => run(templateWith({ class: 'animal', catalogId: 'animal.deer' }))).not.toThrow();
     expect(() => run(templateWith({ class: 'car', catalogId: 'vehicle.sedan' }))).not.toThrow();
     expect(() => run(templateWith({ class: 'static_object', catalogId: 'object.tyre', static: true }))).not.toThrow();
+  });
+
+  it('projects authored Studio paint onto the materialized playback actor', () => {
+    const result = run(templateWith({ class: 'car', catalogId: 'vehicle.sedan' }, [], '#8C2F2F'));
+    expect(actor(result, 'subject').tags).toContain('studio:body-color:#8c2f2f');
   });
 });
 
