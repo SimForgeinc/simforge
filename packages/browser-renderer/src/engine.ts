@@ -1,3 +1,4 @@
+import { once } from 'node:events';
 import { createWriteStream, promises as fs, type WriteStream } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -147,19 +148,23 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
           const relativePath = artifactRelativePath(identity, mediaType);
           const absolutePath = path.join(context.workspace, relativePath);
           await fs.mkdir(path.dirname(absolutePath), { recursive: true });
-          outputs.set(handle, { identity, mediaType, relativePath, stream: createWriteStream(absolutePath, { flags: 'wx' }), closed: false });
+          const stream = createWriteStream(absolutePath, { flags: 'wx' });
+          await once(stream, 'open');
+          outputs.set(handle, { identity, mediaType, relativePath, stream, closed: false });
           return handle;
         });
         await page.exposeFunction('__uniscenariosArtifactWrite', async (handle: string, base64: string) => {
           const output = requiredOutput(outputs, handle);
           const bytes = Buffer.from(base64, 'base64');
-          if (!output.stream.write(bytes)) await new Promise<void>((resolve, reject) => { output.stream.once('drain', resolve); output.stream.once('error', reject); });
+          if (!output.stream.write(bytes)) await once(output.stream, 'drain');
         });
         await page.exposeFunction('__uniscenariosArtifactClose', async (handle: string) => {
           const output = requiredOutput(outputs, handle);
           if (output.closed) throw new Error(`Artifact ${handle} was closed more than once.`);
           output.closed = true;
-          await new Promise<void>((resolve, reject) => { output.stream.end(resolve); output.stream.once('error', reject); });
+          const finished = once(output.stream, 'finish');
+          output.stream.end();
+          await finished;
         });
         await page.exposeFunction('__uniscenariosArtifactAbort', async (handle: string) => {
           const output = outputs.get(handle);
@@ -271,5 +276,6 @@ function artifactRelativePath(identity: ArtifactIdentity, mediaType: string): st
     return `sensors/${safe(identity.actorId)}/${safe(identity.sensorId)}/${safe(identity.modality)}.${extension}`;
   }
   if (identity.role === 'render-manifest') return 'render-manifest.json';
+  if (identity.role === 'render-video' && mediaType === 'video/webm') return 'render-video.webm';
   return 'diagnostics/sensor-frames.ndjson';
 }
