@@ -1,6 +1,7 @@
 import { createWriteStream, promises as fs, type WriteStream } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import { chromium } from 'playwright-core';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration, type RenderArtifactManifest, type RenderEngineAdapter, type RenderExecutionContext } from '@uniscenarios/render-runtime';
 import { BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
@@ -71,12 +72,16 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       if (!mapInput) throw new Error('Browser render requires materialized asset map.manifest.');
       const playbackInput = context.inputs.get('playback.bundle');
       if (!playbackInput) throw new Error('Browser render requires materialized asset playback.bundle.');
+      const playbackBytes = await fs.readFile(playbackInput.path);
+      const playbackJson = playbackBytes[0] === 0x1f && playbackBytes[1] === 0x8b
+        ? gunzipSync(playbackBytes).toString('utf8')
+        : playbackBytes.toString('utf8');
       const request: ResolvedBrowserRenderRequest = {
         schema: BROWSER_RENDER_REQUEST_V1_SCHEMA,
         intentSha256: context.intentSha256,
         intent,
         mapManifestUrl: pathToFileURL(mapInput.path).href,
-        playbackBundle: JSON.parse(await fs.readFile(playbackInput.path, 'utf8')),
+        playbackBundle: JSON.parse(playbackJson),
       };
       const outputs = new Map<string, OutputFile>();
       const browser = await chromium.launch({
