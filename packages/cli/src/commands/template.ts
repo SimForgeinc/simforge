@@ -15,12 +15,16 @@ import {
   type ClauseResult,
 } from '@uniscenarios/scenario-model';
 
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
 import { adaptTemplate } from '../adapt.js';
-import { EXIT } from '../errors.js';
+import { CliError, EXIT } from '../errors.js';
+import { assertKnownMap } from '../maps.js';
 import { createMapContext } from '../map-context.js';
 import { emit, emitLines, pad } from '../output.js';
 import { matchOnMap } from '../sites.js';
-import { readFile } from 'node:fs/promises';
+import { writeJsonFile } from '../template-io.js';
 
 export interface TemplateValidateOptions {
   readonly file: string;
@@ -125,4 +129,91 @@ export async function templateValidate(options: TemplateValidateOptions): Promis
     emitLines(lines);
   }
   return counts.error > 0 ? EXIT.validationFindings : EXIT.ok;
+}
+
+/**
+ * Fixed bookkeeping timestamps for emitted skeletons.
+ *
+ * `template new` is a *deterministic* generator: the same flags produce
+ * byte-identical output, so two agents comparing skeletons diff their edits,
+ * not their wall clocks. An author stamps real times on first save.
+ */
+const TEMPLATE_NEW_EPOCH = '1970-01-01T00:00:00.000Z';
+
+export interface TemplateNewOptions {
+  readonly out?: string | undefined;
+  readonly mapId?: string | undefined;
+  readonly siteId?: string | undefined;
+  readonly pretty: boolean;
+}
+
+/**
+ * `uniscenarios template new` — a minimal, schema-valid v2 skeleton.
+ *
+ * The shape mirrors `examples/mechanisms/`: one `on_reference` ego, an empty
+ * corridor anchor with matcher policy, and a 20 s clip with no interactions.
+ * It validates as-is; the author's job is to make it *mean* something. With
+ * `--map` (and optionally `--site`) the skeleton is pre-bound via
+ * `anchor.pin`, which collapses matching to that exact place.
+ */
+export async function templateNew(options: TemplateNewOptions): Promise<number> {
+  if (options.siteId !== undefined && options.mapId === undefined) {
+    throw new CliError('missing_option', '--site requires --map', { path: '--site' });
+  }
+  if (options.mapId !== undefined) assertKnownMap(options.mapId);
+
+  const template = {
+    scenarioVersion: 2,
+    meta: {
+      name: 'New template',
+      description:
+        'Minimal v2 skeleton from `uniscenarios template new`. Constrain the anchor corridor, add roles and choreography interactions, then run `uniscenarios template validate`.',
+      createdAt: TEMPLATE_NEW_EPOCH,
+      modifiedAt: TEMPLATE_NEW_EPOCH,
+      appVersion: 'uniscenarios/template-new/v1',
+      tags: ['skeleton'],
+      author: 'cli/template-new',
+      negativeControl: false,
+    },
+    ...(options.mapId === undefined
+      ? {}
+      : { sourceMap: { mapId: options.mapId, mapName: options.mapId } }),
+    anchor: {
+      id: 'new-template',
+      corridor: {},
+      features: [],
+      policy: { allowMirror: true, maxSitesPerMap: 10 },
+      ...(options.mapId === undefined
+        ? {}
+        : {
+            pin: {
+              mapId: options.mapId,
+              ...(options.siteId === undefined ? {} : { siteId: options.siteId }),
+            },
+          }),
+    },
+    roles: [
+      {
+        id: 'ego',
+        kind: 'on_reference',
+        actor: { class: 'car' },
+        pose: { laneOffset: 0, s: 15, tFrac: 0, headingOffsetRad: 0 },
+        initialSpeedKph: 'clamp(0.8 * lane.speedLimitKph, 25, 50)',
+      },
+    ],
+    choreography: { clipSeconds: 20, warmupSeconds: 5, interactions: [] },
+    metricSubject: 'ego',
+  };
+
+  // Emit exactly what a downstream validator will parse — no drift between
+  // what this writes and what `ScenarioTemplateV2Schema` accepts.
+  const parsed = ScenarioTemplateV2Schema.parse(template);
+
+  let out: string | null = null;
+  if (options.out !== undefined) {
+    await writeJsonFile(options.out, parsed);
+    out = resolve(options.out);
+  }
+  emit({ ok: true, template: parsed, out }, options);
+  return EXIT.ok;
 }
