@@ -787,7 +787,7 @@ class CarlaBackend:
                 actor.apply_control(self.carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
             elif actor.type_id.startswith("walker."):
                 actor.apply_control(self.carla.WalkerControl(speed=0.0, jump=False))
-        reports = [self._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=100, abort=abort)]
+        reports = [self._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=500, abort=abort)]
         zero = self.carla.Vector3D(x=0.0, y=0.0, z=0.0)
         for actor_id, actor in self.actors.items():
             check()
@@ -865,6 +865,7 @@ class CarlaBackend:
         previous = {actor_id: actor.get_transform() for actor_id, actor in self.actors.items()}
         consecutive = 0
         residuals: dict[str, dict[str, float]] = {}
+        unstable_actor_ids: set[str] = set()
         for tick in range(1, maximum_ticks + 1):
             check()
             self.world.tick()
@@ -894,6 +895,7 @@ class CarlaBackend:
                     frozen_static_actor_ids.add(actor_id)
                 self.frozen_static_actor_ids = frozen_static_actor_ids
             residuals = {}
+            unstable_actor_ids = set()
             stable = True
             current = {}
             for actor_id, actor in self.actors.items():
@@ -926,14 +928,19 @@ class CarlaBackend:
                     or vertical_drift > 0.001
                     or yaw_drift > 0.02
                 ):
+                    unstable_actor_ids.add(actor_id)
                     stable = False
                 current[actor_id] = transform
             previous = current
             consecutive = consecutive + 1 if stable and tick >= minimum_ticks else 0
             if consecutive >= 5:
                 return {"phase": phase, "ticks": tick, "residuals": residuals}
+        unstable = {
+            actor_id: residuals[actor_id]
+            for actor_id in sorted(unstable_actor_ids)
+        }
         raise RuntimeError(
-            f"native actor stability did not converge during {phase} after {maximum_ticks} ticks: {residuals}"
+            f"native actor stability did not converge during {phase} after {maximum_ticks} ticks: {unstable}"
         )
 
     def _vehicle_longitudinal_control(self, actor_id: str, target_speed: float, speed: float) -> tuple[float, float]:
