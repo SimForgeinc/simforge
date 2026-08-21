@@ -290,6 +290,7 @@ class CarlaBackend:
         )
         self.actor_asset_evidence: dict[str, dict[str, Any]] = {}
         self.pronto_sensor_host_actor_id: str | None = None
+        self.presentation_camera_key: str | None = None
         self.sensor_writer_pool: ThreadPoolExecutor | None = None
         self.map_evidence: dict[str, Any] = {"available": False}
         self.signal_id_map: dict[str, str] = {}
@@ -1144,6 +1145,98 @@ class CarlaBackend:
             self.sensors.append(sensor_actor)
             check()
 
+        if "video" in spec.outputs and self.pronto_sensor_host_actor_id is not None:
+            self._configure_presentation_camera(spec, output_dir, library, quality_attributes, check)
+
+    def _configure_presentation_camera(
+        self,
+        spec: RenderSpec,
+        output_dir: Path,
+        library: Any,
+        quality_attributes: Mapping[str, Mapping[str, str]],
+        check: Callable[[], None],
+    ) -> None:
+        """Attach a presentation-only chase camera without changing the authored rig."""
+        key = "presentation-trailing-camera"
+        host_actor_id = self.pronto_sensor_host_actor_id
+        assert host_actor_id is not None
+        host = self.actors.get(host_actor_id)
+        if host is None:
+            raise RuntimeError("the Pronto presentation camera has no runtime host actor")
+        blueprint = library.find(NATIVE_SENSOR_BLUEPRINTS["rgb"])
+        primary_rgb = next(sensor for sensor in spec.sensors if sensor.modality == "rgb")
+        attributes = {
+            "image_size_x": primary_rgb.config["width"],
+            "image_size_y": primary_rgb.config["height"],
+            "fov": 90.0,
+            "sensor_tick": self.fixed_timestep_s,
+        }
+        requested_grade = dict(DEFAULT_RGB_CAMERA_GRADE)
+        loaded_map_name = str(self.map_evidence.get("loadedMapName", ""))
+        for map_token, exposure in MAP_RGB_EXPOSURE:
+            if map_token in loaded_map_name:
+                requested_grade["exposure_compensation"] = exposure
+                break
+        applied_grade = {}
+        missing_grade = []
+        for name, value in requested_grade.items():
+            if blueprint.has_attribute(name):
+                blueprint.set_attribute(name, value)
+                applied_grade[name] = value
+            else:
+                missing_grade.append(name)
+        for name, value in quality_attributes[spec.quality].items():
+            if blueprint.has_attribute(name):
+                blueprint.set_attribute(name, value)
+        for name, value in attributes.items():
+            if not blueprint.has_attribute(name):
+                raise RuntimeError(f"CARLA presentation camera blueprint lacks required attribute {name}")
+            blueprint.set_attribute(name, str(value))
+        transform = self.carla.Transform(
+            self.carla.Location(x=-8.0, y=0.0, z=4.0),
+            self.carla.Rotation(pitch=-12.0, yaw=0.0, roll=0.0),
+        )
+        sensor_actor = self.world.spawn_actor(blueprint, transform, attach_to=host)
+        if sensor_actor is None:
+            raise RuntimeError("CARLA failed to spawn the Pronto presentation camera")
+        if (
+            str(getattr(sensor_actor, "type_id", "")) != NATIVE_SENSOR_BLUEPRINTS["rgb"]
+            or getattr(getattr(sensor_actor, "parent", None), "id", None) != getattr(host, "id", None)
+        ):
+            sensor_actor.destroy()
+            raise RuntimeError("CARLA presentation camera did not read back exact host ownership")
+        target_dir = output_dir / key
+        target_dir.mkdir(parents=True, exist_ok=False)
+        self.sensor_configs[key] = {
+            "target": target_dir,
+            "role": key,
+            "actorId": host_actor_id,
+            "sensorId": key,
+            "modality": "rgb",
+            "converter": None,
+            "extension": "png",
+            "transform": {"x": -8.0, "y": 0.0, "z": 4.0, "pitch": -12.0, "yaw": 0.0, "roll": 0.0},
+            "config": {
+                "width": primary_rgb.config["width"],
+                "height": primary_rgb.config["height"],
+                "fov": 90.0,
+            },
+        }
+        self.camera_grade_evidence[key] = {
+            "schema": "uniscenario.camera-grade-evidence/v1",
+            "profile": "rrmaps-accepted-v1",
+            "mapName": loaded_map_name,
+            "attributes": dict(sorted(applied_grade.items())),
+            "exact": not missing_grade,
+            "missingAttributes": sorted(missing_grade),
+            "postprocess": spec.quality != "preview",
+            "motionBlurIntensity": 0.0,
+        }
+        sensor_actor.listen(lambda data: self._receive_sensor_frame(key, data))
+        self.sensors.append(sensor_actor)
+        self.presentation_camera_key = key
+        check()
+
     def _receive_sensor_frame(self, sensor_key: str, data: Any) -> None:
         with self.sensor_condition:
             if self.sensor_closed:
@@ -1329,7 +1422,11 @@ class CarlaBackend:
         check = abort or (lambda: None)
         check()
         with self.sensor_lock:
-            snapshot = list(self.sensor_records)
+            presentation_camera_key = getattr(self, "presentation_camera_key", None)
+            snapshot = [
+                item for item in self.sensor_records
+                if item["artifactName"] != presentation_camera_key
+            ]
         records = []
         for item in snapshot:
             check()

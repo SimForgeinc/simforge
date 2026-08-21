@@ -1416,10 +1416,12 @@ def execute_lease(
                 sensor for sensor in lease.render_spec.sensors
                 if sensor.modality == "rgb"
             )
+            presentation_camera_key = getattr(backend, "presentation_camera_key", None)
+            video_camera_key = presentation_camera_key or primary_rgb_sensor.artifact_name
             remaining_bytes = min(MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes, artifact_temp_limit)
             body = _encode_video(
                 output_dir,
-                primary_rgb_sensor.artifact_name,
+                video_camera_key,
                 lease.render_spec.fps,
                 Path(directory) / "render.mp4",
                 expected_capture_count,
@@ -1435,9 +1437,9 @@ def execute_lease(
                 lease.artifact_uploads.get("video"),
                 {
                     "actorId": primary_rgb_sensor.actor_id,
-                    "sensorId": primary_rgb_sensor.sensor_id,
+                    "sensorId": presentation_camera_key or primary_rgb_sensor.sensor_id,
                     "modality": primary_rgb_sensor.modality,
-                    "outputName": primary_rgb_sensor.role,
+                    "outputName": presentation_camera_key or primary_rgb_sensor.role,
                     "frameCount": expected_capture_count,
                     "fps": lease.render_spec.fps,
                     "durationS": plan.frames[-1].t,

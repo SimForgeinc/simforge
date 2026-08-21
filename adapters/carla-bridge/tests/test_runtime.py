@@ -654,6 +654,19 @@ def test_capture_waits_for_all_delayed_sensors_on_the_exact_world_frame(tmp_path
     assert (tmp_path / "rear/00000007.png").is_file()
 
 
+def test_presentation_camera_frames_are_captured_but_excluded_from_authored_sensor_manifest(tmp_path):
+    def callbacks(backend):
+        backend._receive_sensor_frame("hero", _SensorImage(42, 1.25))
+        backend._receive_sensor_frame("rear", _SensorImage(42, 1.25))
+
+    backend = _capture_backend(tmp_path, callbacks)
+    backend.presentation_camera_key = "rear"
+    backend.tick({"outputFrameIndex": 7, "scheduledTimeS": 7 / 30})
+
+    assert [item["sensorId"] for item in backend.sensor_manifest()] == ["hero"]
+    assert (tmp_path / "rear/00000007.png").is_file()
+
+
 def test_capture_fails_closed_when_one_sensor_times_out(tmp_path):
     backend = _capture_backend(tmp_path, lambda value: value._receive_sensor_frame("hero", _SensorImage(42)))
     backend.sensor_timeout_s = 0.01
