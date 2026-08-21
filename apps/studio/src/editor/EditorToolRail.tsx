@@ -456,7 +456,7 @@ function writeStoredIds(key: string, ids: readonly string[]): void {
 
 const styles: Record<string, CSSProperties> = {
   rail: {
-    position: 'absolute', zIndex: 22, left: 10, top: 12, width: 44,
+    position: 'absolute', zIndex: 22, right: 10, top: 12, width: 44,
     display: 'flex', flexDirection: 'column', gap: 2, padding: 4,
     borderRadius: 7, background: PANEL, border: BORDER,
     boxShadow: '0 8px 28px rgba(0,0,0,.38)', userSelect: 'none',
@@ -472,7 +472,7 @@ const styles: Record<string, CSSProperties> = {
   tooltip: { position: 'absolute', left: 45, pointerEvents: 'none', opacity: 0, width: 1, height: 1, overflow: 'hidden' },
   disabled: { opacity: .28, cursor: 'default' },
   drawer: {
-    position: 'absolute', zIndex: 21, top: 12, left: 63, bottom: 12, width: 372,
+    position: 'absolute', zIndex: 21, top: 12, right: 63, bottom: 12, width: 372,
     display: 'flex', flexDirection: 'column', overflow: 'hidden',
     borderRadius: 9, background: PANEL, border: BORDER,
     boxShadow: '0 18px 48px rgba(0,0,0,.52)',

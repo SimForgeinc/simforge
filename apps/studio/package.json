@@ -24,6 +24,7 @@
     "@uniscenarios/city-renderer": "workspace:*",
     "@uniscenarios/cli": "workspace:*",
     "@uniscenarios/editor-core": "workspace:*",
+    "@uniscenarios/editor-ui": "workspace:*",
     "@uniscenarios/esmini-runner": "workspace:*",
     "@uniscenarios/map-intel": "workspace:*",
     "@uniscenarios/openscenario": "workspace:*",

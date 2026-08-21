@@ -100,6 +100,7 @@ export function VerifiedReplayBar({
           <span>Camera</span>
           <select
             aria-label="Playback camera"
+            className="studio-field"
             value={state?.cameraSelectionId ?? 'all-actors'}
             disabled={!state}
             onChange={(event) => {
@@ -116,11 +117,12 @@ export function VerifiedReplayBar({
           type="button"
           style={styles.toggle}
           aria-label={toggleLabel}
+          className="studio-btn"
           onClick={onToggle}
           disabled={!state}
           data-testid="verified-replay-toggle"
         >{complete ? '↻ Replay' : replay.status === 'Playing' ? 'Ⅱ Pause' : '▶ Resume'}</button>
-        <button type="button" style={styles.stop} onClick={onStop} data-testid="verified-replay-stop">
+        <button type="button" className="studio-btn" style={styles.stop} onClick={onStop} data-testid="verified-replay-stop">
           ■ Stop &amp; return to Gallery
         </button>
       </div>
@@ -132,23 +134,29 @@ const styles: Record<string, CSSProperties> = {
   bar: {
     position: 'absolute', zIndex: 22, top: 12, left: 64, right: 16,
     display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(240px, 2fr) auto',
-    alignItems: 'center', gap: 16, padding: '9px 12px', border: '1px solid #464c56',
-    borderRadius: 8, background: 'rgba(22,25,30,.96)', boxShadow: '0 8px 24px rgba(0,0,0,.4)',
+    alignItems: 'center', gap: 16, padding: '9px 12px',
+    border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))',
+    borderRadius: 'var(--ueui-radius, 10px)',
+    background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))',
+    backdropFilter: 'blur(72px) saturate(185%)',
+    WebkitBackdropFilter: 'blur(72px) saturate(185%)',
+    boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))',
+    color: 'var(--ueui-text, #f2f2f2)',
   },
   identity: { minWidth: 0 },
-  eyebrow: { display: 'block', color: '#56c28b', fontSize: 8, fontWeight: 750, textTransform: 'uppercase', letterSpacing: .8 },
-  title: { display: 'block', overflow: 'hidden', color: '#e9edf3', fontSize: 11, textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  eyebrow: { display: 'block', color: 'var(--ueui-ok, #57c785)', fontSize: 8, fontWeight: 650, textTransform: 'uppercase', letterSpacing: .8 },
+  title: { display: 'block', overflow: 'hidden', color: 'var(--ueui-text, #f2f2f2)', fontSize: 11, textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   transport: { minWidth: 0 },
   readoutRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 4 },
-  status: { color: '#f0b36f', fontSize: 9, fontWeight: 750, textTransform: 'uppercase', letterSpacing: .6 },
-  complete: { color: '#56c28b' },
-  time: { color: '#f2f5f9', fontSize: 11, fontVariantNumeric: 'tabular-nums' },
-  progressTrack: { display: 'block', height: 5, overflow: 'hidden', borderRadius: 999, background: '#343a43' },
-  progressFill: { display: 'block', height: '100%', borderRadius: 999, background: '#f07f2f', transition: 'width 80ms linear' },
+  status: { color: 'var(--ueui-warn, #f0a13c)', fontSize: 9, fontWeight: 650, textTransform: 'uppercase', letterSpacing: .6 },
+  complete: { color: 'var(--ueui-ok, #57c785)' },
+  time: { color: 'var(--ueui-text, #f2f2f2)', fontSize: 11, fontVariantNumeric: 'tabular-nums' },
+  progressTrack: { display: 'block', height: 5, overflow: 'hidden', borderRadius: 999, background: 'rgba(255,255,255,.1)' },
+  progressFill: { display: 'block', height: '100%', borderRadius: 999, background: 'var(--ueui-accent, #e8e044)', transition: 'width 80ms linear' },
   actions: { display: 'flex', alignItems: 'center', gap: 7 },
-  cameraLabel: { display: 'flex', alignItems: 'center', gap: 5, color: '#9ba5b3', fontSize: 8, whiteSpace: 'nowrap' },
-  cameraReason: { maxWidth: 180, overflow: 'hidden', color: '#8792a0', fontSize: 8, textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  keyboardHint: { color: '#7f8997', fontSize: 8, whiteSpace: 'nowrap' },
-  toggle: { padding: '7px 10px', border: '1px solid #596271', borderRadius: 6, background: '#303640', color: '#eef2f7', font: 'inherit', fontSize: 10, cursor: 'pointer' },
-  stop: { padding: '7px 10px', border: '1px solid #d36d29', borderRadius: 6, background: '#9f471b', color: '#fff5ec', font: 'inherit', fontSize: 10, cursor: 'pointer' },
+  cameraLabel: { display: 'flex', alignItems: 'center', gap: 5, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 8, whiteSpace: 'nowrap' },
+  cameraReason: { maxWidth: 180, overflow: 'hidden', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 8, textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  keyboardHint: { color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 8, whiteSpace: 'nowrap' },
+  toggle: { padding: '7px 10px', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 7, background: 'rgba(255,255,255,.05)', color: 'var(--ueui-text, #f2f2f2)', font: 'inherit', fontSize: 10, cursor: 'pointer' },
+  stop: { padding: '7px 10px', border: '1px solid transparent', borderRadius: 7, background: 'var(--ueui-accent, #e8e044)', color: '#10120a', font: 'inherit', fontSize: 10, fontWeight: 650, cursor: 'pointer' },
 };
