@@ -160,7 +160,9 @@ def _read_radar_detections(path: Path) -> list[tuple[float, float, float, float]
 
 
 def _lidar_frames(frames: Sequence[Path], range_m: float) -> Iterator[bytes]:
-    span = max(1.0, min(range_m, 120.0))
+    # Returns cluster within a few tens of metres, so cap the view well inside a 200 m sensor
+    # range; otherwise the cloud collapses into a dot at the centre of the frame.
+    span = max(1.0, min(range_m, 60.0))
     scale = min(VIDEO_WIDTH / (span * 2.2), VIDEO_HEIGHT / (span * 2.2))
     origin_x, origin_y = VIDEO_WIDTH // 2, VIDEO_HEIGHT // 2
     for path in frames:
