@@ -812,7 +812,7 @@ class CarlaBackend:
             actor.set_target_velocity(zero)
             actor.set_target_angular_velocity(zero)
             self.speed_integrals[actor_id] = 0.0
-        reports.append(self._wait_for_native_stability("post-reset", minimum_ticks=5, maximum_ticks=100, abort=abort))
+        reports.append(self._wait_for_native_stability("post-reset", minimum_ticks=5, maximum_ticks=10, abort=abort))
         # The stability window can introduce tiny horizontal suspension drift.
         # Restore the authored planar pose once more without changing settled z;
         # no world tick occurs between this reset and scenario frame zero.
