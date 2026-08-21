@@ -1,6 +1,6 @@
 {
   "schema": "uniscenarios.stack-config/v1",
-  "stackVersion": "0.1.0-rc.44",
+  "stackVersion": "0.1.0-rc.45",
   "repository": "https://github.com/SimForgeinc/UniScenarios",
   "contracts": {
     "scenarioTemplate": "2",
@@ -95,7 +95,7 @@
     {
       "path": "adapters/carla-bridge",
       "name": "uniscenarios-carla-bridge",
-      "version": "0.1.0rc44",
+      "version": "0.1.0rc45",
       "role": "optional-carla-execution-adapter",
       "registry": "pypi"
     }

@@ -1,6 +1,6 @@
 {
   "name": "@uniscenarios/playback",
-  "version": "0.1.0-rc.44",
+  "version": "0.1.0-rc.45",
   "description": "Deterministic UniScenarios trace loading, sampling, playback control, map runtime, collider, and browser traffic runtime.",
   "repository": {
     "type": "git",

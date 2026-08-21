@@ -1,6 +1,6 @@
 {
   "name": "@uniscenarios/editor-ui",
-  "version": "0.1.0-rc.44",
+  "version": "0.1.0-rc.45",
   "description": "Runtime-free React presentation layer for the UniScenarios v2 editor: shell, actor library rail, timeline dock, inspector surfaces, and experience chooser.",
   "repository": {
     "type": "git",
