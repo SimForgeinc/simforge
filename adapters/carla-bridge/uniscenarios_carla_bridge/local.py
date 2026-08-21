@@ -21,6 +21,7 @@ from .runtime.backend import (
     KIA_CARNIVAL_MODEL,
     CarlaBackend,
 )
+from .runtime.compiler import compile_xosc14
 from .runtime.contract import (
     ASSET_CATALOG_SCHEMA,
     EMPTY_AMBIENT_CONFIG_SHA256,
