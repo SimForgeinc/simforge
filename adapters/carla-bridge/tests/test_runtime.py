@@ -26,6 +26,7 @@ from uniscenarios_carla_bridge.runtime.backend import (
     VEHICLE_DOOR_MEMBERS,
     VEHICLE_LIGHT_BITS,
     CarlaBackend,
+    _approved_cooked_xodr_sha256,
     resolve_signal_lamp,
     runtime_asset_bindings,
 )
@@ -413,6 +414,19 @@ def _lease_with_physical_signal():
     value["job"]["executionPackage"]["xosc"].update({"sha256": digest(xosc), "sizeBytes": len(xosc)})
     manifest = execution_manifest(xosc)
     return parse_lease(seal_lease(value, manifest)), xosc, manifest
+
+
+def test_cooked_xodr_deployment_binding_is_exact_and_fail_closed(monkeypatch):
+    digest = "a" * 64
+    monkeypatch.setenv(
+        "UNISCENARIO_CARLA_COOKED_XODR_SHA256_JSON",
+        json.dumps({"Belmont_Office_Park_Belmont_CA": digest}),
+    )
+    assert _approved_cooked_xodr_sha256("Belmont_Office_Park_Belmont_CA", digest) == digest
+    with pytest.raises(RuntimeError, match="does not match"):
+        _approved_cooked_xodr_sha256("Belmont_Office_Park_Belmont_CA", "b" * 64)
+    with pytest.raises(RuntimeError, match="no approved cooked XODR digest"):
+        _approved_cooked_xodr_sha256("Richmond_Field_Station_Richmond_CA", digest)
 
 
 def test_carla_spawn_preserves_absolute_xosc_elevation_and_coordinate_sign():

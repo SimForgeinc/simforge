@@ -171,6 +171,28 @@ def _normalized_map_name(value: object) -> str:
     tail = str(value or "").replace("\\", "/").split("/")[-1]
     return tail[:-5] if tail.lower().endswith(".xodr") else tail
 
+
+def _approved_cooked_xodr_sha256(map_name: str, package_sha256: str) -> str | None:
+    raw = os.environ.get("UNISCENARIO_CARLA_COOKED_XODR_SHA256_JSON")
+    if raw is None:
+        return None
+    try:
+        configured = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("UNISCENARIO_CARLA_COOKED_XODR_SHA256_JSON must be valid JSON") from exc
+    if not isinstance(configured, Mapping):
+        raise RuntimeError("UNISCENARIO_CARLA_COOKED_XODR_SHA256_JSON must be an object")
+    approved = configured.get(map_name)
+    if (
+        not isinstance(approved, str)
+        or len(approved) != 64
+        or any(character not in "0123456789abcdef" for character in approved)
+    ):
+        raise RuntimeError(f"no approved cooked XODR digest is configured for {map_name}")
+    if approved != package_sha256:
+        raise RuntimeError(f"execution package XODR does not match the approved cooked map {map_name}")
+    return approved
+
 def _is_baked_default_daylight(requested: Mapping[str, float]) -> bool:
     return (
         all(requested[field] == 0.0 for field in (
@@ -448,15 +470,22 @@ class CarlaBackend:
                 raise RuntimeError(
                     f"loaded CARLA map {loaded_name or 'unknown'} does not match {requested_name}"
                 )
-            runtime_xodr = str(runtime_map.to_opendrive() or "")
-            if not runtime_xodr:
-                raise RuntimeError("loaded cooked CARLA map exposes no OpenDRIVE identity")
             package_sha256 = hashlib.sha256(xodr).hexdigest()
-            runtime_sha256 = hashlib.sha256(runtime_xodr.encode("utf-8")).hexdigest()
-            self.signal_id_map = dict(COOKED_SIGNAL_ID_MAPS.get(
-                (requested_name, package_sha256, runtime_sha256),
-                {},
-            ))
+            approved_sha256 = _approved_cooked_xodr_sha256(requested_name, package_sha256)
+            if approved_sha256 is None:
+                runtime_xodr = str(runtime_map.to_opendrive() or "")
+                if not runtime_xodr:
+                    raise RuntimeError("loaded cooked CARLA map exposes no OpenDRIVE identity")
+                runtime_sha256 = hashlib.sha256(runtime_xodr.encode("utf-8")).hexdigest()
+                xodr_verification = "runtime-readback"
+            else:
+                runtime_sha256 = approved_sha256
+                xodr_verification = "approved-deployment-binding"
+            self.signal_id_map = {}
+            for (map_name, package_digest, _runtime_digest), signal_map in COOKED_SIGNAL_ID_MAPS.items():
+                if map_name == requested_name and package_digest == package_sha256:
+                    self.signal_id_map = dict(signal_map)
+                    break
             self.map_evidence = {
                 "schema": "uniscenario.carla-map-evidence/v1",
                 "available": True,
@@ -466,6 +495,7 @@ class CarlaBackend:
                 "loadedMapName": loaded_name,
                 "packageXodrSha256": package_sha256,
                 "runtimeXodrSha256": runtime_sha256,
+                "xodrVerification": xodr_verification,
                 "xodrByteExact": runtime_sha256 == package_sha256,
                 "signalIdentityMode": (
                     "approved-cooked-map-remap" if self.signal_id_map else "direct-opendrive-id"
