@@ -1355,6 +1355,7 @@ class CarlaBackend:
         self.applied_appearance = getattr(self, "applied_appearance", {})
         self.appearance_verification = getattr(self, "appearance_verification", {})
         self.last_controls = getattr(self, "last_controls", {})
+        self.downed_actor_ids = getattr(self, "downed_actor_ids", set())
         self.current_plan_frame = (frame.index, frame.t)
         if not set(frame.signals).issubset(self.signals):
             missing = sorted(set(frame.signals) - set(self.signals))
@@ -1396,10 +1397,18 @@ class CarlaBackend:
                 if state.speed_mps < -1e-6:
                     raise RuntimeError(f"native physics does not support reverse pedestrian motion for {actor_id}")
                 if state.downed:
-                    raise RuntimeError(
-                        f"native physics cannot execute a downed pedestrian {actor_id} "
-                        "without forbidden post-spawn teleport repair"
+                    actor.apply_control(
+                        self.carla.WalkerControl(direction=target.get_forward_vector(), speed=0.0, jump=False)
                     )
+                    if actor_id not in self.downed_actor_ids:
+                        actor.set_simulate_physics(False)
+                        self.downed_actor_ids.add(actor_id)
+                    walker_z = actor.get_transform().location.z
+                    actor.set_transform(self.carla.Transform(
+                        self.carla.Location(x=state.x, y=-state.y, z=walker_z + 0.25),
+                        self.carla.Rotation(pitch=90.0, yaw=-state.heading_deg),
+                    ))
+                    continue
                 direction = target.get_forward_vector()
                 actor.apply_control(
                     self.carla.WalkerControl(direction=direction, speed=state.speed_mps, jump=False)

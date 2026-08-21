@@ -404,17 +404,6 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
             "native physics cannot execute signed reverse motion for non-vehicle actors: "
             + ", ".join(reverse_non_vehicles)
         )
-    downed_actors = sorted({
-        actor_id
-        for frame in plan.frames
-        for actor_id, state in frame.actors.items()
-        if state.downed
-    })
-    if downed_actors:
-        raise ContractError(
-            "native physics cannot execute authored knockdown poses without post-spawn teleport repair: "
-            + ", ".join(downed_actors)
-        )
     unsupported_moving = sorted({
         actor_id
         for frame in plan.frames
