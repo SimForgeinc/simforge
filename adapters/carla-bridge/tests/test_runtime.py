@@ -2127,6 +2127,7 @@ def test_duration_frame_pixel_sensor_and_output_budgets(monkeypatch):
     )
     with pytest.raises(ContractError, match="capture exceeds 18000 frames"):
         worker_runner._enforce_render_budgets(lease, short, 18_001)
+    monkeypatch.setattr(worker_runner, "MAX_SENSOR_SAMPLES", 1)
     with pytest.raises(ContractError, match="sensor pixels"):
         worker_runner._enforce_render_budgets(lease, short, 18_000)
 

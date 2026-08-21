@@ -34,6 +34,7 @@ from .contract import (
     MAX_MANIFEST_BYTES,
     MAX_OUTPUT_BYTES,
     MAX_SENSOR_PIXELS,
+    MAX_SENSOR_SAMPLES,
     MAX_TRAFFIC_BYTES,
     MAX_XODR_BYTES,
     MAX_XOSC_BYTES,
@@ -409,7 +410,7 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
         for frame in plan.frames
         for actor_id, state in frame.actors.items()
         if abs(state.speed_mps) > 1e-6
-        and plan.actors[actor_id].kind in {"animal", "static", "static_object"}
+        and plan.actors[actor_id].kind in {"static", "static_object"}
     })
     if unsupported_moving:
         raise ContractError(
@@ -1028,8 +1029,8 @@ def _enforce_render_budgets(lease: Lease, plan: ExecutionPlan, capture_count: in
         for sensor in lease.render_spec.sensors
         if sensor.modality in CAMERA_MODALITIES
     ) * capture_count
-    if camera_pixels > MAX_SENSOR_PIXELS:
-        raise ContractError(f"render capture exceeds {MAX_SENSOR_PIXELS} sensor pixels")
+    if camera_pixels > MAX_SENSOR_SAMPLES:
+        raise ContractError(f"render capture exceeds {MAX_SENSOR_SAMPLES} sensor pixels")
     point_bytes = 0
     for sensor in lease.render_spec.sensors:
         if sensor.modality in {"lidar", "semantic-lidar", "radar"}:
