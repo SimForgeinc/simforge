@@ -5,10 +5,12 @@ import ast
 import hashlib
 import gzip
 import io
+import math
 import json
 import inspect
 from pathlib import Path
 import subprocess
+import struct
 from threading import Condition, Lock, Thread
 import time
 import textwrap
@@ -200,27 +202,35 @@ def seal_lease(value, manifest: bytes = MANIFEST):
         "jobMode": job["mode"],
         "trafficMode": package["ambient"]["ambientMode"],
         "executionMode": job["renderSpec"].get("executionMode", "native-physics"),
-        "cameraKinds": sorted({camera["kind"] for camera in job["renderSpec"]["cameras"]}),
+        "sensorKinds": sorted({sensor["kind"] for sensor in job["renderSpec"]["sensors"]}),
         "outputs": sorted(set(job["renderSpec"]["outputs"])),
         "resources": {
             "schema": "uniscenario.render-resource-request/v1",
             "durationS": 0.04,
-            "sensors": len(job["renderSpec"]["cameras"]),
-            "captureFrames": len(job["renderSpec"]["cameras"]),
+            "sensors": len(job["renderSpec"]["sensors"]),
+            "captureFrames": len(job["renderSpec"]["sensors"]),
             "actors": 256,
             "actorFrameStates": 512,
-            "sensorPixels": (
-                job["renderSpec"]["width"]
-                * job["renderSpec"]["height"]
-                * len(job["renderSpec"]["cameras"])
+            "sensorPixels": sum(
+                sensor["attributes"]["width"] * sensor["attributes"]["height"]
+                for sensor in job["renderSpec"]["sensors"]
+                if sensor["kind"] in {"rgb", "depth", "semantic", "instance", "normals"}
             ),
             "outputBytes": 2_147_483_648,
-            "maxCameraWidth": job["renderSpec"]["width"] if job["renderSpec"]["cameras"] else 0,
-            "maxCameraHeight": job["renderSpec"]["height"] if job["renderSpec"]["cameras"] else 0,
-            "pixelsPerFrame": (
-                job["renderSpec"]["width"]
-                * job["renderSpec"]["height"]
-                * len(job["renderSpec"]["cameras"])
+            "maxCameraWidth": max((
+                sensor["attributes"]["width"]
+                for sensor in job["renderSpec"]["sensors"]
+                if sensor["kind"] in {"rgb", "depth", "semantic", "instance", "normals"}
+            ), default=0),
+            "maxCameraHeight": max((
+                sensor["attributes"]["height"]
+                for sensor in job["renderSpec"]["sensors"]
+                if sensor["kind"] in {"rgb", "depth", "semantic", "instance", "normals"}
+            ), default=0),
+            "pixelsPerFrame": sum(
+                sensor["attributes"]["width"] * sensor["attributes"]["height"]
+                for sensor in job["renderSpec"]["sensors"]
+                if sensor["kind"] in {"rgb", "depth", "semantic", "instance", "normals"}
             ),
         },
     }
@@ -233,7 +243,7 @@ def lease_value(outputs=None, uploads=None):
     if uploads is None:
         upload_kinds = list(dict.fromkeys(["trace", *[item for item in selected_outputs if item != "frames"]]))
         if "frames" in selected_outputs:
-            upload_kinds.append("framesArchive-hero")
+            upload_kinds.append("sensorArchive-hero")
         media_types = {
             "trace": "application/gzip",
             "video": "video/mp4",
@@ -268,7 +278,37 @@ def lease_value(outputs=None, uploads=None):
                 },
             },
             "mode": "full_render",
-            "renderSpec": {"schema": "uniscenario.render-spec/v1", "width": 640, "height": 360, "fps": 25, "cameras": [{"id": "hero", "kind": "rgb", "attachTo": "ego", "mount": "chase"}], "outputs": selected_outputs, "executionMode": "native-physics", "quality": "high"},
+            "renderSpec": {
+                "schema": "uniscenario.render-spec/v1",
+                "width": 640,
+                "height": 360,
+                "fps": 25,
+                "sensors": [{
+                    "id": "hero",
+                    "kind": "rgb",
+                    "attachTo": "ego",
+                    "attachment": "rigid",
+                    "transform": {
+                        "x": -7.5,
+                        "y": 3.0,
+                        "z": 0.0,
+                        "pitch": -0.20943951023931953,
+                        "yaw": 0.0,
+                        "roll": 0.0,
+                    },
+                    "attributes": {
+                        "width": 640,
+                        "height": 360,
+                        "fov": 1.5707963267948966,
+                        "clipNear": 0.1,
+                        "clipFar": 1000.0,
+                        "enablePostprocessEffects": True,
+                    },
+                }],
+                "outputs": selected_outputs,
+                "executionMode": "native-physics",
+                "quality": "high",
+            },
             "parityThresholds": {"positionM": 0.01, "headingDeg": 0.01, "speedMps": 0.01},
             "artifactUploads": uploads,
         },
@@ -292,23 +332,60 @@ class FakeBackend:
     def configure_environment(self, environment): self.calls.append(("environment", environment.cloudiness))
     def spawn(self, actors, first_frame, catalog, abort=None): (abort or (lambda: None))(); self.calls.append(("spawn", sorted(actors)))
     def prepare_scenario(self, first_frame, abort=None): (abort or (lambda: None))(); self.calls.append(("prepare", first_frame.index)); return self.stability
-    def configure_cameras(self, spec, output_dir: Path, max_capture_disk_bytes, abort=None): (abort or (lambda: None))(); output_dir.mkdir(parents=True); self.output_dir = output_dir; self.calls.append(("cameras", spec.width)); self.max_capture_disk_bytes = max_capture_disk_bytes
+    def configure_sensors(self, spec, output_dir: Path, max_capture_disk_bytes, abort=None):
+        (abort or (lambda: None))()
+        output_dir.mkdir(parents=True)
+        self.output_dir = output_dir
+        self.spec = spec
+        self.calls.append(("sensors", spec.width))
+        self.max_capture_disk_bytes = max_capture_disk_bytes
     def apply(self, frame, abort=None): (abort or (lambda: None))(); self.frame = frame; self.executed_signals = dict(frame.signals); self.calls.append(("apply", frame.index))
     def tick(self, capture=None, abort=None):
         (abort or (lambda: None))()
         self.calls.append(("tick", self.frame.index))
         if capture is not None:
-            for camera_id in ("hero",):
-                target = self.output_dir / camera_id
+            for sensor in self.spec.sensors:
+                target = self.output_dir / sensor.id
                 target.mkdir(parents=True, exist_ok=True)
                 output_index = int(capture["outputFrameIndex"])
-                (target / f"{output_index:08d}.png").write_bytes(b"png")
-                self.records.append({"sensorId": camera_id, "kind": "rgb", "outputFrameIndex": output_index, "scheduledTimeS": capture["scheduledTimeS"], "carlaFrame": self.frame.index + 1, "timestamp": self.frame.t, "relativePath": f"{camera_id}/{output_index:08d}.png"})
+                (target / f"{output_index:08d}.{sensor.format}").write_bytes(b"sensor")
+                record = {
+                    "sensorId": sensor.id,
+                    "kind": sensor.kind,
+                    "format": sensor.format,
+                    "outputFrameIndex": output_index,
+                    "scheduledTimeS": capture["scheduledTimeS"],
+                    "carlaFrame": self.frame.index + 1,
+                    "timestamp": self.frame.t,
+                    "relativePath": f"{sensor.id}/{output_index:08d}.{sensor.format}",
+                    "attachTo": sensor.attach_to,
+                    "attachment": sensor.attachment,
+                    "transform": sensor.transform,
+                    "relativeMatrix": [1.0, 0.0, 0.0, sensor.transform["x"], 0.0, 1.0, 0.0, sensor.transform["y"], 0.0, 0.0, 1.0, sensor.transform["z"], 0.0, 0.0, 0.0, 1.0],
+                    "canonicalWorldMatrix": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+                    "attributes": sensor.attributes,
+                }
+                if sensor.kind in {"rgb", "depth", "semantic", "instance", "normals"}:
+                    width, height, fov = (
+                        sensor.attributes["width"],
+                        sensor.attributes["height"],
+                        sensor.attributes["fov"],
+                    )
+                    focal = width / (2 * __import__("math").tan(fov / 2))
+                    record["calibration"] = {
+                        "intrinsicMatrix": [focal, 0.0, width / 2, 0.0, focal, height / 2, 0.0, 0.0, 1.0],
+                        "width": width,
+                        "height": height,
+                        "fov": fov,
+                        "clipNear": sensor.attributes["clipNear"],
+                        "clipFar": sensor.attributes["clipFar"],
+                    }
+                self.records.append(record)
         return {actor_id: {"x": state.x + self.offset, "y": state.y, "z": state.z, "headingDeg": state.heading_deg, "speedMps": state.speed_mps} for actor_id, state in self.frame.actors.items()}
     def finalize_capture(self, expected_frame_count, abort=None):
         (abort or (lambda: None))()
         self.calls.append(("finalize", expected_frame_count))
-        assert len(self.records) == expected_frame_count
+        assert len(self.records) == expected_frame_count * len(self.spec.sensors)
     def cleanup(self): self.calls.append(("cleanup",))
     def sensor_manifest(self, abort=None): (abort or (lambda: None))(); return self.records
     def signal_readback(self, abort=None): (abort or (lambda: None))(); return dict(self.executed_signals)
@@ -568,8 +645,19 @@ def _capture_backend(tmp_path, callback):
     backend.max_capture_disk_bytes = 1024 * 1024
     backend.sensor_timeout_s = 0.2
     backend.sensor_configs = {
-        camera_id: {"target": tmp_path / camera_id, "kind": "rgb", "converter": None, "attachTo": "ego", "mount": "chase"}
-        for camera_id in ("hero", "rear")
+        sensor_id: {
+            "target": tmp_path / sensor_id,
+            "kind": "rgb",
+            "format": "png",
+            "converter": None,
+            "attachTo": "ego",
+            "attachment": "rigid",
+            "transform": {"x": 0.0, "y": 1.0, "z": 0.0, "pitch": 0.0, "yaw": 0.0, "roll": 0.0},
+            "relativeMatrix": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+            "attributes": {"width": 640, "height": 360, "fov": math.pi / 2, "clipNear": 0.1, "clipFar": 1000.0, "enablePostprocessEffects": False},
+            "calibration": {"intrinsicMatrix": [320.0, 0.0, 320.0, 0.0, 320.0, 180.0, 0.0, 0.0, 1.0], "width": 640, "height": 360, "fov": math.pi / 2, "clipNear": 0.1, "clipFar": 1000.0},
+        }
+        for sensor_id in ("hero", "rear")
     }
     for config in backend.sensor_configs.values():
         config["target"].mkdir()
@@ -579,18 +667,29 @@ def _capture_backend(tmp_path, callback):
     return backend
 
 
+class _SensorTransform:
+    def get_matrix(self):
+        return [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+
+
 class _SensorImage:
     def __init__(self, frame, timestamp=0.0):
         self.frame, self.timestamp = frame, timestamp
+        self.transform = _SensorTransform()
     def save_to_disk(self, target):
-        Path(target).write_bytes(b"png")
+        Path(target).write_bytes(b"\x89PNG\r\n\x1a\n")
 
 
 def test_capture_waits_for_all_delayed_sensors_on_the_exact_world_frame(tmp_path):
     threads = []
     def callbacks(backend):
-        for camera_id, delay in (("hero", 0.01), ("rear", 0.04)):
-            thread = Thread(target=lambda cid=camera_id, wait=delay: (time.sleep(wait), backend._receive_sensor_frame(cid, _SensorImage(42, 1.25))))
+        for sensor_id, delay in (("hero", 0.01), ("rear", 0.04)):
+            thread = Thread(target=lambda sid=sensor_id, wait=delay: (time.sleep(wait), backend._receive_sensor_frame(sid, _SensorImage(42, 1.25))))
             thread.start()
             threads.append(thread)
     backend = _capture_backend(tmp_path, callbacks)
@@ -629,6 +728,298 @@ def test_capture_rejects_duplicate_and_out_of_order_callbacks(tmp_path, frames, 
         backend._receive_sensor_frame("rear", _SensorImage(42))
     backend = _capture_backend(tmp_path, callbacks)
     with pytest.raises(RuntimeError, match=message):
+        backend.tick({"outputFrameIndex": 0, "scheduledTimeS": 0.0})
+
+def _all_sensor_values():
+    transform = {"x": 1.5, "y": 2.0, "z": -0.5, "pitch": 0.1, "yaw": -0.2, "roll": 0.3}
+    camera_attributes = {
+        "width": 320,
+        "height": 240,
+        "fov": 1.2,
+        "clipNear": 0.1,
+        "clipFar": 500.0,
+        "enablePostprocessEffects": False,
+    }
+    lidar_attributes = {
+        "channels": 64,
+        "range": 120.0,
+        "pointsPerSecond": 1_200_000,
+        "rotationFrequency": 10.0,
+        "upperFov": 0.26,
+        "lowerFov": -0.44,
+    }
+    radar_attributes = {
+        "horizontalFov": 0.52,
+        "verticalFov": 0.35,
+        "range": 250.0,
+        "pointsPerSecond": 1500,
+    }
+    attachments = {
+        "rgb": "spring_arm",
+        "depth": "spring_arm_ghost",
+    }
+    return [
+        {
+            "id": kind,
+            "kind": kind,
+            "attachTo": "ego",
+            "attachment": attachments.get(kind, "rigid"),
+            "transform": dict(transform),
+            "attributes": (
+                dict(camera_attributes)
+                if kind in {"rgb", "depth", "semantic", "instance", "normals"}
+                else dict(lidar_attributes)
+                if kind in {"lidar", "semantic_lidar"}
+                else dict(radar_attributes)
+            ),
+        }
+        for kind in (
+            "rgb",
+            "depth",
+            "semantic",
+            "instance",
+            "normals",
+            "lidar",
+            "semantic_lidar",
+            "radar",
+        )
+    ]
+
+
+def test_generic_sensor_contract_rejects_deprecated_and_incomplete_shapes():
+    deprecated = lease_value()
+    deprecated["job"]["renderSpec"]["cameras"] = deprecated["job"]["renderSpec"].pop("sensors")
+    with pytest.raises(ContractError, match="renderSpec has invalid fields"):
+        parse_lease(deprecated)
+
+    extra_field = lease_value()
+    extra_field["job"]["renderSpec"]["sensors"][0]["mount"] = "chase"
+    with pytest.raises(ContractError, match="invalid fields"):
+        parse_lease(extra_field)
+
+    missing_attribute = lease_value()
+    del missing_attribute["job"]["renderSpec"]["sensors"][0]["attributes"]["fov"]
+    with pytest.raises(ContractError, match="attributes has invalid fields"):
+        parse_lease(missing_attribute)
+
+    incomplete_transform = lease_value()
+    del incomplete_transform["job"]["renderSpec"]["sensors"][0]["transform"]["roll"]
+    with pytest.raises(ContractError, match="contain exactly"):
+        parse_lease(incomplete_transform)
+
+    implicit_attachment = lease_value()
+    implicit_attachment["job"]["renderSpec"]["sensors"][0]["attachment"] = "default"
+    with pytest.raises(ContractError, match="attachment is unsupported"):
+        parse_lease(implicit_attachment)
+
+
+def test_configures_and_captures_every_carla_sensor_blueprint_and_attachment(tmp_path):
+    value = lease_value()
+    value["job"]["renderSpec"]["sensors"] = _all_sensor_values()
+    spec = parse_lease(seal_lease(value)).render_spec
+
+    class Location:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Rotation:
+        def __init__(self, pitch=0.0, yaw=0.0, roll=0.0):
+            self.pitch, self.yaw, self.roll = pitch, yaw, roll
+
+    class Transform:
+        def __init__(self, location, rotation):
+            self.location, self.rotation = location, rotation
+
+    class AttachmentType:
+        Rigid = object()
+        SpringArm = object()
+        SpringArmGhost = object()
+
+    class ColorConverter:
+        Raw = object()
+
+    class Carla:
+        pass
+
+    Carla.Location = Location
+    Carla.Rotation = Rotation
+    Carla.Transform = Transform
+    Carla.AttachmentType = AttachmentType
+    Carla.ColorConverter = ColorConverter
+
+    camera_attributes = {
+        "image_size_x",
+        "image_size_y",
+        "fov",
+        "sensor_tick",
+        "enable_postprocess_effects",
+    }
+    lidar_attributes = {
+        "channels",
+        "range",
+        "points_per_second",
+        "rotation_frequency",
+        "upper_fov",
+        "lower_fov",
+        "sensor_tick",
+    }
+    radar_attributes = {
+        "horizontal_fov",
+        "vertical_fov",
+        "range",
+        "points_per_second",
+        "sensor_tick",
+    }
+
+    class Blueprint:
+        def __init__(self, blueprint_id):
+            self.id = blueprint_id
+            self.values = {}
+            if blueprint_id.startswith("sensor.camera."):
+                self.available = camera_attributes
+            elif blueprint_id.startswith("sensor.lidar."):
+                self.available = lidar_attributes
+            else:
+                self.available = radar_attributes
+        def has_attribute(self, name):
+            return name in self.available
+        def set_attribute(self, name, value):
+            assert name in self.available
+            self.values[name] = value
+
+    class Library:
+        def __init__(self):
+            self.blueprints = {}
+            self.missing = None
+        def find(self, blueprint_id):
+            if blueprint_id == self.missing:
+                return None
+            self.blueprints.setdefault(blueprint_id, Blueprint(blueprint_id))
+            return self.blueprints[blueprint_id]
+
+    class SpawnedSensor:
+        def __init__(self):
+            self.callback = None
+            self.stops = 0
+        def listen(self, callback):
+            self.callback = callback
+        def stop(self):
+            self.stops += 1
+        def destroy(self):
+            pass
+
+    class World:
+        def __init__(self):
+            self.library = Library()
+            self.spawned = []
+        def get_blueprint_library(self):
+            return self.library
+        def spawn_actor(self, blueprint, transform, *, attach_to, attachment_type):
+            sensor = SpawnedSensor()
+            self.spawned.append((blueprint, transform, attach_to, attachment_type, sensor))
+            return sensor
+
+    def backend_for(world):
+        backend = object.__new__(CarlaBackend)
+        backend.carla = Carla
+        backend.world = world
+        backend.actors = {"ego": object()}
+        backend.sensors = []
+        backend.sensor_lock = Lock()
+        backend.sensor_condition = Condition(backend.sensor_lock)
+        backend.sensor_pending = {}
+        backend.sensor_last_frame = {}
+        backend.sensor_records = []
+        backend.sensor_configs = {}
+        backend.sensor_error = None
+        backend.sensor_closed = False
+        backend.capture_disk_bytes = 0
+        backend.max_capture_disk_bytes = 0
+        backend.sensor_timeout_s = 0.2
+        return backend
+
+    world = World()
+    backend = backend_for(world)
+    backend.configure_sensors(spec, tmp_path, 10_000_000)
+    assert [item[0].id for item in world.spawned] == [
+        "sensor.camera.rgb",
+        "sensor.camera.depth",
+        "sensor.camera.semantic_segmentation",
+        "sensor.camera.instance_segmentation",
+        "sensor.camera.normals",
+        "sensor.lidar.ray_cast",
+        "sensor.lidar.ray_cast_semantic",
+        "sensor.other.radar",
+    ]
+    assert world.spawned[0][3] is AttachmentType.SpringArm
+    assert world.spawned[1][3] is AttachmentType.SpringArmGhost
+    assert all(item[3] is AttachmentType.Rigid for item in world.spawned[2:])
+    lowered = world.spawned[0][1]
+    assert (lowered.location.x, lowered.location.y, lowered.location.z) == (1.5, 0.5, 2.0)
+    assert lowered.rotation.pitch == pytest.approx(math.degrees(0.1))
+    assert lowered.rotation.yaw == pytest.approx(math.degrees(-0.2))
+    assert lowered.rotation.roll == pytest.approx(math.degrees(0.3))
+    assert float(world.library.blueprints["sensor.camera.rgb"].values["fov"]) == pytest.approx(math.degrees(1.2))
+    assert world.library.blueprints["sensor.camera.rgb"].values["enable_postprocess_effects"] == "False"
+    assert float(world.library.blueprints["sensor.lidar.ray_cast"].values["upper_fov"]) == pytest.approx(math.degrees(0.26))
+    assert float(world.library.blueprints["sensor.other.radar"].values["horizontal_fov"]) == pytest.approx(math.degrees(0.52))
+
+    class ImageData(_SensorImage):
+        def __init__(self):
+            super().__init__(42, 1.25)
+            self.converters = []
+        def convert(self, converter):
+            self.converters.append(converter)
+
+    class Measurement:
+        frame = 42
+        timestamp = 1.25
+        transform = _SensorTransform()
+        def __init__(self, raw_data):
+            self.raw_data = raw_data
+
+    data_by_kind = {}
+    for sensor_spec, spawned in zip(spec.sensors, world.spawned):
+        if sensor_spec.kind in {"rgb", "depth", "semantic", "instance", "normals"}:
+            data = ImageData()
+        elif sensor_spec.kind == "lidar":
+            data = Measurement(struct.pack("<ffff", 1.0, 2.0, 3.0, 0.5))
+        elif sensor_spec.kind == "semantic_lidar":
+            data = Measurement(struct.pack("<ffffII", 1.0, 2.0, 3.0, 0.75, 17, 8))
+        else:
+            data = Measurement(struct.pack("<ffff", 4.0, 0.2, 0.1, 10.0))
+        data_by_kind[sensor_spec.kind] = data
+        spawned[4].callback(data)
+    backend._capture_world_frame(42, {"outputFrameIndex": 0, "scheduledTimeS": 0.0})
+    backend.finalize_capture(1)
+    records = worker_validation.validate_sensor_evidence(spec, backend.sensor_manifest(), 1)
+    assert len(records) == 8
+    assert {record["format"] for record in records} == {"png", "ply", "csv"}
+    assert data_by_kind["depth"].converters == [ColorConverter.Raw]
+    assert (tmp_path / "lidar/00000000.ply").read_text().endswith("1 3 -2 0.5\n")
+    assert "property uint object_tag" in (tmp_path / "semantic_lidar/00000000.ply").read_text()
+    assert (tmp_path / "radar/00000000.csv").read_text() == (
+        "altitude,azimuth,depth,velocity\n0.100000001,0.200000003,10,4\n"
+    )
+    assert all(item[4].stops == 1 for item in world.spawned)
+
+    missing_world = World()
+    missing_world.library.missing = "sensor.camera.rgb"
+    with pytest.raises(RuntimeError, match="sensor.camera.rgb is unavailable"):
+        backend_for(missing_world).configure_sensors(spec, tmp_path / "missing", 10_000_000)
+
+
+def test_image_callback_without_output_fails_closed(tmp_path):
+    class MissingOutputImage(_SensorImage):
+        def save_to_disk(self, target):
+            pass
+
+    def callbacks(backend):
+        backend._receive_sensor_frame("hero", MissingOutputImage(42))
+        backend._receive_sensor_frame("rear", _SensorImage(42))
+
+    backend = _capture_backend(tmp_path, callbacks)
+    with pytest.raises(RuntimeError, match="did not produce its expected png output"):
         backend.tick({"outputFrameIndex": 0, "scheduledTimeS": 0.0})
 
 
@@ -939,7 +1330,7 @@ def test_executes_hash_closed_lease_and_uploads_trace():
     assert backend.calls[0] == ("mode", "native-physics")
     assert backend.calls.index(("signals", ())) < backend.calls.index(("environment", 0.0))
     assert backend.calls.index(("signals", ())) < backend.calls.index(("spawn", ["ego"]))
-    assert backend.calls.index(("prepare", 0)) < backend.calls.index(("cameras", 640))
+    assert backend.calls.index(("prepare", 0)) < backend.calls.index(("sensors", 640))
 
 
 def test_mode_is_explicit_and_parity_tolerance_gates_result():
@@ -967,7 +1358,7 @@ def test_interaction_2d_is_camera_free_and_emits_trace_and_manifest():
     })
     value["job"]["mode"] = "interaction_2d"
     value["job"]["renderSpec"]["schema"] = "uniscenario.interaction-spec/v1"
-    value["job"]["renderSpec"]["cameras"] = []
+    value["job"]["renderSpec"]["sensors"] = []
     lease = parse_lease(seal_lease(value))
     backend = FakeBackend()
     assets = {"memory:manifest": MANIFEST, "memory:xosc": XOSC, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
@@ -977,7 +1368,7 @@ def test_interaction_2d_is_camera_free_and_emits_trace_and_manifest():
         downloader=lambda url, _limit: assets[url],
         uploader=lambda *_args: None,
     )
-    assert not any(call[0] == "cameras" for call in backend.calls)
+    assert not any(call[0] == "sensors" for call in backend.calls)
     assert [artifact["kind"] for artifact in result["artifacts"]] == ["trace", "manifest"]
 
 
@@ -1202,22 +1593,75 @@ def test_rejects_fake_or_incomplete_ambient_provenance():
         parse_lease(bad_digest)
 
 
-def test_versioned_render_spec_supports_mounts_sensors_quality_environment_and_formats():
+def test_versioned_render_spec_supports_every_generic_sensor_kind_and_strict_attributes():
     value = lease_value(outputs=["trace", "manifest", "annotations"])
+    transform = {"x": 1.0, "y": 2.0, "z": 0.5, "pitch": 0.1, "yaw": -0.2, "roll": 0.3}
+    camera_attributes = {
+        "width": 800,
+        "height": 600,
+        "fov": 1.2,
+        "clipNear": 0.1,
+        "clipFar": 500.0,
+        "enablePostprocessEffects": False,
+    }
+    lidar_attributes = {
+        "channels": 64,
+        "range": 120.0,
+        "pointsPerSecond": 1_200_000,
+        "rotationFrequency": 10.0,
+        "upperFov": 0.26,
+        "lowerFov": -0.44,
+    }
+    radar_attributes = {
+        "horizontalFov": 0.52,
+        "verticalFov": 0.35,
+        "range": 250.0,
+        "pointsPerSecond": 1500,
+    }
     value["job"]["renderSpec"].update({
         "quality": "cinematic",
         "environment": {"cloudiness": 70, "precipitation": 25, "wetness": 50, "sunAltitude": 12},
         "formats": ["json", "jsonl"],
-        "cameras": [
-            {"id": "hero", "kind": "rgb", "attachTo": "ego", "mount": "hood", "fov": 82},
-            {"id": "depth", "kind": "depth", "attachTo": "ego", "mount": "roof"},
-            {"id": "sem", "kind": "semantic", "mount": "world", "transform": {"x": 10, "y": 2, "z": 8, "pitch": -20}},
-            {"id": "inst", "kind": "instance", "attachTo": "ego", "mount": "dash"},
+        "sensors": [
+            {
+                "id": kind,
+                "kind": kind,
+                "attachTo": "ego",
+                "attachment": "rigid",
+                "transform": dict(transform),
+                "attributes": (
+                    dict(camera_attributes)
+                    if kind in {"rgb", "depth", "semantic", "instance", "normals"}
+                    else dict(lidar_attributes)
+                    if kind in {"lidar", "semantic_lidar"}
+                    else dict(radar_attributes)
+                ),
+            }
+            for kind in (
+                "rgb",
+                "depth",
+                "semantic",
+                "instance",
+                "normals",
+                "lidar",
+                "semantic_lidar",
+                "radar",
+            )
         ],
     })
     lease = parse_lease(seal_lease(value))
-    assert [camera.kind for camera in lease.render_spec.cameras] == ["rgb", "depth", "semantic", "instance"]
-    assert lease.render_spec.cameras[0].transform["x"] == 1.4
+    assert [sensor.kind for sensor in lease.render_spec.sensors] == [
+        "rgb",
+        "depth",
+        "semantic",
+        "instance",
+        "normals",
+        "lidar",
+        "semantic_lidar",
+        "radar",
+    ]
+    assert lease.render_spec.sensors[0].transform == transform
+    assert lease.render_spec.sensors[-1].attributes == radar_attributes
     assert lease.render_spec.quality == "cinematic"
     assert lease.render_spec.environment.cloudiness == 70
 
@@ -1318,7 +1762,7 @@ def test_cleanup_failure_is_chained_without_masking_execution_failure():
     assert str(raised.value.__cause__) == "secondary cleanup failure"
 
 
-def test_frame_archives_are_reserved_and_reported_per_camera(monkeypatch):
+def test_frame_archives_are_reserved_and_reported_per_sensor(monkeypatch):
     lease = parse_lease(lease_value(outputs=["frames"]))
     assets = {"memory:manifest": MANIFEST, "memory:xosc": XOSC, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
     uploads = []
@@ -1332,14 +1776,68 @@ def test_frame_archives_are_reserved_and_reported_per_camera(monkeypatch):
         downloader=lambda url, _limit: assets[url],
         uploader=stream_upload,
     )
-    assert [item["kind"] for item in result["artifacts"]] == ["trace", "framesArchive-hero"]
+    assert [item["kind"] for item in result["artifacts"]] == ["trace", "sensorArchive-hero"]
     assert result["artifacts"][1]["mediaType"] == "application/zip"
     assert result["artifacts"][1]["metadata"] == {
         "sensorId": "hero", "sensorKind": "rgb", "format": "png",
         "frameCount": 1, "fps": 25.0, "durationS": 0.04,
     }
-    assert uploads[1][0] == "memory:upload:framesArchive-hero"
+    assert uploads[1][0] == "memory:upload:sensorArchive-hero"
     assert uploads[1][1].startswith(b"PK")
+
+def test_generic_sensor_archives_upload_each_kind_with_its_exact_format():
+    sensor_values = _all_sensor_values()
+    reservations = {
+        kind: {
+            "uploadId": kind,
+            "uploadUrl": f"memory:upload:{kind}",
+            "artifactUrl": f"/api/uniscenario/artifact-uploads/{kind}",
+            "requiredHeaders": {
+                "content-type": "application/gzip" if kind == "trace" else "application/zip"
+            },
+        }
+        for kind in ["trace", *(f"sensorArchive-{sensor['id']}" for sensor in sensor_values)]
+    }
+    value = lease_value(outputs=["frames"], uploads=reservations)
+    value["job"]["renderSpec"]["sensors"] = sensor_values
+    lease = parse_lease(seal_lease(value))
+    assets = {
+        "memory:manifest": MANIFEST,
+        "memory:xosc": XOSC,
+        "memory:xodr": XODR,
+        "memory:catalog": CATALOG,
+        "memory:traffic": DISABLED_TRAFFIC,
+    }
+    uploaded = {}
+    result = execute_lease(
+        lease,
+        FakeBackend(),
+        lambda body: {"valid": True, "xmlSha256": digest(body), "xsdSha256": OFFICIAL_XSD_SHA256},
+        downloader=lambda url, _limit: assets[url],
+        uploader=lambda url, body, _media_type, _headers: uploaded.__setitem__(url, artifact_bytes(body)),
+    )
+    archive_artifacts = result["artifacts"][1:]
+    assert [item["kind"] for item in archive_artifacts] == [
+        f"sensorArchive-{sensor['id']}"
+        for sensor in sensor_values
+    ]
+    assert {
+        item["metadata"]["sensorKind"]: item["metadata"]["format"]
+        for item in archive_artifacts
+    } == {
+        "rgb": "png",
+        "depth": "png",
+        "semantic": "png",
+        "instance": "png",
+        "normals": "png",
+        "lidar": "ply",
+        "semantic_lidar": "ply",
+        "radar": "csv",
+    }
+    assert all(
+        uploaded[f"memory:upload:{item['kind']}"].startswith(b"PK")
+        for item in archive_artifacts
+    )
 
 
 def test_multi_actor_pedestrian_and_lifecycle_capability_gates():
@@ -1725,7 +2223,7 @@ def test_expiry_inside_actor_spawn_cleans_up_without_binding_or_upload(monkeypat
             deadline_monotonic=lambda: 1.0,
         )
     assert backend.calls[-1] == ("cleanup",)
-    assert not any(call[0] in {"prepare", "cameras"} for call in backend.calls)
+    assert not any(call[0] in {"prepare", "sensors"} for call in backend.calls)
 
 
 def test_expiry_inside_native_stability_cleans_up_without_binding_or_upload(monkeypatch):
@@ -1749,7 +2247,7 @@ def test_expiry_inside_native_stability_cleans_up_without_binding_or_upload(monk
             deadline_monotonic=lambda: 1.0,
         )
     assert backend.calls[-1] == ("cleanup",)
-    assert not any(call[0] == "cameras" for call in backend.calls)
+    assert not any(call[0] == "sensors" for call in backend.calls)
 
 
 def test_cancellation_during_trace_serialization_never_binds_or_uploads():
@@ -1854,8 +2352,16 @@ def test_slow_heartbeat_never_blocks_arriving_sensor_callback(tmp_path):
     backend.sensor_lock = lock
     backend.sensor_condition = Condition(lock)
     backend.sensor_configs = {"hero": {
-        "target": tmp_path, "kind": "rgb", "converter": None,
-        "attachTo": None, "mount": "world",
+        "target": tmp_path,
+        "kind": "rgb",
+        "format": "png",
+        "converter": None,
+        "attachTo": "ego",
+        "attachment": "rigid",
+        "transform": {"x": 0.0, "y": 1.0, "z": 0.0, "pitch": 0.0, "yaw": 0.0, "roll": 0.0},
+        "relativeMatrix": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+        "attributes": {"width": 640, "height": 360, "fov": math.pi / 2, "clipNear": 0.1, "clipFar": 1000.0, "enablePostprocessEffects": False},
+        "calibration": {"intrinsicMatrix": [320.0, 0.0, 320.0, 0.0, 320.0, 180.0, 0.0, 0.0, 1.0], "width": 640, "height": 360, "fov": math.pi / 2, "clipNear": 0.1, "clipFar": 1000.0},
     }}
     backend.sensor_timeout_s = 0.5
     backend.sensor_error = None
@@ -1878,7 +2384,8 @@ def test_slow_heartbeat_never_blocks_arriving_sensor_callback(tmp_path):
     class Image:
         frame = 42
         timestamp = 1.25
-        def save_to_disk(self, target): Path(target).write_bytes(b"png")
+        transform = _SensorTransform()
+        def save_to_disk(self, target): Path(target).write_bytes(b"\x89PNG\r\n\x1a\n")
     def run_capture():
         try:
             backend._capture_world_frame(42, {"outputFrameIndex": 0, "scheduledTimeS": 1.25}, abort)
@@ -2005,7 +2512,7 @@ def test_raw_frames_and_archive_share_one_peak_temp_budget(monkeypatch):
             "uploadId": "trace", "uploadUrl": "memory:trace", "artifactUrl": "/api/uniscenario/artifact-uploads/trace",
             "requiredHeaders": {"content-type": "application/gzip"},
         },
-        "framesArchive-hero": {
+        "sensorArchive-hero": {
             "uploadId": "frames", "uploadUrl": "memory:frames", "artifactUrl": "/api/uniscenario/artifact-uploads/frames",
             "requiredHeaders": {"content-type": "application/zip"},
         },
@@ -2015,21 +2522,11 @@ def test_raw_frames_and_archive_share_one_peak_temp_budget(monkeypatch):
     monkeypatch.setattr(worker_runner, "MAX_OUTPUT_BYTES", 1_100_000)
     class LargeFrameBackend(FakeBackend):
         def tick(self, capture=None, abort=None):
-            (abort or (lambda: None))()
-            self.calls.append(("tick", self.frame.index))
+            result = super().tick(capture, abort)
             if capture is not None:
-                target = self.output_dir / "hero"
-                target.mkdir(parents=True, exist_ok=True)
-                (target / "00000000.png").write_bytes(b"x" * 1_000_000)
-                self.records.append({
-                    "sensorId": "hero", "kind": "rgb", "outputFrameIndex": 0,
-                    "scheduledTimeS": 0.0, "carlaFrame": 1, "timestamp": 0.0,
-                    "relativePath": "hero/00000000.png",
-                })
-            return {
-                actor_id: {"x": state.x, "y": state.y, "z": state.z, "headingDeg": state.heading_deg, "speedMps": state.speed_mps}
-                for actor_id, state in self.frame.actors.items()
-            }
+                target = self.output_dir / "hero" / "00000000.png"
+                target.write_bytes(b"x" * 1_000_000)
+            return result
     backend = LargeFrameBackend()
     uploaded = []
     with pytest.raises(ContractError, match="pre-allocation budget"):
@@ -2053,7 +2550,7 @@ def test_duration_frame_pixel_sensor_and_output_budgets(monkeypatch):
         worker_runner._enforce_render_budgets(lease, too_long, 1)
     short = ExecutionPlan(
         "uniscenario.execution-plan/v1", 0.02, {},
-        (PlanFrame(0, 0.0, {}, {}), PlanFrame(1, 1.0, {}, {})), "a" * 64,
+        (PlanFrame(0, 0.0, {}, {}), PlanFrame(1, 0.04, {}, {})), "a" * 64,
     )
     with pytest.raises(ContractError, match="capture exceeds 18000 frames"):
         worker_runner._enforce_render_budgets(lease, short, 18_001)
@@ -2061,14 +2558,15 @@ def test_duration_frame_pixel_sensor_and_output_budgets(monkeypatch):
         worker_runner._enforce_render_budgets(lease, short, 18_000)
 
     sensor_heavy = lease_value()
-    sensor_heavy["job"]["renderSpec"]["cameras"] = [
-        {"id": f"camera-{index}", "kind": "rgb", "attachTo": "ego", "mount": "chase"}
+    template = sensor_heavy["job"]["renderSpec"]["sensors"][0]
+    sensor_heavy["job"]["renderSpec"]["sensors"] = [
+        {**copy.deepcopy(template), "id": f"sensor-{index}"}
         for index in range(17)
     ]
     sensor_heavy = seal_lease(sensor_heavy)
     sensor_heavy["job"]["executionPackage"]["runtimeRequirements"]["resources"]["sensors"] = 16
     reseal_control(sensor_heavy["job"]["executionPackage"])
-    with pytest.raises(ContractError, match="1..16 cameras"):
+    with pytest.raises(ContractError, match="1..16.*sensors"):
         parse_lease(sensor_heavy)
 
     invalid_resources = lease_value()
@@ -2097,7 +2595,7 @@ def test_duration_and_output_budgets_fail_before_expensive_allocation(monkeypatc
     (camera_dir / "00000000.png").write_bytes(b"four")
     monkeypatch.setattr(worker_runner.zipfile, "ZipFile", lambda *_args, **_kwargs: pytest.fail("ZIP must not allocate"))
     with pytest.raises(ContractError, match="pre-allocation budget"):
-        worker_runner._archive_frames(camera_dir, tmp_path / "frames.zip", 1, 3, lambda *_args: None)
+        worker_runner._archive_sensor_frames(camera_dir, "png", tmp_path / "frames.zip", 1, 3, lambda *_args: None)
     monkeypatch.setattr(worker_runner, "_run_process", lambda *_args, **_kwargs: pytest.fail("ffmpeg must not start"))
     with pytest.raises(ContractError, match="pre-allocation output budget"):
         worker_runner._encode_video(tmp_path, "hero", 30, tmp_path / "render.mp4", 1, 3, lambda *_args: None, lambda: float("inf"))

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from dataclasses import dataclass
-from math import isfinite, sqrt
+from math import cos, degrees, isfinite, sin, sqrt, tan
 import os
+import struct
 from threading import Condition, Lock
 from time import monotonic
 from typing import Any, Callable, Mapping, Protocol
@@ -151,6 +152,171 @@ def runtime_asset_bindings(
     check()
     return bindings
 
+def _matmul4(left: list[list[float]], right: list[list[float]]) -> list[list[float]]:
+    return [
+        [
+            sum(left[row][inner] * right[inner][column] for inner in range(4))
+            for column in range(4)
+        ]
+        for row in range(4)
+    ]
+
+
+def _flatten_matrix(matrix: list[list[float]]) -> list[float]:
+    return [value for row in matrix for value in row]
+
+
+def _canonical_relative_matrix(transform: Mapping[str, float]) -> list[float]:
+    """Return authored +X-forward/+Y-up/+Z-left pose as a row-major matrix."""
+    pitch, yaw, roll = transform["pitch"], transform["yaw"], transform["roll"]
+    cp, sp = cos(pitch), sin(pitch)
+    cy, sy = cos(yaw), sin(yaw)
+    cr, sr = cos(roll), sin(roll)
+    yaw_matrix = [
+        [cy, 0.0, sy, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [-sy, 0.0, cy, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+    pitch_matrix = [
+        [cp, -sp, 0.0, 0.0],
+        [sp, cp, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+    roll_matrix = [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, cr, -sr, 0.0],
+        [0.0, sr, cr, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+    matrix = _matmul4(_matmul4(yaw_matrix, pitch_matrix), roll_matrix)
+    matrix[0][3] = transform["x"]
+    matrix[1][3] = transform["y"]
+    matrix[2][3] = transform["z"]
+    return _flatten_matrix(matrix)
+
+
+def _canonical_world_matrix(sensor_data: Any) -> list[float]:
+    """Convert a CARLA sensor world pose to the canonical authored frame."""
+    transform = getattr(sensor_data, "transform", None)
+    get_matrix = getattr(transform, "get_matrix", None)
+    if not callable(get_matrix):
+        raise RuntimeError("sensor callback omitted its CARLA world transform")
+    raw = get_matrix()
+    if (
+        not isinstance(raw, (list, tuple))
+        or len(raw) != 4
+        or any(not isinstance(row, (list, tuple)) or len(row) != 4 for row in raw)
+    ):
+        raise RuntimeError("sensor callback returned an invalid CARLA world transform")
+    carla_matrix = [[float(value) for value in row] for row in raw]
+    if any(not isfinite(value) for row in carla_matrix for value in row):
+        raise RuntimeError("sensor callback returned a non-finite CARLA world transform")
+    # B lowers a canonical local vector (forward, up, left) into CARLA
+    # (forward, right, up); A is its inverse for the world basis.
+    lower = [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, -1.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+    raise_to_canonical = [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, -1.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+    return _flatten_matrix(_matmul4(_matmul4(raise_to_canonical, carla_matrix), lower))
+
+
+def _camera_calibration(attributes: Mapping[str, int | float | bool]) -> Mapping[str, object]:
+    width = int(attributes["width"])
+    height = int(attributes["height"])
+    focal = width / (2.0 * tan(float(attributes["fov"]) / 2.0))
+    return {
+        "intrinsicMatrix": [focal, 0.0, width / 2.0, 0.0, focal, height / 2.0, 0.0, 0.0, 1.0],
+        "width": width,
+        "height": height,
+        "fov": float(attributes["fov"]),
+        "clipNear": float(attributes["clipNear"]),
+        "clipFar": float(attributes["clipFar"]),
+    }
+
+
+def _artifact_number(value: float) -> str:
+    if not isfinite(value):
+        raise RuntimeError("sensor callback contained a non-finite measurement")
+    return "0" if value == 0 else format(value, ".9g")
+
+
+def _point_artifact(kind: str, measurement: Any) -> bytes:
+    raw = getattr(measurement, "raw_data", None)
+    if not isinstance(raw, (bytes, bytearray, memoryview)):
+        raise RuntimeError(f"{kind} callback omitted raw_data")
+    payload = bytes(raw)
+    record = struct.Struct("<ffff" if kind == "lidar" else "<ffffII")
+    if len(payload) % record.size:
+        raise RuntimeError(f"{kind} callback raw_data has an invalid byte length")
+    points: list[tuple[float | int, ...]] = []
+    for values in record.iter_unpack(payload):
+        # CARLA local (forward, right, up) -> canonical (forward, up, left).
+        if kind == "lidar":
+            x, right, up, intensity = values
+            point: tuple[float | int, ...] = (x, up, -right, intensity)
+        else:
+            x, right, up, cosine, object_index, object_tag = values
+            point = (x, up, -right, cosine, object_index, object_tag)
+        if any(not isfinite(float(value)) for value in point):
+            raise RuntimeError(f"{kind} callback contained a non-finite point")
+        points.append(point)
+    points.sort()
+    properties = (
+        ("property float x", "property float y", "property float z", "property float intensity")
+        if kind == "lidar"
+        else (
+            "property float x",
+            "property float y",
+            "property float z",
+            "property float cos_incidence",
+            "property uint object_idx",
+            "property uint object_tag",
+        )
+    )
+    lines = [
+        "ply",
+        "format ascii 1.0",
+        f"element vertex {len(points)}",
+        *properties,
+        "end_header",
+    ]
+    for point in points:
+        numeric = [_artifact_number(float(value)) for value in point[:4]]
+        if kind == "semantic_lidar":
+            numeric.extend(str(int(value)) for value in point[4:])
+        lines.append(" ".join(numeric))
+    return ("\n".join(lines) + "\n").encode("ascii")
+
+
+def _radar_artifact(measurement: Any) -> bytes:
+    raw = getattr(measurement, "raw_data", None)
+    if not isinstance(raw, (bytes, bytearray, memoryview)):
+        raise RuntimeError("radar callback omitted raw_data")
+    payload = bytes(raw)
+    record = struct.Struct("<ffff")
+    if len(payload) % record.size:
+        raise RuntimeError("radar callback raw_data has an invalid byte length")
+    detections: list[tuple[float, float, float, float]] = []
+    for velocity, azimuth, altitude, depth in record.iter_unpack(payload):
+        detection = (altitude, azimuth, depth, velocity)
+        if any(not isfinite(value) for value in detection):
+            raise RuntimeError("radar callback contained a non-finite detection")
+        detections.append(detection)
+    detections.sort()
+    lines = ["altitude,azimuth,depth,velocity"]
+    lines.extend(",".join(_artifact_number(value) for value in detection) for detection in detections)
+    return ("\n".join(lines) + "\n").encode("ascii")
+
 
 class RenderBackend(Protocol):
     def set_rpc_timeout(self, timeout_s: float) -> None: ...
@@ -160,7 +326,7 @@ class RenderBackend(Protocol):
     def bind_signals(self, signal_ids: tuple[str, ...], abort: Callable[[], None] | None = None) -> None: ...
     def spawn(self, actors: Mapping[str, ActorBinding], first_frame: PlanFrame, catalog: Mapping[str, Any], abort: Callable[[], None] | None = None) -> None: ...
     def prepare_scenario(self, first_frame: PlanFrame, abort: Callable[[], None] | None = None) -> Mapping[str, Any] | None: ...
-    def configure_cameras(self, spec: RenderSpec, output_dir: Path, max_capture_disk_bytes: int, abort: Callable[[], None] | None = None) -> None: ...
+    def configure_sensors(self, spec: RenderSpec, output_dir: Path, max_capture_disk_bytes: int, abort: Callable[[], None] | None = None) -> None: ...
     def apply(self, frame: PlanFrame, abort: Callable[[], None] | None = None) -> None: ...
     def tick(self, capture: Mapping[str, float | int] | None = None, abort: Callable[[], None] | None = None) -> Mapping[str, Mapping[str, float]]: ...
     def finalize_capture(self, expected_frame_count: int, abort: Callable[[], None] | None = None) -> None: ...
@@ -546,7 +712,7 @@ class CarlaBackend:
             self.speed_integrals[actor_id] = integral
         return throttle, 0.0
 
-    def configure_cameras(self, spec: RenderSpec, output_dir: Path, max_capture_disk_bytes: int, abort: Callable[[], None] | None = None) -> None:
+    def configure_sensors(self, spec: RenderSpec, output_dir: Path, max_capture_disk_bytes: int, abort: Callable[[], None] | None = None) -> None:
         assert self.world is not None
         check = abort or (lambda: None)
         check()
@@ -554,6 +720,12 @@ class CarlaBackend:
             raise ContractError("capture disk quota must be positive")
         self.capture_disk_bytes = 0
         self.max_capture_disk_bytes = max_capture_disk_bytes
+        self.sensor_configs.clear()
+        self.sensor_pending.clear()
+        self.sensor_last_frame.clear()
+        self.sensor_records.clear()
+        self.sensor_error = None
+        self.sensor_closed = False
         output_dir.mkdir(parents=True, exist_ok=True)
         library = self.world.get_blueprint_library()
         sensor_blueprints = {
@@ -561,68 +733,161 @@ class CarlaBackend:
             "depth": "sensor.camera.depth",
             "semantic": "sensor.camera.semantic_segmentation",
             "instance": "sensor.camera.instance_segmentation",
+            "normals": "sensor.camera.normals",
+            "lidar": "sensor.lidar.ray_cast",
+            "semantic_lidar": "sensor.lidar.ray_cast_semantic",
+            "radar": "sensor.other.radar",
         }
-        converters = {
-            "depth": self.carla.ColorConverter.LogarithmicDepth,
-            "semantic": self.carla.ColorConverter.CityScapesPalette,
-            "instance": self.carla.ColorConverter.Raw,
+        attachment_members = {
+            "rigid": "Rigid",
+            "spring_arm": "SpringArm",
+            "spring_arm_ghost": "SpringArmGhost",
         }
-        quality_attributes = {
-            "preview": {"enable_postprocess_effects": "False", "motion_blur_intensity": "0.0", "gamma": "2.2"},
-            "standard": {"enable_postprocess_effects": "True", "motion_blur_intensity": "0.15", "gamma": "2.2"},
-            "high": {"enable_postprocess_effects": "True", "motion_blur_intensity": "0.35", "gamma": "2.2"},
-            "cinematic": {"enable_postprocess_effects": "True", "motion_blur_intensity": "0.5", "gamma": "2.2"},
-        }
-        for camera in spec.cameras:
+
+        def set_required_attribute(blueprint: Any, name: str, value: str, sensor_id: str) -> None:
+            has_attribute = getattr(blueprint, "has_attribute", None)
+            if not callable(has_attribute) or not has_attribute(name):
+                raise RuntimeError(f"CARLA blueprint for sensor {sensor_id} is missing required attribute {name}")
+            blueprint.set_attribute(name, value)
+
+        for sensor_spec in spec.sensors:
             check()
-            blueprint = library.find(sensor_blueprints[camera.kind])
-            blueprint.set_attribute("image_size_x", str(spec.width))
-            blueprint.set_attribute("image_size_y", str(spec.height))
-            blueprint.set_attribute("fov", str(camera.fov))
-            # Every world tick must produce a callback. The worker selects the
-            # exact 30 fps output world frames from the 50 Hz execution plan.
-            blueprint.set_attribute("sensor_tick", "0.0")
-            for name, value in quality_attributes[spec.quality].items():
-                if blueprint.has_attribute(name):
-                    blueprint.set_attribute(name, value)
-            t = camera.transform
-            transform = self.carla.Transform(self.carla.Location(x=t["x"], y=-t["y"], z=t["z"]), self.carla.Rotation(pitch=t["pitch"], yaw=-t["yaw"], roll=t["roll"]))
-            resolved_attach_to = camera.attach_to
-            if not resolved_attach_to and camera.mount != "world":
-                resolved_attach_to = next(iter(self.actors))
-            parent = self.actors.get(resolved_attach_to) if resolved_attach_to else None
-            sensor = self.world.spawn_actor(blueprint, transform, attach_to=parent)
-            check()
-            camera_dir = output_dir / camera.id
-            camera_dir.mkdir(parents=True, exist_ok=True)
-            self.sensor_configs[camera.id] = {
-                "target": camera_dir, "kind": camera.kind, "converter": converters.get(camera.kind),
-                "attachTo": resolved_attach_to, "mount": camera.mount,
+            blueprint_id = sensor_blueprints[sensor_spec.kind]
+            try:
+                blueprint = library.find(blueprint_id)
+            except Exception as exc:
+                raise RuntimeError(f"CARLA blueprint {blueprint_id} is unavailable") from exc
+            if blueprint is None:
+                raise RuntimeError(f"CARLA blueprint {blueprint_id} is unavailable")
+            attributes = sensor_spec.attributes
+            blueprint_attributes: dict[str, str]
+            converter = None
+            if sensor_spec.kind in {"rgb", "depth", "semantic", "instance", "normals"}:
+                blueprint_attributes = {
+                    "image_size_x": str(attributes["width"]),
+                    "image_size_y": str(attributes["height"]),
+                    "fov": str(degrees(float(attributes["fov"]))),
+                    "sensor_tick": "0.0",
+                }
+                postprocess_name = "enable_postprocess_effects"
+                has_postprocess = getattr(blueprint, "has_attribute", lambda _name: False)(postprocess_name)
+                postprocess = bool(attributes["enablePostprocessEffects"])
+                if has_postprocess:
+                    blueprint_attributes[postprocess_name] = "True" if postprocess else "False"
+                elif postprocess:
+                    raise RuntimeError(
+                        f"CARLA blueprint for sensor {sensor_spec.id} cannot enable postprocess effects"
+                    )
+                if sensor_spec.kind != "rgb":
+                    converter = getattr(getattr(self.carla, "ColorConverter", None), "Raw", None)
+                    if converter is None:
+                        raise RuntimeError("CARLA ColorConverter.Raw is unavailable")
+            elif sensor_spec.kind in {"lidar", "semantic_lidar"}:
+                blueprint_attributes = {
+                    "channels": str(attributes["channels"]),
+                    "range": str(attributes["range"]),
+                    "points_per_second": str(attributes["pointsPerSecond"]),
+                    "rotation_frequency": str(attributes["rotationFrequency"]),
+                    "upper_fov": str(degrees(float(attributes["upperFov"]))),
+                    "lower_fov": str(degrees(float(attributes["lowerFov"]))),
+                    "sensor_tick": "0.0",
+                }
+            else:
+                blueprint_attributes = {
+                    "horizontal_fov": str(degrees(float(attributes["horizontalFov"]))),
+                    "vertical_fov": str(degrees(float(attributes["verticalFov"]))),
+                    "range": str(attributes["range"]),
+                    "points_per_second": str(attributes["pointsPerSecond"]),
+                    "sensor_tick": "0.0",
+                }
+            for name, value in blueprint_attributes.items():
+                set_required_attribute(blueprint, name, value, sensor_spec.id)
+            t = sensor_spec.transform
+            transform = self.carla.Transform(
+                self.carla.Location(x=t["x"], y=-t["z"], z=t["y"]),
+                self.carla.Rotation(
+                    pitch=degrees(t["pitch"]),
+                    yaw=degrees(t["yaw"]),
+                    roll=degrees(t["roll"]),
+                ),
+            )
+            parent = self.actors[sensor_spec.attach_to]
+            attachment_type = getattr(
+                getattr(self.carla, "AttachmentType", None),
+                attachment_members[sensor_spec.attachment],
+                None,
+            )
+            if attachment_type is None:
+                raise RuntimeError(
+                    f"CARLA AttachmentType.{attachment_members[sensor_spec.attachment]} is unavailable"
+                )
+            spawned = self.world.spawn_actor(
+                blueprint,
+                transform,
+                attach_to=parent,
+                attachment_type=attachment_type,
+            )
+            if spawned is None:
+                raise RuntimeError(f"CARLA failed to spawn sensor {sensor_spec.id}")
+            self.sensors.append(spawned)
+            target = output_dir / sensor_spec.id
+            target.mkdir(parents=True, exist_ok=True)
+            config: dict[str, Any] = {
+                "target": target,
+                "kind": sensor_spec.kind,
+                "format": sensor_spec.format,
+                "converter": converter,
+                "attachTo": sensor_spec.attach_to,
+                "attachment": sensor_spec.attachment,
+                "transform": dict(sensor_spec.transform),
+                "relativeMatrix": _canonical_relative_matrix(sensor_spec.transform),
+                "attributes": dict(sensor_spec.attributes),
             }
-            sensor.listen(lambda image, camera_id=camera.id: self._receive_sensor_frame(camera_id, image))
-            self.sensors.append(sensor)
+            if sensor_spec.kind in {"rgb", "depth", "semantic", "instance", "normals"}:
+                config["calibration"] = _camera_calibration(sensor_spec.attributes)
+            self.sensor_configs[sensor_spec.id] = config
+            listen = getattr(spawned, "listen", None)
+            if not callable(listen):
+                raise RuntimeError(f"spawned CARLA sensor {sensor_spec.id} has no callback API")
+            listen(lambda data, sensor_id=sensor_spec.id: self._sensor_callback(sensor_id, data))
             check()
 
-    def _receive_sensor_frame(self, camera_id: str, image: Any) -> None:
+    def _sensor_callback(self, sensor_id: str, data: Any) -> None:
+        try:
+            self._receive_sensor_frame(sensor_id, data)
+        except Exception as exc:
+            with self.sensor_condition:
+                if not self.sensor_closed and self.sensor_error is None:
+                    self.sensor_error = RuntimeError(f"invalid callback from sensor {sensor_id}: {exc}")
+                    self.sensor_error.__cause__ = exc
+                self.sensor_condition.notify_all()
+
+    def _receive_sensor_frame(self, sensor_id: str, data: Any) -> None:
         with self.sensor_condition:
             if self.sensor_closed:
                 return
-            frame = int(image.frame)
-            prior = self.sensor_last_frame.get(camera_id)
+            if sensor_id not in self.sensor_configs:
+                raise RuntimeError(f"callback referenced unknown sensor {sensor_id}")
+            frame = getattr(data, "frame", None)
+            if not isinstance(frame, int) or isinstance(frame, bool) or frame < 0:
+                raise RuntimeError(f"sensor {sensor_id} callback has an invalid frame")
+            prior = self.sensor_last_frame.get(sensor_id)
             if prior is not None and frame <= prior:
                 kind = "duplicate" if frame == prior else "out-of-order"
-                self.sensor_error = RuntimeError(f"{kind} sensor callback for {camera_id}: {frame} after {prior}")
-            elif camera_id in self.sensor_pending.setdefault(frame, {}):
-                self.sensor_error = RuntimeError(f"duplicate sensor callback for {camera_id}: {frame}")
+                self.sensor_error = RuntimeError(f"{kind} sensor callback for {sensor_id}: {frame} after {prior}")
+            elif sensor_id in self.sensor_pending.setdefault(frame, {}):
+                self.sensor_error = RuntimeError(f"duplicate sensor callback for {sensor_id}: {frame}")
             else:
-                self.sensor_last_frame[camera_id] = frame
-                self.sensor_pending[frame][camera_id] = image
+                self.sensor_last_frame[sensor_id] = frame
+                self.sensor_pending[frame][sensor_id] = data
             self.sensor_condition.notify_all()
 
     def _capture_world_frame(self, carla_frame: int, capture: Mapping[str, float | int], abort: Callable[[], None] | None = None) -> None:
         check = abort or (lambda: None)
         check()
         expected = set(self.sensor_configs)
+        if not expected:
+            raise RuntimeError("capture requested before sensors were configured")
         deadline = monotonic() + self.sensor_timeout_s
         while True:
             with self.sensor_condition:
@@ -630,43 +895,97 @@ class CarlaBackend:
                     raise self.sensor_error
                 received = set(self.sensor_pending.get(carla_frame, {}))
                 if received == expected:
-                    images = self.sensor_pending.pop(carla_frame)
+                    sensor_data = self.sensor_pending.pop(carla_frame)
                     for old_frame in [frame for frame in self.sensor_pending if frame < carla_frame]:
                         del self.sensor_pending[old_frame]
                     break
                 remaining = deadline - monotonic()
                 if remaining <= 0:
                     missing = sorted(expected - received)
-                    raise RuntimeError(f"sensor frame timeout at CARLA frame {carla_frame}; missing: {', '.join(missing)}")
+                    raise RuntimeError(
+                        f"sensor frame timeout at CARLA frame {carla_frame}; missing: {', '.join(missing)}"
+                    )
                 self.sensor_condition.wait(min(0.25, remaining))
             # The fence may make a synchronous control-plane request. Never
             # hold the sensor callback's condition lock across that request.
             check()
-        output_index = int(capture["outputFrameIndex"])
-        scheduled_time = float(capture["scheduledTimeS"])
-        for camera_id in sorted(images):
+        output_index = capture.get("outputFrameIndex")
+        scheduled_time_value = capture.get("scheduledTimeS")
+        if not isinstance(output_index, int) or isinstance(output_index, bool) or output_index < 0:
+            raise RuntimeError("capture outputFrameIndex must be a non-negative integer")
+        if (
+            not isinstance(scheduled_time_value, (int, float))
+            or isinstance(scheduled_time_value, bool)
+            or not isfinite(float(scheduled_time_value))
+            or float(scheduled_time_value) < 0
+        ):
+            raise RuntimeError("capture scheduledTimeS must be finite and non-negative")
+        scheduled_time = float(scheduled_time_value)
+        for sensor_id in sorted(sensor_data):
             check()
-            image = images[camera_id]
-            config = self.sensor_configs[camera_id]
-            if config["converter"] is not None:
-                image.convert(config["converter"])
-                check()
-            relative = f"{camera_id}/{output_index:08d}.png"
-            target = config["target"] / f"{output_index:08d}.png"
-            image.save_to_disk(str(target))
+            data = sensor_data[sensor_id]
+            config = self.sensor_configs[sensor_id]
+            timestamp_value = getattr(data, "timestamp", None)
+            if (
+                not isinstance(timestamp_value, (int, float))
+                or isinstance(timestamp_value, bool)
+                or not isfinite(float(timestamp_value))
+            ):
+                raise RuntimeError(f"sensor {sensor_id} callback has an invalid timestamp")
+            world_matrix = _canonical_world_matrix(data)
+            extension = config["format"]
+            relative = f"{sensor_id}/{output_index:08d}.{extension}"
+            target = config["target"] / f"{output_index:08d}.{extension}"
+            if config["kind"] in {"rgb", "depth", "semantic", "instance", "normals"}:
+                converter = config["converter"]
+                if converter is not None:
+                    convert = getattr(data, "convert", None)
+                    if not callable(convert):
+                        raise RuntimeError(f"image callback for sensor {sensor_id} has no converter API")
+                    convert(converter)
+                    check()
+                save_to_disk = getattr(data, "save_to_disk", None)
+                if not callable(save_to_disk):
+                    raise RuntimeError(f"image callback for sensor {sensor_id} has no output API")
+                save_to_disk(str(target))
+            elif config["kind"] in {"lidar", "semantic_lidar"}:
+                target.write_bytes(_point_artifact(config["kind"], data))
+            else:
+                target.write_bytes(_radar_artifact(data))
             check()
+            if not target.is_file() or target.stat().st_size <= 0:
+                target.unlink(missing_ok=True)
+                raise RuntimeError(f"sensor {sensor_id} did not produce its expected {extension} output")
+            if extension == "png":
+                with target.open("rb") as image_file:
+                    if image_file.read(8) != b"\x89PNG\r\n\x1a\n":
+                        target.unlink(missing_ok=True)
+                        raise RuntimeError(f"sensor {sensor_id} did not produce a valid PNG output")
             charged_bytes = target.stat().st_size + 4096
             self.capture_disk_bytes += charged_bytes
             if self.capture_disk_bytes > self.max_capture_disk_bytes:
                 target.unlink(missing_ok=True)
-                raise ContractError("captured frames exceed the incremental temporary-disk quota")
+                raise ContractError("captured sensor data exceed the incremental temporary-disk quota")
+            record: dict[str, Any] = {
+                "sensorId": sensor_id,
+                "kind": config["kind"],
+                "format": config["format"],
+                "outputFrameIndex": output_index,
+                "scheduledTimeS": scheduled_time,
+                "carlaFrame": carla_frame,
+                "timestamp": float(timestamp_value),
+                "relativePath": relative,
+                "attachTo": config["attachTo"],
+                "attachment": config["attachment"],
+                "transform": dict(config["transform"]),
+                "relativeMatrix": list(config["relativeMatrix"]),
+                "canonicalWorldMatrix": world_matrix,
+                "attributes": dict(config["attributes"]),
+            }
+            if "calibration" in config:
+                record["calibration"] = dict(config["calibration"])
             with self.sensor_lock:
-                self.sensor_records.append({
-                    "sensorId": camera_id, "kind": config["kind"], "outputFrameIndex": output_index,
-                    "scheduledTimeS": scheduled_time, "carlaFrame": carla_frame,
-                    "timestamp": float(image.timestamp), "relativePath": relative,
-                    "attachTo": config["attachTo"], "mount": config["mount"],
-                })
+                self.sensor_records.append(record)
             check()
 
     def sensor_manifest(self, abort: Callable[[], None] | None = None) -> list[Mapping[str, Any]]:
@@ -860,6 +1179,12 @@ class CarlaBackend:
     def finalize_capture(self, expected_frame_count: int, abort: Callable[[], None] | None = None) -> None:
         check = abort or (lambda: None)
         check()
+        if (
+            not isinstance(expected_frame_count, int)
+            or isinstance(expected_frame_count, bool)
+            or expected_frame_count < 0
+        ):
+            raise RuntimeError("expected sensor frame count must be a non-negative integer")
         with self.sensor_condition:
             self.sensor_closed = True
             if self.sensor_error:
@@ -869,14 +1194,30 @@ class CarlaBackend:
         for sensor in self.sensors:
             check()
             sensor.stop()
-        indexes_by_camera = {camera_id: [] for camera_id in self.sensor_configs}
+        indexes_by_sensor = {sensor_id: [] for sensor_id in self.sensor_configs}
         for item in records:
             check()
-            indexes_by_camera[item["sensorId"]].append(int(item["outputFrameIndex"]))
-        for camera_id, indexes in indexes_by_camera.items():
+            sensor_id = item["sensorId"]
+            if sensor_id not in indexes_by_sensor:
+                raise RuntimeError(f"capture manifest referenced unknown sensor {sensor_id}")
+            indexes_by_sensor[sensor_id].append(int(item["outputFrameIndex"]))
+        for sensor_id, indexes in indexes_by_sensor.items():
             check()
             if indexes != list(range(expected_frame_count)):
-                raise RuntimeError(f"sensor {camera_id} capture is not frame-closed: {len(indexes)} of {expected_frame_count}")
+                raise RuntimeError(
+                    f"sensor {sensor_id} capture is not frame-closed: {len(indexes)} of {expected_frame_count}"
+                )
+            config = self.sensor_configs[sensor_id]
+            extension = config["format"]
+            actual_files = sorted(config["target"].iterdir())
+            expected_files = [
+                config["target"] / f"{index:08d}.{extension}"
+                for index in range(expected_frame_count)
+            ]
+            if actual_files != expected_files or any(
+                not path.is_file() or path.stat().st_size <= 0 for path in actual_files
+            ):
+                raise RuntimeError(f"sensor {sensor_id} output directory is not frame-closed")
         check()
 
     def signal_readback(self, abort: Callable[[], None] | None = None) -> Mapping[str, str]:

@@ -31,16 +31,9 @@ const plan: MapSignalPlan = {
   binding: { mapId: 'map', junctionId: 'j1', controlDigest: digest },
   clips: [{ id: 'clip', startS: 3, endS: 5, reference: { controllerId: 'c1', headId: 'h1' }, indication: 'yellow' }],
 };
-const topology = {
-  lanes: {}, junctions: { j1: { junctionId: 'j1', gateIds: ['g1', 'g2'], internalLaneRsls: [], approachLaneRsls: [] } },
-  gates: [
-    { id: 'g1', junctionId: 'j1', turnRelation: 'Straight', headingChangeRad: 0, connectingLaneRsl: 'ja', approachLaneRsl: 'a', exitLaneRsls: [] },
-    { id: 'g2', junctionId: 'j1', turnRelation: 'Straight', headingChangeRad: 0, connectingLaneRsl: 'jb', approachLaneRsl: 'b', exitLaneRsls: [] },
-  ],
-} as any;
 const options = {
-  mapId: 'map', controlDigest: digest, clipSeconds: 8, warmupSeconds: 2,
-  signalCatalog: catalog, topology, conflictPairsByJunction: { j1: [{ gateA: 'g1', gateB: 'g2' }] },
+  mapId: 'map', clipSeconds: 8, warmupSeconds: 2,
+  signalCatalog: catalog,
 };
 
 describe('map signal plan compiler', () => {
@@ -101,13 +94,6 @@ describe('map signal plan compiler', () => {
           catalog.controllers[1]!,
         ],
       };
-      const stageTopology = {
-        ...topology,
-        gates: [
-          ...topology.gates,
-          { id: 'g3', junctionId: 'j1', turnRelation: 'Left', headingChangeRad: 1, connectingLaneRsl: 'jc', approachLaneRsl: 'c', exitLaneRsls: [] },
-        ],
-      };
       const stageDigest = contentHash({ signalPrograms: stagePrograms, roadControls: [] });
       const authored = {
         ...plan,
@@ -116,9 +102,7 @@ describe('map signal plan compiler', () => {
       };
       const compiled = compileMapSignalPlans(stagePrograms, [authored], {
         ...options,
-        controlDigest: stageDigest,
         signalCatalog: stageCatalog,
-        topology: stageTopology,
       });
       const book = new SignalBook(compiled, 2);
       expect(book.phaseAt('signal:h1', 4)).toBe(expectedStage);
@@ -165,20 +149,9 @@ describe('map signal plan compiler', () => {
       binding: { ...plan.binding, controlDigest: sharedDigest },
       clips: [{ ...plan.clips[0]!, reference: { controllerId: 'c-preferred', headId: 'shared' }, indication: 'green' }],
     };
-    const sharedTopology = {
-      ...topology,
-      gates: [
-        { id: 'g-first', junctionId: 'j1', turnRelation: 'Straight', headingChangeRad: 0, connectingLaneRsl: 'ja', approachLaneRsl: 'a', exitLaneRsls: [] },
-        { id: 'g-preferred', junctionId: 'j1', turnRelation: 'Left', headingChangeRad: 1, connectingLaneRsl: 'jb', approachLaneRsl: 'b', exitLaneRsls: [] },
-        { id: 'g-conflict', junctionId: 'j1', turnRelation: 'Straight', headingChangeRad: 0, connectingLaneRsl: 'jc', approachLaneRsl: 'c', exitLaneRsls: [] },
-      ],
-    } as any;
     const compiled = compileMapSignalPlans(sharedPrograms, [sharedPlan], {
       ...options,
-      controlDigest: sharedDigest,
       signalCatalog: sharedCatalog,
-      topology: sharedTopology,
-      conflictPairsByJunction: { j1: [{ gateA: 'g-preferred', gateB: 'g-conflict' }] },
     });
     const book = new SignalBook(compiled, 2);
     expect(book.phaseAt('shared-preferred', 4)).toBe('green');
@@ -202,9 +175,11 @@ describe('map signal plan compiler', () => {
     ))).toBe(true);
   });
 
-  it('fails closed on stale metadata and dual ownership', () => {
-    expect(() => compileMapSignalPlans(programs, [plan], { ...options, controlDigest: 'changed' }))
-      .toThrowError(expect.objectContaining({ code: 'map_signal_plan_stale_binding' }));
+  it('validates current physical references instead of unrelated digest provenance', () => {
+    expect(() => compileMapSignalPlans(programs, [{
+      ...plan,
+      binding: { ...plan.binding, controlDigest: 'historical-provenance' },
+    }], options)).not.toThrow();
     expect(() => compileMapSignalPlans(programs, [plan], { ...options, worldSignalSetIds: ['signal:h1'] }))
       .toThrowError(expect.objectContaining({ code: 'map_signal_plan_dual_ownership' }));
   });
@@ -228,21 +203,28 @@ describe('map signal plan compiler', () => {
       binding: { ...plan.binding, controlDigest: inconsistentDigest },
     }], {
       ...options,
-      controlDigest: inconsistentDigest,
     })).toThrowError(expect.objectContaining({
       code: 'map_signal_plan_reference_unbound',
     } satisfies Partial<MapSignalPlanCompileError>));
   });
 
-  it('rejects a controller stage whose simultaneously active heads conflict', () => {
+  it('accepts a map-native controller group instead of second-guessing it with advisory geometry', () => {
     const groupedPrograms = programs.map((program) => ({
       ...program,
-      mapBinding: { ...program.mapBinding!, controllerIds: ['c1'], controllerHeadGroups: [{ controllerId: 'c1', headIds: program.mapBinding!.headIds }] },
+      mapBinding: {
+        ...program.mapBinding!,
+        controllerIds: ['c1'],
+        controllerHeadGroups: [{ controllerId: 'c1', headIds: program.mapBinding!.headIds }],
+      },
     }));
-    const groupedCatalog = { ...catalog, controllers: [{ id: 'c1', sequence: 0, signalIds: ['h1', 'h2'] }], junctions: [{ junctionId: 'j1', controllerIds: ['c1'] }] };
-    const groupedDigest = contentHash({ signalPrograms: groupedPrograms, roadControls: [] });
-    expect(() => compileMapSignalPlans(groupedPrograms, [{ ...plan, binding: { ...plan.binding, controlDigest: groupedDigest } }], {
-      ...options, controlDigest: groupedDigest, signalCatalog: groupedCatalog,
-    })).toThrowError(expect.objectContaining({ code: 'map_signal_plan_controller_conflict' } satisfies Partial<MapSignalPlanCompileError>));
+    const groupedCatalog = {
+      ...catalog,
+      controllers: [{ id: 'c1', sequence: 0, signalIds: ['h1', 'h2'] }],
+      junctions: [{ junctionId: 'j1', controllerIds: ['c1'] }],
+    };
+    expect(() => compileMapSignalPlans(groupedPrograms, [plan], {
+      ...options,
+      signalCatalog: groupedCatalog,
+    })).not.toThrow();
   });
 });

@@ -54,6 +54,8 @@ import {
 import { LOW_FIDELITY_HIDDEN_ROLE } from './viewer-contract';
 import { buildProp, getEntry, type CatalogId, type Dims } from '@uniscenarios/prop-catalog';
 import type { ActorKind } from '@uniscenarios/sim-engine';
+import type { ActorSensor } from '@uniscenarios/scenario-model';
+import { ActorSensorOverlay } from './sensorOverlay';
 
 export type DoorName = 'left' | 'right' | 'rear';
 export type DoorState = 'closed' | 'opening' | 'open' | 'closing';
@@ -92,6 +94,8 @@ export interface ActorView {
   /** Scenario clock and sampled speed drive procedural motion until a rigged GLB is installed. */
   readonly animationTimeS?: number;
   readonly speedMps?: number;
+  /** Physical sensors authored on this actor. Playback-only views omit them. */
+  readonly sensors?: readonly ActorSensor[];
 }
 
 /** One material's worth of a merged prop. */
@@ -370,6 +374,7 @@ export class ActorRenderer {
   private readonly indicatorMaterial = new MeshBasicMaterial({ color: 0xffa21a, toneMapped: false });
   private readonly indicatorBatches = new Map<'left' | 'right', Batch>();
   private readonly selection: LineSegments;
+  private readonly sensorOverlay = new ActorSensorOverlay();
   private drawCalls = 0;
   private disposed = false;
   private readonly layers = new Map<string, readonly ActorView[]>();
@@ -410,13 +415,14 @@ export class ActorRenderer {
     this.selection.renderOrder = 30;
     this.selection.frustumCulled = false;
     this.group.add(this.selection);
+    this.group.add(this.sensorOverlay.group);
   }
 
-  /** Draw calls this layer contributes when everything is visible. */
   get stats(): { batches: number; drawCalls: number } {
+    const sensorStats = this.sensorOverlay.stats;
     return {
-      batches: this.batches.size + this.doorBatches.size + this.indicatorBatches.size + (this.reverseLightBatch ? 1 : 0) + (this.emergencyRedBatch ? 1 : 0) + (this.emergencyBlueBatch ? 1 : 0),
-      drawCalls: this.drawCalls
+      batches: this.batches.size + this.doorBatches.size + this.indicatorBatches.size + (this.reverseLightBatch ? 1 : 0) + (this.emergencyRedBatch ? 1 : 0) + (this.emergencyBlueBatch ? 1 : 0) + sensorStats.housingDrawCalls,
+      drawCalls: this.drawCalls + sensorStats.housingDrawCalls + sensorStats.coverageDrawCalls
     };
   }
 
@@ -508,6 +514,7 @@ export class ActorRenderer {
     draws += this.syncReverseLights(actors);
     draws += this.syncEmergencyLights(actors);
     draws += this.syncIndicators(actors);
+    this.sensorOverlay.sync(actors);
     this.drawCalls = draws + (actors.length > 0 ? 1 : 0);
   }
 
@@ -522,6 +529,7 @@ export class ActorRenderer {
     geometry.computeBoundingSphere();
     this.selection.geometry.dispose();
     this.selection.geometry = geometry;
+    this.sensorOverlay.setSelectedActorIds(new Set(actors.map((actor) => actor.id)));
     this.selection.visible = verts.length > 0;
   }
 
@@ -595,6 +603,7 @@ export class ActorRenderer {
     this.shadowTexture.dispose();
     this.selection.geometry.dispose();
     (this.selection.material as Material).dispose();
+    this.sensorOverlay.dispose();
     this.group.clear();
     this.group.removeFromParent();
     this.drawCalls = 0;
