@@ -13,6 +13,7 @@ import { captureInstanceIdCube, captureRadarFrame, type TraceVelocity } from './
 import { RenderResourcePool, renderOffscreenRgba } from './sensors/render-targets.js';
 import { encodeRadarCsv, type RadarDetection } from './sensors/csv.js';
 import { encodeLidarPly, type LidarPoint } from './sensors/ply.js';
+import { CHASE_CAMERA_SENSOR_ID } from './pronto.js';
 import { StreamingRgbaVideoEncoder, StreamingSensorVideoEncoder } from './video.js';
 
 export const BROWSER_RENDER_ENGINE_ID = 'browser' as const;
@@ -71,6 +72,9 @@ export async function captureBrowserArtifacts(input: {
 
   try {
     if (input.renderSpec.video) {
+      // Prefer the authored trailing chase camera when the intent carries one; otherwise
+      // synthesize the same view so every render still ships a drive-along video.
+      const authoredChase = plan.passes.find((candidate) => candidate.sensorId === CHASE_CAMERA_SENSOR_ID && candidate.modality === 'rgb');
       const host = plan.passes[0]!;
       const config = {
         width: input.renderSpec.video.width,
@@ -78,14 +82,14 @@ export async function captureBrowserArtifacts(input: {
         fps: input.renderSpec.video.fps,
         quality: input.renderSpec.video.quality === 'lossless' ? 'high' as const : input.renderSpec.video.quality,
       };
-      presentationPass = {
+      presentationPass = authoredChase ?? {
         actorId: host.actorId,
-        sensorId: 'presentation-trailing-camera',
-        outputName: 'presentation-trailing-camera',
+        sensorId: CHASE_CAMERA_SENSOR_ID,
+        outputName: CHASE_CAMERA_SENSOR_ID,
         modality: 'rgb',
         transform: {
-          position: { x: -8, y: 4, z: 0 },
-          rotation: { pitchRad: -20 * Math.PI / 180, yawRad: 0, rollRad: 0 },
+          position: { x: -9, y: 3.4, z: 0 },
+          rotation: { pitchRad: 15 * Math.PI / 180, yawRad: 0, rollRad: 0 },
         },
         width: config.width,
         height: config.height,
@@ -121,7 +125,7 @@ export async function captureBrowserArtifacts(input: {
       const actors = samplePlaybackActors(input.bundle, frame.sourceTimeSeconds);
       addTiming(timings, 'worldUpdate', performance.now() - started);
       const work: Promise<void>[] = [];
-      if (presentationPass && presentationVideo) {
+      if (presentationPass && presentationVideo && !plan.passes.includes(presentationPass)) {
         const actor = actors.find((candidate) => candidate.id === presentationPass!.actorId && candidate.present);
         if (!actor) throw new Error(`Presentation actor ${presentationPass.actorId} is absent at ${frame.sourceTimeSeconds}.`);
         const world = worldMatrices.get(passKey(presentationPass)) ?? new Matrix4();
@@ -157,6 +161,10 @@ export async function captureBrowserArtifacts(input: {
         await framesSink.write(encoder.encode(`${JSON.stringify(record)}\n`), input.signal);
         addTiming(timings, 'artifactWrite', performance.now() - started);
         const captured = capturePass({ pass, frameIndex: frame.index, fps: input.renderSpec.video?.fps ?? 24, viewer: input.viewer, world, actors, actor, resources, cubeCameras, cameras, timings });
+        if (presentationVideo && pass === presentationPass) {
+          if (!captured.pixels) throw new Error('The trailing chase camera did not produce RGBA pixels.');
+          await presentationVideo.encode(frame, captured.pixels, input.signal);
+        }
         work.push(pipeline.run(() => serializeCapture(pass, captured), input.signal).then(async ({ value, timings: pipelineTiming }) => {
           addTiming(timings, 'encoding', pipelineTiming.executionMs);
           const archive = archives.get(passKey(pass));
@@ -246,7 +254,9 @@ function passKey(pass: BrowserRenderPass): string { return `${pass.actorId}\u000
 const scratchRelative = new Matrix4(); const scratchActorWorld = new Matrix4(); const scratchPitchMatrix = new Matrix4(); const scratchRollMatrix = new Matrix4(); const scratchPosition = new Vector3(); const scratchScale = new Vector3(1, 1, 1); const scratchRotation = new Quaternion(); const scratchTarget = new Vector3(); const scratchUp = new Vector3();
 function sensorWorldMatrix(target: Matrix4, pass: BrowserRenderPass, x: number, z: number, heading: number): void {
   scratchRelative.makeRotationY(pass.transform.rotation.yawRad)
-    .multiply(scratchPitchMatrix.makeRotationZ(pass.transform.rotation.pitchRad))
+    // Canonical pitch is nose-down positive (CARLA lowering negates it), so rotating the
+    // sensor's forward +X about +Z has to run the other way or every camera tilts skyward.
+    .multiply(scratchPitchMatrix.makeRotationZ(-pass.transform.rotation.pitchRad))
     .multiply(scratchRollMatrix.makeRotationX(pass.transform.rotation.rollRad))
     .setPosition(pass.transform.position.x, pass.transform.position.y, pass.transform.position.z);
   scratchActorWorld.makeRotationY(heading).setPosition(x, 0, z);

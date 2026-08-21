@@ -17,6 +17,11 @@ export const PRONTO_KIA_CARNIVAL_CLASS = PRONTO_KIA_CARLA_CLASS_PATH;
 export const PRONTO_SOURCE_IMAGE_OCI_DIGEST = PRONTO_CARLA_IMAGE_INDEX_SHA256;
 export const PRONTO_SOURCE_IMAGE_AMD64_DIGEST = PRONTO_CARLA_IMAGE_AMD64_SHA256;
 export const PRONTO_SENSOR_COUNTS = Object.freeze({ camera: 8, lidar: 6, radar: 4 });
+/**
+ * A presentation view authored on the host, deliberately outside the measurement rig, so the
+ * 8/6/4 attestation counts only Pronto devices. Mirrors the control-plane contract id.
+ */
+export const CHASE_CAMERA_SENSOR_ID = 'chase-cam-trailing';
 
 /** Browser-side defense after portable schema validation and input materialization. */
 export function assertProntoKiaSensorHost(renderSpec: RenderSpecV3, bundle: PlaybackBundle, sensorHost: ProntoSensorHost): void {
@@ -34,7 +39,7 @@ export function assertProntoKiaSensorHost(renderSpec: RenderSpecV3, bundle: Play
     || sensorHost.sensorRig.radars !== PRONTO_SENSOR_COUNTS.radar) {
     throw new Error(`Pronto sensor host must use rig ${PRONTO_SENSOR_RIG_ID} with exact 8/6/4 counts.`);
   }
-  const cameraIds = new Set(renderSpec.sources.filter((source) => source.modality !== 'lidar' && source.modality !== 'radar').map((source) => source.sensorId));
+  const cameraIds = new Set(renderSpec.sources.filter((source) => source.modality !== 'lidar' && source.modality !== 'radar' && source.sensorId !== CHASE_CAMERA_SENSOR_ID).map((source) => source.sensorId));
   const lidarIds = new Set(renderSpec.sources.filter((source) => source.modality === 'lidar').map((source) => source.sensorId));
   const radarIds = new Set(renderSpec.sources.filter((source) => source.modality === 'radar').map((source) => source.sensorId));
   if (cameraIds.size !== PRONTO_SENSOR_COUNTS.camera || lidarIds.size !== PRONTO_SENSOR_COUNTS.lidar || radarIds.size !== PRONTO_SENSOR_COUNTS.radar) {
