@@ -905,7 +905,8 @@ class CarlaBackend:
                 angular = actor.get_angular_velocity()
                 prior = previous[actor_id]
                 linear_speed = sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2)
-                angular_speed = sqrt(angular.x ** 2 + angular.y ** 2 + angular.z ** 2)
+                # CARLA reports actor angular velocity in degrees per second.
+                angular_speed = radians(sqrt(angular.x ** 2 + angular.y ** 2 + angular.z ** 2))
                 horizontal_drift = sqrt(
                     (transform.location.x - prior.location.x) ** 2
                     + (transform.location.y - prior.location.y) ** 2

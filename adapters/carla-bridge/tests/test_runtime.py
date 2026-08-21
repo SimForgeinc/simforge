@@ -555,6 +555,27 @@ def test_native_stability_accepts_late_convergence_with_five_tick_proof():
     assert report["residuals"]["ego"]["verticalMps"] == 0
 
 
+def test_native_stability_converts_carla_angular_velocity_from_degrees_per_second():
+    class Vector3D:
+        def __init__(self, z=0): self.x, self.y, self.z = 0, 0, z
+    class Transform:
+        def __init__(self):
+            self.location = Vector3D()
+            self.rotation = type("Rotation", (), {"yaw": 0})()
+    class Actor:
+        def get_transform(self): return Transform()
+        def get_velocity(self): return Vector3D()
+        def get_angular_velocity(self): return Vector3D(1.0)
+
+    backend = object.__new__(CarlaBackend)
+    backend.world = type("World", (), {"tick": lambda _self: None})()
+    backend.actors = {"ego": Actor()}
+    report = backend._wait_for_native_stability("spawn settle", minimum_ticks=1, maximum_ticks=5)
+
+    assert report["ticks"] == 5
+    assert report["residuals"]["ego"]["angularRadps"] == pytest.approx(0.01745329252)
+
+
 def test_native_stability_rejects_periodic_motion_without_five_consecutive_ticks():
     class Vector3D:
         def __init__(self, z=0): self.x, self.y, self.z = 0, 0, z
