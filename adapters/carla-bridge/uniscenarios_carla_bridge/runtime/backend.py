@@ -525,7 +525,7 @@ class CarlaBackend:
             spawn_lift = max(0.25, half_height + 0.15)
             actor = None
             transform = None
-            for additional_lift in (0.0, 0.5, 1.0, 2.0):
+            for additional_lift in (0.0, 0.5, 1.0, 2.0, 4.0, 8.0):
                 transform = self.carla.Transform(
                     self.carla.Location(
                         x=state.x,
