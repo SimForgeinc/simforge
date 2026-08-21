@@ -95,6 +95,19 @@ export async function captureBrowserArtifacts(input: {
         throwIfAborted(input.signal);
         const actor = actors.find((candidate) => candidate.id === pass.actorId && candidate.present);
         if (!actor) throw new Error(`Sensor actor ${pass.actorId} is absent at ${frame.sourceTimeSeconds}.`);
+        if (![actor.x, actor.z, actor.headingRad].every(Number.isFinite)) {
+          throw new Error(
+            `Sensor actor ${actor.id} has invalid playback coordinates at ${frame.sourceTimeSeconds}: `
+            + JSON.stringify({ x: actor.x, z: actor.z, headingRad: actor.headingRad }),
+          );
+        }
+        const transformValues = [
+          ...Object.values(pass.transform.position),
+          ...Object.values(pass.transform.rotation),
+        ];
+        if (!transformValues.every(Number.isFinite)) {
+          throw new Error(`Sensor ${pass.sensorId} has invalid authored transform: ${JSON.stringify(pass.transform)}.`);
+        }
         const key = passKey(pass);
         const world = worldMatrices.get(key) ?? new Matrix4();
         worldMatrices.set(key, world);
