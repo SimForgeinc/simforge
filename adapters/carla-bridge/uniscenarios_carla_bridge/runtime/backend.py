@@ -1039,18 +1039,20 @@ class CarlaBackend:
                             requested_grade["exposure_compensation"] = exposure
                             break
                     applied_grade = {}
+                    missing_grade = []
                     for name, value in requested_grade.items():
-                        if not blueprint.has_attribute(name):
-                            raise RuntimeError(
-                                f"CARLA RGB camera is missing required HD grade attribute {name}"
-                            )
-                        blueprint.set_attribute(name, value)
-                        applied_grade[name] = value
+                        if blueprint.has_attribute(name):
+                            blueprint.set_attribute(name, value)
+                            applied_grade[name] = value
+                        else:
+                            missing_grade.append(name)
                     self.camera_grade_evidence[key] = {
                         "schema": "uniscenario.camera-grade-evidence/v1",
                         "profile": "rrmaps-accepted-v1",
                         "mapName": loaded_map_name,
                         "attributes": dict(sorted(applied_grade.items())),
+                        "exact": not missing_grade,
+                        "missingAttributes": sorted(missing_grade),
                         "postprocess": spec.quality != "preview",
                         "motionBlurIntensity": 0.0,
                     }
