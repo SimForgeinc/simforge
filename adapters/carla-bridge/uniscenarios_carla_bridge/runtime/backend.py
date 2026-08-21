@@ -474,7 +474,7 @@ class CarlaBackend:
             }
         else:
             self.client.set_timeout(180.0)
-            loaded = self.client.load_world(requested_name)
+            loaded = self.client.load_world(requested_name, reset_settings=False)
             self.world = loaded if loaded is not None else self.client.get_world()
             runtime_map = self.world.get_map()
             loaded_name = _normalized_map_name(getattr(runtime_map, "name", ""))

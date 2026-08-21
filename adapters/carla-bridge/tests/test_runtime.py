@@ -445,6 +445,37 @@ def test_map_load_releases_a_prior_synchronous_world():
     assert world.applied == [settings]
 
 
+def test_cooked_map_load_preserves_the_released_async_settings(monkeypatch):
+    xodr = b"<OpenDRIVE/>"
+    digest = hashlib.sha256(xodr).hexdigest()
+    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_XODR_SHA256_JSON", json.dumps({"CookedMap": digest}))
+    settings = type(
+        "Settings",
+        (),
+        {"synchronous_mode": True, "fixed_delta_seconds": 0.02, "no_rendering_mode": False},
+    )()
+    runtime_map = type("Map", (), {"name": "Carla/Maps/CookedMap"})()
+    class World:
+        def get_map(self): return runtime_map
+        def get_settings(self): return settings
+        def apply_settings(self, _value): return None
+    world = World()
+    calls = []
+    class Client:
+        def get_world(self): return world
+        def get_available_maps(self): return ["Carla/Maps/CookedMap"]
+        def set_timeout(self, value): calls.append(("timeout", value))
+        def load_world(self, name, *, reset_settings): calls.append(("load", name, reset_settings)); return world
+    backend = object.__new__(CarlaBackend)
+    backend.client = Client()
+
+    backend.load_opendrive("CookedMap", xodr, 0.05)
+
+    assert ("load", "CookedMap", False) in calls
+    assert settings.synchronous_mode is True
+    assert settings.fixed_delta_seconds == 0.05
+
+
 def test_carla_spawn_preserves_absolute_xosc_elevation_and_coordinate_sign():
     class Location:
         def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
