@@ -714,22 +714,13 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
     lease, asset_paths = _intent_lease(intent, intent_sha, inputs, output_dir)
     progress_path = Path(args.progress)
     progress_path.parent.mkdir(parents=True, exist_ok=True)
-    sequence = 0
-
-    def emit(event: str, payload: Mapping[str, object]) -> None:
-        nonlocal sequence
-        record = {
-            "schema": "uniscenario.render-progress/v1", "intentId": intent["intentId"],
-            "intentSha256": intent_sha, "sequence": sequence, "event": event, **payload,
-        }
-        with progress_path.open("a", encoding="utf-8", newline="\n") as target:
-            target.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
-        sequence += 1
-
+    # The outer render worker owns the public progress contract and already
+    # reports job/stage/artifact events. Keep the engine file empty instead of
+    # writing its legacy intent-scoped event vocabulary into that job-scoped
+    # stream.
     progress_path.write_text("", "utf-8")
-    emit("accepted", {"engine": "carla"})
     result = _execute_local_lease(
-        lease, asset_paths, output_dir, DEFAULT_XSD, args.host, args.port, progress=emit,
+        lease, asset_paths, output_dir, DEFAULT_XSD, args.host, args.port,
     )
     manifest_entries = _artifact_manifest_entries(result["artifacts"])
     runtime_evidence = result["attestation"]["runtimeEvidence"]
