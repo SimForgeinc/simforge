@@ -530,6 +530,12 @@ class CarlaBackend:
                         f"CARLA actor {actor_id} spawned as {observed_type_id!r}, "
                         f"expected exact blueprint {blueprint_id!r}"
                     )
+            if blueprint_id.startswith("walker."):
+                set_gravity = getattr(actor, "set_enable_gravity", None)
+                if not callable(set_gravity):
+                    actor.destroy()
+                    raise RuntimeError(f"CARLA walker {actor_id} cannot disable uncontrolled vertical drift")
+                set_gravity(False)
             self.actor_asset_evidence[actor_id] = {
                 "catalogId": binding.catalog_name,
                 "requestedBlueprintId": blueprint_id,

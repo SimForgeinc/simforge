@@ -452,6 +452,36 @@ def test_carla_spawn_preserves_absolute_xosc_elevation_and_coordinate_sign():
     assert spawned.rotation.yaw == pytest.approx(5.782)
 
 
+def test_carla_spawn_disables_uncontrolled_walker_gravity():
+    class Value:
+        def __init__(self, *args, **values): self.args = args; self.__dict__.update(values)
+    class Carla:
+        Location = Rotation = Transform = Value
+    class Actor:
+        id = 2
+        type_id = "walker.pedestrian.0015"
+        def __init__(self): self.gravity = None
+        def set_enable_gravity(self, enabled): self.gravity = enabled
+        def destroy(self): return True
+    actor = Actor()
+    class World:
+        def get_blueprint_library(self): return Value(find=lambda _blueprint_id: "walker.pedestrian.0015")
+        def try_spawn_actor(self, _blueprint, _transform): return actor
+
+    backend = object.__new__(CarlaBackend)
+    backend.carla = Carla
+    backend.world = World()
+    backend.actors = {}
+    frame = PlanFrame(0, 0, {"ped": ActorFrame("spawn", 1, 2, 3, 4, 0)}, {})
+    backend.spawn(
+        {"ped": ActorBinding("ped", "actor_ped", "pedestrian", "pedestrian.adult_walking")},
+        frame,
+        {"pedestrian.adult_walking": {"blueprintId": "walker.pedestrian.0015"}},
+    )
+
+    assert actor.gravity is False
+
+
 def test_native_prepare_settles_before_t0_and_resets_linear_and_angular_velocity():
     class Vector3D:
         def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
