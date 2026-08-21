@@ -513,12 +513,21 @@ class CarlaBackend:
                 if isinstance(entry_height, (int, float)) else 0.0
             )
             spawn_lift = max(0.25, half_height + 0.15)
-            transform = self.carla.Transform(
-                self.carla.Location(x=state.x, y=-state.y, z=state.z + spawn_lift),
-                self.carla.Rotation(yaw=-state.heading_deg),
-            )
-            actor = self.world.try_spawn_actor(blueprint, transform)
-            check()
+            actor = None
+            transform = None
+            for additional_lift in (0.0, 0.5, 1.0, 2.0):
+                transform = self.carla.Transform(
+                    self.carla.Location(
+                        x=state.x,
+                        y=-state.y,
+                        z=state.z + spawn_lift + additional_lift,
+                    ),
+                    self.carla.Rotation(yaw=-state.heading_deg),
+                )
+                actor = self.world.try_spawn_actor(blueprint, transform)
+                check()
+                if actor is not None:
+                    break
             if actor is None:
                 raise RuntimeError(f"CARLA failed to spawn {actor_id} as {blueprint_id}")
             observed_type_id = str(getattr(actor, "type_id", ""))
@@ -530,7 +539,10 @@ class CarlaBackend:
                         f"CARLA actor {actor_id} spawned as {observed_type_id!r}, "
                         f"expected exact blueprint {blueprint_id!r}"
                     )
-            if blueprint_id.startswith("walker."):
+            if (
+                blueprint_id.startswith("walker.")
+                and self.map_evidence.get("source") == "generated-opendrive-world"
+            ):
                 set_gravity = getattr(actor, "set_enable_gravity", None)
                 if not callable(set_gravity):
                     actor.destroy()

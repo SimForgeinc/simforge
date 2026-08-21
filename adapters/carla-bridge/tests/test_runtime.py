@@ -465,12 +465,16 @@ def test_carla_spawn_disables_uncontrolled_walker_gravity():
         def destroy(self): return True
     actor = Actor()
     class World:
+        def __init__(self): self.transforms = []
         def get_blueprint_library(self): return Value(find=lambda _blueprint_id: "walker.pedestrian.0015")
-        def try_spawn_actor(self, _blueprint, _transform): return actor
+        def try_spawn_actor(self, _blueprint, transform):
+            self.transforms.append(transform)
+            return actor if len(self.transforms) == 2 else None
 
     backend = object.__new__(CarlaBackend)
     backend.carla = Carla
     backend.world = World()
+    backend.map_evidence = {"source": "generated-opendrive-world"}
     backend.actors = {}
     frame = PlanFrame(0, 0, {"ped": ActorFrame("spawn", 1, 2, 3, 4, 0)}, {})
     backend.spawn(
@@ -480,6 +484,8 @@ def test_carla_spawn_disables_uncontrolled_walker_gravity():
     )
 
     assert actor.gravity is False
+    assert len(backend.world.transforms) == 2
+    assert backend.world.transforms[1].args[0].z - backend.world.transforms[0].args[0].z == 0.5
 
 
 def test_native_prepare_settles_before_t0_and_resets_linear_and_angular_velocity():
