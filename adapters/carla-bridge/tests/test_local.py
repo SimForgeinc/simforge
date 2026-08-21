@@ -13,6 +13,47 @@ def test_default_schema_is_bundled_and_digest_pinned() -> None:
     assert hashlib.sha256(local.DEFAULT_XSD.read_bytes()).hexdigest() == OFFICIAL_XSD_SHA256
 
 
+def test_run_intent_writes_the_final_manifest_without_legacy_progress_events(
+    monkeypatch: pytest.MonkeyPatch, tmp_path,
+) -> None:
+    intent_path = tmp_path / "intent.json"
+    package_path = tmp_path / "package.json"
+    output_path = tmp_path / "output"
+    progress_path = tmp_path / "progress.jsonl"
+    manifest_path = tmp_path / "manifest.json"
+    intent_path.write_text('{"intentId":"intent-1","sensorHost":{}}')
+    package_path.write_text("{}")
+    monkeypatch.setattr(local, "_read_input_package", lambda _package, _intent: ("a" * 64, {}))
+    monkeypatch.setattr(local, "_intent_lease", lambda *_args: (object(), {}))
+    monkeypatch.setattr(
+        local,
+        "_execute_local_lease",
+        lambda *_args: {
+            "artifacts": [],
+            "attestation": {
+                "runtimeEvidence": {"prontoSensorHost": {}, "runtimeImage": {}},
+            },
+            "parityEvidence": {},
+            "planSha256": "b" * 64,
+        },
+    )
+    args = local.argparse.Namespace(
+        intent=str(intent_path),
+        package=str(package_path),
+        output=str(output_path),
+        progress=str(progress_path),
+        manifest=str(manifest_path),
+        host="127.0.0.1",
+        port=2000,
+    )
+
+    result = local._run_intent(args)
+
+    assert result["schema"] == "uniscenario.render-artifact-manifest/v1"
+    assert manifest_path.is_file()
+    assert progress_path.read_text() == ""
+
+
 def test_probe_is_read_only_and_always_cleans_up(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[object] = []
 

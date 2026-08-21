@@ -765,7 +765,6 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
     manifest_path = Path(args.manifest)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(artifact_manifest, sort_keys=True, separators=(",", ":")) + "\n", "utf-8")
-    emit("completed", {"manifest": str(manifest_path), "artifactCount": len(manifest_entries)})
     for internal in (output_dir / ".disabled-materialized-traffic.json", output_dir / ".execution-manifest.json"):
         internal.unlink(missing_ok=True)
     return artifact_manifest
