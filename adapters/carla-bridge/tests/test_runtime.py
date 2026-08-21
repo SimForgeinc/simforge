@@ -526,7 +526,7 @@ def test_native_prepare_settles_before_t0_and_resets_linear_and_angular_velocity
         "ped": ActorFrame("spawn", 5, 6, 7, 8, 0),
     }, {})
     report = backend.prepare_scenario(frame)
-    assert backend.world.ticks == 33
+    assert backend.world.ticks == 29
     assert backend.actors["ego"].controls[0].brake == 1.0
     assert backend.actors["ped"].controls[0].speed == 0.0
     assert backend.actors["ego"].linear.x == backend.actors["ego"].linear.y == backend.actors["ego"].linear.z == 0.0
@@ -535,7 +535,7 @@ def test_native_prepare_settles_before_t0_and_resets_linear_and_angular_velocity
     assert backend.actors["ego"].transform.location.z == 7
     assert backend.actors["ego"].transform.rotation.yaw == -4
     assert backend.speed_integrals == {"ego": 0.0, "ped": 0.0}
-    assert [phase["ticks"] for phase in report["phases"]] == [24, 9]
+    assert [phase["ticks"] for phase in report["phases"]] == [20, 9]
     assert report["phases"][1]["residuals"]["ego"]["verticalMps"] == 0.0
 
 

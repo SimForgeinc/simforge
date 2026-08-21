@@ -796,7 +796,7 @@ class CarlaBackend:
         reports = [self._wait_for_native_stability(
             "spawn settle",
             minimum_ticks=20,
-            maximum_ticks=100,
+            maximum_ticks=20,
             require_convergence=False,
             abort=abort,
         )]
