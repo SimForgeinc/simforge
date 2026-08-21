@@ -559,6 +559,14 @@ def test_native_prepare_fails_closed_when_motion_never_converges():
     backend.actors = {"ego": Actor()}
     with pytest.raises(RuntimeError, match="spawn settle.*linearMps.*verticalMps"):
         backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=25)
+    report = backend._wait_for_native_stability(
+        "spawn settle",
+        minimum_ticks=1,
+        maximum_ticks=2,
+        require_convergence=False,
+    )
+    assert report["converged"] is False
+    assert report["ticks"] == 2
 
 
 def test_native_stability_accepts_late_convergence_with_five_tick_proof():

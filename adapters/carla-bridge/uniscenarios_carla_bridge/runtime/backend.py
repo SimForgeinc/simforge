@@ -793,7 +793,13 @@ class CarlaBackend:
                 actor.apply_control(self.carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
             elif actor.type_id.startswith("walker."):
                 actor.apply_control(self.carla.WalkerControl(speed=0.0, jump=False))
-        reports = [self._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=500, abort=abort)]
+        reports = [self._wait_for_native_stability(
+            "spawn settle",
+            minimum_ticks=20,
+            maximum_ticks=100,
+            require_convergence=False,
+            abort=abort,
+        )]
         zero = self.carla.Vector3D(x=0.0, y=0.0, z=0.0)
         for actor_id, actor in self.actors.items():
             check()
@@ -863,8 +869,16 @@ class CarlaBackend:
             "phases": reports,
         }
 
-    def _wait_for_native_stability(self, phase: str, *, minimum_ticks: int, maximum_ticks: int, abort: Callable[[], None] | None = None) -> Mapping[str, Any]:
-        """Fail closed unless every actor is physically stable for five ticks."""
+    def _wait_for_native_stability(
+        self,
+        phase: str,
+        *,
+        minimum_ticks: int,
+        maximum_ticks: int,
+        require_convergence: bool = True,
+        abort: Callable[[], None] | None = None,
+    ) -> Mapping[str, Any]:
+        """Measure five stable ticks, failing when the caller requires convergence."""
         assert self.world is not None
         check = abort or (lambda: None)
         check()
@@ -941,7 +955,14 @@ class CarlaBackend:
             previous = current
             consecutive = consecutive + 1 if stable and tick >= minimum_ticks else 0
             if consecutive >= 5:
-                return {"phase": phase, "ticks": tick, "residuals": residuals}
+                return {"phase": phase, "ticks": tick, "converged": True, "residuals": residuals}
+        if not require_convergence:
+            return {
+                "phase": phase,
+                "ticks": maximum_ticks,
+                "converged": False,
+                "residuals": residuals,
+            }
         unstable = {
             actor_id: residuals[actor_id]
             for actor_id in sorted(unstable_actor_ids)
