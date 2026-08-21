@@ -390,16 +390,18 @@ def _intent_lease(
     native_render_spec, parsed_spec = _render_spec_v3_to_native(intent.get("renderSpec"))
     sensor_host = intent.get("sensorHost")
     if not isinstance(sensor_host, Mapping) or set(sensor_host) != {
-        "actorId", "vehicleAsset", "sourceImage", "sensorRig",
+        "actorId", "vehicleAsset", "sensorRig",
     }:
         raise ContractError("render intent sensorHost has invalid fields")
     host_actor_id = sensor_host.get("actorId")
     vehicle_asset = sensor_host.get("vehicleAsset")
-    source_image = sensor_host.get("sourceImage")
+    source_image = vehicle_asset.get("sourceImage") if isinstance(vehicle_asset, Mapping) else None
     sensor_rig = sensor_host.get("sensorRig")
     if not isinstance(host_actor_id, str) or not host_actor_id:
         raise ContractError("render intent sensorHost.actorId must be non-empty")
-    if vehicle_asset != {
+    if not isinstance(vehicle_asset, Mapping) or {
+        key: value for key, value in vehicle_asset.items() if key != "sourceImage"
+    } != {
         "catalogAssetId": KIA_CARNIVAL_CATALOG_ID,
         "carlaBlueprintId": KIA_CARNIVAL_BLUEPRINT_ID,
         "carlaClassPath": KIA_CARNIVAL_CLASS_PATH,
