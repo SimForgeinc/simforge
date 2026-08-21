@@ -167,17 +167,17 @@ export function VariationsPanel({ controller, viewer, map, authoringEnabled, por
         {analysisStatus === 'loading' ? <div style={styles.preflight}>Updating structural compatibility…</div> : null}
         {eligibility ? <EligibilityOverview report={eligibility} /> : null}
         <div style={styles.axes}>
-          <label>Candidate budget <input aria-label="Candidate budget" type="number" min={1} max={MAX_VARIATION_CANDIDATE_BUDGET} value={candidateBudget} onChange={(event) => { const next = clamp(event.currentTarget.value, 1, MAX_VARIATION_CANDIDATE_BUDGET); setCandidateBudget(next); saveControls({ drawsPerLocation, candidateBudget: next, workerCount }); }} /></label>
-          <label>Draws / location <input aria-label="Draws per location" type="number" min={1} max={32} value={drawsPerLocation} onChange={(event) => { const next = clamp(event.currentTarget.value, 1, 32); setDrawsPerLocation(next); saveControls({ drawsPerLocation: next, candidateBudget, workerCount }); }} /></label>
+          <label>Candidate budget <input aria-label="Candidate budget" className="studio-field" type="number" min={1} max={MAX_VARIATION_CANDIDATE_BUDGET} value={candidateBudget} onChange={(event) => { const next = clamp(event.currentTarget.value, 1, MAX_VARIATION_CANDIDATE_BUDGET); setCandidateBudget(next); saveControls({ drawsPerLocation, candidateBudget: next, workerCount }); }} /></label>
+          <label>Draws / location <input aria-label="Draws per location" className="studio-field" type="number" min={1} max={32} value={drawsPerLocation} onChange={(event) => { const next = clamp(event.currentTarget.value, 1, 32); setDrawsPerLocation(next); saveControls({ drawsPerLocation: next, candidateBudget, workerCount }); }} /></label>
           <div style={styles.axisStatus}>Axis combinations <strong>1</strong><small>Typed axes not yet expanded</small></div>
-          <label>Workers <select aria-label="Verification workers" value={workerCount} onChange={(event) => { const next = Number(event.currentTarget.value); setWorkerCount(next); saveControls({ drawsPerLocation, candidateBudget, workerCount: next }); }}><option value={2}>2</option><option value={3}>3</option><option value={4}>4 max</option></select></label>
+          <label>Workers <select aria-label="Verification workers" className="studio-field" value={workerCount} onChange={(event) => { const next = Number(event.currentTarget.value); setWorkerCount(next); saveControls({ drawsPerLocation, candidateBudget, workerCount: next }); }}><option value={2}>2</option><option value={3}>3</option><option value={4}>4 max</option></select></label>
         </div>
         {!sampledParameters ? <div style={styles.drawNotice}>This scenario has no sampled typed parameters, so extra draws would be identical. The default verifies one candidate per compatible location, capped by the candidate budget.</div> : null}
-        <button type="button" data-testid="variation-search" style={styles.primary} disabled={!authoringEnabled || !eligibility?.locations.compatible || status === 'searching'} onClick={() => void search()}>
+        <button type="button" data-testid="variation-search" className="studio-btn" style={styles.primary} disabled={!authoringEnabled || !eligibility?.locations.compatible || status === 'searching'} onClick={() => void search()}>
           {status === 'searching' ? 'Verifying candidates…' : 'Generate & verify'}
         </button>
-        {status === 'searching' ? <button type="button" style={styles.cancel} onClick={() => { client.current.cancel(); setStatus('idle'); }}>Cancel</button> : null}
-        {(result?.resumeToken ?? eligibility?.resumeToken) && status !== 'searching' && funnel.enumerated > funnel.simulated + funnel.failed ? <button type="button" style={styles.resume} onClick={() => void search(true)}>Resume checkpoint</button> : null}
+        {status === 'searching' ? <button type="button" className="studio-btn" style={styles.cancel} onClick={() => { client.current.cancel(); setStatus('idle'); }}>Cancel</button> : null}
+        {(result?.resumeToken ?? eligibility?.resumeToken) && status !== 'searching' && funnel.enumerated > funnel.simulated + funnel.failed ? <button type="button" className="studio-btn" style={styles.resume} onClick={() => void search(true)}>Resume checkpoint</button> : null}
         {(status === 'searching' || progressCandidates.length > 0) ? <Funnel counts={funnel} /> : null}
         {!authoringEnabled ? <div style={styles.blocker}>Stop playback before searching or accepting variations.</div> : null}
         {error ? <div style={styles.error}>{error}</div> : null}
@@ -203,7 +203,7 @@ export function VariationsPanel({ controller, viewer, map, authoringEnabled, por
           const decision = store.current.decision(key);
           const active = key === selectedKey;
           const issues = item.acceptance.issues.filter((issue) => issue.severity !== 'info');
-          return <article key={key} data-testid={`variation-candidate-${item.candidate.rank}`} style={{ ...styles.card, ...(active ? styles.cardActive : {}) }} onClick={() => setSelectedKey(key)}>
+          return <article key={key} data-testid={`variation-candidate-${item.candidate.rank}`} className="studio-tile-hover" style={{ ...styles.card, ...(active ? styles.cardActive : {}) }} onClick={() => setSelectedKey(key)}>
             <div style={styles.cardTop}><strong>#{item.candidate.rank} {mapLabel(item.candidate.mapId)}</strong><Status status={item.acceptance.status} /></div>
             {item.stage ? <div style={styles.stage}>{item.stage}</div> : null}
             <div style={styles.site}>{item.candidate.site.siteId}</div>
@@ -217,9 +217,9 @@ export function VariationsPanel({ controller, viewer, map, authoringEnabled, por
             {decision ? <div style={styles.decision}>Previously {decision.decision} {new Date(decision.decidedAt).toLocaleString()}</div> : null}
             {item.acceptance.status === 'accepted' ? <div style={styles.carla}>{carlaConformanceEligibility({ candidate: item, reviewState: decision?.decision, currentRevision: scenarioRevision(controller.doc.data) }).message}</div> : null}
             <div style={styles.actions}>
-              <button type="button" data-testid={`variation-reject-${item.candidate.rank}`} style={styles.reject} onClick={(event) => { event.stopPropagation(); reject(item); }}>Reject</button>
-              <button type="button" style={styles.shortlist} disabled={item.acceptance.status !== 'accepted'} onClick={(event) => { event.stopPropagation(); shortlist(item); }}>Shortlist</button>
-              <button type="button" data-testid={`variation-accept-${item.candidate.rank}`} style={styles.accept} disabled={item.acceptance.status !== 'accepted' || !authoringEnabled} title={item.acceptance.status !== 'accepted' ? 'Materialization, simulation, behavior equivalence, or required checks did not pass' : 'Promote into an editable scenario'} onClick={(event) => { event.stopPropagation(); void accept(item).catch((reason) => setError(String(reason))); }}>Promote &amp; open</button>
+              <button type="button" data-testid={`variation-reject-${item.candidate.rank}`} className="studio-btn" style={styles.reject} onClick={(event) => { event.stopPropagation(); reject(item); }}>Reject</button>
+              <button type="button" className="studio-btn" style={styles.shortlist} disabled={item.acceptance.status !== 'accepted'} onClick={(event) => { event.stopPropagation(); shortlist(item); }}>Shortlist</button>
+              <button type="button" data-testid={`variation-accept-${item.candidate.rank}`} className="studio-btn" style={styles.accept} disabled={item.acceptance.status !== 'accepted' || !authoringEnabled} title={item.acceptance.status !== 'accepted' ? 'Materialization, simulation, behavior equivalence, or required checks did not pass' : 'Promote into an editable scenario'} onClick={(event) => { event.stopPropagation(); void accept(item).catch((reason) => setError(String(reason))); }}>Promote &amp; open</button>
             </div>
           </article>;
         })}
@@ -236,7 +236,7 @@ function ZeroMatches({ result }: { result: VariationSearchPayload }): JSX.Elemen
 }
 
 function Status({ status }: { status: VariationCandidateResult['acceptance']['status'] }): JSX.Element {
-  const color = status === 'accepted' ? '#75e69c' : status.startsWith('pending') ? '#facc15' : '#ff8585';
+  const color = status === 'accepted' ? 'var(--ueui-ok, #57c785)' : status.startsWith('pending') ? 'var(--ueui-warn, #f0a13c)' : 'var(--ueui-danger, #ff6b5e)';
   return <span style={{ ...styles.badge, color }}>{status.replaceAll('_', ' ')}</span>;
 }
 function EligibilityOverview({ report }: { report: EligibilityReport }): JSX.Element {
@@ -257,25 +257,25 @@ function candidateKey(item: VariationCandidateResult): string { return `${item.c
 function mapLabel(id: string): string { return MAPS.find((map) => map.id === id)?.label ?? id; }
 
 const styles: Record<string, CSSProperties> = {
-  panel: { width: 430, height: '100%', boxSizing: 'border-box', overflowY: 'auto', color: '#e9edf4', background: 'rgba(24,27,32,.98)', border: '1px solid #3b3f47', borderRadius: 8, boxShadow: '0 18px 48px rgba(0,0,0,.52)' },
-  header: { display: 'flex', alignItems: 'center', padding: '13px 14px 11px', borderBottom: '1px solid #373b43' },
-  eyebrow: { color: '#f07f2f', fontSize: 9, fontWeight: 750, letterSpacing: .9, textTransform: 'uppercase' },
-  close: { marginLeft: 'auto', width: 28, height: 28, border: 0, background: 'transparent', color: '#949ca8', fontSize: 22, cursor: 'pointer' },
-  section: { padding: 13, borderBottom: '1px solid #343840' }, copy: { color: '#aeb6c2', fontSize: 11, marginBottom: 10 },
-  currentMap: { color: '#76c8ee', fontSize: 10, marginBottom: 8 }, preflight: { padding: 9, color: '#aeb6c2', background: '#20242a', borderRadius: 5, marginBottom: 8, fontSize: 10 },
-  overview: { padding: 10, background: '#20242a', border: '1px solid #3b4049', borderRadius: 7, marginBottom: 10 }, compatible: { display: 'flex', alignItems: 'baseline', gap: 7, color: '#75e69c' }, breakdown: { marginTop: 3, color: '#aeb6c2', fontSize: 9 }, requirements: { display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }, chip: { padding: '3px 5px', border: '1px solid #4a515d', borderRadius: 9, color: '#cbd2dc', fontSize: 8 }, formula: { marginTop: 8, color: '#f0c177', fontSize: 10, fontWeight: 650 }, structural: { marginTop: 3, color: '#8f98a5', fontSize: 9 }, reason: { marginTop: 5, color: '#edc778', fontSize: 8 },
-  axes: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6, marginBottom: 9, fontSize: 9, color: '#abb3bf' },
+  panel: { width: 430, height: '100%', boxSizing: 'border-box', overflowY: 'auto', color: 'var(--ueui-text, #f2f2f2)', background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', backdropFilter: 'blur(72px) saturate(185%)', WebkitBackdropFilter: 'blur(72px) saturate(185%)', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 'var(--ueui-radius, 10px)', boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))' },
+  header: { display: 'flex', alignItems: 'center', padding: '13px 14px 11px', borderBottom: '1px solid var(--ueui-line, rgba(255,255,255,.08))' },
+  eyebrow: { color: 'var(--ueui-accent, #e8e044)', fontSize: 9, fontWeight: 700, letterSpacing: .9, textTransform: 'uppercase' },
+  close: { marginLeft: 'auto', width: 28, height: 28, border: 0, background: 'transparent', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 22, cursor: 'pointer' },
+  section: { padding: 13, borderBottom: '1px solid var(--ueui-line, rgba(255,255,255,.08))' }, copy: { color: 'rgba(242,242,242,.78)', fontSize: 11, marginBottom: 10 },
+  currentMap: { color: 'var(--ueui-accent, #e8e044)', fontSize: 10, marginBottom: 8 }, preflight: { padding: 9, color: 'var(--ueui-text-muted, #9a9a9a)', background: 'rgba(255,255,255,.04)', borderRadius: 6, marginBottom: 8, fontSize: 10 },
+  overview: { padding: 10, background: 'rgba(255,255,255,.03)', border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 8, marginBottom: 10 }, compatible: { display: 'flex', alignItems: 'baseline', gap: 7, color: 'var(--ueui-ok, #57c785)' }, breakdown: { marginTop: 3, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9 }, requirements: { display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }, chip: { padding: '3px 5px', border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 999, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 8 }, formula: { marginTop: 8, color: 'var(--ueui-warn, #f0a13c)', fontSize: 10, fontWeight: 650 }, structural: { marginTop: 3, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9 }, reason: { marginTop: 5, color: 'var(--ueui-warn, #f0a13c)', fontSize: 8 },
+  axes: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6, marginBottom: 9, fontSize: 9, color: 'var(--ueui-text-muted, #9a9a9a)' },
   axisStatus: { display: 'flex', flexDirection: 'column', gap: 2, padding: '4px 0' },
-  drawNotice: { margin: '-2px 0 9px', color: '#8f98a5', fontSize: 9, lineHeight: 1.45 },
-  primary: { width: '100%', padding: '8px 10px', border: '1px solid #d76d25', borderRadius: 6, background: '#f07f2f', color: '#16181c', fontWeight: 750, cursor: 'pointer' },
-  cancel: { width: '100%', marginTop: 6, padding: 6, border: '1px solid #755', borderRadius: 5, background: '#35282a', color: '#ffb4b4' }, resume: { width: '100%', marginTop: 6, padding: 6, border: '1px solid #4b6075', borderRadius: 5, background: '#263441', color: '#b8dcff' }, funnel: { marginTop: 8, padding: 7, background: '#18252b', color: '#9bdcf5', borderRadius: 5, fontSize: 9 },
-  blocker: { marginTop: 8, color: '#e9c77d', fontSize: 10 }, error: { marginTop: 7, color: '#ff9b9b', fontSize: 10, whiteSpace: 'pre-wrap' },
-  liftIssues: { marginTop: 8, padding: 8, border: '1px solid #74454a', borderRadius: 5, background: '#332327', fontSize: 10 },
-  dependency: { marginTop: 2, color: '#e9c77d' },
-  summary: { fontWeight: 650, marginBottom: 2 }, token: { color: '#77808d', font: '9px ui-monospace, monospace', marginBottom: 9 }, zero: { display: 'grid', gap: 7, color: '#aeb6c2', fontSize: 10 },
-  card: { marginBottom: 9, padding: 10, border: '1px solid #3b4049', borderRadius: 7, background: '#20242a', cursor: 'pointer' }, cardActive: { borderColor: '#4bc0ff', boxShadow: '0 0 0 1px rgba(75,192,255,.25)' },
-  cardTop: { display: 'flex', gap: 8, alignItems: 'center' }, badge: { marginLeft: 'auto', fontSize: 8, fontWeight: 800, textTransform: 'uppercase' },
-  site: { marginTop: 2, color: '#818a97', font: '9px ui-monospace, monospace', overflow: 'hidden', textOverflow: 'ellipsis' }, score: { marginTop: 5, color: '#c5ccd6', fontSize: 10 }, explain: { marginTop: 4, color: '#9ca5b2', fontSize: 10 },
-  stage: { marginTop: 2, color: '#7cccf0', fontSize: 8, textTransform: 'uppercase' }, issueError: { marginTop: 5, color: '#ff9b9b', fontSize: 9 }, issueWarning: { marginTop: 5, color: '#edc778', fontSize: 9 }, preview: { marginTop: 6, color: '#69c7ef', fontSize: 9 }, decision: { marginTop: 6, color: '#b8a7e8', fontSize: 9 }, carla: { marginTop: 6, padding: 5, background: '#282632', color: '#c8b9f5', fontSize: 8 },
-  actions: { display: 'flex', gap: 6, marginTop: 9 }, reject: { flex: 1, padding: 6, border: '1px solid #555b65', borderRadius: 5, background: '#2a2e35', color: '#d8dde5' }, shortlist: { flex: 1, padding: 6, border: '1px solid #756c48', borderRadius: 5, background: '#3b3524', color: '#f4d98b' }, accept: { flex: 2, padding: 6, border: '1px solid #43845b', borderRadius: 5, background: '#275239', color: '#baf2cd', fontWeight: 700 },
+  drawNotice: { margin: '-2px 0 9px', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9, lineHeight: 1.45 },
+  primary: { width: '100%', padding: '8px 10px', border: '1px solid transparent', borderRadius: 8, background: 'var(--ueui-accent, #e8e044)', color: '#10120a', fontWeight: 700, cursor: 'pointer' },
+  cancel: { width: '100%', marginTop: 6, padding: 6, border: '1px solid rgba(255,107,94,.4)', borderRadius: 7, background: 'rgba(255,107,94,.1)', color: 'var(--ueui-danger, #ff6b5e)', cursor: 'pointer' }, resume: { width: '100%', marginTop: 6, padding: 6, border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 7, background: 'rgba(255,255,255,.05)', color: 'var(--ueui-text, #f2f2f2)', cursor: 'pointer' }, funnel: { marginTop: 8, padding: 7, background: 'rgba(255,255,255,.04)', color: 'var(--ueui-text-muted, #9a9a9a)', borderRadius: 6, fontSize: 9 },
+  blocker: { marginTop: 8, color: 'var(--ueui-warn, #f0a13c)', fontSize: 10 }, error: { marginTop: 7, color: 'var(--ueui-danger, #ff6b5e)', fontSize: 10, whiteSpace: 'pre-wrap' },
+  liftIssues: { marginTop: 8, padding: 8, border: '1px solid rgba(255,107,94,.35)', borderRadius: 7, background: 'rgba(255,107,94,.08)', fontSize: 10 },
+  dependency: { marginTop: 2, color: 'var(--ueui-warn, #f0a13c)' },
+  summary: { fontWeight: 650, marginBottom: 2 }, token: { color: 'var(--ueui-text-muted, #9a9a9a)', font: '9px ui-monospace, monospace', marginBottom: 9 }, zero: { display: 'grid', gap: 7, color: 'rgba(242,242,242,.78)', fontSize: 10 },
+  card: { marginBottom: 9, padding: 10, border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 'var(--ueui-radius, 10px)', background: 'linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012))', cursor: 'pointer' }, cardActive: { borderColor: 'rgba(232,224,68,.55)', background: 'var(--ueui-accent-soft, rgba(232,224,68,.16))' },
+  cardTop: { display: 'flex', gap: 8, alignItems: 'center' }, badge: { marginLeft: 'auto', fontSize: 8, fontWeight: 700, textTransform: 'uppercase' },
+  site: { marginTop: 2, color: 'var(--ueui-text-muted, #9a9a9a)', font: '9px ui-monospace, monospace', overflow: 'hidden', textOverflow: 'ellipsis' }, score: { marginTop: 5, color: 'rgba(242,242,242,.82)', fontSize: 10 }, explain: { marginTop: 4, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10 },
+  stage: { marginTop: 2, color: 'var(--ueui-accent, #e8e044)', fontSize: 8, textTransform: 'uppercase' }, issueError: { marginTop: 5, color: 'var(--ueui-danger, #ff6b5e)', fontSize: 9 }, issueWarning: { marginTop: 5, color: 'var(--ueui-warn, #f0a13c)', fontSize: 9 }, preview: { marginTop: 6, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9 }, decision: { marginTop: 6, color: 'rgba(242,242,242,.65)', fontSize: 9 }, carla: { marginTop: 6, padding: 5, background: 'rgba(255,255,255,.04)', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 8 },
+  actions: { display: 'flex', gap: 6, marginTop: 9 }, reject: { flex: 1, padding: 6, border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 7, background: 'rgba(255,255,255,.05)', color: 'var(--ueui-text, #f2f2f2)', cursor: 'pointer' }, shortlist: { flex: 1, padding: 6, border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 7, background: 'rgba(255,255,255,.05)', color: 'var(--ueui-text, #f2f2f2)', cursor: 'pointer' }, accept: { flex: 2, padding: 6, border: '1px solid transparent', borderRadius: 7, background: 'var(--ueui-accent, #e8e044)', color: '#10120a', fontWeight: 700, cursor: 'pointer' },
 };

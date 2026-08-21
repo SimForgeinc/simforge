@@ -119,8 +119,8 @@ export function ScenarioCopilotPanel({ controller, map, sampleHeight, onValidate
       </button>
     </div>
     <label style={styles.label} htmlFor="copilot-prompt">Describe the scenario</label>
-    <textarea id="copilot-prompt" data-testid="scenario-copilot-prompt" style={styles.prompt} value={prompt} onChange={(event) => setPrompt(event.currentTarget.value)} disabled={busy} />
-    <button type="button" data-testid="scenario-copilot-generate" style={styles.generate} disabled={busy || prompt.trim().length < 8} onClick={() => void generate()}>{busy ? 'Generating…' : 'Generate on this map'}</button>
+    <textarea id="copilot-prompt" data-testid="scenario-copilot-prompt" className="studio-field" style={styles.prompt} value={prompt} onChange={(event) => setPrompt(event.currentTarget.value)} disabled={busy} />
+    <button type="button" data-testid="scenario-copilot-generate" className="studio-btn" style={styles.generate} disabled={busy || prompt.trim().length < 8} onClick={() => void generate()}>{busy ? 'Generating…' : 'Generate on this map'}</button>
     {progress ? <div role="status" style={styles.progress}><span>{progress.message}</span><span>{progress.completed}/{progress.total}</span></div> : null}
     {error ? <div role="alert" style={styles.error}>{error}</div> : null}
     {result ? <>
@@ -128,8 +128,8 @@ export function ScenarioCopilotPanel({ controller, map, sampleHeight, onValidate
       {result.warnings.map((warning) => <div key={warning} style={styles.warning}>{warning}</div>)}
       <details style={styles.intent} open>
         <summary><strong>Review structured intent</strong> · editable before regeneration</summary>
-        <textarea aria-label="Structured scenario intent" style={styles.intentEditor} value={intentDraft} onChange={(event) => setIntentDraft(event.currentTarget.value)} />
-        <button type="button" style={styles.secondary} onClick={regenerateIntent}>Regenerate from edited intent</button>
+        <textarea aria-label="Structured scenario intent" className="studio-field" style={styles.intentEditor} value={intentDraft} onChange={(event) => setIntentDraft(event.currentTarget.value)} />
+        <button type="button" className="studio-btn" style={styles.secondary} onClick={regenerateIntent}>Regenerate from edited intent</button>
       </details>
       <div style={styles.candidates}>
         {result.candidates.map((candidate) => {
@@ -162,7 +162,7 @@ export function ScenarioCopilotPanel({ controller, map, sampleHeight, onValidate
                 {evaluation.diagnostic ? <div style={styles.invalid}>{evaluation.diagnostic}</div> : null}
               </div>)}
             </details> : null}
-            <button type="button" data-testid="scenario-copilot-apply" style={styles.apply} disabled={!validation || validation === 'running' || !validation.valid} onClick={() => onApply(candidate)}>Apply & open in editor</button>
+            <button type="button" data-testid="scenario-copilot-apply" className="studio-btn" style={styles.apply} disabled={!validation || validation === 'running' || !validation.valid} onClick={() => onApply(candidate)}>Apply & open in editor</button>
           </article>;
         })}
       </div>
@@ -172,27 +172,27 @@ export function ScenarioCopilotPanel({ controller, map, sampleHeight, onValidate
 }
 
 const styles: Record<string, CSSProperties> = {
-  panel: { padding: 18, color: '#e9edf3', display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, maxHeight: 'calc(100vh - 96px)', overflowY: 'auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #353b44', paddingBottom: 12 },
-  eyebrow: { color: '#f28b36', fontSize: 11, letterSpacing: 1.5, fontWeight: 800 }, heading: { margin: '3px 0 0', fontSize: 24 },
-  close: { border: 0, background: 'transparent', color: '#aeb6c3', fontSize: 27, cursor: 'pointer' },
-  mapLock: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 10, alignItems: 'center', padding: 11, border: '1px solid #3e596c', borderRadius: 9, background: '#152630' },
-  tabs: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, padding: 4, background: '#15191e', borderRadius: 8 }, tab: { padding: 8, border: 0, borderRadius: 6, background: 'transparent', color: '#9ca8b6', fontWeight: 750, cursor: 'pointer' }, tabActive: { color: '#fff', background: '#343b45' }, rerunNotice: { display: 'flex', justifyContent: 'space-between', gap: 8, padding: 9, borderRadius: 7, background: '#2b301c', color: '#f4d77c', fontSize: 11 },
-  lock: { color: '#77d9ff', fontSize: 12, fontWeight: 800 },
-  label: { fontSize: 12, color: '#b7c0cc', fontWeight: 750 }, providers: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 },
-  provider: { color: '#dbe2eb', textAlign: 'left', padding: 10, display: 'flex', flexDirection: 'column', gap: 4, background: '#20242a', borderWidth: 1, borderStyle: 'solid', borderColor: '#3b414b', borderRadius: 8, cursor: 'pointer' },
-  providerActive: { borderColor: '#f28b36', background: '#2d261f' }, prompt: { minHeight: 108, resize: 'vertical', borderRadius: 8, padding: 11, color: '#f4f6f8', background: '#15181d', border: '1px solid #424954', font: 'inherit' },
-  generate: { padding: '11px 14px', border: 0, borderRadius: 8, background: '#f27f2b', color: '#11151a', fontWeight: 850, cursor: 'pointer' },
-  progress: { display: 'flex', justifyContent: 'space-between', color: '#9de5ff', background: '#132630', padding: 9, borderRadius: 7, fontSize: 12 },
-  error: { padding: 10, borderRadius: 7, background: '#3b1e24', color: '#ffadb8' }, warning: { padding: 9, borderRadius: 7, background: '#382f1e', color: '#ffd786', fontSize: 12 },
-  runMeta: { display: 'flex', gap: 10, flexWrap: 'wrap', color: '#aeb7c3', fontSize: 12 }, intent: { border: '1px solid #3a414b', borderRadius: 8, padding: 10, background: '#1b1f25' },
-  intentEditor: { marginTop: 9, boxSizing: 'border-box', width: '100%', minHeight: 170, resize: 'vertical', background: '#101318', color: '#dce7f3', border: '1px solid #3c4652', borderRadius: 6, padding: 9, fontFamily: 'ui-monospace, monospace', fontSize: 11 },
-  secondary: { marginTop: 8, padding: '7px 10px', borderRadius: 6, border: '1px solid #536170', background: '#28313b', color: '#e1e8ef', cursor: 'pointer' },
-  candidates: { display: 'grid', gap: 10 }, card: { padding: 12, border: '1px solid #3d4650', borderRadius: 9, background: '#20242a' }, cardTitle: { display: 'flex', justifyContent: 'space-between', gap: 8 },
-  validating: { color: '#8edfff', fontSize: 12 }, valid: { color: '#79e2a3', fontSize: 12 }, invalid: { color: '#ff9d9d', fontSize: 12 },
-  provenance: { marginTop: 8, color: '#8e98a6', fontSize: 10, overflowWrap: 'anywhere' }, apply: { marginTop: 10, width: '100%', padding: 9, border: 0, borderRadius: 7, background: '#2d8f55', color: '#effff5', fontWeight: 800, cursor: 'pointer' },
-  researchEvidence: { marginTop: 7, padding: 7, borderRadius: 6, color: '#f8d38b', background: '#342b1d', fontSize: 10 },
-  agentEvidence: { marginTop: 7, padding: 7, borderRadius: 6, color: '#bfe9ff', background: '#172a34', fontSize: 10 },
-  agentIteration: { marginTop: 6, paddingTop: 6, borderTop: '1px solid #315064', lineHeight: 1.5 },
-  caveat: { color: '#7f8997', fontSize: 10, lineHeight: 1.45, borderTop: '1px solid #303640', paddingTop: 10 },
+  panel: { padding: 18, color: 'var(--ueui-text, #f2f2f2)', display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, maxHeight: 'calc(100vh - 96px)', overflowY: 'auto', boxSizing: 'border-box', height: '100%', background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', backdropFilter: 'blur(72px) saturate(185%)', WebkitBackdropFilter: 'blur(72px) saturate(185%)', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 'var(--ueui-radius, 10px)', boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--ueui-line, rgba(255,255,255,.08))', paddingBottom: 12 },
+  eyebrow: { color: 'var(--ueui-accent, #e8e044)', fontSize: 11, letterSpacing: 1.5, fontWeight: 700 }, heading: { margin: '3px 0 0', fontSize: 24 },
+  close: { border: 0, background: 'transparent', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 27, cursor: 'pointer' },
+  mapLock: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 10, alignItems: 'center', padding: 11, border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 'var(--ueui-radius, 10px)', background: 'rgba(255,255,255,.03)' },
+  tabs: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, padding: 4, background: 'rgba(8, 11, 16, 0.55)', borderRadius: 8 }, tab: { padding: 8, border: 0, borderRadius: 6, background: 'transparent', color: 'var(--ueui-text-muted, #9a9a9a)', fontWeight: 650, cursor: 'pointer' }, tabActive: { color: '#10120a', background: 'var(--ueui-accent, #e8e044)' }, rerunNotice: { display: 'flex', justifyContent: 'space-between', gap: 8, padding: 9, borderRadius: 7, background: 'rgba(240,161,60,.12)', color: 'var(--ueui-warn, #f0a13c)', fontSize: 11 },
+  lock: { color: 'var(--ueui-accent, #e8e044)', fontSize: 12, fontWeight: 700 },
+  label: { fontSize: 12, color: 'rgba(242,242,242,.82)', fontWeight: 650 }, providers: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 },
+  provider: { color: 'rgba(242,242,242,.85)', textAlign: 'left', padding: 10, display: 'flex', flexDirection: 'column', gap: 4, background: 'rgba(255,255,255,.03)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 'var(--ueui-radius, 10px)', cursor: 'pointer' },
+  providerActive: { borderColor: 'rgba(232,224,68,.5)', background: 'var(--ueui-accent-soft, rgba(232,224,68,.16))' }, prompt: { minHeight: 108, resize: 'vertical', borderRadius: 8, padding: 11 },
+  generate: { padding: '11px 14px', border: '1px solid transparent', borderRadius: 8, background: 'var(--ueui-accent, #e8e044)', color: '#10120a', fontWeight: 750, cursor: 'pointer' },
+  progress: { display: 'flex', justifyContent: 'space-between', color: 'var(--ueui-text-muted, #9a9a9a)', background: 'rgba(255,255,255,.04)', padding: 9, borderRadius: 7, fontSize: 12 },
+  error: { padding: 10, borderRadius: 7, background: 'rgba(255,107,94,.12)', color: 'var(--ueui-danger, #ff6b5e)' }, warning: { padding: 9, borderRadius: 7, background: 'rgba(240,161,60,.12)', color: 'var(--ueui-warn, #f0a13c)', fontSize: 12 },
+  runMeta: { display: 'flex', gap: 10, flexWrap: 'wrap', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 12 }, intent: { border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 'var(--ueui-radius, 10px)', padding: 10, background: 'rgba(255,255,255,.03)' },
+  intentEditor: { marginTop: 9, boxSizing: 'border-box', width: '100%', minHeight: 170, resize: 'vertical', padding: 9, fontFamily: 'ui-monospace, monospace', fontSize: 11 },
+  secondary: { marginTop: 8, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', background: 'rgba(255,255,255,.05)', color: 'var(--ueui-text, #f2f2f2)', cursor: 'pointer' },
+  candidates: { display: 'grid', gap: 10 }, card: { padding: 12, border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 'var(--ueui-radius, 10px)', background: 'linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012))' }, cardTitle: { display: 'flex', justifyContent: 'space-between', gap: 8 },
+  validating: { color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 12 }, valid: { color: 'var(--ueui-ok, #57c785)', fontSize: 12 }, invalid: { color: 'var(--ueui-danger, #ff6b5e)', fontSize: 12 },
+  provenance: { marginTop: 8, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10, overflowWrap: 'anywhere' }, apply: { marginTop: 10, width: '100%', padding: 9, border: '1px solid transparent', borderRadius: 8, background: 'var(--ueui-accent, #e8e044)', color: '#10120a', fontWeight: 700, cursor: 'pointer' },
+  researchEvidence: { marginTop: 7, padding: 7, borderRadius: 7, color: 'var(--ueui-warn, #f0a13c)', background: 'rgba(240,161,60,.1)', fontSize: 10 },
+  agentEvidence: { marginTop: 7, padding: 7, borderRadius: 7, color: 'rgba(242,242,242,.82)', background: 'rgba(255,255,255,.04)', fontSize: 10 },
+  agentIteration: { marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--ueui-line, rgba(255,255,255,.08))', lineHeight: 1.5 },
+  caveat: { color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10, lineHeight: 1.45, borderTop: '1px solid var(--ueui-line, rgba(255,255,255,.08))', paddingTop: 10 },
 };

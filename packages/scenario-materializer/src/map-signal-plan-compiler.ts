@@ -2,7 +2,6 @@ import type { MapSignalPlan, MapSignalPlanClip } from '@uniscenarios/scenario-mo
 import type {
   ControlIndication,
   SignalProgram,
-  TopologyIndex,
 } from '@uniscenarios/sim-engine';
 
 import type { MapSignalCatalog } from './map-signals.js';
@@ -42,17 +41,6 @@ export interface CompileMapSignalPlansOptions {
   readonly clipSeconds: number;
   readonly warmupSeconds: number;
   readonly signalCatalog: MapSignalCatalog;
-  /**
-   * Derived conflict geometry, from the map's `derived/topology-derived.json.gz`
-   * when that artifact is reachable. Both are optional together and advisory:
-   * the authoritative conflict-free partition is the map's own declared
-   * controller-stage sequence, which the head-group check below enforces. A
-   * browser caller compiling without the derived artifact gets no conflict
-   * scan rather than a false rejection.
-   */
-  readonly topology?: TopologyIndex;
-  /** Derived gate conflicts keyed by physical junction id. */
-  readonly conflictPairsByJunction?: Readonly<Record<string, readonly { gateA: string; gateB: string }[]>>;
   /** Resolved engine signal ids owned by legacy `@world set(signal:*.phase)`. */
   readonly worldSignalSetIds?: readonly string[];
 }
@@ -98,14 +86,6 @@ function addBaselineBoundaries(
   }
 }
 
-function controllerStagePrograms(
-  programs: readonly SignalProgram[],
-  controllerId: string,
-): SignalProgram[] {
-  return programs.filter((program) => program.mapBinding?.controllerHeadGroups?.some(
-    (group) => group.controllerId === controllerId,
-  ));
-}
 
 function validateControllerStage(
   plan: MapSignalPlan,
@@ -142,26 +122,6 @@ function validateControllerStage(
       `head "${clip.reference.headId}" has no executable program in controller "${clip.reference.controllerId}"`,
       `${path}.reference`,
     );
-  }
-
-  const declaredConflicts = options.topology
-    ? options.conflictPairsByJunction?.[plan.binding.junctionId] ?? []
-    : [];
-  const active = controllerStagePrograms(programs, clip.reference.controllerId);
-  const activeConnectingLanes = new Set(active.flatMap((program) =>
-    program.stopLines.flatMap((line) => line.connectingLaneRsls),
-  ));
-  const gateById = new Map((options.topology?.gates ?? []).map((gate) => [gate.id, gate]));
-  for (const pair of declaredConflicts) {
-    const a = gateById.get(pair.gateA)?.connectingLaneRsl;
-    const b = gateById.get(pair.gateB)?.connectingLaneRsl;
-    if (a && b && activeConnectingLanes.has(a) && activeConnectingLanes.has(b)) {
-      throw new MapSignalPlanCompileError(
-        'map_signal_plan_controller_conflict',
-        `controller "${clip.reference.controllerId}" contains conflicting movements ${pair.gateA} and ${pair.gateB}`,
-        `${path}.reference.controllerId`,
-      );
-    }
   }
 
   return referenceProgram;

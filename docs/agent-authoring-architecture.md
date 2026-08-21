@@ -132,13 +132,18 @@ uniscenarios maps list
 uniscenarios locations find   --map <id> [--type --tags --near <handle> --within-m ...]
 uniscenarios locations get    <handle|id> [--describe]      # NL paragraph for grounding
 uniscenarios locations resolve "<free text>"                # fuzzy → ranked handles
+uniscenarios template new    [--out --map --site]          # deterministic v2 skeleton
 uniscenarios template validate <file>                       # schema + tier-1
 uniscenarios sites match      <template> --map <id> [--all-maps --min-score]
 uniscenarios instantiate      <template> --site <siteId> [--seed N | --draws K]
 uniscenarios simulate         <instance|template+site> [--trace out.trace.json]
 uniscenarios validate         <instance> [--tier 2]         # includes sim-backed checks
 uniscenarios evaluate         <trace>    [--filters critical|negative-control]
-uniscenarios render           <instance> --out clip.mp4     # headless viewer capture (later)
+uniscenarios evidence verify  <instance> <trace.json.gz>    # shared-input-hash proof
+uniscenarios import           <file.xosc> [--map --out]     # OpenSCENARIO 1.4 → v2 draft
+uniscenarios export           <instance> --format xosc-1.4|xosc-1.3-esmini|osc-2.2 --out f
+uniscenarios render run       <render-intent> --engine browser|carla --inputs m --out dir/
+uniscenarios render hash      <render-intent>               # canonical SHA-256 identity
 uniscenarios batch            <template> --maps ... --draws N --out dir/   # the matrix
 ```
 

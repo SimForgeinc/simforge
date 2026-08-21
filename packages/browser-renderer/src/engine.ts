@@ -18,7 +18,7 @@ export interface BrowserRenderEngineOptions {
 const CAPABILITIES: EngineCapabilityDeclaration = {
   schema: ENGINE_CAPABILITIES_V1_SCHEMA,
   engineId: BROWSER_RENDER_ENGINE_ID,
-  engineVersion: '0.1.0-rc.44',
+  engineVersion: '0.1.0-rc.45',
   backend: 'browser',
   protocolVersion: 1,
   capabilities: [
@@ -201,7 +201,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
           return {
             schema: 'uniscenario.render-artifact-manifest/v1',
             intentSha256: context.intentSha256,
-            engine: { engineId: BROWSER_RENDER_ENGINE_ID, engineVersion: options.engineVersion ?? '0.1.0-rc.44', backend: 'browser' },
+            engine: { engineId: BROWSER_RENDER_ENGINE_ID, engineVersion: options.engineVersion ?? '0.1.0-rc.45', backend: 'browser' },
             startedAt,
             completedAt: new Date().toISOString(),
             artifacts,

@@ -662,16 +662,6 @@ export abstract class EditorControllerCommands {
     const next = waiting
       ? { x: latest!.x, z: latest!.z }
       : { x: Number(point.x.toFixed(3)), z: Number(point.z.toFixed(3)) };
-    if (
-      !draft.timed
-      && latest
-      && Math.hypot(next.x - latest.x, next.z - latest.z) <= ROUTE_POINT_COINCIDENCE_EPSILON_M
-    ) {
-      draft.cursor = null;
-      this.syncCustomRouteDraft();
-      this.notify();
-      return;
-    }
     draft.points.push(next);
     this.syncCustomRouteDraft();
     this.notify();

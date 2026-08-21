@@ -39,7 +39,8 @@ import { schemas } from './commands/schemas.js';
 import { simulate } from './commands/simulate.js';
 import { debugScenario } from './commands/debug.js';
 import { sitesMatch } from './commands/sites.js';
-import { templateValidate } from './commands/template.js';
+import { templateNew, templateValidate } from './commands/template.js';
+import { importOpenScenario } from './commands/import.js';
 import { validate } from './commands/validate.js';
 import { renderHash, renderRun } from './commands/render.js';
 
@@ -48,6 +49,7 @@ const COMMANDS = [
   { name: 'locations find', summary: 'structured location query: --map --type --facts --near …' },
   { name: 'locations get', summary: 'one location by handle or id, optionally --describe' },
   { name: 'locations resolve', summary: 'free text → ranked handles' },
+  { name: 'template new', summary: 'emit a minimal schema-valid v2 template skeleton (--out, --map/--site pre-bind)' },
   { name: 'template validate', summary: 'schema + tier-1, with map checks when --map is given' },
   { name: 'sites match', summary: 'anchor → ranked concrete sites on one map or --all-maps' },
   { name: 'instantiate', summary: 'template × site × draw → a concrete SimScenarioInput' },
@@ -59,6 +61,7 @@ const COMMANDS = [
   { name: 'export', summary: 'concrete instance → native XML 1.4, explicit XML 1.3 esmini compatibility, or DSL 2.2' },
   { name: 'catalog create', summary: 'reserve exactly 100 deterministic scenario identities per supported map' },
   { name: 'catalog verify', summary: 'reject catalog identity, cardinality, provenance, or evidence gaps' },
+  { name: 'import', summary: 'OpenSCENARIO XML 1.4 → v2 template draft, with a lossy-feature report' },
   { name: 'catalog batch', summary: 'resumable catalog materialization + simulation with an attempt ledger' },
   { name: 'batch', summary: 'sites × draws matrix: instantiate → simulate → evaluate' },
   { name: 'render run', summary: 'execute one immutable render intent with the browser or CARLA engine' },
@@ -272,9 +275,21 @@ async function dispatch(argv: readonly string[]): Promise<number> {
     }
 
     case 'template': {
+      if (sub === 'new') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: ['out', 'map', 'site'],
+        });
+        return templateNew({
+          out: optionalString(args, 'out'),
+          mapId: optionalString(args, 'map'),
+          siteId: optionalString(args, 'site'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
       if (sub !== 'validate') {
         throw new CliError('unknown_command', `uniscenarios template ${sub ?? ''}`.trim(), {
-          detail: { known: ['validate'] },
+          detail: { known: ['new', 'validate'] },
         });
       }
       const args = parseArgs(argv.slice(2), {
@@ -285,6 +300,19 @@ async function dispatch(argv: readonly string[]): Promise<number> {
         file: positional(args, 0, 'file'),
         mapId: optionalString(args, 'map'),
         siteId: optionalString(args, 'site'),
+        pretty: boolFlag(args, 'pretty'),
+      });
+    }
+
+    case 'import': {
+      const args = parseArgs(argv.slice(1), {
+        booleans: GLOBAL_BOOLEANS,
+        values: ['out', 'map'],
+      });
+      return importOpenScenario({
+        file: positional(args, 0, 'file.xosc'),
+        out: optionalString(args, 'out'),
+        mapId: optionalString(args, 'map'),
         pretty: boolFlag(args, 'pretty'),
       });
     }

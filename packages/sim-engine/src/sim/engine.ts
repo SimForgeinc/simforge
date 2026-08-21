@@ -366,6 +366,7 @@ function timedRouteSegmentKinematics(
 function sampleTimedRoute(
   points: NonNullable<ActorRuntime['timedRoute']>,
   timeS: number,
+  fallbackHeadingRad: number,
 ): TimedRouteSample {
   const first = points[0]!;
   const last = points[points.length - 1]!;
@@ -391,7 +392,11 @@ function sampleTimedRoute(
   const from = points[segmentIndex]!;
   const to = points[nextIndex]!;
   const fraction = (timeS - from.timeS) / (to.timeS - from.timeS);
-  return timedRouteSegmentKinematics(points, segmentIndex, fraction);
+  if (Math.hypot(to.point.x - from.point.x, to.point.y - from.point.y) <= 1e-6) {
+    return { position: from.point, headingRad: fallbackHeadingRad, speedMps: 0 };
+  }
+  const sample = timedRouteSegmentKinematics(points, segmentIndex, fraction);
+  return sample.speedMps > 1e-8 ? sample : { ...sample, headingRad: fallbackHeadingRad };
 }
 
 /**
@@ -2388,7 +2393,7 @@ class Simulation {
 
     if (a.timedRoute && t + this.dt <= a.timedRoute.at(-1)!.timeS + 1e-9) {
       const sampleAt = Math.min(t + this.dt, this.resolvedInput.clipSeconds);
-      const sample = sampleTimedRoute(a.timedRoute, sampleAt);
+      const sample = sampleTimedRoute(a.timedRoute, sampleAt, a.headingRad);
       const projected = a.route.projectPoint(sample.position);
       plan.position = sample.position;
       plan.heading = normalizeAngle(sample.headingRad);

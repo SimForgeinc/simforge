@@ -1,4 +1,10 @@
-import type { StaticColliderClass, StaticMapCollider } from '@uniscenarios/sim-engine';
+import {
+  createFixedStepSimulation,
+  type LaneGraph,
+  type SimScenarioInput,
+  type StaticColliderClass,
+  type StaticMapCollider,
+} from '@uniscenarios/sim-engine';
 
 const SCHEMA = 'uniscenarios.static-map-colliders/v1';
 const CLASSES = new Set<StaticColliderClass>(['building', 'wall', 'barrier', 'prop', 'road-boundary']);
@@ -177,4 +183,198 @@ function isSha256Digest(value: unknown): value is string {
 /** Test-only reset; production retains fulfilled and failed map lookups. */
 export function resetStaticColliderCacheForTests(): void {
   cache.clear();
+}
+
+const TRAVEL_LANE_TYPES = new Set(['driving', 'biking', 'parking', 'shoulder']);
+const ROAD_INDEX_CELL_M = 20;
+const ROAD_EDGE_CLEARANCE_M = 0.75;
+const MIN_LEGACY_FRAGMENT_EDGE_M = 3;
+const MAX_LEGACY_FRAGMENTS_PER_COLLIDER = 4_096;
+
+type StaticObb = StaticMapCollider['obb'];
+
+interface TravelLaneSample {
+  readonly x: number;
+  readonly z: number;
+  readonly clearanceM: number;
+}
+
+interface TravelLaneIndex {
+  readonly buckets: ReadonlyMap<string, readonly TravelLaneSample[]>;
+}
+
+/** Fail closed when a requested map has no verified static collision artifact. */
+export function requireReadyStaticColliderBundle(
+  bundle: StaticColliderBundle,
+  graph: LaneGraph,
+): StaticColliderBundle {
+  if (bundle.diagnostics.status === 'ready') return alignLegacyStaticCollidersToScene(bundle, graph);
+  const detail = bundle.diagnostics.warning?.trim();
+  throw new Error(`Static map collision data is ${bundle.diagnostics.status}${detail ? `: ${detail}` : '.'}`);
+}
+
+/**
+ * Repair v1 collider artifacts emitted before GLB z coordinates were mapped to
+ * scene coordinates, then remove coarse proxy fragments covering travel lanes.
+ */
+export function alignLegacyStaticCollidersToScene(
+  bundle: StaticColliderBundle,
+  graph: LaneGraph,
+): StaticColliderBundle {
+  if (bundle.colliders.length === 0) return bundle;
+  const points = graph.laneRsls().flatMap((rsl) => graph.geometry(rsl)?.points ?? []);
+  if (points.length === 0) return bundle;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  for (const point of points) {
+    const sceneZ = -point.y;
+    minZ = Math.min(minZ, sceneZ);
+    maxZ = Math.max(maxZ, sceneZ);
+  }
+  const distanceToRange = (value: number): number =>
+    value < minZ ? minZ - value : value > maxZ ? value - maxZ : 0;
+  const publishedScore = bundle.colliders.reduce(
+    (sum, collider) => sum + distanceToRange(collider.obb.center.z) ** 2,
+    0,
+  );
+  const mirroredScore = bundle.colliders.reduce(
+    (sum, collider) => sum + distanceToRange(-collider.obb.center.z) ** 2,
+    0,
+  );
+  if (!(mirroredScore + 1e-6 < publishedScore)) return bundle;
+  const mirrored = bundle.colliders.map((collider) => ({
+    ...collider,
+    obb: {
+      ...collider.obb,
+      center: { ...collider.obb.center, z: -collider.obb.center.z },
+      headingRad: -collider.obb.headingRad,
+    },
+  }));
+  return { ...bundle, colliders: carveLegacyTravelCorridors(mirrored, graph) };
+}
+
+/** Split legacy proxy OBBs and retain only fragments outside travelled lanes. */
+export function carveLegacyTravelCorridors(
+  colliders: readonly StaticMapCollider[],
+  graph: LaneGraph,
+): StaticMapCollider[] {
+  const index = buildTravelLaneIndex(graph);
+  if (index.buckets.size === 0) return [...colliders];
+  return colliders.flatMap((collider) => {
+    const fragments: StaticMapCollider[] = [];
+    splitOutsideTravelLanes(collider, collider.obb, '', index, fragments);
+    return fragments;
+  });
+}
+
+function buildTravelLaneIndex(graph: LaneGraph): TravelLaneIndex {
+  const mutable = new Map<string, TravelLaneSample[]>();
+  for (const rsl of graph.laneRsls()) {
+    const geometry = graph.geometry(rsl);
+    if (!geometry) continue;
+    const laneType = geometry.lane?.laneType;
+    if (laneType !== undefined && !TRAVEL_LANE_TYPES.has(laneType)) continue;
+    const clearanceM = Math.max(
+      1,
+      (Number.isFinite(geometry.widthM) ? geometry.widthM : 3.5) / 2 + ROAD_EDGE_CLEARANCE_M,
+    );
+    for (const point of geometry.points) {
+      const sample = { x: point.x, z: -point.y, clearanceM };
+      const key = roadCell(sample.x, sample.z);
+      const bucket = mutable.get(key) ?? [];
+      bucket.push(sample);
+      mutable.set(key, bucket);
+    }
+  }
+  return { buckets: mutable };
+}
+
+function splitOutsideTravelLanes(
+  collider: StaticMapCollider,
+  obb: StaticObb,
+  suffix: string,
+  index: TravelLaneIndex,
+  output: StaticMapCollider[],
+): void {
+  if (!overlapsTravelLane(obb, index)) {
+    output.push({ ...collider, id: suffix ? `${collider.id}#${suffix}` : collider.id, obb });
+    return;
+  }
+  if (
+    Math.max(obb.lengthM, obb.widthM) <= MIN_LEGACY_FRAGMENT_EDGE_M
+    || output.length >= MAX_LEGACY_FRAGMENTS_PER_COLLIDER
+  ) return;
+
+  const cos = Math.cos(obb.headingRad);
+  const sin = Math.sin(obb.headingRad);
+  if (obb.lengthM >= obb.widthM) {
+    const lengthM = obb.lengthM / 2;
+    const offsetM = obb.lengthM / 4;
+    splitOutsideTravelLanes(collider, {
+      ...obb,
+      center: { x: obb.center.x - offsetM * cos, z: obb.center.z - offsetM * sin },
+      lengthM,
+    }, `${suffix}a`, index, output);
+    splitOutsideTravelLanes(collider, {
+      ...obb,
+      center: { x: obb.center.x + offsetM * cos, z: obb.center.z + offsetM * sin },
+      lengthM,
+    }, `${suffix}b`, index, output);
+    return;
+  }
+
+  const widthM = obb.widthM / 2;
+  const offsetM = obb.widthM / 4;
+  splitOutsideTravelLanes(collider, {
+    ...obb,
+    center: { x: obb.center.x + offsetM * sin, z: obb.center.z - offsetM * cos },
+    widthM,
+  }, `${suffix}a`, index, output);
+  splitOutsideTravelLanes(collider, {
+    ...obb,
+    center: { x: obb.center.x - offsetM * sin, z: obb.center.z + offsetM * cos },
+    widthM,
+  }, `${suffix}b`, index, output);
+}
+
+function overlapsTravelLane(obb: StaticObb, index: TravelLaneIndex): boolean {
+  const radiusM = Math.hypot(obb.lengthM, obb.widthM) / 2 + 4;
+  const x0 = Math.floor((obb.center.x - radiusM) / ROAD_INDEX_CELL_M);
+  const x1 = Math.floor((obb.center.x + radiusM) / ROAD_INDEX_CELL_M);
+  const z0 = Math.floor((obb.center.z - radiusM) / ROAD_INDEX_CELL_M);
+  const z1 = Math.floor((obb.center.z + radiusM) / ROAD_INDEX_CELL_M);
+  const cos = Math.cos(obb.headingRad);
+  const sin = Math.sin(obb.headingRad);
+  for (let x = x0; x <= x1; x += 1) {
+    for (let z = z0; z <= z1; z += 1) {
+      for (const sample of index.buckets.get(`${x},${z}`) ?? []) {
+        const dx = sample.x - obb.center.x;
+        const dz = sample.z - obb.center.z;
+        const longitudinalM = dx * cos + dz * sin;
+        const lateralM = -dx * sin + dz * cos;
+        if (
+          Math.abs(longitudinalM) <= obb.lengthM / 2 + sample.clearanceM
+          && Math.abs(lateralM) <= obb.widthM / 2 + sample.clearanceM
+        ) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function roadCell(x: number, z: number): string {
+  return `${Math.floor(x / ROAD_INDEX_CELL_M)},${Math.floor(z / ROAD_INDEX_CELL_M)}`;
+}
+
+/** Create the strict fixed-step runtime used by collision-aware playback. */
+export function createCollisionAwareFixedStepSimulation(
+  input: SimScenarioInput,
+  graph: LaneGraph,
+  staticColliders: readonly StaticMapCollider[] | undefined,
+) {
+  return createFixedStepSimulation(input, {
+    graph,
+    guards: 'throw',
+    staticColliders: staticColliders ?? [],
+  });
 }

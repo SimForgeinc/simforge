@@ -7,6 +7,7 @@ export * from './physics';
 export * from './runtimeRefinements';
 export * from './site-selection';
 export * from './replay-bundle';
+export * from './restingHeading';
 export * from './staticMapColliders';
 export * from './transport';
 export * from './traffic-provider/adaptiveFallback';

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Raycaster, Vector2, Vector3 } from 'three';
+import { Raycaster, Vector2 } from 'three';
 import { CityView } from '@uniscenarios/city-renderer/react';
 import type { BenchResult, CityViewer, CityViewerOptions } from '@uniscenarios/city-renderer';
 import { SettingsPanel } from './LayerPanel';
@@ -11,13 +11,18 @@ import type { EditorController } from './editor/controller';
 import { MapPicker } from './editor/ui';
 import { WorkspaceHeader } from './editor/EditorChrome';
 import { EditorToolRail, shouldShowEditorToolRail, type CatalogPlacementAdapter, type ViewportTool } from './editor/EditorToolRail';
+import { EditorExperienceChooser, type EditorExperience } from '@uniscenarios/editor-ui';
+import { WorkspaceShell } from './workspace/WorkspaceShell';
+import { WorkspaceTimelineDock, signalLanesFromPlans } from './workspace/TimelineDock';
+import { RailHost } from './workspace/RailHost';
+import { InspectorHost } from './workspace/InspectorHost';
+import { actorRecordForRole } from './workspace/ActorDetails';
 import { PlaybackPanel } from './playback/PlaybackPanel';
 import type { PlaybackCameraOption } from './playback/PlaybackPanel';
-import { PlaybackLoadError, canonicalPreviewIdentity, evaluatePlaybackSignalHeadStates, samplePlaybackActors, type PlaybackBundle, type SampledActor } from '@uniscenarios/playback';
+import { PlaybackLoadError, canonicalPreviewIdentity, evaluatePlaybackSignalHeadStates, samplePlaybackActors, type PlaybackBundle } from '@uniscenarios/playback';
 import { galleryCameraChoice } from '@uniscenarios/playback';
 import {
   physicsForActor,
-  physicsReasonLabel,
   physicsSummaryForAuthoredActors,
   physicsSummaryForTrace,
   type ActorPhysicsDisplay,
@@ -25,8 +30,6 @@ import {
 import { usePlayback } from './playback/usePlayback';
 import { useStudioSession } from './session/useStudioSession';
 import { throwIfPreparationAborted } from './session/preparationGate';
-import { TimelineDock } from './timeline/TimelineDock';
-import { buildTimelineOutcomeIndex, initialTimelineOutcomesFromManifest, timelineOutcomesAt } from './timeline/model';
 import { defaultSpeedKph } from './timeline/actions';
 import { evaluateAuthoredAmbientRobustness, ScenarioWorkerClient, type LivePlaybackRun } from './playback/scenarioWorkerClient';
 import type { AmbientRobustnessSummary } from './playback/scenario-worker';
@@ -97,7 +100,6 @@ import type { OpenScenarioWorkspaceState } from './openscenario/model';
 import { openScenarioLocationIntent } from './openscenario/navigation';
 import { MapWorkspace } from './map-workspace';
 import { copyScenarioDiagnosticText, createScenarioDiagnostic } from './diagnostics/scenarioDiagnostic';
-import { CATALOG, getEntry, type CatalogId } from '@uniscenarios/prop-catalog';
 import { compiledWorldMatchesRevision, simulationClassFor, type ActorRecord } from './editor/document';
 import {
   authoringRoutes,
@@ -138,6 +140,25 @@ function optionsFromUrl(quality: QualityPreference): CityViewerOptions {
   };
 }
 
+const EDITOR_EXPERIENCE_STORAGE_KEY = 'uniscenarios.studio.editor-experience.v1';
+
+function loadEditorExperience(): EditorExperience | null {
+  try {
+    const raw = window.localStorage.getItem(EDITOR_EXPERIENCE_STORAGE_KEY);
+    return raw === 'simple' || raw === 'advanced' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveEditorExperience(experience: EditorExperience): void {
+  try {
+    window.localStorage.setItem(EDITOR_EXPERIENCE_STORAGE_KEY, experience);
+  } catch {
+    // Storage can be unavailable in hardened browsers; the choice stays session-local.
+  }
+}
+
 declare global {
   interface Window {
     __viewer?: CityViewer;
@@ -172,16 +193,6 @@ export function App(): JSX.Element {
 }
 
 function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): JSX.Element {
-  // Below this width a permanent 360 px timeline would leave too little room
-  // for useful map interaction. Tablet widths (including 707–900 px) remain a
-  // true split; phone widths deliberately switch the timeline to a drawer.
-  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
-  useEffect(() => {
-    const onResize = (): void => setViewportWidth(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-  const timelineDrawerLayout = viewportWidth < 680;
   const [mapId, setMapId] = useState(initialMapId);
   const map = mapById(mapId) ?? (MAPS[0] as MapEntry);
 
@@ -217,7 +228,6 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
   const [acceleratedSignalCycles, setAcceleratedSignalCycles] = useState(false);
   const [sumoFallbackReason, setSumoFallbackReason] = useState<string | null>(null);
   const [ambientPreviewState, setAmbientPreviewState] = useState<RevisionOwnedPreview<PlaybackBundle> | null>(null);
-  const [actorDetailsId, setActorDetailsId] = useState<string | null>(null);
   const [selectedDashCameraId, setSelectedDashCameraId] = useState<string | null>(null);
   const [cameraPlaybackRequested, setCameraPlaybackRequested] = useState(false);
   const [ambientPreviewBusy, setAmbientPreviewBusy] = useState(false);
@@ -229,7 +239,7 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
   const [openScenarioOpen, setOpenScenarioOpen] = useState(() => openScenarioLocationIntent(window.location).open);
   const [mapWorkspaceOpen, setMapWorkspaceOpen] = useState(false);
   const [generationsOpen, setGenerationsOpen] = useState(() => window.location.hash === '#generations');
-  const [timelineOpenGeneration, setTimelineOpenGeneration] = useState(0);
+  const [experience, setExperience] = useState<EditorExperience | null>(loadEditorExperience);
   const [openScenarioState, setOpenScenarioState] = useState<OpenScenarioWorkspaceState>({ status: 'empty', reason: 'Place at least one actor before generating an interchange artifact.' });
   const [signalAuthoringCatalog, setSignalAuthoringCatalog] = useState<Awaited<ReturnType<ScenarioWorkerClient['inspectSignals']>> | null>(null);
   const [selectedSignalHeadId, setSelectedSignalHeadId] = useState<string | null>(null);
@@ -795,27 +805,6 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
     if (cameraRegistry) cameraRegistry.helpers.group.visible = viewSettings.debugGraphics;
   }, [cameraRegistry, viewSettings.debugGraphics]);
   const selectedPlayback = playbackBundle ?? authoredPlayback;
-  const authoredOutcomeTrace = authoredPlayback?.trace;
-  const authoredInteractions = editorController?.doc.data.choreography.interactions;
-  const authoredManifest = authoredPlayback?.instance.manifest;
-  const authoredOutcomeIndex = useMemo(
-    () => buildTimelineOutcomeIndex(
-      authoredOutcomeTrace?.events ?? [],
-      authoredInteractions ?? [],
-      initialTimelineOutcomesFromManifest(
-        authoredInteractions ?? [],
-        authoredManifest?.initialInteractionOutcomes,
-        authoredManifest?.notes,
-      ),
-    ),
-    [authoredInteractions, authoredManifest, authoredOutcomeTrace],
-  );
-  const authoredTimelineOutcomes = useMemo(
-    () => studioSession.state.mode === 'authoring'
-      ? []
-      : timelineOutcomesAt(authoredOutcomeIndex, studioSession.state.time),
-    [authoredOutcomeIndex, studioSession.state.mode, studioSession.state.time],
-  );
   const authoredPhysicsSummary = useMemo(() => physicsSummaryForAuthoredActors((state?.actors ?? []).map((actor) => {
     const role = editorController?.doc.data.roles.find((item) => item.id === actor.id);
     return {
@@ -860,18 +849,18 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
       label: `${role.label || role.actor.catalogId || role.id} · ${sensor.label || 'Dash camera'}`,
     })),
   ).sort((a, b) => a.id.localeCompare(b.id)), [editorController, state?.actors]);
-  const actorDetailsActor = useMemo(() => {
-    if (!actorDetailsId || !editorController) return null;
-    const editable = state?.actors.find((item) => item.id === actorDetailsId);
+  const resolveActorRecord = useCallback((actorId: string | null): ActorRecord | null => {
+    if (!actorId || !editorController) return null;
+    const editable = state?.actors.find((item) => item.id === actorId);
     if (editable) return editable;
-    const role = editorController.doc.data.roles.find((item) => item.id === actorDetailsId);
+    const role = editorController.doc.data.roles.find((item) => item.id === actorId);
     if (!role) return null;
     const materialized = ambientPreview ?? authoredPlayback ?? campaignSource?.evidence ?? null;
     const sampled = materialized
-      ? samplePlaybackActors(materialized, materialized.startTime).find((item) => item.id === actorDetailsId && item.present)
+      ? samplePlaybackActors(materialized, materialized.startTime).find((item) => item.id === actorId && item.present)
       : undefined;
     return actorRecordForRole(role, sampled);
-  }, [actorDetailsId, ambientPreview, authoredPlayback, campaignSource, editorController, state?.actors]);
+  }, [ambientPreview, authoredPlayback, campaignSource, editorController, state?.actors]);
   const selectedAuthoredDashCamera = useMemo(() => {
     const selected = authoredDashCameras.find((camera) => camera.id === selectedDashCameraId);
     if (selected) return selected;
@@ -1198,9 +1187,30 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
     },
   }), [authoringEnabled, editorController, state?.mode, state?.placing]);
 
-  useEffect(() => {
-    if (!authoringEnabled) setActorDetailsId(null);
-  }, [authoringEnabled]);
+  const chooseExperience = useCallback((mode: EditorExperience) => {
+    setExperience(mode);
+    saveEditorExperience(mode);
+  }, []);
+
+  const focusTimelineActor = useCallback((actorId: string) => {
+    if (!editorController) return;
+    editorController.setSelection([actorId]);
+    const sampledPreviewActor = ambientPreview
+      ? samplePlaybackActors(ambientPreview, ambientPreview.startTime).find((actor) => actor.id === actorId && actor.present)
+      : undefined;
+    const previewActor = sampledPreviewActor ? {
+      ...sampledPreviewActor,
+      y: sampleHeight?.(sampledPreviewActor.x, sampledPreviewActor.z) ?? 0,
+    } : undefined;
+    editorController.frameActor(actorId, previewActor);
+  }, [ambientPreview, editorController, sampleHeight]);
+
+  const signalLanes = useMemo(() => signalLanesFromPlans(
+    editorController?.doc.data.mapSignalPlans ?? [],
+    map.id,
+    selectedSignalHeadId,
+    (planId) => editorController?.doc.removeMapSignalPlan(planId),
+  ), [editorController, map.id, selectedSignalHeadId]);
 
   const loading = state === null;
 
@@ -1279,9 +1289,7 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
     editorController.doc.importTemplate(grounded, { saveName: candidate.title });
     editorController.setSelection(grounded.roles.map((role) => role.id));
     setAuxiliaryTool(null);
-    setActorDetailsId(null);
   }, [editorController, sampleHeight]);
-
   const openSavedGeneration = useCallback((entry: CopilotGenerationHistoryEntry): void => {
     if (!editorController || !entry.candidate) return;
     const compatibility = draftCompatibility(entry, map.id, editorController.laneIndex.stats.xodrSha256);
@@ -1299,503 +1307,304 @@ function StudioApp({ initialQuality }: { initialQuality: QualityPreference }): J
     editorController.setSelection(grounded.roles.map((role) => role.id));
     setPlaybackBundle(null); setCampaignPlaybackTitle(null); setCampaignSource(null);
     setOpenScenarioOpen(false); setMapWorkspaceOpen(false); setAuxiliaryTool(null); setSettingsOpen(false);
-    setActorDetailsId(grounded.roles[0]?.id ?? null);
-    setTimelineOpenGeneration((value) => value + 1);
     navigateGenerations(false);
     frameEditableActors(viewer, grounded);
   }, [editorController, map.id, navigateGenerations, sampleHeight, viewer]);
-
   const switchToGenerationMap = useCallback((entry: CopilotGenerationHistoryEntry): void => {
     const target = mapById(entry.mapId);
     if (!target) { window.alert(`The map ${entry.mapId} is not installed in Studio.`); return; }
     selectMap(target);
   }, [selectMap]);
 
+  const showAuthoringChrome = !playbackBundle && !mapWorkspaceOpen;
+
   return (
     <div style={styles.root}>
-      <WorkspaceHeader
-        state={state}
-        map={map}
-        playback={playbackBundle !== null || studioSession.state.mode !== 'authoring'}
-        openScenario={openScenarioOpen}
-        mapWorkspace={mapWorkspaceOpen}
-        generationsOpen={generationsOpen}
-        settingsOpen={settingsOpen}
-        onSettings={() => setSettingsOpen((open) => !open)}
-        onCopyScenario={editorController ? copyCurrentScenario : undefined}
-        onOpenScenario={() => {
-          navigateGenerations(false);
-          setMapWorkspaceOpen(false);
-          setOpenScenarioOpen((open) => !open);
-        }}
-        onMapWorkspace={() => {
-          navigateGenerations(false);
-          setOpenScenarioOpen(false);
-          setSettingsOpen(false);
-          setMapWorkspaceOpen(true);
-        }}
-        onGenerations={() => navigateGenerations(!generationsOpen)}
-        onAuthorWorkspace={() => {
-          navigateGenerations(false);
-          setOpenScenarioOpen(false);
-          setMapWorkspaceOpen(false);
-        }}
-        physicsSummary={activePhysicsSummary}
-      />
-      <div
-        style={{
-          ...styles.editorBody,
-          gridTemplateColumns: !playbackBundle && !mapWorkspaceOpen && !timelineDrawerLayout
-            ? 'clamp(360px, 35vw, 560px) minmax(0, 1fr)'
-            : 'minmax(0, 1fr)',
-        }}
-        data-testid="editor-body"
-        data-timeline-layout={timelineDrawerLayout ? 'drawer' : 'split'}
-      >
-      {!playbackBundle && !mapWorkspaceOpen ? (
-        <div style={timelineDrawerLayout ? styles.timelineDrawerPane : styles.timelinePane} data-testid="timeline-pane">
-          <TimelineDock
-            key={`timeline-open-${timelineOpenGeneration}`}
+      <WorkspaceShell
+        header={<WorkspaceHeader
+          state={state}
+          map={map}
+          playback={playbackBundle !== null || studioSession.state.mode !== 'authoring'}
+          openScenario={openScenarioOpen}
+          mapWorkspace={mapWorkspaceOpen}
+          generationsOpen={generationsOpen}
+          settingsOpen={settingsOpen}
+          onSettings={() => setSettingsOpen((open) => !open)}
+          onCopyScenario={editorController ? copyCurrentScenario : undefined}
+          onOpenScenario={() => {
+            navigateGenerations(false);
+            setMapWorkspaceOpen(false);
+            setOpenScenarioOpen((open) => !open);
+          }}
+          onMapWorkspace={() => {
+            navigateGenerations(false);
+            setOpenScenarioOpen(false);
+            setSettingsOpen(false);
+            setMapWorkspaceOpen(true);
+          }}
+          onGenerations={() => navigateGenerations(!generationsOpen)}
+          onAuthorWorkspace={() => {
+            navigateGenerations(false);
+            setOpenScenarioOpen(false);
+            setMapWorkspaceOpen(false);
+          }}
+          physicsSummary={activePhysicsSummary}
+        />}
+        rail={showAuthoringChrome && authoringEnabled ? (
+          <RailHost
             controller={editorController}
-            editorState={state}
-            session={studioSession}
-            outcomes={authoredTimelineOutcomes}
-            achievedSpeeds={authoredPlayback ? Object.fromEntries(
-              Object.entries(authoredPlayback.trace.ticks.actors).map(([actorId, track]) => [actorId, {
-                times: authoredPlayback.trace.ticks.t,
-                kph: track.speedMps.map((speed) => speed * 3.6),
-              }]),
-            ) : undefined}
-            rightInset={settingsOpen ? 360 : 16}
-            drawerMode={timelineDrawerLayout}
-            dashCameras={authoredDashCameras}
-            selectedDashCameraId={selectedAuthoredDashCamera?.id ?? null}
-            onDashCameraChange={setSelectedDashCameraId}
-            onCameraPlay={() => {
-              if (!selectedAuthoredDashCamera) return;
-              setSelectedDashCameraId(selectedAuthoredDashCamera.id);
-              setCameraPlaybackRequested(true);
-              studioSession.playPause();
-            }}
-            onPlayPause={() => {
-              if (studioSession.state.mode !== 'playing' && studioSession.state.mode !== 'preparing') {
-                setCameraPlaybackRequested(false);
-              }
-              studioSession.playPause();
-            }}
-            onActorInspect={(actorId) => {
-              editorController?.setSelection([actorId]);
-              const sampledPreviewActor = ambientPreview
-                ? samplePlaybackActors(ambientPreview, ambientPreview.startTime).find((actor) => actor.id === actorId && actor.present)
-                : undefined;
-              const previewActor = sampledPreviewActor ? {
-                ...sampledPreviewActor,
-                y: sampleHeight?.(sampledPreviewActor.x, sampledPreviewActor.z) ?? 0,
-              } : undefined;
-              editorController?.frameActor(actorId, previewActor);
-              setActorDetailsId(editorController?.doc.data.roles.some((role) => role.id === actorId) ? actorId : null);
-            }}
-            onActorDelete={(actorId) => {
-              if (actorDetailsId === actorId) setActorDetailsId(null);
-            }}
-            signalCatalog={signalAuthoringCatalog?.signalCatalog ?? null}
-            signalControlDigest={signalAuthoringCatalog?.controlDigest ?? null}
-            selectedSignalHeadId={selectedSignalHeadId}
-            selectedSignalJunctionId={selectedSignalReference?.junctionId ?? null}
-            selectedSignalControllerId={selectedSignalReference?.referenceControllerId ?? null}
-            selectedSignalResolved={selectedSignalHeadId === null || selectedSignalReference !== null}
+            state={state}
+            document={editorController?.doc ?? null}
+            hostRef={hostRef}
           />
-        </div>
-      ) : null}
-      <div style={styles.mapPane} ref={hostRef} data-testid="map-pane">
-      <CityView
-        key={map.id}
-        manifestUrl={map.manifest}
-        options={optionsRef.current}
-        onReady={onReady}
-        onError={(error) => setWorldRenderError(error instanceof Error ? error.message : String(error))}
-        style={styles.canvas}
-      />
-      {!mapWorkspaceOpen ? <WorldLoadingOverlay
-        viewer={viewer}
-        mapLabel={map.label}
-        editorReady={state !== null}
-        error={worldRenderError ?? editorError}
-      /> : null}
-      {previewUpdating ? <div role="status" aria-live="polite" data-testid="canonical-preview-updating" style={{ position: 'absolute', top: 14, left: '50%', zIndex: 24, transform: 'translateX(-50%)', padding: '7px 11px', border: '1px solid #56708d', borderRadius: 999, background: 'rgba(22,30,40,.94)', color: '#cde6ff', fontSize: 11, pointerEvents: 'none' }}>Updating preview…</div> : null}
-      {shouldShowEditorToolRail(authoringEnabled, mapWorkspaceOpen) ? <EditorToolRail
-        controller={editorController}
-        state={state}
-        placement={catalogPlacement}
-        authoringEnabled={authoringEnabled}
-        auxiliaryTool={auxiliaryTool}
-        onToolRequest={requestAuxiliaryTool}
-      /> : null}
-      {!mapWorkspaceOpen && authoringEnabled && actorDetailsId && editorController && viewer ? (
-        <ActorDetailsCallout
-          actor={actorDetailsActor}
-          physics={actorDetailsActor ? physicsForActor(activePhysicsSummary, actorDetailsActor.id) : null}
-          controller={editorController}
-          viewer={viewer}
-          host={hostRef.current}
-          onClose={() => setActorDetailsId(null)}
-        />
-      ) : null}
-
-      {mapWorkspaceOpen ? (
-        <MapWorkspace viewer={viewer} map={map} overlays={overlays} editor={editorController} editorState={state} />
-      ) : null}
-
-      {openScenarioOpen ? <OpenScenarioWorkspace
-        state={presentedOpenScenarioState}
-        onRetry={regenerateOpenScenario}
-        onClose={() => setOpenScenarioOpen(false)}
-        templateValidation={editorController?.doc.validation ?? null}
-        physicsSummary={activePhysicsSummary}
-        initialSection={openScenarioLocationIntent(window.location).section}
-        onLocateSource={(sourceId) => {
-          editorController?.setSelection([sourceId]);
-          setOpenScenarioOpen(false);
-        }}
-      /> : null}
-
-      {!mapWorkspaceOpen && auxiliaryTool === 'ambient' && authoringEnabled ? (
-        <AmbientTrafficPopover
-          profile={ambientTrafficProfile}
-          provenance={ambientTrafficProvider === 'off' ? null : ambientPreview?.ambientTraffic ?? authoredPlayback?.ambientTraffic ?? null}
-          provider={ambientTrafficProvider}
-          onProviderChange={changeAmbientTrafficProvider}
-          acceleratedSignalCycles={acceleratedSignalCycles}
-          onAcceleratedSignalCyclesChange={changeAcceleratedSignalCycles}
-          sumoStatus={sumoFallbackReason ? { phase: 'fallback', actorCount: 0, reason: sumoFallbackReason } : sumoStatus}
-          busy={ambientPreviewBusy || sumoStatus.phase === 'loading'}
-          error={ambientTrafficError}
-          onChange={changeAmbientTraffic}
-          robustnessReport={ambientRobustnessReport}
-          robustnessBusy={ambientRobustnessBusy}
-          onRunRobustness={ambientTrafficProvider === 'native' ? runAmbientRobustness : undefined}
-          onClose={closeAuxiliaryTool}
-        />
-      ) : null}
-
-      {!mapWorkspaceOpen && auxiliaryTool && auxiliaryTool !== 'ambient' && authoringEnabled ? (
-        <div
-          style={auxiliaryTool === 'saved' ? { ...styles.toolDrawer, ...styles.galleryDrawer } : styles.toolDrawer}
-          data-testid={`${auxiliaryTool}-tool-drawer`}
-        >
-          {auxiliaryTool === 'camera' && cameraRegistry ? (
-            <CameraPanel registry={cameraRegistry} state={cameraState} />
-          ) : auxiliaryTool === 'saved' ? (
-            <CampaignDrawer
-              authoringEnabled={authoringEnabled}
-              onOpen={openCampaign}
-              onPlayEvidence={playCampaignEvidence}
-              onClose={() => setAuxiliaryTool(null)}
+        ) : null}
+        canvas={(slotProps) => (
+          <div {...slotProps} ref={hostRef} data-testid="map-pane" style={styles.mapPane}>
+            <CityView
+              key={map.id}
+              manifestUrl={map.manifest}
+              options={optionsRef.current}
+              onReady={onReady}
+              onError={(error) => setWorldRenderError(error instanceof Error ? error.message : String(error))}
+              style={styles.canvas}
             />
-          ) : auxiliaryTool === 'variations' && editorController ? (
-            <VariationsPanel
-              controller={editorController}
+            {!mapWorkspaceOpen ? <WorldLoadingOverlay
               viewer={viewer}
-              map={map}
-              authoringEnabled={authoringEnabled}
-              onOpenProject={(targetMap) => {
-                setAuxiliaryTool(null);
-                selectMap(targetMap);
-              }}
-              onClose={() => setAuxiliaryTool(null)}
-            />
-          ) : auxiliaryTool === 'copilot' && editorController ? (
-            <ScenarioCopilotPanel
+              mapLabel={map.label}
+              editorReady={state !== null}
+              error={worldRenderError ?? editorError}
+            /> : null}
+            {previewUpdating ? <div role="status" aria-live="polite" data-testid="canonical-preview-updating" style={{ position: 'absolute', top: 14, left: '50%', zIndex: 24, transform: 'translateX(-50%)', padding: '7px 11px', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 999, background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', color: 'var(--ueui-text, #f2f2f2)', fontSize: 11, pointerEvents: 'none' }}>Updating preview…</div> : null}
+          </div>
+        )}
+        floatingOverlay={
+          <>
+            {showAuthoringChrome && editorController ? (
+              <WorkspaceTimelineDock
+                controller={editorController}
+                editorState={state}
+                session={studioSession}
+                playbackController={playbackController}
+                authoredPlayback={authoredPlayback}
+                experience={experience ?? 'simple'}
+                signalLanes={signalLanes}
+                onSelectActor={(actorId) => editorController.setSelection([actorId])}
+                onFocusActor={focusTimelineActor}
+                onSelectInteraction={(_, actorId) => editorController.setSelection([actorId])}
+                onClearSelection={() => editorController.setSelection([])}
+                onSelectSignal={(headId) => {
+                  setSelectedSignalHeadId(headId);
+                  signalSelectionModel?.selectHead(headId);
+                }}
+                dashCameras={authoredDashCameras}
+                selectedDashCameraId={selectedAuthoredDashCamera?.id ?? null}
+                onDashCameraChange={setSelectedDashCameraId}
+                onCameraPlay={() => {
+                  if (!selectedAuthoredDashCamera) return;
+                  setSelectedDashCameraId(selectedAuthoredDashCamera.id);
+                  setCameraPlaybackRequested(true);
+                  studioSession.playPause();
+                }}
+              />
+            ) : null}
+            {shouldShowEditorToolRail(authoringEnabled, mapWorkspaceOpen) ? <EditorToolRail
               controller={editorController}
-              map={map}
-              sampleHeight={sampleHeight}
-              onValidate={validateCopilotCandidate}
-              onApply={applyCopilotCandidate}
-              onOpenGenerations={() => navigateGenerations(true)}
-              onClose={() => setAuxiliaryTool(null)}
-            />
-          ) : auxiliaryTool === 'measure' ? (
-            <div style={styles.measurePanel}>
-              <div style={styles.drawerHeading}>Viewport performance</div>
-              <div style={styles.drawerHint}>
-                Rendering quality and live fidelity controls are in the Viewport panel on the right.
+              state={state}
+              placement={catalogPlacement}
+              authoringEnabled={authoringEnabled}
+              auxiliaryTool={auxiliaryTool}
+              onToolRequest={requestAuxiliaryTool}
+            /> : null}
+
+            {mapWorkspaceOpen ? (
+              <MapWorkspace viewer={viewer} map={map} overlays={overlays} editor={editorController} editorState={state} />
+            ) : null}
+
+            {openScenarioOpen ? <OpenScenarioWorkspace
+              state={presentedOpenScenarioState}
+              onRetry={regenerateOpenScenario}
+              onClose={() => setOpenScenarioOpen(false)}
+              templateValidation={editorController?.doc.validation ?? null}
+              physicsSummary={activePhysicsSummary}
+              initialSection={openScenarioLocationIntent(window.location).section}
+              onLocateSource={(sourceId) => {
+                editorController?.setSelection([sourceId]);
+                setOpenScenarioOpen(false);
+              }}
+            /> : null}
+
+            {!mapWorkspaceOpen && auxiliaryTool === 'ambient' && authoringEnabled ? (
+              <AmbientTrafficPopover
+                profile={ambientTrafficProfile}
+                provenance={ambientTrafficProvider === 'off' ? null : ambientPreview?.ambientTraffic ?? authoredPlayback?.ambientTraffic ?? null}
+                provider={ambientTrafficProvider}
+                onProviderChange={changeAmbientTrafficProvider}
+                acceleratedSignalCycles={acceleratedSignalCycles}
+                onAcceleratedSignalCyclesChange={changeAcceleratedSignalCycles}
+                sumoStatus={sumoFallbackReason ? { phase: 'fallback', actorCount: 0, reason: sumoFallbackReason } : sumoStatus}
+                busy={ambientPreviewBusy || sumoStatus.phase === 'loading'}
+                error={ambientTrafficError}
+                onChange={changeAmbientTraffic}
+                robustnessReport={ambientRobustnessReport}
+                robustnessBusy={ambientRobustnessBusy}
+                onRunRobustness={ambientTrafficProvider === 'native' ? runAmbientRobustness : undefined}
+                onClose={closeAuxiliaryTool}
+              />
+            ) : null}
+
+            {!mapWorkspaceOpen && auxiliaryTool && auxiliaryTool !== 'ambient' && authoringEnabled ? (
+              <div
+                style={auxiliaryTool === 'saved' ? { ...styles.toolDrawer, ...styles.galleryDrawer } : styles.toolDrawer}
+                data-testid={`${auxiliaryTool}-tool-drawer`}
+              >
+                {auxiliaryTool === 'camera' && cameraRegistry ? (
+                  <CameraPanel registry={cameraRegistry} state={cameraState} />
+                ) : auxiliaryTool === 'saved' ? (
+                  <CampaignDrawer
+                    authoringEnabled={authoringEnabled}
+                    onOpen={openCampaign}
+                    onPlayEvidence={playCampaignEvidence}
+                    onClose={() => setAuxiliaryTool(null)}
+                  />
+                ) : auxiliaryTool === 'variations' && editorController ? (
+                  <VariationsPanel
+                    controller={editorController}
+                    viewer={viewer}
+                    map={map}
+                    authoringEnabled={authoringEnabled}
+                    onOpenProject={(targetMap) => {
+                      setAuxiliaryTool(null);
+                      selectMap(targetMap);
+                    }}
+                    onClose={() => setAuxiliaryTool(null)}
+                  />
+                ) : auxiliaryTool === 'copilot' && editorController ? (
+                  <ScenarioCopilotPanel
+                    controller={editorController}
+                    map={map}
+                    sampleHeight={sampleHeight}
+                    onValidate={validateCopilotCandidate}
+                    onApply={applyCopilotCandidate}
+                    onOpenGenerations={() => navigateGenerations(true)}
+                    onClose={() => setAuxiliaryTool(null)}
+                  />
+                ) : auxiliaryTool === 'measure' ? (
+                  <div style={styles.measurePanel}>
+                    <div style={styles.drawerHeading}>Viewport performance</div>
+                    <div style={styles.drawerHint}>
+                      Rendering quality and live fidelity controls are in the Viewport panel on the right.
+                    </div>
+                    <button
+                      type="button"
+                      style={styles.measureAction}
+                      disabled={!viewer || benchRunning}
+                      onClick={() => void window.__bench?.()}
+                    >
+                      {benchRunning ? 'Measuring frame pacing…' : 'Measure frame pacing'}
+                    </button>
+                  </div>
+                ) : null}
               </div>
+            ) : null}
+
+            {generationsOpen ? <GenerationsWorkspace
+              currentMapId={map.id}
+              currentMapHash={editorController?.laneIndex.stats.xodrSha256 ?? null}
+              onOpenDraft={openSavedGeneration}
+              onSwitchMap={switchToGenerationMap}
+              onClose={() => navigateGenerations(false)}
+            /> : null}
+
+            {playbackBundle && campaignPlaybackTitle ? (
+              <VerifiedReplayBar
+                title={campaignPlaybackTitle}
+                state={playbackState}
+                startTime={playbackBundle.startTime}
+                endTime={playbackBundle.endTime}
+                onToggle={() => playbackController?.toggle()}
+                onStop={returnToGallery}
+                cameraOptions={playbackCameraOptions}
+                onCameraChange={(option) => playbackController?.selectCamera(option.id, option.policy, option.view)}
+              />
+            ) : null}
+
+            {selectedPlayback && playbackCameraError ? (
+              <div role="alert" style={styles.playbackCameraError} data-testid="playback-camera-error">
+                <strong>Playback camera unavailable</strong>
+                <span>{playbackCameraError}</span>
+              </div>
+            ) : null}
+
+            {!mapWorkspaceOpen && (authoringEnabled || playbackBundle) ? (
               <button
                 type="button"
-                style={styles.measureAction}
-                disabled={!viewer || benchRunning}
-                onClick={() => void window.__bench?.()}
+                style={{ ...styles.panelToggle, left: leftPanelOpen ? 300 : 64 }}
+                aria-label={leftPanelOpen ? 'Hide map and playback panel' : 'Show map and playback panel'}
+                aria-pressed={leftPanelOpen}
+                onClick={() => setLeftPanelOpen((open) => !open)}
               >
-                {benchRunning ? 'Measuring frame pacing…' : 'Measure frame pacing'}
+                {leftPanelOpen ? '‹' : 'Map & import'}
               </button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+            ) : null}
 
-      {generationsOpen ? <GenerationsWorkspace
-        currentMapId={map.id}
-        currentMapHash={editorController?.laneIndex.stats.xodrSha256 ?? null}
-        onOpenDraft={openSavedGeneration}
-        onSwitchMap={switchToGenerationMap}
-        onClose={() => navigateGenerations(false)}
+            {!mapWorkspaceOpen && (authoringEnabled || playbackBundle) && leftPanelOpen ? (
+              <div style={styles.leftRail}>
+                <MapPicker current={map} loading={loading} onSelect={selectMap} />
+                <PlaybackPanel
+                  bundle={playbackBundle}
+                  controller={playbackController}
+                  state={playbackState}
+                  cameraOptions={playbackCameraOptions}
+                  cameraError={playbackCameraError}
+                  onImport={importPlayback}
+                  onClear={() => {
+                    setPlaybackBundle(null);
+                    setCampaignPlaybackTitle(null);
+                    setCampaignCameras(EMPTY_CAMERA_PRESENTATION);
+                  }}
+                />
+              </div>
+            ) : null}
+
+            {!mapWorkspaceOpen && settingsOpen ? <div id="studio-settings" style={styles.settingsDrawer}>
+              <SettingsPanel
+                viewer={viewer}
+                overlays={overlays}
+                overlayError={overlayError ?? editorError}
+                settings={viewSettings}
+                onSettingsChange={setViewSettings}
+                onResetDefaults={() => setViewSettings(cloneDefaults())}
+                onClose={() => setSettingsOpen(false)}
+                benchRunning={benchRunning}
+                onBench={() => void window.__bench?.()}
+                actorCount={playbackState?.actorCount ?? playbackBundle?.actors.length ?? authoredPlayback?.actors.length ?? ambientPreview?.actors.length ?? state?.actors.length ?? 0}
+                laneCount={laneStats?.lanes ?? null}
+              />
+            </div> : null}
+            {!mapWorkspaceOpen && authoringEnabled && state?.message ? (
+              <div role="status" style={styles.editorNotice} data-testid="editor-notice">{state.message}</div>
+            ) : null}
+            {showAuthoringChrome && experience === null && state ? (
+              <div className="studio-chooser-overlay">
+                <EditorExperienceChooser onChoose={chooseExperience} />
+              </div>
+            ) : null}
+          </>
+        }
+      />
+      {editorController ? <InspectorHost
+        controller={editorController}
+        document={editorController.doc}
+        state={state}
+        resolveActor={resolveActorRecord}
+        physicsFor={(actorId) => physicsForActor(activePhysicsSummary, actorId)}
+        suppress={state?.mode === 'drawingRoute'}
+        onSelectActor={(actorId) => editorController.setSelection(actorId === null ? [] : [actorId])}
       /> : null}
-
-      {playbackBundle && campaignPlaybackTitle ? (
-        <VerifiedReplayBar
-          title={campaignPlaybackTitle}
-          state={playbackState}
-          startTime={playbackBundle.startTime}
-          endTime={playbackBundle.endTime}
-          onToggle={() => playbackController?.toggle()}
-          onStop={returnToGallery}
-          cameraOptions={playbackCameraOptions}
-          onCameraChange={(option) => playbackController?.selectCamera(option.id, option.policy, option.view)}
-        />
-      ) : null}
-
-      {selectedPlayback && playbackCameraError ? (
-        <div role="alert" style={styles.playbackCameraError} data-testid="playback-camera-error">
-          <strong>Playback camera unavailable</strong>
-          <span>{playbackCameraError}</span>
-        </div>
-      ) : null}
-
-      {!mapWorkspaceOpen && (authoringEnabled || playbackBundle) ? (
-        <button
-          type="button"
-          style={{ ...styles.panelToggle, left: leftPanelOpen ? 300 : 64 }}
-          aria-label={leftPanelOpen ? 'Hide map and playback panel' : 'Show map and playback panel'}
-          aria-pressed={leftPanelOpen}
-          onClick={() => setLeftPanelOpen((open) => !open)}
-        >
-          {leftPanelOpen ? '‹' : 'Map & import'}
-        </button>
-      ) : null}
-
-      {!mapWorkspaceOpen && (authoringEnabled || playbackBundle) && leftPanelOpen ? (
-        <div style={styles.leftRail}>
-          <MapPicker current={map} loading={loading} onSelect={selectMap} />
-          <PlaybackPanel
-            bundle={playbackBundle}
-            controller={playbackController}
-            state={playbackState}
-            cameraOptions={playbackCameraOptions}
-            cameraError={playbackCameraError}
-            onImport={importPlayback}
-            onClear={() => {
-              setPlaybackBundle(null);
-              setCampaignPlaybackTitle(null);
-              setCampaignCameras(EMPTY_CAMERA_PRESENTATION);
-            }}
-          />
-        </div>
-      ) : null}
-
-      {!mapWorkspaceOpen && settingsOpen ? <div id="studio-settings" style={styles.settingsDrawer}>
-        <SettingsPanel
-          viewer={viewer}
-          overlays={overlays}
-          overlayError={overlayError ?? editorError}
-          settings={viewSettings}
-          onSettingsChange={setViewSettings}
-          onResetDefaults={() => setViewSettings(cloneDefaults())}
-          onClose={() => setSettingsOpen(false)}
-          benchRunning={benchRunning}
-          onBench={() => void window.__bench?.()}
-          actorCount={playbackState?.actorCount ?? playbackBundle?.actors.length ?? authoredPlayback?.actors.length ?? ambientPreview?.actors.length ?? state?.actors.length ?? 0}
-          laneCount={laneStats?.lanes ?? null}
-        />
-      </div> : null}
-      {!mapWorkspaceOpen && authoringEnabled && state?.message ? (
-        <div role="status" style={styles.editorNotice} data-testid="editor-notice">{state.message}</div>
-      ) : null}
-      </div>
-      </div>
     </div>
   );
 }
 
-export function ActorDetailsCallout({ actor, physics, controller, viewer, host, onClose }: {
-  actor: ActorRecord | null;
-  physics: ActorPhysicsDisplay | null;
-  controller: EditorController;
-  viewer: CityViewer;
-  host: HTMLDivElement | null;
-  onClose: () => void;
-}): JSX.Element | null {
-  const [anchor, setAnchor] = useState({ x: 0, y: 0, panelX: 72, panelY: 16, visible: false });
-  const [tab, setTab] = useState<'appearance' | 'sensors'>('appearance');
-  useEffect(() => { setTab('appearance'); }, [actor?.id]);
-  useEffect(() => {
-    if (!actor || !host) return;
-    let raf = 0;
-    let previous = '';
-    const update = (): void => {
-      const bounds = host.getBoundingClientRect();
-      const point = new Vector3(actor.x, actor.y + actor.dims.h * 0.65, actor.z).project(viewer.camera);
-      const x = (point.x * 0.5 + 0.5) * bounds.width;
-      const y = (-point.y * 0.5 + 0.5) * bounds.height;
-      const panelX = Math.max(70, Math.min(bounds.width - 318, x + (x > bounds.width * 0.62 ? -330 : 34)));
-      const panelY = Math.max(12, Math.min(bounds.height - 300, y - 86));
-      const next = `${Math.round(x)}|${Math.round(y)}|${Math.round(panelX)}|${Math.round(panelY)}|${point.z < 1}`;
-      if (next !== previous) {
-        previous = next;
-        setAnchor({ x, y, panelX, panelY, visible: point.z < 1 });
-      }
-      raf = requestAnimationFrame(update);
-    };
-    update();
-    return () => cancelAnimationFrame(raf);
-  }, [actor, host, viewer]);
-  useEffect(() => {
-    const key = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', key, { capture: true });
-    return () => window.removeEventListener('keydown', key, { capture: true });
-  }, [onClose]);
-  if (!actor) return null;
-  const known = CATALOG.some((entry) => entry.id === actor.catalogId);
-  const models = CATALOG.filter((entry) => actor.kind === 'pedestrian'
-    ? entry.class === 'pedestrian'
-    : actor.kind === 'vehicle' ? entry.class === 'vehicle' : false);
-  const lineEndX = anchor.panelX > anchor.x ? anchor.panelX : anchor.panelX + 304;
-  const lineEndY = anchor.panelY + 44;
-  return <>
-    {anchor.visible ? <svg style={styles.actorConnector} aria-hidden="true">
-      <line x1={anchor.x} y1={anchor.y} x2={lineEndX} y2={lineEndY} stroke="#f08a43" strokeWidth="1.5" />
-      <circle cx={anchor.x} cy={anchor.y} r="4" fill="#f08a43" stroke="#16191e" strokeWidth="2" />
-    </svg> : null}
-    <aside style={{ ...styles.actorDetails, left: anchor.panelX, top: anchor.panelY }} aria-label={`${actor.kind} details`} data-testid="actor-details">
-      <div style={styles.actorDetailsHeader}><div><small>{actor.kind}</small><strong>{actor.label ?? getEntrySafeLabel(actor.catalogId)}</strong></div><button type="button" onClick={onClose} aria-label="Close actor details">×</button></div>
-      <div role="tablist" aria-label="Actor settings" style={styles.actorTabs}>
-        <button type="button" role="tab" aria-selected={tab === 'appearance'} style={tab === 'appearance' ? styles.actorTabActive : styles.actorTab} onClick={() => setTab('appearance')}>Appearance</button>
-        <button type="button" role="tab" aria-selected={tab === 'sensors'} style={tab === 'sensors' ? styles.actorTabActive : styles.actorTab} onClick={() => setTab('sensors')} data-testid="actor-sensors-tab">Sensors{actor.sensors.length ? ` · ${actor.sensors.length}` : ''}</button>
-      </div>
-      {tab === 'appearance' ? <div role="tabpanel" aria-label="Appearance">
-        {physics ? <div style={styles.actorPhysics} role="status" data-testid="actor-physics-backend">
-          <span>Motion backend</span>
-          <strong>{physics.mode === 'dynamic-v1' ? `Dynamic v1 · ${physics.profile ?? 'class profile'}` : physics.mode === 'fixed-static-v1' ? 'Fixed static' : physics.mode === 'kinematic-v1' ? 'Legacy kinematic replay' : 'Unknown'}</strong>
-          <small>{physicsReasonLabel(physics.reason)}</small>
-        </div> : null}
-        <label style={styles.actorField}><span>Catalog model</span><select value={actor.catalogId} onChange={(event) => controller.updateActorAppearance(actor.id, { catalogId: event.target.value as CatalogId })} data-testid="actor-model">
-          {!known ? <option value={actor.catalogId}>Missing model · {actor.catalogId}</option> : null}
-          {models.map((entry) => {
-            const cameraConflict = actor.sensors.length > 0 && !supportsDashCamera({ class: simulationClassFor(entry.id) });
-            return <option key={entry.id} value={entry.id} disabled={cameraConflict}>{entry.label}{cameraConflict ? ' · remove cameras first' : ''}</option>;
-          })}
-        </select></label>
-        {actor.kind === 'vehicle' ? <label style={styles.actorField}><span>Body color</span><span style={styles.colorControl}><input type="color" value={actor.bodyColor ?? '#59748f'} onInput={(event) => controller.updateActorAppearance(actor.id, { bodyColor: event.currentTarget.value })} data-testid="actor-body-color" /><code>{actor.bodyColor ?? '#59748f'}</code></span></label> : null}
-        {actor.kind !== 'prop' ? <label style={styles.actorField}><span>Default speed</span><span><input type="number" min={0} max={200} step={1} value={Number((actor.initialSpeedKph ?? 0).toFixed(2))} onChange={(event) => controller.updateActorAppearance(actor.id, { initialSpeedKph: Number(event.currentTarget.value) })} data-testid="actor-default-speed" /> km/h</span></label> : null}
-        {!known ? <div style={styles.missingAsset}>This model is unavailable in this build. Its ID is preserved until you choose a replacement.</div> : null}
-        <div style={styles.actorIdentity}>The default speed applies before timeline actions. Changing actor type removes actions that do not apply to the new type.</div>
-      </div> : <ActorSensorsPanel actor={actor} controller={controller} />}
-    </aside>
-  </>;
-}
-
-export function ActorSensorsPanel({ actor, controller }: { actor: ActorRecord; controller: EditorController }): JSX.Element {
-  const role = controller.doc.data.roles.find((item) => item.id === actor.id);
-  const supported = role ? supportsDashCamera(role.actor) : false;
-  const cameras = dashCameras({ sensors: actor.sensors }, { includeDisabled: true });
-  const addCamera = (): void => {
-    if (!role || !supported) return;
-    controller.doc.addActorSensor(actor.id, defaultDashCamera(role.actor));
-  };
-  return <div role="tabpanel" aria-label="Sensors" data-testid="actor-sensors-panel">
-    <div style={styles.sensorIntro}>Sensors are mounted to this actor and move with it during playback.</div>
-    {!supported ? <div style={styles.sensorUnsupported} role="status">Dash cameras are not supported on this actor type. Vehicle-mounted cameras are available for cars, trucks, buses, vans, and motorcycles.</div> : null}
-    {cameras.map((camera, index) => <DashCameraEditor key={camera.id} actorId={actor.id} sensor={camera} ordinal={index + 1} controller={controller} />)}
-    {supported ? <button type="button" style={styles.sensorAdd} onClick={addCamera} data-testid="add-dash-camera" aria-label={`Add dash camera to ${actor.label ?? actor.catalogId}`}>＋ Add Dash Camera</button> : null}
-    {supported && cameras.length === 0 ? <div style={styles.sensorEmpty}>No cameras attached.</div> : null}
-  </div>;
-}
-
-function DashCameraEditor({ actorId, sensor, ordinal, controller }: {
-  actorId: string;
-  sensor: DashCameraSensor;
-  ordinal: number;
-  controller: EditorController;
-}): JSX.Element {
-  const replace = (next: DashCameraSensor): void => controller.doc.updateActorSensor(actorId, sensor.id, next);
-  const number = (value: string, fallback: number): number => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  };
-  const bounded = (value: string, fallback: number, min: number, max: number): number =>
-    Math.min(max, Math.max(min, number(value, fallback)));
-  const position = (axis: 'x' | 'y' | 'z', value: string): void => replace({
-    ...sensor,
-    mount: { ...sensor.mount, position: { ...sensor.mount.position, [axis]: number(value, sensor.mount.position[axis]) } },
-  });
-  const angle = (axis: 'yawRad' | 'pitchRad' | 'rollRad', value: string): void => replace({
-    ...sensor,
-    mount: { ...sensor.mount, rotation: { ...sensor.mount.rotation, [axis]: bounded(value, sensor.mount.rotation[axis] * 180 / Math.PI, axis === 'pitchRad' ? -90 : -180, axis === 'pitchRad' ? 90 : 180) * Math.PI / 180 } },
-  });
-  return <section style={styles.sensorCard} aria-label={sensor.label ?? `Dash camera ${ordinal}`} data-testid="dash-camera-editor">
-    <div style={styles.sensorHeader}>
-      <label style={styles.sensorEnabled}><input type="checkbox" checked={sensor.enabled} onChange={(event) => replace({ ...sensor, enabled: event.currentTarget.checked })} aria-label={`Enable dash camera ${ordinal}`} /> <strong>Dash Camera</strong></label>
-      <button type="button" style={styles.sensorRemove} onClick={() => controller.doc.removeActorSensor(actorId, sensor.id)} aria-label={`Remove dash camera ${ordinal}`}>Remove</button>
-    </div>
-    <label style={styles.actorField}><span>Name</span><input value={sensor.label ?? ''} placeholder={`Dash camera ${ordinal}`} onChange={(event) => {
-      const label = event.currentTarget.value;
-      const next = { ...sensor };
-      if (label) next.label = label;
-      else delete next.label;
-      replace(next);
-    }} aria-label={`Dash camera ${ordinal} name`} /></label>
-    <label style={styles.actorField}><span>Horizontal field of view</span><span style={styles.sensorUnit}><input type="number" min={10} max={170} step={1} value={sensor.camera.horizontalFovDeg} onChange={(event) => replace({ ...sensor, camera: { ...sensor.camera, horizontalFovDeg: bounded(event.currentTarget.value, sensor.camera.horizontalFovDeg, 10, 170) } })} aria-label={`Dash camera ${ordinal} horizontal field of view`} /><span>°</span></span></label>
-    <details style={styles.sensorAdvanced}>
-      <summary>Mount &amp; camera details</summary>
-      <div style={styles.sensorSectionLabel}>Position · actor-local metres</div>
-      <div style={styles.sensorGrid}>
-        {(['x', 'y', 'z'] as const).map((axis) => <label key={axis}><span>{axis === 'x' ? 'Forward' : axis === 'y' ? 'Up' : 'Left'}</span><input type="number" step={0.05} value={sensor.mount.position[axis]} onChange={(event) => position(axis, event.currentTarget.value)} aria-label={`Dash camera ${ordinal} mount ${axis}`} /></label>)}
-      </div>
-      <div style={styles.sensorSectionLabel}>Orientation · degrees</div>
-      <div style={styles.sensorGrid}>
-        {([['yawRad', 'Yaw'], ['pitchRad', 'Pitch'], ['rollRad', 'Roll']] as const).map(([axis, label]) => <label key={axis}><span>{label}</span><input type="number" step={1} value={Number((sensor.mount.rotation[axis] * 180 / Math.PI).toFixed(2))} onChange={(event) => angle(axis, event.currentTarget.value)} aria-label={`Dash camera ${ordinal} mount ${label.toLowerCase()}`} /></label>)}
-      </div>
-      <div style={styles.sensorGrid}>
-        <label><span>Near · m</span><input type="number" min={0.01} max={10} step={0.01} value={sensor.camera.nearM} onChange={(event) => replace({ ...sensor, camera: { ...sensor.camera, nearM: bounded(event.currentTarget.value, sensor.camera.nearM, 0.001, Math.min(10, sensor.camera.farM - 0.001)) } })} aria-label={`Dash camera ${ordinal} near clipping distance`} /></label>
-        <label><span>Far · m</span><input type="number" min={1} max={100000} step={10} value={sensor.camera.farM} onChange={(event) => replace({ ...sensor, camera: { ...sensor.camera, farM: bounded(event.currentTarget.value, sensor.camera.farM, sensor.camera.nearM + 0.001, 100000) } })} aria-label={`Dash camera ${ordinal} far clipping distance`} /></label>
-        <label><span>Aspect</span><input type="number" min={0.1} max={10} step={0.01} value={sensor.camera.aspectRatio} onChange={(event) => replace({ ...sensor, camera: { ...sensor.camera, aspectRatio: bounded(event.currentTarget.value, sensor.camera.aspectRatio, 0.1, 10) } })} aria-label={`Dash camera ${ordinal} aspect ratio`} /></label>
-      </div>
-    </details>
-  </section>;
-}
-
-/** Resolve any authored role into the actor-details view using its concrete preview pose. */
-export function actorRecordForRole(role: RoleBinding, sampled?: SampledActor): ActorRecord | null {
-  const absolute = role.kind === 'scene_absolute' ? role.pose : null;
-  if (!sampled && !absolute) return null;
-  const catalogId = (role.actor.catalogId ?? sampled?.catalogId) as CatalogId | undefined;
-  if (!catalogId) return null;
-  const dims = role.actor.dims
-    ? { l: role.actor.dims.length, w: role.actor.dims.width, h: role.actor.dims.height }
-    : sampled?.dims ?? getEntry(catalogId).dims;
-  const actorKind: ActorRecord['kind'] = role.actor.class === 'static_object'
-    ? 'prop'
-    : role.actor.class === 'pedestrian' ? 'pedestrian' : 'vehicle';
-  return {
-    id: role.id,
-    source: actorKind === 'prop' ? 'prop' : 'role',
-    kind: actorKind,
-    catalogId,
-    label: role.label,
-    x: sampled?.x ?? absolute!.position.x,
-    y: absolute?.position.y ?? 0,
-    z: sampled?.z ?? absolute!.position.z,
-    headingRad: sampled?.headingRad ?? absolute!.headingRad,
-    laneRef: undefined,
-    dims,
-    bodyColor: typeof role.extensions?.['studio.presentation.bodyColor'] === 'string'
-      ? role.extensions['studio.presentation.bodyColor']
-      : undefined,
-    initialSpeedKph: typeof role.initialSpeedKph === 'number' ? role.initialSpeedKph : defaultSpeedKph(role.actor.class, catalogId),
-    sensors: role.actor.sensors,
-  };
-}
 
 function sampledTraceSpeed(bundle: PlaybackBundle, actorId: string, time: number): number {
   const track = bundle.trace.ticks.actors[actorId];
@@ -1811,9 +1620,6 @@ function sampledTraceSpeed(bundle: PlaybackBundle, actorId: string, time: number
   return Math.max(0, track.speedMps[low] ?? 0);
 }
 
-function getEntrySafeLabel(id: CatalogId): string {
-  try { return getEntry(id).label; } catch { return id; }
-}
 
 function frameEditableActors(viewer: CityViewer | null, template: ScenarioTemplateV2): void {
   if (!viewer) return;
@@ -1838,70 +1644,45 @@ const styles: Record<string, CSSProperties> = {
   root: {
     position: 'fixed',
     inset: 0,
-    background: '#0b0d10',
-    color: '#e6e9ef',
-    font: '13px/1.45 ui-sans-serif, system-ui, -apple-system, sans-serif',
-  },
-  editorBody: {
-    position: 'absolute',
-    inset: '42px 0 0',
-    display: 'grid',
-    minWidth: 0,
-    minHeight: 0,
-    overflow: 'hidden',
-  },
-  timelinePane: {
-    position: 'relative',
-    minWidth: 0,
-    minHeight: 0,
-    overflow: 'hidden',
-    zIndex: 18,
-  },
-  timelineDrawerPane: {
-    position: 'absolute',
-    zIndex: 40,
-    top: 0,
-    left: 0,
-    bottom: 0,
-    width: 'min(360px, calc(100vw - 20px))',
-    overflow: 'hidden',
+    background: 'var(--ueui-glass-low, rgba(8, 11, 16, 0.94))',
+    color: 'var(--ueui-text, #f2f2f2)',
+    font: "13px/1.45 'Inter', 'SF Pro Text', system-ui, -apple-system, sans-serif",
   },
   mapPane: {
-    position: 'relative',
-    minWidth: 0,
-    minHeight: 0,
+    position: 'absolute',
+    inset: 0,
     overflow: 'hidden',
-    background: '#0b0d10',
+    background: 'var(--ueui-glass-low, rgba(8, 11, 16, 0.94))',
   },
   actorConnector: { position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 27, pointerEvents: 'none', overflow: 'visible' },
-  actorDetails: { position: 'absolute', zIndex: 28, width: 304, maxHeight: 'min(620px, calc(100% - 24px))', overflowY: 'auto', boxSizing: 'border-box', padding: 12, border: '1px solid #555b65', borderRadius: 8, background: 'rgba(24,27,32,.98)', boxShadow: '0 16px 42px rgba(0,0,0,.48)', color: '#e8ebf0' },
+  actorDetails: { position: 'absolute', zIndex: 28, width: 304, maxHeight: 'min(620px, calc(100% - 24px))', overflowY: 'auto', boxSizing: 'border-box', padding: 12, border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 'var(--ueui-radius, 10px)', background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', backdropFilter: 'blur(72px) saturate(185%)', WebkitBackdropFilter: 'blur(72px) saturate(185%)', boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))', color: 'var(--ueui-text, #f2f2f2)' },
   actorDetailsHeader: { display: 'flex', alignItems: 'flex-start', marginBottom: 12, gap: 8 },
-  actorTabs: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, padding: 3, marginBottom: 12, borderRadius: 6, background: '#111419' },
-  actorTab: { padding: '6px 7px', border: 0, borderRadius: 4, background: 'transparent', color: '#8993a1', fontSize: 10, cursor: 'pointer' },
-  actorTabActive: { padding: '6px 7px', border: '1px solid #4f5967', borderRadius: 4, background: '#282d35', color: '#f0f2f5', fontSize: 10, cursor: 'pointer' },
-  actorField: { display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 11, color: '#9099a7', fontSize: 10 },
-  actorPhysics: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '3px 8px', marginBottom: 12, padding: 9, border: '1px solid #39434a', borderRadius: 6, background: '#1c2426', color: '#96a1ae', fontSize: 10 },
-  colorControl: { display: 'flex', alignItems: 'center', gap: 9, color: '#c8ced7' },
-  missingAsset: { marginBottom: 9, padding: 7, borderRadius: 5, background: '#4b3523', color: '#ffd0a8', fontSize: 9 },
-  actorIdentity: { paddingTop: 8, borderTop: '1px solid #393e46', color: '#747e8c', fontSize: 9, lineHeight: 1.35 },
-  sensorIntro: { marginBottom: 10, color: '#929ba8', fontSize: 10, lineHeight: 1.4 },
-  sensorUnsupported: { marginBottom: 10, padding: 9, border: '1px solid #574832', borderRadius: 6, background: '#312a20', color: '#e5c696', fontSize: 10, lineHeight: 1.4 },
-  sensorEmpty: { marginTop: 8, color: '#737d8b', fontSize: 9, textAlign: 'center' },
-  sensorAdd: { width: '100%', padding: '8px 10px', border: '1px solid #476783', borderRadius: 5, background: '#213448', color: '#d9edff', fontSize: 10, cursor: 'pointer' },
-  sensorCard: { marginBottom: 10, padding: 9, border: '1px solid #414852', borderRadius: 6, background: '#20242a' },
+  actorTabs: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, padding: 3, marginBottom: 12, borderRadius: 7, background: 'rgba(8, 11, 16, 0.55)' },
+  actorTab: { padding: '6px 7px', border: 0, borderRadius: 5, background: 'transparent', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10, cursor: 'pointer' },
+  actorTabActive: { padding: '6px 7px', border: '1px solid rgba(232,224,68,.5)', borderRadius: 5, background: 'var(--ueui-accent-soft, rgba(232,224,68,.16))', color: 'var(--ueui-text, #f2f2f2)', fontSize: 10, cursor: 'pointer' },
+  actorField: { display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 11, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10 },
+  actorPhysics: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '3px 8px', marginBottom: 12, padding: 9, border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 7, background: 'rgba(255,255,255,.03)', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10 },
+  colorControl: { display: 'flex', alignItems: 'center', gap: 9, color: 'rgba(242,242,242,.82)' },
+  missingAsset: { marginBottom: 9, padding: 7, borderRadius: 6, background: 'rgba(240,161,60,.12)', color: 'var(--ueui-warn, #f0a13c)', fontSize: 9 },
+  actorIdentity: { paddingTop: 8, borderTop: '1px solid var(--ueui-line, rgba(255,255,255,.08))', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9, lineHeight: 1.35 },
+  sensorIntro: { marginBottom: 10, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10, lineHeight: 1.4 },
+  sensorUnsupported: { marginBottom: 10, padding: 9, border: '1px solid rgba(240,161,60,.3)', borderRadius: 7, background: 'rgba(240,161,60,.08)', color: 'var(--ueui-warn, #f0a13c)', fontSize: 10, lineHeight: 1.4 },
+  sensorEmpty: { marginTop: 8, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9, textAlign: 'center' },
+  sensorAdd: { width: '100%', padding: '8px 10px', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 7, background: 'rgba(255,255,255,.05)', color: 'var(--ueui-text, #f2f2f2)', fontSize: 10, cursor: 'pointer' },
+  sensorCard: { marginBottom: 10, padding: 9, border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 7, background: 'rgba(255,255,255,.03)' },
   sensorHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 9, fontSize: 10 },
-  sensorEnabled: { display: 'flex', alignItems: 'center', gap: 6, color: '#e6eaf0' },
-  sensorRemove: { padding: '3px 6px', border: '1px solid #694b4b', borderRadius: 4, background: '#332526', color: '#e7adad', fontSize: 9, cursor: 'pointer' },
+  sensorEnabled: { display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ueui-text, #f2f2f2)' },
+  sensorRemove: { padding: '3px 6px', border: '1px solid rgba(255,107,94,.4)', borderRadius: 5, background: 'rgba(255,107,94,.1)', color: 'var(--ueui-danger, #ff6b5e)', fontSize: 9, cursor: 'pointer' },
   sensorUnit: { display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 6 },
-  sensorAdvanced: { color: '#a5aebb', fontSize: 10 },
-  sensorSectionLabel: { marginTop: 9, marginBottom: 5, color: '#737e8c', fontSize: 8, textTransform: 'uppercase', letterSpacing: '.06em' },
+  sensorAdvanced: { color: 'rgba(242,242,242,.78)', fontSize: 10 },
+  sensorSectionLabel: { marginTop: 9, marginBottom: 5, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 8, textTransform: 'uppercase', letterSpacing: '.06em' },
   sensorGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6, marginBottom: 7 },
   canvas: { position: 'absolute', inset: 0 },
   toolDrawer: {
     position: 'absolute',
     zIndex: 21,
     top: 12,
-    left: 63,
+    right: 63,
     bottom: 12,
     width: 372,
     overflow: 'hidden',
@@ -1916,21 +1697,23 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     boxSizing: 'border-box',
     padding: 14,
-    borderRadius: 9,
-    background: 'rgba(28,30,35,.98)',
-    border: '1px solid #3a3d44',
-    boxShadow: '0 18px 48px rgba(0,0,0,.52)',
+    borderRadius: 'var(--ueui-radius, 10px)',
+    background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))',
+    backdropFilter: 'blur(72px) saturate(185%)',
+    WebkitBackdropFilter: 'blur(72px) saturate(185%)',
+    border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))',
+    boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))',
   },
-  drawerHeading: { color: '#eef0f4', fontSize: 15, fontWeight: 680 },
-  drawerHint: { marginTop: 3, color: '#77818f', fontSize: 10 },
-  measureAction: { width: '100%', marginTop: 12, padding: '7px 9px', borderRadius: 6, border: '1px solid #4a505a', background: '#2b3037', color: '#eef2f7', font: 'inherit', cursor: 'pointer' },
-  playbackCameraError: { position: 'absolute', zIndex: 30, top: 54, left: '50%', transform: 'translateX(-50%)', width: 'min(560px, calc(100vw - 40px))', display: 'flex', flexDirection: 'column', gap: 3, padding: '10px 12px', border: '1px solid #d96a6a', borderRadius: 8, background: 'rgba(72,18,22,.96)', color: '#ffe5e5', boxShadow: '0 12px 34px rgba(0,0,0,.45)', fontSize: 11 },
-  playbackCameraNotice: { position: 'absolute', zIndex: 24, top: 54, left: '50%', transform: 'translateX(-50%)', width: 'min(560px, calc(100vw - 40px))', display: 'flex', flexDirection: 'column', gap: 3, padding: '8px 11px', border: '1px solid #677485', borderRadius: 8, background: 'rgba(28,33,40,.94)', color: '#dbe3ed', boxShadow: '0 8px 24px rgba(0,0,0,.32)', fontSize: 10 },
-  authoredPlaybackCamera: { position: 'absolute', zIndex: 22, top: 12, right: 16, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 9px', border: '1px solid #464c56', borderRadius: 7, background: 'rgba(22,25,30,.96)', color: '#aeb6c2', fontSize: 10 },
+  drawerHeading: { color: 'var(--ueui-text, #f2f2f2)', fontSize: 15, fontWeight: 650 },
+  drawerHint: { marginTop: 3, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10 },
+  measureAction: { width: '100%', marginTop: 12, padding: '7px 9px', borderRadius: 8, border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', background: 'rgba(255,255,255,.05)', color: 'var(--ueui-text, #f2f2f2)', font: 'inherit', cursor: 'pointer' },
+  playbackCameraError: { position: 'absolute', zIndex: 30, top: 54, left: '50%', transform: 'translateX(-50%)', width: 'min(560px, calc(100vw - 40px))', display: 'flex', flexDirection: 'column', gap: 3, padding: '10px 12px', border: '1px solid rgba(255,107,94,.4)', borderRadius: 'var(--ueui-radius, 10px)', background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', color: 'var(--ueui-danger, #ff6b5e)', boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))', fontSize: 11 },
+  playbackCameraNotice: { position: 'absolute', zIndex: 24, top: 54, left: '50%', transform: 'translateX(-50%)', width: 'min(560px, calc(100vw - 40px))', display: 'flex', flexDirection: 'column', gap: 3, padding: '8px 11px', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 'var(--ueui-radius, 10px)', background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', color: 'var(--ueui-text, #f2f2f2)', boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))', fontSize: 10 },
+  authoredPlaybackCamera: { position: 'absolute', zIndex: 22, top: 12, right: 16, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 9px', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 8, background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10 },
   panelToggle: {
     position: 'absolute', zIndex: 20, top: 12, minWidth: 34, height: 28,
-    padding: '0 8px', border: '1px solid #3c4149', borderRadius: 6,
-    background: 'rgba(24,27,32,.94)', color: '#aeb6c2', font: 'inherit', fontSize: 10,
+    padding: '0 8px', border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 8,
+    background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', color: 'var(--ueui-text-muted, #9a9a9a)', font: 'inherit', fontSize: 10,
     boxShadow: '0 4px 14px rgba(0,0,0,.28)', cursor: 'pointer',
   },
   leftRail: {
@@ -1946,12 +1729,12 @@ const styles: Record<string, CSSProperties> = {
   settingsDrawer: {
     position: 'absolute',
     top: 12,
-    right: 10,
+    right: 64,
     bottom: 12,
     width: 'min(336px, calc(100vw - 84px))',
     zIndex: 25,
     overflow: 'hidden',
     filter: 'drop-shadow(0 18px 42px rgba(0,0,0,.5))',
   },
-  editorNotice: { position: 'absolute', zIndex: 32, left: '50%', bottom: 14, transform: 'translateX(-50%)', maxWidth: 'min(520px, calc(100% - 32px))', padding: '7px 10px', border: '1px solid #72552e', borderRadius: 7, background: 'rgba(52,39,24,.96)', color: '#ffd49a', boxShadow: '0 8px 22px rgba(0,0,0,.34)', fontSize: 10, pointerEvents: 'none' },
+  editorNotice: { position: 'absolute', zIndex: 32, left: '50%', bottom: 14, transform: 'translateX(-50%)', maxWidth: 'min(520px, calc(100% - 32px))', padding: '7px 10px', border: '1px solid rgba(240,161,60,.35)', borderRadius: 8, background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))', color: 'var(--ueui-warn, #f0a13c)', boxShadow: '0 8px 22px rgba(0,0,0,.34)', fontSize: 10, pointerEvents: 'none' },
 };

@@ -5,7 +5,7 @@ import { defaultDashCamera, type ActorSensor, type RoleBinding } from '@uniscena
 import type { SampledActor } from '@uniscenarios/playback';
 import type { EditorController } from './editor/controller';
 import type { ActorRecord } from './editor/document';
-import { ActorDetailsCallout, ActorSensorsPanel, actorRecordForRole } from './App';
+import { ActorDetailsCallout, ActorSensorsPanel, actorRecordForRole } from './workspace/ActorDetails';
 
 function actor(kind: ActorRecord['kind'], sensors: readonly ActorSensor[] = []): ActorRecord {
   return {

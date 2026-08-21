@@ -70,7 +70,7 @@ export function MapWorkspace({
           <div><div style={styles.eyebrow}>Map intelligence</div><div style={styles.title}>Semantic layers</div></div>
           <span style={styles.revision}>{state.manifest ? `rev ${state.manifest.catalogRevision.slice(0, 8)}` : 'loading'}</span>
         </div>
-        <label style={styles.searchWrap}>
+        <label className="studio-field" style={styles.searchWrap}>
           <span aria-hidden="true">⌕</span>
           <input
             type="search"
@@ -99,6 +99,7 @@ export function MapWorkspace({
                 aria-pressed={layer.visible}
                 disabled={!layer.available}
                 style={{ ...styles.eye, ...(layer.visible ? styles.eyeOn : null) }}
+                className="studio-btn"
                 onClick={(event) => { event.stopPropagation(); controller?.setVisible(layer.id, !layer.visible); }}
               >{layer.visible ? '●' : '○'}</button>
             </div>
@@ -108,7 +109,7 @@ export function MapWorkspace({
           <section style={styles.results}>
             <div style={styles.sectionTitle}>{state.resultCount} matches</div>
             {state.results.map((feature) => (
-              <button key={feature.id} type="button" style={styles.result} onClick={() => { controller?.setVisible(feature.layerId, true); controller?.select(feature.id); }}>
+              <button key={feature.id} type="button" className="studio-btn" style={styles.result} onClick={() => { controller?.setVisible(feature.layerId, true); controller?.select(feature.id); }}>
                 <span>{feature.name}</span><small>{feature.sourceRef}</small>
               </button>
             ))}
@@ -158,6 +159,7 @@ export function MapWorkspace({
               disabled={failure !== null}
               title={failure ?? 'Move the selected actor to this exact binding'}
               style={{ ...styles.anchorButton, ...(failure ? styles.anchorDisabled : null) }}
+              className="studio-btn"
               onClick={() => useAnchor(state.selected!)}
             >Use as anchor</button>
             {failure ? <div style={styles.explanation}>{failure}</div> : null}
@@ -188,43 +190,49 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: 'go
   return <div style={styles.fact}><span>{label}</span><strong style={tone === 'good' ? styles.good : tone === 'warn' ? styles.warn : undefined}>{value}</strong></div>;
 }
 
-const PANEL: CSSProperties = { background: 'rgba(18,21,26,.97)', border: '1px solid #343a44', borderRadius: 9, boxShadow: '0 18px 48px rgba(0,0,0,.48)' };
+const GLASS_SURFACE: CSSProperties = {
+  background: 'linear-gradient(180deg, var(--ueui-glass-high, rgba(19, 24, 32, 0.92)), var(--ueui-glass-low, rgba(8, 11, 16, 0.94)))',
+  backdropFilter: 'blur(72px) saturate(185%)',
+  WebkitBackdropFilter: 'blur(72px) saturate(185%)',
+};
+
+const PANEL: CSSProperties = { ...GLASS_SURFACE, border: '1px solid var(--ueui-line-strong, rgba(255,255,255,.14))', borderRadius: 'var(--ueui-radius, 10px)', boxShadow: 'var(--ueui-shadow, 0 18px 48px rgba(0,0,0,.55))', color: 'var(--ueui-text, #f2f2f2)' };
 const styles: Record<string, CSSProperties> = {
   workspace: { position: 'absolute', inset: 0, zIndex: 18, pointerEvents: 'none' },
   browser: { ...PANEL, pointerEvents: 'auto', position: 'absolute', top: 12, left: 12, bottom: 12, width: 324, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   inspector: { ...PANEL, pointerEvents: 'auto', position: 'absolute', top: 12, right: 12, bottom: 12, width: 330, overflowY: 'auto', paddingBottom: 14 },
   panelHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, padding: '14px 14px 10px' },
-  eyebrow: { color: '#758092', fontSize: 9, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' },
-  title: { color: '#f0f3f7', fontSize: 16, fontWeight: 700, lineHeight: 1.25 },
-  revision: { color: '#697383', fontSize: 9, fontFamily: 'ui-monospace, monospace' },
-  searchWrap: { display: 'flex', alignItems: 'center', gap: 7, margin: '0 12px 10px', padding: '0 9px', minHeight: 34, border: '1px solid #3b424d', borderRadius: 6, background: '#12151a', color: '#667181' },
-  search: { minWidth: 0, flex: 1, border: 0, outline: 0, background: 'transparent', color: '#e7ebf1', font: 'inherit', fontSize: 11 },
-  error: { margin: '0 12px 10px', padding: 9, borderRadius: 6, color: '#fecaca', background: '#471a1f', fontSize: 10 },
+  eyebrow: { color: 'var(--ueui-accent, #e8e044)', fontSize: 9, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' },
+  title: { color: 'var(--ueui-text, #f2f2f2)', fontSize: 16, fontWeight: 650, lineHeight: 1.25 },
+  revision: { color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9, fontFamily: 'ui-monospace, monospace' },
+  searchWrap: { display: 'flex', alignItems: 'center', gap: 7, margin: '0 12px 10px', padding: '0 9px', minHeight: 34 },
+  search: { minWidth: 0, flex: 1, border: 0, outline: 0, background: 'transparent', color: 'var(--ueui-text, #f2f2f2)', font: 'inherit', fontSize: 11 },
+  error: { margin: '0 12px 10px', padding: 9, borderRadius: 7, color: 'var(--ueui-danger, #ff6b5e)', background: 'rgba(255,107,94,.12)', fontSize: 10 },
   layerList: { overflowY: 'auto', padding: '0 8px' },
-  layerRow: { display: 'flex', alignItems: 'center', gap: 9, minHeight: 48, padding: '0 7px', borderBottom: '1px solid #292e36', cursor: 'pointer' },
+  layerRow: { display: 'flex', alignItems: 'center', gap: 9, minHeight: 48, padding: '0 7px', borderBottom: '1px solid var(--ueui-line, rgba(255,255,255,.08))', cursor: 'pointer' },
   unavailable: { opacity: .45, cursor: 'default' },
   swatch: { width: 9, height: 24, borderRadius: 3, boxShadow: '0 0 10px currentColor' },
   layerIdentity: { minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' },
-  count: { minWidth: 28, textAlign: 'right', color: '#8f99a8', fontVariantNumeric: 'tabular-nums', fontSize: 10 },
-  eye: { width: 27, height: 27, padding: 0, border: '1px solid #363d47', borderRadius: 5, background: '#1a1e24', color: '#667181', cursor: 'pointer' },
-  eyeOn: { color: '#65a5ff', borderColor: '#426da8', background: '#17283f' },
-  results: { minHeight: 0, overflowY: 'auto', padding: '10px 12px', borderTop: '1px solid #303640' },
-  sectionTitle: { marginBottom: 6, color: '#788395', fontSize: 9, fontWeight: 750, letterSpacing: .7, textTransform: 'uppercase' },
-  result: { display: 'flex', width: '100%', flexDirection: 'column', gap: 1, padding: '7px 8px', border: 0, borderBottom: '1px solid #292e36', background: 'transparent', color: '#dce2eb', textAlign: 'left', cursor: 'pointer', font: 'inherit', fontSize: 10 },
-  more: { padding: 8, color: '#7e8998', fontSize: 9 },
-  manifest: { marginTop: 'auto', display: 'flex', justifyContent: 'space-between', padding: '9px 12px', borderTop: '1px solid #303640', color: '#697383', fontSize: 8, fontFamily: 'ui-monospace, monospace' },
+  count: { minWidth: 28, textAlign: 'right', color: 'var(--ueui-text-muted, #9a9a9a)', fontVariantNumeric: 'tabular-nums', fontSize: 10 },
+  eye: { width: 27, height: 27, padding: 0, border: '1px solid var(--ueui-line, rgba(255,255,255,.08))', borderRadius: 6, background: 'rgba(255,255,255,.04)', color: 'var(--ueui-text-muted, #9a9a9a)', cursor: 'pointer' },
+  eyeOn: { color: 'var(--ueui-accent, #e8e044)', borderColor: 'rgba(232,224,68,.5)', background: 'var(--ueui-accent-soft, rgba(232,224,68,.16))' },
+  results: { minHeight: 0, overflowY: 'auto', padding: '10px 12px', borderTop: '1px solid var(--ueui-line, rgba(255,255,255,.08))' },
+  sectionTitle: { marginBottom: 6, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9, fontWeight: 650, letterSpacing: .7, textTransform: 'uppercase' },
+  result: { display: 'flex', width: '100%', flexDirection: 'column', gap: 1, padding: '7px 8px', border: 0, borderBottom: '1px solid var(--ueui-line, rgba(255,255,255,.08))', background: 'transparent', color: 'var(--ueui-text, #f2f2f2)', textAlign: 'left', cursor: 'pointer', font: 'inherit', fontSize: 10 },
+  more: { padding: 8, color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9 },
+  manifest: { marginTop: 'auto', display: 'flex', justifyContent: 'space-between', padding: '9px 12px', borderTop: '1px solid var(--ueui-line, rgba(255,255,255,.08))', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 8, fontFamily: 'ui-monospace, monospace' },
   hover: { ...PANEL, pointerEvents: 'none', position: 'absolute', left: '50%', bottom: 26, transform: 'translateX(-50%)', display: 'flex', gap: 9, padding: '7px 10px', fontSize: 10 },
-  close: { border: 0, background: 'transparent', color: '#8b95a4', cursor: 'pointer', fontSize: 18 },
-  identity: { margin: '0 14px 12px', padding: '6px 8px', overflow: 'hidden', textOverflow: 'ellipsis', borderRadius: 5, background: '#12151a', color: '#7f8a9a', font: '9px ui-monospace, monospace' },
-  section: { margin: '0 14px 15px', paddingTop: 10, borderTop: '1px solid #303640' },
-  fact: { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0', color: '#7e8998', fontSize: 10 },
-  good: { color: '#65c88a' }, warn: { color: '#f3b55f' },
-  provenance: { display: 'flex', flexDirection: 'column', gap: 1, padding: '5px 0', color: '#cfd5de', fontSize: 9 },
-  empty: { color: '#707b8b', fontSize: 10 },
-  anchorButton: { display: 'block', width: 'calc(100% - 28px)', margin: '4px 14px', padding: '9px 10px', border: '1px solid #4c7ebd', borderRadius: 6, background: '#285d9e', color: '#fff', font: 'inherit', fontWeight: 700, cursor: 'pointer' },
-  anchorDisabled: { borderColor: '#3a414b', background: '#282d34', color: '#6f7886', cursor: 'not-allowed' },
-  explanation: { margin: '6px 14px 0', color: '#8b95a4', fontSize: 9, lineHeight: 1.4 },
-  message: { margin: '8px 14px 0', padding: 8, borderRadius: 5, background: '#183527', color: '#9ae2b4', fontSize: 9 },
-  emptyInspector: { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 38, color: '#7c8797', textAlign: 'center', fontSize: 10 },
-  emptyIcon: { color: '#5b8cff', fontSize: 30 },
+  close: { border: 0, background: 'transparent', color: 'var(--ueui-text-muted, #9a9a9a)', cursor: 'pointer', fontSize: 18 },
+  identity: { margin: '0 14px 12px', padding: '6px 8px', overflow: 'hidden', textOverflow: 'ellipsis', borderRadius: 6, background: 'rgba(8, 11, 16, 0.55)', color: 'var(--ueui-text-muted, #9a9a9a)', font: '9px ui-monospace, monospace' },
+  section: { margin: '0 14px 15px', paddingTop: 10, borderTop: '1px solid var(--ueui-line, rgba(255,255,255,.08))' },
+  fact: { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10 },
+  good: { color: 'var(--ueui-ok, #57c785)' }, warn: { color: 'var(--ueui-warn, #f0a13c)' },
+  provenance: { display: 'flex', flexDirection: 'column', gap: 1, padding: '5px 0', color: 'rgba(242,242,242,.82)', fontSize: 9 },
+  empty: { color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 10 },
+  anchorButton: { display: 'block', width: 'calc(100% - 28px)', margin: '4px 14px', padding: '9px 10px', border: '1px solid transparent', borderRadius: 8, background: 'var(--ueui-accent, #e8e044)', color: '#10120a', font: 'inherit', fontWeight: 700, cursor: 'pointer' },
+  anchorDisabled: { borderColor: 'var(--ueui-line, rgba(255,255,255,.08))', background: 'rgba(255,255,255,.04)', color: 'var(--ueui-text-muted, #9a9a9a)', cursor: 'not-allowed' },
+  explanation: { margin: '6px 14px 0', color: 'var(--ueui-text-muted, #9a9a9a)', fontSize: 9, lineHeight: 1.4 },
+  message: { margin: '8px 14px 0', padding: 8, borderRadius: 6, background: 'rgba(87,199,133,.12)', color: 'var(--ueui-ok, #57c785)', fontSize: 9 },
+  emptyInspector: { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 38, color: 'var(--ueui-text-muted, #9a9a9a)', textAlign: 'center', fontSize: 10 },
+  emptyIcon: { color: 'var(--ueui-accent, #e8e044)', fontSize: 30 },
 };
