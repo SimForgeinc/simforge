@@ -757,15 +757,17 @@ def test_carla_signal_binding_owns_complete_map_and_restores_state_timings_and_f
 
     first = Light(101, "head-a", "green", False, (11.0, 4.0, 9.0))
     second = Light(202, "head-b", "yellow", True, (8.0, 3.0, 12.0))
+    extra = Light(303, "head-extra", "red", False, (7.0, 2.0, 8.0))
     backend = object.__new__(CarlaBackend)
     backend.carla = Carla
-    backend.world = World([first, second])
+    backend.world = World([first, second, extra])
     backend.signals, backend.signal_snapshots = {}, {}
     backend.sensors, backend.actors = [], {}
 
     backend.bind_signals(("head-a", "head-b"))
     assert first.mutations == [("freeze", True)]
     assert second.mutations == [("freeze", True)]
+    assert extra.mutations == []
     assert backend.world.ticks == 1
 
     backend.apply(PlanFrame(0, 0, {}, {"head-a": "red", "head-b": "green"}))
@@ -779,6 +781,8 @@ def test_carla_signal_binding_owns_complete_map_and_restores_state_timings_and_f
     assert (second.state, second.frozen) == ("yellow", True)
     assert (first.green_time, first.yellow_time, first.red_time) == (11.0, 4.0, 9.0)
     assert (second.green_time, second.yellow_time, second.red_time) == (8.0, 3.0, 12.0)
+    assert (extra.state, extra.frozen) == ("red", False)
+    assert extra.mutations == []
     assert backend.world.ticks == 3
     first_after_cleanup = list(first.mutations)
     second_after_cleanup = list(second.mutations)
@@ -792,10 +796,9 @@ def test_carla_signal_binding_owns_complete_map_and_restores_state_timings_and_f
     ("authored", "runtime_ids", "message"),
     [
         (("head-present", "head-missing"), ("head-present",), "missing: head-missing"),
-        (("head-present",), ("head-present", "head-extra"), "extra: head-extra"),
     ],
 )
-def test_carla_signal_binding_requires_exact_complete_map_before_mutation(authored, runtime_ids, message):
+def test_carla_signal_binding_requires_every_authored_head_before_mutation(authored, runtime_ids, message):
     class Light:
         def __init__(self, actor_id, signal_id): self.id, self.signal_id, self.mutations = actor_id, signal_id, []
         def get_opendrive_id(self): return self.signal_id

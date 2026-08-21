@@ -587,7 +587,7 @@ class CarlaBackend:
                 self.collision_pending.append(item)
 
     def bind_signals(self, signal_ids: tuple[str, ...], abort: Callable[[], None] | None = None) -> None:
-        """Own every runtime light while requiring every authored head to resolve."""
+        """Own every authored runtime light while leaving unrelated map lights untouched."""
         check = abort or (lambda: None)
         check()
         assert self.world is not None
@@ -615,9 +615,13 @@ class CarlaBackend:
         except Exception as exc:  # noqa: BLE001 - this is an execution ownership boundary.
             raise RuntimeError("CARLA traffic light enumeration failed before ownership") from exc
         check()
+        runtime_id_by_authored = {
+            signal_id: signal_remap.get(signal_id, signal_id)
+            for signal_id in authored
+        }
+        expected_runtime_ids = set(runtime_id_by_authored.values())
 
         resolved: dict[str, Any] = {}
-        unbound: list[str] = []
         duplicate_ids: list[str] = []
         for light in lights:
             check()
@@ -626,23 +630,16 @@ class CarlaBackend:
             except Exception as exc:  # noqa: BLE001 - reject the full map before mutation.
                 raise RuntimeError("CARLA traffic light identity read failed before ownership") from exc
             if not signal_id:
-                unbound.append(str(getattr(light, "id", "unknown")))
                 continue
-            if signal_id in resolved:
+            if signal_id in resolved and signal_id in expected_runtime_ids:
                 duplicate_ids.append(signal_id)
             resolved[signal_id] = light
         runtime_ids = set(resolved)
-        runtime_id_by_authored = {
-            signal_id: signal_remap.get(signal_id, signal_id)
-            for signal_id in authored
-        }
         missing = sorted(
             signal_id for signal_id, runtime_id in runtime_id_by_authored.items()
             if runtime_id not in runtime_ids
         )
-        expected_runtime_ids = set(runtime_id_by_authored.values())
-        extra = sorted(runtime_ids - expected_runtime_ids)
-        if missing or extra or unbound or duplicate_ids:
+        if missing or duplicate_ids:
             details = []
             if missing:
                 details.append(
@@ -653,10 +650,6 @@ class CarlaBackend:
                         for signal_id in missing
                     )
                 )
-            if extra:
-                details.append(f"extra: {', '.join(extra)}")
-            if unbound:
-                details.append(f"unbound actor ids: {', '.join(sorted(unbound))}")
             if duplicate_ids:
                 details.append(f"duplicate OpenDRIVE ids: {', '.join(sorted(set(duplicate_ids)))}")
             raise RuntimeError(
@@ -670,9 +663,14 @@ class CarlaBackend:
             self.executed_signals = {}
             self.executed_signal_lamps = {}
             return
+        self.signals = {
+            authored_id: resolved[runtime_id]
+            for authored_id, runtime_id in runtime_id_by_authored.items()
+        }
 
         snapshots: dict[int, _OwnedSignalSnapshot] = {}
-        for light in lights:
+        owned_lights = {self._signal_identity(light): light for light in self.signals.values()}
+        for light in owned_lights.values():
             check()
             key = self._signal_identity(light)
             if key in snapshots:
@@ -710,10 +708,6 @@ class CarlaBackend:
                 light, state, frozen, green_time, yellow_time, red_time,
             )
 
-        self.signals = {
-            authored_id: resolved[runtime_id]
-            for authored_id, runtime_id in runtime_id_by_authored.items()
-        }
         self.signal_snapshots = snapshots
         self.executed_signals = {}
         self.executed_signal_lamps = {}
