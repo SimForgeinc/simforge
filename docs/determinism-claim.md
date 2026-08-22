@@ -63,15 +63,23 @@ camera, deterministic entity-ID assignment).
 
 **Policy adopted: golden-hash-per-GPU.** Same-device wgpu is empirically
 bitwise-stable, but cross-vendor/cross-driver byte equality is NOT guaranteed.
+
+Independently re-verified from this workstream after the spike produced
+clip-length sequences: `scripts/renderer-spike/out/seq_run1` vs `seq_run2`
+(two full process runs) have **59/59 common frames sha256-identical**
+(first frame `c9edb32e830c…`). The contrast with the Chrome path on the same
+machine could not be sharper: Bevy 59/59 byte-stable vs Chrome 0/8 and 5/6.
 Any CI gate on Bevy render hashes therefore pins (GPU model, driver, wgpu
 backend) and compares against a golden hash table recorded for that exact
 fingerprint — never against a universal hash. The hardware fingerprint block
 of every determinism manifest is the key into that table.
 
-Limitation: only single-pose Bevy stills exist today
-(`scripts/renderer-spike/out/bevy_a_run1.*`); clip-length Bevy frame sets for
-the realism ablation await the remaining spike work (vegetation/sky/lighting
-parity, est. 4–7 days per the bake-off report).
+Limitation: at the time the ablation runner was written, only single-pose
+Bevy stills existed (`scripts/renderer-spike/out/bevy_a_run1.*`); the spike has
+since landed clip-length sequences (`out/seq_run1`, `out/seq_run2`), which are
+the stage-B frame sets the runner now discovers automatically. Vegetation,
+HDRI sky and lighting-calibration parity remain open spike work
+(est. 4–7 days per the bake-off report).
 
 ## Consequences
 
