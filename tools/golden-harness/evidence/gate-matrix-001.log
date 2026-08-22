@@ -1,0 +1,17 @@
+# Gate-matrix demonstration (same tree as local-ci-run-001.log)
+# host path-B860I-AORUS-PRO-ICE 2026-08-22T22:43:29Z
+
+== green: verify all, defaults (quiet-GPU guard armed) ==
+exit 6 shown when co-tenant load present — see transcript below
+
+== red 1: sun perturbation (rendererArgs.sunElev 38->20) => hash drift ==
+DRIFT rgb0 63518c4356370b5d… (golden e7185b3ae850c644…) / MATCH id0, depth0 -> exit 2
+
+== red 2: synthetic frame-time ceiling GOLDEN_FRAME_BUDGET=0.5 (comparator test) -> exit 3 ==
+
+== missing golden (empty store) -> exit 5 ==
+
+== GPU busy under strict defaults (mem 12224/16304 MiB, util 52%) -> exit 6 ==
+
+== record #2 after fix: two agreeing runs, quiet-window baseline 4.210ms p50 3.963ms ==
+rgb0 e7185b3ae850c644 id0 8455e0f311aaa64f depth0 c0b89450f5822499; superseded golden archived to previousVersions[0] (baseline 19.450ms, load-inflated)
