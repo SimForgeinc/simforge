@@ -1,0 +1,7 @@
+[package]
+name = "service"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+render-core = { path = "../render-core" }
