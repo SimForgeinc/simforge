@@ -23,7 +23,7 @@ export const RenderWorkerConfigSchema = z.strictObject({
   instanceId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/),
   engine: z.union([
     z.strictObject({
-      id: z.enum(['browser', 'carla']),
+      id: z.enum(['browser', 'carla', 'native']),
       options: ModuleOptionsSchema.default({}),
     }),
     z.strictObject({

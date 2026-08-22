@@ -1,0 +1,75 @@
+{
+  "schema": "uniscenario.render-artifact-manifest/v1",
+  "intentSha256": "3ce39a0a779ce209623ed5010688a14161c9726f5a90087f45706734f583e461",
+  "engine": {
+    "engineId": "uniscenarios-native",
+    "engineVersion": "0.1.0",
+    "backend": "native"
+  },
+  "startedAt": "2026-08-22T23:26:07.897Z",
+  "completedAt": "2026-08-22T23:26:18.528Z",
+  "artifacts": [
+    {
+      "identity": {
+        "role": "sensorArchive",
+        "actorId": "ego",
+        "sensorId": "pronto-cam1",
+        "modality": "depth"
+      },
+      "relativePath": "sensors/ego/pronto-cam1/depth.tar",
+      "sha256": "70f3ca6e4ea34c827e91532c570ab3c4f7fa468a0c6569b093308f827cb6570d",
+      "sizeBytes": 491312640,
+      "mediaType": "application/x-tar",
+      "frameCount": 401
+    },
+    {
+      "identity": {
+        "role": "sensorArchive",
+        "actorId": "ego",
+        "sensorId": "pronto-cam1",
+        "modality": "instance"
+      },
+      "relativePath": "sensors/ego/pronto-cam1/instance.tar",
+      "sha256": "ffec3cc604b5a8b3a2241424e0e2de02d679a80a92538d26900c948206aff5bb",
+      "sizeBytes": 22573056,
+      "mediaType": "application/x-tar",
+      "frameCount": 401
+    },
+    {
+      "identity": {
+        "role": "sensorArchive",
+        "actorId": "ego",
+        "sensorId": "pronto-cam1",
+        "modality": "rgb"
+      },
+      "relativePath": "sensors/ego/pronto-cam1/rgb.tar",
+      "sha256": "e64d3aff88365faad3847fd4e400beca64a4cad5f32e7f9cd9ed310bffb23428",
+      "sizeBytes": 187118592,
+      "mediaType": "application/x-tar",
+      "frameCount": 401
+    },
+    {
+      "identity": {
+        "role": "diagnostics",
+        "actorId": null,
+        "sensorId": null,
+        "modality": null
+      },
+      "relativePath": "diagnostics/native-run.json",
+      "sha256": "2f73c7287633aea966faca43e4c375140ed65d8f8bc78c611894fc5d582efbaa",
+      "sizeBytes": 77284,
+      "mediaType": "application/json",
+      "frameCount": null
+    }
+  ],
+  "warnings": [
+    {
+      "code": "native.v1.modality_deferred",
+      "message": "modality lidar is not produced by native engine v1 (lands with WSB3); no synthetic artifacts were emitted"
+    },
+    {
+      "code": "native.v1.modality_deferred",
+      "message": "modality radar is not produced by native engine v1 (lands with WSB3); no synthetic artifacts were emitted"
+    }
+  ]
+}

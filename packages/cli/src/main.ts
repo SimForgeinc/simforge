@@ -64,7 +64,7 @@ const COMMANDS = [
   { name: 'import', summary: 'OpenSCENARIO XML 1.4 → v2 template draft, with a lossy-feature report' },
   { name: 'catalog batch', summary: 'resumable catalog materialization + simulation with an attempt ledger' },
   { name: 'batch', summary: 'sites × draws matrix: instantiate → simulate → evaluate' },
-  { name: 'render run', summary: 'execute one immutable render intent with the browser or CARLA engine' },
+  { name: 'render run', summary: 'execute one immutable render intent with the browser, CARLA, or native engine' },
   { name: 'render hash', summary: 'compute the canonical SHA-256 identity of a render intent' },
   { name: 'schemas', summary: 'the published JSON Schemas — the LLM emission contract' },
 ] as const;
@@ -579,8 +579,8 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           values: ['engine', 'out', 'inputs', 'engine-options'],
         });
         const engine = requireString(args, 'engine');
-        if (engine !== 'browser' && engine !== 'carla') {
-          throw new CliError('bad_value', '--engine must be browser | carla', { path: '--engine' });
+        if (engine !== 'browser' && engine !== 'carla' && engine !== 'native') {
+          throw new CliError('bad_value', '--engine must be browser | carla | native', { path: '--engine' });
         }
         return renderRun({
           intentPath: positional(args, 0, 'render-intent.json'),
