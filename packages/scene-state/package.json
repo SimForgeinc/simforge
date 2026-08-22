@@ -1,0 +1,34 @@
+{
+  "name": "@uniscenarios/scene-state",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "directory": "packages/scene-state"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./cli": "./src/cli.ts"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "scene-state": "tsx src/cli.ts"
+  }
+}
