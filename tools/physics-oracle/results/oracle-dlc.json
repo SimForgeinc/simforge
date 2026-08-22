@@ -1,0 +1,40 @@
+{
+  "schema": "uniscenarios.physics-oracle-run/v1",
+  "carlaServerVersion": "0.9.16",
+  "carlaClientVersion": "0.9.16",
+  "map": "Carla/Maps/Town01_Opt",
+  "vehicleBlueprint": "vehicle.lincoln.mkz_2020",
+  "fixedDeltaSeconds": 0.02,
+  "generatedAtEpochS": 1787436098,
+  "results": {
+    "double_lane_change_iso3888": {
+      "metrics": [
+        "peakLateralG",
+        "exitSpeedMps"
+      ],
+      "entrySpeedKmh": 55.0,
+      "entrySpeedReached": true,
+      "passed": false,
+      "peakLateralG": 8.325,
+      "exitSpeedMps": 0.0,
+      "gates": [
+        {
+          "gate": "A",
+          "lateralM": 0.01,
+          "centreM": 0.0,
+          "withinWidth": true
+        },
+        {
+          "gate": "B",
+          "lateralM": 0.46,
+          "centreM": 0.0,
+          "withinWidth": true
+        }
+      ],
+      "courseCompleted": false,
+      "vehicleWidthM": 1.94,
+      "note": "ISO 3888-1 course 15/30/25/25/30 m, widths 1.1+B/2 and B+1, lane offset 3.5 m; pure-pursuit follower pinned to entry speed"
+    }
+  },
+  "errors": {}
+}

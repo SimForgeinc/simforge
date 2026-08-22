@@ -1,0 +1,13 @@
+{
+  "schema": "uniscenarios.physics-oracle-run/v1",
+  "carlaServerVersion": "0.9.16",
+  "carlaClientVersion": "0.9.16",
+  "map": "Carla/Maps/Town01_Opt",
+  "vehicleBlueprint": "vehicle.lincoln.mkz_2020",
+  "fixedDeltaSeconds": 0.02,
+  "generatedAtEpochS": 1787435869,
+  "results": {},
+  "errors": {
+    "step_steer": "RuntimeError(\"no stable step-steer run; attempts=[{'steerCmd': 0.04, 'sideslipPeakRad': 1.562, 'latgPeak': 21.368, 'yawSamples': 100, 'stable': False}, {'steerCmd': 0.06, 'sideslipPeakRad': 1.563, 'latgPeak': 17.948, 'yawSamples': 100, 'stable': False}, {'steerCmd': 0.08, 'sideslipPeakRad': 0.107, 'latgPeak': 23.025, 'yawSamples': 100, 'stable': False}]\")"
+  }
+}

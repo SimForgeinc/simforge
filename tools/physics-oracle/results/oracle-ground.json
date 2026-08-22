@@ -1,0 +1,49 @@
+{
+  "schema": "uniscenarios.physics-oracle-run/v1",
+  "carlaServerVersion": "0.9.16",
+  "carlaClientVersion": "0.9.16",
+  "map": "Carla/Maps/Town01_Opt",
+  "vehicleBlueprint": "vehicle.lincoln.mkz_2020",
+  "fixedDeltaSeconds": 0.02,
+  "generatedAtEpochS": 1787435970,
+  "results": {
+    "acceleration": {
+      "metric": "zeroTo100kmhTimeS",
+      "value": 7.3,
+      "zeroTo60kmhTimeS": 3.44,
+      "note": "full-throttle launch from standstill, automatic gearbox"
+    },
+    "braking_100_to_0": {
+      "metric": "stoppingDistanceM",
+      "value": 54.1,
+      "entrySpeedKmh": 100.06,
+      "stopTimeS": 3.24,
+      "meanDecelMps2": 7.14,
+      "note": "full-throttle run-up, pedal applied the moment v first reaches 100 km/h; distance integrated from pedal onset"
+    },
+    "coastdown_80": {
+      "metric": "coastdownDecelAt80kmhMps2",
+      "value": 1.876,
+      "crossingSpeedKmh": 79.95,
+      "note": "pedals released, automatic gearbox in drive (includes CARLA powertrain drag)"
+    },
+    "double_lane_change_iso3888": {
+      "metrics": [
+        "peakLateralG",
+        "exitSpeedMps"
+      ],
+      "entrySpeedKmh": 50.0,
+      "entrySpeedReached": true,
+      "passed": false,
+      "peakLateralG": 82.221,
+      "exitSpeedMps": 0.0,
+      "gates": [],
+      "courseCompleted": false,
+      "vehicleWidthM": 1.94,
+      "note": "ISO 3888-1 course 15/30/25/25/30 m, widths 1.1+B/2 and B+1, lane offset 3.5 m; pure-pursuit follower pinned to entry speed"
+    }
+  },
+  "errors": {
+    "step_steer": "RuntimeError(\"no stable step-steer run; attempts=[{'steerCmd': 0.04, 'sideslipPeakRad': 0.648, 'latgPeak': 14.425, 'yawSamples': 75, 'stable': False}, {'steerCmd': 0.06, 'sideslipPeakRad': 0.767, 'latgPeak': 17.625, 'yawSamples': 75, 'stable': False}, {'steerCmd': 0.08, 'sideslipPeakRad': 0.034, 'latgPeak': 23.024, 'yawSamples': 75, 'stable': False}]\")"
+  }
+}
