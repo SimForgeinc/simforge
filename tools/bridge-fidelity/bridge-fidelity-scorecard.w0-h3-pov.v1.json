@@ -1,0 +1,797 @@
+{
+ "schema": "uniscenarios.bridge-fidelity-scorecard.v1",
+ "generatedAt": "2026-08-22",
+ "corpusHash": "3e67a6b5cef8a4f4944439799fee2b619ca9653c89b96f0c82774ef59af7fc6f",
+ "detector": {
+  "name": "yolo11s",
+  "version": "ultralytics 8.4.126 / torch 2.13.0+cu130",
+  "weightsSha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+  "confThreshold": 0.25,
+  "iouMatch": 0.5,
+  "device": "cpu"
+ },
+ "metricsAuthorityOrder": [
+  "ap-recall-delta-vs-real-matched",
+  "hallucination-deletion-vs-engine-gt",
+  "fid-tiebreak"
+ ],
+ "realReferenceOverall": {
+  "vehicle": {
+   "nGt": 17106,
+   "nDet": 10968,
+   "ap": 0.5268,
+   "recall": 0.5506,
+   "deletionRate": 0.4494,
+   "hallucinationRate": 0.1412
+  },
+  "pedestrian": {
+   "nGt": 4893,
+   "nDet": 2438,
+   "ap": 0.3651,
+   "recall": 0.409,
+   "deletionRate": 0.591,
+   "hallucinationRate": 0.1792
+  },
+  "bicycle": {
+   "nGt": 240,
+   "nDet": 112,
+   "ap": 0.1575,
+   "recall": 0.2292,
+   "deletionRate": 0.7708,
+   "hallucinationRate": 0.5089
+  },
+  "motorcycle": {
+   "nGt": 136,
+   "nDet": 62,
+   "ap": 0.1323,
+   "recall": 0.2059,
+   "deletionRate": 0.7941,
+   "hallucinationRate": 0.5484
+  }
+ },
+ "realReferenceByStratum": {
+  "baseline": {
+   "vehicle": {
+    "nGt": 2377,
+    "nDet": 1321,
+    "ap": 0.4733,
+    "recall": 0.4867,
+    "deletionRate": 0.5133,
+    "hallucinationRate": 0.1241
+   },
+   "pedestrian": {
+    "nGt": 125,
+    "nDet": 55,
+    "ap": 0.3607,
+    "recall": 0.368,
+    "deletionRate": 0.632,
+    "hallucinationRate": 0.1636
+   },
+   "bicycle": {
+    "nGt": 13,
+    "nDet": 4,
+    "ap": 0.2115,
+    "recall": 0.2308,
+    "deletionRate": 0.7692,
+    "hallucinationRate": 0.25
+   },
+   "motorcycle": {
+    "nGt": 8,
+    "nDet": 3,
+    "ap": 0.0417,
+    "recall": 0.125,
+    "deletionRate": 0.875,
+    "hallucinationRate": 0.6667
+   }
+  },
+  "cut-in": {
+   "vehicle": {
+    "nGt": 4842,
+    "nDet": 3478,
+    "ap": 0.4579,
+    "recall": 0.5124,
+    "deletionRate": 0.4876,
+    "hallucinationRate": 0.2867
+   },
+   "pedestrian": {
+    "nGt": 793,
+    "nDet": 303,
+    "ap": 0.1975,
+    "recall": 0.2547,
+    "deletionRate": 0.7453,
+    "hallucinationRate": 0.3333
+   },
+   "bicycle": {
+    "nGt": 57,
+    "nDet": 27,
+    "ap": 0.0704,
+    "recall": 0.1404,
+    "deletionRate": 0.8596,
+    "hallucinationRate": 0.7037
+   },
+   "motorcycle": {
+    "nGt": 44,
+    "nDet": 19,
+    "ap": 0.0498,
+    "recall": 0.0909,
+    "deletionRate": 0.9091,
+    "hallucinationRate": 0.7895
+   }
+  },
+  "dart-out": {
+   "vehicle": {
+    "nGt": 3550,
+    "nDet": 2630,
+    "ap": 0.4301,
+    "recall": 0.5056,
+    "deletionRate": 0.4944,
+    "hallucinationRate": 0.3175
+   },
+   "pedestrian": {
+    "nGt": 2965,
+    "nDet": 1589,
+    "ap": 0.3489,
+    "recall": 0.4094,
+    "deletionRate": 0.5906,
+    "hallucinationRate": 0.236
+   },
+   "bicycle": {
+    "nGt": 115,
+    "nDet": 71,
+    "ap": 0.1859,
+    "recall": 0.2609,
+    "deletionRate": 0.7391,
+    "hallucinationRate": 0.5775
+   },
+   "motorcycle": {
+    "nGt": 43,
+    "nDet": 24,
+    "ap": 0.0973,
+    "recall": 0.186,
+    "deletionRate": 0.814,
+    "hallucinationRate": 0.6667
+   }
+  },
+  "intersection": {
+   "vehicle": {
+    "nGt": 3167,
+    "nDet": 1834,
+    "ap": 0.4858,
+    "recall": 0.4992,
+    "deletionRate": 0.5008,
+    "hallucinationRate": 0.1379
+   },
+   "pedestrian": {
+    "nGt": 594,
+    "nDet": 305,
+    "ap": 0.4415,
+    "recall": 0.4529,
+    "deletionRate": 0.5471,
+    "hallucinationRate": 0.118
+   },
+   "bicycle": {
+    "nGt": 36,
+    "nDet": 10,
+    "ap": 0.216,
+    "recall": 0.2222,
+    "deletionRate": 0.7778,
+    "hallucinationRate": 0.2
+   },
+   "motorcycle": {
+    "nGt": 22,
+    "nDet": 10,
+    "ap": 0.298,
+    "recall": 0.3182,
+    "deletionRate": 0.6818,
+    "hallucinationRate": 0.3
+   }
+  },
+  "night": {
+   "vehicle": {
+    "nGt": 1418,
+    "nDet": 654,
+    "ap": 0.3936,
+    "recall": 0.4034,
+    "deletionRate": 0.5966,
+    "hallucinationRate": 0.1254
+   },
+   "pedestrian": {
+    "nGt": 111,
+    "nDet": 38,
+    "ap": 0.264,
+    "recall": 0.2793,
+    "deletionRate": 0.7207,
+    "hallucinationRate": 0.1842
+   },
+   "bicycle": {
+    "nGt": 8,
+    "nDet": 0,
+    "ap": 0.0,
+    "recall": 0.0,
+    "deletionRate": 1.0,
+    "hallucinationRate": null
+   },
+   "motorcycle": {
+    "nGt": 9,
+    "nDet": 3,
+    "ap": 0.1481,
+    "recall": 0.2222,
+    "deletionRate": 0.7778,
+    "hallucinationRate": 0.3333
+   }
+  },
+  "weather": {
+   "vehicle": {
+    "nGt": 1752,
+    "nDet": 1051,
+    "ap": 0.5108,
+    "recall": 0.524,
+    "deletionRate": 0.476,
+    "hallucinationRate": 0.1265
+   },
+   "pedestrian": {
+    "nGt": 305,
+    "nDet": 148,
+    "ap": 0.3757,
+    "recall": 0.3934,
+    "deletionRate": 0.6066,
+    "hallucinationRate": 0.1892
+   },
+   "bicycle": {
+    "nGt": 11,
+    "nDet": 0,
+    "ap": 0.0,
+    "recall": 0.0,
+    "deletionRate": 1.0,
+    "hallucinationRate": null
+   },
+   "motorcycle": {
+    "nGt": 10,
+    "nDet": 3,
+    "ap": 0.1667,
+    "recall": 0.2,
+    "deletionRate": 0.8,
+    "hallucinationRate": 0.3333
+   }
+  }
+ },
+ "clips": [
+  {
+   "clip": "baseline-midblock",
+   "scenarioClass": "baseline/midblock-pedestrian",
+   "matchedRealStrata": [
+    "dart-out",
+    "baseline"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": 1.0,
+     "deletionRate": null
+    },
+    "pedestrian": {
+     "apEngineFloor": 0.0758,
+     "apTranslated": 0.0258,
+     "apDelta": -0.05,
+     "recallEngineFloor": 0.0909,
+     "recallTranslated": 0.1136,
+     "hallucinationRate": 0.7826,
+     "deletionRate": 0.8864
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "bus-stop-emergence",
+   "scenarioClass": "dart-out/pedestrian",
+   "matchedRealStrata": [
+    "dart-out",
+    "baseline"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": 0.5,
+     "apTranslated": 0.0417,
+     "apDelta": -0.4583,
+     "recallEngineFloor": 0.5,
+     "recallTranslated": 0.125,
+     "hallucinationRate": 0.9841,
+     "deletionRate": 0.875
+    },
+    "pedestrian": {
+     "apEngineFloor": 0.6294,
+     "apTranslated": 0.126,
+     "apDelta": -0.5034,
+     "recallEngineFloor": 0.6429,
+     "recallTranslated": 0.1905,
+     "hallucinationRate": 0.7143,
+     "deletionRate": 0.8095
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "cutout-reveals-stopped",
+   "scenarioClass": "occlusion-longitudinal",
+   "matchedRealStrata": [
+    "cut-in",
+    "baseline"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": 0.0,
+     "apTranslated": 0.4306,
+     "apDelta": 0.4306,
+     "recallEngineFloor": 0.0,
+     "recallTranslated": 0.4917,
+     "hallucinationRate": 0.7065,
+     "deletionRate": 0.5083
+    },
+    "pedestrian": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "fog-midblock",
+   "scenarioClass": "weather-proxy",
+   "matchedRealStrata": [
+    "weather"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": 1.0,
+     "deletionRate": null
+    },
+    "pedestrian": {
+     "apEngineFloor": 0.0514,
+     "apTranslated": 0.0,
+     "apDelta": -0.0514,
+     "recallEngineFloor": 0.0909,
+     "recallTranslated": 0.0,
+     "hallucinationRate": 1.0,
+     "deletionRate": 1.0
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "lane-drop-merge",
+   "scenarioClass": "merge",
+   "matchedRealStrata": [
+    "cut-in",
+    "baseline"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": 0.0,
+     "apTranslated": 0.0,
+     "apDelta": 0.0,
+     "recallEngineFloor": 0.0,
+     "recallTranslated": 0.0,
+     "hallucinationRate": 1.0,
+     "deletionRate": 1.0
+    },
+    "pedestrian": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "night-rain-merge",
+   "scenarioClass": "night-proxy",
+   "matchedRealStrata": [
+    "night"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": 1.0,
+     "deletionRate": null
+    },
+    "pedestrian": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": 1.0,
+     "deletionRate": null
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "parked-row-dartout",
+   "scenarioClass": "dart-out/pedestrian",
+   "matchedRealStrata": [
+    "dart-out"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": 0.0,
+     "apTranslated": 0.0,
+     "apDelta": 0.0,
+     "recallEngineFloor": 0.0,
+     "recallTranslated": 0.0,
+     "hallucinationRate": 1.0,
+     "deletionRate": 1.0
+    },
+    "pedestrian": {
+     "apEngineFloor": 0.6155,
+     "apTranslated": 0.7615,
+     "apDelta": 0.146,
+     "recallEngineFloor": 0.619,
+     "recallTranslated": 0.8095,
+     "hallucinationRate": 0.2917,
+     "deletionRate": 0.1905
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "school-parked-row-dartout",
+   "scenarioClass": "dart-out/pedestrian",
+   "matchedRealStrata": [
+    "dart-out"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": 1.0,
+     "deletionRate": null
+    },
+    "pedestrian": {
+     "apEngineFloor": 0.5485,
+     "apTranslated": 0.5981,
+     "apDelta": 0.0496,
+     "recallEngineFloor": 0.561,
+     "recallTranslated": 0.6341,
+     "hallucinationRate": 0.2778,
+     "deletionRate": 0.3659
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "signal-red-light",
+   "scenarioClass": "intersection",
+   "matchedRealStrata": [
+    "intersection"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": 1.0,
+     "deletionRate": null
+    },
+    "pedestrian": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": 1.0,
+     "deletionRate": null
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  },
+  {
+   "clip": "workzone-lane-shift",
+   "scenarioClass": "construction-zone",
+   "matchedRealStrata": [
+    "cut-in",
+    "intersection"
+   ],
+   "framesEvaluated": 60,
+   "perClass": {
+    "vehicle": {
+     "apEngineFloor": 0.0333,
+     "apTranslated": 0.0,
+     "apDelta": -0.0333,
+     "recallEngineFloor": 0.0333,
+     "recallTranslated": 0.0,
+     "hallucinationRate": 1.0,
+     "deletionRate": 1.0
+    },
+    "pedestrian": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "bicycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    },
+    "motorcycle": {
+     "apEngineFloor": null,
+     "apTranslated": null,
+     "apDelta": null,
+     "recallEngineFloor": null,
+     "recallTranslated": null,
+     "hallucinationRate": null,
+     "deletionRate": null
+    }
+   }
+  }
+ ],
+ "summary": {
+  "perClass": {
+   "vehicle": {
+    "apDeltaMean": -0.0122,
+    "apTranslatedMean": 0.0945,
+    "apEngineFloorMean": 0.1067,
+    "recallTranslatedMean": 0.1233,
+    "recallEngineFloorMean": 0.1067,
+    "hallucinationRateMean": 0.9691,
+    "deletionRateMean": 0.8767
+   },
+   "pedestrian": {
+    "apDeltaMean": -0.0818,
+    "apTranslatedMean": 0.3023,
+    "apEngineFloorMean": 0.3841,
+    "recallTranslatedMean": 0.3495,
+    "recallEngineFloorMean": 0.4009,
+    "hallucinationRateMean": 0.7238,
+    "deletionRateMean": 0.6505
+   },
+   "bicycle": {
+    "apDeltaMean": null,
+    "apTranslatedMean": null,
+    "apEngineFloorMean": null,
+    "recallTranslatedMean": null,
+    "recallEngineFloorMean": null,
+    "hallucinationRateMean": null,
+    "deletionRateMean": null
+   },
+   "motorcycle": {
+    "apDeltaMean": null,
+    "apTranslatedMean": null,
+    "apEngineFloorMean": null,
+    "recallTranslatedMean": null,
+    "recallEngineFloorMean": null,
+    "hallucinationRateMean": null,
+    "deletionRateMean": null
+   }
+  }
+ },
+ "perClass": {
+  "vehicle": {
+   "ap": 0.0945,
+   "recall": 0.1233,
+   "apDeltaVsEngineFloor": -0.0122
+  },
+  "pedestrian": {
+   "ap": 0.3023,
+   "recall": 0.3495,
+   "apDeltaVsEngineFloor": -0.0818
+  },
+  "bicycle": {
+   "ap": null,
+   "recall": null,
+   "apDeltaVsEngineFloor": null
+  },
+  "motorcycle": {
+   "ap": null,
+   "recall": null,
+   "apDeltaVsEngineFloor": null
+  }
+ },
+ "hallucinationRate": 0.8681,
+ "deletionRate": 0.7636,
+ "verdict": {
+  "result": "fail",
+  "reasons": [
+   "hallucination 0.8681 > 0.25",
+   "pedestrian deletion 0.6505 > 0.35"
+  ],
+  "gate": "bridge-gate.v1"
+ }
+}

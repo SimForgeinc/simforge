@@ -32,3 +32,8 @@ __pycache__/
 
 # Catalog execution attempt work trees are re-derivable from ledgers + seeds.
 catalog/*.json.work/
+
+# WS1 RealityAnchor: raw eval-corpus downloads (BDD100K images, nuScenes
+# samples) and detector work caches are re-derivable from the committed
+# corpus-manifest.v1.json per-item sha256 values; only the manifest is versioned.
+tools/bridge-fidelity/.corpus/
