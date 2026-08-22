@@ -10,4 +10,9 @@
 //!
 //! The `native-render` binary is the spike application verbatim at this
 //! commit; scene-state playback, actor meshes and the motion-vector pass are
-//! added on top in subsequent commits.
+
+// WSB4 RealismStack: lighting ladder, weather ladder, render profiles, post.
+pub mod lighting;
+pub mod post_grain;
+pub mod profiles;
+pub mod weather;

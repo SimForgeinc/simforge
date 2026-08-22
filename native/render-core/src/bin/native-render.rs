@@ -6,7 +6,7 @@
 //!
 //! Asset loading: BEVY_ASSET_ROOT is set to "/" so absolute GLB paths load
 //! as plain file paths ("home/path/...").
-use anyhow::{bail, Result};
+use anyhow::{bail, Context as _, Result};
 use bevy::app::{AppExit, ScheduleRunnerPlugin};
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera::RenderTarget;
@@ -33,6 +33,10 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
+
+use render_core::lighting::{self, LightingRung};
+use render_core::profiles::RenderProfile;
+use render_core::weather::{self as weather_mod, Weather};
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -98,6 +102,28 @@ struct Args {
     /// Output directory for sequence frames (frame-%04d.png).
     #[arg(long)]
     seq_out_dir: Option<String>,
+    /// Lighting foundation ladder rung 0-5 (0=spike baseline, 1=IBL sky,
+    /// 2=physical sun/EV100, 3=GTAO+contact shadows, 4=PCSS, 5=Solari GI).
+    #[arg(long, default_value_t = 2)]
+    rung: u8,
+    /// Render profile: sensor (linear, fixed EV100) or cinematic (full stack).
+    #[arg(long, default_value = "sensor")]
+    profile: String,
+    /// Weather state: clear | fog | rain | night.
+    #[arg(long, default_value = "clear")]
+    weather: String,
+    /// HDRI for the sky/IBL (equirectangular .hdr).
+    #[arg(long, default_value = "/home/path/local-uniscenarios/maps/yale-street/browser/3d/env/sky.hdr")]
+    sky: String,
+    /// Enable SSR (deferred path) — rain wet-road reflections experiment.
+    #[arg(long, default_value_t = false)]
+    ssr: bool,
+    /// Cinematic: temporal anti-aliasing.
+    #[arg(long, default_value_t = false)]
+    taa: bool,
+    /// Cinematic film-grain intensity (0 disables).
+    #[arg(long, default_value_t = 0.06)]
+    grain: f32,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -260,6 +286,8 @@ fn main() -> Result<()> {
         frames_override = Some(poses.len() as u32);
     }
 
+    let weather = Weather::parse(&args.weather)?;
+    let profile = RenderProfile::parse(&args.profile)?;
     let mut app = App::new();
     app.insert_resource(ClearColor(Color::srgb(0.53, 0.74, 0.92)))
         .add_plugins((
@@ -281,14 +309,13 @@ fn main() -> Result<()> {
                 }),
             ScheduleRunnerPlugin::run_loop(Duration::ZERO),
         ))
-        .insert_resource(GlobalAmbientLight {
-            color: Color::srgb(1.0, 0.98, 0.94),
-            brightness: args.ambient,
-            affects_lightmapped_meshes: true,
-        })
+        .insert_resource(weather)
+        .insert_resource(profile)
         .insert_resource(DirectionalLightShadowMap { size: 2048 })
+        .add_plugins(bevy::post_process::auto_exposure::AutoExposurePlugin)
         .insert_resource(MainReceiver(rx))
         .insert_resource(args.clone())
+        .init_resource::<WetnessApplied>()
         .insert_resource(match &seq_frames {
             Some((poses, dir)) => SeqMode {
                 poses: poses.clone(),
@@ -322,6 +349,7 @@ fn main() -> Result<()> {
         .add_systems(Startup, startup_setup)
         .add_systems(Update, (check_assets, poll_roots))
         .add_systems(Update, (build_id_pass, advance_seq_pose, tick_frames).chain())
+        .add_systems(Update, (apply_wetness_once, attach_fog_sun))
         .add_systems(PostUpdate, collect_passes);
 
     let render_app = app.get_sub_app_mut(RenderApp).unwrap();
@@ -342,28 +370,40 @@ fn startup_setup(
     mut commands: Commands,
     args: Res<Args>,
     mut images: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    weather: Res<Weather>,
+    profile: Res<RenderProfile>,
     device: Res<RenderDevice>,
     server: Res<AssetServer>,
 ) {
-    commands.spawn((
-        DirectionalLight {
-            illuminance: args.lux,
-            shadow_maps_enabled: true,
-            ..default()
-        },
-        CascadeShadowConfigBuilder {
-            minimum_distance: 1.0,
-            maximum_distance: 400.0,
-            num_cascades: 4,
-            ..default()
-        }
-        .build(),
-        Transform::IDENTITY.looking_to(sun_direction(args.sun_elev, args.sun_azim), Vec3::Y),
-    ));
+    let rung = LightingRung(args.rung);
+    let plan = weather.lighting_plan(None);
+
+    // WSB4 lighting ladder (see render_core::lighting).
+    let sky = lighting::spawn_lighting(
+        &mut commands,
+        &mut images,
+        rung,
+        &plan,
+        sun_direction(args.sun_elev, args.sun_azim),
+        400.0,
+        &args.sky,
+        (args.lux, if rung.ibl() { 0.0 } else { args.ambient }),
+    )
+    .unwrap_or_else(|e| panic!("WSB4 lighting/sky setup failed: {e:#}"));
 
     let eye = Vec3::from_slice(&args.eye);
     let target = Vec3::from_slice(&args.target);
     let fwd = (target - eye).normalize();
+
+    match *weather {
+        Weather::Fog => weather_mod::spawn_fog(&mut commands, eye, fwd, 48),
+        Weather::Night => weather_mod::spawn_streetlights(
+            &mut commands, &mut meshes, &mut materials, eye, fwd,
+        ),
+        _ => {}
+    }
 
     let size = Extent3d {
         width: args.width,
@@ -411,6 +451,29 @@ fn startup_setup(
             ));
             e.id()
         };
+        // WSB4 render profile (sensor|cinematic) on the RGB view only; the
+        // instance-ID view stays exactly as the spike had it.
+        profile.apply(
+            &mut commands,
+            cam_id,
+            *weather,
+            sky.clone(),
+            plan.skybox_brightness,
+            args.ssr,
+            args.taa,
+            args.grain,
+        );
+        if LightingRung(args.rung).ao_contact() {
+            lighting::apply_camera_ao(&mut commands, cam_id);
+        }
+        if *weather == Weather::Fog {
+            commands.entity(cam_id).insert(bevy::light::VolumetricFog {
+                ambient_color: Color::srgb(0.75, 0.8, 0.88),
+                ambient_intensity: 0.35,
+                jitter: 0.0,
+                step_count: 48,
+            });
+        }
 
         if c == 0 {
             commands.entity(cam_id).insert(CameraMarker);
@@ -518,7 +581,7 @@ fn build_id_pass(
     mut commands: Commands,
     args: Res<Args>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    meshes_q: Query<
+    mut meshes_q: Query<
         (
             Entity,
             &Mesh3d,
@@ -688,7 +751,9 @@ fn collect_passes(
         }
         if !seq_active && state.captured_triples == args.frames as u64 {
             // Save outputs from the final frame's passes.
-            save_outputs(&args, passes.iter().map(|p| (&p.key, &p.data)));
+            let grain = if args.profile.eq_ignore_ascii_case("cinematic") { args.grain } else { 0.0 };
+            let seed = f as f32;
+            save_outputs(&args, passes.iter().map(|p| (&p.key, &p.data)), grain, seed);
             write_timings(&args, &state);
             state.saved = true;
             exit.write(AppExit::Success);
@@ -710,16 +775,77 @@ fn strip_padding(data: &[u8], width: usize, height: usize, pixel: usize) -> Vec<
         .collect()
 }
 
+/// Deterministic monochrome film grain (same hash13 math as the WGSL
+/// prototype), applied on the CPU readback for the cinematic profile. Seeded
+/// by pixel coordinates + capture frame — no wall-clock input.
+fn apply_cpu_grain(
+    rgba: &mut [u8],
+    width: usize,
+    height: usize,
+    intensity: f32,
+    seed: f32,
+) {
+    #[inline]
+    fn hash13(px: f32, py: f32, frame: f32) -> f32 {
+        let mut p = [
+            (px * 0.1031).fract(),
+            (py * 0.1030).fract(),
+            (frame * 0.0973).fract(),
+        ];
+        let dot = p[0] * (p[1] + 33.33) + p[1] * (p[2] + 33.33) + p[2] * (p[0] + 33.33);
+        p[0] += dot;
+        p[1] += dot;
+        p[2] += dot;
+        ((p[0] + p[1]) * p[2]).fract()
+    }
+    #[inline]
+    fn smoothstep(e0: f32, e1: f32, x: f32) -> f32 {
+        let t = ((x - e0) / (e1 - e0)).clamp(0.0, 1.0);
+        t * t * (3.0 - 2.0 * t)
+    }
+    if intensity <= 0.0 {
+        return;
+    }
+    for py in 0..height {
+        for pxx in 0..width {
+            let idx = (py * width + pxx) * 4;
+            let (r, g, b) = (
+                rgba[idx] as f32 / 255.0,
+                rgba[idx + 1] as f32 / 255.0,
+                rgba[idx + 2] as f32 / 255.0,
+            );
+            let luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            let weight = mix2(0.65, 1.0, smoothstep(0.0, 0.5, luma))
+                * mix2(1.0, 0.55, smoothstep(0.6, 1.0, luma));
+            let n = hash13(pxx as f32 + 0.5, py as f32 + 0.5, seed + 1.0);
+            let grain = (n - 0.5) * 2.0 * intensity * weight;
+            for c in 0..3 {
+                let v = rgba[idx + c] as f32 / 255.0 + grain;
+                rgba[idx + c] = (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
+            }
+        }
+    }
+}
+#[inline]
+fn mix2(a: f32, b: f32, t: f32) -> f32 {
+    a + (b - a) * t
+}
+
 fn save_outputs<'a>(
     args: &Args,
     passes: impl Iterator<Item = (&'a String, &'a Vec<u8>)>,
+    grain_intensity: f32,
+    grain_seed: f32,
 ) {
     let w = args.width as usize;
     let h = args.height as usize;
     for (key, data) in passes {
         match key.as_str() {
             k if k.starts_with("rgb") || k == "id0" => {
-                let raw = strip_padding(data, w, h, 4);
+                let mut raw = strip_padding(data, w, h, 4);
+                if grain_intensity > 0.0 && k.starts_with("rgb") {
+                    apply_cpu_grain(&mut raw, w, h, grain_intensity, grain_seed);
+                }
                 let img = image::RgbaImage::from_raw(w as u32, h as u32, raw)
                     .expect("rgba image");
                 let suffix = if k == "id0" { "id" } else { k };
@@ -800,6 +926,56 @@ fn write_timings(args: &Args, state: &SpikeState) {
     )
     .expect("write timings");
     println!("TIMINGS {}", timings);
+}
+
+// ------------------------- WSB4 realism-stack systems ----------------------
+
+#[derive(Resource, Default)]
+struct WetnessApplied(bool);
+
+/// Fog needs the sun to be a volumetric light for visible shafts.
+fn attach_fog_sun(
+    weather: Res<Weather>,
+    suns: Query<Entity, (With<DirectionalLight>, With<render_core::lighting::VolumetricLightMarker>)>,
+    mut commands: Commands,
+) {
+    if *weather != Weather::Fog {
+        return;
+    }
+    for e in &suns {
+        commands.entity(e).insert(bevy::light::VolumetricLight);
+    }
+}
+
+/// Rain: apply the wet-road reflectance ramp once the scene is spawned.
+fn apply_wetness_once(
+    weather: Res<Weather>,
+    state: Option<Res<SpikeState>>,
+    mut wet: ResMut<WetnessApplied>,
+    mut meshes_q: Query<
+        (
+            Entity,
+            Option<&Name>,
+            Option<&ChildOf>,
+            &Mesh3d,
+            &MeshMaterial3d<StandardMaterial>,
+        ),
+    >,
+    names_q: Query<&Name>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    if wet.0 || *weather != Weather::Rain {
+        return;
+    }
+    let Some(state) = state.as_ref() else {
+        return;
+    };
+    if state.build_ready_at.is_none() {
+        return;
+    }
+    let touched = weather_mod::apply_wetness(1.0, &mut meshes_q, &names_q, &mut materials);
+    println!("WETNESS applied to {touched} road material(s)");
+    wet.0 = true;
 }
 
 // --------------------------- render world ---------------------------------
