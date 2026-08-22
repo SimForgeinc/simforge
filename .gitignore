@@ -23,3 +23,12 @@ campaigns/**/work/*.match.json
 
 # Python bytecode from running the adapter test suite locally.
 __pycache__/
+.pytest_cache/
+.venv/
+
+# Stray runtime logs and packed npm artifacts.
+*.log
+*.tgz
+
+# Catalog execution attempt work trees are re-derivable from ledgers + seeds.
+catalog/*.json.work/
