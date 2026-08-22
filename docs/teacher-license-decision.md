@@ -144,7 +144,22 @@ auditor gates every teacher's outputs identically regardless of source.
 
 — WS3Bridge, 2026-08-22
 
-## 6. Technical disqualifier — IsolationX factor-matrix verdict (independent of law)
+## 6. Technical disqualifier — IsolationX factor-matrix verdict (UNDER RE-EVALUATION)
+
+**Status 2026-08-22 (PM), per Main:** the official H3 website produced
+scene-preserving weather translation on an uploaded driving video, while our
+harness passed the source clip as `{type:"video", role:"reference"}` beside
+style images (`simforge1:~/h3-teacher/h3_smoke.sh`) — which likely conditions
+style, not content. The E1 "fundamentally re-generative" conclusion may
+therefore be a **payload bug, not a model property**. A dedicated lane
+(H3Reproduce) is enumerating the SGLang request schema and running a payload
+matrix scored with WS1's frozen detector; its verdict will supersede this
+section. Until then the evidence below stands as recorded, and Wan 2.2 work
+continues in parallel — a **two-teacher outcome is plausible**.
+The license analysis (§2) is unaffected by this: it is an independent,
+dispositive gate regardless of how well H3 performs technically.
+
+Evidence as originally recorded (2026-08-22, AM):
 
 Independent of the license analysis, the V2 isolation experiments
 (`simforge1:~/w0-exp/V2_RESULTS.md`, run 2026-08-22) disqualify zero-shot H3
@@ -161,9 +176,18 @@ Ref2VA edit-mode as a teacher on *technical* grounds:
   phrasing / combo): best combined result reached only near-field recall
   **0.732** and IoU≥0.5 **0.158** against the 90% kill gate; pedestrians are
   systematically deleted or displaced.
+- **Measured disqualifier (WS1 RealityAnchor scorecard)**:
+  `tools/bridge-fidelity/bridge-fidelity-scorecard.w0-h3-pov.v1.json`
+  (schema `uniscenarios.bridge-fidelity-scorecard.v1`, frozen yolo11s,
+  corpusHash 3e67a6b5…): H3 Ref2VA dashcam-POV W0 set verdict **FAIL** under
+  bridge-gate.v1 — hallucination rate **0.87** (gate ≤0.25), pedestrian
+  deletion **0.65** (gate ≤0.35) against the real-frame corpus
+  (1760 BDD10k+nuScenes frames). Provenance caveat: W0 engine frames were
+  SwiftShader-rendered; floors carry that until WS4 pins render hardware.
 
 Consequence recorded here because it gates teacher choice too: even if
 MiniMax granted territory/distillation terms, H3 would remain unusable as a
 zero-shot observation bridge, and dense G-buffer conditioning in the student
 (plan WS3 item 1) is mandatory rather than optional. Wan 2.2 is therefore
 primary on both legal AND technical grounds.
+

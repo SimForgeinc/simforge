@@ -49,8 +49,9 @@ def box_area(b) -> float:
     return max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1])
 
 
-def audit_clip(gt_frames: list[dict], det_frames: dict[str, dict], cfg: dict) -> dict:
-    """gt_frames: list of {frame, boxes:[...]}; det_frames: file-> {dets:[...]}."""
+def audit_clip(gt_frames: list[dict], det_frames: dict, cfg: dict, clip: str = "") -> dict:
+    """gt_frames: list of {frame, boxes:[...]}; det_frames: key-> {dets:[...]}
+    where key is '<clip>/<NNNNN>.png' or bare '<NNNNN>.png'."""
     total_gt = deleted_gt = deleted_gt_near = total_near = 0
     total_det_hi = halluc_det = 0
     supported = matched_dets = 0
@@ -58,13 +59,13 @@ def audit_clip(gt_frames: list[dict], det_frames: dict[str, dict], cfg: dict) ->
 
     for fr in gt_frames:
         fidx = fr["frame"]
-        fname = f"{fidx:05d}.png"
-        dets = det_frames.get(fname, {}).get("dets", [])
+        prefix = f"{clip}/" if clip else ""
+        fname = f"{prefix}{fidx:05d}.png"
+        hit = det_frames.get(fname) or det_frames.get(f"{fidx:05d}.png") or {"dets": []}
+        dets = hit.get("dets", []) if isinstance(hit, dict) else list(hit)
         gt_boxes = [
             b for b in fr.get("boxes", [])
             if b.get("in_frame") and b.get("visible")
-            and b["kind"] in SAFETY_KINDS
-            and box_area(b["bbox_xyxy"]) >= cfg.min_gt_area_px2
         ]
         near_boxes = [b for b in gt_boxes if b.get("dist_m", 1e9) <= cfg.near_m]
         dets_hi = [d for d in dets if d["conf"] >= cfg.halluc_conf_min]
@@ -209,8 +210,11 @@ def main(argv=None):
             gt = json.load(f)
         with open(det_path) as f:
             det = json.load(f)
-        det_by_file = {d["file"]: d for d in det["detections"]}
-        res = audit_clip(gt["frames"], det_by_file, cfg)
+        det_by_key = {}
+        for d in det["detections"]:
+            key = f"{d['clip']}/{d['file']}" if "clip" in d else d["file"]
+            det_by_key[key] = d
+        res = audit_clip(gt["frames"], det_by_key, cfg, clip=clip)
         report["clips"][clip] = res
         n_reject += int(res["reject"])
         status = "REJECT" if res["reject"] else "accept"

@@ -1,0 +1,211 @@
+{
+  "schema": "uniscenarios.bridge-auditor.v1",
+  "frozen_detector": {
+    "name": "yolo11s",
+    "weights_sha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+    "conf": 0.25,
+    "iou": 0.5,
+    "classes": [
+      "car",
+      "truck",
+      "bus",
+      "person",
+      "bicycle",
+      "motorcycle"
+    ]
+  },
+  "thresholds": {
+    "iou_tau": 0.25,
+    "near_m": 60.0,
+    "min_gt_area_px2": 60.0,
+    "halluc_conf_min": 0.5,
+    "halluc_iou_support": 0.1,
+    "min_halluc_area_px2": 200.0,
+    "max_near_deletion_rate": 0.3,
+    "max_halluc_frame_frac": 0.25,
+    "min_supported_fraction": 0.1
+  },
+  "clips": {
+    "baseline-midblock": {
+      "frames": 60,
+      "total_gt": 60,
+      "deleted_gt": 60,
+      "total_near": 41,
+      "deleted_gt_near": 41,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3"
+      ]
+    },
+    "bus-stop-emergence": {
+      "frames": 60,
+      "total_gt": 42,
+      "deleted_gt": 42,
+      "total_near": 42,
+      "deleted_gt_near": 42,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3"
+      ]
+    },
+    "cutout-reveals-stopped": {
+      "frames": 60,
+      "total_gt": 60,
+      "deleted_gt": 60,
+      "total_near": 57,
+      "deleted_gt_near": 57,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3"
+      ]
+    },
+    "fog-midblock": {
+      "frames": 60,
+      "total_gt": 60,
+      "deleted_gt": 60,
+      "total_near": 41,
+      "deleted_gt_near": 41,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3"
+      ]
+    },
+    "lane-drop-merge": {
+      "frames": 60,
+      "total_gt": 0,
+      "deleted_gt": 0,
+      "total_near": 0,
+      "deleted_gt_near": 0,
+      "deletion_rate": 0.0,
+      "near_deletion_rate": 0.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": false,
+      "reasons": []
+    },
+    "night-rain-merge": {
+      "frames": 60,
+      "total_gt": 0,
+      "deleted_gt": 0,
+      "total_near": 0,
+      "deleted_gt_near": 0,
+      "deletion_rate": 0.0,
+      "near_deletion_rate": 0.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": false,
+      "reasons": []
+    },
+    "parked-row-dartout": {
+      "frames": 60,
+      "total_gt": 120,
+      "deleted_gt": 120,
+      "total_near": 97,
+      "deleted_gt_near": 97,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3"
+      ]
+    },
+    "school-parked-row-dartout": {
+      "frames": 60,
+      "total_gt": 120,
+      "deleted_gt": 120,
+      "total_near": 99,
+      "deleted_gt_near": 99,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3"
+      ]
+    },
+    "signal-red-light": {
+      "frames": 60,
+      "total_gt": 0,
+      "deleted_gt": 0,
+      "total_near": 0,
+      "deleted_gt_near": 0,
+      "deletion_rate": 0.0,
+      "near_deletion_rate": 0.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": false,
+      "reasons": []
+    },
+    "workzone-lane-shift": {
+      "frames": 60,
+      "total_gt": 51,
+      "deleted_gt": 51,
+      "total_near": 51,
+      "deleted_gt_near": 51,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 0,
+      "supported_detections": 0,
+      "hallucinated_detections": 0,
+      "hallucination_frame_fraction": 0.0,
+      "supported_detection_fraction": null,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3"
+      ]
+    }
+  },
+  "aggregate": {
+    "clips_audited": 10,
+    "clips_rejected": 7,
+    "rejection_rate": 0.7,
+    "gate_max_rejection_rate": 0.2,
+    "gate_passed": false
+  }
+}

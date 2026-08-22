@@ -16,14 +16,14 @@ import os
 import numpy as np
 import torch
 from PIL import Image
-from diffusers import ControlNetModel, DDIMScheduler
+from diffusers import ControlNetModel, EulerAncestralDiscreteScheduler
 from .dataset import BridgePairDataset
 from .model import build_controlnet, encode_prompt, load_base
 
 
 def parse_args(argv=None):
     p = argparse.ArgumentParser()
-
+    p.add_argument("--ckpt", required=True)
 
     p.add_argument("--clips-root", required=True)
     p.add_argument("--teacher-root", default=None)
@@ -42,12 +42,13 @@ def main(argv=None):
     args = parse_args(argv)
     device = "cuda"
     os.makedirs(args.out, exist_ok=True)
+    unet, vae, text_encoder, tokenizer = load_base(args.base, device, torch.float16)
     controlnet = build_controlnet(unet).to(device, dtype=torch.float16)
     state = ControlNetModel.from_pretrained(args.ckpt).state_dict()
     controlnet.load_state_dict(state)
     controlnet = controlnet.eval()
 
-    sched = DDIMScheduler.from_config(args.base, subfolder="scheduler", timestep_spacing="trailing")
+    sched = EulerAncestralDiscreteScheduler.from_config(args.base, subfolder="scheduler", timestep_spacing="trailing")
     prompt_emb = encode_prompt(text_encoder, tokenizer, args.prompt, device)
 
     ds = BridgePairDataset(clips_root=args.clips_root, teacher_root=args.teacher_root,

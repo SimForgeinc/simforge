@@ -1,0 +1,118 @@
+{
+  "schema": "uniscenarios.bridge-pair-inventory.v1",
+  "sources": {
+    "/home/ubuntu/w0-data/clips-pov": {
+      "kind": "render-clips",
+      "clips": {
+        "baseline-midblock": {
+          "frames": 60
+        },
+        "bus-stop-emergence": {
+          "frames": 60
+        },
+        "cutout-reveals-stopped": {
+          "frames": 60
+        },
+        "fog-midblock": {
+          "frames": 60
+        },
+        "lane-drop-merge": {
+          "frames": 60
+        },
+        "night-rain-merge": {
+          "frames": 60
+        },
+        "parked-row-dartout": {
+          "frames": 60
+        },
+        "school-parked-row-dartout": {
+          "frames": 60
+        },
+        "signal-red-light": {
+          "frames": 60
+        },
+        "workzone-lane-shift": {
+          "frames": 60
+        }
+      },
+      "frames": 600
+    },
+    "/home/ubuntu/w0-data/translated-pov": {
+      "kind": "translated-video",
+      "clips": [
+        "baseline-midblock",
+        "bus-stop-emergence",
+        "cutout-reveals-stopped",
+        "fog-midblock",
+        "lane-drop-merge",
+        "night-rain-merge",
+        "parked-row-dartout",
+        "school-parked-row-dartout",
+        "signal-red-light",
+        "workzone-lane-shift"
+      ]
+    },
+    "/home/ubuntu/w0-data/translated": {
+      "kind": "translated-video",
+      "clips": [
+        "baseline-midblock",
+        "bus-stop-emergence",
+        "cutout-reveals-stopped",
+        "fog-midblock",
+        "lane-drop-merge",
+        "night-rain-merge",
+        "parked-row-dartout",
+        "school-parked-row-dartout",
+        "signal-red-light",
+        "workzone-lane-shift"
+      ]
+    },
+    "/home/ubuntu/ws3-bridge/teacher-frames": {
+      "kind": "teacher-frames",
+      "clips": {
+        "baseline-midblock": 60,
+        "bus-stop-emergence": 60,
+        "cutout-reveals-stopped": 60,
+        "fog-midblock": 60,
+        "lane-drop-merge": 60,
+        "night-rain-merge": 60,
+        "parked-row-dartout": 60,
+        "school-parked-row-dartout": 60,
+        "signal-red-light": 60,
+        "workzone-lane-shift": 60
+      },
+      "frames": 600
+    },
+    "/home/ubuntu/ws3-bridge/h3-pov-frames": {
+      "kind": "teacher-frames",
+      "clips": {
+        "baseline-midblock": 60,
+        "bus-stop-emergence": 60,
+        "cutout-reveals-stopped": 60,
+        "fog-midblock": 60,
+        "lane-drop-merge": 60,
+        "night-rain-merge": 60,
+        "parked-row-dartout": 60,
+        "school-parked-row-dartout": 60,
+        "signal-red-light": 60,
+        "workzone-lane-shift": 60
+      },
+      "frames": 600
+    }
+  },
+  "totals": {
+    "render_frames": 600,
+    "teacher_videos": 20,
+    "teacher_frames_extracted": 1200,
+    "aligned_pairs_now": 600
+  },
+  "scale_out": {
+    "target_pairs": 100000,
+    "clips_needed_60f": 1667,
+    "wan_seconds_per_clip_measured": 257.4,
+    "wan_clip_gpu_seconds": 257.4,
+    "wan_generation_gpu_days_4xa100": 1.24,
+    "h3_reference_gpu_days_4xa100_forbidden": 4.32,
+    "render_wall_hours_local_gpu": 55.6
+  }
+}

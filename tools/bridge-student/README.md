@@ -112,3 +112,27 @@ above deliberately stops at per-frame v0; the AR upgrade lands as
 Run `inventory.py` after each new batch of teacher generations; the committed
 `reports/inventory.json` records measured constants (H3 reference latency,
 Wan latency once measured) and the GPU-day cost of reaching 100k pairs.
+
+## v0 run findings (2026-08-22, honest record)
+
+Run `runs/v0-wan-teacher` on simforge1 (GPU4): 480 train / 120 val pairs
+(Wan 2.2 teacher targets), 1500 steps @ batch 4, 384², lr 1e-5.
+Loss curve `reports/runs/v0-wan-teacher/loss.jsonl`: 0.056 -> 0.005
+(eps-MSE), ~0.285 s/step on A100.
+
+Outcome: per-step eps predictions validate on held-out clips
+(t=750 mse 0.023, t=500 0.103, t=250 0.347), BUT multi-step few-step
+sampling collapses to a flat field. Controls performed:
+- canonical `StableDiffusionControlNetPipeline` (4/8/30 steps, capped
+  timesteps): same collapse;
+- RANDOM-INIT ControlNet through our own manual DDIM/EulerA loop:
+  perfect sd-turbo street scene => sampler and wiring are correct;
+  the trained adapter itself causes the collapse.
+
+Diagnosis (ranked): eps-MSE-only objective on 600 near-duplicate frames
+lets the adapter satisfy the loss by memorized x0-regression that is
+unstable off the training manifold; no val-loss gate was wired; bf16-autocast
+train / fp16-infer mismatch unverified. Next levers (in order):
+paired single/few-step REGRESSION distillation against teacher frames
+(L2+LPIPS, DMD/CausVid-family) instead of pure eps-MSE; min-SNR timestep
+weighting; val-loss early stop; mixed-precision parity check.

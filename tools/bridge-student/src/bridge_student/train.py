@@ -91,9 +91,9 @@ def make_preview_grid(images: torch.Tensor, conds: torch.Tensor, targets: torch.
 
 def sample_preview(controlnet, unet, vae, prompt_emb, batch, args, device, generator):
     """Few-step deterministic preview using the frozen base's scheduler family."""
-    from diffusers import DDIMScheduler
+    from diffusers import EulerAncestralDiscreteScheduler
 
-    sched = DDIMScheduler.from_config(
+    sched = EulerAncestralDiscreteScheduler.from_config(
         "stabilityai/sd-turbo", subfolder="scheduler",
         timestep_spacing="trailing", rescale_betas_zero_snr=False,
     )
@@ -154,6 +154,10 @@ def main(argv=None):
 
     prompt_emb = encode_prompt(text_encoder, tokenizer, args.prompt, device)
 
+    from diffusers import DDPMScheduler
+
+    noise_sched = DDPMScheduler.from_pretrained(args.base, subfolder="scheduler")
+
     opt = torch.optim.AdamW(controlnet.parameters(), lr=args.lr, weight_decay=1e-2)
     n_trainable = sum(p.numel() for p in controlnet.parameters() if p.requires_grad)
     print(f"trainable params: {n_trainable/1e6:.1f}M", flush=True)
@@ -179,7 +183,7 @@ def main(argv=None):
                     ts = (u ** 2 * 980 + 20).long().clamp(0, 999)
                 else:
                     ts = torch.randint(20, 981, (latents.shape[0],), device=device)
-                noisy = (latents.float() + noise).to(dtype)
+                noisy = noise_sched.add_noise(latents.float(), noise, ts).to(dtype)
                 ehs = prompt_emb.expand(latents.shape[0], -1, -1).to(dtype)
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 pred = controlnet_forward(controlnet, unet, noisy, ts, ehs, cond.to(dtype))
@@ -198,9 +202,8 @@ def main(argv=None):
                 controlnet.eval()
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     grid = sample_preview(controlnet, unet, vae, prompt_emb, batch, args, device, gen)
-                grid_np = (grid.float().cpu().numpy().transpose(0, 2, 3, 1) * 255).astype(np.uint8)
-                Image.fromarray(np.concatenate(list(grid_np), axis=1)).save(
-                    os.path.join(samples_dir, f"step_{step:06d}.png"))
+                grid = make_preview_grid(grid, batch["cond"], batch["target"])
+                grid.save(os.path.join(samples_dir, f"step_{step:06d}.png"))
                 controlnet.train()
             if step % args.ckpt_interval == 0 or step == args.steps:
                 controlnet.save_pretrained(ckpt_dir, safe_serialization=True)

@@ -1,0 +1,217 @@
+{
+  "schema": "uniscenarios.bridge-auditor.v1",
+  "frozen_detector": {},
+  "thresholds": {
+    "iou_tau": 0.25,
+    "near_m": 60.0,
+    "min_gt_area_px2": 60.0,
+    "halluc_conf_min": 0.5,
+    "halluc_iou_support": 0.1,
+    "min_halluc_area_px2": 200.0,
+    "max_near_deletion_rate": 0.3,
+    "max_halluc_frame_frac": 0.25,
+    "min_supported_fraction": 0.1
+  },
+  "clips": {
+    "baseline-midblock": {
+      "frames": 60,
+      "total_gt": 36,
+      "deleted_gt": 36,
+      "total_near": 36,
+      "deleted_gt_near": 36,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 4,
+      "supported_detections": 0,
+      "hallucinated_detections": 2,
+      "hallucination_frame_fraction": 0.0333,
+      "supported_detection_fraction": 0.0,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3",
+        "supported_det_fraction=0.000<0.1 (rebind)"
+      ]
+    },
+    "bus-stop-emergence": {
+      "frames": 60,
+      "total_gt": 42,
+      "deleted_gt": 42,
+      "total_near": 42,
+      "deleted_gt_near": 42,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 18,
+      "supported_detections": 0,
+      "hallucinated_detections": 18,
+      "hallucination_frame_fraction": 0.3,
+      "supported_detection_fraction": 0.0,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3",
+        "halluc_frame_frac=0.300>0.25",
+        "supported_det_fraction=0.000<0.1 (rebind)"
+      ]
+    },
+    "cutout-reveals-stopped": {
+      "frames": 60,
+      "total_gt": 60,
+      "deleted_gt": 60,
+      "total_near": 57,
+      "deleted_gt_near": 57,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 73,
+      "supported_detections": 36,
+      "hallucinated_detections": 37,
+      "hallucination_frame_fraction": 0.4333,
+      "supported_detection_fraction": 0.4932,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3",
+        "halluc_frame_frac=0.433>0.25"
+      ]
+    },
+    "fog-midblock": {
+      "frames": 60,
+      "total_gt": 36,
+      "deleted_gt": 36,
+      "total_near": 36,
+      "deleted_gt_near": 36,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 10,
+      "supported_detections": 0,
+      "hallucinated_detections": 9,
+      "hallucination_frame_fraction": 0.1167,
+      "supported_detection_fraction": 0.0,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3",
+        "supported_det_fraction=0.000<0.1 (rebind)"
+      ]
+    },
+    "lane-drop-merge": {
+      "frames": 60,
+      "total_gt": 0,
+      "deleted_gt": 0,
+      "total_near": 0,
+      "deleted_gt_near": 0,
+      "deletion_rate": 0.0,
+      "near_deletion_rate": 0.0,
+      "high_conf_detections": 30,
+      "supported_detections": 0,
+      "hallucinated_detections": 30,
+      "hallucination_frame_fraction": 0.4833,
+      "supported_detection_fraction": 0.0,
+      "reject": true,
+      "reasons": [
+        "halluc_frame_frac=0.483>0.25",
+        "supported_det_fraction=0.000<0.1 (rebind)"
+      ]
+    },
+    "night-rain-merge": {
+      "frames": 60,
+      "total_gt": 0,
+      "deleted_gt": 0,
+      "total_near": 0,
+      "deleted_gt_near": 0,
+      "deletion_rate": 0.0,
+      "near_deletion_rate": 0.0,
+      "high_conf_detections": 75,
+      "supported_detections": 0,
+      "hallucinated_detections": 74,
+      "hallucination_frame_fraction": 0.9,
+      "supported_detection_fraction": 0.0,
+      "reject": true,
+      "reasons": [
+        "halluc_frame_frac=0.900>0.25",
+        "supported_det_fraction=0.000<0.1 (rebind)"
+      ]
+    },
+    "parked-row-dartout": {
+      "frames": 60,
+      "total_gt": 108,
+      "deleted_gt": 108,
+      "total_near": 97,
+      "deleted_gt_near": 97,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 78,
+      "supported_detections": 5,
+      "hallucinated_detections": 69,
+      "hallucination_frame_fraction": 0.8,
+      "supported_detection_fraction": 0.0641,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3",
+        "halluc_frame_frac=0.800>0.25",
+        "supported_det_fraction=0.064<0.1 (rebind)"
+      ]
+    },
+    "school-parked-row-dartout": {
+      "frames": 60,
+      "total_gt": 109,
+      "deleted_gt": 109,
+      "total_near": 99,
+      "deleted_gt_near": 99,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 73,
+      "supported_detections": 25,
+      "hallucinated_detections": 43,
+      "hallucination_frame_fraction": 0.55,
+      "supported_detection_fraction": 0.3425,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3",
+        "halluc_frame_frac=0.550>0.25"
+      ]
+    },
+    "signal-red-light": {
+      "frames": 60,
+      "total_gt": 0,
+      "deleted_gt": 0,
+      "total_near": 0,
+      "deleted_gt_near": 0,
+      "deletion_rate": 0.0,
+      "near_deletion_rate": 0.0,
+      "high_conf_detections": 34,
+      "supported_detections": 0,
+      "hallucinated_detections": 31,
+      "hallucination_frame_fraction": 0.5167,
+      "supported_detection_fraction": 0.0,
+      "reject": true,
+      "reasons": [
+        "halluc_frame_frac=0.517>0.25",
+        "supported_det_fraction=0.000<0.1 (rebind)"
+      ]
+    },
+    "workzone-lane-shift": {
+      "frames": 60,
+      "total_gt": 51,
+      "deleted_gt": 51,
+      "total_near": 51,
+      "deleted_gt_near": 51,
+      "deletion_rate": 1.0,
+      "near_deletion_rate": 1.0,
+      "high_conf_detections": 46,
+      "supported_detections": 0,
+      "hallucinated_detections": 43,
+      "hallucination_frame_fraction": 0.65,
+      "supported_detection_fraction": 0.0,
+      "reject": true,
+      "reasons": [
+        "near_deletion_rate=1.000>0.3",
+        "halluc_frame_frac=0.650>0.25",
+        "supported_det_fraction=0.000<0.1 (rebind)"
+      ]
+    }
+  },
+  "aggregate": {
+    "clips_audited": 10,
+    "clips_rejected": 10,
+    "rejection_rate": 1.0,
+    "gate_max_rejection_rate": 0.2,
+    "gate_passed": false
+  }
+}
