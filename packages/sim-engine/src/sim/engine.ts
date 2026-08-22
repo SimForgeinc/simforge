@@ -82,10 +82,11 @@ import {
   DYNAMIC_V1_DEFAULT_SUBSTEP_S,
 } from './dynamic-v1.js';
 import { corneringPlan } from './cornering.js';
-import type { MotionBackend, PhysicsTelemetrySample } from './motion-backend.js';
+import type { MotionBackend, MotionIntent, PhysicsTelemetrySample, VehicleControl } from './motion-backend.js';
 import { actorPhysicsBackends } from './physics-provenance.js';
 import {
   articulatedDoorObb,
+  alongRouteDistance,
   alongRouteGapM,
   DOOR_OPEN_DURATION_S,
   isReverseMotion,
@@ -142,6 +143,104 @@ export interface RunOptions {
    * interchange replay, where ASAM time zero is the start of warm-up.
    */
   readonly includeWarmupTrace?: boolean;
+  /**
+   * Deterministic per-tick action overrides applied in `planActor` before the
+   * motion backend steps. See {@link ActionHook}.
+   */
+  readonly actionHook?: ActionHook;
+  /**
+   * How generated background traffic responds to a policy-controlled ego.
+   *
+   * `'scripted'` (default) keeps the authored-run behaviour byte-for-byte:
+   * ambient actors were placed and settled against the authored choreography,
+   * and their planning scans the full actor list exactly as before.
+   *
+   * `'reactive'` re-evaluates cruise/gap/yield control for ambient actors
+   * against the current world state each planning tick, over a spatially
+   * pruned nearby set (`O(actors × nearby-actors)`), and additionally treats a
+   * body whose pose no longer resolves through lane storage — a dynamic ego
+   * deviating from its authored route — as a physical leader/yield target.
+   */
+  readonly ambientReactivity?: 'scripted' | 'reactive';
+}
+
+/**
+ * Context handed to an {@link ActionHook} for one actor on one planning tick.
+ */
+export interface ActionHookContext {
+  readonly actorId: string;
+  /** Simulation time of the tick being planned; negative during warm-up. */
+  readonly tS: number;
+}
+
+/**
+ * Caller-supplied override of the choreography intent for one actor on one
+ * tick. Present fields replace the engine-computed setpoints just before the
+ * motion backend steps; omitted fields keep the authored behavior. `control`
+ * additionally bypasses the dynamic backend's setpoint controller while
+ * staying inside the profile's steer clamp/rate/lag and jerk envelope (see
+ * `MotionIntent.control`).
+ */
+export type ActionOverride = Partial<
+  Pick<MotionIntent, 'motionDirection' | 'targetSpeedMps' | 'targetAccelerationMps2'>
+> & {
+  readonly control?: VehicleControl;
+};
+
+/**
+ * Deterministic external action channel. The hook is consulted once per
+ * actor per planning tick, in the engine's sorted-actor-id order, and never
+ * reads wall time — injecting the same sequence into two sessions therefore
+ * yields byte-identical traces (proven by `action-hook-determinism.test.ts`).
+ */
+export type ActionHook = (context: ActionHookContext) => ActionOverride | undefined;
+
+export interface AdvanceOptions {
+  /**
+   * Build the full trace before returning. Mid-episode traces are expensive;
+   * leave this unset to receive a trace only once the episode is complete
+   * (`done`). Interactive consumers should use {@link FixedStepSimulationSession.peek}
+   * for cheap read-only state between batches.
+   */
+  readonly trace?: boolean;
+}
+
+/** Read-only per-actor state, safe to inspect between batches. */
+export interface SessionActorSnapshot {
+  readonly id: string;
+  readonly x: number;
+  readonly y: number;
+  readonly headingRad: number;
+  readonly speedMps: number;
+  /** Longitudinal acceleration of the current tick's plan, m/s². */
+  readonly accelMps2: number;
+  /** Lane-relative lateral offset, metres (positive = left). */
+  readonly lateralOffsetM: number;
+  readonly lateralRateMps: number;
+  /** Route arc length, metres. */
+  readonly s: number;
+  /** Lane the actor's current route station resolves to; `null` when freeform. */
+  readonly laneRsl: string | null;
+}
+
+/** Running episode minima for one monitored pair, as of the snapshot. */
+export interface SessionPairMinima {
+  readonly a: string;
+  readonly b: string;
+  readonly minDistanceM: number;
+  readonly minTtcS: number;
+  readonly minPathTtcS: number;
+  readonly minPetS: number;
+}
+
+/** Read-only world snapshot; never builds a trace and never mutates state. */
+export interface SimulationSnapshot {
+  /** Simulation time of the snapshot; negative during warm-up. */
+  readonly tS: number;
+  readonly done: boolean;
+  readonly actors: readonly SessionActorSnapshot[];
+  /** `Infinity` means the episode has not produced a sample for that pair yet. */
+  readonly minima: readonly SessionPairMinima[];
 }
 
 export interface SimResult {
@@ -157,7 +256,14 @@ export interface SimResult {
   readonly arrival: ArrivalSolution[];
 }
 
-export interface FixedStepSimulationProgress extends SimResult {
+export interface FixedStepSimulationProgress extends Omit<SimResult, 'trace'> {
+  /**
+   * The full episode trace. Non-null once the episode is complete or when the
+   * caller explicitly requested a mid-episode trace via `advance(…, { trace:
+   * true })`; otherwise `null` so the stepping path never pays for
+   * `buildTrace` per batch. Use `peek()` for cheap read-only state instead.
+   */
+  readonly trace: SimTrace | null;
   readonly done: boolean;
   readonly recordedUntil: number | null;
 }
@@ -169,7 +275,15 @@ export interface FixedStepSimulationProgress extends SimResult {
  */
 export interface FixedStepSimulationSession {
   readonly done: boolean;
-  advance(maxTicks?: number): FixedStepSimulationProgress;
+  advance(maxTicks?: number, opts?: AdvanceOptions): FixedStepSimulationProgress;
+  /** Read-only world snapshot (poses, speeds, running metric minima). */
+  peek(): SimulationSnapshot;
+  /**
+   * Events recorded since the previous call, in record order. Purely a
+   * session-side read: the trace's event list is untouched either way, so
+   * digests are identical whether or not the caller drains mid-episode.
+   */
+  drainEvents(): readonly SimEvent[];
 }
 
 /** Moving actors this close to the end are clamped to the terminal pose. */
@@ -178,6 +292,16 @@ const ROUTE_END_SLACK_M = 0.01;
 const FREEFORM_LANE_REBIND_M = 1;
 /** Lookahead used for the stop-line search and the crossing-conflict scan. */
 const LOOKAHEAD_M = 80;
+/** Reactive ambient leader scan: how far a generated follower looks, and the
+ * grid cell of the per-tick broadphase. The scan radius matches the stop-line
+ * lookahead plus margin so gap control never loses a leader the scripted scan
+ * would have found at planning-relevant distances. */
+const REACTIVE_SCAN_RADIUS_M = LOOKAHEAD_M + 40;
+const REACTIVE_GRID_CELL_M = 40;
+/** Same-lane corridor used by the reactive leader observation (controllers.findLeader default). */
+const LEADER_CORRIDOR_HALF_WIDTH_M = 1.6;
+/** Squared scan radius so the leader loop can reject far bodies without a sqrt. */
+const REACTIVE_MAX_RANGE_M2 = REACTIVE_SCAN_RADIUS_M * REACTIVE_SCAN_RADIUS_M;
 /** Conflict scan: samples per actor, and the spacing between them. */
 const CONFLICT_SAMPLES = 14;
 const CONFLICT_STEP_M = 5;
@@ -547,6 +671,8 @@ class Simulation {
   private readonly attachedPropsByActor = new Map<string, StaticProp[]>();
   private readonly attachedOccluderIds: ReadonlySet<string>;
   private readonly events: SimEvent[] = [];
+  /** Index into `events` of the first event not yet returned by `drainEvents`. */
+  private drainedEventCount = 0;
   /** Predicate edge evidence, independent of action eligibility/forcing. */
   private readonly triggerTruthTransitions = new Map<string, TriggerTruthTransition[]>();
   /** Non-lateral legacy windows already released on their terminal tick. */
@@ -585,6 +711,13 @@ class Simulation {
    */
   private readonly ambientActorIds: string[];
   private readonly ambientActorIdSet: ReadonlySet<string>;
+  /** Reactive ambient re-evaluation is active (opt-in, ambient actors only). */
+  private readonly ambientReactive: boolean;
+  /**
+   * Per-planning-tick uniform grid of live bodies, rebuilt by
+   * `buildNearbyIndex` when `ambientReactive`; queried by `nearbyActors`.
+   */
+  private reactiveGrid = new Map<string, ActorRuntime[]>();
   private world: WorldState;
   private conflictSamples = new Map<string, Vec2[]>();
   private conflictCandidates = new Map<string, ActorRuntime[]>();
@@ -628,9 +761,6 @@ class Simulation {
     }
 
     const input = this.resolvedInput;
-    this.physicsConfig = resolvePhysicsConfig(input);
-    this.dynamicBackend = new DynamicV1Backend(this.physicsConfig.substepS ?? DYNAMIC_V1_DEFAULT_SUBSTEP_S);
-    this.motionBackend = this.dynamicBackend;
     this.dt = input.dt;
     this.warmupTicks = Math.round(input.warmupSeconds / input.dt);
     this.clipTicks = Math.round(input.clipSeconds / input.dt);
@@ -640,6 +770,15 @@ class Simulation {
       input.operationalConditions.effects.frictionScale,
       input.surfacePatches,
     );
+    this.physicsConfig = resolvePhysicsConfig(input);
+    // An explicit `kinematic-v1` selection is honored exactly: no actor is
+    // registered with the force backend and every moving body runs the
+    // established route choreography. Omitted physics resolves to the
+    // current default (`dynamic-v1`).
+    this.dynamicBackend = this.physicsConfig.mode === 'dynamic-v1'
+      ? new DynamicV1Backend(this.physicsConfig.substepS ?? DYNAMIC_V1_DEFAULT_SUBSTEP_S)
+      : null;
+    this.motionBackend = this.dynamicBackend;
     for (const id of this.signals.ids()) this.signalTracks.set(id, { phase: [] });
     this.attachedOccluderIds = new Set(
       input.props
@@ -717,6 +856,7 @@ class Simulation {
       .sort();
     this.ambientActorIdSet = new Set(this.ambientActorIds);
     this.hasAmbientTraffic = this.ambientActorIds.length > 0;
+    this.ambientReactive = this.hasAmbientTraffic && this.opts.ambientReactivity === 'reactive';
     for (const spec of [...input.actors].sort((a, b) => (a.id < b.id ? -1 : 1))) {
       const rt = this.buildActor(spec);
       this.actors.push(rt);
@@ -974,14 +1114,14 @@ class Simulation {
 
   run(): SimResult {
     const result = this.advance(Number.POSITIVE_INFINITY);
-    return { input: result.input, trace: result.trace, issues: result.issues, arrival: result.arrival };
+    return { input: result.input, trace: result.trace!, issues: result.issues, arrival: result.arrival };
   }
 
   get done(): boolean {
     return this.finished;
   }
 
-  advance(maxTicks = 1): FixedStepSimulationProgress {
+  advance(maxTicks = 1, opts: AdvanceOptions = {}): FixedStepSimulationProgress {
     const budget = Number.isFinite(maxTicks) ? Math.max(0, Math.floor(maxTicks)) : Number.MAX_SAFE_INTEGER;
     const total = this.warmupTicks + this.clipTicks;
     let advanced = 0;
@@ -1026,11 +1166,70 @@ class Simulation {
     }
     return {
       input: this.resolvedInput,
-      trace: this.buildTrace(),
+      trace: this.finished || opts.trace === true ? this.buildTrace() : null,
       issues: this.issues,
       arrival: this.arrivalSolutions,
       done: this.finished,
       recordedUntil: this.tArray.length > 0 ? this.tArray[this.tArray.length - 1]! : null,
+    };
+  }
+
+  /** Read-only world snapshot. Never calls `buildTrace` and never mutates state. */
+  peek(): SimulationSnapshot {
+    const actors = [...this.actors]
+      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+      .map((a) => ({
+        id: a.id,
+        x: a.position.x,
+        y: a.position.y,
+        headingRad: a.headingRad,
+        speedMps: a.speedMps,
+        accelMps2: a.accelMps2,
+        lateralOffsetM: a.lateralOffsetM,
+        lateralRateMps: a.lateralRateMps,
+        s: a.routeS,
+        laneRsl: a.route.poseAt(a.routeS).rsl ?? null,
+      }));
+    const minima = [...this.metrics.pairs.values()]
+      .map((p) => ({
+        a: p.a,
+        b: p.b,
+        minDistanceM: p.minDistance,
+        minTtcS: p.minTtc,
+        minPathTtcS: p.minPathTtc,
+        minPetS: p.minPet,
+      }))
+      .sort((x, y) => (x.a < y.a ? -1 : x.a > y.a ? 1 : x.b.localeCompare(y.b)));
+    return { tS: this.world.t, done: this.finished, actors, minima };
+  }
+
+  /**
+   * Events recorded since the previous call, in record order. Purely a
+   * session-side read: the trace's event list is untouched either way, so
+   * digests are identical whether or not the caller drains mid-episode.
+   */
+  drainEvents(): readonly SimEvent[] {
+    const pending = this.events.slice(this.drainedEventCount);
+    this.drainedEventCount = this.events.length;
+    return pending;
+  }
+
+  /**
+   * Fold the caller's action override into the choreography intent just
+   * before the motion backend steps. Present override fields win; everything
+   * else keeps the engine-computed setpoints.
+   */
+  private hookedIntent(actorId: string, tS: number, intent: MotionIntent): MotionIntent {
+    const override = this.opts.actionHook?.({ actorId, tS });
+    if (!override) return intent;
+    return {
+      ...intent,
+      ...(override.motionDirection !== undefined ? { motionDirection: override.motionDirection } : {}),
+      ...(override.targetSpeedMps !== undefined ? { targetSpeedMps: override.targetSpeedMps } : {}),
+      ...(override.targetAccelerationMps2 !== undefined
+        ? { targetAccelerationMps2: override.targetAccelerationMps2 }
+        : {}),
+      ...(override.control !== undefined ? { control: override.control } : {}),
     };
   }
 
@@ -2180,6 +2379,7 @@ class Simulation {
 
   private planAll(t: number): Plan[] {
     this.buildConflictSamples();
+    this.buildNearbyIndex();
     const plans: Plan[] = [];
     for (const a of this.actors) {
       plans.push(this.planActor(a, t));
@@ -2270,6 +2470,92 @@ class Simulation {
       if (forB) forB.push(a);
       else this.conflictCandidates.set(b.id, [a]);
     }
+  }
+
+  /**
+   * Reactive ambient broadphase: one uniform grid over the live bodies per
+   * planning tick. Each ambient actor then gathers candidates from the fixed
+   * window of cells covering `REACTIVE_SCAN_RADIUS_M` around it —
+   * `O(actors × nearby-actors)` per tick, with no pairwise key allocation.
+   *
+   * Determinism: buckets are filled by iterating `this.actors` (sorted by id)
+   * and a query visits cells in a fixed offset order, so the candidate list
+   * for a given world state is identical regardless of map iteration order.
+   */
+  private buildNearbyIndex(): void {
+    this.reactiveGrid.clear();
+    if (!this.ambientReactive) return;
+    for (const actor of this.actors) {
+      if (!actor.present || actor.retired) continue;
+      const key = `${Math.floor(actor.position.x / REACTIVE_GRID_CELL_M)},${Math.floor(actor.position.y / REACTIVE_GRID_CELL_M)}`;
+      const bucket = this.reactiveGrid.get(key);
+      if (bucket) bucket.push(actor);
+      else this.reactiveGrid.set(key, [actor]);
+    }
+  }
+
+  /** Live bodies within one scan radius of `a`, in deterministic order. */
+  private nearbyActors(a: ActorRuntime): readonly ActorRuntime[] {
+    const cx = Math.floor(a.position.x / REACTIVE_GRID_CELL_M);
+    const cy = Math.floor(a.position.y / REACTIVE_GRID_CELL_M);
+    const reach = Math.ceil(REACTIVE_SCAN_RADIUS_M / REACTIVE_GRID_CELL_M);
+    const collected: ActorRuntime[] = [];
+    for (let dx = -reach; dx <= reach; dx++) {
+      for (let dy = -reach; dy <= reach; dy++) {
+        const bucket = this.reactiveGrid.get(`${cx + dx},${cy + dy}`);
+        if (!bucket) continue;
+        for (const other of bucket) collected.push(other);
+      }
+    }
+    return collected;
+  }
+
+  /**
+   * Leader search for one actor. Scripted mode (and every authored actor)
+   * keeps the exact `controllers.findLeader` scan. A reactive ambient actor
+   * scans only its nearby set, and adds a heading-space fallback: when
+   * another body's pose no longer resolves through lane storage onto this
+   * route — exactly what a policy-controlled ego does when it leaves its
+   * choreography — it is still observed as a physical leader from where it
+   * actually stands.
+   */
+  private findLeaderFor(
+    a: ActorRuntime,
+  ): { gapM: number; speedMps: number; id: string } | null {
+    if (!this.ambientReactive || !this.ambientActorIdSet.has(a.id)) {
+      return findLeader(a, this.actors);
+    }
+    const others = this.nearbyActors(a);
+    let best: { gapM: number; speedMps: number; id: string } | null = null;
+    const cos = Math.cos(a.headingRad);
+    const sin = Math.sin(a.headingRad);
+    for (const b of others) {
+      if (b.id === a.id || !b.present || b.retired) continue;
+      const dx = b.position.x - a.position.x;
+      const dy = b.position.y - a.position.y;
+      // Bodies beyond one scan radius cannot gate this tick's control.
+      if (dx * dx + dy * dy > REACTIVE_MAX_RANGE_M2) continue;
+      const halves = a.dims.l / 2 + b.dims.l / 2;
+      const joined = alongRouteDistance(a, b);
+      let gap: number;
+      let lateral: number;
+      if (joined === null) {
+        // Lane-storage join failed — the deviating-body case. Observe it in
+        // the observer's heading frame instead: O(1), no route projection,
+        // and exactly the "where does that body stand right now" question
+        // reactive mode exists to answer.
+        const fwd = dx * cos + dy * sin;
+        if (fwd <= 0) continue;
+        gap = fwd - halves;
+        lateral = -dx * sin + dy * cos;
+      } else {
+        gap = joined - halves;
+        lateral = a.route.lateralOffsetAt(a.routeS + joined, b.position) - a.lateralOffsetM;
+      }
+      if (!Number.isFinite(lateral) || Math.abs(lateral) > LEADER_CORRIDOR_HALF_WIDTH_M) continue;
+      if (best === null || gap < best.gapM) best = { gapM: gap, speedMps: b.speedMps, id: b.id };
+    }
+    return best;
   }
 
   /**
@@ -2367,14 +2653,14 @@ class Simulation {
       plan.speed = speed;
       plan.routeS = a.routeS;
       if (this.motionBackend && this.dynamicActorIds.has(a.id)) {
-        const result = this.motionBackend.step(a.id, {
+        const result = this.motionBackend.step(a.id, this.hookedIntent(a.id, t, {
           motionDirection: isReverseMotion(a) ? -1 : 1,
           targetSpeedMps: 0,
           targetAccelerationMps2: -emergencyDecel,
           previewPoint: { x: a.position.x + Math.cos(a.headingRad), y: a.position.y + Math.sin(a.headingRad) },
           previewHeadingRad: a.headingRad,
           ...(a.downedAtS != null ? { downed: true } : {}),
-        }, this.dt, frictionScale);
+        }), this.dt, frictionScale);
         plan.speed = a.downedAtS != null
           ? Math.hypot(result.state.longitudinalVelocityMps, result.state.lateralVelocityMps)
           : Math.abs(result.state.longitudinalVelocityMps);
@@ -2462,7 +2748,7 @@ class Simulation {
 
     const commandedLeader =
       a.longCmd?.kind === 'gap' && a.longCmd.gap ? this.leaderFromId(a, a.longCmd.gap.actorId) : null;
-    const sourceLeader = a.bestEffortWorldPath ? null : findLeader(a, this.actors);
+    const sourceLeader = a.bestEffortWorldPath ? null : this.findLeaderFor(a);
     let targetLeader: ReturnType<typeof findLeader> = null;
     if (!a.bestEffortWorldPath && a.latCmd?.kind === 'changeLane' && a.latCmd.pending) {
       const targetRoute = a.latCmd.pending.route;
@@ -2603,7 +2889,7 @@ class Simulation {
       // explicit schedule-tracking feedback to meet the commanded duration.
       const measuredTrackingErrorM = a.lateralOffsetM - a.lateralReferenceOffsetM;
       const trackingPreviewOffset = previewLateralReference.offset - (a.latCmd ? measuredTrackingErrorM : 0);
-      const result = this.motionBackend.step(a.id, {
+      const result = this.motionBackend.step(a.id, this.hookedIntent(a.id, t, {
         motionDirection: isReverseMotion(a) ? -1 : 1,
         targetSpeedMps: dynamicTargetSpeed,
         targetAccelerationMps2: dynamicTargetAcceleration,
@@ -2612,7 +2898,7 @@ class Simulation {
         // uses the current reference rate so the controller does not apply the
         // same future lateral transition twice (bearing and body slip).
         previewHeadingRad: headingWithSlip(previewPose.headingRad, plan.lateralReferenceRate, Math.max(plan.speed, 0.5)),
-      }, this.dt, frictionScale);
+      }), this.dt, frictionScale);
       const projected = a.route.projectPoint({ x: result.state.x, y: result.state.y });
       const projectedOffset = a.route.lateralOffsetAt(projected.s, {
         x: result.state.x,

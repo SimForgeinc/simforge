@@ -458,8 +458,14 @@ export class DynamicV1Backend implements MotionBackend {
     }
     const s = entry.state;
     const p = entry.profile;
-    const boundedIntent = this.boundedIntent(entry, intent, h);
-    const control = controlFor(s, p, boundedIntent);
+    // A raw actuator request bypasses the setpoint controller but not the
+    // physical envelope: steer still passes through the clamp/rate/lag block
+    // below, and the implied longitudinal acceleration is jerk-limited so a
+    // passthrough caller cannot step the drivetrain harder than a setpoint
+    // caller could.
+    const control = intent.control != null
+      ? this.boundedControl(entry, intent.control, h)
+      : controlFor(s, p, this.boundedIntent(entry, intent, h));
     const steerTarget = control.steer * p.maxSteerRad;
     const steerDerivative = clamp(
       (steerTarget - s.steerRad) / p.steerTimeConstantS,
@@ -592,6 +598,33 @@ export class DynamicV1Backend implements MotionBackend {
     const delta = clamp(requested - entry.commandedAccelerationMps2, -p.maxJerkMps3 * h, p.maxJerkMps3 * h);
     entry.commandedAccelerationMps2 += delta;
     return { ...intent, targetAccelerationMps2: entry.commandedAccelerationMps2 };
+  }
+
+  /**
+   * Clamp a raw actuator request into the profile envelope. Throttle/brake are
+   * folded into one longitudinal force request, rate-limited by the same
+   * jerk budget the setpoint path uses, then split back into unit-range
+   * pedals; steer is clamped to the unit range (the integrate step applies
+   * the profile clamp plus rate/lag on top).
+   */
+  private boundedControl(
+    entry: VehicleEntry,
+    control: VehicleControl,
+    h: number,
+  ): VehicleControl {
+    const p = entry.profile;
+    const throttle = clamp(control.throttle, 0, 1);
+    const brake = clamp(control.brake, 0, 1);
+    const steer = clamp(control.steer, -1, 1);
+    const requestedAx =
+      (throttle * p.maxDriveForceN - brake * p.maxBrakeForceN) / p.massKg;
+    const boundedAx = clamp(requestedAx, -p.maxLongitudinalDecelMps2, p.maxLongitudinalAccelMps2);
+    const delta = clamp(boundedAx - entry.commandedAccelerationMps2, -p.maxJerkMps3 * h, p.maxJerkMps3 * h);
+    entry.commandedAccelerationMps2 += delta;
+    const forceN = entry.commandedAccelerationMps2 * p.massKg;
+    return forceN >= 0
+      ? { throttle: clamp(forceN / p.maxDriveForceN, 0, 1), brake: 0, steer }
+      : { throttle: 0, brake: clamp(-forceN / p.maxBrakeForceN, 0, 1), steer };
   }
 
   /**

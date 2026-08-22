@@ -514,8 +514,8 @@ async function runLive(request: ScenarioWorkerStartRequest, token: number): Prom
   const simulation = prepared ?? createFixedStepSimulation(request.input, { graph: runtime.graph, guards: 'throw' });
   let progress = simulation.advance(prepared
     ? 1
-    : initialLiveTickBudget(request.input.warmupSeconds, request.input.dt));
-  postLive(request, progress.done ? 'complete' : 'ready', progress.trace, progress.recordedUntil ?? 0);
+    : initialLiveTickBudget(request.input.warmupSeconds, request.input.dt), { trace: true });
+  postLive(request, progress.done ? 'complete' : 'ready', progress.trace!, progress.recordedUntil ?? 0);
   while (!progress.done && token === liveGeneration) {
     await waitUntilPlaying(request.id, token);
     if (transport?.id === request.id && !transport.playing) continue;
@@ -530,8 +530,8 @@ async function runLive(request: ScenarioWorkerStartRequest, token: number): Prom
       await new Promise<void>((resolve) => setTimeout(resolve, refill.waitMs));
       continue;
     }
-    progress = simulation.advance(refill.advanceTicks);
-    postLive(request, progress.done ? 'complete' : 'progress', progress.trace, progress.recordedUntil ?? 0);
+    progress = simulation.advance(refill.advanceTicks, { trace: true });
+    postLive(request, progress.done ? 'complete' : 'progress', progress.trace!, progress.recordedUntil ?? 0);
     // Let cancellation, pause, and a newer document revision preempt long
     // catch-up work without imposing a fixed delay on normal playback.
     await new Promise<void>((resolve) => setTimeout(resolve, 0));

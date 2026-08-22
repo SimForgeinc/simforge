@@ -19,6 +19,10 @@
       "role": "simulation-kernel"
     },
     {
+      "path": "packages/rl-env",
+      "role": "rl-environment"
+    },
+    {
       "path": "packages/ambient-traffic",
       "role": "ambient-traffic-contracts"
     },
@@ -97,6 +101,13 @@
       "name": "uniscenarios-carla-bridge",
       "version": "0.1.0rc45",
       "role": "optional-carla-execution-adapter",
+      "registry": "pypi"
+    },
+    {
+      "path": "adapters/uniscenarios-gym",
+      "name": "uniscenarios-gym",
+      "version": "0.1.0rc45",
+      "role": "rl-gym-client",
       "registry": "pypi"
     }
   ]

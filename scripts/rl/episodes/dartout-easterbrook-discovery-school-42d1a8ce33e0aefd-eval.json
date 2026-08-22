@@ -1,0 +1,10 @@
+{
+  "template": "../../../examples/cpnco-parked-row.template.json",
+  "map": "easterbrook-discovery-school",
+  "site": "42d1a8ce33e0aefd",
+  "seeds": [
+    "9000",
+    "9001",
+    "9002"
+  ]
+}

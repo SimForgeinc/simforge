@@ -1,0 +1,12 @@
+{
+  "template": "../../../examples/cpnco-parked-row.template.json",
+  "map": "yale-street",
+  "site": "9c231a64d240c9ae",
+  "seeds": [
+    "2000",
+    "2001",
+    "2002",
+    "2003",
+    "2004"
+  ]
+}

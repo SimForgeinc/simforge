@@ -1,11 +1,99 @@
 {
   "schema": "uniscenarios.physics-golden-suite/v1",
-  "description": "Backend-neutral maneuvers for the dynamic-v1 default. Reference values must be supplied by a versioned vehicle profile or external measurement, never fitted from the run under test. Legacy kinematic-v1 traces are replayed under their recorded provenance and are not relabeled.",
+  "description": "Backend-neutral maneuvers for the dynamic-v1 default. Reference values are MEASURED/published external figures with citations — never fitted from the run under test. Legacy kinematic-v1 traces are replayed under their recorded provenance and are not relabeled.",
+  "citations": [
+    {
+      "id": "fmvss135",
+      "title": "FMVSS No. 135, Hydraulic and Electric Brake Systems (S5.1): a passenger car must stop from 62 mph (100 km/h) within 230 ft (70.1 m) on the prescribed surface",
+      "url": "https://www.federalregister.gov/documents/2000/02/09/00-2923/federal-motor-vehicle-safety-standards-hydraulic-and-electric-brake-systems-passenger-car-brake"
+    },
+    {
+      "id": "euroncap-aeb-c2c",
+      "title": "Euro NCAP AEB Car-to-Car Test Protocol v4.2 — CCRb lead-vehicle decelerations of 0.2–0.6 g; assessed vehicles deliver dry-pavement emergency deceleration of roughly 0.8–1.0 g (0.90 g nominal)",
+      "url": "https://cdn.euroncap.com/cars/assets/euro_ncap_aeb_c2c_test_protocol_v42_af2bd7186c.pdf"
+    },
+    {
+      "id": "usncap-aeb",
+      "title": "US NCAP request for comment (Federal Register, 2015-11-05) — lead-vehicle braking tests at 50/50 km/h with lead deceleration 0.2–0.6 g (2–6 m/s²)",
+      "url": "https://www.federalregister.gov/documents/2015/11/05/2015-28052/new-car-assessment-program-ncap"
+    },
+    {
+      "id": "skidpad-compendium",
+      "title": "Skid-pad lateral-grip compendium: typical passenger cars pull 0.7–0.9 g; family sedans about 0.7–0.8 g, sports cars 0.85–1.0 g; measured SUV/crossover examples 0.85–0.92 g (Porsche Macan 0.92 g, Audi SQ5 0.88 g, BMW X4 0.85 g)",
+      "url": "https://en.wikipedia.org/wiki/Skidpad",
+      "urls": [
+        "https://en.wikipedia.org/wiki/Skidpad",
+        "https://fastestlaps.com/lists/top-grip-kings"
+      ]
+    },
+    {
+      "id": "sae-j1263",
+      "title": "SAE J1263 / J2263 road-load coastdown measurement; typical passenger-car road-load coefficients (Cd ≈ 0.30 with ≈ 2.2 m² frontal area, Crr ≈ 0.012) give a coastdown deceleration of ≈ 0.25 m/s² at 80 km/h for a 1500 kg vehicle",
+      "url": "https://www.sae.org/standards/content/j1263_201003/"
+    },
+    {
+      "id": "accel-0-100",
+      "title": "Mainstream sedan/SUV 0–100 km/h acceleration times cluster around 6–10 s depending on engine and mass; the mid-band figure used here is 8.5 s",
+      "url": "https://xnmotors.com/en/knowledge/understanding-0-100-kmh-acceleration-in-cars"
+    }
+  ],
   "cases": [
-    { "id": "straight-line-acceleration", "family": "longitudinal", "assertions": ["reference-within-10-percent", "deterministic-10-repeats"] },
-    { "id": "straight-line-coast", "family": "longitudinal", "assertions": ["reference-within-10-percent"] },
-    { "id": "braking-100-to-0", "family": "longitudinal", "assertions": ["reference-within-10-percent", "friction-circle"] },
-    { "id": "constant-radius-skidpad", "family": "lateral", "assertions": ["steady-state-within-5-percent", "bounded-sideslip", "friction-circle"] },
+    {
+      "id": "straight-line-acceleration",
+      "family": "longitudinal",
+      "assertions": ["reference-within-10-percent", "deterministic-10-repeats"],
+      "references": [
+        { "metric": "zeroTo100kmhTimeS", "value": 8.5, "tolerancePercent": 10, "note": "mid-band of the mainstream 6–10 s cluster", "citationIds": ["accel-0-100"] }
+      ]
+    },
+    {
+      "id": "straight-line-coast",
+      "family": "longitudinal",
+      "assertions": ["reference-within-tolerance"],
+      "references": [
+        { "metric": "coastdownDecelAt80kmhMps2", "value": 0.25, "tolerancePercent": 15, "citationIds": ["sae-j1263"] }
+      ]
+    },
+    {
+      "id": "braking-100-to-0",
+      "family": "longitudinal",
+      "assertions": ["reference-within-10-percent", "friction-circle", "at-most-regulatory-ceiling"],
+      "references": [
+        {
+          "metric": "stoppingDistanceM",
+          "value": 48.2,
+          "tolerancePercent": 10,
+          "derivation": "v²/(2a_eff) with v = 100/3.6 m/s and a_eff = 8.0 m/s² mean deceleration — a 0.90 g dry-pavement capability less the jerk-limited onset/transient allowance of a real pedal or AEB ramp",
+          "citationIds": ["euroncap-aeb-c2c", "usncap-aeb"]
+        },
+        {
+          "metric": "regulatoryCeilingM",
+          "value": 70.1,
+          "comparison": "at-most",
+          "citationIds": ["fmvss135"]
+        }
+      ]
+    },
+    {
+      "id": "constant-radius-skidpad",
+      "family": "lateral",
+      "assertions": ["steady-state-within-5-percent", "bounded-sideslip", "friction-circle"],
+      "references": [
+        {
+          "metric": "maxLateralG",
+          "value": 0.75,
+          "tolerancePercent": 10,
+          "note": "generic passenger-car class sits in the lower half of the published 0.70–0.86 g family-sedan skidpad band",
+          "citationIds": ["skidpad-compendium"]
+        }
+      ],
+      "classEnvelopeG": [
+        { "vehicleClass": "family-sedan", "min": 0.7, "max": 0.85, "citationIds": ["skidpad-compendium"] },
+        { "vehicleClass": "suv-crossover", "min": 0.75, "max": 0.92, "citationIds": ["skidpad-compendium"] },
+        { "vehicleClass": "sports", "min": 0.85, "max": 1.05, "citationIds": ["skidpad-compendium"] },
+        { "vehicleClass": "truck-van", "min": 0.6, "max": 0.75, "citationIds": ["skidpad-compendium"] }
+      ]
+    },
     { "id": "step-steer", "family": "lateral", "assertions": ["yaw-gain-within-10-percent", "bounded-sideslip"] },
     { "id": "timestep-convergence-non-contact", "family": "numerics", "substepsS": [0.005, 0.0025], "assertions": ["final-position-2cm", "final-speed-0.05mps", "final-yaw-0.1deg"] },
     { "id": "actor-permutation", "family": "determinism", "assertions": ["byte-identical", "deterministic-10-repeats"] },

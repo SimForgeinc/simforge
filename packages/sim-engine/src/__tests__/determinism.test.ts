@@ -99,7 +99,7 @@ describe('determinism', () => {
     const live = createFixedStepSimulation(input, { graph, guards: 'collect' });
     let progress = live.advance(batch);
     while (!progress.done) progress = live.advance(batch);
-    const actual = serializeTrace(progress.trace);
+    const actual = serializeTrace(progress.trace!);
     expect(Buffer.from(actual).equals(Buffer.from(expected))).toBe(true);
     expect(progress.recordedUntil).toBe(input.clipSeconds);
   });
@@ -107,11 +107,11 @@ describe('determinism', () => {
   it('exposes a valid warmed prefix without completing the 20-second clip', () => {
     const input: SimScenarioInput = { ...busyScenario(), physics: { mode: 'dynamic-v1' } };
     const live = createFixedStepSimulation(input, { graph, guards: 'collect' });
-    const prefix = live.advance(Math.round(input.warmupSeconds / input.dt) + Math.ceil(0.25 / input.dt));
+    const prefix = live.advance(Math.round(input.warmupSeconds / input.dt) + Math.ceil(0.25 / input.dt), { trace: true });
     expect(prefix.done).toBe(false);
     expect(prefix.recordedUntil).toBeGreaterThanOrEqual(0.15);
     expect(prefix.recordedUntil).toBeLessThan(0.5);
-    expect(prefix.trace.header.physics.mode).toBe('dynamic-v1');
+    expect(prefix.trace!.header.physics.mode).toBe('dynamic-v1');
   });
 
   it('never mutates or drops state from the authored input while streaming', () => {
@@ -177,7 +177,7 @@ describe('non-determinism tripwire', () => {
     for (const entry of readdirSync(dir).sort()) {
       const full = join(dir, entry);
       if (statSync(full).isDirectory()) {
-        if (entry === '__tests__' || entry === 'node_modules') continue;
+        if (entry === '__tests__' || entry === 'bench' || entry === 'node_modules') continue;
         walk(full, out);
       } else if (entry.endsWith('.ts')) {
         out.push(full);

@@ -37,7 +37,7 @@ describe('32-actor live startup budget', () => {
     const startupMs = performance.now() - started;
 
     expect(firstMovement.recordedUntil).toBeCloseTo(input.dt);
-    expect(firstMovement.trace.header.actorIds).toHaveLength(32);
+    expect(session.peek().actors).toHaveLength(32);
     expect(startupMs).toBeLessThan(100);
   });
 

@@ -7,6 +7,9 @@ const graph = syntheticGraph();
 
 function laneChange(durationS: number, window = { startS: 1, endS: 1.5 }) {
   return scenario(graph, {
+    // These assertions are about the dynamic body's settle behavior against
+    // the authored reference, so the force backend is selected explicitly.
+    physics: { mode: 'dynamic-v1' },
     clipSeconds: 12,
     actors: [vehicle(graph, { id: 'ego', rsl: LANE_RIGHT, s: 20, speedMps: 10, cruiseSpeedMps: 10 })],
     interactions: [{

@@ -271,8 +271,8 @@ describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${s
 
     const product = materializeMapBound(doc.toJSON(), bundle);
     const play = (): ReturnType<typeof createFixedStepSimulation> => createFixedStepSimulation(product.input, { graph: bundle.graph, guards: 'throw' });
-    const firstPlay = play().advance(2).trace;
-    const resetPlay = play().advance(2).trace;
+    const firstPlay = play().advance(2, { trace: true }).trace!;
+    const resetPlay = play().advance(2, { trace: true }).trace!;
 
     for (const actor of product.input.actors) {
       const role = doc.role(actor.id)!;

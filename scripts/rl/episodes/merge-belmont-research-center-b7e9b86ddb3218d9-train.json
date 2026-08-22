@@ -1,0 +1,12 @@
+{
+  "template": "../../../examples/mechanisms/corridor/merge-gap-collapse.template.json",
+  "map": "belmont-research-center",
+  "site": "b7e9b86ddb3218d9",
+  "seeds": [
+    "2000",
+    "2001",
+    "2002",
+    "2003",
+    "2004"
+  ]
+}

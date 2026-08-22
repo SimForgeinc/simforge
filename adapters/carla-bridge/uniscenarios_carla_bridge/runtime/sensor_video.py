@@ -10,6 +10,7 @@ Rasterisation streams raw RGB frames into ffmpeg, so no intermediate images are 
 sensor video costs one pass over its captured frames.
 """
 from __future__ import annotations
+import shutil
 
 import math
 import subprocess
@@ -53,6 +54,10 @@ def encode_camera_video(
     max_bytes: int,
 ) -> Path:
     """Encode a camera's PNG sequence without re-rasterising it."""
+    stream = sensor_dir / "stream.mp4"
+    if stream.exists() and stream.stat().st_size > 0:
+        shutil.copyfile(stream, destination)
+        return destination
     _frame_paths(sensor_dir, "png", expected_frame_count)
     command = [
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import shutil
 
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
@@ -250,6 +251,10 @@ def _encode_video(
     camera_dir = frame_dir / camera_id
     if not camera_dir.is_dir():
         raise RuntimeError("video output requested but the backend produced no camera frames")
+    stream = camera_dir / "stream.mp4"
+    if stream.exists() and stream.stat().st_size > 0:
+        shutil.copyfile(stream, destination)
+        return destination
     frames = _expected_frame_paths(camera_dir, expected_frame_count, "png", lambda: check_abort("encode_video", 0, expected_frame_count))
     source_bytes = 0
     for index, frame in enumerate(frames):
@@ -1056,7 +1061,15 @@ def _enforce_render_budgets(lease: Lease, plan: ExecutionPlan, capture_count: in
             bytes_per_point = 24 if sensor.modality == "semantic-lidar" else 16
             point_bytes += int(sensor.config["pointsPerSecond"]) * bytes_per_point * duration
     frame_file_count = len(lease.render_spec.sensors) * capture_count
-    if camera_pixels * 4 + point_bytes + frame_file_count * 4096 > MAX_OUTPUT_BYTES:
+    projected_bytes = camera_pixels * 4 + point_bytes + frame_file_count * 4096
+    if os.environ.get("UNISCENARIO_RGB_STDOUT_VIDEO") == "1":
+        # streamed rgb: rawvideo pipes into ffmpeg, so only the encoded mp4 lands on disk
+        projected_bytes -= sum(
+            int(sensor.config["width"]) * int(sensor.config["height"]) * capture_count * 4
+            for sensor in lease.render_spec.sensors
+            if sensor.modality == "rgb"
+        )
+    if projected_bytes > MAX_OUTPUT_BYTES:
         raise ContractError("projected raw capture exceeds the temporary-disk budget")
 
 
@@ -1290,6 +1303,7 @@ def execute_lease(
             backend.configure_execution(lease.render_spec.execution_mode)
             backend_fence("load_opendrive")
             backend.load_opendrive(package.xodr.map_name, xodr, plan.fixed_timestep_s)
+            backend.video_fps = float(lease.render_spec.fps)
             check_abort("load_opendrive")
             signal_ids: set[str] = set()
             for frame in plan.frames:

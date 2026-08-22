@@ -3,7 +3,10 @@
 UniScenarios identifies executed motion semantics explicitly. New and
 regenerated simulations with no `physics` field run `dynamic-v1`; omission
 still preserves older input JSON and its content hash. Authors may explicitly
-pin `kinematic-v1`. Trace format v3 records the selected mode,
+pin `kinematic-v1`, and an explicit selection is honored exactly:
+`resolvePhysicsConfig` never rewrites a declared mode, so an input pinned to
+`kinematic-v1` executes the route choreography and records `kinematic-v1`
+provenance — no silent migration in either direction. Trace format v3 records the selected mode,
 actual substep, engine build, and the digest of any per-actor vehicle-profile
 overrides, plus per-tick collision impulse/count telemetry. OpenSCENARIO exports retain the same provenance in UniScenarios
 Properties/comments.

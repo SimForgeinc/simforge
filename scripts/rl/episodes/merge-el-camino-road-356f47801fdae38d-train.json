@@ -1,0 +1,12 @@
+{
+  "template": "../../../examples/mechanisms/corridor/merge-gap-collapse.template.json",
+  "map": "el-camino-road",
+  "site": "356f47801fdae38d",
+  "seeds": [
+    "2000",
+    "2001",
+    "2002",
+    "2003",
+    "2004"
+  ]
+}

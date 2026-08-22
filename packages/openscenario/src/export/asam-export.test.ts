@@ -375,8 +375,8 @@ describe('ASAM OpenSCENARIO XML 1.4.0 export', () => {
       path: 'interactions',
     }));
     expect(result.content).toContain('name="uniscenarios.export.intent" value="trajectory-replay"');
-    expect(result.content).toContain('name="uniscenarios.physics.mode" value="dynamic-v1"');
-    expect(result.content).toContain('name="uniscenarios.trajectoryReplay.physics.mode" value="dynamic-v1"');
+    expect(result.content).toContain('name="uniscenarios.physics.mode" value="kinematic-v1"');
+    expect(result.content).toContain('name="uniscenarios.trajectoryReplay.physics.mode" value="kinematic-v1"');
   });
 
   it('exports the omitted-input dynamic default with its actual 5 ms substep', () => {
@@ -457,8 +457,8 @@ describe('ASAM OpenSCENARIO XML 1.4.0 export', () => {
     }).content;
     expect(content).toContain('<Property name="uniscenarios.provenance.templateDigest" value="abc123"/>');
     expect(content).toContain('<Property name="uniscenarios.provenance.drawIndex" value="7"/>');
-    expect(content).toContain('<Property name="uniscenarios.physics.actorBackends" value="ego:dynamic-v1:selected:vehicle"/>');
-    expect(content).toContain('<Property name="uniscenarios.trajectoryReplay.physics.actorBackends" value="ego:dynamic-v1:selected:vehicle"/>');
+    expect(content).toContain('<Property name="uniscenarios.physics.actorBackends" value="ego:kinematic-v1:selected:vehicle"/>');
+    expect(content).toContain('<Property name="uniscenarios.trajectoryReplay.physics.actorBackends" value="ego:kinematic-v1:selected:vehicle"/>');
   });
 
   it('binds signal conditions to the logical scenario controller', () => {
@@ -581,7 +581,7 @@ describe('ASAM OpenSCENARIO DSL 2.2.0 export', () => {
     }));
     expect(result.content).toContain('import osc.standard');
     expect(result.content).toContain('scenario uniscenarios_instance:');
-    expect(result.content).toContain('# uniscenarios.physics.actorBackends=ego:dynamic-v1:selected:vehicle');
+    expect(result.content).toContain('# uniscenarios.physics.actorBackends=ego:kinematic-v1:selected:vehicle');
     expect(result.content).toContain('actor_ego: vehicle with:');
     expect(result.content).toContain('route_ego_pose_0: pose_3d with:');
     expect(result.content).toContain('route_ego: path = map_ref.create_path(points: [route_ego_pose_0');

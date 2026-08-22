@@ -32,3 +32,6 @@ __pycache__/
 
 # Catalog execution attempt work trees are re-derivable from ledgers + seeds.
 catalog/*.json.work/
+scripts/rl/runs/
+scripts/rl/**/__pycache__/
+scripts/rl/*.log

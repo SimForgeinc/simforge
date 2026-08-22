@@ -1,4 +1,5 @@
 from __future__ import annotations
+import subprocess
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -1250,6 +1251,43 @@ class CarlaBackend:
             "cameras": cameras,
         }
 
+    def _rgb_encoder(self, sensor_key: str, config: dict[str, Any]) -> Any:
+        """Lazily start a rawvideo->mp4 encoder so RGB frames never touch disk."""
+        encoder = config.get("encoder")
+        if encoder is not None:
+            return encoder
+        if os.environ.get("UNISCENARIO_RGB_STDOUT_VIDEO") != "1":
+            return None
+        width = int(config["config"]["width"])
+        height = int(config["config"]["height"])
+        fps = max(1, int(round(1.0 / float(self.fixed_timestep_s))))
+        destination = config["target"] / "stream.mp4"
+        command = [
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-f", "rawvideo", "-pix_fmt", "bgra",
+            "-s", f"{width}x{height}", "-r", str(fps), "-i", "-",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
+            "-pix_fmt", "yuv420p", str(destination),
+        ]
+        process = subprocess.Popen(command, stdin=subprocess.PIPE)
+        config["encoder"] = process
+        return process
+
+    def _close_rgb_encoders(self) -> None:
+        for sensor_key, config in sorted(self.sensor_configs.items()):
+            encoder = config.get("encoder")
+            if encoder is None:
+                continue
+            try:
+                encoder.stdin.close()
+                code = encoder.wait(timeout=300)
+                if code != 0:
+                    raise RuntimeError(f"RGB stream encoder {sensor_key} exited with {code}")
+            except Exception as exc:
+                raise RuntimeError(f"RGB stream encoder {sensor_key} failed: {exc}") from exc
+            finally:
+                config["encoder"] = None
+
     def _write_sensor_frame(
         self,
         sensor_key: str,
@@ -1262,16 +1300,23 @@ class CarlaBackend:
         converter = config["converter"]
         if config["modality"] == "rgb" and hasattr(data, "raw_data"):
             self._sample_rgb_visual_quality(sensor_key, data)
-        if converter is not None:
-            data.convert(converter)
-        filename = f"{output_index:08d}.{config['extension']}"
-        target = config["target"] / filename
-        if config["modality"] == "radar":
-            self._write_radar_csv(target, data)
+        encoder = self._rgb_encoder(sensor_key, config) if config["modality"] == "rgb" else None
+        if encoder is not None:
+            target = config["target"] / "stream.mp4"
+            encoder.stdin.write(memoryview(data.raw_data))
+            size = 0
+            relative = f"{sensor_key}/stream.mp4"
         else:
-            data.save_to_disk(str(target))
-        size = target.stat().st_size
-        relative = f"{sensor_key}/{filename}"
+            if converter is not None:
+                data.convert(converter)
+            filename = f"{output_index:08d}.{config['extension']}"
+            target = config["target"] / filename
+            if config["modality"] == "radar":
+                self._write_radar_csv(target, data)
+            else:
+                data.save_to_disk(str(target))
+            size = target.stat().st_size
+            relative = f"{sensor_key}/{filename}"
         record = {
             "artifactName": sensor_key,
             "role": config["role"],
@@ -1796,6 +1841,7 @@ class CarlaBackend:
                     f"sensor {sensor_key} capture is not frame-closed: "
                     f"{len(indexes)} of {expected_frame_count}"
                 )
+        self._close_rgb_encoders()
         if any(config["modality"] == "rgb" for config in self.sensor_configs.values()):
             self.visual_quality_evidence = dict(self._visual_quality_report())
             if self.visual_quality_evidence["verdict"] != "pass":
@@ -1820,6 +1866,14 @@ class CarlaBackend:
             self._restore_owned_signals()
         except Exception as exc:  # noqa: BLE001 - continue the rest of cleanup.
             errors.append(exc)
+        for config in getattr(self, "sensor_configs", {}).values():
+            encoder = config.get("encoder") if isinstance(config, dict) else None
+            if encoder is not None:
+                try:
+                    encoder.kill()
+                except Exception:
+                    pass
+                config["encoder"] = None
         writer_pool = getattr(self, "sensor_writer_pool", None)
         if writer_pool is not None:
             try:

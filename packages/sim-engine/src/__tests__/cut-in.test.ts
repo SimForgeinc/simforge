@@ -139,6 +139,9 @@ describe('cut-in composition', () => {
 
   it('aborts an in-progress true lane change back to its source route', () => {
     const input = scenario(graph, {
+      // The abort window depends on the physical body's lateral progress, so
+      // the force backend is selected explicitly rather than inherited.
+      physics: { mode: 'dynamic-v1' },
       actors: [
         vehicle(graph, { id: 'challenger', rsl: LANE_RIGHT, s: 40, speedMps: 14, cruiseSpeedMps: 14 }),
       ],

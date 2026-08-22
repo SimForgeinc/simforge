@@ -41,12 +41,12 @@ function advance(
 }
 
 describe('dynamic-v1 class-native actors', () => {
-  it('defaults omitted physics to dynamic-v1 and migrates an editable legacy pin', () => {
+  it('defaults omitted physics to dynamic-v1 and honors an explicit kinematic pin', () => {
     const graph = syntheticGraph();
     const pinnedFixture = scenario(graph, {
       actors: [vehicle(graph, { id: 'car', rsl: LANE_LEFT, s: 20, speedMps: 8, cruiseSpeedMps: 12 })],
     });
-    const { physics: _legacyPin, ...legacy } = pinnedFixture;
+    const { physics: _pin, ...legacy } = pinnedFixture;
     const explicitDynamic: SimScenarioInput = { ...legacy, physics: { mode: 'dynamic-v1' } };
     const explicitKinematic: SimScenarioInput = { ...legacy, physics: { mode: 'kinematic-v1' } };
     const implicitTrace = runSimulation(legacy, { graph, guards: 'collect' }).trace;
@@ -56,9 +56,12 @@ describe('dynamic-v1 class-native actors', () => {
     expect(implicitTrace.ticks.actors.car!.physics).toBeDefined();
     expect(implicitTrace.header.physics.mode).toBe('dynamic-v1');
     expect(implicitTrace.header.physics.substepS).toBe(0.005);
-    expect(kinematicTrace.ticks).toEqual(dynamicTrace.ticks);
-    expect(kinematicTrace.ticks.actors.car!.physics).toBeDefined();
-    expect(kinematicTrace.header.physics.actorBackends?.car).toEqual({ mode: 'dynamic-v1', reason: 'selected', profile: 'vehicle' });
+    // An explicit selection is honored exactly — never silently relabeled.
+    expect(kinematicTrace.header.physics.mode).toBe('kinematic-v1');
+    expect(kinematicTrace.header.physics.actorBackends?.car)
+      .toEqual({ mode: 'kinematic-v1', reason: 'selected', profile: 'vehicle' });
+    expect(kinematicTrace.ticks.actors.car!.physics).toBeUndefined();
+    expect(kinematicTrace.ticks).not.toEqual(dynamicTrace.ticks);
   });
 
   it('uses a native bus profile instead of a kinematic fallback', () => {

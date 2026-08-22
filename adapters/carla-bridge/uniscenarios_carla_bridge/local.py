@@ -437,7 +437,20 @@ def _intent_lease(
         sum(sensor.modality in {"lidar", "semantic-lidar"} for sensor in rig_sensors),
         sum(sensor.modality == "radar" for sensor in rig_sensors),
     )
-    if (
+    if os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
+        rgb_ids = {sensor.sensor_id for sensor in parsed_spec.sensors if sensor.modality == "rgb"}
+        derived = {
+            name: tuple(name.split("__"))
+            for name in (str(sensor.sensor_id) for sensor in rig_sensors)
+            if "__" in name
+        }
+        unknown_bases = sorted({name.split("__")[0] for name in derived} - rgb_ids)
+        bad_modality = sorted(name for name, (_, mod) in derived.items() if mod not in camera_modalities - {"rgb"})
+        if unknown_bases or bad_modality or len(rgb_ids) < 8 or actual_rig[1] < 6 or actual_rig[2] < 4:
+            raise ContractError(
+                "SDG expansion sensors must derive from real rgb rig cameras via id__modality"
+            )
+    elif (
         len(rig_sensors) != 18
         or actual_rig != (8, 6, 4)
         or {sensor.actor_id for sensor in parsed_spec.sensors} != {host_actor_id}
@@ -774,8 +787,28 @@ def main() -> None:
     intent.add_argument("--output", required=True)
     intent.add_argument("--progress", required=True)
     intent.add_argument("--manifest", required=True)
+    local = commands.add_parser("run-local", help="render an OpenSCENARIO offline from files")
+    local.add_argument("--scenario", required=True)
+    local.add_argument("--xodr", required=True)
+    local.add_argument("--catalog", required=True)
+    local.add_argument("--output", required=True)
+    local.add_argument("--map-label", default="local-map")
+    local.add_argument("--map-revision", default="local")
+    local.add_argument("--start-seconds", type=float, default=0.0)
+    local.add_argument("--end-seconds", type=float, default=20.0)
+    local.add_argument("--seed", type=int, default=None)
+    local.add_argument("--sdg", dest="sdg_modalities", default=None,
+                       help="extra camera modalities per Pronto camera (comma-separated: depth,semantic,instance,normals) or a profile preset: playback,training_basic,training_multimodal,raw_multisensor,tao_detection,sdg")
+    local.add_argument("--annotations", action="store_true",
+                       help="emit per-frame actor ground truth as an ndjson annotations artifact")
     args = parser.parse_args()
-    result = _probe(args.host, args.port) if args.command == "probe" else _run_intent(args)
+    if args.command == "run-local":
+        from .run_local import run_local_command
+        result = run_local_command(args)
+    elif args.command == "probe":
+        result = _probe(args.host, args.port)
+    else:
+        result = _run_intent(args)
     print(json.dumps(result, sort_keys=True))
 
 
