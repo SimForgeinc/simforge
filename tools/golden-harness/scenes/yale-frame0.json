@@ -1,0 +1,22 @@
+{
+  "sceneId": "yale-frame0",
+  "mapId": "yale-street",
+  "profile": "sensor",
+  "description": "Spike corpus yale-street tiles 2_4/2_5/2_6/3_5 (lod0) + road layer at the W0 baseline-midblock frame-0 POV; the golden scene from scripts/renderer-spike/FINDINGS.md.",
+  "corpusFiles": ["tile_2_4.glb", "tile_2_5.glb", "tile_2_6.glb", "tile_3_5.glb", "road.glb"],
+  "rendererArgs": {
+    "eye": [580.45, 14.44, -1655.66],
+    "target": [590.40, 14.35, -1648.96],
+    "fov": 58,
+    "width": 736,
+    "height": 416,
+    "warmup": 20,
+    "frames": 30,
+    "cameras": 1,
+    "sunElev": 38,
+    "sunAzim": 145,
+    "lux": 28000,
+    "ambient": 0.6
+  },
+  "expectedPasses": ["rgb0", "id0", "depth0"]
+}

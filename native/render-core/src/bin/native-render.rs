@@ -483,6 +483,15 @@ fn check_assets(
             state.loaded_at = Some(Instant::now());
         }
     }
+    // WSB6 determinism fix: spawn tile content ONLY once every GLB has loaded,
+    // so WorldAssetRoot spawn order (=> entity order => draw order) follows the
+    // deterministic CLI `--glbs` order instead of async load-completion racing.
+    // Spawning partially-ready tiles let coplanar geometry at tile borders flip
+    // the winning surface between processes (~25% of runs differed on RGB;
+    // see tools/golden-harness/evidence/ and docs/native-golden-ci.md).
+    if state.loaded_at.is_none() {
+        return;
+    }
     for (e, tile) in &loads {
         let Some(gltf) = gltfs.get(&tile.0) else {
             continue;

@@ -1,0 +1,88 @@
+name: native-golden
+
+# WSB6 — native renderer determinism + perf regression gate.
+#
+# Runs on the RTX 5080 box via a self-hosted runner (label `gpu-rtx5080`):
+# A100/datacenter raster is unrepresentative and Chrome RGB is provably not
+# goldenable (docs/determinism-claim.md), so this suite is Bevy/wgpu
+# sensor-profile only, golden-hashed per GPU fingerprint.
+#
+# Runner registration (one-time, on the 5080 host):
+#   1. GitHub repo → Settings → Actions → Runners → New self-hosted runner
+#   2. Label it: gpu-rtx5080, Linux, X64
+#   3. Keep the default work dir on the local SSD (the corpus + target/ are large)
+#   4. Ensure nvidia-smi is on PATH and Vulkan loader (vulkaninfo) works for the
+#      runner user; the runner must NOT run under root-less sandboxing that
+#      blocks /dev/dri or /dev/nvidia*
+#
+# Until the runner is registered this workflow shows as "queued" forever;
+# the exact same steps run locally via tools/golden-harness/ci-local.sh
+# (execution log committed at tools/golden-harness/evidence/).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'native/**'
+      - 'tools/golden-harness/**'
+      - 'scripts/renderer-spike/**'
+      - '.github/workflows/native-golden.yml'
+  pull_request:
+    paths:
+      - 'native/**'
+      - 'tools/golden-harness/**'
+      - 'scripts/renderer-spike/**'
+  workflow_dispatch: {}
+
+concurrency:
+  # The 5080 is a single shared raster GPU — serialize golden runs.
+  group: native-golden-gpu
+  cancel-in-progress: false
+
+jobs:
+  golden-suite:
+    runs-on: [self-hosted, Linux, X64, gpu-rtx5080]
+    timeout-minutes: 60
+    env:
+      # Decoded sensor corpus root (WSB1). Falls back to the repo's spike
+      # corpus when the SCEN_SENSOR_CORPUS checkout is absent.
+      SCEN_SENSOR_CORPUS: ${{ vars.SCEN_SENSOR_CORPUS }}
+      # Wait up to 5 min for a quiet GPU before gating (co-tenant jobs make
+      # frame times ~5x worse and can destabilize evidence); exit 6 if still busy.
+      GOLDEN_GPU_WAIT: '300'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            native/target
+          key: native-golden-${{ runner.os }}-${{ hashFiles('native/Cargo.lock') }}
+
+      - name: Build native renderer
+        working-directory: native
+        run: cargo build --release -p render-core --bin native-render
+
+      - name: Check corpus availability
+        run: |
+          if [ -z "$SCEN_SENSOR_CORPUS" ] && [ ! -d scripts/renderer-spike/corpus ]; then
+            echo "::error::No corpus found: set repo variable SCEN_SENSOR_CORPUS or commit-check out the spike corpus"; exit 1
+          fi
+          echo "corpus root: ${SCEN_SENSOR_CORPUS:-scripts/renderer-spike/corpus}"
+
+      - name: Verify goldens (hash drift + frame-time budget)
+        run: node tools/golden-harness/golden.mjs verify all
+
+      - name: Upload verify artifacts (manifests + frames, always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-verify-artifacts
+          path: artifacts/golden-harness/
+          retention-days: 14
+          if-no-files-found: ignore
