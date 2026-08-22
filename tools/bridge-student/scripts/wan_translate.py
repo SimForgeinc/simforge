@@ -92,12 +92,17 @@ def main():
         nf = len(video)
         idxs = np.linspace(0, nf - 1, args.out_frames).round().astype(int)
         for j, vi in enumerate(idxs):
-            arr = (video[vi].float().cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8) \
-                if hasattr(video[vi], "permute") else np.asarray(video[vi].convert("RGB"))
+            v = video[vi]
+            if hasattr(v, "permute"):
+                arr = (v.float().cpu().numpy().transpose(1, 2, 0) * 255).astype(np.uint8)
+            elif isinstance(v, np.ndarray):
+                arr = v.astype(np.uint8)
+            else:
+                arr = np.asarray(v.convert("RGB"))
             Image.fromarray(arr).save(os.path.join(out_dir, f"{j:05d}.png"))
         with open(done_marker, "w") as f:
             json.dump({"seconds": round(dt, 1), "frames_out": int(len(idxs)),
-                       "num_frames": nf}, f)
+                       "num_frames": int(nf)}, f)
         print(f"{clip}: {nf} frames in {dt:.1f}s -> {out_dir}", flush=True)
 
 

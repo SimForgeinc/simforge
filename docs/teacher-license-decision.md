@@ -143,3 +143,27 @@ student-training generation moves to Wan 2.2 I2V; the frozen-perception
 auditor gates every teacher's outputs identically regardless of source.
 
 — WS3Bridge, 2026-08-22
+
+## 6. Technical disqualifier — IsolationX factor-matrix verdict (independent of law)
+
+Independent of the license analysis, the V2 isolation experiments
+(`simforge1:~/w0-exp/V2_RESULTS.md`, run 2026-08-22) disqualify zero-shot H3
+Ref2VA edit-mode as a teacher on *technical* grounds:
+
+- **E1 real-footage control**: feeding REAL dashcam footage (ref2va source
+  clip, seed 44), source-vs-output detector agreement was recall **0.000 for
+  every class across all 96 frame pairs** (car n=489, truck 65, bus 62,
+  person 43); the output re-rendered the style-reference scene (Madison St
+  intersection), not the input clip. The model is fundamentally
+  RE-generative, not a vid2vid editor: the failure is not our synthetic
+  camera, not serving, not prompting.
+- Single-factor matrix (caption / style-ref match / resolution / official
+  phrasing / combo): best combined result reached only near-field recall
+  **0.732** and IoU≥0.5 **0.158** against the 90% kill gate; pedestrians are
+  systematically deleted or displaced.
+
+Consequence recorded here because it gates teacher choice too: even if
+MiniMax granted territory/distillation terms, H3 would remain unusable as a
+zero-shot observation bridge, and dense G-buffer conditioning in the student
+(plan WS3 item 1) is mandatory rather than optional. Wan 2.2 is therefore
+primary on both legal AND technical grounds.
