@@ -18,9 +18,15 @@ use crate::lighting::{CLEAR_DAY_SUN_LUX, kelvin_to_rgb, LightingPlan};
 
 /// The map HDRIs are normalized (sky ≈ 1.26 luma units, measured for
 /// yale-street env/sky.hdr), not cd/m². Scale so the sky hemisphere delivers
-/// ~6 klx diffuse — a plausible clear-sky fill against a 100 klx sun
-/// (target shadowed/sunlit ratio ≈ 0.15–0.25 on horizontal surfaces).
-pub const HDRI_TO_CDM2: f32 = 18000.0;
+/// ~15 klx diffuse against the 100 klx physical sun (WMO/CIE clear-day sky
+/// diffuse is 10–25 klx; target shadowed/sunlit ratio ≈ 0.15–0.25 on
+/// horizontal surfaces). Empirically: 18 000 gave ratio 0.034 at rung 2;
+/// scaling by the same 8.33× the sun gained (12 klx → 100 klx) restores the
+/// With the probe volume fixed, 150 000 measured ratio 0.65 (washed out);
+/// solving e/(s+e) for the 0.20 target gives ≈20 000. NOTE: measure_shadow_fill
+/// reads sRGB-encoded pixels; 20 000 measures sRGB ratio 0.49 ≈ LINEAR 0.21
+/// (γ2.2), inside the 0.15–0.25 physical band, shadow tint +0.024 blue.
+pub const HDRI_TO_CDM2: f32 = 20_000.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, bevy::prelude::Resource)]
 pub enum Weather {

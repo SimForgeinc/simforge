@@ -23,6 +23,7 @@ use bevy::light::{
     LightProbe,
 };
 use bevy::math::{Dir3, Quat, Vec3, Vec4};
+use bevy::transform::components::Transform;
 use bevy::pbr::{ContactShadows, ScreenSpaceAmbientOcclusion};
 use bevy::render::render_resource::{
     Extent3d, TextureDimension, TextureFormat, TextureViewDescriptor, TextureViewDimension,
@@ -238,8 +239,12 @@ pub fn spawn_lighting(
         // Runtime GPU filtering of GeneratedEnvironmentMapLight contributed
         // no measurable diffuse here; use the direct EnvironmentMapLight path
         // with the CPU-side cubemap for both lobes.
+        // LightProbe influence is the entity transform's scaled 2×2×2 cube;
+        // the default transform is a 1 m cube at the origin, which misses the
+        // world-space scene entirely (tiles sit ~1.7 km out). Cover everything.
         commands.spawn((
             LightProbe::default(),
+            Transform::from_scale(Vec3::splat(1_000_000.0)),
             EnvironmentMapLight {
                 diffuse_map: handle.clone(),
                 specular_map: handle.clone(),
