@@ -310,7 +310,7 @@ fn main() -> Result<()> {
                 loaded_at: None,
                 load_start: Instant::now(),
                 build_ready_at: None,
-                id_clones_done: true,
+                id_clones_done: false,
                 capture_start: None,
                 last_capture_at: None,
                 frame_period_ms: Vec::new(),

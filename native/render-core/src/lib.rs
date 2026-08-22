@@ -8,6 +8,12 @@
 //! WSB2 owns the scene/actor/motion-vector modules; WSB3 adds camera rigs and
 //! extra sensor passes; WSB4 adds lighting/atmosphere/post + render profiles.
 //!
-//! The `native-render` binary is the spike application verbatim at this
-//! commit; scene-state playback, actor meshes and the motion-vector pass are
-//! added on top in subsequent commits.
+//! Binaries:
+//! - `native-render`: the spike application (flag-compatible baseline).
+//! - `scen-play`: scene-state.v1 trace playback with actors + motion vectors.
+
+pub mod catalog;
+pub mod motion_vector;
+pub mod playback;
+pub mod readback;
+pub mod scene_state;
