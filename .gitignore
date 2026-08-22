@@ -35,3 +35,10 @@ catalog/*.json.work/
 scripts/rl/runs/
 scripts/rl/**/__pycache__/
 scripts/rl/*.log
+
+# Sensor corpus: decoded GLBs are large binaries, re-derivable via
+# `uniscenarios corpus build`; the checksummed manifests ARE committed so
+# downstream lanes and CI can verify a local build against them.
+.corpus/**/*
+!.corpus/**/
+!.corpus/*/manifest.json
