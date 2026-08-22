@@ -161,16 +161,17 @@ class _PerEpisodeNoise:
         self.std = std
         self.suite_hash = suite_hash
         self.arm_name = arm_name
+        self.base = inner
         self.inner: EvalPolicy | None = None
+
+    def reset_episode(self, entry_id: str) -> None:
+        seed = episode_noise_seed(self.suite_hash, self.arm_name, entry_id, f"ns{self.std:g}")
+        assert self.base is not None
+        self.inner = EgoStateNoisePolicy(self.base, self.std, seed)
 
     @property
     def name(self) -> str:
         return f"{self.arm_name}+ns{self.std:g}"
-
-    def reset_episode(self, entry_id: str) -> None:
-        seed = episode_noise_seed(self.suite_hash, self.arm_name, entry_id, f"ns{self.std:g}")
-        assert self.inner is not None
-        self.inner = EgoStateNoisePolicy(self.inner, self.std, seed)
 
     def act(self, frame: dict[str, Any]) -> dict[str, float] | None:
         assert self.inner is not None
