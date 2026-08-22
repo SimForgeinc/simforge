@@ -29,7 +29,7 @@ export const EngineCapabilityDeclarationSchema = z.strictObject({
   schema: z.literal(ENGINE_CAPABILITIES_V1_SCHEMA),
   engineId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/),
   engineVersion: z.string().min(1).max(128),
-  backend: z.enum(['browser', 'carla']),
+  backend: z.enum(['browser', 'carla', 'native']),
   protocolVersion: z.literal(1),
   capabilities: z.array(EngineCapabilitySchema).min(1).max(32),
   modalities: z.array(z.enum(['rgb', 'depth', 'semantic', 'instance', 'lidar', 'radar'])).min(1).max(6),

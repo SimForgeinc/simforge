@@ -9,7 +9,7 @@ import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration } from 
 import { loadRenderEngine, type RenderEngineAdapter, type RenderExecutionContext } from './engine.js';
 import { parseProgressJsonl } from './progress.js';
 
-export type BuiltinRenderEngineId = 'browser' | 'carla';
+export type BuiltinRenderEngineId = 'browser' | 'carla' | 'native';
 
 const CARLA_CAPABILITIES: EngineCapabilityDeclaration = {
   schema: ENGINE_CAPABILITIES_V1_SCHEMA,
@@ -134,6 +134,13 @@ export async function loadBuiltinRenderEngine(
     const moduleSpecifier = typeof options.module === 'string'
       ? options.module
       : process.env.UNISCENARIOS_BROWSER_ENGINE_MODULE ?? '@uniscenarios/browser-renderer';
+    const { module: _module, ...engineOptions } = options;
+    return loadRenderEngine(moduleSpecifier, engineOptions);
+  }
+  if (engineId === 'native') {
+    const moduleSpecifier = typeof options.module === 'string'
+      ? options.module
+      : process.env.UNISCENARIOS_NATIVE_ENGINE_MODULE ?? '@uniscenarios/native-renderer';
     const { module: _module, ...engineOptions } = options;
     return loadRenderEngine(moduleSpecifier, engineOptions);
   }
