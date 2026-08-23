@@ -22,6 +22,23 @@ reimplement portable behavior. A product need that changes scenario semantics is
 implemented and tested here first, released as a complete stack, and then
 consumed by SimCloud.
 
+### Addendum (2026-08-23): the local product surface `apps/cloud`
+
+`apps/cloud` is a deliberate, scoped exception to "UniScenarios must not
+import SimCloud code": it is a 1:1 COPY of SimCloud's product presentation and
+API layer (dashboard, app switcher, scenario editor, control-plane routes)
+living in this repo so the complete product runs locally with no cloud. It is
+not a fork: files stay byte-faithful to SimCloud source except at three local
+seams (embedded-Postgres DB adapter, filesystem object store behind the S3
+helper API, fixed local identity) plus documented local additions
+(browser-recording reservation routes, enriched worker claim closure, local
+compiler/render worker, legacy-table migrations). Product behavior changes
+still land in SimCloud first (or simultaneously) and are re-copied here;
+`apps/cloud` must never grow product semantics SimCloud lacks. Engine
+dependency direction is unchanged: `apps/cloud` consumes the workspace
+packages the same way SimCloud consumes the released tarballs. See
+`docs/simcloud-local-port-plan.md` and `docs/context/`.
+
 ## Ownership
 
 | Capability | Canonical owner | SimCloud responsibility |
