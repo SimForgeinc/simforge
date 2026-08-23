@@ -3,7 +3,7 @@ import { PlaybackController } from '@uniscenarios/playback';
 import { captureBrowserArtifacts, BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import { parseResolvedBrowserRenderRequest, type ResolvedBrowserRenderRequest } from './intent.js';
 import type { ArtifactByteSink, ArtifactIdentity } from './artifacts.js';
-import { assertProntoKiaSensorHost } from './pronto.js';
+import { assertBrowserSensorHost } from './pronto.js';
 
 export interface HeadlessArtifactBridge {
   open(identity: ArtifactIdentity, mediaType: string): Promise<string>;
@@ -29,7 +29,7 @@ export const browserEngineAdapter = Object.freeze({
 });
 
 export async function renderHeadlessIntent(request: ResolvedBrowserRenderRequest, services: BrowserEngineServices): Promise<BrowserCaptureResult> {
-  assertProntoKiaSensorHost(request.intent.renderSpec, request.playbackBundle, request.intent.sensorHost);
+  assertBrowserSensorHost(request.intent.renderSpec, request.playbackBundle, request.intent.sensorHost);
   const viewer = new CityViewer(services.canvas, { antialias: false, maxPixelRatio: 1 });
   let controller: PlaybackController | null = null;
   try {

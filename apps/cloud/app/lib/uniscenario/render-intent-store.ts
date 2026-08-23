@@ -118,7 +118,7 @@ function enforceRtx5080Admission(resources: RenderResourceRequestV2) {
   }
 }
 
-function selectedSensorHostActorId(input: SubmitUniScenarioRenderIntent, lineage: ImmutableLineageRow) {
+function selectedSensorHost(input: SubmitUniScenarioRenderIntent, lineage: ImmutableLineageRow) {
   const content = typeof lineage.canonical_content === "string"
     ? JSON.parse(lineage.canonical_content) as Record<string, unknown>
     : lineage.canonical_content;
@@ -130,6 +130,9 @@ function selectedSensorHostActorId(input: SubmitUniScenarioRenderIntent, lineage
   const foundActorIds = new Set<string>();
   const foundSourceKeys = new Set<string>();
   const catalogIds = new Set<string>();
+  const cameraIds = new Set<string>();
+  const lidarIds = new Set<string>();
+  const radarIds = new Set<string>();
   for (const role of roles) {
     if (!role || typeof role !== "object") continue;
     const value = role as {
@@ -163,16 +166,30 @@ function selectedSensorHostActorId(input: SubmitUniScenarioRenderIntent, lineage
           throw new Error(`render_sensor_source_mismatch:${value.id}:${sensor.id}`);
         }
         foundSourceKeys.add(`${value.id}\0${sensor.id}\0${selected.modality}`);
+        if (sensor.type === "dash_camera") cameraIds.add(sensor.id);
+        else if (sensor.type === "lidar") lidarIds.add(sensor.id);
+        else if (sensor.type === "radar") radarIds.add(sensor.id);
       }
     }
   }
   if (foundActorIds.size !== selectedActorIds.size || foundSourceKeys.size !== selectedSourceKeys.size) {
     throw new Error("render_sensor_host_asset_lineage_incomplete");
   }
-  if (foundActorIds.size !== 1 || catalogIds.size !== 1 || !catalogIds.has(PRONTO_SENSOR_HOST_ASSET_ID)) {
+  if (foundActorIds.size !== 1 || catalogIds.size !== 1) {
+    throw new Error("render_sensor_host_must_be_one_catalog_vehicle");
+  }
+  const actorId = [...foundActorIds][0]!;
+  const catalogAssetId = [...catalogIds][0]!;
+  if (input.engine === "carla" && catalogAssetId !== PRONTO_SENSOR_HOST_ASSET_ID) {
     throw new Error("pronto_sensor_host_must_be_kia_carnival");
   }
-  return [...foundActorIds][0]!;
+  return {
+    actorId,
+    catalogAssetId,
+    cameras: cameraIds.size,
+    lidars: lidarIds.size,
+    radars: radarIds.size,
+  };
 }
 
 function buildIntent(input: SubmitUniScenarioRenderIntent, lineage: ImmutableLineageRow): UniScenarioRenderIntent {
@@ -187,11 +204,15 @@ function buildIntent(input: SubmitUniScenarioRenderIntent, lineage: ImmutableLin
   ) {
     throw new Error("pronto_render_must_cover_full_clip");
   }
-  const sensorHostActorId = selectedSensorHostActorId(input, lineage);
+  const sensorHost = selectedSensorHost(input, lineage);
   const intentId = uniscenarioId("usri");
   return UniScenarioRenderIntentSchema.parse({
     schema: RENDER_INTENT_CONTRACT,
     intentId,
+    executionPackage: {
+      id: lineage.execution_package_id,
+      sourceInputDigest: lineage.source_input_digest,
+    },
     scenarioRevision: {
       revisionId: lineage.revision_id,
       scenarioSha256: lineage.scenario_sha256,
@@ -202,28 +223,39 @@ function buildIntent(input: SubmitUniScenarioRenderIntent, lineage: ImmutableLin
         sha256: lineage.map_sha256,
       },
     },
-    sensorHost: {
-      actorId: sensorHostActorId,
-      vehicleAsset: {
-        catalogAssetId: "vehicle.kia.carnival",
-        carlaBlueprintId: "vehicle.kia.carnival",
-        carlaClassPath: "/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C",
-        make: "Kia",
-        model: "Carnival",
-        baseType: "van",
-        sourceImage: {
-          repository: "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
-          indexSha256: "f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5",
-          linuxAmd64ManifestSha256: "baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64",
+    sensorHost: input.engine === "carla"
+      ? {
+        actorId: sensorHost.actorId,
+        vehicleAsset: {
+          catalogAssetId: "vehicle.kia.carnival",
+          carlaBlueprintId: "vehicle.kia.carnival",
+          carlaClassPath: "/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C",
+          make: "Kia",
+          model: "Carnival",
+          baseType: "van",
+          sourceImage: {
+            repository: "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
+            indexSha256: "f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5",
+            linuxAmd64ManifestSha256: "baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64",
+          },
+        },
+        sensorRig: {
+          rigId: "pronto.8-camera-6-lidar-4-radar",
+          cameras: 8,
+          lidars: 6,
+          radars: 4,
+        },
+      }
+      : {
+        actorId: sensorHost.actorId,
+        vehicleAsset: { catalogAssetId: sensorHost.catalogAssetId },
+        sensorRig: {
+          rigId: "authored",
+          cameras: sensorHost.cameras,
+          lidars: sensorHost.lidars,
+          radars: sensorHost.radars,
         },
       },
-      sensorRig: {
-        rigId: "pronto.8-camera-6-lidar-4-radar",
-        cameras: 8,
-        lidars: 6,
-        radars: 4,
-      },
-    },
     renderSpec: input.renderSpec,
     assets: [
       {

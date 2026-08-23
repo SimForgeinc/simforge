@@ -12,9 +12,47 @@ const LocalRenderSpecV3Schema = z.custom<RenderSpecV3>(
 export const UniScenarioRendererEngineSchema = z.enum(["browser", "carla"]);
 export type UniScenarioRendererEngine = z.infer<typeof UniScenarioRendererEngineSchema>;
 
+const ProntoSensorHostSchema = z.strictObject({
+  actorId: PublicIdSchema,
+  vehicleAsset: z.strictObject({
+    catalogAssetId: z.literal("vehicle.kia.carnival"),
+    carlaBlueprintId: z.literal("vehicle.kia.carnival"),
+    carlaClassPath: z.literal("/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C"),
+    make: z.literal("Kia"),
+    model: z.literal("Carnival"),
+    baseType: z.literal("van"),
+    sourceImage: z.strictObject({
+      repository: z.literal("ghcr.io/simforgeinc/carla-rfs-munich-belmont"),
+      indexSha256: z.literal("f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5"),
+      linuxAmd64ManifestSha256: z.literal("baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64"),
+    }),
+  }),
+  sensorRig: z.strictObject({
+    rigId: z.literal("pronto.8-camera-6-lidar-4-radar"),
+    cameras: z.literal(8),
+    lidars: z.literal(6),
+    radars: z.literal(4),
+  }),
+});
+
+const AuthoredSensorHostSchema = z.strictObject({
+  actorId: PublicIdSchema,
+  vehicleAsset: z.strictObject({ catalogAssetId: PublicIdSchema }),
+  sensorRig: z.strictObject({
+    rigId: z.literal("authored"),
+    cameras: z.number().int().nonnegative().max(1024),
+    lidars: z.number().int().nonnegative().max(1024),
+    radars: z.number().int().nonnegative().max(1024),
+  }),
+});
+
 export const UniScenarioRenderIntentSchema = z.strictObject({
   schema: z.literal("uniscenario.render-intent/v1"),
   intentId: PublicIdSchema,
+  executionPackage: z.strictObject({
+    id: PublicIdSchema,
+    sourceInputDigest: Sha256Schema,
+  }),
   scenarioRevision: z.strictObject({
     revisionId: PublicIdSchema,
     scenarioSha256: Sha256Schema,
@@ -28,28 +66,7 @@ export const UniScenarioRenderIntentSchema = z.strictObject({
       sha256: Sha256Schema,
     }),
   }),
-  sensorHost: z.strictObject({
-    actorId: PublicIdSchema,
-    vehicleAsset: z.strictObject({
-      catalogAssetId: z.literal("vehicle.kia.carnival"),
-      carlaBlueprintId: z.literal("vehicle.kia.carnival"),
-      carlaClassPath: z.literal("/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C"),
-      make: z.literal("Kia"),
-      model: z.literal("Carnival"),
-      baseType: z.literal("van"),
-      sourceImage: z.strictObject({
-        repository: z.literal("ghcr.io/simforgeinc/carla-rfs-munich-belmont"),
-        indexSha256: z.literal("f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5"),
-        linuxAmd64ManifestSha256: z.literal("baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64"),
-      }),
-    }),
-    sensorRig: z.strictObject({
-      rigId: z.literal("pronto.8-camera-6-lidar-4-radar"),
-      cameras: z.literal(8),
-      lidars: z.literal(6),
-      radars: z.literal(4),
-    }),
-  }),
+  sensorHost: z.union([ProntoSensorHostSchema, AuthoredSensorHostSchema]),
   renderSpec: LocalRenderSpecV3Schema,
   assets: z.array(z.strictObject({
     assetId: PublicIdSchema,
@@ -67,13 +84,26 @@ export const UniScenarioRenderIntentSchema = z.strictObject({
       context.addIssue({
         code: "custom",
         path: ["renderSpec", "sources"],
-        message: "Every Pronto source must attach to the declared Kia Carnival sensor host.",
+        message: "Every render source must attach to the declared sensor host.",
       });
     }
     const key = `${source.actorId}\0${source.sensorId}`;
     if (source.modality === "lidar") lidarSensors.add(key);
     else if (source.modality === "radar") radarSensors.add(key);
     else cameraSensors.add(key);
+  }
+  if (intent.sensorHost.sensorRig.rigId === "authored") {
+    const counts = intent.sensorHost.sensorRig;
+    if (cameraSensors.size !== counts.cameras
+      || lidarSensors.size !== counts.lidars
+      || radarSensors.size !== counts.radars) {
+      context.addIssue({
+        code: "custom",
+        path: ["sensorHost", "sensorRig"],
+        message: "Authored sensor counts must match the selected physical sensors.",
+      });
+    }
+    return;
   }
   if (cameraSensors.size > 8 || lidarSensors.size > 6 || radarSensors.size > 4) {
     context.addIssue({

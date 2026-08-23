@@ -7,6 +7,8 @@ import {
   PRONTO_KIA_CARLA_CLASS_PATH,
   PRONTO_KIA_CATALOG_ASSET_ID,
   PRONTO_SENSOR_RIG_ID,
+  ProntoSensorHostSchema,
+  type RenderSensorHost,
   type ProntoSensorHost,
   type RenderSpecV3,
 } from '@uniscenarios/scenario-model';
@@ -19,6 +21,37 @@ export const PRONTO_SOURCE_IMAGE_AMD64_DIGEST = PRONTO_CARLA_IMAGE_AMD64_SHA256;
 export const PRONTO_SENSOR_COUNTS = Object.freeze({ camera: 8, lidar: 6, radar: 4 });
 
 /** Browser-side defense after portable schema validation and input materialization. */
+export function assertBrowserSensorHost(renderSpec: RenderSpecV3, bundle: PlaybackBundle, sensorHost: RenderSensorHost): void {
+  const hosts = new Set(renderSpec.sources.map((source) => source.actorId));
+  if (hosts.size !== 1 || !hosts.has(sensorHost.actorId)) {
+    throw new Error('Every browser render source must attach to the declared sensor host.');
+  }
+  const actor = bundle.actors.find((candidate) => candidate.id === sensorHost.actorId);
+  if (!actor) throw new Error(`Browser sensor host ${sensorHost.actorId} is absent from immutable playback metadata.`);
+  if (actor.catalogId !== sensorHost.vehicleAsset.catalogAssetId) {
+    throw new Error(`Browser sensor host ${sensorHost.actorId} expected ${sensorHost.vehicleAsset.catalogAssetId}; received ${actor.catalogId}.`);
+  }
+  const cameraIds = new Set(renderSpec.sources
+    .filter((source) => source.modality !== 'lidar' && source.modality !== 'radar')
+    .map((source) => source.sensorId));
+  const lidarIds = new Set(renderSpec.sources
+    .filter((source) => source.modality === 'lidar')
+    .map((source) => source.sensorId));
+  const radarIds = new Set(renderSpec.sources
+    .filter((source) => source.modality === 'radar')
+    .map((source) => source.sensorId));
+  if (sensorHost.sensorRig.rigId === 'authored') {
+    if (cameraIds.size !== sensorHost.sensorRig.cameras
+      || lidarIds.size !== sensorHost.sensorRig.lidars
+      || radarIds.size !== sensorHost.sensorRig.radars) {
+      throw new Error('Authored browser sensor counts do not match the immutable render sources.');
+    }
+    return;
+  }
+  assertProntoKiaSensorHost(renderSpec, bundle, ProntoSensorHostSchema.parse(sensorHost));
+}
+
+/** Pronto-specific provenance and exact-rig validation, retained for the managed Pronto lane. */
 export function assertProntoKiaSensorHost(renderSpec: RenderSpecV3, bundle: PlaybackBundle, sensorHost: ProntoSensorHost): void {
   if (sensorHost.vehicleAsset.catalogAssetId !== PRONTO_KIA_CATALOG_ASSET_ID
     || sensorHost.vehicleAsset.carlaBlueprintId !== PRONTO_KIA_CARLA_BLUEPRINT_ID

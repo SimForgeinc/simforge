@@ -342,11 +342,11 @@ export function RenderConfigPanel({
   const issues = useMemo(() => {
     const list: string[] = [];
     if (sensorOptions.length === 0) {
-      list.push("Add the Pronto sensor rig before rendering.");
+      list.push(backend === "carla" ? "Add the Pronto sensor rig before rendering." : "Add a camera or sensor before rendering.");
     } else if (selectedSensors.length === 0) {
-      list.push("Select the Pronto sensor rig.");
+      list.push("Select at least one sensor.");
     } else if (selectedModalities.length !== selectedSensors.length) {
-      list.push("Every selected Pronto sensor needs at least one modality.");
+      list.push("Every selected sensor needs at least one modality.");
     }
     if (selectedSensors.length > MANAGED_MAX_SENSORS) {
       list.push(
@@ -354,11 +354,17 @@ export function RenderConfigPanel({
       );
     }
     if (
-      selectedHostActorCount !== 1
-      || sensorHostAssets.length !== 1
-      || sensorHostAssets[0] !== "vehicle.kia.carnival"
+      backend === "carla"
+      && (
+        selectedHostActorCount !== 1
+        || sensorHostAssets.length !== 1
+        || sensorHostAssets[0] !== "vehicle.kia.carnival"
+      )
     ) {
       list.push("The Pronto sensor rig must attach to the Kia Carnival asset (vehicle.kia.carnival).");
+    }
+    if (backend === "browser" && selectedHostActorCount !== 1) {
+      list.push("Browser renders capture sensors from one vehicle at a time.");
     }
     if (estimatedGpuBytes > MANAGED_MAX_ESTIMATED_GPU_BYTES) {
       list.push("This modality mix exceeds the RTX 5080 memory profile. Lower the modality count.");
@@ -372,6 +378,7 @@ export function RenderConfigPanel({
     if (outputs.length === 0) list.push("Enable at least one output.");
     return list;
   }, [
+    backend,
     estimatedGpuBytes,
     outputs,
     selectedHostActorCount,
