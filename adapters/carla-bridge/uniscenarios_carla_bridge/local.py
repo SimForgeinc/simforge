@@ -771,6 +771,8 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
     def emit(event: str, payload: Mapping[str, object]) -> None:
         nonlocal sequence
+        if event not in {"job.started", "progress"}:
+            return
         if event == "progress":
             record = {
                 "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
