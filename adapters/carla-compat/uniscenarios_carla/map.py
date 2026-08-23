@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from functools import cached_property
 
 from ._lanegraph import LaneGraphLite, LaneHit, LaneNode, find_dev_assets, load_topology_index
+from .geoloc import (
+    GeoLocation,
+    GeoOrigin,
+    geolocation_to_transform,
+    parse_geo_origin,
+    transform_to_geolocation,
+)
 from .geom import Location, Rotation, Transform
+from .lane_types import TOPOLOGY_TO_FLAG, LaneType
 
-#: Lane types treated as drivable for waypoint queries.
+#: Kept for backwards compatibility with the WSB7 surface.
 DRIVING_LANE_TYPES = ("driving",)
 
 
@@ -123,22 +132,80 @@ def _walk(graph: LaneGraphLite, lane: LaneNode, s: float, distance: float, *, fo
 class Map:
     """``carla.Map`` facade: name, waypoints, recommended spawn points."""
 
-    def __init__(self, map_id: str, graph: LaneGraphLite, spawn_points: list[Transform]) -> None:
+    def __init__(self, map_id: str, graph: LaneGraphLite, spawn_points: list[Transform],
+                 client=None) -> None:
         self.name = map_id
         self._graph = graph
         self._spawn_points = spawn_points
+        self._client = client
+
+    @property
+    def dev_assets_root(self) -> str | None:
+        return getattr(self._client, "_dev_assets_root", None)
+
+    @cached_property
+    def digest(self) -> dict:
+        """The V2X map-digest rule: ``{mapId, xodrSha256}``.
+
+        Consumers MUST refuse artifacts whose digest does not match. Raises
+        when the map has no bundle identity (e.g. ad-hoc topology roots).
+        """
+        from .maps import read_map_digest
+        return read_map_digest(self.name, self.dev_assets_root)
+
+    @cached_property
+    def _geo_origin(self) -> GeoOrigin:
+        from .maps import resolve_map_info
+        info = resolve_map_info(self.name, self.dev_assets_root)
+        xodr = next((c for c in (info.path / "xodr.xodr",
+                                 info.path / "browser" / "map.xodr") if c.exists()), None)
+        if xodr is None:
+            raise FileNotFoundError(f"no source .xodr for {self.name!r}")
+        origin = parse_geo_origin(xodr)
+        if origin is None:
+            raise RuntimeError(f"{xodr} carries no <geoReference> lat_0/lon_0")
+        return origin
+
+    # -- geolocation (geo_utils.py flat-earth contract) -----------------------
+
+    def transform_to_geolocation(self, location: Location) -> GeoLocation:
+        """World location → WGS-84 (CARLA 0.10 semantics: correct WGS-84)."""
+        return transform_to_geolocation(self._geo_origin, location.x, location.y,
+                                        location.z if hasattr(location, "z") else 0.0)
+
+    def geolocation_to_transform(self, geo) -> Transform:
+        """WGS-84 → world transform at z=0 (flat-earth inverse)."""
+        if hasattr(geo, "latitude"):
+            latitude, longitude = float(geo.latitude), float(geo.longitude)
+        else:
+            latitude, longitude = float(geo[0]), float(geo[1])
+        x, y = geolocation_to_transform(self._geo_origin, latitude, longitude)
+        return Transform(location=Location(x=x, y=y, z=0.0))
 
     # -- queries ------------------------------------------------------------
 
     def get_waypoint(self, location: Location, project_to_road: bool = True,
-                     lane_type=DRIVING_LANE_TYPES) -> Waypoint | None:
-        """Nearest driving lane waypoint to a world location (or None)."""
-        hit = self._graph.nearest_lane((location.x, location.y), lane_types=DRIVING_LANE_TYPES)
+                     lane_type=LaneType.Driving) -> Waypoint | None:
+        """Nearest-lane waypoint (CARLA signature incl. ``lane_type``).
+
+        ``lane_type`` accepts carla-style ``LaneType`` flags (combinable
+        with ``|``), an int mask, or a topology string. Sidewalk queries
+        work wherever the map carries sidewalk lanes.
+        """
+        wanted = self._topology_strings_for(lane_type)
+        if not wanted:
+            return None
+        hit = self._graph.nearest_lane((location.x, location.y), lane_types=wanted)
         if hit is None:
-            if project_to_road:
-                return None
             return None
         return _waypoint_from_hit(self._graph, hit)
+
+    @staticmethod
+    def _topology_strings_for(lane_type) -> tuple[str, ...]:
+        if isinstance(lane_type, str):
+            return (lane_type,)
+        mask = lane_type.value if isinstance(lane_type, LaneType) else int(lane_type)
+        return tuple(t for t, flag in TOPOLOGY_TO_FLAG.items() if flag & mask)
 
     def get_spawn_points(self) -> list[Transform]:
         """The authored scenario's spawn poses (engine is scenario-authoritative)."""
