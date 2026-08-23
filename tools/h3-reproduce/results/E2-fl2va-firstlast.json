@@ -1,0 +1,63 @@
+{
+  "label": "E2: fl2va first+last keyframes + user prompt, 20 steps, 416p",
+  "instrument": {
+    "name": "yolo11s",
+    "weightsSha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+    "confThreshold": 0.25,
+    "iouMatch": 0.5,
+    "device": "cpu"
+  },
+  "source": {
+    "path": "/home/path/assets-inbox/h3-website-ref/richmond-20s-4177212-sensorvideo3-busfree-chase.mp4",
+    "width": 1280,
+    "height": 720,
+    "nb_frames": "480",
+    "avg_frame_rate": "24/1"
+  },
+  "output": {
+    "path": "/tmp/bind-work/arms/E2_fl2va_firstlast_20st.mp4",
+    "width": 736,
+    "height": 416,
+    "nb_frames": "192",
+    "avg_frame_rate": "24/1"
+  },
+  "frames_compared": 96,
+  "per_class": {
+    "vehicle": {
+      "src_det": 999,
+      "out_det": 988,
+      "recall": 0.3754,
+      "binding_iou": 0.7499,
+      "hallucination": 0.6204,
+      "deletion": 0.6246
+    },
+    "pedestrian": {
+      "src_det": 0,
+      "out_det": 5,
+      "recall": null,
+      "binding_iou": null,
+      "hallucination": 1.0,
+      "deletion": null
+    },
+    "bicycle": {
+      "src_det": 0,
+      "out_det": 0,
+      "recall": null,
+      "binding_iou": null,
+      "hallucination": null,
+      "deletion": null
+    },
+    "motorcycle": {
+      "src_det": 0,
+      "out_det": 0,
+      "recall": null,
+      "binding_iou": null,
+      "hallucination": null,
+      "deletion": null
+    }
+  },
+  "overall": {
+    "recall": 0.3754,
+    "hallucination": 0.6224
+  }
+}

@@ -86,12 +86,12 @@ score. Boxes compared in resolution-normalized coords.
 | A1 | video-only + user prompt verbatim, server defaults (50 steps), 416p, seed 44 | 0.141 | 0.692 | 0.809 |
 | A2 | video-only + user prompt verbatim, 20 steps, 416p, seed 44 | 0.127 | 0.765 | 0.812 |
 | A3 | video-only + W0-style long prompt (image clause neutralized), 20 steps, 416p | 0.165 | 0.796 | 0.770 |
-| A4 | current harness control on richmond: video + 3 style imgs + W0 prompt, 20 steps, 416p | (pending) | | |
+| A4 | current harness control on richmond: video + 3 style imgs + W0 prompt, 20 steps, 416p | **0.000** | n/a | **1.000** |
 | A5 | `type:"video_audio"` arm | N/A — both available source clips carry no audio track; schema rejects audio-less `video_audio` ("MiniMax H3 audio material has no audio stream") | | |
-| A6 | video-only + user prompt verbatim, 20 steps, **768p** (resolution factor) | (pending) | | |
+| A6 | video-only + user prompt verbatim, 20 steps, **768p** (resolution factor) | 0.167 | 0.809 | 0.796 |
 | D1 | real-footage control | N/A — no real driving video exists in the environment (WS1 corpus = BDD stills; simforge1 `nuplan_demo.mp4` is a BEV visualization render, not camera footage; first attempt scored vacuously: 0 vehicle dets in source) | | |
-| E1 | fl2va first-frame keyframe of the source clip + user prompt, 20 steps | (pending) | | |
-| E2 | fl2va first+last keyframes + user prompt, 20 steps | (pending) | | |
+| E1 | fl2va first-frame keyframe only + user prompt, 20 steps, 416p | 0.149 | 0.811 | 0.682 |
+| E2 | **fl2va first+last keyframes** of source clip + user prompt, 20 steps, 416p | **0.375** | **0.750** | **0.620** |
 
 All arms: engine clip = first 8 s of richmond-20s chase render (1280×720@24),
 `target {short_edge 416→or 768, aspect 16:9, duration 8 s}`, `flow_shift 12`,
@@ -99,10 +99,81 @@ All arms: engine clip = first 8 s of richmond-20s chase render (1280×720@24),
 
 ## 3. Verdict
 
-(filled at end of run)
+**Both hypotheses were half-right. The 0.0 binding was a payload error, AND the
+naive fix (video-only ref2va) still doesn't reach the website bar. The
+invocation that reaches it with open weights is first+last-frame FL2VA.**
+
+1. **Payload error confirmed (harness artifact).** A4 — the exact harness
+   payload (source video `role:"reference"` + 3 style images + W0 edit prompt,
+   task `ref2va`) — scores **0.000 recall / 1.000 hallucination** on the same
+   richmond clip, reproducing IsolationX's 0.0 exactly. The style images +
+   edit-framing cause the model to generate a fresh scene in the style of the
+   images instead of translating the source. This is consistent with the code
+   design invariant: references are independent context tokens and *never*
+   bind target geometry (`task_profiles.py:8`).
+2. **No hidden content-binding mode exists.** The schema admits only
+   keyframe (image, frame 0/-1) and reference roles; there is no
+   source/strength/cfg knob (`request_validation.py:41`, CFG fields rejected,
+   `video_adapter.py:119-136`). Video-only ref2va arms (A1/A2/A3/A6) recover
+   partial binding (0.13–0.17 recall) but plateau at ~half the website bar.
+   Resolution (A6 768p vs A2 416p: 0.167 vs 0.127) and steps (A1 50 vs A2 20)
+   are second-order; the long W0 prompt is mildly helpful (A3 0.165).
+3. **Winning invocation: fl2va with BOTH endpoint keyframes (E2)** —
+   vehicle recall **0.375 ≥ BAR 0.354**, binding IoU **0.750 ≥ BAR 0.711**,
+   hallucination **0.620 < BAR 0.807** (fewer unanchored detections than the
+   website output itself). First+last keyframes pin the target's temporal arc;
+   first-frame-only (E1, 0.149) drifts like reference-only arms.
+4. **Trade-off:** E2 preserves scene/motion but largely *ignores* the
+   global style instruction (stayed daytime; user asked for midnight):
+   endpoint keyframes pin appearance. Website-grade *style* translation with
+   binding needs the closed H3-Context-IR rewriting feeding ref2va — that
+   module, not the weights, is the missing piece on the open-weights path.
+5. **Teacher decision:** per WS3's license analysis the community weights are
+   legally unusable as a distillation teacher regardless (§V.3 ban, USA an
+   Excluded Territory). Technically, if a bindable teacher were ever needed:
+   fl2va-first-last is the only open-weights H3 mode that carries scene
+   content through. The commercial MiniMax/Hailuo API is licensed separately
+   from the community weights — its terms need an independent check before
+   assuming the NO-GO transfers (no API key exists in the MichaelAgents
+   vault, so no product-API arm was run).
+
+### Winning payload JSON (verbatim)
+
+```json
+{
+  "model": "MiniMaxAI/MiniMax-H3",
+  "prompt": "<user style/edit instruction>",
+  "seconds": 8,
+  "task": "fl2va",
+  "conditions": [
+    {"type": "image", "uri": "file://.../kf_first.jpg", "role": "keyframe", "frame_index": 0},
+    {"type": "image", "uri": "file://.../kf_last.jpg",  "role": "keyframe", "frame_index": -1}
+  ],
+  "target": {"short_edge": 416, "aspect_ratio": "16:9", "duration_seconds": 8.0},
+  "num_outputs_per_prompt": 1,
+  "num_inference_steps": 20,
+  "flow_shift": 12.0,
+  "audio_flow_shift": 3.0,
+  "seed": 44
+}
+```
+
+(`kf_first.jpg` = source frame 0; `kf_last.jpg` = source last frame.
+Served by a `--model-variant fl2va` worker. Signature constraint
+`(0,-1)` per `task_profiles.py:69-73`; >2 keyframes rejected.)
 
 ## 4. Reproduction
 
 - `tools/h3-reproduce/score_binding.py` — frozen-instrument per-clip scorer.
 - `tools/h3-reproduce/run_matrix.sh` — payload matrix runner (simforge1).
 - `results/*.json` — raw per-arm scores.
+- `results/evidence/` — aligned source/output frame pairs backing the scores.
+- Ops: an fl2va worker on simforge1 is required for E-arms
+  (`--model-variant fl2va`, port 30040 in our run). Launch with
+  `SGLANG_USE_RUNAI_MODEL_STREAMER=0` — the default Run:ai model streamer
+  deadlocks this box's loader (0 % CPU after "Loading safetensors"; fallback
+  reader loads all 33 B weights in ~25 s). The three ref2va workers were
+  unaffected (loaded before this regression).
+- Website-bar alignment: hailuo-conversion.mp4 is 15.08 s/362 frames from a
+  20 s/480-frame source → the website compressed the clip ~1.326×; fair
+  comparison time-stretches it back (`setpts=480/362*PTS`), see BAR vs BAR-raw.
