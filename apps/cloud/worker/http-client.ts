@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 
 import type { RenderInputFile } from "@uniscenarios/render-runtime";
 
@@ -209,13 +210,22 @@ export async function downloadInputs(
   signal: AbortSignal,
 ): Promise<ReadonlyMap<string, RenderInputFile>> {
   await mkdir(directory, { recursive: true, mode: 0o700 });
+  const root = resolve(directory);
   const seen = new Set<string>();
+  const paths = new Set<string>();
   const materialized = new Map<string, RenderInputFile>();
   for (const [index, input] of inputs.entries()) {
     if (seen.has(input.inputId)) throw new Error(`duplicate render input ${input.inputId}`);
     seen.add(input.inputId);
     const safeName = basename(input.inputId).replace(/[^A-Za-z0-9._-]/g, "_") || "input";
-    const path = join(directory, `${String(index).padStart(3, "0")}-${safeName}`);
+    const path = input.relativePath
+      ? resolve(root, input.relativePath)
+      : join(root, `${String(index).padStart(3, "0")}-${safeName}`);
+    if (path === root || !path.startsWith(`${root}/`) || paths.has(path)) {
+      throw new Error(`invalid or duplicate render input relativePath for ${input.inputId}`);
+    }
+    paths.add(path);
+    await mkdir(dirname(path), { recursive: true, mode: 0o700 });
     const response = await fetch(input.download.url, {
       headers: input.download.headers,
       signal,
@@ -233,7 +243,7 @@ export async function downloadInputs(
       },
     });
     await pipeline(
-      Readable.fromWeb(response.body as import("node:stream/web").ReadableStream),
+      Readable.fromWeb(response.body as NodeReadableStream),
       verify,
       createWriteStream(path, { flags: "wx", mode: 0o600 }),
       { signal },
@@ -294,6 +304,7 @@ function parseRemoteInput(value: unknown): RemoteInput {
   }
   return {
     inputId: stringField(row, "inputId"),
+    ...(typeof row.relativePath === "string" ? { relativePath: row.relativePath } : {}),
     sha256,
     sizeBytes,
     download: {

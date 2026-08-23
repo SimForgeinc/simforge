@@ -28,18 +28,70 @@ All internal worker endpoints require `Authorization: Bearer <token>`. The token
   "leaseExpiresAt": "ISO-8601",
   "payload": {
     "mode": "browser_render",
-    "workspaceId": "...",
-    "revisionId": "...",
-    "documentId": "...",
-    "datasetId": "...",
-    "renderSpec": {},
-    "renderSpecSha256": "64 lowercase hex characters",
-    "recordingInputUrl": "http://127.0.0.1:5199/api/uniscenario/revisions/.../recording-input"
+    "engine": "browser",
+    "intent": {
+      "schema": "uniscenario.render-intent/v1",
+      "engine": "browser",
+      "assets": [
+        { "assetId": "map.manifest", "kind": "map", "sha256": "...", "sizeBytes": 123 },
+        { "assetId": "map/3d/tiles/tile.glb", "kind": "other", "sha256": "...", "sizeBytes": 456 },
+        { "assetId": "playback.bundle", "kind": "other", "sha256": "...", "sizeBytes": 789 }
+      ]
+    },
+    "intentSha256": "64 lowercase hex characters",
+    "inputs": [
+      {
+        "inputId": "scenario.xosc",
+        "relativePath": "scenario.xosc",
+        "sha256": "...",
+        "sizeBytes": 123,
+        "download": { "url": "...", "headers": {} }
+      },
+      {
+        "inputId": "map.manifest",
+        "relativePath": "3d/manifest.json",
+        "sha256": "...",
+        "sizeBytes": 123,
+        "download": { "url": "...", "headers": {} }
+      },
+      {
+        "inputId": "map/3d/tiles/tile.glb",
+        "relativePath": "3d/tiles/tile.glb",
+        "sha256": "...",
+        "sizeBytes": 456,
+        "download": { "url": "...", "headers": {} }
+      },
+      {
+        "inputId": "playback.bundle",
+        "relativePath": "playback.bundle",
+        "sha256": "...",
+        "sizeBytes": 789,
+        "download": { "url": "...", "headers": {} }
+      }
+    ],
+    "recording": {
+      "revisionId": "...",
+      "documentId": "...",
+      "renderSpec": {},
+      "resolvedManifest": {},
+      "idempotencyKey": "browser-render-..."
+    }
   }
 }
 ```
 
-Fetch `recordingInputUrl` to obtain the revision/map/browser-asset closure. The URL base is `UNISCENARIO_API_BASE_URL` or `http://127.0.0.1:5199`.
+The claim contains every verified member of the map's active
+`browser_asset_set`. The manifest member has the reserved input ID
+`map.manifest`; other members use `map/<relative-path>`. `relativePath`
+preserves the published city tree beneath the worker's input root so
+CityViewer can resolve tiles and textures relative to `3d/manifest.json`.
+
+`playback.bundle` is decoded JSON from the matching immutable
+`simulation_previews` artifact. A preview matches only when its document
+version, content digest, and map version equal the revision. Jobs without this
+materialized evidence remain queued rather than receiving an incomplete claim.
+The `recording` object is a complete `CreateBrowserRecordingSchema` value
+resolved from that exact playback evidence, revision, map, and render spec.
 
 Every subsequent CPU request includes this fence:
 

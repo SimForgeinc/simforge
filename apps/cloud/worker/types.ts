@@ -8,6 +8,8 @@ export type LocalRenderEngine = "browser" | "native";
 
 export type RemoteInput = {
   readonly inputId: string;
+  /** Workspace-relative materialization path; preserves map-manifest relative URL closure. */
+  readonly relativePath?: string;
   readonly sha256: string;
   readonly sizeBytes: number;
   readonly download: {
