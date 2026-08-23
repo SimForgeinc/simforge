@@ -36,7 +36,7 @@ const ARTIFACT_SELECT = `
          al.relationship, al.render_job_id, al.render_attempt_id,
          al.artifact_role, al.artifact_actor_id, al.artifact_sensor_id, al.artifact_modality,
          CASE
-           WHEN al.relationship IN ('source', 'job_level') AND al.render_attempt_id IS NULL THEN TRUE
+           WHEN al.relationship IN ('source', 'job_level', 'output') AND al.render_attempt_id IS NULL THEN TRUE
            WHEN al.render_attempt_id IS NULL OR ra.id IS NULL THEN FALSE
            WHEN al.relationship = 'render_output' AND a.artifact_state = 'available'
              THEN ra.attempt_state = 'succeeded'
