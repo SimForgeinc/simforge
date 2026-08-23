@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ActorView } from "@uniscenarios/editor-core";
+import type { ActorView } from "@uniscenarios/city-renderer";
 import type { SumoAuthoredOccupancySource } from "@uniscenarios/sim-engine";
 import { SumoCollisionPhysics } from "./sumoCollisionPhysics";
 

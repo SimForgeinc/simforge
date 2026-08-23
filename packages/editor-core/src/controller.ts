@@ -40,7 +40,7 @@ import { Vector2, Vector3, type Intersection } from 'three';
 import { getViewerSurfaceRect, type EditorViewer } from './viewer-contract';
 import { CATALOG, getEntry, type CatalogId } from '@uniscenarios/prop-catalog';
 import { buildDefaultPlacementRoute, buildFollowRoute } from '@uniscenarios/sim-engine';
-import { type ActorView } from './actorRenderer';
+import { type ActorView } from '@uniscenarios/city-renderer';
 import {
   actorKindFor,
   DEFAULT_AUTHORED_VEHICLE_SPEED_KPH,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ActorRenderer } from "@uniscenarios/editor-core";
+import type { ActorRenderer } from "@uniscenarios/city-renderer";
 import type { CityViewer } from "@uniscenarios/city-renderer";
 import { indexedWorldHeightSampler } from "@uniscenarios/city-renderer";
 import { resolveAmbientTrafficProfile } from "@uniscenarios/sim-engine";

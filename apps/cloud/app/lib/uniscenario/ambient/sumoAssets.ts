@@ -9,7 +9,7 @@ import {
   type SumoRuntimeManifest,
   type SumoRoadOccupancyIndex,
 } from "@uniscenarios/sim-engine";
-import type { ActorView } from "@uniscenarios/editor-core";
+import type { ActorView } from "@uniscenarios/city-renderer";
 import type { MapEntry } from "../maps";
 import type {
   NetworkWorldTransform,

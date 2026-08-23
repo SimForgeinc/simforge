@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { CityViewer } from "@uniscenarios/city-renderer";
-import { ActorRenderer } from "@uniscenarios/editor-core";
+import { ActorRenderer } from "@uniscenarios/city-renderer";
 import { CityView } from "@uniscenarios/city-renderer/react";
 import { cn } from "@/app/lib/utils";
 import {

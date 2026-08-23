@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CityViewer } from "@uniscenarios/city-renderer";
-import type { ActorRenderer } from "@uniscenarios/editor-core";
+import type { ActorRenderer } from "@uniscenarios/city-renderer";
 import {
   DISABLED_SUMO_STATUS,
   type SumoTrafficStatus,

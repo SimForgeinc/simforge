@@ -343,9 +343,9 @@ importers:
 
   packages/ambient-traffic:
     dependencies:
-      '@uniscenarios/editor-core':
+      '@uniscenarios/city-renderer':
         specifier: workspace:*
-        version: link:../editor-core
+        version: link:../city-renderer
       '@uniscenarios/playback':
         specifier: workspace:*
         version: link:../playback
@@ -446,6 +446,15 @@ importers:
 
   packages/city-renderer:
     dependencies:
+      '@uniscenarios/prop-catalog':
+        specifier: workspace:*
+        version: link:../prop-catalog
+      '@uniscenarios/scenario-model':
+        specifier: workspace:*
+        version: link:../scenario-model
+      '@uniscenarios/sim-engine':
+        specifier: workspace:*
+        version: link:../sim-engine
       three:
         specifier: ^0.185.0
         version: 0.185.1
@@ -520,6 +529,9 @@ importers:
 
   packages/editor-core:
     dependencies:
+      '@uniscenarios/city-renderer':
+        specifier: workspace:*
+        version: link:../city-renderer
       '@uniscenarios/prop-catalog':
         specifier: workspace:*
         version: link:../prop-catalog
@@ -710,9 +722,6 @@ importers:
       '@uniscenarios/city-renderer':
         specifier: workspace:*
         version: link:../city-renderer
-      '@uniscenarios/editor-core':
-        specifier: workspace:*
-        version: link:../editor-core
       '@uniscenarios/openscenario':
         specifier: workspace:*
         version: link:../openscenario

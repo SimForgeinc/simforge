@@ -11,11 +11,10 @@ import {
   MemoryStorage,
   WebTemplateFileStore,
 } from "@uniscenarios/scenario-model";
-import type { CityViewer } from "@uniscenarios/city-renderer";
+import { type ActorRenderer, type CityViewer } from "@uniscenarios/city-renderer";
 import type { GroundIndex } from "@uniscenarios/city-renderer";
 import type { PlaybackBundle } from "@uniscenarios/playback";
 import {
-  ActorRenderer,
   EditorController,
   EditorDocument,
   type EditorState,

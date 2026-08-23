@@ -14,7 +14,7 @@ import {
 import type { MapOverlayHandle } from '../mapOverlays';
 import type { CameraPolicy } from '@uniscenarios/camera-rig';
 import type { DashCameraSensor } from '@uniscenarios/scenario-model';
-import type { ActorRenderer } from '@uniscenarios/editor-core';
+import type { ActorRenderer } from '@uniscenarios/city-renderer';
 import { createRestingHeading, withRestingHeading } from '@uniscenarios/playback';
 
 export interface UsePlaybackOptions {

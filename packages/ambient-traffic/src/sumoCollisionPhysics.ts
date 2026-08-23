@@ -1,4 +1,4 @@
-import type { ActorView } from "@uniscenarios/editor-core";
+import type { ActorView } from "@uniscenarios/city-renderer";
 import {
   obbOverlap,
   sweptObbTimeOfImpact,

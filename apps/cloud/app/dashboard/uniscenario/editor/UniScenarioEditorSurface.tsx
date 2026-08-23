@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Raycaster, Vector2, Vector3 } from "three";
 import type { CityViewer } from "@uniscenarios/city-renderer";
-import type { ActorRenderer } from "@uniscenarios/editor-core";
+import type { ActorRenderer } from "@uniscenarios/city-renderer";
 import type {
   EditorDocument,
   EditorState,

@@ -1,4 +1,4 @@
-import type { ActorRenderer, ActorView } from '@uniscenarios/editor-core';
+import type { ActorRenderer, ActorView } from '@uniscenarios/city-renderer';
 import type { PlaybackBundle } from './model';
 
 const RESTING_SPEED_MPS = 1e-8;

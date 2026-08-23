@@ -25,7 +25,7 @@
     "dist"
   ],
   "dependencies": {
-    "@uniscenarios/editor-core": "workspace:*",
+    "@uniscenarios/city-renderer": "workspace:*",
     "@uniscenarios/playback": "workspace:*",
     "@uniscenarios/scenario-model": "workspace:*",
     "@uniscenarios/sim-engine": "workspace:*"

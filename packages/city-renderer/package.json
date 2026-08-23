@@ -28,6 +28,9 @@
     "dist"
   ],
   "dependencies": {
+    "@uniscenarios/prop-catalog": "workspace:*",
+    "@uniscenarios/scenario-model": "workspace:*",
+    "@uniscenarios/sim-engine": "workspace:*",
     "three": "^0.185.0"
   },
   "peerDependencies": {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ActorRenderer, ActorView } from '@uniscenarios/editor-core';
+import type { ActorRenderer, ActorView } from '@uniscenarios/city-renderer';
 import { parseSimScenarioInput } from '@uniscenarios/sim-engine';
 import {
   CollisionActorOverrides,

@@ -1,4 +1,4 @@
-import type { ActorRenderer, ActorView } from "@uniscenarios/editor-core";
+import type { ActorRenderer, ActorView } from "@uniscenarios/city-renderer";
 
 export const SUMO_VISUAL_INTERPOLATION_SECONDS = 0.1;
 

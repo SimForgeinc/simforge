@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DashCameraSensor, ScenarioTemplateV2 } from "@uniscenarios/scenario-model";
-import type { ActorRenderer } from "@uniscenarios/editor-core";
+import type { ActorRenderer } from "@uniscenarios/city-renderer";
 import type { CityViewer } from "@uniscenarios/city-renderer";
 import { indexedWorldHeightSampler } from "@uniscenarios/city-renderer";
 import {

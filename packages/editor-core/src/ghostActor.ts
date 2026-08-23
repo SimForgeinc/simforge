@@ -1,7 +1,7 @@
 import { BufferAttribute, BufferGeometry, DoubleSide, Group, LineBasicMaterial, LineSegments, type Material, Mesh, MeshBasicMaterial } from "three";
 import { getEntry, type CatalogId } from "@uniscenarios/prop-catalog";
-import { propTemplate } from "./actorRenderer";
-import { externalModelScene, onExternalModelChange } from "./externalModel";
+import { propTemplate } from "@uniscenarios/city-renderer";
+import { externalModelScene, onExternalModelChange } from "@uniscenarios/city-renderer";
 
 /**
  * The translucent preview that follows the cursor during placement.

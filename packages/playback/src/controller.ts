@@ -8,7 +8,7 @@ import {
   type DoorName,
   type DoorState,
   type DoorStates,
-} from '@uniscenarios/editor-core';
+} from '@uniscenarios/city-renderer';
 import {
   samplePlaybackActors,
   samplePlaybackSignals,

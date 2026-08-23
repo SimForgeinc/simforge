@@ -55,7 +55,7 @@ import {
   type Object3D
 } from 'three';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
-import { LOW_FIDELITY_HIDDEN_ROLE } from './viewer-contract';
+import { LOW_FIDELITY_HIDDEN_ROLE } from './roads-only';
 import { buildProp, getEntry, type Dims, type ExternalModelBinding } from '@uniscenarios/prop-catalog';
 import type { ActorKind } from '@uniscenarios/sim-engine';
 import type { ActorSensor } from '@uniscenarios/scenario-model';
@@ -1261,4 +1261,3 @@ function pushBoxEdges(out: number[], actor: ActorView): void {
   }
 }
 
-export { GhostActor } from "./ghostActor";

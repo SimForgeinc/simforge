@@ -41,7 +41,8 @@ import { getViewerSurfaceRect, type EditorViewer } from './viewer-contract';
 import { getEntry, type CatalogId } from '@uniscenarios/prop-catalog';
 import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
 import type { SceneTrace, SimScenarioInput } from '@uniscenarios/sim-engine';
-import { ActorRenderer, GhostActor, type ActorView } from './actorRenderer';
+import { ActorRenderer, type ActorView } from '@uniscenarios/city-renderer';
+import { GhostActor } from './ghostActor';
 
 import {
   actorKindFor,

@@ -6,7 +6,7 @@ import type {
   UniScenarioMapEntry,
 } from "@uniscenarios/editor-core";
 import type { CityViewer } from "@uniscenarios/city-renderer";
-import type { ActorRenderer } from "@uniscenarios/editor-core";
+import type { ActorRenderer } from "@uniscenarios/city-renderer";
 import { contentHash } from "@uniscenarios/sim-engine";
 import {
   createUniScenarioDocument,

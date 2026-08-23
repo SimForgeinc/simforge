@@ -7,7 +7,7 @@ import type {
   UniScenarioDocumentSummaryDto,
 } from "@/app/lib/uniscenario/contracts";
 import type { CityViewer } from "@uniscenarios/city-renderer";
-import type { ActorRenderer } from "@uniscenarios/editor-core";
+import type { ActorRenderer } from "@uniscenarios/city-renderer";
 import { useSetPageTitle } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";
 import { CopyableErrorMessage } from "./list/CopyableErrorMessage";

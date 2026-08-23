@@ -78,3 +78,7 @@ export type {
   ManifestVegetationTile,
   VegetationInstanceFile,
 } from './types';
+
+export * from './actorRenderer';
+export * from './externalModel';
+export * from './sensorOverlay';
