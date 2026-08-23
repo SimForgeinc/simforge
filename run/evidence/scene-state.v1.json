@@ -1,0 +1,87 @@
+{
+  "actors": [
+    {
+      "actorClass": "truck",
+      "angularVelocityY": 0.0,
+      "catalogId": "vehicle.bus",
+      "id": "bus",
+      "kind": "update",
+      "transform": {
+        "position": [
+          813.8829,
+          0.0,
+          -1635.2395
+        ],
+        "rotation": [
+          0.0,
+          0.2870434820652008,
+          0.0,
+          0.9579175710678101
+        ]
+      },
+      "velocity": [
+        0.0,
+        0.0,
+        -0.0
+      ]
+    },
+    {
+      "actorClass": "car",
+      "angularVelocityY": 0.0,
+      "catalogId": "vehicle.ego",
+      "id": "ego",
+      "kind": "update",
+      "transform": {
+        "position": [
+          813.9555,
+          0.0,
+          -1640.6259
+        ],
+        "rotation": [
+          0.0,
+          0.28857722878456116,
+          0.0,
+          0.957456648349762
+        ]
+      },
+      "velocity": [
+        8.357499999999796,
+        0.0,
+        5.542500000001501
+      ]
+    },
+    {
+      "actorClass": "pedestrian",
+      "angularVelocityY": 0.0,
+      "catalogId": "walker.ped",
+      "id": "ped",
+      "kind": "update",
+      "transform": {
+        "position": [
+          830.4833,
+          0.0,
+          -1630.4552
+        ],
+        "rotation": [
+          0.0,
+          -0.43640074133872986,
+          0.0,
+          0.8997523784637451
+        ]
+      },
+      "velocity": [
+        1.4049999999997753,
+        0.0,
+        -1.7825000000016569
+      ]
+    }
+  ],
+  "mapId": "yale-street",
+  "tick": 300,
+  "tickHz": 50.0,
+  "timeOfDay": 12.0,
+  "version": "scene-state.v1",
+  "weather": {
+    "preset": "clear"
+  }
+}

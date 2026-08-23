@@ -1,0 +1,190 @@
+{
+  "files": [
+    {
+      "path": "chase-cam-trailing/00000000.rgb.png",
+      "sha256": "79dc4e2cdbf9276912735e930c606445cdebfa343031f07b8e601044fe934537"
+    },
+    {
+      "path": "gnss.jsonl",
+      "sha256": "08da5998174d98d7a643e16b6a6c036f2fb0c18009d1d8a074272d68e105c139"
+    },
+    {
+      "path": "imu.jsonl",
+      "sha256": "47bc4d653f2f290f0e4265a2f9cf83ff740e94812c88b4b4ab91bd5666a30e33"
+    },
+    {
+      "path": "legend.json",
+      "sha256": "e4126f77aa626df454af80ed975ebccc667a5a66fdd626989c844578bc7a2c47"
+    },
+    {
+      "path": "pronto-cam0/00000000.depth.f32.bin",
+      "sha256": "517cf5171b7016d239eabb684ab5f0f782fde2caedeed82067e71430f432e90a"
+    },
+    {
+      "path": "pronto-cam0/00000000.instance.png",
+      "sha256": "1d8e6907c062dc9ba61ed01f06f2c6ea071bb39e72eb8facd34677e0ea0d38b8"
+    },
+    {
+      "path": "pronto-cam0/00000000.rgb.png",
+      "sha256": "7d9091c1af4a6a1a60c90e21574092ed4a1ff9d678c9cf72fa6ca163fa8e55c0"
+    },
+    {
+      "path": "pronto-cam0/00000000.semantic.png",
+      "sha256": "301d26cab19b250a87acfacc9b5a53f250b340acb083de8cfd1c4219f39c9a41"
+    },
+    {
+      "path": "pronto-cam1/00000000.depth.f32.bin",
+      "sha256": "5f5e17cb5383d1c7319775ca0805930da2357318f55d5963ad16da7d22a84fc5"
+    },
+    {
+      "path": "pronto-cam1/00000000.instance.png",
+      "sha256": "8849a683b1f40f6c4a6eac571566439fbdb15373a614753582af737c22e2787e"
+    },
+    {
+      "path": "pronto-cam1/00000000.rgb.png",
+      "sha256": "c6b1a213a6510e42fff9f21010aba5b557affdc58f206be4c46794cb80fcf024"
+    },
+    {
+      "path": "pronto-cam1/00000000.semantic.png",
+      "sha256": "95e9c114c8a29794fd5e2d50d9af22f7104aedc9b52c3615d13f67244929dbbe"
+    },
+    {
+      "path": "pronto-cam2/00000000.depth.f32.bin",
+      "sha256": "be355dc882e7a3d3b3d54bee993774f944baef06a7882af608d16b07f44675c7"
+    },
+    {
+      "path": "pronto-cam2/00000000.instance.png",
+      "sha256": "e6f156c595d19e0f2a62db882c6920077fdc92b3ba7807ccf8f13a3ba77de515"
+    },
+    {
+      "path": "pronto-cam2/00000000.rgb.png",
+      "sha256": "84e470cc32f13805ad5545768ad2e3c8fd9616c345d01ffb1cb54f863d7d2937"
+    },
+    {
+      "path": "pronto-cam2/00000000.semantic.png",
+      "sha256": "64ef2f8ae30fdbfb51c8be76f2291a9357596d7b3a39d2dd26992b5b0bec80e6"
+    },
+    {
+      "path": "pronto-cam3/00000000.depth.f32.bin",
+      "sha256": "89cee8940d614e494b799d4556e632af81fa3e86d6754e792230b5af62e793d9"
+    },
+    {
+      "path": "pronto-cam3/00000000.instance.png",
+      "sha256": "032618bcb9c328258b268802f4b1a1b333e071cc3e40d3d4f3e9fd0a8f5e4b96"
+    },
+    {
+      "path": "pronto-cam3/00000000.rgb.png",
+      "sha256": "ef013eb54c748c744dc386310bdf28951adaf5550b81eff1922d11b10878fa70"
+    },
+    {
+      "path": "pronto-cam3/00000000.semantic.png",
+      "sha256": "b777d245511f88172d84b1884e6087845277d6677753290be317c1a5e2a8ca95"
+    },
+    {
+      "path": "pronto-cam4/00000000.depth.f32.bin",
+      "sha256": "6f1cd3e3c2a674a9d3e2baadfabfefadd8bb04e1a3043288c0798d4d6f5d22b9"
+    },
+    {
+      "path": "pronto-cam4/00000000.instance.png",
+      "sha256": "86c6cf2784617e1a28775cc84ae01f0c02312b40e9c9cc38c2ded647f6720311"
+    },
+    {
+      "path": "pronto-cam4/00000000.rgb.png",
+      "sha256": "68b64f1f9076cdd36316812e20fac0f239efbc0ea18d566572b82de699a07879"
+    },
+    {
+      "path": "pronto-cam4/00000000.semantic.png",
+      "sha256": "a790e9c7beec9824d8fab88486e189edcd7e0291bc8c09bb022c229fffbbc8b2"
+    },
+    {
+      "path": "pronto-cam5/00000000.depth.f32.bin",
+      "sha256": "ebdf9ece5e235236f8fbd425c8090e70400cd0fb634ea8ff0c4299fcacfa3c9f"
+    },
+    {
+      "path": "pronto-cam5/00000000.instance.png",
+      "sha256": "e846ecd6c2d3d3db7fdcf38ea45f06a67c271ed2ddc6505dedcdaa3cb30d167f"
+    },
+    {
+      "path": "pronto-cam5/00000000.rgb.png",
+      "sha256": "37ed77116fe705d88c13c6c76a00160fa738bd02f297c4dc98354b7aece7adf4"
+    },
+    {
+      "path": "pronto-cam5/00000000.semantic.png",
+      "sha256": "5252c39352d870f411807239511aa2a8cac44acc707657a8fbee04dfde3155f9"
+    },
+    {
+      "path": "pronto-cam6/00000000.depth.f32.bin",
+      "sha256": "83c7281784b30d1752d53e797e657b7186f766605bce742b22e3fc5b629c4557"
+    },
+    {
+      "path": "pronto-cam6/00000000.instance.png",
+      "sha256": "1c57dca177f3a8d85bda12a1ee2080777a99d8955b4ee44b88616b0980abea80"
+    },
+    {
+      "path": "pronto-cam6/00000000.rgb.png",
+      "sha256": "e2cf030d01032f8cde5aa19048e17a1a74b1d89831045d1d6f4662397a6bf54f"
+    },
+    {
+      "path": "pronto-cam6/00000000.semantic.png",
+      "sha256": "501b5e4e54b76ed698038005e4ae080362dd29f8bd8b15c37d7ce131b6674608"
+    },
+    {
+      "path": "pronto-cam7/00000000.depth.f32.bin",
+      "sha256": "b92f15d536fb20ca4ea1b32021aeb97e652ea1bbfa5b51a9067a637842d19ffc"
+    },
+    {
+      "path": "pronto-cam7/00000000.instance.png",
+      "sha256": "ed22d85162c435cb002470cc08db28f906de01dc1ddea1a89887b5244dd0df10"
+    },
+    {
+      "path": "pronto-cam7/00000000.rgb.png",
+      "sha256": "a6a4f67c162614ce364c3f5b3821ae5336802a1327adffb643f4c3546e190884"
+    },
+    {
+      "path": "pronto-cam7/00000000.semantic.png",
+      "sha256": "24a2b2356256fdb73c222786fd7ca166d923463b87ca956d2bc4f6dcd7d58d69"
+    },
+    {
+      "path": "pronto-lidar-front-left-wide/00000000.ply",
+      "sha256": "c297f9eac247c7d932e0b775d026143373cbcfab3c436d7e8c1911eb8781400d"
+    },
+    {
+      "path": "pronto-lidar-front-left/00000000.ply",
+      "sha256": "2e8d46079a92eba417366f1120ba22672a162c458cac3d9a77829c7c57afb93a"
+    },
+    {
+      "path": "pronto-lidar-front-right-wide/00000000.ply",
+      "sha256": "297b71a92287c09183523eb7a203e2f1ae6d24395247b48b1a6479df88bc7ee9"
+    },
+    {
+      "path": "pronto-lidar-front-right/00000000.ply",
+      "sha256": "c618e66da1ebe4e46524e79501e14c88b8efa97afc0725d43eef64ba9b789668"
+    },
+    {
+      "path": "pronto-lidar-rear-left/00000000.ply",
+      "sha256": "a290daedc1b9d1cbc5037ffa145c99ff7c564daa7d50b36dc13aa33c479171bb"
+    },
+    {
+      "path": "pronto-lidar-rear-right/00000000.ply",
+      "sha256": "673f963967c7eca5df5ee0707dca49b5a739388bf01e847143cfa02677c8dba3"
+    },
+    {
+      "path": "pronto-rad-01/00000000.csv",
+      "sha256": "011e0e24bee0c73c0d8e5f7b2d8dbf41a0280064a3fd9fcc1cd1d1eb950f97ac"
+    },
+    {
+      "path": "pronto-rad-02/00000000.csv",
+      "sha256": "1bd01a226cfff78fd13a41fc1b1f8c2b876f71e2d2c792036665a649dcfee263"
+    },
+    {
+      "path": "pronto-rad-03/00000000.csv",
+      "sha256": "686123fff94466d493535f02d58ae4ef9d38337c6cc90261cc595ad07717354e"
+    },
+    {
+      "path": "pronto-rad-04/00000000.csv",
+      "sha256": "4783366d312cef4679336e175d6fce29cd5e0482fee6a1ff5d73ae24aa7e4cbe"
+    }
+  ],
+  "profile": "sensor",
+  "schema": "uniscenarios.sensor-capture-manifest/v1"
+}

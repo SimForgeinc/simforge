@@ -1,0 +1,18 @@
+# local execution of .github/workflows/native-golden.yml steps (self-hosted runner not yet registered)
+# host: path-B860I-AORUS-PRO-ICE 2026-08-22T22:40:20Z | GPU: RTX 5080, driver 595.84, co-tenant load present (mem 10.6/16.3GiB)
+# env: SCEN_SENSOR_CORPUS=/home/path/UniScenarios/scripts/renderer-spike/corpus GOLDEN_GPU_MAX_MEM_FRAC=0.9 GOLDEN_GPU_MAX_UTIL=95 (permissive: co-tenant load; hash gates unaffected)
+
+=== step 1/3: build native renderer ===
+    Finished `release` profile [optimized] target(s) in 0.34s
+=== step 2/3: corpus availability check ===
+corpus root: scripts/renderer-spike/corpus (spike corpus via SCEN_SENSOR_CORPUS)
+=== step 3/3: golden suite ===
+[golden-harness] spike run verify: native-render --glbs /home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_4.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_5.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_6.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_3_5.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/road.glb --eye 580.45 14.44 -1655.66 --target 590.4 14.35 -1648.96 --fov 58 --width 736 --height 416 --warmup 20 --frames 30 --cameras 1 --sun-elev 38 --sun-azim 145 --lux 28000 --ambient 0.6 --out /home/path/UniScenarios-ws/wsb6-determinism-ci/artifacts/golden-harness/verify/yale-frame0/verify-run/yale-frame0
+[golden-harness] wrote artifacts/golden-harness/verify/yale-frame0/manifest.json
+[golden-harness] verify yale-frame0 @ fp=75b333b1506af34f:
+  MATCH  rgb0    e7185b3ae850c644…
+  MATCH  id0     8455e0f311aaa64f…
+  MATCH  depth0  c0b89450f5822499…
+  frame-time: 5.190 ms vs baseline 19.450 ms → -73.3% (budget +-50%)
+[golden-harness] PASS yale-frame0
+verify-all exit=0
