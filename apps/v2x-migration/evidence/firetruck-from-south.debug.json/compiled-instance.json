@@ -1,0 +1,266 @@
+{
+  "kind": "scenario-instance",
+  "version": 1,
+  "manifest": {
+    "kind": "scenario-instance-manifest",
+    "manifestVersion": 1,
+    "replayKey": {
+      "templateId": "eva-firetruck-south",
+      "templateVersion": 2,
+      "templateDigest": "52946a54c13934f1",
+      "mapId": "richmond-field-station",
+      "matcherIndexDigest": "feb1e9ac00de961ede8fac419a650efa89747b4b6272d2c676870f1dc0f73105",
+      "engineGraphDigest": "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643",
+      "siteId": "studio:richmond-field-station",
+      "matcherVersion": "1.0.0",
+      "solverVersion": "0.6.0",
+      "paramSeed": "18b99d7703772be5599e85ca74337ae4157c713265e4cecd3cd24cc02db03079",
+      "drawIndex": -1,
+      "ambientProfileHash": "none"
+    },
+    "instanceId": "studio:richmond-field-station#-1",
+    "archetype": null,
+    "negativeControl": false,
+    "metricSubject": "ego_vehicle",
+    "operationalVariant": null,
+    "site": {
+      "siteId": "studio:richmond-field-station",
+      "score": 1,
+      "verdict": "exact",
+      "originFeatureId": "map:richmond-field-station",
+      "entryLaneRsl": "44:0:-1",
+      "egoTurn": null,
+      "degradationSummary": "exact map-bound Studio placement",
+      "matchedReasons": [
+        "anchor.pin.mapId",
+        "scene_absolute"
+      ]
+    },
+    "params": {
+      "values": {},
+      "categorical": {},
+      "rejectedConstraints": []
+    },
+    "actors": [
+      {
+        "id": "ego_vehicle",
+        "actorKind": "car",
+        "roleKind": "scene_absolute",
+        "laneRsl": "44:0:-1",
+        "spawnS": 18.556084754521763,
+        "initialSpeedMps": 0,
+        "bindingStatus": "bound"
+      },
+      {
+        "id": "firetruck",
+        "actorKind": "truck",
+        "roleKind": "scene_absolute",
+        "laneRsl": "26:0:1",
+        "spawnS": 152.33873307180903,
+        "initialSpeedMps": 8.33,
+        "bindingStatus": "bound"
+      }
+    ],
+    "props": [],
+    "arrival": [],
+    "inputHash": "9270a16a92fc42ed1a556081625b3e4cf7d5d89a0328cb3b670b8ece8ea2c013",
+    "feasible": true,
+    "issues": [
+      {
+        "code": "runway_insufficient",
+        "severity": "warning",
+        "path": "actors.firetruck.behavior.route",
+        "reason": "route provides 286.4 m ahead of the spawn but the actor covers 999.6 m in 120 s",
+        "detail": {
+          "availableM": 286.368769921174,
+          "neededM": 999.6000000000826,
+          "clipSeconds": 120
+        }
+      }
+    ],
+    "initialInteractionOutcomes": [],
+    "notes": []
+  },
+  "input": {
+    "schemaVersion": 1,
+    "mapId": "richmond-field-station",
+    "clipSeconds": 120,
+    "warmupSeconds": 0,
+    "dt": 0.02,
+    "seed": "18b99d7703772be5",
+    "physics": {
+      "mode": "dynamic-v1"
+    },
+    "operationalConditions": {
+      "weather": "clear",
+      "timeOfDay": "day",
+      "traffic": "moderate",
+      "visibility": "unrestricted",
+      "effects": {
+        "visibilityRangeM": 1000,
+        "frictionScale": 1,
+        "trafficSpeedFactor": 1
+      }
+    },
+    "metricSubject": "ego_vehicle",
+    "actors": [
+      {
+        "id": "ego_vehicle",
+        "kind": "car",
+        "dims": {
+          "l": 4.5,
+          "w": 2.1,
+          "h": 1.8
+        },
+        "initial": {
+          "laneRef": {
+            "rsl": "44:0:-1",
+            "s": 18.8,
+            "tFrac": 0
+          },
+          "pose": {
+            "x": -103.66,
+            "z": -129.76,
+            "headingRad": 2.0205
+          },
+          "speedMps": 0
+        },
+        "behavior": {
+          "rules": {
+            "obeySignals": true,
+            "yield": true,
+            "yieldToVehicles": true,
+            "yieldToPedestrians": true,
+            "collisionAvoidance": true,
+            "aggression": 0.5,
+            "speedFactor": 1
+          },
+          "route": {
+            "kind": "lanePath",
+            "lanes": [
+              "44:0:-1",
+              "246:0:-1",
+              "18:0:-1"
+            ]
+          },
+          "drivingProfile": {
+            "comfortableLateralAccelerationMps2": 2.2,
+            "comfortableDecelerationMps2": 2.5
+          },
+          "cruiseSpeedMps": 0
+        },
+        "presentAtStart": true,
+        "static": false,
+        "tags": [
+          "role:ego_vehicle",
+          "class:car",
+          "driver-profile:lawful",
+          "binding:scene_absolute",
+          "catalog:vehicle.sedan"
+        ]
+      },
+      {
+        "id": "firetruck",
+        "kind": "truck",
+        "dims": {
+          "l": 9,
+          "w": 2.5,
+          "h": 3.5
+        },
+        "initial": {
+          "laneRef": {
+            "rsl": "26:0:1",
+            "s": 21.7,
+            "tFrac": 0
+          },
+          "pose": {
+            "x": -60.42,
+            "z": -200.22,
+            "headingRad": 1.982
+          },
+          "speedMps": 8.33
+        },
+        "behavior": {
+          "rules": {
+            "obeySignals": true,
+            "yield": true,
+            "yieldToVehicles": true,
+            "yieldToPedestrians": true,
+            "collisionAvoidance": true,
+            "aggression": 0.2,
+            "speedFactor": 0.9
+          },
+          "route": {
+            "kind": "lanePath",
+            "lanes": [
+              "26:0:1",
+              "143:0:1",
+              "44:0:-1",
+              "246:0:-1",
+              "18:0:-1"
+            ]
+          },
+          "drivingProfile": {
+            "comfortableLateralAccelerationMps2": 1.4,
+            "comfortableDecelerationMps2": 1.8
+          },
+          "cruiseSpeedMps": 8.33
+        },
+        "presentAtStart": true,
+        "static": false,
+        "tags": [
+          "role:firetruck",
+          "class:truck",
+          "driver-profile:cautious",
+          "binding:scene_absolute",
+          "catalog:vehicle.fire_engine"
+        ]
+      }
+    ],
+    "interactions": [
+      {
+        "id": "ego-holds",
+        "actorId": "ego_vehicle",
+        "trigger": {
+          "kind": "at",
+          "t": 0
+        },
+        "verb": "speed",
+        "target": {
+          "mode": "stop"
+        },
+        "dynamics": {
+          "shape": "step",
+          "constraint": "time",
+          "value": 0.1
+        }
+      },
+      {
+        "id": "firetruck-standoff",
+        "actorId": "firetruck",
+        "trigger": {
+          "kind": "at",
+          "t": 0
+        },
+        "verb": "gap",
+        "target": {
+          "actorId": "ego_vehicle"
+        },
+        "value": 8,
+        "mode": "distance",
+        "dynamics": {
+          "shape": "step",
+          "constraint": "time",
+          "value": 0.1
+        }
+      }
+    ],
+    "signalPrograms": [],
+    "roadControls": [],
+    "surfacePatches": [],
+    "props": [],
+    "occluders": [],
+    "occlusionPairs": [],
+    "nearMissCriteria": []
+  }
+}

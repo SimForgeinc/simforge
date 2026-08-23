@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "mapId": "richmond-field-station",
+  "clipSeconds": 130,
+  "warmupSeconds": 0,
+  "dt": 0.02,
+  "seed": "18b99d7703772be5",
+  "physics": {
+    "mode": "dynamic-v1"
+  },
+  "operationalConditions": {
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted",
+    "effects": {
+      "visibilityRangeM": 1000,
+      "frictionScale": 1,
+      "trafficSpeedFactor": 1
+    }
+  },
+  "metricSubject": "firetruck",
+  "actors": [
+    {
+      "id": "firetruck",
+      "kind": "truck",
+      "dims": {
+        "l": 9,
+        "w": 2.5,
+        "h": 3.5
+      },
+      "initial": {
+        "laneRef": {
+          "rsl": "26:0:1",
+          "s": 21.7,
+          "tFrac": 0
+        },
+        "pose": {
+          "x": -60.42,
+          "z": -200.22,
+          "headingRad": 1.982
+        },
+        "speedMps": 8.33
+      },
+      "behavior": {
+        "rules": {
+          "obeySignals": true,
+          "yield": true,
+          "yieldToVehicles": true,
+          "yieldToPedestrians": true,
+          "collisionAvoidance": true,
+          "aggression": 0.2,
+          "speedFactor": 0.9
+        },
+        "route": {
+          "kind": "lanePath",
+          "lanes": [
+            "26:0:1",
+            "143:0:1",
+            "44:0:-1",
+            "246:0:-1",
+            "18:0:-1"
+          ]
+        },
+        "drivingProfile": {
+          "comfortableLateralAccelerationMps2": 1.4,
+          "comfortableDecelerationMps2": 1.8
+        },
+        "cruiseSpeedMps": 8.33
+      },
+      "presentAtStart": true,
+      "static": false,
+      "tags": [
+        "role:firetruck",
+        "class:truck",
+        "driver-profile:cautious",
+        "binding:scene_absolute",
+        "catalog:vehicle.fire_engine"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "id": "firetruck-standoff",
+      "actorId": "firetruck",
+      "trigger": {
+        "kind": "at",
+        "t": 0
+      },
+      "verb": "gap",
+      "target": {
+        "actorId": "ego_vehicle"
+      },
+      "value": 8,
+      "mode": "distance",
+      "dynamics": {
+        "shape": "step",
+        "constraint": "time",
+        "value": 0.1
+      }
+    }
+  ],
+  "signalPrograms": [],
+  "roadControls": [],
+  "surfacePatches": [],
+  "props": [],
+  "occluders": [],
+  "occlusionPairs": [],
+  "nearMissCriteria": []
+}
