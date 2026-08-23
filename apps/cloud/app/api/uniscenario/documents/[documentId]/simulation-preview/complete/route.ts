@@ -1,0 +1,6 @@
+import { NextResponse } from "next/server";
+import { CompleteUniScenarioSimulationPreviewSchema } from "@/app/lib/uniscenario/contracts";
+import { completeSimulationPreview } from "@/app/lib/uniscenario/simulation-preview-store";
+import { readJson, requireUniScenarioContext, requireUniScenarioMutableDocumentContext, requireUniScenarioMutationOrigin } from "@/app/lib/uniscenario/http";
+type Context = { params: Promise<{ documentId: string }> };
+export async function POST(request: Request, route: Context) { const origin=requireUniScenarioMutationOrigin(request); if(origin)return origin; const auth=await requireUniScenarioContext(); if(auth.response)return auth.response; const {documentId}=await route.params; const access=await requireUniScenarioMutableDocumentContext(auth.context,documentId,"mutateContent"); if(access.response)return access.response; const parsed=CompleteUniScenarioSimulationPreviewSchema.safeParse(await readJson(request)); if(!parsed.success)return NextResponse.json({error:"invalid_simulation_preview"},{status:400}); const value=await completeSimulationPreview(auth.context,documentId,parsed.data); return value?NextResponse.json(value):NextResponse.json({error:"stale_simulation_preview"},{status:409}); }
