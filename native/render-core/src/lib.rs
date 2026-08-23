@@ -1,19 +1,18 @@
-//! render-core: headless Bevy scene renderer for UniScenarios.
-//!
-//! Grows from scripts/renderer-spike/bevy-spike (GO verdict, see
-//! scripts/renderer-spike/FINDINGS.md). Owns: scene ingestion (corpus GLB
-//! tiles), actor rendering, cameras, passes (RGB / instance-ID / depth /
-//! motion vectors) and GPU->CPU readback.
-//!
-//! WSB2 owns the scene/actor/motion-vector modules; WSB3 adds camera rigs and
-//! extra sensor passes; WSB4 adds lighting/atmosphere/post + render profiles.
+//! Shared rendering core for the UniScenarios native renderer.
 //!
 //! Binaries:
 //! - `native-render`: the spike application (flag-compatible baseline).
 //! - `scen-play`: scene-state.v1 trace playback with actors + motion vectors.
-
+//!
+//! WSB4 RealismStack modules: lighting ladder, weather ladder, render
+//! profiles, post-process grain, vegetation instancing.
 pub mod catalog;
+pub mod lighting;
 pub mod motion_vector;
 pub mod playback;
+pub mod post_grain;
+pub mod profiles;
 pub mod readback;
 pub mod scene_state;
+pub mod veg;
+pub mod weather;
