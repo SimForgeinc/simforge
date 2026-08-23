@@ -1,0 +1,2 @@
+{"model": "Qwen/Qwen2.5-VL-7B-Instruct", "group_size": 40, "completion_tokens_target": 100, "prompt_len": 256, "gen_peak_alloc_gib": 31.41, "step_peak_alloc_gib": 31.41, "step_peak_reserved_gib": 35.73, "gen_time_s": 11.85, "update_time_s": 14.98, "step_time_s": 26.83, "oom": false}
+{"model": "zai-org/GLM-4.1V-9B-Thinking", "group_size": 40, "completion_tokens_target": 100, "prompt_len": 241, "gen_peak_alloc_gib": 30.82, "step_peak_alloc_gib": 30.82, "step_peak_reserved_gib": 32.37, "gen_time_s": 13.79, "update_time_s": 12.2, "step_time_s": 25.98, "oom": false}

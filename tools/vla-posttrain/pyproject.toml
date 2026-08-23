@@ -1,0 +1,19 @@
+[project]
+name = "vla-posttrain"
+version = "0.1.0"
+description = "WS7 ComputeDerisk: Poutine-shape GRPO post-training smoke + scale measurements on simforge1"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.6",
+    "transformers>=4.51",
+    "trl>=0.19",
+    "peft>=0.15",
+    "accelerate>=1.6",
+    "bitsandbytes>=0.45",
+    "qwen-vl-utils>=0.0.10",
+    "pillow>=11",
+    "numpy>=1.26",
+]
+
+[tool.uv]
+# torch/bitsandbytes resolve from PyPI with bundled CUDA 12 runtime wheels; no extra index needed on A100 (sm80).
