@@ -146,7 +146,19 @@ auditor gates every teacher's outputs identically regardless of source.
 
 ## 6. Technical disqualifier — IsolationX factor-matrix verdict (UNDER RE-EVALUATION)
 
-**Status 2026-08-22 (PM), per Main:** the official H3 website produced
+**RESOLVED 2026-08-22 (evening), H3Reproduce lane final verdict**
+(`h3-reproduce` branch, `tools/h3-reproduce/VERDICT.md`, scored with WS1's
+frozen yolo11s): the 0.0-binding was a **PAYLOAD ARTIFACT** — re-running our
+exact harness payload reproduced recall 0.000 / hallucination 1.000, while
+first+last-frame (fl2va) conditioning of the same source clip reaches
+recall 0.375 / IoU 0.750 / hallucination 0.620, meeting the website bar
+(0.354 / 0.711 / 0.807). Video-only ref2va plateaus at 0.13–0.17 recall.
+Technical consequence recorded for any future reference-teacher work
+(Wan included): **keyframe (first+last frame) conditioning is the mechanism
+that carries scene content; reference-video conditioning does not.** The
+license NO-GO (§2) is unaffected and remains dispositive for H3 as teacher.
+
+Original status note: the official H3 website produced
 scene-preserving weather translation on an uploaded driving video, while our
 harness passed the source clip as `{type:"video", role:"reference"}` beside
 style images (`simforge1:~/h3-teacher/h3_smoke.sh`) — which likely conditions
