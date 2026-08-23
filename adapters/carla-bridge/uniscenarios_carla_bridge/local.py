@@ -761,15 +761,17 @@ def _artifact_manifest_entries(items: Any) -> list[dict[str, Any]]:
             raise RuntimeError(f"native artifact identity is duplicated: {identity}")
         identities.add(identity)
         entries.append({
-            "role": role,
-            "actorId": actor_id,
-            "sensorId": sensor_id,
-            "modality": modality,
-            "artifactUrl": item["artifactUrl"],
+            "identity": {
+                "role": role,
+                "actorId": actor_id,
+                "sensorId": sensor_id,
+                "modality": modality,
+            },
+            "relativePath": item["artifactUrl"],
             "sha256": item["sha256"],
             "sizeBytes": item["sizeBytes"],
             "mediaType": item["mediaType"],
-            **({"metadata": dict(metadata)} if metadata else {}),
+            "frameCount": metadata.get("frameCount") if isinstance(metadata.get("frameCount"), int) else None,
         })
     return entries
 
@@ -810,21 +812,23 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
     progress_path.write_text("", "utf-8")
     emit("job.started", {})
+    started_at = datetime.now(timezone.utc).isoformat()
     result = _execute_local_lease(
         lease, asset_paths, output_dir, DEFAULT_XSD, args.host, args.port, progress=emit,
     )
     manifest_entries = _artifact_manifest_entries(result["artifacts"])
-    runtime_evidence = result["attestation"]["runtimeEvidence"]
     artifact_manifest = {
         "schema": "uniscenario.render-artifact-manifest/v1",
-        "intentId": intent["intentId"], "intentSha256": intent_sha, "engine": "carla",
-        "artifacts": manifest_entries, "attestation": result["attestation"],
-        "carlaEvidence": {
-            "sensorHost": dict(intent["sensorHost"]),
-            "sensorHostReadback": runtime_evidence["prontoSensorHost"],
-            "runtimeImage": runtime_evidence["runtimeImage"],
+        "intentSha256": intent_sha,
+        "engine": {
+            "engineId": "uniscenarios-carla",
+            "engineVersion": "native-v1",
+            "backend": "carla",
         },
-        "parityEvidence": result["parityEvidence"], "planSha256": result["planSha256"],
+        "startedAt": started_at,
+        "completedAt": datetime.now(timezone.utc).isoformat(),
+        "artifacts": manifest_entries,
+        "warnings": [],
     }
     manifest_path = Path(args.manifest)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)

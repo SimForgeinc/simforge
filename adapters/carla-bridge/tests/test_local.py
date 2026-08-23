@@ -108,17 +108,15 @@ def test_artifact_manifest_accepts_sensor_data() -> None:
     }])
 
     assert entries == [{
-        "role": "sensorData",
-        "actorId": "ego",
-        "sensorId": "lidar-front",
-        "modality": "lidar",
-        "artifactUrl": "sensor-data.zip",
-        "sha256": "a" * 64,
-        "sizeBytes": 42,
-        "mediaType": "application/zip",
-        "metadata": {
+        "identity": {
+            "role": "sensorData",
             "actorId": "ego",
             "sensorId": "lidar-front",
             "modality": "lidar",
         },
+        "relativePath": "sensor-data.zip",
+        "sha256": "a" * 64,
+        "sizeBytes": 42,
+        "mediaType": "application/zip",
+        "frameCount": None,
     }]
