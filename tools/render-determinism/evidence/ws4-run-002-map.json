@@ -1,0 +1,155 @@
+{
+  "schema": "uniscenarios.render-determinism-manifest.v1",
+  "generatedAt": "2026-08-22T21:49:24.183Z",
+  "claim": "byte-exactness of the Chrome/three.js RGB export path across two independent renders of one fixed scene state on pinned hardware",
+  "mode": "map-orbit",
+  "scenario": {
+    "instanceId": null,
+    "mapId": "belmont-research-center",
+    "inputs": {
+      "map": {
+        "id": "belmont-research-center",
+        "note": "deterministic camera orbit over the streamed static city scene"
+      }
+    }
+  },
+  "rendererPath": {
+    "file": "scripts/export-render.mjs",
+    "sha256": "65d059a7d274d359dd4a134ee663fcc02d66d4034bdf7097cd0a258b7abe784f",
+    "engine": "chrome-headless three.js via Studio dev server (@uniscenarios/studio)",
+    "invocation": {
+      "url": "http://127.0.0.1:5199/",
+      "flags": [
+        "--headless",
+        "--map",
+        "belmont-research-center",
+        "--frames",
+        "6"
+      ],
+      "passesRenderedSequentially": true
+    }
+  },
+  "hardware": {
+    "collectedAt": "2026-08-22T21:49:24.183Z",
+    "chrome": {
+      "version": "151.0.7922.108",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+      "launchArgs": [
+        "--ignore-gpu-blocklist"
+      ],
+      "headless": true
+    },
+    "webgl": {
+      "available": true,
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "glslVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "unmaskedVendor": "Google Inc. (Google)",
+      "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "maxTextureSize": 8192
+    },
+    "host": {
+      "osPrettyName": "Ubuntu 24.04.4 LTS",
+      "kernel": "7.0.0-28-generic",
+      "arch": "x64",
+      "cpuModel": "Intel(R) Core(TM) Ultra 9 285K",
+      "cpuCount": 24,
+      "totalMemoryBytes": 66856239104,
+      "hostname": "path-B860I-AORUS-PRO-ICE",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 5080",
+          "driverVersion": "595.84",
+          "vbiosVersion": "98.03.6C.00.3E",
+          "pciBusId": "00000000:02:00.0"
+        }
+      ]
+    }
+  },
+  "passes": {
+    "rgb": {
+      "available": true,
+      "frameCount": 6,
+      "frames": [
+        {
+          "name": "belmont-research-center/frames/frame-000000.png",
+          "bytes": 815262,
+          "sha256PassA": "75b8ea9e9c433e417794fb7d221bea7d760525e78fd36c3cddd950592794b10c",
+          "sha256PassB": "75b8ea9e9c433e417794fb7d221bea7d760525e78fd36c3cddd950592794b10c",
+          "equal": true
+        },
+        {
+          "name": "belmont-research-center/frames/frame-000001.png",
+          "bytes": 945402,
+          "sha256PassA": "d7f4574a6dfc1c8d06ac2002cf363abdbd067ec3dd7b9646b297eb2faf71dc63",
+          "sha256PassB": "d7f4574a6dfc1c8d06ac2002cf363abdbd067ec3dd7b9646b297eb2faf71dc63",
+          "equal": true
+        },
+        {
+          "name": "belmont-research-center/frames/frame-000002.png",
+          "bytes": 796844,
+          "sha256PassA": "41db68e2132d0b60b669872b2d3bcb715e24b1ef48ddf851f0294f352546ec1d",
+          "sha256PassB": "41db68e2132d0b60b669872b2d3bcb715e24b1ef48ddf851f0294f352546ec1d",
+          "equal": true
+        },
+        {
+          "name": "belmont-research-center/frames/frame-000003.png",
+          "bytes": 909360,
+          "sha256PassA": "1cfaab631f7fa6ef54f4629ca951ae28db68fd8569ed10b07ed8b70ea5afc3aa",
+          "sha256PassB": "1cfaab631f7fa6ef54f4629ca951ae28db68fd8569ed10b07ed8b70ea5afc3aa",
+          "equal": true
+        },
+        {
+          "name": "belmont-research-center/frames/frame-000004.png",
+          "bytes": 945842,
+          "sha256PassA": "f7cc58bb75845df3152083a77a3681986bdc28fa4064e9246ccfd1b9f500cf21",
+          "sha256PassB": "f7cc58bb75845df3152083a77a3681986bdc28fa4064e9246ccfd1b9f500cf21",
+          "equal": true
+        },
+        {
+          "name": "belmont-research-center/frames/frame-000005.png",
+          "bytes": 722231,
+          "sha256PassA": "7edaff685e0316aad9152a119a676023eca2167e73b0cd1013bae9d12bce6e24",
+          "sha256PassB": "cef1ff33b8c49c37e415daa2c275322c55802f919325af1d99ddaa9ab05f7e38",
+          "equal": false
+        }
+      ],
+      "equalFrames": 5,
+      "byteStable": false
+    },
+    "depth": {
+      "available": false,
+      "reason": "the Chrome screenshot export path emits RGB stills only; depth is produced by the sensor-rig pipeline (packages/browser-renderer src/sensors/depth-pass.ts) and is not exercised here"
+    },
+    "semantic": {
+      "available": false,
+      "reason": "not emitted by scripts/export-render.mjs; semantic G-buffer lives in packages/browser-renderer src/sensors/id-pass.ts and requires the sensor-rig intent pipeline"
+    },
+    "instance": {
+      "available": false,
+      "reason": "not emitted by scripts/export-render.mjs; instance G-buffer shares the id-pass limitation above"
+    }
+  },
+  "verdict": {
+    "byteStable": false,
+    "mismatchedFrames": 1,
+    "scope": "RGB only, single GPU/driver/Chrome build, two processes on one machine — cross-hardware reproducibility is explicitly NOT claimed (see docs/determinism-claim.md)"
+  },
+  "runs": [
+    {
+      "label": "a",
+      "startedAt": "2026-08-22T21:19:33.212Z",
+      "finishedAt": "2026-08-22T21:33:59.569Z",
+      "exitCode": 0,
+      "stdoutTail": "> export belmont-research-center\n{\n  \"outDir\": \"/home/path/UniScenarios-ws/ws4-renderer/artifacts/render-determinism/ws4-run-002-map/pass-a\",\n  \"maps\": [\n    \"belmont-research-center\"\n  ],\n  \"diagnostics\": 0\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "label": "b",
+      "startedAt": "2026-08-22T21:33:59.569Z",
+      "finishedAt": "2026-08-22T21:49:23.421Z",
+      "exitCode": 0,
+      "stdoutTail": "> export belmont-research-center\n{\n  \"outDir\": \"/home/path/UniScenarios-ws/ws4-renderer/artifacts/render-determinism/ws4-run-002-map/pass-b\",\n  \"maps\": [\n    \"belmont-research-center\"\n  ],\n  \"diagnostics\": 0\n}\n",
+      "stderrTail": ""
+    }
+  ]
+}
