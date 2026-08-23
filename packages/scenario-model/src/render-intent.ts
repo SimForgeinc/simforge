@@ -118,18 +118,22 @@ export const RenderIntentV1Schema = z.strictObject({
   const chaseCameras = hostSources.filter(
     (source) => source.sensorId === PRONTO_CHASE_CAMERA_SENSOR_ID,
   );
-  const cameras = hostSources.filter(
-    (source) => source.modality !== 'lidar'
+  const cameraSensors = new Set(hostSources
+    .filter((source) => source.modality !== 'lidar'
       && source.modality !== 'radar'
-      && source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID,
-  ).length;
-  const lidars = hostSources.filter((source) => source.modality === 'lidar').length;
-  const radars = hostSources.filter((source) => source.modality === 'radar').length;
-  if (cameras !== 8 || lidars !== 6 || radars !== 4) {
+      && source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID)
+    .map((source) => source.sensorId));
+  const lidarSensors = new Set(hostSources
+    .filter((source) => source.modality === 'lidar')
+    .map((source) => source.sensorId));
+  const radarSensors = new Set(hostSources
+    .filter((source) => source.modality === 'radar')
+    .map((source) => source.sensorId));
+  if (cameraSensors.size !== 8 || lidarSensors.size !== 6 || radarSensors.size !== 4) {
     ctx.issues.push({
       code: 'custom',
       path: ['renderSpec', 'sources'],
-      message: `Pronto rig requires 8 cameras, 6 LiDARs, and 4 radars; got ${cameras}/${lidars}/${radars}`,
+      message: `Pronto rig requires 8 cameras, 6 LiDARs, and 4 radars; got ${cameraSensors.size}/${lidarSensors.size}/${radarSensors.size}`,
       input: ctx.value.renderSpec.sources,
     });
   }

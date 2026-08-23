@@ -435,11 +435,17 @@ def _intent_lease(
         sensor for sensor in parsed_spec.sensors
         if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
     ]
-    actual_rig = (
-        sum(sensor.modality in camera_modalities for sensor in rig_sensors),
-        sum(sensor.modality in {"lidar", "semantic-lidar"} for sensor in rig_sensors),
-        sum(sensor.modality == "radar" for sensor in rig_sensors),
-    )
+    camera_sensor_ids = {
+        sensor.sensor_id for sensor in rig_sensors if sensor.modality in camera_modalities
+    }
+    lidar_sensor_ids = {
+        sensor.sensor_id for sensor in rig_sensors
+        if sensor.modality in {"lidar", "semantic-lidar"}
+    }
+    radar_sensor_ids = {
+        sensor.sensor_id for sensor in rig_sensors if sensor.modality == "radar"
+    }
+    actual_rig = (len(camera_sensor_ids), len(lidar_sensor_ids), len(radar_sensor_ids))
     if os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
         rgb_ids = {sensor.sensor_id for sensor in parsed_spec.sensors if sensor.modality == "rgb"}
         derived = {
@@ -454,8 +460,7 @@ def _intent_lease(
                 "SDG expansion sensors must derive from real rgb rig cameras via id__modality"
             )
     elif (
-        len(rig_sensors) != 18
-        or actual_rig != (8, 6, 4)
+        actual_rig != (8, 6, 4)
         or {sensor.actor_id for sensor in parsed_spec.sensors} != {host_actor_id}
     ):
         raise ContractError("all exact Pronto sensors must attach to render intent sensorHost.actorId")

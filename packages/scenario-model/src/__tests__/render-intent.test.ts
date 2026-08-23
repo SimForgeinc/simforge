@@ -117,6 +117,18 @@ describe('pronto render intent', () => {
     expect(parseRenderIntent(intent(RIG)).renderSpec.sources).toHaveLength(18);
   });
 
+  it('counts physical camera identities across multiple modalities', () => {
+    const depthSources = RIG
+      .filter((source) => source.modality === 'rgb')
+      .map((source) => ({
+        ...source,
+        modality: 'depth' as const,
+        outputName: `${source.sensorId}-depth`,
+      }));
+
+    expect(parseRenderIntent(intent([...RIG, ...depthSources])).renderSpec.sources).toHaveLength(26);
+  });
+
   it('accepts the rig plus a trailing chase camera', () => {
     const sources = [camera(PRONTO_CHASE_CAMERA_SENSOR_ID, 70), ...RIG];
 
