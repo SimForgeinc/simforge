@@ -98,6 +98,64 @@ optional local render worker. Plan: `docs/simcloud-local-port-plan.md`.
   `dev:worker` adds the local worker; the legacy Vite studio moved behind
   `dev:studio-legacy` pending removal.
 
+## Wave 4 completion — SimCloud port verified end-to-end (2026-08-23)
+
+After the cutover, the full product chain was proven on the local stack:
+author work-zone scenario → simulate (SUMO 56 live ambient vehicles, parked
+cars, lit world) → simulation preview → Create Render with an authored Basic
+Dash Camera → local worker claims/renders/encodes → gallery mp4 (H.264
+1280×720, 24 fps, 5.0 s) → OpenSCENARIO 1.4 export compiles and downloads
+(local compiler worker lane). Everything merged to main; the running services
+serve from the canonical checkout on :5199 (tailnet 100.72.252.40:5199).
+
+## Wave 5 — Video-model bake-off (2026-08-23)
+
+Question: which model can take our Bevy-rendered driving video, change the
+weather, and make it photoreal while preserving the scene? Protocol: full
+source-video conditioning (keyframe conditioning prohibited unless a model has
+no reference path — user policy), frozen yolo11s all-class scoring against the
+tick-identical three.js twin, GPU-resident execution only (no CPU offload —
+user policy), ARM-RAIN + ARM-NIGHT prompts, artifacts on
+`seablue:~/Downloads/model-bakeoff/` (grids `bakeoff-*-grid-v2.mp4`).
+
+| Model | Verdict |
+|---|---|
+| **Qwen-Video-Edit** (Qwen-Image-Edit DiT over Wan-VAE latents) | **Winner** — the only architecture that binds to source structure (road/median/houses/ego path preserved) with convincing rain and real night (luma 0.34). Resident recipe proven: FP8-resident DiT + component-placed encoder/VAE, 12.4% faster than offload. Its Wan2.2 enhancement stage runs resident in 11 min but WORSENS seams (+8%) and hallucinates a fake dashcam timestamp — recommendation: raw resident; seam fix = overlap-blended chunking (open item, with small-actor fidelity). |
+| Bernini-Diffusers-v2 | Most dramatic weather, but regenerates the scene. Presentation tool only. |
+| LTX 0.9.8 2B / 2.3 22B IC-LoRA / 2.5 | Fast; strong effects (2.3 Day-To-Night luma 0.52) but geometry regenerated in every variant; 2.5 ships no control adapters yet. FAIL vs the Qwen bar. |
+| Evoke 14B | Not a translator: v2v = continuation/re-imagination of a different street. Genuinely photoreal world model — research direction only. |
+| ID-V2V (Eyeline/Netflix) | Cannot run GPU-resident on 40 GB cards (51.7 GB weights/rank; USP replicates weights). Partial run: nice weather, structure below Qwen. SAM3 finds no cars in our stylized renders (only the pedestrian). |
+| H3 (incumbent) | **Closed case** — see below. |
+
+## H3 final verdict (2026-08-23)
+
+The website-vs-local gap is NOT a deployment problem. Falsified with evidence:
+quantization (BF16, null), wrong weights (official checkpoints), Turbo LoRA
+(none), flow shift (matches), steps (50 vs 20 moved recall 0.141 vs 0.127),
+resolution (768p arm 0.167, still under half the bar). SGLang at exact vanilla
+settings (A7) scored 0.114 vs the website bar 0.354/0.711. Causal divergence:
+the hosted product runs closed modules (H3-Context-IR prompt/context
+orchestrator + H3-Regenerate-2K second pass) and the released Ref2VA
+architecture's references explicitly do not bind generated geometry. Official
+open task inventory is exactly t2va/fl2va/ref2va — no identity or
+source-binding route exists. Conclusion: open-weights H3 cannot do
+structure-faithful video translation regardless of serving. The official
+Diffusers loader also cannot run GPU-resident on A100-40GB (61.7 GB
+transformer, no TP/USP path). Package:
+`seablue:~/Downloads/model-bakeoff/h3-vanilla/`.
+
+## Standing policies (user decisions, 2026-08-23)
+
+- Video models: research scope, licensing explicitly waived by the user.
+- Wan 2.2 removed from the project as our teacher/tooling (87.7 GiB purged
+  from simforge1); third-party pipelines that internally embed Wan components
+  may still be evaluated for functionality.
+- Conditioning: full source video as reference, never first/last keyframes
+  unless a model has no reference path.
+- Execution: never CPU/sequential offload — always fully GPU-resident,
+  sharded/component-placed across GPUs; report precise memory breakdowns when
+  a model cannot fit resident.
+
 ## Standing operational facts
 
 - GPU box: RTX 5080 16 GB locally (user's production V2X twin holds ~9.4 GB —
