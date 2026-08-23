@@ -9,11 +9,14 @@ It was extracted without modifying or deleting the source repository.
 - Package scope: `@uniscenarios/*`
 - Primary CLI: `uniscenarios`
 - Compatibility CLI alias: `scen`
-- Application workspace: `apps/studio` (`@uniscenarios/studio`)
+- Application workspaces: `apps/cloud` (`@uniscenarios/cloud`, the launched
+  product surface since 2026-08-23) and `apps/studio` (`@uniscenarios/studio`,
+  legacy authoring surface behind `dev:studio-legacy`, pending removal)
 
-The `apps/studio` directory name describes the authoring surface; it is not a
-legacy product name. Public UI, schemas, package metadata, and documentation use
-UniScenarios naming.
+The `apps/studio` directory name describes the retired authoring surface; the
+current product UI is the SimCloud-identical `apps/cloud` (see
+`docs/context/project-overview.md`). Public UI, schemas, package metadata, and
+documentation use UniScenarios naming.
 
 The naming contract is executable:
 
