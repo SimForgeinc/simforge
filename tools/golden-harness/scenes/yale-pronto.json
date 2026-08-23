@@ -1,0 +1,28 @@
+{
+  "sceneId": "yale-pronto",
+  "mapId": "yale-street",
+  "profile": "sensor",
+  "binary": "native/target/release/sensor-capture",
+  "description": "Pronto port-E rig frame 0 (9 cameras x RGB/depth/instance/semantic + lidar/radar/IMU/GNSS) over WSB1 decoded corpus tiles, scene-state.v1 actors, yale georeference. Separate artifact family from native-render (Tonemapping::None ID/semantic passes).",
+  "corpusRootEnv": "SCEN_SENSOR_CORPUS_WSB1",
+  "corpusFiles": ["tile_2_4.lod0.glb", "tile_2_5.lod0.glb", "tile_2_6.lod0.glb", "tile_3_5.lod0.glb", "road.glb"],
+  "invocationTemplate": [
+    "--rig-program", "qualification/render-qualification-program.v1.json",
+    "--glbs", "{glbs}",
+    "--scene-state", "run/evidence/scene-state.v1.json",
+    "--xodr", "fixtures/yale-header.xodr",
+    "--width", "736", "--height", "416", "--warmup", "20",
+    "--out", "{out}"
+  ],
+  "expectedPasses": [
+    "pronto-cam0.rgb", "pronto-cam0.depth", "pronto-cam0.instance", "pronto-cam0.semantic",
+    "lidar-front-left.ply"
+  ],
+  "passPaths": {
+    "pronto-cam0.rgb": "pronto-cam0/00000000.rgb.png",
+    "pronto-cam0.depth": "pronto-cam0/00000000.depth.f32.bin",
+    "pronto-cam0.instance": "pronto-cam0/00000000.instance.png",
+    "pronto-cam0.semantic": "pronto-cam0/00000000.semantic.png",
+    "lidar-front-left.ply": "pronto-lidar-front-left/00000000.ply"
+  }
+}

@@ -35,6 +35,13 @@ Expected invariants across lighting/atmosphere changes: depth0 and id0 hold
 (geometry/unlit passes); rgb0 drift is expected and handled by per-pass
 re-record (superseded versions archived append-only under `previousVersions`).
 
+| yale-pronto | pronto-cam0.rgb `7d9091c1af4a6a1a` · depth `517cf5171b7016d2` · instance `3b8b2be27a00bd7e` · semantic `8455e0f311aaa64f` · lidar-front-left PLY `e9c48979b3331bff` | sensor-capture (Tonemapping::None ID/semantic) — separate artifact family; rgb/depth independently reproduce WSB3's paired-run hashes |
+
+yale-pronto reads WSB1's decoded corpus (`SCEN_SENSOR_CORPUS_WSB1` →
+`.corpus/yale-street`, tiles/ subdir auto-detected), the committed
+`run/evidence/scene-state.v1.json`, and `fixtures/yale-header.xodr`.
+It has no timing instrumentation — frame-time gate is skipped for it.
+
 ## Re-record
 
 ```sh

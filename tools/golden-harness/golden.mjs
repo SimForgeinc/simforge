@@ -101,9 +101,14 @@ async function requireQuietGpu() {
 }
 
 function resolvePaths(scene) {
-  const corpusRoot = process.env.SCEN_SENSOR_CORPUS
+  const corpusRoot = (scene.corpusRootEnv && process.env[scene.corpusRootEnv])
+    ?? scene.corpusRoot
+    ?? process.env.SCEN_SENSOR_CORPUS
     ?? path.join(repoRoot, 'scripts/renderer-spike/corpus');
-  const glbs = scene.corpusFiles.map((f) => path.join(corpusRoot, f));
+  const tilesDir = fs.existsSync(path.join(corpusRoot, 'tiles'))
+    ? 'tiles'
+    : '';
+  const glbs = scene.corpusFiles.map((f) => path.join(corpusRoot, tilesDir, f));
   for (const g of glbs) {
     if (!fs.existsSync(g)) {
       fail(1, `corpus file missing: ${g} (set SCEN_SENSOR_CORPUS to the decoded corpus root)`);
@@ -118,8 +123,16 @@ function loadScene(id) {
   return JSON.parse(fs.readFileSync(p, 'utf8'));
 }
 
-/** Map logical pass key -> output file produced by the spike's --out prefix. */
-function passFiles(outPrefix) {
+/** Map logical pass key -> output file (scene.passPaths wins over spike layout). */
+function passFiles(outPrefix, scene) {
+  if (scene?.passPaths) {
+    return Object.fromEntries(Object.entries(scene.passPaths).map(([k, rel]) => [k, `${outPrefix}/${rel}`]));
+  }
+  return spikePassFiles(outPrefix);
+}
+
+/** Spike/native-render output layout. */
+function spikePassFiles(outPrefix) {
   return {
     rgb0: `${outPrefix}.rgb0.png`,
     id0: `${outPrefix}.id.png`,
@@ -128,8 +141,8 @@ function passFiles(outPrefix) {
   };
 }
 
-function hashPasses(outPrefix, passes) {
-  const map = passFiles(outPrefix);
+function hashPasses(outPrefix, passes, hashScene) {
+  const map = passFiles(outPrefix, hashScene);
   const out = {};
   for (const key of passes) {
     const f = map[key];
@@ -143,6 +156,11 @@ function hashPasses(outPrefix, passes) {
 }
 
 function buildSpikeInvocation(scene, glbs, outPrefix) {
+  if (scene.invocationTemplate) {
+    // Generic argv template ({glbs} -> csv, {out} -> output prefix/dir).
+    return scene.invocationTemplate.map((t) =>
+      t === '{glbs}' ? glbs.join(',') : t.replaceAll('{out}', outPrefix));
+  }
   const a = scene.rendererArgs;
   return [
     '--glbs', glbs.join(','),
@@ -166,8 +184,9 @@ function runSpike(binPath, invocation, label) {
     fail(1, `spike exited ${r.status}\nstdout tail:\n${(r.stdout ?? '').slice(-2000)}\nstderr tail:\n${(r.stderr ?? '').slice(-2000)}`);
   }
   const timingsLine = (r.stdout ?? '').split('\n').find((l) => l.startsWith('TIMINGS '));
-  if (!timingsLine) fail(1, 'spike did not print a TIMINGS line');
-  return JSON.parse(timingsLine.slice('TIMINGS '.length));
+  // Binaries without timing instrumentation (e.g. sensor-capture) are allowed;
+  // their scenes opt out of the frame-time gate.
+  return timingsLine ? JSON.parse(timingsLine.slice('TIMINGS '.length)) : null;
 }
 
 function cargoVersions() {
@@ -189,11 +208,12 @@ function rustcVersion() {
   } catch { return null; }
 }
 
-function resolveBinary(args) {
+function resolveBinary(args, scene) {
   // Production path first (native/render-core bin `native-render`, byte-identical
   // CLI to the spike today); spike binary kept as fallback for pre-scaffold trees.
   const candidates = [
     args.bin,
+    scene?.binary && path.join(repoRoot, scene.binary),
     path.join(repoRoot, 'native/target/release/native-render'),
     path.join(repoRoot, 'scripts/renderer-spike/bevy-spike/target/release/bevy-spike'),
   ].filter(Boolean);
@@ -249,7 +269,7 @@ async function cmdRecord(args) {
   if (!sceneId) fail(1, 'usage: golden.mjs record <scene>');
   const scene = applyOverrides(loadScene(sceneId), args.overrides);
   const { glbs } = resolvePaths(scene);
-  const binPath = resolveBinary(args);
+  const binPath = resolveBinary(args, scene);
 
   await requireQuietGpu();
   console.log('[golden-harness] collecting hardware fingerprint...');
@@ -276,7 +296,7 @@ async function cmdRecord(args) {
     const timings = runSpike(binPath, invocation, label);
     runs.push({
       timings,
-      passHashes: hashPasses(prefix, scene.expectedPasses),
+      passHashes: hashPasses(prefix, scene.expectedPasses, scene),
       invocation,
     });
   }
@@ -288,21 +308,24 @@ async function cmdRecord(args) {
     fail(4, `two record runs disagree on passes: ${drift.join(',')} — this GPU/render path is NOT byte-stable; refusing to write a golden`);
   }
 
+  const t = runs[0].timings;
   const golden = {
     ...manifestBase({ mode: 'golden-record', ...base, invocation: runs[0].invocation }),
     passHashes: runs[0].passHashes,
     corpusChecksums,
-    timings: {
-      avgFrameMs: runs[0].timings.avg_frame_ms,
-      p50FrameMs: runs[0].timings.p50_frame_ms,
-      p99FrameMs: runs[0].timings.p99_frame_ms,
-      fps: runs[0].timings.fps,
-      measuredFrames: runs[0].timings.measured_frames,
-    },
+    ...(t ? {
+      timings: {
+        avgFrameMs: t.avg_frame_ms,
+        p50FrameMs: t.p50_frame_ms,
+        p99FrameMs: t.p99_frame_ms,
+        fps: t.fps,
+        measuredFrames: t.measured_frames,
+      },
+    } : {}),
     twoRunEvidence: {
       runsCompared: 2,
       byteStable: true,
-      runBTimingsAvgFrameMs: runs[1].timings.avg_frame_ms,
+      ...(runs[1].timings ? { runBTimingsAvgFrameMs: runs[1].timings.avg_frame_ms } : {}),
     },
     verdict: {
       byteStable: true,
@@ -324,7 +347,8 @@ async function cmdRecord(args) {
   fs.writeFileSync(gp, JSON.stringify(golden, null, 2));
   writeManifest(golden, path.join(artifacts, 'manifest.json'));
   console.log(`[golden-harness] RECORDED golden for ${sceneId} @ ${hardware.gpuFingerprint}`);
-  console.log(`  baseline avg_frame_ms=${golden.timings.avgFrameMs.toFixed(3)} p50=${golden.timings.p50FrameMs.toFixed(3)} (budget: verify fails above ${(golden.timings.avgFrameMs * 1.10).toFixed(3)})`);
+  if (golden.timings) console.log(`  baseline avg_frame_ms=${golden.timings.avgFrameMs.toFixed(3)} p50=${golden.timings.p50FrameMs.toFixed(3)} (budget: verify fails above ${(golden.timings.avgFrameMs * 1.10).toFixed(3)})`);
+  else console.log('  (no timing instrumentation — frame-time gate disabled for this scene)');
   for (const [k, v] of Object.entries(golden.passHashes)) console.log(`  ${k.padEnd(7)} ${v.sha256.slice(0, 16)}…  ${v.bytes}B`);
 }
 
@@ -352,7 +376,7 @@ class GateFailure extends Error {
 async function verifyOne(args, sceneId) {
   const scene = applyOverrides(loadScene(sceneId), args.overrides);
   const { glbs } = resolvePaths(scene);
-  const binPath = resolveBinary(args);
+  const binPath = resolveBinary(args, scene);
 
   await requireQuietGpu();
   const hardware = await collectNativeHardware();
@@ -368,7 +392,7 @@ async function verifyOne(args, sceneId) {
   fs.mkdirSync(path.dirname(prefix), { recursive: true });
   const invocation = buildSpikeInvocation(scene, glbs, prefix);
   const timings = runSpike(binPath, invocation, 'verify');
-  const observed = hashPasses(prefix, [...scene.expectedPasses, ...(Object.keys(golden.passHashes).includes('legend') ? ['legend'] : [])]);
+  const observed = hashPasses(prefix, [...scene.expectedPasses, ...(Object.keys(golden.passHashes).includes('legend') ? ['legend'] : [])], scene);
 
   // Gate 1: pass-hash drift.
   const drifted = Object.entries(golden.passHashes)
@@ -377,20 +401,22 @@ async function verifyOne(args, sceneId) {
     .map(([k]) => k);
 
   // Gate 2: frame-time budget (>10% avg-frame regression vs recorded baseline).
+  // Scenes without timing instrumentation (sensor-capture) skip this gate.
   const budgetFactor = Number(process.env.GOLDEN_FRAME_BUDGET ?? 1.10);
-  const baseline = golden.timings.avgFrameMs;
-  const regressionPct = ((timings.avg_frame_ms - baseline) / baseline) * 100;
+  const baseline = golden.timings?.avgFrameMs;
+  const regressionPct = timings && baseline ? ((timings.avg_frame_ms - baseline) / baseline) * 100 : null;
 
   const manifest = {
     ...manifestBase({ mode: 'golden-verify', scene, hardware, binPath, invocation, versions: cargoVersions() }),
     passHashes: observed,
     corpusChecksums: golden.corpusChecksums,
     timings: {
-      avgFrameMs: timings.avg_frame_ms, p50FrameMs: timings.p50_frame_ms,
-      p99FrameMs: timings.p99_frame_ms, fps: timings.fps,
-      measuredFrames: timings.measured_frames,
-      baselineAvgFrameMs: baseline,
-      regressionPct: Number(regressionPct.toFixed(2)),
+      ...(timings ? {
+        avgFrameMs: timings.avg_frame_ms, p50FrameMs: timings.p50_frame_ms,
+        p99FrameMs: timings.p99_frame_ms, fps: timings.fps, measuredFrames: timings.measured_frames,
+      } : {}),
+      baselineAvgFrameMs: baseline ?? null,
+      regressionPct: regressionPct === null ? null : Number(regressionPct.toFixed(2)),
       budgetFactor,
     },
     verdict: {
@@ -408,13 +434,17 @@ async function verifyOne(args, sceneId) {
     const ok = exp && (exp.sha256 === v.sha256);
     console.log(`  ${ok ? 'MATCH' : 'DRIFT'}  ${k.padEnd(7)} ${v.sha256.slice(0, 16)}…${exp && !ok ? ` (golden ${exp.sha256.slice(0, 16)}…)` : ''}`);
   }
-  console.log(`  frame-time: ${timings.avg_frame_ms.toFixed(3)} ms vs baseline ${baseline.toFixed(3)} ms → ${regressionPct >= 0 ? '+' : ''}${regressionPct.toFixed(1)}% (budget +${((budgetFactor - 1) * 100).toFixed(0)}%)`);
+  if (regressionPct !== null) {
+    console.log(`  frame-time: ${timings.avg_frame_ms.toFixed(3)} ms vs baseline ${baseline.toFixed(3)} ms → ${regressionPct >= 0 ? '+' : ''}${regressionPct.toFixed(1)}% (budget +${((budgetFactor - 1) * 100).toFixed(0)}%)`);
+  } else {
+    console.log('  frame-time gate: skipped (no timing instrumentation)');
+  }
 
   if (drifted.length > 0) {
     console.error(`[golden-harness] FAIL(${sceneId}): pass-hash drift in: ${drifted.join(', ')}`);
     throw new GateFailure(2, 'pass-hash drift');
   }
-  if (regressionPct > (budgetFactor - 1) * 100) {
+  if (regressionPct !== null && regressionPct > (budgetFactor - 1) * 100) {
     console.error(`[golden-harness] FAIL(${sceneId}): frame-time regression ${regressionPct.toFixed(1)}% exceeds budget`);
     throw new GateFailure(3, 'frame-time budget exceeded');
   }
