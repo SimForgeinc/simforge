@@ -87,8 +87,9 @@ export async function upsertUniScenarioDocumentRating(
      LEFT JOIN uniscenario.render_jobs rj
        ON rj.workspace_id = d.workspace_id AND rj.id = :render_job_id
      WHERE d.workspace_id = :workspace_id AND d.id = :document_id AND d.deleted_at IS NULL
-       AND (:revision_id IS NULL OR rev.id IS NOT NULL)
-       AND (:render_job_id IS NULL OR rj.id IS NOT NULL)
+       -- PGlite: untyped parameter in IS NOT NULL
+       AND (CAST(:revision_id AS TEXT) IS NULL OR rev.id IS NOT NULL)
+       AND (CAST(:render_job_id AS TEXT) IS NULL OR rj.id IS NOT NULL)
      ON CONFLICT (document_id, rater_user_id) DO UPDATE SET
        score = EXCLUDED.score,
        comment = EXCLUDED.comment,

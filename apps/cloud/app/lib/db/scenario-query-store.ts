@@ -1035,7 +1035,8 @@ export async function listTemplateScenariosForMap(input: {
       WHERE s.workspace_id = :workspace_id
         AND s.dataset_id = :dataset_id
         AND (
-          (:map_asset_id IS NOT NULL AND s.map_asset_id = :map_asset_id)
+          -- PGlite: untyped parameter in IS NOT NULL
+          (CAST(:map_asset_id AS TEXT) IS NOT NULL AND s.map_asset_id = :map_asset_id)
           OR (
             COALESCE(
               NULLIF(BTRIM(s.draft_json::jsonb->'setup'->'map'->>'backendMapName'), ''),

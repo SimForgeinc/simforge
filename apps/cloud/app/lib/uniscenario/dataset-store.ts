@@ -343,7 +343,8 @@ export async function addUniScenarioDatasetItem(
      LEFT JOIN uniscenario.render_jobs j
        ON j.workspace_id = d.workspace_id AND j.id = :render_job_id AND j.revision_id = r.id
      WHERE d.workspace_id = :workspace_id AND d.id = :dataset_id AND d.deleted_at IS NULL
-       AND (:render_job_id IS NULL OR j.id IS NOT NULL)
+       -- PGlite: untyped parameter in IS NOT NULL
+       AND (CAST(:render_job_id AS TEXT) IS NULL OR j.id IS NOT NULL)
      ON CONFLICT (workspace_id, dataset_id, revision_id, render_job_id)
      DO UPDATE SET metadata = EXCLUDED.metadata
      RETURNING id`,
