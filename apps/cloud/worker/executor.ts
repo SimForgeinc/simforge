@@ -86,6 +86,20 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
     );
     const artifacts: RecordingArtifact[] = [];
     for (const artifact of runtimeManifest.artifacts) {
+      if (
+        artifact.identity.role === "diagnostics"
+        && artifact.mediaType === "application/x-ndjson"
+        && intent.renderSpec.artifacts.includes("frames")
+      ) {
+        artifacts.push({
+          kind: "frames",
+          path: safeArtifactPath(request.workspace, artifact.relativePath),
+          mediaType: "application/x-ndjson",
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
+        });
+        continue;
+      }
       if (artifact.identity.role !== "sensorArchive") continue;
       const { actorId, sensorId, modality } = artifact.identity;
       if (!actorId || !sensorId || !modality || artifact.mediaType !== "application/zip") {

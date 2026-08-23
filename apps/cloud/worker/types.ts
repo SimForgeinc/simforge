@@ -54,6 +54,14 @@ export type RecordingArtifact =
     readonly sizeBytes: number;
   }
   | {
+    readonly kind: "frames";
+    readonly sensor?: never;
+    readonly path: string;
+    readonly mediaType: "application/x-ndjson";
+    readonly sha256: string;
+    readonly sizeBytes: number;
+  }
+  | {
     readonly kind: "sensor_archive";
     readonly sensor: RecordingSensorIdentity;
     readonly path: string;
