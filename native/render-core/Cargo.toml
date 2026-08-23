@@ -11,6 +11,10 @@ path = "src/bin/native-render.rs"
 name = "scen-play"
 path = "src/bin/scen-play.rs"
 
+[[bin]]
+name = "native-render-job"
+path = "src/bin/native-render-job.rs"
+
 [dependencies]
 crossbeam-channel = "0.5"
 bevy = { version = "0.19.1", default-features = true, features = ["png", "hdr", "ktx2", "debug", "tonemapping_luts"] }
@@ -21,6 +25,8 @@ half = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 walkdir = "2"
+
+sha2 = "0.10"
 
 [features]
 default = ["pcss"]

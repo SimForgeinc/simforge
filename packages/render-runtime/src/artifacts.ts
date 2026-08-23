@@ -58,7 +58,7 @@ export const RenderArtifactManifestSchema = z.strictObject({
   engine: z.strictObject({
     engineId: z.string().min(1).max(128),
     engineVersion: z.string().min(1).max(128),
-    backend: z.enum(['browser', 'carla']),
+    backend: z.enum(['browser', 'carla', 'native']),
   }),
   startedAt: z.iso.datetime({ offset: true }),
   completedAt: z.iso.datetime({ offset: true }),

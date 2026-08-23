@@ -17,6 +17,8 @@ pub mod motion_vector;
 pub mod playback;
 pub mod readback;
 pub mod scene_state;
+pub mod engine;
+pub mod job;
 pub mod lighting;
 pub mod post_grain;
 pub mod profiles;
