@@ -190,3 +190,30 @@ Lanes R1–R4 are sequential-ish on shared files (R1 first, then R2/R3/R4 in
 parallel worktrees is NOT safe — same files everywhere). Recommended: R1+R2+R3
 as ONE lane (the mechanical rename is atomic by nature), R4 parallel-safe
 (docs only), R5 by the integrator, R6 after.
+
+## 8. Amendment (2026-08-23): consolidation supersedes rename-only
+
+`docs/package-consolidation-analysis.md` (Fable critical analysis) supersedes
+§2/§3/§7 granularity: the same Phase-2 release window merges 24 packages into
+**13 packages / 8 systems** instead of renaming 24→24. Key corrections adopted:
+- Map pipeline {xodr-tools, map-intel, anchor-matcher, scenario-materializer}
+  → `@simforge/maps` + `@simforge/compiler` (compiler also absorbs the CLI's
+  library face — rl-env/examiner/SimCloud must not import a CLI package).
+- Rendering {render-runtime, browser-renderer, native-renderer} →
+  `@simforge/render` with `/web` and `/native` subpaths.
+- Interop {openscenario, esmini-runner, trace-comparator} →
+  `@simforge/openscenario` with `/esmini` and `/trace-diff` subpaths.
+- {policy-eval, examiner} → `@simforge/evaluation` (unvendored).
+- scene-state → `engine/scene-state`; camera-rig + ActorRenderer/ActorView
+  (moved OUT of editor-core) → `@simforge/viewer`, fixing the
+  playback→editor inversion BEFORE the rename sweep; ambient-traffic →
+  `playback/traffic`.
+- carla adapters stay TWO: `adapters/carla-api` (import carla over our
+  engine) and `adapters/carla-exec` (run our scenarios in real CARLA).
+- tools/ split: golden-harness + render-determinism + policy-eval-runner are
+  CI qualification gates → `qualification/`; only true research lanes →
+  `research/`.
+- editor-ui deletion is a Phase-2 (vendored-set) change, not Phase-1.
+- Execution order: R0-Deletions → R0-Seams (two reviewed behavioral commits:
+  cli lib-face extraction; ActorRenderer move) → R1+R2 atomic merge+rename →
+  docs → verify → release.
