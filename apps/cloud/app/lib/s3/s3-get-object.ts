@@ -8,13 +8,14 @@ import { localObjectPath, readLocalObject, readLocalObjectMetadata } from "./s3-
 const gunzipAsync = promisify(gunzip);
 
 export type S3RawObjectDigest = {
-  sha256Hex: string;
+  sha256: string;
   sizeBytes: number;
 };
 
 type S3RawObjectDigestLimits = {
+  declaredSizeBytes: number;
   maximumBytes: number;
-  expectedBytes?: number;
+  maximumDurationMs?: number;
 };
 
 export async function sha256S3RawObjectBounded(
@@ -25,7 +26,7 @@ export async function sha256S3RawObjectBounded(
   const filePath = localObjectPath(bucket, key);
   const info = await stat(filePath);
   if (info.size > limits.maximumBytes) throw new Error("s3_object_exceeds_maximum_bytes");
-  if (limits.expectedBytes !== undefined && info.size !== limits.expectedBytes) {
+  if (info.size !== limits.declaredSizeBytes) {
     throw new Error("s3_object_size_mismatch");
   }
   const hash = createHash("sha256");
@@ -35,7 +36,7 @@ export async function sha256S3RawObjectBounded(
     if (sizeBytes > limits.maximumBytes) throw new Error("s3_object_exceeds_maximum_bytes");
     hash.update(chunk);
   }
-  return { sha256Hex: hash.digest("hex"), sizeBytes };
+  return { sha256: hash.digest("hex"), sizeBytes };
 }
 
 export async function headS3ObjectInfo(

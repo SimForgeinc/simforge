@@ -131,9 +131,15 @@ importers:
       earcut:
         specifier: ^3.0.2
         version: 3.2.3
+      fast-xml-parser:
+        specifier: ^5.5.6
+        version: 5.11.0
       fflate:
         specifier: ^0.8.2
         version: 0.8.3
+      flatbush:
+        specifier: ^4.5.1
+        version: 4.6.2
       gl-matrix:
         specifier: ^3.4.4
         version: 3.4.4
@@ -220,8 +226,8 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(@types/react@19.2.18)
       '@types/three':
-        specifier: 0.185.3
-        version: 0.185.3
+        specifier: 0.185.4
+        version: 0.185.4
       autoprefixer:
         specifier: ^10.4.27
         version: 10.5.4(postcss@8.5.25)
@@ -2702,9 +2708,6 @@ packages:
   '@types/supercluster@7.1.3':
     resolution: {integrity: sha512-Z0pOY34GDFl3Q6hUFYf3HkTwKEE02e7QgtJppBt+beEAxnyOpJua+voGFvxINBHa06GwLFFym7gRPY2SiKIfIA==}
 
-  '@types/three@0.185.3':
-    resolution: {integrity: sha512-8TqTn1+fjPWuJ4mR6Igtg56DCf9b5EeAlwhb5xaa6WlBrsg7SvG0NQbyctGRkHCKwg0uftfCspOEsTXelgktMA==}
-
   '@types/three@0.185.4':
     resolution: {integrity: sha512-gAsBIC07NIFrxjbf7tH2t71c38uulFfk/RFoC7FNBSjMRAQ8J1x/RBvusX0N5PJouaYFJawXQqfCQ0RKUx/1nA==}
 
@@ -3080,6 +3083,12 @@ packages:
 
   fix-dts-default-cjs-exports@1.0.1:
     resolution: {integrity: sha512-pVIECanWFC61Hzl2+oOCtoJ3F17kglZC/6N94eRWycFgBH35hHx0Li604ZIzhseh97mf2p0cv7vVrOZGoqhlEg==}
+
+  flatbush@4.6.2:
+    resolution: {integrity: sha512-nNT7MFJ58Q4IAm3aYsEg+zgZGpdRcmR1i4U+aa8c+r91jmYZg7FTQwNnIMC0FyBqVZTbClKdAnrJkKkfp1BOvw==}
+
+  flatqueue@3.1.0:
+    resolution: {integrity: sha512-Ia4qIYrrsEqIRx3c3XhkT+QDLQuUV5ovsr6ah1rIgKT5wclhoGK3lAMS1bWRAWxlx7wtlTBpV7QXB5d9fOSRxA==}
 
   fraction.js@5.3.4:
     resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
@@ -5873,15 +5882,6 @@ snapshots:
     dependencies:
       '@types/geojson': 7946.0.16
 
-  '@types/three@0.185.3':
-    dependencies:
-      '@dimforge/rapier3d-compat': 0.12.0
-      '@tweenjs/tween.js': 23.1.3
-      '@types/stats.js': 0.17.4
-      '@types/webxr': 0.5.24
-      fflate: 0.8.3
-      meshoptimizer: 1.1.1
-
   '@types/three@0.185.4':
     dependencies:
       '@dimforge/rapier3d-compat': 0.12.0
@@ -6321,6 +6321,12 @@ snapshots:
       magic-string: 0.30.21
       mlly: 1.8.2
       rollup: 4.62.3
+
+  flatbush@4.6.2:
+    dependencies:
+      flatqueue: 3.1.0
+
+  flatqueue@3.1.0: {}
 
   fraction.js@5.3.4: {}
 

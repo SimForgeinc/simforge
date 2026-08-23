@@ -6,6 +6,10 @@ export function anthropicConfigured() {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
 }
 
+export function isAnthropicThinkingEnabled(): boolean {
+  return process.env.ANTHROPIC_THINKING_ENABLED?.trim().toLowerCase() === "true";
+}
+
 export function createChatModel() {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {

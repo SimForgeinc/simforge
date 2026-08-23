@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "metadata": {
+    "sourceScenarioId": "scenario-current-v2",
+    "mapAssetId": "map-asset-1",
+    "mapName": "TestMap",
+    "notes": "",
+    "createdAt": "2026-07-01T00:00:00.000Z",
+    "updatedAt": "2026-07-01T00:00:00.000Z"
+  },
+  "actors": [
+    {
+      "id": "ego",
+      "label": "Ego",
+      "kind": "vehicle",
+      "role": "ego",
+      "blueprint": "vehicle.lincoln.mkz",
+      "spawn": {
+        "road_id": "1",
+        "s_fraction": 0.25
+      }
+    }
+  ]
+}

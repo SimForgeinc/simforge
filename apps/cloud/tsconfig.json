@@ -25,5 +25,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "worker", "test-only", "**/*.test.ts", "**/*.test.tsx", "**/__tests__/**", "**/*.cli.ts", "app/lib/simcloud-shared/auth", "app/lib/simcloud-shared/bin"]
 }

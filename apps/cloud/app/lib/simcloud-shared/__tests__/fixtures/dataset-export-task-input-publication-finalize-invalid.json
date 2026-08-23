@@ -1,0 +1,24 @@
+[
+  {
+    "name": "missing prefix and manifestKey when packageKey is absent",
+    "payload": {
+      "stage": "publication_finalize"
+    }
+  },
+  {
+    "name": "packageKey cannot be combined with prefix",
+    "payload": {
+      "stage": "publication_finalize",
+      "packageKey": "exports/job/package.tar",
+      "prefix": "exports/job/prefix/"
+    }
+  },
+  {
+    "name": "packageKey cannot be combined with manifestKey",
+    "payload": {
+      "stage": "publication_finalize",
+      "packageKey": "exports/job/package.tar",
+      "manifestKey": "exports/job/manifest.json"
+    }
+  }
+]
