@@ -1,0 +1,4346 @@
+{
+  "contractVersion": "simcloud.carla-object-catalog/v1",
+  "carlaVersion": "0.10.0",
+  "engine": "UE5.5",
+  "generatedFrom": {
+    "inventory": "config/uniscenario/carla/carla-0.10.0-blueprints.json",
+    "inventorySha256": "eb7d7b74008d00e71804710846e2501220c2a96d755490e4db900d92d4f6cc6b",
+    "proceduralCatalogEntries": 89
+  },
+  "counts": {
+    "objects": 130,
+    "vehicles": 11,
+    "pedestrians": 37,
+    "props": 82,
+    "equivalents": 38,
+    "unavailable": 51
+  },
+  "objects": [
+    {
+      "id": "carla.advertisement",
+      "label": "Advertising board",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA advertising board (static.prop.advertisement), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.549,
+        "w": 0.287,
+        "h": 2.443
+      },
+      "tags": [
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.advertisement",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.atm",
+      "label": "ATM",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA atm (static.prop.atm), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.572,
+        "w": 0.833,
+        "h": 2.195
+      },
+      "tags": [
+        "occlusion:medium",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.atm",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.barbeque",
+      "label": "Barbeque",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA barbeque (static.prop.barbeque), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.946,
+        "w": 0.499,
+        "h": 1.264
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.barbeque",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.barrel",
+      "label": "Barrel",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA barrel (static.prop.barrel), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.46,
+        "w": 0.471,
+        "h": 0.807
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.barrel",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.bench01",
+      "label": "Bench",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA bench (static.prop.bench01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.793,
+        "w": 0.638,
+        "h": 1.004
+      },
+      "tags": [
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.bench01",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.bench02",
+      "label": "Backless bench",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA backless bench (static.prop.bench02), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.583,
+        "w": 0.513,
+        "h": 0.513
+      },
+      "tags": [
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.bench02",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.bike_helmet",
+      "label": "Bicycle helmet",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA bicycle helmet (static.prop.bike helmet), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.186,
+        "w": 0.277,
+        "h": 0.171
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.bike helmet",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.briefcase",
+      "label": "Briefcase",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA briefcase (static.prop.briefcase), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.543,
+        "w": 0.181,
+        "h": 0.433
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.briefcase",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.brokentile01",
+      "label": "Broken tile",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA broken tile (static.prop.brokentile01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.134,
+        "w": 0.176,
+        "h": 0.007
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.brokentile01",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.brokentile02",
+      "label": "Broken tile (shard)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA broken tile (shard) (static.prop.brokentile02), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.21,
+        "w": 0.152,
+        "h": 0.008
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.brokentile02",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.brokentile03",
+      "label": "Broken tile (chip)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA broken tile (chip) (static.prop.brokentile03), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.154,
+        "w": 0.145,
+        "h": 0.009
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.brokentile03",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.brokentile04",
+      "label": "Broken tile (fragment)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA broken tile (fragment) (static.prop.brokentile04), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.13,
+        "w": 0.126,
+        "h": 0.01
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.brokentile04",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.busstop",
+      "label": "Bus stop shelter",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA bus stop shelter (static.prop.busstop), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.894,
+        "w": 3.876,
+        "h": 2.739
+      },
+      "tags": [
+        "occlusion:high",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.busstop",
+        "size": "big"
+      }
+    },
+    {
+      "id": "carla.calibrator",
+      "label": "Calibration target",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA calibration target (static.prop.calibrator), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.548,
+        "w": 0.69,
+        "h": 0.202
+      },
+      "tags": [
+        "occlusion:low",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.calibrator",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.chainbarrier",
+      "label": "Chain barrier",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA chain barrier (static.prop.chainbarrier), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.683,
+        "w": 0.243,
+        "h": 0.692
+      },
+      "tags": [
+        "occlusion:low",
+        "roadside",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.chainbarrier",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.chainbarrierend",
+      "label": "Chain barrier end post",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA chain barrier end post (static.prop.chainbarrierend), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.243,
+        "w": 0.243,
+        "h": 0.692
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadside",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.chainbarrierend",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.colacan",
+      "label": "Drinks can",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA drinks can (static.prop.colacan), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.068,
+        "w": 0.072,
+        "h": 0.11
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.colacan",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.constructioncone",
+      "label": "Construction cone",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA construction cone (static.prop.constructioncone), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.478,
+        "w": 0.478,
+        "h": 0.712
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.constructioncone",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.container",
+      "label": "Shipping container",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA shipping container (static.prop.container), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 5.4,
+        "w": 1.653,
+        "h": 1.348
+      },
+      "tags": [
+        "occlusion:high",
+        "roadside",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.container",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.creasedbox01",
+      "label": "Creased box",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA creased box (static.prop.creasedbox01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.029,
+        "w": 0.907,
+        "h": 0.062
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.creasedbox01",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.dirtdebris01",
+      "label": "Dirt debris",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA dirt debris (static.prop.dirtdebris01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.857,
+        "w": 1.514,
+        "h": 0.149
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.dirtdebris01",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.dirtdebris02",
+      "label": "Dirt debris (patch)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA dirt debris (patch) (static.prop.dirtdebris02), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.857,
+        "w": 1.514,
+        "h": 0.149
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.dirtdebris02",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.dirtdebris03",
+      "label": "Dirt debris (spread)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA dirt debris (spread) (static.prop.dirtdebris03), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.857,
+        "w": 1.514,
+        "h": 0.188
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.dirtdebris03",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.doghouse",
+      "label": "Dog house",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA dog house (static.prop.doghouse), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.079,
+        "w": 1.272,
+        "h": 1.094
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.doghouse",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.dumpster",
+      "label": "Dumpster",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA dumpster (static.prop.dumpster), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 2.866,
+        "w": 1.394,
+        "h": 2.267
+      },
+      "tags": [
+        "occlusion:high",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.dumpster",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.foodcart",
+      "label": "Food cart",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA food cart (static.prop.foodcart), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 2.285,
+        "w": 4.638,
+        "h": 3.573
+      },
+      "tags": [
+        "occlusion:high",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.foodcart",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.fountain",
+      "label": "Plaza fountain",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA plaza fountain (static.prop.fountain), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 8.402,
+        "w": 8.402,
+        "h": 6.924
+      },
+      "tags": [
+        "occlusion:high",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.fountain",
+        "size": "big"
+      }
+    },
+    {
+      "id": "carla.garbage01",
+      "label": "Litter (bottle)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA litter (bottle) (static.prop.garbage01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.053,
+        "w": 0.053,
+        "h": 0.087
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.garbage01",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.garbage02",
+      "label": "Litter (paper)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA litter (paper) (static.prop.garbage02), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.053,
+        "w": 0.053,
+        "h": 0.009
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.garbage02",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.garbage03",
+      "label": "Litter (cup)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA litter (cup) (static.prop.garbage03), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.06,
+        "w": 0.059,
+        "h": 0.079
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.garbage03",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.garbage04",
+      "label": "Litter (carton)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA litter (carton) (static.prop.garbage04), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.057,
+        "w": 0.056,
+        "h": 0.069
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.garbage04",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.garbage05",
+      "label": "Litter (wrapper)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA litter (wrapper) (static.prop.garbage05), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.232,
+        "w": 0.233,
+        "h": 0.058
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.garbage05",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.garbage06",
+      "label": "Litter (packaging)",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA litter (packaging) (static.prop.garbage06), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.366,
+        "w": 0.213,
+        "h": 0.077
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.garbage06",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.gardenlamp",
+      "label": "Garden lamp",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA garden lamp (static.prop.gardenlamp), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.297,
+        "w": 0.281,
+        "h": 0.648
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.gardenlamp",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.gnome",
+      "label": "Garden gnome",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA garden gnome (static.prop.gnome), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.367,
+        "w": 0.376,
+        "h": 0.883
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.gnome",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.guitarcase",
+      "label": "Guitar case",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA guitar case (static.prop.guitarcase), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.242,
+        "w": 0.125,
+        "h": 0.494
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.guitarcase",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.haybale",
+      "label": "Hay bale",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA hay bale (static.prop.haybale), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.248,
+        "w": 1.193,
+        "h": 1.195
+      },
+      "tags": [
+        "occlusion:low",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.haybale",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.kiosk_01",
+      "label": "Kiosk",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA kiosk (static.prop.kiosk_01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.625,
+        "w": 1.654,
+        "h": 3.245
+      },
+      "tags": [
+        "occlusion:high",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.kiosk_01",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.mailbox",
+      "label": "Mailbox",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA mailbox (static.prop.mailbox), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.527,
+        "w": 0.438,
+        "h": 1.157
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.mailbox",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.maptable",
+      "label": "Map table",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA map table (static.prop.maptable), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.573,
+        "w": 0.617,
+        "h": 1.181
+      },
+      "tags": [
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.maptable",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.mobile",
+      "label": "Mobile phone",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA mobile phone (static.prop.mobile), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.08,
+        "w": 0.007,
+        "h": 0.166
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.mobile",
+        "size": "tiny"
+      }
+    },
+    {
+      "id": "carla.motorhelmet",
+      "label": "Motorcycle helmet",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA motorcycle helmet (static.prop.motorhelmet), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.2,
+        "w": 0.259,
+        "h": 0.258
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.motorhelmet",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.pergola",
+      "label": "Pergola",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA pergola (static.prop.pergola), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 5.029,
+        "w": 5.085,
+        "h": 3.542
+      },
+      "tags": [
+        "occlusion:high",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.pergola",
+        "size": "big"
+      }
+    },
+    {
+      "id": "carla.plantpot01",
+      "label": "Planter (long)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA planter (long) (static.prop.plantpot01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.089,
+        "w": 0.476,
+        "h": 0.557
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plantpot01",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plantpot02",
+      "label": "Planter (trough)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA planter (trough) (static.prop.plantpot02), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.051,
+        "w": 0.431,
+        "h": 0.487
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plantpot02",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plantpot03",
+      "label": "Planter (trough, wide)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA planter (trough, wide) (static.prop.plantpot03), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.051,
+        "w": 0.431,
+        "h": 0.487
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plantpot03",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plantpot04",
+      "label": "Planter (rail)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA planter (rail) (static.prop.plantpot04), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 4.967,
+        "w": 0.737,
+        "h": 0.125
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plantpot04",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plantpot05",
+      "label": "Planter (square)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA planter (square) (static.prop.plantpot05), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.495,
+        "w": 0.476,
+        "h": 0.557
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plantpot05",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plantpot06",
+      "label": "Planter (round, large)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA planter (round, large) (static.prop.plantpot06), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.593,
+        "w": 1.593,
+        "h": 0.85
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plantpot06",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plantpot07",
+      "label": "Planter (round)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA planter (round) (static.prop.plantpot07), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.53,
+        "w": 0.53,
+        "h": 0.489
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plantpot07",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plasticbag",
+      "label": "Plastic bag",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA plastic bag (static.prop.plasticbag), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.311,
+        "w": 0.403,
+        "h": 0.552
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plasticbag",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plasticchair",
+      "label": "Plastic chair",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA plastic chair (static.prop.plasticchair), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.73,
+        "w": 0.75,
+        "h": 1.271
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plasticchair",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.plastictable",
+      "label": "Plastic table",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA plastic table (static.prop.plastictable), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 2.482,
+        "w": 2.482,
+        "h": 2.48
+      },
+      "tags": [
+        "occlusion:medium",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.plastictable",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.platformgarbage01",
+      "label": "Platform litter pile",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA platform litter pile (static.prop.platformgarbage01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 3.633,
+        "w": 1.711,
+        "h": 0.332
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.platformgarbage01",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.purse",
+      "label": "Purse",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA purse (static.prop.purse), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.159,
+        "w": 0.333,
+        "h": 0.585
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.purse",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.recyclecardboard",
+      "label": "Recycling bin (cardboard)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA recycling bin (cardboard) (static.prop.recyclecardboard), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 2.589,
+        "w": 2.385,
+        "h": 2.01
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.recyclecardboard",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.recycleglass",
+      "label": "Recycling bin (glass)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA recycling bin (glass) (static.prop.recycleglass), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.02,
+        "w": 1.776,
+        "h": 1.943
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.recycleglass",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.recycleorganic",
+      "label": "Recycling bin (organic)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA recycling bin (organic) (static.prop.recycleorganic), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.02,
+        "w": 1.776,
+        "h": 1.943
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.recycleorganic",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.recycleplastic",
+      "label": "Recycling bin (plastic)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA recycling bin (plastic) (static.prop.recycleplastic), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 2.589,
+        "w": 1.987,
+        "h": 2.188
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.recycleplastic",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.shoppingbag",
+      "label": "Shopping bag",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA shopping bag (static.prop.shoppingbag), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.474,
+        "w": 0.243,
+        "h": 0.601
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.shoppingbag",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.shoppingcart",
+      "label": "Shopping cart",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA shopping cart (static.prop.shoppingcart), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.669,
+        "w": 1.208,
+        "h": 1.079
+      },
+      "tags": [
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.shoppingcart",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.shoppingtrolley",
+      "label": "Shopping trolley",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA shopping trolley (static.prop.shoppingtrolley), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.506,
+        "w": 0.331,
+        "h": 1.094
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.shoppingtrolley",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.streetbarrier",
+      "label": "Street barrier",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA street barrier (static.prop.streetbarrier), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.215,
+        "w": 0.372,
+        "h": 1.069
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.streetbarrier",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.streetfountain",
+      "label": "Drinking fountain",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA drinking fountain (static.prop.streetfountain), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.405,
+        "w": 0.984,
+        "h": 1.048
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.streetfountain",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.streetsign",
+      "label": "Street sign",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA street sign (static.prop.streetsign), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.064,
+        "w": 0.125,
+        "h": 2.154
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.streetsign",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.streetsign01",
+      "label": "Street sign (tall)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA street sign (tall) (static.prop.streetsign01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 2.47,
+        "w": 0.303,
+        "h": 3.878
+      },
+      "tags": [
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.streetsign01",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.streetsign04",
+      "label": "Street sign (post)",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA street sign (post) (static.prop.streetsign04), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.171,
+        "w": 0.125,
+        "h": 2.773
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.streetsign04",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.swing",
+      "label": "Swing set",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA swing set (static.prop.swing), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 4.105,
+        "w": 1.577,
+        "h": 2.572
+      },
+      "tags": [
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.swing",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.swingcouch",
+      "label": "Swing couch",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA swing couch (static.prop.swingcouch), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.357,
+        "w": 2.362,
+        "h": 2.249
+      },
+      "tags": [
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.swingcouch",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.trafficcone01",
+      "label": "Traffic cone (large)",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA traffic cone (large) (static.prop.trafficcone01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.955,
+        "w": 0.955,
+        "h": 1.234
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trafficcone01",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.trafficcone02",
+      "label": "Traffic cone",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA traffic cone (static.prop.trafficcone02), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.456,
+        "w": 0.395,
+        "h": 1.183
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trafficcone02",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.trafficwarning",
+      "label": "Traffic warning board",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA traffic warning board (static.prop.trafficwarning), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 2.373,
+        "w": 2.871,
+        "h": 3.57
+      },
+      "tags": [
+        "occlusion:medium",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trafficwarning",
+        "size": "big"
+      }
+    },
+    {
+      "id": "carla.trampoline",
+      "label": "Trampoline",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA trampoline (static.prop.trampoline), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 4.132,
+        "w": 4.132,
+        "h": 2.802
+      },
+      "tags": [
+        "occlusion:medium",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trampoline",
+        "size": "big"
+      }
+    },
+    {
+      "id": "carla.trashbag",
+      "label": "Trash bag",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA trash bag (static.prop.trashbag), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.378,
+        "w": 0.43,
+        "h": 0.702
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "roadside"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trashbag",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.trashcan01",
+      "label": "Trash can (tall)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA trash can (tall) (static.prop.trashcan01), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.544,
+        "w": 0.375,
+        "h": 1.214
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trashcan01",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.trashcan02",
+      "label": "Trash can (round)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA trash can (round) (static.prop.trashcan02), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.793,
+        "w": 0.67,
+        "h": 1.059
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trashcan02",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.trashcan03",
+      "label": "Trash can (drum)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA trash can (drum) (static.prop.trashcan03), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.757,
+        "w": 0.757,
+        "h": 0.989
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trashcan03",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.trashcan04",
+      "label": "Trash can (bin)",
+      "class": "occluder",
+      "actorClass": "static_object",
+      "description": "CARLA trash can (bin) (static.prop.trashcan04), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.524,
+        "w": 0.514,
+        "h": 1.045
+      },
+      "tags": [
+        "debris",
+        "occlusion:medium",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.trashcan04",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.travelcase",
+      "label": "Suitcase",
+      "class": "hazard",
+      "actorClass": "static_object",
+      "description": "CARLA suitcase (static.prop.travelcase), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.567,
+        "w": 0.328,
+        "h": 1.263
+      },
+      "tags": [
+        "debris",
+        "occlusion:low",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.travelcase",
+        "size": "small"
+      }
+    },
+    {
+      "id": "carla.vehicle_ambulance_ford",
+      "label": "Ford ambulance",
+      "class": "vehicle",
+      "actorClass": "truck",
+      "description": "CARLA Ford ambulance (vehicle.ambulance.ford), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 6.357,
+        "w": 2.351,
+        "h": 2.431
+      },
+      "tags": [
+        "emergency",
+        "large-vehicle",
+        "mobile",
+        "occlusion:high",
+        "roadway",
+        "service"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.ambulance.ford",
+        "baseType": "truck",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_carlacola_actors",
+      "label": "Carlacola box truck",
+      "class": "vehicle",
+      "actorClass": "truck",
+      "description": "CARLA Carlacola box truck (vehicle.carlacola.actors), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 8.004,
+        "w": 2.912,
+        "h": 4.055
+      },
+      "tags": [
+        "commercial",
+        "large-vehicle",
+        "mobile",
+        "occlusion:high",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.carlacola.actors",
+        "baseType": "truck",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_dodge_charger",
+      "label": "Dodge Charger",
+      "class": "vehicle",
+      "actorClass": "car",
+      "description": "CARLA Dodge Charger (vehicle.dodge.charger), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 5.006,
+        "w": 1.881,
+        "h": 1.54
+      },
+      "tags": [
+        "mobile",
+        "occlusion:medium",
+        "parkable",
+        "passenger",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.dodge.charger",
+        "baseType": "car",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_dodgecop_charger",
+      "label": "Dodge Charger police",
+      "class": "vehicle",
+      "actorClass": "car",
+      "description": "CARLA Dodge Charger police (vehicle.dodgecop.charger), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 5.237,
+        "w": 1.924,
+        "h": 1.644
+      },
+      "tags": [
+        "emergency",
+        "mobile",
+        "occlusion:medium",
+        "roadway",
+        "service"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.dodgecop.charger",
+        "baseType": "car",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_firetruck_actors",
+      "label": "Fire truck",
+      "class": "vehicle",
+      "actorClass": "truck",
+      "description": "CARLA Fire truck (vehicle.firetruck.actors), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 8.58,
+        "w": 2.901,
+        "h": 3.827
+      },
+      "tags": [
+        "emergency",
+        "large-vehicle",
+        "mobile",
+        "occlusion:high",
+        "roadway",
+        "service"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.firetruck.actors",
+        "baseType": "truck",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_fuso_mitsubishi",
+      "label": "Mitsubishi Fuso truck",
+      "class": "vehicle",
+      "actorClass": "truck",
+      "description": "CARLA Mitsubishi Fuso truck (vehicle.fuso.mitsubishi), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 10.174,
+        "w": 3.928,
+        "h": 4.241
+      },
+      "tags": [
+        "commercial",
+        "large-vehicle",
+        "mobile",
+        "occlusion:high",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.fuso.mitsubishi",
+        "baseType": "bus",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": false,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_lincoln_mkz",
+      "label": "Lincoln MKZ",
+      "class": "vehicle",
+      "actorClass": "car",
+      "description": "CARLA Lincoln MKZ (vehicle.lincoln.mkz), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 4.892,
+        "w": 1.836,
+        "h": 1.524
+      },
+      "tags": [
+        "mobile",
+        "occlusion:medium",
+        "parkable",
+        "passenger",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.lincoln.mkz",
+        "baseType": "car",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_mini_cooper",
+      "label": "Mini Cooper",
+      "class": "vehicle",
+      "actorClass": "car",
+      "description": "CARLA Mini Cooper (vehicle.mini.cooper), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 4.553,
+        "w": 2.096,
+        "h": 1.772
+      },
+      "tags": [
+        "mobile",
+        "occlusion:medium",
+        "parkable",
+        "passenger",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.mini.cooper",
+        "baseType": "car",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_nissan_patrol",
+      "label": "Nissan Patrol",
+      "class": "vehicle",
+      "actorClass": "car",
+      "description": "CARLA Nissan Patrol (vehicle.nissan.patrol), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 5.591,
+        "w": 2.147,
+        "h": 2.059
+      },
+      "tags": [
+        "mobile",
+        "occlusion:medium",
+        "parkable",
+        "passenger",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.nissan.patrol",
+        "baseType": "car",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_sprinter_mercedes",
+      "label": "Mercedes Sprinter",
+      "class": "vehicle",
+      "actorClass": "van",
+      "description": "CARLA Mercedes Sprinter (vehicle.sprinter.mercedes), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 5.915,
+        "w": 1.988,
+        "h": 2.726
+      },
+      "tags": [
+        "commercial",
+        "delivery",
+        "mobile",
+        "occlusion:high",
+        "roadway"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.sprinter.mercedes",
+        "baseType": "van",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vehicle_taxi_ford",
+      "label": "Ford taxi",
+      "class": "vehicle",
+      "actorClass": "car",
+      "description": "CARLA Ford taxi (vehicle.taxi.ford), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 5.354,
+        "w": 1.789,
+        "h": 1.575
+      },
+      "tags": [
+        "mobile",
+        "occlusion:medium",
+        "passenger",
+        "roadway",
+        "service"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "vehicle.taxi.ford",
+        "baseType": "car",
+        "numberOfWheels": 4,
+        "hasDynamicDoors": true,
+        "generation": 3
+      }
+    },
+    {
+      "id": "carla.vendingmachine",
+      "label": "Vending machine",
+      "class": "street",
+      "actorClass": "static_object",
+      "description": "CARLA vending machine (static.prop.vendingmachine), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.873,
+        "w": 1.102,
+        "h": 2.108
+      },
+      "tags": [
+        "occlusion:medium",
+        "sidewalk"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.vendingmachine",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.walker_0015",
+      "label": "Pedestrian 0015 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0015), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0015",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0016",
+      "label": "Pedestrian 0016 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0016), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0016",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0017",
+      "label": "Pedestrian 0017 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0017), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0017",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0018",
+      "label": "Pedestrian 0018 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0018), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0018",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0019",
+      "label": "Pedestrian 0019 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0019), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0019",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0020",
+      "label": "Pedestrian 0020 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0020), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0020",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0021",
+      "label": "Pedestrian 0021 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0021), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0021",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0022",
+      "label": "Pedestrian 0022 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0022), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0022",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0023",
+      "label": "Pedestrian 0023 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0023), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0023",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0024",
+      "label": "Pedestrian 0024 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0024), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0024",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0025",
+      "label": "Pedestrian 0025 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0025), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0025",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0026",
+      "label": "Pedestrian 0026 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0026), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0026",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0027",
+      "label": "Pedestrian 0027 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0027), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0027",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0028",
+      "label": "Pedestrian 0028 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0028), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0028",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0029",
+      "label": "Pedestrian 0029 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0029), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0029",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0030",
+      "label": "Pedestrian 0030 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0030), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0030",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0031",
+      "label": "Pedestrian 0031 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0031), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0031",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0032",
+      "label": "Pedestrian 0032 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0032), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0032",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0033",
+      "label": "Pedestrian 0033 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0033), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0033",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0034",
+      "label": "Pedestrian 0034 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0034), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.87
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0034",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0035",
+      "label": "Pedestrian 0035 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0035), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.915
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0035",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0036",
+      "label": "Pedestrian 0036 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0036), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.92
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0036",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0037",
+      "label": "Pedestrian 0037 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0037), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.92
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0037",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0038",
+      "label": "Pedestrian 0038 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0038), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.87
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0038",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0039",
+      "label": "Pedestrian 0039 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0039), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0039",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0040",
+      "label": "Pedestrian 0040 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0040), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0040",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0041",
+      "label": "Pedestrian 0041 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0041), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.84
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0041",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0042",
+      "label": "Pedestrian 0042 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0042), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.83
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0042",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0043",
+      "label": "Pedestrian 0043 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0043), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.83
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0043",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0044",
+      "label": "Pedestrian 0044 (adult, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult female pedestrian (walker.pedestrian.0044), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.83
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0044",
+        "age": "adult",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0045",
+      "label": "Pedestrian 0045 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0045), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0045",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0046",
+      "label": "Pedestrian 0046 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0046), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0046",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0047",
+      "label": "Pedestrian 0047 (adult, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA adult male pedestrian (walker.pedestrian.0047), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0047",
+        "age": "adult",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.walker_0048",
+      "label": "Pedestrian 0048 (child, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA child female pedestrian (walker.pedestrian.0048), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.5,
+        "w": 0.5,
+        "h": 1.11
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0048",
+        "age": "child",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0049",
+      "label": "Pedestrian 0049 (child, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA child female pedestrian (walker.pedestrian.0049), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.5,
+        "w": 0.5,
+        "h": 1.11
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0049",
+        "age": "child",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0050",
+      "label": "Pedestrian 0050 (teenager, female)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA teenager female pedestrian (walker.pedestrian.0050), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.905
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0050",
+        "age": "teenager",
+        "gender": "female"
+      }
+    },
+    {
+      "id": "carla.walker_0051",
+      "label": "Pedestrian 0051 (teenager, male)",
+      "class": "pedestrian",
+      "actorClass": "pedestrian",
+      "description": "CARLA teenager male pedestrian (walker.pedestrian.0051), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.905
+      },
+      "tags": [
+        "mobile",
+        "occlusion:low",
+        "sidewalk",
+        "vru"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "walker.pedestrian.0051",
+        "age": "teenager",
+        "gender": "male"
+      }
+    },
+    {
+      "id": "carla.warningaccident",
+      "label": "Accident warning sign",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA accident warning sign (static.prop.warningaccident), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.305,
+        "w": 1.055,
+        "h": 1.86
+      },
+      "tags": [
+        "occlusion:low",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.warningaccident",
+        "size": "medium"
+      }
+    },
+    {
+      "id": "carla.warningconstruction",
+      "label": "Construction warning sign",
+      "class": "construction",
+      "actorClass": "static_object",
+      "description": "CARLA construction warning sign (static.prop.warningconstruction), measured from the shipped UE5 mesh.",
+      "dims": {
+        "l": 1.305,
+        "w": 1.055,
+        "h": 1.86
+      },
+      "tags": [
+        "occlusion:low",
+        "roadway",
+        "workzone"
+      ],
+      "defaultParams": {},
+      "carla": {
+        "blueprintId": "static.prop.warningconstruction",
+        "size": "medium"
+      }
+    }
+  ],
+  "equivalents": [
+    {
+      "catalogId": "construction.channelizer_drum",
+      "blueprintId": "static.prop.barrel",
+      "carlaObjectId": "carla.barrel",
+      "authoredDims": {
+        "l": 0.58,
+        "w": 0.58,
+        "h": 1.07
+      },
+      "carlaDims": {
+        "l": 0.46,
+        "w": 0.471,
+        "h": 0.807
+      },
+      "dimensionDelta": {
+        "l": -0.12,
+        "w": -0.109,
+        "h": -0.263
+      },
+      "worstRelativeError": 0.246,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.246,
+      "dimensionalAgreement": "exact",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "construction.pedestrian_barrier",
+      "blueprintId": "static.prop.streetbarrier",
+      "carlaObjectId": "carla.streetbarrier",
+      "authoredDims": {
+        "l": 2,
+        "w": 0.55,
+        "h": 1.1
+      },
+      "carlaDims": {
+        "l": 1.215,
+        "w": 0.372,
+        "h": 1.069
+      },
+      "dimensionDelta": {
+        "l": -0.785,
+        "w": -0.178,
+        "h": -0.031
+      },
+      "worstRelativeError": 0.392,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.392,
+      "dimensionalAgreement": "close",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "construction.sign_road_work",
+      "blueprintId": "static.prop.warningconstruction",
+      "carlaObjectId": "carla.warningconstruction",
+      "authoredDims": {
+        "l": 0.9,
+        "w": 1.73,
+        "h": 2.21
+      },
+      "carlaDims": {
+        "l": 1.305,
+        "w": 1.055,
+        "h": 1.86
+      },
+      "dimensionDelta": {
+        "l": 0.405,
+        "w": -0.675,
+        "h": -0.35
+      },
+      "worstRelativeError": 0.45,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.45,
+      "dimensionalAgreement": "close",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "construction.traffic_cone",
+      "blueprintId": "static.prop.constructioncone",
+      "carlaObjectId": "carla.constructioncone",
+      "authoredDims": {
+        "l": 0.36,
+        "w": 0.36,
+        "h": 0.7
+      },
+      "carlaDims": {
+        "l": 0.478,
+        "w": 0.478,
+        "h": 0.712
+      },
+      "dimensionDelta": {
+        "l": 0.118,
+        "w": 0.118,
+        "h": 0.012
+      },
+      "worstRelativeError": 0.328,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.328,
+      "dimensionalAgreement": "close",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "hazard.cardboard_box",
+      "blueprintId": "static.prop.creasedbox01",
+      "carlaObjectId": "carla.creasedbox01",
+      "authoredDims": {
+        "l": 0.58,
+        "w": 0.44,
+        "h": 0.47
+      },
+      "carlaDims": {
+        "l": 1.029,
+        "w": 0.907,
+        "h": 0.062
+      },
+      "dimensionDelta": {
+        "l": 0.449,
+        "w": 0.467,
+        "h": -0.408
+      },
+      "worstRelativeError": 1.061,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 1.061,
+      "dimensionalAgreement": "loose",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "hazard.debris",
+      "blueprintId": "static.prop.dirtdebris01",
+      "carlaObjectId": "carla.dirtdebris01",
+      "authoredDims": {
+        "l": 0.88,
+        "w": 0.85,
+        "h": 0.24
+      },
+      "carlaDims": {
+        "l": 1.857,
+        "w": 1.514,
+        "h": 0.149
+      },
+      "dimensionDelta": {
+        "l": 0.977,
+        "w": 0.664,
+        "h": -0.091
+      },
+      "worstRelativeError": 1.11,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 1.11,
+      "dimensionalAgreement": "loose",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "hazard.trash_bags",
+      "blueprintId": "static.prop.trashbag",
+      "carlaObjectId": "carla.trashbag",
+      "authoredDims": {
+        "l": 1.02,
+        "w": 0.93,
+        "h": 0.58
+      },
+      "carlaDims": {
+        "l": 0.378,
+        "w": 0.43,
+        "h": 0.702
+      },
+      "dimensionDelta": {
+        "l": -0.642,
+        "w": -0.5,
+        "h": 0.122
+      },
+      "worstRelativeError": 0.629,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.629,
+      "dimensionalAgreement": "loose",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "occluder.dumpster",
+      "blueprintId": "static.prop.dumpster",
+      "carlaObjectId": "carla.dumpster",
+      "authoredDims": {
+        "l": 1.9,
+        "w": 1.52,
+        "h": 1.25
+      },
+      "carlaDims": {
+        "l": 2.866,
+        "w": 1.394,
+        "h": 2.267
+      },
+      "dimensionDelta": {
+        "l": 0.966,
+        "w": -0.126,
+        "h": 1.017
+      },
+      "worstRelativeError": 0.814,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.814,
+      "dimensionalAgreement": "loose",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "pedestrian.adult",
+      "blueprintId": "walker.pedestrian.0016",
+      "carlaObjectId": "carla.walker_0016",
+      "authoredDims": {
+        "l": 0.32,
+        "w": 0.5,
+        "h": 1.75
+      },
+      "carlaDims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "dimensionDelta": {
+        "l": 0.055,
+        "w": -0.125,
+        "h": 0.1
+      },
+      "worstRelativeError": 0.25,
+      "gatedAxes": [
+        "h"
+      ],
+      "gatedRelativeError": 0.057,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "pedestrian.adult_standing",
+      "blueprintId": "walker.pedestrian.0016",
+      "carlaObjectId": "carla.walker_0016",
+      "authoredDims": {
+        "l": 0.32,
+        "w": 0.5,
+        "h": 1.75
+      },
+      "carlaDims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "dimensionDelta": {
+        "l": 0.055,
+        "w": -0.125,
+        "h": 0.1
+      },
+      "worstRelativeError": 0.25,
+      "gatedAxes": [
+        "h"
+      ],
+      "gatedRelativeError": 0.057,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "pedestrian.adult_walking",
+      "blueprintId": "walker.pedestrian.0016",
+      "carlaObjectId": "carla.walker_0016",
+      "authoredDims": {
+        "l": 0.85,
+        "w": 0.5,
+        "h": 1.75
+      },
+      "carlaDims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "dimensionDelta": {
+        "l": -0.475,
+        "w": -0.125,
+        "h": 0.1
+      },
+      "worstRelativeError": 0.559,
+      "gatedAxes": [
+        "h"
+      ],
+      "gatedRelativeError": 0.057,
+      "dimensionalAgreement": "close",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "pedestrian.child",
+      "blueprintId": "walker.pedestrian.0048",
+      "carlaObjectId": "carla.walker_0048",
+      "authoredDims": {
+        "l": 0.24,
+        "w": 0.35,
+        "h": 1.2
+      },
+      "carlaDims": {
+        "l": 0.5,
+        "w": 0.5,
+        "h": 1.11
+      },
+      "dimensionDelta": {
+        "l": 0.26,
+        "w": 0.15,
+        "h": -0.09
+      },
+      "worstRelativeError": 1.083,
+      "gatedAxes": [
+        "h"
+      ],
+      "gatedRelativeError": 0.075,
+      "dimensionalAgreement": "loose",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "pedestrian.child_standing",
+      "blueprintId": "walker.pedestrian.0048",
+      "carlaObjectId": "carla.walker_0048",
+      "authoredDims": {
+        "l": 0.24,
+        "w": 0.35,
+        "h": 1.2
+      },
+      "carlaDims": {
+        "l": 0.5,
+        "w": 0.5,
+        "h": 1.11
+      },
+      "dimensionDelta": {
+        "l": 0.26,
+        "w": 0.15,
+        "h": -0.09
+      },
+      "worstRelativeError": 1.083,
+      "gatedAxes": [
+        "h"
+      ],
+      "gatedRelativeError": 0.075,
+      "dimensionalAgreement": "loose",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "pedestrian.child_walking",
+      "blueprintId": "walker.pedestrian.0049",
+      "carlaObjectId": "carla.walker_0049",
+      "authoredDims": {
+        "l": 0.58,
+        "w": 0.35,
+        "h": 1.2
+      },
+      "carlaDims": {
+        "l": 0.5,
+        "w": 0.5,
+        "h": 1.11
+      },
+      "dimensionDelta": {
+        "l": -0.08,
+        "w": 0.15,
+        "h": -0.09
+      },
+      "worstRelativeError": 0.429,
+      "gatedAxes": [
+        "h"
+      ],
+      "gatedRelativeError": 0.075,
+      "dimensionalAgreement": "close",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "pedestrian.traffic_marshal",
+      "blueprintId": "walker.pedestrian.0017",
+      "carlaObjectId": "carla.walker_0017",
+      "authoredDims": {
+        "l": 0.72,
+        "w": 0.68,
+        "h": 1.88
+      },
+      "carlaDims": {
+        "l": 0.375,
+        "w": 0.375,
+        "h": 1.85
+      },
+      "dimensionDelta": {
+        "l": -0.345,
+        "w": -0.305,
+        "h": -0.03
+      },
+      "worstRelativeError": 0.479,
+      "gatedAxes": [
+        "h"
+      ],
+      "gatedRelativeError": 0.016,
+      "dimensionalAgreement": "close",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "street.bus_shelter",
+      "blueprintId": "static.prop.busstop",
+      "carlaObjectId": "carla.busstop",
+      "authoredDims": {
+        "l": 4,
+        "w": 1.6,
+        "h": 2.5
+      },
+      "carlaDims": {
+        "l": 1.894,
+        "w": 3.876,
+        "h": 2.739
+      },
+      "dimensionDelta": {
+        "l": -2.106,
+        "w": 2.276,
+        "h": 0.239
+      },
+      "worstRelativeError": 1.422,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 1.422,
+      "dimensionalAgreement": "loose",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "street.food_cart",
+      "blueprintId": "static.prop.foodcart",
+      "carlaObjectId": "carla.foodcart",
+      "authoredDims": {
+        "l": 1.84,
+        "w": 1,
+        "h": 2.18
+      },
+      "carlaDims": {
+        "l": 2.285,
+        "w": 4.638,
+        "h": 3.573
+      },
+      "dimensionDelta": {
+        "l": 0.445,
+        "w": 3.638,
+        "h": 1.393
+      },
+      "worstRelativeError": 3.638,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 3.638,
+      "dimensionalAgreement": "loose",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "street.mailbox_cluster",
+      "blueprintId": "static.prop.mailbox",
+      "carlaObjectId": "carla.mailbox",
+      "authoredDims": {
+        "l": 0.54,
+        "w": 0.98,
+        "h": 1.52
+      },
+      "carlaDims": {
+        "l": 0.527,
+        "w": 0.438,
+        "h": 1.157
+      },
+      "dimensionDelta": {
+        "l": -0.013,
+        "w": -0.542,
+        "h": -0.363
+      },
+      "worstRelativeError": 0.553,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.553,
+      "dimensionalAgreement": "close",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "street.shopping_cart",
+      "blueprintId": "static.prop.shoppingcart",
+      "carlaObjectId": "carla.shoppingcart",
+      "authoredDims": {
+        "l": 1.05,
+        "w": 0.65,
+        "h": 1.05
+      },
+      "carlaDims": {
+        "l": 0.669,
+        "w": 1.208,
+        "h": 1.079
+      },
+      "dimensionDelta": {
+        "l": -0.381,
+        "w": 0.558,
+        "h": 0.029
+      },
+      "worstRelativeError": 0.858,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.858,
+      "dimensionalAgreement": "loose",
+      "fidelity": "semantic-substitute"
+    },
+    {
+      "catalogId": "vehicle.ambulance",
+      "blueprintId": "vehicle.ambulance.ford",
+      "carlaObjectId": "carla.vehicle_ambulance_ford",
+      "authoredDims": {
+        "l": 6.1,
+        "w": 2.1,
+        "h": 2.65
+      },
+      "carlaDims": {
+        "l": 6.357,
+        "w": 2.351,
+        "h": 2.431
+      },
+      "dimensionDelta": {
+        "l": 0.257,
+        "w": 0.251,
+        "h": -0.219
+      },
+      "worstRelativeError": 0.12,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.12,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.box_truck",
+      "blueprintId": "vehicle.carlacola.actors",
+      "carlaObjectId": "carla.vehicle_carlacola_actors",
+      "authoredDims": {
+        "l": 7.6,
+        "w": 2.44,
+        "h": 3.4
+      },
+      "carlaDims": {
+        "l": 8.004,
+        "w": 2.912,
+        "h": 4.055
+      },
+      "dimensionDelta": {
+        "l": 0.404,
+        "w": 0.472,
+        "h": 0.655
+      },
+      "worstRelativeError": 0.193,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.193,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.chevrolet_corvette",
+      "blueprintId": "vehicle.dodge.charger",
+      "carlaObjectId": "carla.vehicle_dodge_charger",
+      "authoredDims": {
+        "l": 4.63,
+        "w": 1.93,
+        "h": 1.23
+      },
+      "carlaDims": {
+        "l": 5.006,
+        "w": 1.881,
+        "h": 1.54
+      },
+      "dimensionDelta": {
+        "l": 0.376,
+        "w": -0.049,
+        "h": 0.31
+      },
+      "worstRelativeError": 0.252,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.252,
+      "dimensionalAgreement": "close",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.delivery_van",
+      "blueprintId": "vehicle.sprinter.mercedes",
+      "carlaObjectId": "carla.vehicle_sprinter_mercedes",
+      "authoredDims": {
+        "l": 6,
+        "w": 2.05,
+        "h": 2.65
+      },
+      "carlaDims": {
+        "l": 5.915,
+        "w": 1.988,
+        "h": 2.726
+      },
+      "dimensionDelta": {
+        "l": -0.085,
+        "w": -0.062,
+        "h": 0.076
+      },
+      "worstRelativeError": 0.03,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.03,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.fire_engine",
+      "blueprintId": "vehicle.firetruck.actors",
+      "carlaObjectId": "carla.vehicle_firetruck_actors",
+      "authoredDims": {
+        "l": 10.2,
+        "w": 2.55,
+        "h": 3.3
+      },
+      "carlaDims": {
+        "l": 8.58,
+        "w": 2.901,
+        "h": 3.827
+      },
+      "dimensionDelta": {
+        "l": -1.62,
+        "w": 0.351,
+        "h": 0.527
+      },
+      "worstRelativeError": 0.16,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.16,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.ford_mustang",
+      "blueprintId": "vehicle.dodge.charger",
+      "carlaObjectId": "carla.vehicle_dodge_charger",
+      "authoredDims": {
+        "l": 4.81,
+        "w": 1.92,
+        "h": 1.4
+      },
+      "carlaDims": {
+        "l": 5.006,
+        "w": 1.881,
+        "h": 1.54
+      },
+      "dimensionDelta": {
+        "l": 0.196,
+        "w": -0.039,
+        "h": 0.14
+      },
+      "worstRelativeError": 0.1,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.1,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.hatchback",
+      "blueprintId": "vehicle.mini.cooper",
+      "carlaObjectId": "carla.vehicle_mini_cooper",
+      "authoredDims": {
+        "l": 4.05,
+        "w": 1.75,
+        "h": 1.46
+      },
+      "carlaDims": {
+        "l": 4.553,
+        "w": 2.096,
+        "h": 1.772
+      },
+      "dimensionDelta": {
+        "l": 0.503,
+        "w": 0.346,
+        "h": 0.312
+      },
+      "worstRelativeError": 0.214,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.214,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.honda_civic",
+      "blueprintId": "vehicle.lincoln.mkz",
+      "carlaObjectId": "carla.vehicle_lincoln_mkz",
+      "authoredDims": {
+        "l": 4.67,
+        "w": 1.8,
+        "h": 1.42
+      },
+      "carlaDims": {
+        "l": 4.892,
+        "w": 1.836,
+        "h": 1.524
+      },
+      "dimensionDelta": {
+        "l": 0.222,
+        "w": 0.036,
+        "h": 0.104
+      },
+      "worstRelativeError": 0.073,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.073,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.jeep_wrangler",
+      "blueprintId": "vehicle.nissan.patrol",
+      "carlaObjectId": "carla.vehicle_nissan_patrol",
+      "authoredDims": {
+        "l": 4.79,
+        "w": 1.88,
+        "h": 1.87
+      },
+      "carlaDims": {
+        "l": 5.591,
+        "w": 2.147,
+        "h": 2.059
+      },
+      "dimensionDelta": {
+        "l": 0.801,
+        "w": 0.267,
+        "h": 0.189
+      },
+      "worstRelativeError": 0.167,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.167,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.minivan",
+      "blueprintId": "vehicle.nissan.patrol",
+      "carlaObjectId": "carla.vehicle_nissan_patrol",
+      "authoredDims": {
+        "l": 5.15,
+        "w": 2,
+        "h": 1.78
+      },
+      "carlaDims": {
+        "l": 5.591,
+        "w": 2.147,
+        "h": 2.059
+      },
+      "dimensionDelta": {
+        "l": 0.441,
+        "w": 0.147,
+        "h": 0.279
+      },
+      "worstRelativeError": 0.157,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.157,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.police_cruiser",
+      "blueprintId": "vehicle.dodgecop.charger",
+      "carlaObjectId": "carla.vehicle_dodgecop_charger",
+      "authoredDims": {
+        "l": 5.1,
+        "w": 2,
+        "h": 1.55
+      },
+      "carlaDims": {
+        "l": 5.237,
+        "w": 1.924,
+        "h": 1.644
+      },
+      "dimensionDelta": {
+        "l": 0.137,
+        "w": -0.076,
+        "h": 0.094
+      },
+      "worstRelativeError": 0.061,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.061,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.police_suv",
+      "blueprintId": "vehicle.dodgecop.charger",
+      "carlaObjectId": "carla.vehicle_dodgecop_charger",
+      "authoredDims": {
+        "l": 5.1,
+        "w": 2,
+        "h": 1.9
+      },
+      "carlaDims": {
+        "l": 5.237,
+        "w": 1.924,
+        "h": 1.644
+      },
+      "dimensionDelta": {
+        "l": 0.137,
+        "w": -0.076,
+        "h": -0.256
+      },
+      "worstRelativeError": 0.135,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.135,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.porsche_911",
+      "blueprintId": "vehicle.dodge.charger",
+      "carlaObjectId": "carla.vehicle_dodge_charger",
+      "authoredDims": {
+        "l": 4.52,
+        "w": 1.85,
+        "h": 1.3
+      },
+      "carlaDims": {
+        "l": 5.006,
+        "w": 1.881,
+        "h": 1.54
+      },
+      "dimensionDelta": {
+        "l": 0.486,
+        "w": 0.031,
+        "h": 0.24
+      },
+      "worstRelativeError": 0.185,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.185,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.sedan",
+      "blueprintId": "vehicle.lincoln.mkz",
+      "carlaObjectId": "carla.vehicle_lincoln_mkz",
+      "authoredDims": {
+        "l": 4.7,
+        "w": 1.82,
+        "h": 1.45
+      },
+      "carlaDims": {
+        "l": 4.892,
+        "w": 1.836,
+        "h": 1.524
+      },
+      "dimensionDelta": {
+        "l": 0.192,
+        "w": 0.016,
+        "h": 0.074
+      },
+      "worstRelativeError": 0.051,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.051,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.suv",
+      "blueprintId": "vehicle.nissan.patrol",
+      "carlaObjectId": "carla.vehicle_nissan_patrol",
+      "authoredDims": {
+        "l": 4.85,
+        "w": 1.95,
+        "h": 1.78
+      },
+      "carlaDims": {
+        "l": 5.591,
+        "w": 2.147,
+        "h": 2.059
+      },
+      "dimensionDelta": {
+        "l": 0.741,
+        "w": 0.197,
+        "h": 0.279
+      },
+      "worstRelativeError": 0.157,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.157,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.taxi",
+      "blueprintId": "vehicle.taxi.ford",
+      "carlaObjectId": "carla.vehicle_taxi_ford",
+      "authoredDims": {
+        "l": 4.9,
+        "w": 1.85,
+        "h": 1.55
+      },
+      "carlaDims": {
+        "l": 5.354,
+        "w": 1.789,
+        "h": 1.575
+      },
+      "dimensionDelta": {
+        "l": 0.454,
+        "w": -0.061,
+        "h": 0.025
+      },
+      "worstRelativeError": 0.093,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.093,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.tesla_model_3",
+      "blueprintId": "vehicle.lincoln.mkz",
+      "carlaObjectId": "carla.vehicle_lincoln_mkz",
+      "authoredDims": {
+        "l": 4.72,
+        "w": 1.85,
+        "h": 1.44
+      },
+      "carlaDims": {
+        "l": 4.892,
+        "w": 1.836,
+        "h": 1.524
+      },
+      "dimensionDelta": {
+        "l": 0.172,
+        "w": -0.014,
+        "h": 0.084
+      },
+      "worstRelativeError": 0.058,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.058,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.toyota_camry",
+      "blueprintId": "vehicle.lincoln.mkz",
+      "carlaObjectId": "carla.vehicle_lincoln_mkz",
+      "authoredDims": {
+        "l": 4.88,
+        "w": 1.84,
+        "h": 1.45
+      },
+      "carlaDims": {
+        "l": 4.892,
+        "w": 1.836,
+        "h": 1.524
+      },
+      "dimensionDelta": {
+        "l": 0.012,
+        "w": -0.004,
+        "h": 0.074
+      },
+      "worstRelativeError": 0.051,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.051,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    },
+    {
+      "catalogId": "vehicle.van",
+      "blueprintId": "vehicle.sprinter.mercedes",
+      "carlaObjectId": "carla.vehicle_sprinter_mercedes",
+      "authoredDims": {
+        "l": 5.3,
+        "w": 2,
+        "h": 2.4
+      },
+      "carlaDims": {
+        "l": 5.915,
+        "w": 1.988,
+        "h": 2.726
+      },
+      "dimensionDelta": {
+        "l": 0.615,
+        "w": -0.012,
+        "h": 0.326
+      },
+      "worstRelativeError": 0.136,
+      "gatedAxes": [
+        "l",
+        "w",
+        "h"
+      ],
+      "gatedRelativeError": 0.136,
+      "dimensionalAgreement": "exact",
+      "fidelity": "native-blueprint"
+    }
+  ],
+  "unavailable": [
+    {
+      "catalogId": "animal.cat",
+      "class": "animal",
+      "reason": "no CARLA animal blueprint matches this model"
+    },
+    {
+      "catalogId": "animal.deer",
+      "class": "animal",
+      "reason": "no CARLA animal blueprint matches this model"
+    },
+    {
+      "catalogId": "animal.dog",
+      "class": "animal",
+      "reason": "no CARLA animal blueprint matches this model"
+    },
+    {
+      "catalogId": "animal.goose",
+      "class": "animal",
+      "reason": "no CARLA animal blueprint matches this model"
+    },
+    {
+      "catalogId": "animal.raccoon",
+      "class": "animal",
+      "reason": "no CARLA animal blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.arrow_board",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.barricade_type3",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.excavator",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.flagger",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.jersey_barrier",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.jersey_barrier_run",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.long_pipe",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.portable_signal",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.portable_toilet",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.spoil_pile",
+      "class": "construction",
+      "reason": "no CARLA construction blueprint matches this model"
+    },
+    {
+      "catalogId": "construction.temporary_stop_sign",
+      "class": "construction",
+      "reason": "CARLA 0.10.0 has no portable stop sign; static.prop.streetsign is a fixed street name sign"
+    },
+    {
+      "catalogId": "drone.camera_quadcopter",
+      "class": "drone",
+      "reason": "no CARLA drone blueprint matches this model"
+    },
+    {
+      "catalogId": "drone.delivery_quadcopter",
+      "class": "drone",
+      "reason": "no CARLA drone blueprint matches this model"
+    },
+    {
+      "catalogId": "drone.emergency_responder",
+      "class": "drone",
+      "reason": "no CARLA drone blueprint matches this model"
+    },
+    {
+      "catalogId": "hazard.downed_branch",
+      "class": "hazard",
+      "reason": "no CARLA hazard blueprint matches this model"
+    },
+    {
+      "catalogId": "hazard.ladder",
+      "class": "hazard",
+      "reason": "no CARLA hazard blueprint matches this model"
+    },
+    {
+      "catalogId": "hazard.mattress",
+      "class": "hazard",
+      "reason": "no CARLA hazard blueprint matches this model"
+    },
+    {
+      "catalogId": "hazard.tire_debris",
+      "class": "hazard",
+      "reason": "no CARLA hazard blueprint matches this model"
+    },
+    {
+      "catalogId": "occluder.covered_car",
+      "class": "occluder",
+      "reason": "no CARLA occluder blueprint matches this model"
+    },
+    {
+      "catalogId": "occluder.fence_run",
+      "class": "occluder",
+      "reason": "no CARLA occluder blueprint matches this model"
+    },
+    {
+      "catalogId": "occluder.hedge_run",
+      "class": "occluder",
+      "reason": "no CARLA occluder blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.cooler_bot",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.delivery_rover",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.humanoid_construction",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.humanoid_delivery",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.humanoid_general_purpose",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.humanoid_public_safety",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.humanoid_warehouse",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "sidewalk_robot.quadruped_courier",
+      "class": "sidewalk_robot",
+      "reason": "no CARLA sidewalk_robot blueprint matches this model"
+    },
+    {
+      "catalogId": "vehicle.bicycle",
+      "class": "vehicle",
+      "reason": "CARLA 0.10.0 ships no bicycle blueprint"
+    },
+    {
+      "catalogId": "vehicle.bus",
+      "class": "vehicle",
+      "reason": "no bus blueprint; the closest body is a 10 m truck cab"
+    },
+    {
+      "catalogId": "vehicle.cement_mixer",
+      "class": "vehicle",
+      "reason": "no mixer body blueprint"
+    },
+    {
+      "catalogId": "vehicle.dump_truck",
+      "class": "vehicle",
+      "reason": "no tipper body blueprint"
+    },
+    {
+      "catalogId": "vehicle.fire_command_suv",
+      "class": "vehicle",
+      "reason": "no marked command SUV blueprint"
+    },
+    {
+      "catalogId": "vehicle.flatbed_truck",
+      "class": "vehicle",
+      "reason": "no flatbed body blueprint"
+    },
+    {
+      "catalogId": "vehicle.garbage_truck",
+      "class": "vehicle",
+      "reason": "no refuse body blueprint"
+    },
+    {
+      "catalogId": "vehicle.mobility_scooter",
+      "class": "vehicle",
+      "reason": "CARLA 0.10.0 ships no mobility-scooter blueprint"
+    },
+    {
+      "catalogId": "vehicle.motorcycle",
+      "class": "vehicle",
+      "reason": "CARLA 0.10.0 ships no motorcycle blueprint"
+    },
+    {
+      "catalogId": "vehicle.pickup",
+      "class": "vehicle",
+      "reason": "no pickup blueprint; the nearest bodies are a 4.9 m saloon and an 8 m box truck"
+    },
+    {
+      "catalogId": "vehicle.school_bus",
+      "class": "vehicle",
+      "reason": "no bus blueprint"
+    },
+    {
+      "catalogId": "vehicle.semi_truck",
+      "class": "vehicle",
+      "reason": "no articulated tractor-trailer blueprint; the 8 m box truck is 12 m short"
+    },
+    {
+      "catalogId": "vehicle.shuttle_bus",
+      "class": "vehicle",
+      "reason": "no bus blueprint"
+    },
+    {
+      "catalogId": "vehicle.tanker_truck",
+      "class": "vehicle",
+      "reason": "no tanker body blueprint"
+    },
+    {
+      "catalogId": "vehicle.tow_truck",
+      "class": "vehicle",
+      "reason": "no recovery body blueprint"
+    },
+    {
+      "catalogId": "vehicle.tram",
+      "class": "vehicle",
+      "reason": "CARLA 0.10.0 ships no rail vehicle blueprint"
+    },
+    {
+      "catalogId": "vehicle.utility_bucket_truck",
+      "class": "vehicle",
+      "reason": "no aerial-platform body blueprint"
+    }
+  ]
+}

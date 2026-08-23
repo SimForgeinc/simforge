@@ -1,0 +1,1200 @@
+{
+  "$schema_notes": "Single source of truth for map-search vocabulary. Sections: numeric_normalization (pre-tokenizer word→digit), object_families (family chips + their aliases), family_chip_label (singular chip labels for relation subjects/objects), candidate_subtypes / sidecar_subtypes (kind → display subtype), candidate_to_poi_kind (CandidateLocation.kind → MapSearchIndexPoiKind for the sidecar), candidate_to_poi_type (CandidateLocation.kind → POI facts.poi_type), road_segment_subtype_by_tag (priority-ordered tag → road-segment subtype, first match wins), road_segment_badges_by_tag (sidecar road_segment_feature tags → extra badge strings), left_turn_phrases_by_tag (protected/unprotected-left tags → search phrases), tag_facts (raw tag → badge strings folded into searchText + exactMapAttributes; the `substring` flag distinguishes exact-match from substring matching), kind_facts (CandidateLocation.kind → implicit facts), fact_value_badges (sidecar fact key → value → badge strings; drives factsToBadges enum renames), overlay_layer_metadata (overlay layer_id → {subtype, family_terms}), operators (relation operator labels + aliases, superset of relation_terms), semantic_terms (alias vocabulary; optional candidate_tags / candidate_kinds anchor the match), relation_terms (parser-level relation operators). Any new search string should land here, not in code. The parser is intentionally narrow: it parses spatial/relational queries against this vocabulary. Polite-framing phrases ('find me', 'where can i find'), intent decomposition, and synonym resolution beyond what's listed here are handled upstream by the LLM tier before it composes a `search_map` query.",
+  "numeric_normalization": {
+    "three": "3",
+    "four": "4",
+    "five": "5"
+  },
+  "street_suffix_normalization": {
+    "st": "street",
+    "rd": "road",
+    "dr": "drive",
+    "ave": "avenue",
+    "blvd": "boulevard",
+    "ln": "lane",
+    "ct": "court",
+    "cir": "circle",
+    "pl": "place",
+    "plz": "plaza",
+    "hwy": "highway",
+    "pkwy": "parkway",
+    "ter": "terrace",
+    "trl": "trail",
+    "pt": "point",
+    "sq": "square",
+    "xing": "crossing",
+    "expy": "expressway",
+    "fwy": "freeway"
+  },
+  "family_chip_label": {
+    "junction": "Junction",
+    "street": "Street",
+    "poi": "POI",
+    "address": "Address"
+  },
+  "candidate_subtypes": {
+    "junction": "Road junction",
+    "street_parking": "Street segment",
+    "road_segment": "Street segment",
+    "crosswalk_zone": "Crosswalk zone",
+    "sidewalk_segment": "Sidewalk segment",
+    "parking_cluster": "Parking area",
+    "parking_lot": "Parking lot",
+    "bus_stop_corridor": "Bus stop",
+    "school_frontage": "School frontage",
+    "hospital_approach": "Hospital approach",
+    "gas_station_approach": "Gas station approach",
+    "retail_frontage": "Retail frontage",
+    "restaurant_frontage": "Restaurant frontage",
+    "hotel_approach": "Hotel approach",
+    "airport_approach": "Airport approach",
+    "shopping_mall_approach": "Shopping mall approach",
+    "transit_stop_corridor": "Transit stop corridor",
+    "occlusion": "Occlusion candidate"
+  },
+  "sidecar_subtypes": {
+    "junction": "Road junction",
+    "street": "Street",
+    "street_segment": "Street segment",
+    "bus_stop": "Bus stop",
+    "school_frontage": "School frontage",
+    "hospital_approach": "Hospital approach",
+    "gas_station_approach": "Gas station approach",
+    "parking_lot": "Parking lot",
+    "parking_cluster": "Parking area",
+    "street_parking": "Street parking",
+    "crosswalk_zone": "Crosswalk zone",
+    "sidewalk_segment": "Sidewalk segment",
+    "road_segment_feature": "Road segment",
+    "retail_frontage": "Retail frontage",
+    "restaurant_frontage": "Restaurant frontage",
+    "hotel_approach": "Hotel approach",
+    "airport_approach": "Airport approach",
+    "shopping_mall_approach": "Shopping mall approach",
+    "transit_stop_corridor": "Transit stop corridor",
+    "address": "Address",
+    "occlusion": "Occlusion candidate"
+  },
+  "candidate_to_poi_kind": {
+    "bus_stop_corridor": "bus_stop",
+    "school_frontage": "school_frontage",
+    "hospital_approach": "hospital_approach",
+    "gas_station_approach": "gas_station_approach",
+    "parking_lot": "parking_lot",
+    "parking_cluster": "parking_cluster",
+    "street_parking": "street_parking",
+    "crosswalk_zone": "crosswalk_zone",
+    "sidewalk_segment": "sidewalk_segment",
+    "road_segment": "road_segment_feature",
+    "retail_frontage": "retail_frontage",
+    "restaurant_frontage": "restaurant_frontage",
+    "hotel_approach": "hotel_approach",
+    "airport_approach": "airport_approach",
+    "shopping_mall_approach": "shopping_mall_approach",
+    "transit_stop_corridor": "transit_stop_corridor",
+    "occlusion": "occlusion"
+  },
+  "candidate_to_poi_type": {
+    "bus_stop_corridor": "bus_stop",
+    "school_frontage": "school",
+    "hospital_approach": "hospital",
+    "gas_station_approach": "gas_station",
+    "parking_lot": "parking_lot",
+    "retail_frontage": "retail",
+    "restaurant_frontage": "restaurant",
+    "hotel_approach": "hotel",
+    "airport_approach": "airport",
+    "shopping_mall_approach": "shopping_mall",
+    "transit_stop_corridor": "transit_stop",
+    "sidewalk_segment": "sidewalk",
+    "occlusion": "occlusion"
+  },
+  "road_segment_subtype_by_tag": [
+    { "tag": "ROAD_GRADE_CREST_ELEVATION_CHANGE", "subtype": "Steep road" },
+    { "tag": "BIKE_INTERSECTION_MIXING_ZONE", "subtype": "Bike merge corridor" },
+    { "tag": "BIKE_LANE_SHARED_ROADWAY", "subtype": "Shared bike corridor" },
+    { "tag": "BIKE_LANE_PROTECTED", "subtype": "Protected bike corridor" },
+    { "tag": "BIKE_LANE_STANDARD", "subtype": "Bike corridor" },
+    { "tag": "HIGH_SPEED_ARTERIAL_SEGMENT", "subtype": "High-speed road" },
+    { "tag": "SIDEWALK_PEDESTRIAN_NETWORK", "subtype": "Pedestrian corridor" }
+  ],
+  "road_segment_badges_by_tag": {
+    "BIKE_INTERSECTION_MIXING_ZONE": ["bike mixing zone"],
+    "BIKE_LANE_PROTECTED": ["protected bike lane"],
+    "BIKE_LANE_SHARED_ROADWAY": ["shared bike lane"],
+    "BIKE_LANE_STANDARD": ["dedicated bike lane"]
+  },
+  "left_turn_phrases_by_tag": {
+    "TURN_PROTECTED_LEFT_PHASE": [
+      "protected left",
+      "protected left turn",
+      "left turn arrow"
+    ],
+    "TURN_UNPROTECTED_LEFT": [
+      "unprotected left",
+      "unprotected left turn",
+      "permissive left",
+      "left across traffic"
+    ]
+  },
+  "tag_facts": [
+    { "match": "exact", "tag": "PARKING_LOT_WITH_ROAD_ACCESS", "facts": ["drive-in/out access"] },
+    { "match": "exact", "tag": "PARKING_LOT_NO_ROAD_ACCESS", "facts": ["no road access"] },
+    { "match": "exact", "tag": "PARKING_LOT_APPROACH", "facts": ["parking lot approach"] },
+    { "match": "exact", "tag": "NARROW_STREET_ADJACENT_PARKING", "facts": ["narrow street parking"] },
+    { "match": "substring", "tag": "PARKING", "facts": ["curb parking"] },
+    { "match": "substring", "tag": "SCHOOL", "facts": ["school frontage"] },
+    { "match": "substring", "tag": "BUS_STOP", "facts": ["bus stop"] },
+    { "match": "substring", "tag": "HOSPITAL", "facts": ["hospital approach"] },
+    { "match": "substring", "tag": "UNCONTROLLED", "facts": ["uncontrolled"] },
+    { "match": "substring", "tag": "NARROW", "facts": ["narrow geometry"] },
+    { "match": "exact", "tag": "ROAD_GRADE_CREST_ELEVATION_CHANGE", "facts": ["steep grade", "crest", "elevation change"] },
+    { "match": "exact", "tag": "BIKE_LANE_STANDARD", "facts": ["bike lane"] },
+    { "match": "exact", "tag": "BIKE_LANE_PROTECTED", "facts": ["bike lane", "protected bike lane"] },
+    { "match": "exact", "tag": "BIKE_LANE_SHARED_ROADWAY", "facts": ["bike lane", "shared bike lane", "sharrow"] },
+    { "match": "exact", "tag": "BIKE_INTERSECTION_MIXING_ZONE", "facts": ["bike lane merge", "bike mixing zone"] },
+    { "match": "exact", "tag": "HIGH_SPEED_ARTERIAL_SEGMENT", "facts": ["high-speed arterial"] },
+    { "match": "exact", "tag": "SIDEWALK_PEDESTRIAN_NETWORK", "facts": ["sidewalk"] }
+  ],
+  "tag_facts_exceptions": {
+    "NARROW": ["NARROW_STREET_ADJACENT_PARKING"],
+    "PARKING": [
+      "PARKING_LOT_WITH_ROAD_ACCESS",
+      "PARKING_LOT_NO_ROAD_ACCESS",
+      "PARKING_LOT_APPROACH",
+      "NARROW_STREET_ADJACENT_PARKING"
+    ]
+  },
+  "kind_facts": {
+    "street_parking": ["street-level", "street parking", "curb parking", "parking lane"],
+    "parking_lot": ["parking lot", "off-street"],
+    "school_frontage": ["school-adjacent"],
+    "bus_stop_corridor": ["transit stop"],
+    "hospital_approach": ["emergency corridor"]
+  },
+  "fact_related_objects": {
+    "school frontage": "School zone",
+    "bus stop": "Transit stop",
+    "hospital approach": "Hospital campus"
+  },
+  "fact_value_badges": {
+    "control_type": {
+      "traffic_light": ["signalized"],
+      "stop": ["stop-sign-controlled"],
+      "all_way_stop": ["all-way stop"],
+      "uncontrolled": ["uncontrolled"]
+    },
+    "complexity_class": {
+      "complex": ["complex geometry"]
+    },
+    "grade_class": {
+      "steep": ["steep grade"],
+      "moderate": ["moderate grade"]
+    },
+    "speed_class": {
+      "high": ["high-speed"],
+      "low": ["low-speed"]
+    },
+    "lane_count_class": {
+      "single-lane": ["single-lane"],
+      "multi-lane": ["multi-lane"]
+    },
+    "size_class": {
+      "small": ["small parking lot"],
+      "medium": ["medium parking lot"],
+      "large": ["large parking lot"]
+    },
+    "width_class": {
+      "narrow": ["narrow street", "narrow road"],
+      "medium": ["medium-width street"],
+      "wide": ["wide road", "wide street"]
+    },
+    "curvature_class": {
+      "sharp": ["sharp curve", "tight curve"],
+      "curved": ["curved"],
+      "straight": ["straight"]
+    },
+    "road_class": {
+      "motorway": ["motorway", "freeway", "expressway", "arterial", "arterial road"],
+      "trunk": ["trunk road", "highway", "arterial", "arterial road"],
+      "primary": ["primary road", "major road", "arterial", "arterial road"],
+      "secondary": ["secondary road", "arterial", "arterial road"],
+      "tertiary": ["tertiary road", "collector", "collector road"],
+      "residential": ["residential", "residential street", "local", "local road"],
+      "unclassified": ["unclassified road", "minor road", "local", "local road"]
+    }
+  },
+  "fact_true_badges": {
+    "is_t_intersection": ["T-intersection"],
+    "has_signal": ["signalized"],
+    "has_stop_sign": ["stop-sign-controlled"],
+    "is_all_way_stop": ["all-way stop"],
+    "bike_lane_present": ["bike lane"],
+    "parking_present": ["curb parking"],
+    "parking_both_sides": ["parking on both sides", "two-sided parking", "double-sided parking"],
+    "sidewalk_present": ["sidewalk"],
+    "crest_present": ["crest", "elevation change"],
+    "is_signalized": ["signalized"],
+    "is_marked": ["marked"],
+    "parking_lot_egress": ["parking exit", "parking egress", "lot egress"],
+    "driveway_egress": ["driveway egress", "driveway exit"],
+    "merge_zone": ["merge", "merge zone", "merging"],
+    "unprotected_left_candidate": ["unprotected left", "unprotected left turn"],
+    "bike_lane_adjacent": ["bike-lane-adjacent", "bike lane adjacent"],
+    "vehicle_spawn": ["vehicle spawn"],
+    "pedestrian_spawn": ["pedestrian spawn"],
+    "cyclist_spawn": ["cyclist spawn", "bicycle spawn"]
+  },
+  "fact_value_badges_by_kind": {
+    "junction": {
+      "size_class": {
+        "small": ["small junction", "small intersection"],
+        "medium": ["medium junction", "medium-sized intersection"],
+        "large": ["large junction", "large intersection"]
+      }
+    }
+  },
+  "overlay_layer_metadata": {
+    "bus_stops": {
+      "subtype": "Bus stop",
+      "family_terms": ["bus stop", "transit stop", "bus"]
+    },
+    "schools": {
+      "subtype": "School frontage",
+      "family_terms": ["school", "school zone"]
+    },
+    "hospitals": {
+      "subtype": "Hospital approach",
+      "family_terms": ["hospital", "medical center", "emergency"]
+    },
+    "gas_stations": {
+      "subtype": "Gas station approach",
+      "family_terms": ["gas station", "fuel station"]
+    },
+    "parking_lots": {
+      "subtype": "Parking lot",
+      "family_terms": ["parking lot", "parking garage", "car park", "parking facility"]
+    },
+    "retail": {
+      "subtype": "Retail",
+      "family_terms": ["retail", "store", "shop", "shopping"]
+    },
+    "restaurant": {
+      "subtype": "Restaurant",
+      "family_terms": ["restaurant", "cafe", "coffee shop", "fast food", "diner"]
+    },
+    "hotel": {
+      "subtype": "Hotel",
+      "family_terms": ["hotel", "motel", "lodging", "accommodation"]
+    },
+    "airport": {
+      "subtype": "Airport",
+      "family_terms": ["airport", "airfield", "aerodrome"]
+    },
+    "shopping_mall": {
+      "subtype": "Shopping mall",
+      "family_terms": ["shopping mall", "shopping center", "mall"]
+    },
+    "transit_stop": {
+      "subtype": "Transit stop",
+      "family_terms": ["transit stop", "train station", "subway station", "bus station", "tram stop"]
+    },
+    "crosswalks": {
+      "subtype": "Crosswalk",
+      "family_terms": ["crosswalk", "pedestrian crossing", "zebra crossing"]
+    },
+    "sidewalks": {
+      "subtype": "Sidewalk",
+      "family_terms": ["sidewalk", "footway", "footpath", "pedestrian path", "walkway"]
+    }
+  },
+  "operators": {
+    "near": {
+      "label": "near",
+      "aliases": ["near", "close to", "around", "by"]
+    },
+    "adjacent_to": {
+      "label": "adjacent to",
+      "aliases": ["adjacent to", "right next to", "next to", "touching"]
+    },
+    "within": {
+      "label": "within",
+      "aliases": ["within"],
+      "expects_distance": true
+    },
+    "leads_to": {
+      "label": "leading to",
+      "aliases": ["leading to", "leads to", "leading into", "leads into", "into"]
+    },
+    "connected_to": {
+      "label": "connected to",
+      "aliases": ["connected to", "connects to", "connecting to", "linked to"]
+    },
+    "upstream_of": {
+      "label": "before",
+      "aliases": ["before", "upstream of"]
+    },
+    "downstream_of": {
+      "label": "after",
+      "aliases": ["after", "past", "downstream of"]
+    }
+  },
+  "object_families": {
+    "junction": {
+      "label": "Junctions",
+      "aliases": [
+        "junction",
+        "junctions",
+        "intersection",
+        "intersections",
+        "crossing",
+        "crossings",
+        "road crossing",
+        "road junction",
+        "intersection point"
+      ]
+    },
+    "street": {
+      "label": "Streets",
+      "aliases": [
+        "street",
+        "streets",
+        "road",
+        "roads",
+        "lane",
+        "lanes",
+        "drive",
+        "drives",
+        "corridor",
+        "corridors",
+        "road segment",
+        "street segment",
+        "arterial",
+        "arterials",
+        "local road",
+        "main road"
+      ]
+    },
+    "poi": {
+      "label": "POIs",
+      "aliases": [
+        "poi",
+        "pois",
+        "place",
+        "places",
+        "location",
+        "locations",
+        "point of interest",
+        "area",
+        "areas",
+        "zone",
+        "zones",
+        "spot",
+        "spots"
+      ]
+    },
+    "address": {
+      "label": "Addresses",
+      "aliases": [
+        "address",
+        "addresses",
+        "street address",
+        "street addresses",
+        "house number",
+        "house numbers",
+        "postal address",
+        "mailing address"
+      ]
+    }
+  },
+  "semantic_terms": [
+    {
+      "id": "rear_end_prone",
+      "label": "Rear-end prone",
+      "aliases": ["rear-end prone", "rear end prone", "rear-end hotspot", "rear end hotspot", "where avs get rear-ended"],
+      "search_terms": ["rear-end prone", "rear end prone"],
+      "candidate_tags": ["rear_end_prone"]
+    },
+    {
+      "id": "unprotected_left_turn_prone",
+      "label": "Unprotected-left-turn prone",
+      "aliases": ["left-turn prone", "left turn prone", "unprotected left prone", "left-turn collision hotspot"],
+      "search_terms": ["left-turn prone", "unprotected left prone"],
+      "candidate_tags": ["unprotected_left_turn_prone"]
+    },
+    {
+      "id": "unsafe_cut_in_prone",
+      "label": "Cut-in prone",
+      "aliases": ["cut-in prone", "cut in prone", "cut-in hotspot", "merge conflict prone"],
+      "search_terms": ["cut-in prone", "cut in prone"],
+      "candidate_tags": ["unsafe_cut_in_prone"]
+    },
+    {
+      "id": "pedestrian_crossing_prone",
+      "label": "Pedestrian-crossing prone",
+      "aliases": ["pedestrian prone", "pedestrian crossing prone", "pedestrian conflict hotspot", "ped-crossing prone"],
+      "search_terms": ["pedestrian prone", "pedestrian crossing prone"],
+      "candidate_tags": ["pedestrian_crossing_prone"]
+    },
+    {
+      "id": "sideswipe_prone",
+      "label": "Sideswipe prone",
+      "aliases": ["sideswipe prone", "sideswipe hotspot", "lateral contact prone"],
+      "search_terms": ["sideswipe prone"],
+      "candidate_tags": ["sideswipe_prone"]
+    },
+    {
+      "id": "right_turn_hook_prone",
+      "label": "Right-hook prone",
+      "aliases": ["right-hook prone", "right hook prone", "right-turn hook prone", "right-hook hotspot"],
+      "search_terms": ["right-hook prone", "right turn hook prone"],
+      "candidate_tags": ["right_turn_hook_prone"]
+    },
+    {
+      "id": "signalized",
+      "label": "Signalized",
+      "aliases": ["signalized", "traffic light", "traffic signal", "with signals", "light controlled"],
+      "search_terms": ["signalized"]
+    },
+    {
+      "id": "protected_left",
+      "label": "Protected Left Turn",
+      "aliases": [
+        "protected left",
+        "protected left turn",
+        "protected lefts",
+        "left arrow",
+        "left turn arrow",
+        "left arrow signal",
+        "signal protected left",
+        "dedicated left turn",
+        "dedicated left turn signal"
+      ],
+      "search_terms": ["protected left", "protected left turn", "left turn arrow"],
+      "candidate_tags": ["TURN_PROTECTED_LEFT_PHASE"]
+    },
+    {
+      "id": "unprotected_left",
+      "label": "Unprotected Left Turn",
+      "aliases": [
+        "unprotected left",
+        "unprotected lefts",
+        "unprotected left turn",
+        "unprotected left turns",
+        "permissive left",
+        "permissive left turn",
+        "permissive lefts",
+        "permitted left",
+        "permitted left turn",
+        "left across traffic",
+        "left turn across traffic",
+        "left across oncoming traffic",
+        "left turn conflict",
+        "cross traffic left",
+        "no protected left",
+        "no left arrow"
+      ],
+      "search_terms": [
+        "unprotected left",
+        "unprotected left turn",
+        "permissive left"
+      ],
+      "candidate_tags": ["TURN_UNPROTECTED_LEFT"]
+    },
+    {
+      "id": "uncontrolled",
+      "label": "Uncontrolled",
+      "aliases": ["uncontrolled", "no signal", "no signs", "free flow intersection"],
+      "search_terms": ["uncontrolled"],
+      "exact_attributes": ["uncontrolled"]
+    },
+    {
+      "id": "stop_controlled",
+      "label": "Stop Controlled",
+      "aliases": ["stop sign", "stop-controlled", "stop controlled", "all way stop", "4 way stop"],
+      "search_terms": ["stop-sign-controlled", "two-way stop", "all-way stop"]
+    },
+    {
+      "id": "yield_controlled",
+      "label": "Yield Controlled",
+      "aliases": ["yield", "yield sign", "yield-controlled"],
+      "search_terms": ["yield", "t-yield"]
+    },
+    {
+      "id": "t_intersection",
+      "label": "T-intersection",
+      "aliases": ["t intersection", "t junction", "t-intersection", "t shape intersection"],
+      "search_terms": ["t-intersection"]
+    },
+    {
+      "id": "three_leg",
+      "label": "3-leg",
+      "aliases": ["3way", "3 way", "3-way", "three way", "3 leg", "3-leg", "3 approaches", "three approaches", "3 road junction", "three road junction"],
+      "search_terms": ["3-leg"]
+    },
+    {
+      "id": "four_way",
+      "label": "4-way",
+      "aliases": ["4way", "4 way", "4-way", "four way", "4 leg", "4-leg", "4 approaches", "four approaches", "cross intersection", "four road junction"],
+      "search_terms": ["4-way", "4-leg"]
+    },
+    {
+      "id": "multi_leg",
+      "label": "Multi-leg",
+      "aliases": ["multileg", "multi leg", "multi-leg", "complex intersection", "many way intersection", "irregular intersection"],
+      "search_terms": ["multi-leg", "complex geometry"]
+    },
+    {
+      "id": "roundabout",
+      "label": "Roundabout",
+      "aliases": [
+        "roundabout",
+        "roundabouts",
+        "traffic circle",
+        "traffic circles",
+        "rotary",
+        "rotaries",
+        "circle intersection",
+        "circle intersections"
+      ],
+      "search_terms": ["roundabout"]
+    },
+    {
+      "id": "narrow",
+      "label": "Narrow",
+      "aliases": [
+        "narrow",
+        "narrow street",
+        "narrow streets",
+        "narrow road",
+        "narrow roads",
+        "narrow lane",
+        "narrow lanes",
+        "tight road",
+        "tight roads",
+        "tight street",
+        "tight streets",
+        "single lane road",
+        "single-lane road",
+        "single lane roads",
+        "one lane street",
+        "one-lane street",
+        "one lane streets"
+      ],
+      "search_terms": ["narrow", "narrow geometry"]
+    },
+    {
+      "id": "parking",
+      "label": "Parking",
+      "aliases": ["parking", "parked cars", "somewhere to park"],
+      "search_terms": ["parking"]
+    },
+    {
+      "id": "street_parking",
+      "label": "Street Parking",
+      "aliases": [
+        "street parking",
+        "street-parking",
+        "on street parking",
+        "on-street parking",
+        "curb parking",
+        "curbside parking",
+        "kerb parking",
+        "parking lane",
+        "parking lanes",
+        "parking strip",
+        "parked cars on street",
+        "parked cars on the street",
+        "parked cars on road",
+        "parked along the curb",
+        "parking along the road",
+        "parking along the street"
+      ],
+      "search_terms": ["street parking", "curb parking", "parking lane"],
+      "candidate_kinds": ["street_parking"]
+    },
+    {
+      "id": "sidewalk",
+      "label": "Sidewalk",
+      "aliases": [
+        "sidewalk",
+        "sidewalks",
+        "footpath",
+        "footpaths",
+        "footway",
+        "footways",
+        "pedestrian path",
+        "pedestrian paths",
+        "pedestrian way",
+        "pedestrian ways",
+        "walkway",
+        "walkways",
+        "pavement",
+        "pavements"
+      ],
+      "search_terms": ["sidewalk"]
+    },
+    {
+      "id": "school",
+      "label": "School",
+      "aliases": [
+        "school",
+        "schools",
+        "school zone",
+        "school zones",
+        "school area",
+        "school areas",
+        "near school",
+        "school frontage",
+        "school frontages",
+        "school children",
+        "schoolchildren",
+        "school kid",
+        "school kids",
+        "schoolkid",
+        "schoolkids",
+        "kids",
+        "children",
+        "pupils",
+        "students",
+        "schoolers",
+        "school district",
+        "school crossing",
+        "school crossings"
+      ],
+      "search_terms": ["school", "school frontage", "school-adjacent"]
+    },
+    {
+      "id": "hospital",
+      "label": "Hospital",
+      "aliases": [
+        "hospital",
+        "hospitals",
+        "medical center",
+        "medical centers",
+        "medical centre",
+        "medical centres",
+        "clinic",
+        "clinics",
+        "urgent care",
+        "emergency entrance",
+        "emergency entrances",
+        "emergency room",
+        "emergency rooms",
+        "er entrance",
+        "ambulance entrance",
+        "ambulance bay",
+        "hospital approach",
+        "hospital approaches"
+      ],
+      "search_terms": ["hospital", "hospital approach", "emergency corridor"]
+    },
+    {
+      "id": "gas_station",
+      "label": "Gas Station",
+      "aliases": [
+        "gas",
+        "fuel",
+        "petrol",
+        "diesel",
+        "gas station",
+        "gas stations",
+        "gas pump",
+        "gas pumps",
+        "petrol pump",
+        "petrol pumps",
+        "petrol station",
+        "petrol stations",
+        "petrol garage",
+        "petrol garages",
+        "gas depot",
+        "fuel station",
+        "fuel stations",
+        "fuel stop",
+        "fuel stops",
+        "filling station",
+        "filling stations",
+        "service station",
+        "service stations",
+        "refuelling station",
+        "refuelling stations",
+        "refueling station",
+        "refueling stations",
+        "ev charging",
+        "ev charger",
+        "ev chargers",
+        "charging station",
+        "charging stations",
+        "convenience stop",
+        "convenience stops"
+      ],
+      "search_terms": ["gas station", "gas station approach"]
+    },
+    {
+      "id": "bus_stop",
+      "label": "Bus Stop",
+      "aliases": [
+        "bus",
+        "buses",
+        "bus stop",
+        "bus stops",
+        "bus stand",
+        "bus stands",
+        "bus station",
+        "bus stations",
+        "bus shelter",
+        "bus shelters",
+        "transit stop",
+        "transit stops",
+        "transit station",
+        "transit stations",
+        "public transit",
+        "public transport",
+        "bus pickup",
+        "bus dropoff",
+        "bus pull-out",
+        "bus pullout",
+        "bus bay",
+        "bus bays"
+      ],
+      "search_terms": ["bus stop", "transit stop"]
+    },
+    {
+      "id": "parking_lot",
+      "label": "Parking Lot",
+      "aliases": [
+        "parking lot",
+        "parking lots",
+        "parking area",
+        "parking areas",
+        "garage",
+        "garages",
+        "car park",
+        "car parks",
+        "carpark",
+        "carparks",
+        "parking garage",
+        "parking garages",
+        "parking facility",
+        "parking facilities",
+        "parking structure",
+        "parking structures",
+        "parking deck",
+        "parking decks",
+        "off street parking",
+        "off-street parking",
+        "lot parking",
+        "private parking",
+        "public parking",
+        "surface lot",
+        "surface lots",
+        "parking lot exit",
+        "parking lot exits"
+      ],
+      "search_terms": ["parking lot", "parking area", "off-street", "parking lot approach"]
+    },
+    {
+      "id": "hotel",
+      "label": "Hotel",
+      "aliases": [
+        "hotel", "hotels",
+        "motel", "motels",
+        "lodging",
+        "accommodation", "accommodations",
+        "inn", "inns",
+        "hostel", "hostels",
+        "resort", "resorts",
+        "lodge", "lodges",
+        "suites",
+        "bed and breakfast",
+        "b&b",
+        "guesthouse", "guesthouses"
+      ],
+      "search_terms": ["hotel", "motel", "lodging", "accommodation"],
+      "candidate_kinds": ["hotel_approach"],
+      "candidate_tags": ["HOTEL_APPROACH"]
+    },
+    {
+      "id": "restaurant",
+      "label": "Restaurant",
+      "aliases": [
+        "restaurant", "restaurants",
+        "cafe", "cafes", "café", "cafés",
+        "coffee shop", "coffee shops",
+        "fast food",
+        "diner", "diners",
+        "eatery", "eateries",
+        "bistro", "bistros",
+        "pizzeria", "pizzerias",
+        "food", "food joint",
+        "place to eat", "where to eat",
+        "dining"
+      ],
+      "search_terms": ["restaurant", "cafe", "fast food", "diner", "food"],
+      "candidate_kinds": ["restaurant_frontage"],
+      "candidate_tags": ["RESTAURANT_FRONTAGE"]
+    },
+    {
+      "id": "retail",
+      "label": "Retail",
+      "aliases": [
+        "retail",
+        "store", "stores",
+        "shop", "shops",
+        "shopping",
+        "shopfront", "storefront", "storefronts",
+        "supermarket", "supermarkets",
+        "grocery", "groceries", "grocery store", "grocery stores",
+        "boutique", "boutiques",
+        "convenience store", "convenience stores"
+      ],
+      "search_terms": ["retail", "store", "shop", "shopping"],
+      "candidate_kinds": ["retail_frontage"],
+      "candidate_tags": ["RETAIL_FRONTAGE"]
+    },
+    {
+      "id": "shopping_mall",
+      "label": "Shopping Mall",
+      "aliases": [
+        "mall", "malls",
+        "shopping mall", "shopping malls",
+        "shopping center", "shopping centers",
+        "shopping centre", "shopping centres",
+        "shopping plaza", "shopping plazas",
+        "outlet mall", "outlet malls",
+        "outlet", "outlets",
+        "plaza", "plazas",
+        "shopping district"
+      ],
+      "search_terms": ["shopping mall", "mall", "shopping center", "plaza"],
+      "candidate_kinds": ["shopping_mall_approach"],
+      "candidate_tags": ["SHOPPING_MALL_APPROACH"]
+    },
+    {
+      "id": "airport",
+      "label": "Airport",
+      "aliases": [
+        "airport", "airports",
+        "airfield", "airfields",
+        "aerodrome", "aerodromes",
+        "terminal", "terminals",
+        "air terminal",
+        "international airport",
+        "regional airport"
+      ],
+      "search_terms": ["airport", "airfield", "terminal"],
+      "candidate_kinds": ["airport_approach"],
+      "candidate_tags": ["AIRPORT_APPROACH"]
+    },
+    {
+      "id": "transit_stop",
+      "label": "Transit Hub",
+      "aliases": [
+        "transit hub", "transit hubs",
+        "transit station", "transit stations",
+        "train station", "train stations",
+        "subway station", "subway stations",
+        "metro station", "metro stations",
+        "rail station", "rail stations",
+        "light rail", "light rail station",
+        "tram stop", "tram stops",
+        "tram station", "tram stations",
+        "bus terminal", "bus station"
+      ],
+      "search_terms": ["transit hub", "train station", "subway station", "tram stop", "rail station"],
+      "candidate_kinds": ["transit_stop_corridor"],
+      "candidate_tags": ["TRANSIT_STOP_CORRIDOR"]
+    },
+    {
+      "id": "narrow_street_parking",
+      "label": "Narrow Street Parking",
+      "aliases": ["narrow street parking", "parked cars on narrow road", "curb parking on narrow street"],
+      "search_terms": ["narrow street parking", "curb parking"],
+      "candidate_tags": ["NARROW_STREET_ADJACENT_PARKING"]
+    },
+    {
+      "id": "grade",
+      "label": "Steep Grade",
+      "aliases": ["steep", "steep road", "steep street", "hill", "hilly", "slope", "uphill", "downhill", "crest", "blind crest", "grade", "grade change", "elevation change", "change in elevation"],
+      "search_terms": ["steep grade", "crest", "elevation change", "% grade"]
+    },
+    {
+      "id": "bike_lane",
+      "label": "Bike Lane",
+      "aliases": ["bike", "bike lane", "bicycle lane", "cycle lane", "cycling"],
+      "search_terms": ["bike lane"]
+    },
+    {
+      "id": "shared_bike",
+      "label": "Shared Bike Lane",
+      "aliases": ["shared bike lane", "shared lane markings", "sharrow", "sharrows", "bike heavy", "bike heavy corridor", "cyclists sharing road", "bike share lane"],
+      "search_terms": ["shared bike lane", "sharrow"]
+    },
+    {
+      "id": "bike_merge",
+      "label": "Bike Lane Merge",
+      "aliases": ["bike lane merge", "bike lane mixing zone", "bike merge", "bike merge zone", "bike conflict corridor", "merging bikes", "bike lane ends", "bike lane termination", "mixing zone"],
+      "search_terms": ["bike lane merge", "bike mixing zone"]
+    },
+    {
+      "id": "occlusion",
+      "label": "Occlusion",
+      "aliases": ["occlusion", "blocked view", "blind spot", "low visibility"],
+      "search_terms": ["occlusion"]
+    },
+    {
+      "id": "conflict",
+      "label": "Conflict",
+      "aliases": [
+        "conflict",
+        "conflicts",
+        "interaction",
+        "interactions",
+        "collision",
+        "collisions",
+        "collision risk",
+        "collision risks",
+        "collision scenario",
+        "collision scenarios",
+        "crash",
+        "crashes",
+        "crash scenario",
+        "crash scenarios",
+        "near miss",
+        "near misses",
+        "near-miss",
+        "cross traffic",
+        "conflict point",
+        "conflict points",
+        "conflict zone",
+        "conflict zones"
+      ],
+      "search_terms": ["conflict", "cross traffic"]
+    },
+    {
+      "id": "pedestrian",
+      "label": "Pedestrian",
+      "aliases": [
+        "pedestrian",
+        "pedestrians",
+        "ped",
+        "peds",
+        "people crossing",
+        "people walking",
+        "foot traffic",
+        "foot-traffic",
+        "walker",
+        "walkers",
+        "walking",
+        "jogger",
+        "joggers"
+      ],
+      "search_terms": ["pedestrian", "crosswalk"]
+    },
+    {
+      "id": "crosswalk",
+      "label": "Crosswalk",
+      "aliases": [
+        "crosswalk",
+        "crosswalks",
+        "cross walk",
+        "cross walks",
+        "pedestrian crossing",
+        "pedestrian crossings",
+        "ped crossing",
+        "ped crossings",
+        "zebra crossing",
+        "zebra crossings",
+        "marked crossing",
+        "marked crossings",
+        "unmarked crossing",
+        "unmarked crossings",
+        "midblock crossing",
+        "mid-block crossing",
+        "crossing zone",
+        "crossing zones"
+      ],
+      "search_terms": ["crosswalk", "crosswalk zone"]
+    },
+    {
+      "id": "high_speed_arterial",
+      "label": "High-speed arterial",
+      "aliases": [
+        "high speed",
+        "high-speed",
+        "fast road",
+        "fast street",
+        "high speed arterial",
+        "high-speed arterial",
+        "high speed road",
+        "fast moving traffic",
+        "speed limit 45",
+        "speed limit 50",
+        "speed limit 55"
+      ],
+      "search_terms": ["high-speed arterial", "high speed segment"]
+    },
+    {
+      "id": "pickup_dropoff",
+      "label": "Pickup / Dropoff",
+      "aliases": ["pickup", "dropoff", "loading zone", "passenger stop"],
+      "search_terms": ["pickup", "dropoff"]
+    },
+    {
+      "id": "parking_lot_egress",
+      "label": "Parking egress",
+      "aliases": ["parking exit", "lot exit", "lot egress", "parking egress", "exit", "exiting"],
+      "search_terms": ["parking exit", "parking egress", "lot egress"]
+    },
+    {
+      "id": "merge_behavior",
+      "label": "Merge",
+      "aliases": ["merge", "merging", "merge zone", "merge lane", "lane merge"],
+      "search_terms": ["merge", "merge zone", "merging"]
+    },
+    {
+      "id": "arterial_road",
+      "label": "Arterial road",
+      "aliases": [
+        "arterial",
+        "arterials",
+        "arterial road",
+        "arterial roads",
+        "major road",
+        "major roads",
+        "main road",
+        "main roads",
+        "thoroughfare",
+        "thoroughfares",
+        "boulevard",
+        "boulevards",
+        "avenue",
+        "avenues"
+      ],
+      "search_terms": ["arterial", "arterial road"]
+    },
+    {
+      "id": "local_road",
+      "label": "Local / residential road",
+      "aliases": [
+        "local road",
+        "local roads",
+        "residential road",
+        "residential roads",
+        "residential street",
+        "residential streets",
+        "side street",
+        "side streets",
+        "neighborhood street",
+        "neighborhood streets",
+        "neighbourhood street",
+        "neighbourhood streets",
+        "quiet street",
+        "quiet streets",
+        "back road",
+        "back roads"
+      ],
+      "search_terms": ["local", "residential"]
+    },
+    {
+      "id": "highway",
+      "label": "Highway / freeway",
+      "aliases": [
+        "highway",
+        "highways",
+        "freeway",
+        "freeways",
+        "expressway",
+        "expressways",
+        "interstate",
+        "interstates",
+        "motorway",
+        "motorways",
+        "turnpike",
+        "turnpikes"
+      ],
+      "search_terms": ["high-speed arterial", "high-speed", "arterial"]
+    },
+    {
+      "id": "vehicle_spawn",
+      "label": "Vehicle spawn",
+      "aliases": ["vehicle spawn", "vehicle spawn point", "car spawn"],
+      "search_terms": ["vehicle spawn"]
+    },
+    {
+      "id": "pedestrian_spawn",
+      "label": "Pedestrian spawn",
+      "aliases": ["pedestrian spawn", "pedestrian spawn point", "ped spawn"],
+      "search_terms": ["pedestrian spawn"]
+    },
+    {
+      "id": "cyclist_spawn",
+      "label": "Cyclist spawn",
+      "aliases": ["cyclist spawn", "cyclist spawn point", "bicycle spawn", "bike spawn"],
+      "search_terms": ["cyclist spawn", "bicycle spawn"]
+    },
+    {
+      "id": "blind_occlusion",
+      "label": "Blind / occluded",
+      "aliases": ["blind", "blind corner", "occluded", "occlusion", "hidden"],
+      "search_terms": ["occlusion", "blind", "occluded"],
+      "candidate_tags": ["occlusion", "blind_corner"]
+    }
+  ],
+  "relation_terms": [
+    {
+      "id": "near",
+      "op": "near",
+      "label": "Near",
+      "aliases": ["near", "close to", "around", "by"]
+    },
+    {
+      "id": "adjacent_to",
+      "op": "adjacent_to",
+      "label": "Adjacent To",
+      "aliases": ["adjacent to", "right next to", "next to", "touching"]
+    },
+    {
+      "id": "within",
+      "op": "within",
+      "label": "Within",
+      "aliases": ["within"],
+      "expects_distance": true
+    },
+    {
+      "id": "leads_to",
+      "op": "leads_to",
+      "label": "Leads To",
+      "aliases": [
+        "leading to",
+        "leads to",
+        "leading into",
+        "leads into",
+        "into"
+      ]
+    },
+    {
+      "id": "connected_to",
+      "op": "connected_to",
+      "label": "Connected To",
+      "aliases": [
+        "connected to",
+        "connects to",
+        "connecting to",
+        "linked to"
+      ]
+    },
+    {
+      "id": "upstream_of",
+      "op": "upstream_of",
+      "label": "Before",
+      "aliases": ["before", "upstream of"]
+    },
+    {
+      "id": "downstream_of",
+      "op": "downstream_of",
+      "label": "After",
+      "aliases": ["after", "past", "downstream of"]
+    }
+  ]
+}
