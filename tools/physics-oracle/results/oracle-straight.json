@@ -1,0 +1,35 @@
+{
+  "schema": "uniscenarios.physics-oracle-run/v1",
+  "carlaServerVersion": "0.9.16",
+  "carlaClientVersion": "0.9.16",
+  "map": "Carla/Maps/Town04_Opt",
+  "vehicleBlueprint": "vehicle.lincoln.mkz_2020",
+  "fixedDeltaSeconds": 0.02,
+  "generatedAtEpochS": 1787434023,
+  "results": {
+    "acceleration": {
+      "metric": "zeroTo100kmhTimeS",
+      "value": 6.56,
+      "zeroTo60kmhTimeS": 3.28,
+      "note": "full-throttle launch from standstill, automatic gearbox; teleport back to segment start preserves speed when the segment runs out"
+    },
+    "braking_100_to_0": {
+      "metric": "stoppingDistanceM",
+      "value": 2108.67,
+      "entrySpeedKmh": 100.39,
+      "stopTimeS": 20.0,
+      "meanDecelMps2": 0.18,
+      "peakDecelMps2": 0.0,
+      "note": "full-throttle run-up, pedal applied the moment v first reaches 100 km/h; distance integrated from pedal onset"
+    },
+    "coastdown_80": {
+      "metric": "coastdownDecelAt80kmhMps2",
+      "value": 24749.301,
+      "crossingSpeedKmh": 0.0,
+      "note": "pedals released, automatic gearbox in drive (includes CARLA powertrain drag)"
+    }
+  },
+  "errors": {
+    "step_steer": "RuntimeError('could not reach target speed')"
+  }
+}

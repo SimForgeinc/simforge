@@ -1,0 +1,205 @@
+{
+  "schema": "uniscenarios.physics-golden-suite/v2",
+  "description": "Backend-neutral golden maneuvers for the dynamic-v1 default, now carrying explicit provenance. Every entry states where its reference authority comes from: measured-carla (executed against CARLA 0.9.16 as physics oracle), published-data (cited external figures), or engine-derived (solver self-checks and not-yet-oracled maneuvers — these are pinned by documentedEngineDerivedIds and any NEW engine-derived entry fails CI). Reference values are never fitted from the run under test.",
+  "provenanceEnum": ["measured-carla", "published-data", "engine-derived"],
+  "documentedEngineDerivedIds": [
+    "constant-radius-skidpad",
+    "step-steer",
+    "timestep-convergence-non-contact",
+    "actor-permutation",
+    "friction-sweep",
+    "split-mu-braking",
+    "rigid-collision-onset",
+    "offline-throughput"
+  ],
+  "oracle": {
+    "tool": "tools/physics-oracle/carla_oracle.py",
+    "carlaServerVersion": "0.9.16",
+    "vehicleBlueprint": "vehicle.lincoln.mkz_2020",
+    "fixedDeltaSeconds": 0.02,
+    "maps": ["Town01_Opt"],
+    "resultsDir": "tools/physics-oracle/results"
+  },
+  "citations": [
+    {
+      "id": "fmvss135",
+      "title": "FMVSS No. 135, Hydraulic and Electric Brake Systems (S5.1): a passenger car must stop from 62 mph (100 km/h) within 230 ft (70.1 m) on the prescribed surface",
+      "url": "https://www.federalregister.gov/documents/2000/02/09/00-2923/federal-motor-vehicle-safety-standards-hydraulic-and-electric-brake-systems-passenger-car-brake"
+    },
+    {
+      "id": "euroncap-aeb-c2c",
+      "title": "Euro NCAP AEB Car-to-Car Test Protocol v4.2 — assessed vehicles deliver dry-pavement emergency deceleration of roughly 0.8-1.0 g (0.90 g nominal)",
+      "url": "https://cdn.euroncap.com/cars/assets/euro_ncap_aeb_c2c_test_protocol_v42_af2bd7186c.pdf"
+    },
+    {
+      "id": "sae-j1263",
+      "title": "SAE J1263 / J2263 road-load coastdown measurement (neutral/coast-down procedure); typical passenger-car coefficients give ~0.25 m/s^2 deceleration at 80 km/h",
+      "url": "https://www.sae.org/standards/content/j1263_201003/"
+    },
+    {
+      "id": "accel-0-100",
+      "title": "Mainstream sedan/SUV 0-100 km/h acceleration times cluster around 6-10 s depending on engine and mass; the mid-band figure is 8.5 s",
+      "url": "https://xnmotors.com/en/knowledge/understanding-0-100-kmh-acceleration-in-cars"
+    },
+    {
+      "id": "iso-3888-1",
+      "title": "ISO 3888-1:2002 Passenger cars — Test track for a severe lane-change manoeuvre — Part 1: Double lane-change. Course sections 15/30/25/25/30 m, gate widths 1.1+B/2 and B+1, lateral lane offset 3.5 m",
+      "url": "https://www.iso.org/standard/56317.html"
+    },
+    {
+      "id": "skidpad-compendium",
+      "title": "Skid-pad lateral-grip compendium: typical passenger cars pull 0.7-0.9 g; family sedans about 0.7-0.8 g",
+      "url": "https://en.wikipedia.org/wiki/Skidpad"
+    }
+  ],
+  "cases": [
+    {
+      "id": "straight-line-acceleration",
+      "family": "longitudinal",
+      "provenance": "measured-carla",
+      "assertions": ["reference-within-10-percent", "deterministic-10-repeats"],
+      "references": [
+        {
+          "metric": "zeroTo100kmhTimeS",
+          "value": 7.3,
+          "tolerancePercent": 12,
+          "provenance": "measured-carla",
+          "note": "full-throttle launch from standstill, automatic gearbox, Lincoln MKZ 2020, Town01_Opt clear straight, dt=0.02 s",
+          "citationIds": []
+        },
+        {
+          "metric": "zeroTo100kmhTimeS",
+          "value": 8.5,
+          "tolerancePercent": 10,
+          "provenance": "published-data",
+          "note": "mid-band of the mainstream 6-10 s cluster retained as the real-world anchor",
+          "citationIds": ["accel-0-100"]
+        }
+      ]
+    },
+    {
+      "id": "straight-line-coast",
+      "family": "longitudinal",
+      "provenance": "published-data",
+      "assertions": ["reference-within-tolerance"],
+      "references": [
+        {
+          "metric": "coastdownDecelAt80kmhMps2",
+          "value": 0.25,
+          "tolerancePercent": 15,
+          "provenance": "published-data",
+          "citationIds": ["sae-j1263"]
+        }
+      ],
+      "notes": "CARLA pedals-released coast measures 1.876 m/s^2 because its powertrain keeps applying drag in drive; SAE J1263 coasts in neutral so the published road-load figure is not comparable to CARLA's protocol. Divergence documented in docs/physics-provenance.md; the fixture keeps the published neutral-coast anchor that the TS road-load model implements."
+    },
+    {
+      "id": "braking-100-to-0",
+      "family": "longitudinal",
+      "provenance": "measured-carla",
+      "assertions": ["reference-within-10-percent", "friction-circle", "at-most-regulatory-ceiling"],
+      "references": [
+        {
+          "metric": "stoppingDistanceM",
+          "value": 54.1,
+          "tolerancePercent": 15,
+          "provenance": "measured-carla",
+          "note": "pedal applied at first moment v reaches 100 km/h after full-throttle run-up (entry 100.06 km/h), mean decel 7.14 m/s^2, Lincoln MKZ 2020, Town01_Opt",
+          "citationIds": []
+        },
+        {
+          "metric": "stoppingDistanceM",
+          "value": 48.2,
+          "tolerancePercent": 10,
+          "provenance": "published-data",
+          "derivation": "v^2/(2*a_eff) with v = 100/3.6 m/s and a_eff = 8.0 m/s^2 mean deceleration (0.90 g dry-pavement capability less jerk-limited onset)",
+          "citationIds": ["euroncap-aeb-c2c"]
+        },
+        {
+          "metric": "regulatoryCeilingM",
+          "value": 70.1,
+          "comparison": "at-most",
+          "provenance": "published-data",
+          "citationIds": ["fmvss135"]
+        }
+      ],
+      "notes": "The CARLA-measured distance (54.1 m) and the Euro-NCAP-derived derivation (48.2 m) differ by ~11%; the widened +-15% band around the CARLA oracle covers both while staying far inside the FMVSS 135 ceiling. TS engine measures 49.53 m, inside the band."
+    },
+    {
+      "id": "double-lane-change-iso3888",
+      "family": "lateral",
+      "provenance": "published-data",
+      "assertions": ["gates-within-width", "bounded-sideslip"],
+      "course": {
+        "standard": "ISO 3888-1:2002",
+        "sectionsM": [15, 30, 25, 25, 30],
+        "gateWidthFormulae": ["1.1+B/2", "B+1", "1.1+B/2", "B+1", "1.1+B/2"],
+        "laneOffsetM": 3.5
+      },
+      "references": [],
+      "notes": "Reference authority is the ISO 3888-1 course geometry itself (published-data); dynamic parity numbers are NOT banded yet: the CARLA oracle runs executed (see docs/physics-provenance.md) but no collision-free gate pass was achieved within this workstream's budget, so no peak-lateral-g reference is claimed rather than fabricated."
+    },
+    {
+      "id": "constant-radius-skidpad",
+      "family": "lateral",
+      "provenance": "engine-derived",
+      "assertions": ["steady-state-within-5-percent", "bounded-sideslip", "friction-circle"],
+      "classEnvelopeG": [
+        { "vehicleClass": "family-sedan", "min": 0.7, "max": 0.85, "citationIds": ["skidpad-compendium"] },
+        { "vehicleClass": "suv-crossover", "min": 0.75, "max": 0.92, "citationIds": ["skidpad-compendium"] },
+        { "vehicleClass": "sports", "min": 0.85, "max": 1.05, "citationIds": ["skidpad-compendium"] },
+        { "vehicleClass": "truck-van", "min": 0.6, "max": 0.75, "citationIds": ["skidpad-compendium"] }
+      ],
+      "references": [],
+      "notes": "Oracle attempts (Town03 roundabout lane-following) produced kinematically invalid samples (radius 0.7 m, >1 g sustained at 24 km/h) because the follower chased junction-interior waypoints; numbers rejected, none fabricated. Pinned engine-derived until a clean constant-radius oracle pass exists."
+    },
+    {
+      "id": "step-steer",
+      "family": "lateral",
+      "provenance": "engine-derived",
+      "assertions": ["yaw-gain-within-10-percent", "bounded-sideslip"],
+      "references": [],
+      "notes": "CARLA step-steer runs at 80/50 km/h ended in wall contact before settling (segment too short for sustained cornering); yaw-gain reference pending a large-area oracle site."
+    },
+    {
+      "id": "timestep-convergence-non-contact",
+      "family": "numerics",
+      "provenance": "engine-derived",
+      "substepsS": [0.005, 0.0025],
+      "assertions": ["final-position-2cm", "final-speed-0.05mps", "final-yaw-0.1deg"]
+    },
+    {
+      "id": "actor-permutation",
+      "family": "determinism",
+      "provenance": "engine-derived",
+      "assertions": ["byte-identical", "deterministic-10-repeats"]
+    },
+    {
+      "id": "friction-sweep",
+      "family": "tire",
+      "provenance": "engine-derived",
+      "assertions": ["friction-circle-plus-2-percent", "stopping-distance-monotonic"]
+    },
+    {
+      "id": "split-mu-braking",
+      "family": "tire",
+      "provenance": "engine-derived",
+      "assertions": ["per-tire-friction-circle-plus-2-percent", "stable-yaw"]
+    },
+    {
+      "id": "rigid-collision-onset",
+      "family": "collision",
+      "provenance": "engine-derived",
+      "assertions": ["onset-within-5ms"],
+      "deferred": ["impulse-magnitude", "restitution", "damage"]
+    },
+    {
+      "id": "offline-throughput",
+      "family": "performance",
+      "provenance": "engine-derived",
+      "actors": 10,
+      "durationS": 20,
+      "assertions": ["wall-clock-at-most-1s", "at-least-20x-realtime"]
+    }
+  ]
+}

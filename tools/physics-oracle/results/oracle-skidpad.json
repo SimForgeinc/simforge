@@ -1,0 +1,72 @@
+{
+  "schema": "uniscenarios.physics-oracle-run/v1",
+  "carlaServerVersion": "0.9.16",
+  "carlaClientVersion": "0.9.16",
+  "map": "Carla/Maps/Town03_Opt",
+  "vehicleBlueprint": "vehicle.lincoln.mkz_2020",
+  "fixedDeltaSeconds": 0.02,
+  "generatedAtEpochS": 1787436249,
+  "results": {
+    "steady_state_cornering": {
+      "metrics": [
+        "maxSustainedLateralG",
+        "corneringRadiusM"
+      ],
+      "value": 17.387,
+      "atSpeedKmh": 64,
+      "corneringRadiusM": 0.7,
+      "perSpeed": [
+        {
+          "targetKmh": 24,
+          "meanLatG": 1.412,
+          "meanSpeedKmh": 11.4,
+          "radiusM": 0.7,
+          "departedLane": false,
+          "samples": 851
+        },
+        {
+          "targetKmh": 32,
+          "meanLatG": 4.02,
+          "meanSpeedKmh": 17.9,
+          "radiusM": 0.6,
+          "departedLane": false,
+          "samples": 851
+        },
+        {
+          "targetKmh": 40,
+          "meanLatG": 8.094,
+          "meanSpeedKmh": 25.1,
+          "radiusM": 0.6,
+          "departedLane": false,
+          "samples": 851
+        },
+        {
+          "targetKmh": 48,
+          "meanLatG": 10.468,
+          "meanSpeedKmh": 31.8,
+          "radiusM": 0.7,
+          "departedLane": false,
+          "samples": 851
+        },
+        {
+          "targetKmh": 56,
+          "meanLatG": 12.288,
+          "meanSpeedKmh": 38.7,
+          "radiusM": 0.9,
+          "departedLane": false,
+          "samples": 851
+        },
+        {
+          "targetKmh": 64,
+          "meanLatG": 17.387,
+          "meanSpeedKmh": 47.2,
+          "radiusM": 1.0,
+          "departedLane": false,
+          "samples": 851
+        }
+      ],
+      "method": "roundabout lane-follow at increasing speed; mean |v*yaw_rate| over settled windows without lane departure"
+    }
+  },
+  "errors": {}
+}
