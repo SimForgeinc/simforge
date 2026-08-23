@@ -245,6 +245,9 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec]:
         "static.object", "traffic_signal.state", "traffic_signal.flashing",
         "traffic_signal.controller_logic", "weather", "collision.observe",
         "custom.map.opendrive", "occlusion.metric",
+        "environment.authored", "timing.fixed_step",
+        "artifact.video", "artifact.frames", "artifact.sensor_archive",
+        "artifact.manifest", "artifact.trace", "artifact.annotations",
         *(f"sensor.{modality}" for modality in native_sensor_capabilities()),
     }
     unsupported_required = sorted(set(required) - supported_required)
