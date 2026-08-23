@@ -5,9 +5,6 @@ import { writeMultipartPart } from "@/app/lib/s3/s3-presign";
 
 type RouteContext = { params: Promise<{ bucket: string; key: string[] }> };
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
 export async function GET(request: Request, context: RouteContext): Promise<Response> {
   const { bucket, key } = await context.params;
   const objectKey = key.join("/");

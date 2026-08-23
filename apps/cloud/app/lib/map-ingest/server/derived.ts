@@ -15,29 +15,14 @@ import type { MapSources } from "@uniscenarios/map-intel";
 import type { MapTopologyIndex } from "@simcloud/shared/map-topology/types";
 import type { CityManifestDocument } from "./city-manifest";
 
-import webPackageJson from "@/package.json";
+import mapIntelPackageJson from "../../../../../../packages/map-intel/package.json";
 
 /**
- * The map-intel version a build receipt records must track the stack, not a
- * literal that outlives the next bump and turns provenance into decoration.
- *
- * It is read from this app's own dependency pin rather than from the installed
- * package: `@uniscenarios/map-intel` does not export `./package.json`, and the
- * offline pipeline's trick of resolving the entrypoint and walking back to the
- * package root cannot work here — Turbopack's `require.resolve` returns a module
- * id, not a path, so that code fails during page-data collection. The pin is
- * exact and `npm ci` installs from the lock, so the pinned version is the
- * version that runs. The stack is vendored as release tarballs, so the manifest
- * reference is a `file:` URL whose filename carries the exact stack version.
+ * Build receipts record the exact version of the workspace package that the
+ * local cloud app executes. Reading its manifest keeps provenance aligned with
+ * workspace package bumps while the app dependency remains `workspace:*`.
  */
-const MAP_INTEL_REF = webPackageJson.dependencies["@uniscenarios/map-intel"];
-const vendoredMatch =
-  /^file:.*\/uniscenarios-map-intel-(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\.tgz$/.exec(MAP_INTEL_REF);
-const MAP_INTEL_PIN = vendoredMatch?.[1] ?? MAP_INTEL_REF;
-if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(MAP_INTEL_PIN)) {
-  throw new Error(`@uniscenarios/map-intel is not pinned to an exact version: ${MAP_INTEL_REF}`);
-}
-export const MAP_INTEL_BUILDER_VERSION = MAP_INTEL_PIN;
+export const MAP_INTEL_BUILDER_VERSION = mapIntelPackageJson.version;
 
 export type BuildDerivedArtifactsInput = {
   mapId: string;
