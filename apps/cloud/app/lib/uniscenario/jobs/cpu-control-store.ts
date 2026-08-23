@@ -1246,7 +1246,10 @@ export async function completeCpuJob(
       await tx.execute(
         `UPDATE uniscenario.render_jobs
             SET job_state = 'succeeded', progress = 1,
-                origin_recording_job_id = :recording_job_id,
+                origin_recording_job_id = CASE
+                  WHEN request_contract_version = 'uniscenario.render-intent/v1' THEN NULL
+                  ELSE :recording_job_id
+                END,
                 telemetry = COALESCE(telemetry, '{}'::jsonb)
                   || jsonb_build_object('browserRecordingJobId', :recording_job_id::text),
                 completed_at = NOW(), updated_at = NOW()
