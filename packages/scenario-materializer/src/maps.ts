@@ -29,7 +29,7 @@ import {
   normalizeDerivedMapIndex,
   type DerivedMapIndex,
 } from '@uniscenarios/anchor-matcher';
-import { topologyWithMapSpeedLimits } from '@uniscenarios/scenario-materializer';
+import { topologyWithMapSpeedLimits } from './map-signals.js';
 import { buildLaneGraph, type LaneGraph, type TopologyIndex } from '@uniscenarios/sim-engine';
 
 import { CliError } from './errors.js';

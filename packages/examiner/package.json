@@ -1,7 +1,7 @@
 {
   "name": "@uniscenarios/examiner",
   "version": "0.1.0-alpha.1",
-  "description": "WS2 Examiner — the faithfulness critic: versioned claim schema (claims.v1), deterministic proposition checkers over the rl-env causal ground-truth channel, a model-agnostic NL→schema extraction harness, and a known-ground-truth grader benchmark (FACT-E/C2-Faith perturbation pattern).",
+  "description": "WS2 Examiner \u2014 the faithfulness critic: versioned claim schema (claims.v1), deterministic proposition checkers over the rl-env causal ground-truth channel, a model-agnostic NL\u2192schema extraction harness, and a known-ground-truth grader benchmark (FACT-E/C2-Faith perturbation pattern).",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
@@ -32,12 +32,12 @@
     "bench:claims": "tsx src/benchmark/run-benchmark.ts"
   },
   "dependencies": {
-    "@uniscenarios/cli": "workspace:*",
-    "@uniscenarios/rl-env": "workspace:*",
-    "@uniscenarios/sim-engine": "workspace:*",
-    "zod": "^4.4.3",
     "@uniscenarios/anchor-matcher": "workspace:*",
-    "@uniscenarios/scenario-model": "workspace:*"
+    "@uniscenarios/rl-env": "workspace:*",
+    "@uniscenarios/scenario-materializer": "workspace:*",
+    "@uniscenarios/scenario-model": "workspace:*",
+    "@uniscenarios/sim-engine": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

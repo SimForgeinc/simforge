@@ -22,7 +22,7 @@ import {
 } from '@uniscenarios/map-intel';
 
 import { CliError } from '../errors.js';
-import { loadMap } from '../maps.js';
+import { loadMap } from '@uniscenarios/scenario-materializer';
 import { emit, emitLines, pad } from '../output.js';
 import { EXIT } from '../errors.js';
 

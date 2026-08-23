@@ -8,11 +8,8 @@
  */
 
 import { matchAnchorReport, type MatchReport, type MatchedSite } from '@uniscenarios/anchor-matcher';
-import {
-  assertMaterializableMapControls,
-  buildSiteRoadControls,
-  buildSiteSignalPlan,
-} from '@uniscenarios/scenario-materializer';
+import { assertMaterializableMapControls } from './materialize.js';
+import { buildSiteRoadControls, buildSiteSignalPlan } from './map-signals.js';
 import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
 
 import { adaptTemplate, unmatchableNotes, type AdaptNote } from './adapt.js';

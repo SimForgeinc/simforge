@@ -20,7 +20,7 @@ import {
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readTraceFile, writeJsonFile } from '../template-io.js';
+import { readTraceFile, writeJsonFile } from '@uniscenarios/scenario-materializer';
 import { metricsSummary } from './simulate.js';
 
 export type EvaluateFilterMode = 'critical' | 'negative-control' | 'all';

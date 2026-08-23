@@ -19,9 +19,9 @@ import {
 
 import { adaptTemplate } from '../adapt.js';
 import { assertRequiredRoleBindings } from '../materialize.js';
-import { REPO_ROOT } from '../maps.js';
+import { REPO_ROOT } from '@uniscenarios/scenario-materializer';
 import { resolveParams } from '../params.js';
-import { readTemplate } from '../template-io.js';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'corridor');
 

@@ -62,7 +62,7 @@ import {
   type TopologyIndex,
 } from '@uniscenarios/sim-engine';
 
-import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@uniscenarios/cli';
+import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@uniscenarios/scenario-materializer';
 
 import { EnvSession } from './session.js';
 import {

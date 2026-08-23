@@ -15,10 +15,10 @@ import {
   parseMapSignalCatalog,
   resolveSiteSignalProgram,
 } from '../map-signals.js';
-import { createMapContext } from '../map-context.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '../maps.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { createMapContext } from '@uniscenarios/scenario-materializer';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@uniscenarios/scenario-materializer';
+import { matchOnMap } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 import {
   assertMaterializableMapControls,
   mapSetKey,

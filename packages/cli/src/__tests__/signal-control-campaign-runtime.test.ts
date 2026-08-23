@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
 
 import { checkInvariants } from '../invariants.js';
-import { DEV_ASSETS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
-import { findSite } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { findSite } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const MAP = 'yale-street';
 const haveArtifacts = existsSync(path.join(DEV_ASSETS, MAP, 'derived', 'topology-derived.json.gz'));

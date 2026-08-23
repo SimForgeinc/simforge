@@ -15,46 +15,16 @@ import type { InstanceManifest } from '@uniscenarios/scenario-materializer';
 import { criticalityBand, filtersFor, type EvaluateFilterMode } from './commands/evaluate.js';
 import { metricsSummary } from './commands/simulate.js';
 import { evaluateTrace } from '@uniscenarios/sim-engine';
-import { loadMap } from './maps.js';
+import { loadMap } from '@uniscenarios/scenario-materializer';
 import { verifyEvidenceHashes, type EvidenceHashReport } from './evidence.js';
 import { checkInvariants, type InvariantResidualReport } from './invariants.js';
 import { materialize } from './materialize.js';
-import { findSite } from './sites.js';
-import { writeJsonFile, writeTraceFile } from './template-io.js';
+import { findSite } from '@uniscenarios/scenario-materializer';
+import { writeJsonFile, writeTraceFile } from '@uniscenarios/scenario-materializer';
 import { toStructuredError } from './errors.js';
 
-export interface CatalogArtifactProvenance {
-  readonly identity: string;
-  /** Authored catalog reservation seed. */
-  readonly seed: string;
-  /** Concrete attempt seed used to materialize this artifact. */
-  readonly attemptSeed: string;
-  /** Immutable digest of authored coordinates, excluding lifecycle state. */
-  readonly designDigest: string;
-  readonly mapId: string;
-  readonly incidentId: string;
-  readonly selectedLocationId: string;
-  readonly selectedMatcherSiteId: string;
-  readonly variant: {
-    readonly id: string;
-    readonly title: string;
-    readonly weather: string;
-    readonly timeOfDay: string;
-    readonly traffic: string;
-    readonly visibility: string;
-  };
-  readonly provenance: {
-    readonly namespace: string;
-    readonly generatorVersion: string;
-    readonly mapCatalogRevision: string;
-    readonly matcherIndexDigest: string;
-    readonly engineGraphDigest: string;
-    readonly locationCatalogDigest: string;
-    readonly taxonomyDigest: string;
-    readonly templateDigest: string;
-  };
-  readonly templateId: string;
-}
+export type { CatalogArtifactProvenance } from '@uniscenarios/scenario-materializer';
+import type { CatalogArtifactProvenance } from '@uniscenarios/scenario-materializer';
 
 export interface CellCoords {
   readonly mapId: string;

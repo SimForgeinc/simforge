@@ -16,10 +16,10 @@ import {
   validateScenarioCatalog,
   type ScenarioCatalogManifest,
 } from '../catalog.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
 import { templateId as canonicalTemplateId } from '../materialize.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 import { validateCatalogLiveClosure } from '../commands/catalog.js';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 

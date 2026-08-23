@@ -6,7 +6,7 @@ import { gunzipSync } from 'node:zlib';
 import { buildLaneGraph, parseSimScenarioInput, type LaneGraph, type TopologyIndex } from '@uniscenarios/sim-engine';
 import { AsamExportError, exportOpenScenarioXml14 } from '@uniscenarios/openscenario/export';
 import { validateOpenScenarioXml14 } from '@uniscenarios/openscenario/node';
-import { DEV_ASSETS } from '../maps.js';
+import { DEV_ASSETS } from '@uniscenarios/scenario-materializer';
 
 export type AuditVerdict = 'xsd-validated' | 'unsupported-fail-closed' | 'asset-blocked' | 'unexpected-failure';
 

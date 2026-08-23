@@ -25,7 +25,7 @@ import type { AmbientTrafficProfile } from '@uniscenarios/sim-engine';
 
 import { CliError, EXIT, exitCodeOf, toStructuredError } from './errors.js';
 import { emit, emitError } from './output.js';
-import { availableMaps, resolveMapSelection, KNOWN_MAPS } from './maps.js';
+import { availableMaps, resolveMapSelection, KNOWN_MAPS } from '@uniscenarios/scenario-materializer';
 import { batch } from './commands/batch.js';
 import { catalogCreate, catalogVerify } from './commands/catalog.js';
 import { catalogBatch } from './commands/catalog-batch.js';

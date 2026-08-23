@@ -33,7 +33,7 @@ import {
   readTemplate,
   writeJsonFile,
   type MapBundle,
-} from '@uniscenarios/cli';
+} from '@uniscenarios/scenario-materializer';
 import type { MatchedSite } from '@uniscenarios/anchor-matcher';
 import { EnvSession, type CausalChannel } from '@uniscenarios/rl-env';
 import {

@@ -38,8 +38,8 @@ import { cellPaths, runCell, type CellOptions, type CellResult } from '../batch-
 import { EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
 import { cellSeed, paramsVersion, templateId } from '../params.js';
-import { matchOnMaps } from '../sites.js';
-import { readTemplate, writeJsonFile } from '../template-io.js';
+import { matchOnMaps } from '@uniscenarios/scenario-materializer';
+import { readTemplate, writeJsonFile } from '@uniscenarios/scenario-materializer';
 import type { EvaluateFilterMode } from './evaluate.js';
 
 export interface BatchOptions {

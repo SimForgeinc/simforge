@@ -9,10 +9,10 @@ import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
 
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { REPO_ROOT, artifactPresence } from '../maps.js';
+import { REPO_ROOT, artifactPresence } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const MAP_ID = 'belmont-research-center';
 const MERGE_MAP_ID = 'yale-street';

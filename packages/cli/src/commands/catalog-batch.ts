@@ -29,9 +29,9 @@ import {
 import { CliError, EXIT, toStructuredError, type StructuredError } from '../errors.js';
 import { verifyEvidenceHashes } from '../evidence.js';
 import { emit, emitLines } from '../output.js';
-import { CATALOG_EXACT_SITE_OPTIONS, matchOnMap } from '../sites.js';
-import { REPO_ROOT } from '../maps.js';
-import { readTemplate, readTraceFile, type InstanceFile } from '../template-io.js';
+import { CATALOG_EXACT_SITE_OPTIONS, matchOnMap } from '@uniscenarios/scenario-materializer';
+import { REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { readTemplate, readTraceFile, type InstanceFile } from '@uniscenarios/scenario-materializer';
 import type { EvaluateFilterMode } from './evaluate.js';
 
 export const CATALOG_EXECUTOR_VERSION = '1.0.1' as const;

@@ -27,7 +27,7 @@ import {
 } from '@uniscenarios/sim-engine';
 
 import { CliError } from './errors.js';
-import { DEV_ASSETS } from './maps.js';
+import { DEV_ASSETS } from '@uniscenarios/scenario-materializer';
 
 interface SumoModule {
   readonly HEAPU8: Uint8Array;

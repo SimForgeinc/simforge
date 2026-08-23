@@ -39,7 +39,7 @@ export {
   resolveMapSelection,
   type MapArtifactPresence,
   type MapBundle,
-} from './maps.js';
+} from '@uniscenarios/scenario-materializer';
 
 export {
   buildSiteSignalPlan,
@@ -52,7 +52,7 @@ export {
   type MapSignalJunction,
   type SiteSignalPlan,
 } from './map-signals.js';
-export { loadMapSignalCatalog } from './map-signals-loader.js';
+export { loadMapSignalCatalog } from '@uniscenarios/scenario-materializer';
 
 export {
   CLAUSE_UNMATCHABLE,
@@ -88,7 +88,7 @@ export {
   type ReplayKey,
 } from './materialize.js';
 
-export { createMapContext } from './map-context.js';
+export { createMapContext } from '@uniscenarios/scenario-materializer';
 
 export {
   assertMatchableAnchor,
@@ -97,7 +97,7 @@ export {
   matchOnMaps,
   siteSummary,
   type SiteMatch,
-} from './sites.js';
+} from '@uniscenarios/scenario-materializer';
 
 export {
   checkInvariants,
@@ -121,7 +121,7 @@ export {
   writeJsonFile,
   writeTraceFile,
   type InstanceFile,
-} from './template-io.js';
+} from '@uniscenarios/scenario-materializer';
 
 export { PROP_DIMS, propDims, type PropDims } from './prop-dims.js';
 

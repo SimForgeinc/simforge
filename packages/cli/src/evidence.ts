@@ -10,7 +10,7 @@
 
 import { contentHash, resolvePhysicsConfig, type MotionPhysicsMode, type SimTrace } from '@uniscenarios/sim-engine';
 
-import type { InstanceFile } from './template-io.js';
+import type { InstanceFile } from '@uniscenarios/scenario-materializer';
 
 export interface EvidenceHashIssue {
   readonly code:

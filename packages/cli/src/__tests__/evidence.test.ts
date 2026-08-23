@@ -9,7 +9,7 @@ import {
 } from '@uniscenarios/sim-engine';
 
 import { verifyEvidenceHashes } from '../evidence.js';
-import type { InstanceFile } from '../template-io.js';
+import type { InstanceFile } from '@uniscenarios/scenario-materializer';
 const LANE = '1:0:-1';
 const topology: TopologyIndex = {
   schemaVersion: 1,

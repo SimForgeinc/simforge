@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { gunzipSync } from 'node:zlib';
-import { parseMapSignalCatalog, type MapSignalCatalog } from '@uniscenarios/scenario-materializer';
+import { parseMapSignalCatalog, type MapSignalCatalog } from './map-signals.js';
 
 export async function loadMapSignalCatalog(xodrFile: string, signalsFile: string): Promise<MapSignalCatalog> {
   const [xodr, signalBytes] = await Promise.all([readFile(xodrFile, 'utf8'), readFile(signalsFile)]);

@@ -26,8 +26,8 @@ import {
   validateScenarioCatalog,
   type ScenarioCatalogManifest,
 } from '../catalog.js';
-import { REPO_ROOT } from '../maps.js';
-import { readTemplate } from '../template-io.js';
+import { REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
 const temporary: string[] = [];

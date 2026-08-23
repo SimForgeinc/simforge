@@ -9,9 +9,9 @@ import { runSimulation } from '@uniscenarios/sim-engine';
 
 import { adaptTemplate } from '../adapt.js';
 import { checkInvariants } from '../invariants.js';
-import { REPO_ROOT, artifactPresence, loadMap } from '../maps.js';
+import { REPO_ROOT, artifactPresence, loadMap } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
-import { readTemplate } from '../template-io.js';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const MAP = 'yale-street';
 const SITE_ID = '2d295212b00a36ba';

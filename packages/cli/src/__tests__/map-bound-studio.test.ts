@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseTemplate, TemplateDocument } from '@uniscenarios/scenario-model';
 import { materializeMapBound } from '@uniscenarios/scenario-materializer';
 import { buildSeededPlacementRoute, createFixedStepSimulation, runSimulation } from '@uniscenarios/sim-engine';
-import { loadMap } from '../maps.js';
+import { loadMap } from '@uniscenarios/scenario-materializer';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
 const studioMapAssets = localMapAssetRequirement(['yale-street', 'belmont-research-center']);

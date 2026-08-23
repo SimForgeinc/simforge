@@ -5,9 +5,9 @@ import path from 'node:path';
 
 import { exportAsamScenario, AsamExportError, type AsamFormat } from '@uniscenarios/openscenario/export';
 import { CliError, EXIT } from '../errors.js';
-import { loadMap } from '../maps.js';
+import { loadMap } from '@uniscenarios/scenario-materializer';
 import { emit, emitLines } from '../output.js';
-import { readInstance } from '../template-io.js';
+import { readInstance } from '@uniscenarios/scenario-materializer';
 
 export interface ExportOptions {
   readonly file: string;

@@ -12,11 +12,11 @@ import { runSimulation } from '@uniscenarios/sim-engine';
 
 import { CliError, EXIT } from '../errors.js';
 import { checkInvariants, type InvariantResidualReport } from '../invariants.js';
-import { loadMap } from '../maps.js';
+import { loadMap } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { findSite } from '../sites.js';
-import { detectKind, readInstance, readTemplate } from '../template-io.js';
+import { findSite } from '@uniscenarios/scenario-materializer';
+import { detectKind, readInstance, readTemplate } from '@uniscenarios/scenario-materializer';
 import { metricsSummary } from './simulate.js';
 import { templateValidate } from './template.js';
 
@@ -71,7 +71,7 @@ export async function validate(options: ValidateOptions): Promise<number> {
     const match = options.siteId
       ? await findSite(template, options.mapId, options.siteId)
       : await (async () => {
-          const { matchOnMap } = await import('../sites.js');
+          const { matchOnMap } = await import('@uniscenarios/scenario-materializer');
           const m = await matchOnMap(template!, options.mapId as string);
           const site = m.report.sites[0];
           if (!site) {

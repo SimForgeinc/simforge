@@ -14,8 +14,8 @@ import path from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { DEV_ASSETS, REPO_ROOT } from '../maps.js';
-import { readTraceFile, writeTraceFile } from '../template-io.js';
+import { DEV_ASSETS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { readTraceFile, writeTraceFile } from '@uniscenarios/scenario-materializer';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'uniscenarios.js');
 const LTAP = path.join(REPO_ROOT, 'examples', 'ltap-opposing.template.json');

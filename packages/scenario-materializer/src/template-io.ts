@@ -27,7 +27,35 @@ import {
 } from '@uniscenarios/sim-engine';
 
 import { CliError, EXIT } from './errors.js';
-import type { CatalogArtifactProvenance } from './batch-cell.js';
+export interface CatalogArtifactProvenance {
+  readonly identity: string;
+  readonly seed: string;
+  readonly attemptSeed: string;
+  readonly designDigest: string;
+  readonly mapId: string;
+  readonly incidentId: string;
+  readonly selectedLocationId: string;
+  readonly selectedMatcherSiteId: string;
+  readonly variant: {
+    readonly id: string;
+    readonly title: string;
+    readonly weather: string;
+    readonly timeOfDay: string;
+    readonly traffic: string;
+    readonly visibility: string;
+  };
+  readonly provenance: {
+    readonly namespace: string;
+    readonly generatorVersion: string;
+    readonly mapCatalogRevision: string;
+    readonly matcherIndexDigest: string;
+    readonly engineGraphDigest: string;
+    readonly locationCatalogDigest: string;
+    readonly taxonomyDigest: string;
+    readonly templateDigest: string;
+  };
+  readonly templateId: string;
+}
 import type { InstanceManifest } from './materialize.js';
 
 export interface InstanceFile {

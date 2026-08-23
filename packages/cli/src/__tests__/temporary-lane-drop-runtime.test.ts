@@ -7,10 +7,10 @@ import { evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
 
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { artifactPresence, REPO_ROOT } from '../maps.js';
+import { artifactPresence, REPO_ROOT } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const MAP = 'el-camino-road';
 const SITE = '0a8fc7e0ff2a6cad';

@@ -11,9 +11,9 @@ import path from 'node:path';
 import { runSimulation, traceDigest, type SimTrace } from '@uniscenarios/sim-engine';
 
 import { EXIT } from '../errors.js';
-import { loadMap } from '../maps.js';
+import { loadMap } from '@uniscenarios/scenario-materializer';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readInstance, writeTraceFile } from '../template-io.js';
+import { readInstance, writeTraceFile } from '@uniscenarios/scenario-materializer';
 
 export interface SimulateOptions {
   readonly file: string;

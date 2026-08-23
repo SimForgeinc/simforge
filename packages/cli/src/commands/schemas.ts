@@ -23,7 +23,7 @@ import {
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
-import { REPO_ROOT } from '../maps.js';
+import { REPO_ROOT } from '@uniscenarios/scenario-materializer';
 
 const MODEL_PKG = path.join(REPO_ROOT, 'packages', 'scenario-model');
 

@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 
 import { buildLanePathRoute, runSimulation } from '@uniscenarios/sim-engine';
 
-import { DEV_ASSETS, REPO_ROOT, loadMap } from '../maps.js';
-import { readInstance } from '../template-io.js';
+import { DEV_ASSETS, REPO_ROOT, loadMap } from '@uniscenarios/scenario-materializer';
+import { readInstance } from '@uniscenarios/scenario-materializer';
 
 const MAP = 'yale-street';
 const INSTANCE = path.join(

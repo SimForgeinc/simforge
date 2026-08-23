@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest';
 
 import { evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
 
-import { REPO_ROOT, artifactPresence } from '../maps.js';
+import { REPO_ROOT, artifactPresence } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const MAP = 'yale-street';
 const TEMPLATE = path.join(REPO_ROOT, 'examples', 'multiple-threat.template.json');

@@ -27,11 +27,11 @@ import {
 
 import { CliError, EXIT } from '../errors.js';
 import { checkInvariants, type InvariantResidualReport } from '../invariants.js';
-import { loadMap, type MapBundle } from '../maps.js';
+import { loadMap, type MapBundle } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
 import { emit } from '../output.js';
-import { findSite, matchOnMap } from '../sites.js';
-import { detectKind, readInstance, readTemplate, writeJsonFile, writeTraceFile, type InstanceFile } from '../template-io.js';
+import { findSite, matchOnMap } from '@uniscenarios/scenario-materializer';
+import { detectKind, readInstance, readTemplate, writeJsonFile, writeTraceFile, type InstanceFile } from '@uniscenarios/scenario-materializer';
 import { runHeadlessSumo, type HeadlessSumoResult } from '../sumo-headless.js';
 import { instanceFile } from './instantiate.js';
 import { metricsSummary } from './simulate.js';

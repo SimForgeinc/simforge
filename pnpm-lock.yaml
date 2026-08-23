@@ -607,12 +607,12 @@ importers:
       '@uniscenarios/anchor-matcher':
         specifier: workspace:*
         version: link:../anchor-matcher
-      '@uniscenarios/cli':
-        specifier: workspace:*
-        version: link:../cli
       '@uniscenarios/rl-env':
         specifier: workspace:*
         version: link:../rl-env
+      '@uniscenarios/scenario-materializer':
+        specifier: workspace:*
+        version: link:../scenario-materializer
       '@uniscenarios/scenario-model':
         specifier: workspace:*
         version: link:../scenario-model
@@ -807,9 +807,9 @@ importers:
       '@msgpack/msgpack':
         specifier: ^3.1.3
         version: 3.1.3
-      '@uniscenarios/cli':
+      '@uniscenarios/scenario-materializer':
         specifier: workspace:*
-        version: link:../cli
+        version: link:../scenario-materializer
       '@uniscenarios/scene-state':
         specifier: workspace:*
         version: link:../scene-state

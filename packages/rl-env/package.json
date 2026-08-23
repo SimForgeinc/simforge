@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.1.3",
-    "@uniscenarios/cli": "workspace:*",
+    "@uniscenarios/scenario-materializer": "workspace:*",
     "@uniscenarios/scene-state": "workspace:*",
     "@uniscenarios/sim-engine": "workspace:*",
     "zod": "^4.4.3"

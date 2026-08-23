@@ -18,11 +18,11 @@ import { runSimulation } from '@uniscenarios/sim-engine';
 
 import { adaptTemplate } from '../adapt.js';
 import { checkInvariants } from '../invariants.js';
-import { KNOWN_MAPS, REPO_ROOT, artifactPresence } from '../maps.js';
+import { KNOWN_MAPS, REPO_ROOT, artifactPresence } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'parking-transit');
 const CASES = [

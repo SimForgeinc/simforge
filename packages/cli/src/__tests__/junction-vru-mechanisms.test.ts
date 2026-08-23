@@ -19,11 +19,11 @@ import {
 import { criticalityWindow, evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
 
 import { adaptTemplate } from '../adapt.js';
-import { DEV_ASSETS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
 import { materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { findSite, matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { findSite, matchOnMap } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@uniscenarios/scenario-materializer';
 
 const MAP = 'yale-street';
 const BELMONT_MAP = 'belmont-research-center';

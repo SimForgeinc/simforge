@@ -15,7 +15,7 @@ import path from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { DEV_ASSETS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'uniscenarios.js');
 const haveArtifacts = existsSync(path.join(DEV_ASSETS, 'yale-street'));

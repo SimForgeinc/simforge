@@ -29,10 +29,10 @@ import {
 } from '@uniscenarios/openscenario/import';
 import { parseAndValidateTemplate, type ClauseResult } from '@uniscenarios/scenario-model';
 
-import { assertKnownMap, availableMaps, mapDir } from '../maps.js';
+import { assertKnownMap, availableMaps, mapDir } from '@uniscenarios/scenario-materializer';
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
-import { writeJsonFile } from '../template-io.js';
+import { writeJsonFile } from '@uniscenarios/scenario-materializer';
 
 export interface ImportOptions {
   readonly file: string;

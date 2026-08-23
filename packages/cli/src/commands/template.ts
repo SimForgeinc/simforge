@@ -20,11 +20,11 @@ import { resolve } from 'node:path';
 
 import { adaptTemplate } from '../adapt.js';
 import { CliError, EXIT } from '../errors.js';
-import { assertKnownMap } from '../maps.js';
-import { createMapContext } from '../map-context.js';
+import { assertKnownMap } from '@uniscenarios/scenario-materializer';
+import { createMapContext } from '@uniscenarios/scenario-materializer';
 import { emit, emitLines, pad } from '../output.js';
-import { matchOnMap } from '../sites.js';
-import { writeJsonFile } from '../template-io.js';
+import { matchOnMap } from '@uniscenarios/scenario-materializer';
+import { writeJsonFile } from '@uniscenarios/scenario-materializer';
 
 export interface TemplateValidateOptions {
   readonly file: string;
