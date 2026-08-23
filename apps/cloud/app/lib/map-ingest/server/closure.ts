@@ -54,7 +54,7 @@ export type UploadedMapClosurePlan = {
   sourceMapId: string;
   derivativeReleaseId: string;
   closureSha256: string;
-  sumoNetworkSha256: null;
+  sumoNetworkSha256: string | null;
   objectCount: number;
   byteLength: number;
   members: UploadedMapClosureMember[];
@@ -220,7 +220,8 @@ export function planUploadedMapClosure(input: PlanUploadedMapClosureInput): Uplo
     sourceMapId: input.sourceMapId,
     derivativeReleaseId: input.derivativeReleaseId,
     closureSha256,
-    sumoNetworkSha256: null,
+    sumoNetworkSha256:
+      members.find((member) => member.relativePath === "derived/sumo/map.net.xml")?.sha256 ?? null,
     objectCount: members.length,
     byteLength: members.reduce((sum, member) => sum + member.byteLength, 0),
     members,
