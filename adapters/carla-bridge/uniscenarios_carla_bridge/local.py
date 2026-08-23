@@ -382,6 +382,57 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec]:
     return native_value, RenderSpec.parse(native_value)
 
 
+def _validate_pronto_sensor_selection(
+    sensors: list[Any],
+    host_actor_id: str,
+    *,
+    smoke: bool,
+) -> None:
+    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
+    chase_sensors = [
+        sensor for sensor in sensors
+        if sensor.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID
+    ]
+    rig_sensors = [
+        sensor for sensor in sensors
+        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
+    ]
+    actual_rig = (
+        len({sensor.sensor_id for sensor in rig_sensors if sensor.modality in camera_modalities}),
+        len({
+            sensor.sensor_id for sensor in rig_sensors
+            if sensor.modality in {"lidar", "semantic-lidar"}
+        }),
+        len({sensor.sensor_id for sensor in rig_sensors if sensor.modality == "radar"}),
+    )
+    actor_ids = {sensor.actor_id for sensor in sensors}
+    if smoke:
+        if actual_rig != (1, 1, 1) or actor_ids != {host_actor_id}:
+            raise ContractError(
+                "CARLA smoke mode requires exactly one camera, one LiDAR, and one radar on sensorHost.actorId"
+            )
+    elif os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
+        rgb_ids = {sensor.sensor_id for sensor in sensors if sensor.modality == "rgb"}
+        derived = {
+            name: tuple(name.split("__"))
+            for name in (str(sensor.sensor_id) for sensor in rig_sensors)
+            if "__" in name
+        }
+        unknown_bases = sorted({name.split("__")[0] for name in derived} - rgb_ids)
+        bad_modality = sorted(
+            name for name, (_, modality) in derived.items()
+            if modality not in camera_modalities - {"rgb"}
+        )
+        if unknown_bases or bad_modality or len(rgb_ids) < 8 or actual_rig[1] < 6 or actual_rig[2] < 4:
+            raise ContractError(
+                "SDG expansion sensors must derive from real rgb rig cameras via id__modality"
+            )
+    elif actual_rig != (8, 6, 4) or actor_ids != {host_actor_id}:
+        raise ContractError("all exact Pronto sensors must attach to render intent sensorHost.actorId")
+    if len(chase_sensors) > 1 or any(sensor.modality != "rgb" for sensor in chase_sensors):
+        raise ContractError("a render carries at most one RGB trailing chase camera")
+
+
 def _intent_lease(
     intent: Mapping[str, Any],
     intent_sha: str,
@@ -437,47 +488,11 @@ def _intent_lease(
         "radars": 4,
     }:
         raise ContractError("render intent sensorHost.sensorRig must identify the exact Pronto 8/6/4 rig")
-    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
-    # The trailing chase camera is an authored presentation view outside the measurement rig.
-    chase_sensors = [
-        sensor for sensor in parsed_spec.sensors
-        if sensor.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID
-    ]
-    rig_sensors = [
-        sensor for sensor in parsed_spec.sensors
-        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
-    ]
-    camera_sensor_ids = {
-        sensor.sensor_id for sensor in rig_sensors if sensor.modality in camera_modalities
-    }
-    lidar_sensor_ids = {
-        sensor.sensor_id for sensor in rig_sensors
-        if sensor.modality in {"lidar", "semantic-lidar"}
-    }
-    radar_sensor_ids = {
-        sensor.sensor_id for sensor in rig_sensors if sensor.modality == "radar"
-    }
-    actual_rig = (len(camera_sensor_ids), len(lidar_sensor_ids), len(radar_sensor_ids))
-    if os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
-        rgb_ids = {sensor.sensor_id for sensor in parsed_spec.sensors if sensor.modality == "rgb"}
-        derived = {
-            name: tuple(name.split("__"))
-            for name in (str(sensor.sensor_id) for sensor in rig_sensors)
-            if "__" in name
-        }
-        unknown_bases = sorted({name.split("__")[0] for name in derived} - rgb_ids)
-        bad_modality = sorted(name for name, (_, mod) in derived.items() if mod not in camera_modalities - {"rgb"})
-        if unknown_bases or bad_modality or len(rgb_ids) < 8 or actual_rig[1] < 6 or actual_rig[2] < 4:
-            raise ContractError(
-                "SDG expansion sensors must derive from real rgb rig cameras via id__modality"
-            )
-    elif (
-        actual_rig != (8, 6, 4)
-        or {sensor.actor_id for sensor in parsed_spec.sensors} != {host_actor_id}
-    ):
-        raise ContractError("all exact Pronto sensors must attach to render intent sensorHost.actorId")
-    if len(chase_sensors) > 1 or any(sensor.modality != "rgb" for sensor in chase_sensors):
-        raise ContractError("a render carries at most one RGB trailing chase camera")
+    _validate_pronto_sensor_selection(
+        parsed_spec.sensors,
+        host_actor_id,
+        smoke=os.environ.get("UNISCENARIO_RENDER_SMOKE") == "1",
+    )
     xosc_path = inputs.get("scenario.xosc")
     if xosc_path is None:
         raise ContractError("input package is missing scenario.xosc")

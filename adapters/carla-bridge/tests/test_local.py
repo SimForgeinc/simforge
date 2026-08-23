@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 
+from types import SimpleNamespace
 import pytest
 
 from uniscenarios_carla_bridge import local
@@ -78,6 +79,18 @@ def test_probe_cleans_up_when_server_version_probe_fails(monkeypatch: pytest.Mon
     with pytest.raises(RuntimeError, match="offline"):
         local._probe("carla.test", 2000)
     assert cleaned == [True]
+
+
+def test_smoke_sensor_selection_is_explicit_and_minimal() -> None:
+    sensors = [
+        SimpleNamespace(sensor_id="camera-front", modality="rgb", actor_id="ego"),
+        SimpleNamespace(sensor_id="lidar-front", modality="lidar", actor_id="ego"),
+        SimpleNamespace(sensor_id="radar-front", modality="radar", actor_id="ego"),
+    ]
+
+    local._validate_pronto_sensor_selection(sensors, "ego", smoke=True)
+    with pytest.raises(local.ContractError, match="all exact Pronto sensors"):
+        local._validate_pronto_sensor_selection(sensors, "ego", smoke=False)
 
 
 def test_artifact_manifest_accepts_sensor_data() -> None:
