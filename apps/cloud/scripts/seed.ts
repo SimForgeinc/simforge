@@ -13,7 +13,8 @@ import {
   publishDevAssetMap,
   type DevAssetMap,
 } from "../app/lib/map-ingest/server/dev-asset-publication";
-import { writeLocalObject } from "../app/lib/s3/s3-object";
+import { registerLocalFile, writeLocalObject } from "../app/lib/s3/s3-object";
+import { SUMO_RUNTIME_VERSION } from "../app/lib/uniscenario/sumo-runtime";
 import { migrate } from "./migrate";
 
 const MAPS: readonly DevAssetMap[] = [
@@ -160,10 +161,30 @@ async function seedPublicationBinding(): Promise<void> {
   });
 }
 
+async function seedSumoRuntime(): Promise<void> {
+  const runtimeRoot = resolve(assetsRoot, "sumo-runtime");
+  const runtimeFiles = [
+    ["sumo.mjs", "text/javascript"],
+    ["sumo.wasm", "application/wasm"],
+    ["runtime-manifest.json", "application/json"],
+    ["THIRD_PARTY_NOTICES.md", "text/markdown"],
+  ] as const;
+  for (const [fileName, contentType] of runtimeFiles) {
+    await registerLocalFile(
+      LOCAL_ARTIFACT_BUCKET,
+      `uniscenario/sumo-runtime/${SUMO_RUNTIME_VERSION}/${fileName}`,
+      resolve(runtimeRoot, fileName),
+      contentType,
+    );
+  }
+  console.log(`registered SUMO browser runtime ${SUMO_RUNTIME_VERSION}`);
+}
+
 export async function seed(): Promise<void> {
   await migrate();
   await seedIdentity();
   await seedPublicationBinding();
+  await seedSumoRuntime();
   for (const map of MAPS) {
     const result = await publishDevAssetMap({
       map,

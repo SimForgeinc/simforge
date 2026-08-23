@@ -211,6 +211,24 @@ export async function publishDevAssetMap({
     return member;
   };
 
+  // Dev-assets retain the timestamped source publication id they were built
+  // under. This local publication binds the same immutable network bytes to
+  // the stable map asset slug, so its sidecar must carry that published source
+  // identity just like the synchronous ingest pipeline's generated outputs.
+  const sumoManifestPath = "derived/sumo/sumo-network-manifest.json";
+  const sourceSumoManifest = JSON.parse(
+    await readFile(requireMember(sumoManifestPath).sourcePath!, "utf8"),
+  ) as Record<string, unknown>;
+  const sumoManifestMember = await storeGeneratedMember(
+    sumoManifestPath,
+    Buffer.from(`${JSON.stringify({ ...sourceSumoManifest, sourceMapId: slug })}\n`),
+  );
+  const sumoManifestIndex = members.findIndex(
+    (member) => member.relativePath === sumoManifestPath,
+  );
+  members[sumoManifestIndex] = sumoManifestMember;
+  byPath.set(sumoManifestPath, sumoManifestMember);
+
   const xodrBytes = await readFile(requireMember("map.xodr").sourcePath!);
   const xodrText = xodrBytes.toString("utf8");
   const manifestBytes = await readFile(requireMember("3d/manifest.json").sourcePath!);

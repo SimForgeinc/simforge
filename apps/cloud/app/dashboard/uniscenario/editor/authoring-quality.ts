@@ -58,7 +58,7 @@ export const AUTHORING_QUALITY = {
     ultraLow: false,
     roadsOnly: false,
     vegetation: false,
-    cinematicLighting: false,
+    cinematicLighting: true,
     live: {
       maxPixelRatio: 0.75,
       maxScreenSpaceError: 1400,
