@@ -328,7 +328,7 @@ function artifactKey(artifact: RecordingArtifact): string {
 function parseReservation(row: JsonObject, expected: RecordingArtifact): UploadReservation {
   const kind = row.role ?? row.kind ?? expected.kind;
   if (kind !== expected.kind) throw new Error(`reserved ${String(kind)} while expecting ${expected.kind}`);
-  const reused = row.reused === true;
+  const reused = row.uploadRequired === false || row.reused === true;
   const upload = reused
     ? null
     : row.upload === undefined
