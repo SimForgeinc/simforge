@@ -1,0 +1,63 @@
+{
+  "label": "CTRL: prior harness run ref2va edit-mode (video+3 style imgs, W0 prompt) vs its source",
+  "instrument": {
+    "name": "yolo11s",
+    "weightsSha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+    "confThreshold": 0.25,
+    "iouMatch": 0.5,
+    "device": "cpu"
+  },
+  "source": {
+    "path": "/tmp/bind-work/smoke/ref2va_source_clip_8s.mp4",
+    "width": 1280,
+    "height": 720,
+    "nb_frames": "240",
+    "avg_frame_rate": "30/1"
+  },
+  "output": {
+    "path": "/tmp/bind-work/smoke/ref2va_edit_8s_416.mp4",
+    "width": 736,
+    "height": 416,
+    "nb_frames": "192",
+    "avg_frame_rate": "24/1"
+  },
+  "frames_compared": 96,
+  "per_class": {
+    "vehicle": {
+      "src_det": 247,
+      "out_det": 385,
+      "recall": 0.004,
+      "binding_iou": 0.6562,
+      "hallucination": 0.9974,
+      "deletion": 0.996
+    },
+    "pedestrian": {
+      "src_det": 6,
+      "out_det": 1,
+      "recall": 0.0,
+      "binding_iou": null,
+      "hallucination": 1.0,
+      "deletion": 1.0
+    },
+    "bicycle": {
+      "src_det": 0,
+      "out_det": 0,
+      "recall": null,
+      "binding_iou": null,
+      "hallucination": null,
+      "deletion": null
+    },
+    "motorcycle": {
+      "src_det": 0,
+      "out_det": 0,
+      "recall": null,
+      "binding_iou": null,
+      "hallucination": null,
+      "deletion": null
+    }
+  },
+  "overall": {
+    "recall": 0.004,
+    "hallucination": 0.9974
+  }
+}
