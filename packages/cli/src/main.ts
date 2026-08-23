@@ -25,7 +25,7 @@ import type { AmbientTrafficProfile } from '@uniscenarios/sim-engine';
 
 import { CliError, EXIT, exitCodeOf, toStructuredError } from './errors.js';
 import { emit, emitError } from './output.js';
-import { availableMaps, resolveMapSelection } from './maps.js';
+import { availableMaps, resolveMapSelection, KNOWN_MAPS } from './maps.js';
 import { batch } from './commands/batch.js';
 import { catalogCreate, catalogVerify } from './commands/catalog.js';
 import { catalogBatch } from './commands/catalog-batch.js';
@@ -43,6 +43,7 @@ import { templateNew, templateValidate } from './commands/template.js';
 import { importOpenScenario } from './commands/import.js';
 import { validate } from './commands/validate.js';
 import { renderHash, renderRun } from './commands/render.js';
+import { corpusBuildCommand, corpusPrewarm } from './commands/corpus.js';
 
 const COMMANDS = [
   { name: 'maps list', summary: 'the five dev maps, their artifacts and catalog revisions' },
@@ -66,6 +67,8 @@ const COMMANDS = [
   { name: 'batch', summary: 'sites × draws matrix: instantiate → simulate → evaluate' },
   { name: 'render run', summary: 'execute one immutable render intent with the browser or CARLA engine' },
   { name: 'render hash', summary: 'compute the canonical SHA-256 identity of a render intent' },
+  { name: 'corpus build', summary: 'decode dev-assets GLB tiles into the checksummed sensor corpus (--map, or --maps a,b)' },
+  { name: 'corpus prewarm', summary: 'tile subset a camera route touches (--map --route poses.json [--radius m])' },
   { name: 'schemas', summary: 'the published JSON Schemas — the LLM emission contract' },
 ] as const;
 
@@ -593,6 +596,52 @@ async function dispatch(argv: readonly string[]): Promise<number> {
       }
       throw new CliError('unknown_command', `uniscenarios render ${sub ?? ''}`.trim(), {
         detail: { known: ['run', 'hash'] },
+      });
+    }
+
+    case 'corpus': {
+      if (sub === 'build') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: [...GLOBAL_BOOLEANS, 'force', 'quiet'],
+          values: ['map', 'maps', 'out-root', 'source-root'],
+        });
+        const mapFlag = optionalString(args, 'map');
+        const mapsFlag = listFlag(args, 'maps');
+        if ((mapFlag === undefined) === (mapsFlag === undefined)) {
+          throw new CliError('missing_option', 'corpus build needs exactly one of --map <id> or --maps a,b,c', {
+            path: '--map',
+          });
+        }
+        const maps = mapFlag !== undefined ? [mapFlag] : (mapsFlag ?? []);
+        for (const mapId of maps) {
+          if (!(KNOWN_MAPS as readonly string[]).includes(mapId)) {
+            throw new CliError('bad_value', `unknown map "${mapId}"`, { path: '--map' });
+          }
+        }
+        return corpusBuildCommand({
+          maps,
+          outRoot: optionalString(args, 'out-root'),
+          sourceRoot: optionalString(args, 'source-root'),
+          force: boolFlag(args, 'force'),
+          quiet: boolFlag(args, 'quiet'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      if (sub === 'prewarm') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: ['map', 'route', 'radius', 'manifest'],
+        });
+        return corpusPrewarm({
+          mapId: requireString(args, 'map'),
+          routePath: requireString(args, 'route'),
+          radius: optionalNumber(args, 'radius') ?? 0,
+          manifestPath: optionalString(args, 'manifest'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      throw new CliError('unknown_command', `uniscenarios corpus ${sub ?? ''}`.trim(), {
+        detail: { known: ['build', 'prewarm'] },
       });
     }
 
