@@ -106,28 +106,34 @@ export async function listRenderJobAttempts(
     leased_at: string | null;
     started_at: string | null; completed_at: string | null;
   }>(
-    `SELECT a.id, a.attempt_number, a.attempt_state, a.worker_node_id,
-            a.execution_package_id, a.execution_package_control_sha256,
-            a.worker_class, a.runtime_version, a.image_digest,
-            a.renderer_engine, a.base_image_digest, a.base_image_platform_digest,
-            a.engine_capabilities_sha256,
-            a.leased_at::text AS leased_at, a.started_at::text AS started_at,
-            a.completed_at::text AS completed_at
-       FROM uniscenario.render_attempts a
+    `SELECT o.id, o.attempt_number,
+            CASE WHEN o.state = 'active' THEN 'running' ELSE o.state END AS attempt_state,
+            o.worker_id AS worker_node_id,
+            j.execution_package_id, j.execution_package_control_sha256,
+            CASE WHEN a.id IS NULL THEN 'local' ELSE a.worker_class END AS worker_class,
+            a.runtime_version, a.image_digest,
+            COALESCE(a.renderer_engine, j.renderer_engine) AS renderer_engine,
+            a.base_image_digest, a.base_image_platform_digest, a.engine_capabilities_sha256,
+            o.leased_at::text AS leased_at,
+            CASE WHEN o.state = 'active' THEN o.leased_at::text ELSE NULL END AS started_at,
+            o.completed_at::text AS completed_at
+       FROM uniscenario.operational_job_attempts o
        JOIN uniscenario.render_jobs j
-         ON j.id = a.render_job_id AND j.workspace_id = a.workspace_id
-       JOIN uniscenario.execution_packages ep
-         ON ep.id = a.execution_package_id AND ep.workspace_id = a.workspace_id
-        AND ep.id = j.execution_package_id
-       JOIN uniscenario.worker_nodes w ON w.id = a.worker_node_id
-      WHERE a.workspace_id = :workspace_id AND a.render_job_id = :job_id
-      ORDER BY a.attempt_number`,
+         ON j.id = o.job_id AND j.workspace_id = o.workspace_id
+       LEFT JOIN uniscenario.render_attempts a
+         ON a.id = o.id AND a.workspace_id = o.workspace_id
+      WHERE o.workspace_id = :workspace_id AND o.job_id = :job_id
+        AND o.job_family = 'openscenario_render'
+      ORDER BY o.attempt_number`,
     { workspace_id: context.workspaceId, job_id: jobId },
   );
-  if (rows.length !== lineage.attemptCount) invalidLineage();
+  if (rows.length !== lineage.attemptCount) {
+    invalidLineage();
+  }
   const seenAttempts = new Set<number>();
   return rows.map((row): UniScenarioRenderAttemptDto => {
     const attemptNumber = Number(row.attempt_number);
+    const localAttempt = row.worker_class === "local";
     if (!Number.isSafeInteger(attemptNumber) || attemptNumber < 1
       || attemptNumber > lineage.attemptCount || seenAttempts.has(attemptNumber)
       || row.execution_package_id !== lineage.executionPackageId
@@ -135,11 +141,15 @@ export async function listRenderJobAttempts(
       || !SHA256_RE.test(row.execution_package_control_sha256 ?? "")
       || !ATTEMPT_STATES.has(row.attempt_state)
       || !PUBLIC_ID_RE.test(row.worker_class ?? "")
-      || !IMMUTABLE_RUNTIME_VERSION_RE.test(row.runtime_version ?? "")
-      || !IMAGE_DIGEST_RE.test(row.image_digest ?? "")
+      || (localAttempt
+        ? row.runtime_version !== null || row.image_digest !== null
+        : !IMMUTABLE_RUNTIME_VERSION_RE.test(row.runtime_version ?? "")
+          || !IMAGE_DIGEST_RE.test(row.image_digest ?? ""))
       || (row.base_image_digest !== null && !IMAGE_DIGEST_RE.test(row.base_image_digest))
       || (row.base_image_platform_digest !== null && !IMAGE_DIGEST_RE.test(row.base_image_platform_digest))
-      || (row.engine_capabilities_sha256 !== null && !SHA256_RE.test(row.engine_capabilities_sha256))) invalidLineage();
+      || (row.engine_capabilities_sha256 !== null && !SHA256_RE.test(row.engine_capabilities_sha256))) {
+      invalidLineage();
+    }
     seenAttempts.add(attemptNumber);
     const leasedAt = publicTimestamp(row.leased_at, true)!;
     const startedAt = publicTimestamp(row.started_at);
@@ -154,14 +164,14 @@ export async function listRenderJobAttempts(
       executionPackageControlSha256: row.execution_package_control_sha256!,
       status: row.attempt_state,
       attemptState: row.attempt_state,
+      runtimeVersion: row.runtime_version,
+      rendererEngine: row.renderer_engine ? UniScenarioRendererEngineSchema.parse(row.renderer_engine) : null,
       workerNodeId: publicIdentifier(row.worker_node_id),
       workerClass: row.worker_class!,
-      runtimeVersion: row.runtime_version!,
-      rendererEngine: row.renderer_engine ? UniScenarioRendererEngineSchema.parse(row.renderer_engine) : null,
+      imageDigest: row.image_digest,
       baseImageDigest: row.base_image_digest,
       baseImagePlatformDigest: row.base_image_platform_digest,
       engineCapabilitiesSha256: row.engine_capabilities_sha256,
-      imageDigest: row.image_digest!,
       leasedAt,
       startedAt,
       completedAt,
@@ -185,15 +195,25 @@ export async function listRenderJobEvents(
     event_ordinal: number; event_kind: string; render_attempt_id: string | null;
     attempt_lineage_valid: boolean; created_at: string;
   }>(
-    `SELECT e.event_ordinal, e.event_type AS event_kind, e.render_attempt_id,
-            (e.render_attempt_id IS NOT NULL AND a.id IS NOT NULL) AS attempt_lineage_valid,
+    `SELECT e.event_ordinal,
+            CASE e.event_type
+              WHEN 'leased' THEN 'accepted'
+              WHEN 'job.started' THEN 'render_started'
+              WHEN 'artifact.ready' THEN 'artifact_uploaded'
+              WHEN 'job.completed' THEN 'completed'
+              WHEN 'job.failed' THEN 'failed'
+              WHEN 'job.canceled' THEN 'cancelled'
+              ELSE 'progress'
+            END AS event_kind,
+            e.attempt_id AS render_attempt_id,
+            (e.attempt_id IS NOT NULL AND a.id IS NOT NULL) AS attempt_lineage_valid,
             e.occurred_at::text AS created_at
-       FROM uniscenario.job_events e
-       LEFT JOIN uniscenario.render_attempts a
-         ON a.id = e.render_attempt_id
-        AND a.workspace_id = e.workspace_id
-        AND a.render_job_id = e.render_job_id
-      WHERE e.workspace_id = :workspace_id AND e.render_job_id = :job_id
+       FROM uniscenario.operational_job_events e
+       LEFT JOIN uniscenario.cpu_job_attempts a
+         ON a.id = e.attempt_id AND a.workspace_id = e.workspace_id
+        AND a.job_family = e.job_family AND a.job_id = e.job_id
+      WHERE e.workspace_id = :workspace_id AND e.job_id = :job_id
+        AND e.job_family = 'openscenario_render'
       ORDER BY e.event_ordinal
       LIMIT :row_limit`,
     {

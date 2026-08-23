@@ -38,13 +38,29 @@ export type CpuJobClaim = {
 
 export type CpuFence = Pick<CpuJobClaim, "jobFamily" | "attemptId" | "fenceToken">;
 
-export type RecordingArtifact = {
-  readonly kind: "manifest" | "video";
-  readonly path: string;
-  readonly mediaType: "application/json" | "video/mp4";
-  readonly sha256: string;
-  readonly sizeBytes: number;
+export type RecordingSensorIdentity = {
+  readonly actorId: string;
+  readonly sensorId: string;
+  readonly modality: "rgb" | "depth" | "semantic" | "instance" | "lidar" | "radar";
 };
+
+export type RecordingArtifact =
+  | {
+    readonly kind: "manifest" | "video";
+    readonly sensor?: never;
+    readonly path: string;
+    readonly mediaType: "application/json" | "video/mp4";
+    readonly sha256: string;
+    readonly sizeBytes: number;
+  }
+  | {
+    readonly kind: "sensor_archive";
+    readonly sensor: RecordingSensorIdentity;
+    readonly path: string;
+    readonly mediaType: "application/zip";
+    readonly sha256: string;
+    readonly sizeBytes: number;
+  };
 
 export type RenderExecutionRequest = {
   readonly jobId: string;

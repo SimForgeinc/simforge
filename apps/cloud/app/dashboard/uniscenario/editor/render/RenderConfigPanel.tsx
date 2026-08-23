@@ -698,7 +698,9 @@ export function RenderConfigPanel({
               aside={sensorOptions.length > 0
                 ? `${selectedSensors.length}/${sensorOptions.length} selected`
                 : "None configured"}
-              hint="All 18 Pronto sources can run simultaneously. Modalities apply to all selected sensors that support them."
+              hint={backend === "carla"
+                ? "All 18 Pronto sources can run simultaneously. Modalities apply to all selected sensors that support them."
+                : "Choose the authored sensors and modalities this browser render should capture."}
               title={`Which sensors should ${engineOption.label} capture?`}
             />
             {sensorOptions.length > 0 ? (
@@ -909,8 +911,12 @@ export function RenderConfigPanel({
                   ? "Kia Carnival · vehicle.kia.carnival"
                   : sensorHostAssets.length > 0 ? sensorHostAssets.join(", ") : "No bound host asset"}
               />
-              <ReviewRow label="Rig capacity" value="8 cameras · 6 LiDAR · 4 radar" />
-              <ReviewRow label="CARLA source" value="carla-rfs-munich-belmont · f17c639e5f86" />
+              {backend === "carla" ? (
+                <>
+                  <ReviewRow label="Rig capacity" value="8 cameras · 6 LiDAR · 4 radar" />
+                  <ReviewRow label="CARLA source" value="carla-rfs-munich-belmont · f17c639e5f86" />
+                </>
+              ) : null}
             </dl>
             {issues.length > 0 ? (
               <div

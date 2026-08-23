@@ -250,7 +250,7 @@ export function RenderProgressView({
               />
               <Fact label="Queued" value={formatTimestamp(detail.createdAt)} />
               <Fact label="Started" value={detail.startedAt ? formatTimestamp(detail.startedAt) : "Not yet"} />
-              <Fact label="Runtime" value={attempt ? attempt.runtimeVersion : "—"} />
+              <Fact label="Runtime" value={attempt?.runtimeVersion ?? (attempt ? "local process" : "—")} />
               <Fact label="Controls" value={shortDigest(detail.executionPackageControlSha256)} />
               <Fact label="Engine" value={detail.rendererEngine ?? "—"} />
               <Fact label="Intent" value={detail.intentSha256 ? shortDigest(detail.intentSha256) : "—"} />

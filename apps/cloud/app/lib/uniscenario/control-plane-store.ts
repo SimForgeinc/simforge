@@ -576,12 +576,14 @@ const RENDER_JOB_COLUMNS = `id, workspace_id, revision_id, execution_package_id,
 
 function renderJobDto(row: RenderJobRow): UniScenarioRenderJobDto {
   const telemetry = parseJsonObject(row.telemetry);
-  const parityEvidence = row.parity_evidence
-    ? UniScenarioParityEvidenceV1Schema.parse(parseJsonObject(row.parity_evidence))
+  const parsedParityEvidence = row.parity_evidence
+    ? UniScenarioParityEvidenceV1Schema.safeParse(parseJsonObject(row.parity_evidence))
     : null;
-  const resourceRequest = row.resource_request
-    ? UniScenarioRenderResourceRequestSchema.parse(parseJsonObject(row.resource_request))
+  const parityEvidence = parsedParityEvidence?.success ? parsedParityEvidence.data : null;
+  const parsedResourceRequest = row.resource_request
+    ? UniScenarioRenderResourceRequestSchema.safeParse(parseJsonObject(row.resource_request))
     : null;
+  const resourceRequest = parsedResourceRequest?.success ? parsedResourceRequest.data : null;
   return {
     id: row.id,
     revisionId: row.revision_id,

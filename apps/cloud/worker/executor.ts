@@ -85,6 +85,21 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       schedules[0]?.frameCount ?? 0,
     );
     const artifacts: RecordingArtifact[] = [];
+    for (const artifact of runtimeManifest.artifacts) {
+      if (artifact.identity.role !== "sensorArchive") continue;
+      const { actorId, sensorId, modality } = artifact.identity;
+      if (!actorId || !sensorId || !modality || artifact.mediaType !== "application/zip") {
+        throw new Error(`browser sensor archive has invalid identity: ${artifact.relativePath}`);
+      }
+      artifacts.push({
+        kind: "sensor_archive",
+        sensor: { actorId, sensorId, modality },
+        path: safeArtifactPath(request.workspace, artifact.relativePath),
+        mediaType: "application/zip",
+        sha256: artifact.sha256,
+        sizeBytes: artifact.sizeBytes,
+      });
+    }
     let durationSeconds = Number(intent.renderSpec.clip.endSeconds) - Number(intent.renderSpec.clip.startSeconds);
     let video: RecordingArtifact | null = null;
     if (request.engine === "browser" && intent.renderSpec.artifacts.includes("video")) {

@@ -422,9 +422,9 @@ export function RenderTheater({
                     <ConfigRow
                       label="Runtime"
                       value={
-                        latestAttempt
+                        latestAttempt?.runtimeVersion && latestAttempt.imageDigest
                           ? `${latestAttempt.runtimeVersion} · ${shortDigest(latestAttempt.imageDigest)}`
-                          : "—"
+                          : latestAttempt ? "local process" : "—"
                       }
                     />
                     <ConfigRow label="Revision" value={detail.revisionId} mono />

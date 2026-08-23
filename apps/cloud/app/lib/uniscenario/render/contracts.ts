@@ -64,12 +64,12 @@ export type UniScenarioRenderAttemptDto = {
   attemptState: string;
   workerNodeId: string;
   workerClass: string;
-  runtimeVersion: string;
+  runtimeVersion: string | null;
   rendererEngine: UniScenarioRendererEngine | null;
   baseImageDigest: string | null;
   baseImagePlatformDigest: string | null;
   engineCapabilitiesSha256: string | null;
-  imageDigest: string;
+  imageDigest: string | null;
   leasedAt: string;
   startedAt: string | null;
   completedAt: string | null;

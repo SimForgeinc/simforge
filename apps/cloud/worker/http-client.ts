@@ -19,7 +19,7 @@ const JOB_FAMILY = "openscenario_render" as const;
 
 type UploadReservation = {
   readonly artifactId: string;
-  readonly kind: RecordingArtifact["kind"];
+  readonly key: string;
   readonly uploadUrl: string;
   readonly headers: Readonly<Record<string, string>>;
 };
@@ -93,11 +93,12 @@ export class CpuJobsClient {
       "/api/uniscenario/recordings",
       {
         recording: claim.payload.recording,
-        artifacts: artifacts.map(({ kind, mediaType, sha256, sizeBytes }) => ({
-          role: kind,
-          mediaType,
-          sha256,
-          sizeBytes,
+        artifacts: artifacts.map((artifact) => ({
+          role: artifact.kind,
+          ...(artifact.sensor ? { sensor: artifact.sensor } : {}),
+          mediaType: artifact.mediaType,
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
         })),
       },
       signal,
@@ -109,7 +110,7 @@ export class CpuJobsClient {
     }
     return {
       recordingId: stringField(recording, "id", "recordingId"),
-      uploads: rows.map((value, index) => parseReservation(object(value), artifacts[index]!.kind)),
+      uploads: rows.map((value, index) => parseReservation(object(value), artifacts[index]!)),
     };
   }
 
@@ -137,12 +138,13 @@ export class CpuJobsClient {
     reservations: readonly UploadReservation[],
     signal: AbortSignal,
   ): Promise<void> {
-    const byKind = new Map(reservations.map((reservation) => [reservation.kind, reservation]));
-    const completedArtifacts = artifacts.map(({ kind, sha256, sizeBytes }) => ({
-      artifactId: requiredReservation(byKind, kind).artifactId,
-      role: kind,
-      sha256,
-      sizeBytes,
+    const byKey = new Map(reservations.map((reservation) => [reservation.key, reservation]));
+    const completedArtifacts = artifacts.map((artifact) => ({
+      artifactId: requiredReservation(byKey, artifactKey(artifact)).artifactId,
+      role: artifact.kind,
+      ...(artifact.sensor ? { sensor: artifact.sensor } : {}),
+      sha256: artifact.sha256,
+      sizeBytes: artifact.sizeBytes,
     }));
     await this.request(
       `/api/uniscenario/recordings/${encodeURIComponent(recordingId)}`,
@@ -314,24 +316,30 @@ function parseRemoteInput(value: unknown): RemoteInput {
   };
 }
 
-function parseReservation(row: JsonObject, expectedKind: RecordingArtifact["kind"]): UploadReservation {
+function artifactKey(artifact: RecordingArtifact): string {
+  return artifact.sensor
+    ? `${artifact.kind}\0${artifact.sensor.actorId}\0${artifact.sensor.sensorId}\0${artifact.sensor.modality}`
+    : artifact.kind;
+}
+
+function parseReservation(row: JsonObject, expected: RecordingArtifact): UploadReservation {
   const upload = row.upload === undefined ? row : object(row.upload);
-  const kind = row.role ?? row.kind ?? expectedKind;
-  if (kind !== expectedKind) throw new Error(`reserved ${String(kind)} while expecting ${expectedKind}`);
+  const kind = row.role ?? row.kind ?? expected.kind;
+  if (kind !== expected.kind) throw new Error(`reserved ${String(kind)} while expecting ${expected.kind}`);
   return {
     artifactId: stringField(row, "artifactId", "id"),
-    kind: expectedKind,
+    key: artifactKey(expected),
     uploadUrl: stringField(upload, "url", "uploadUrl"),
     headers: stringRecord(upload.headers ?? upload.requiredHeaders),
   };
 }
 
 function requiredReservation(
-  reservations: ReadonlyMap<RecordingArtifact["kind"], UploadReservation>,
-  kind: RecordingArtifact["kind"],
+  reservations: ReadonlyMap<string, UploadReservation>,
+  key: string,
 ): UploadReservation {
-  const reservation = reservations.get(kind);
-  if (!reservation) throw new Error(`missing ${kind} upload reservation`);
+  const reservation = reservations.get(key);
+  if (!reservation) throw new Error(`missing ${key} upload reservation`);
   return reservation;
 }
 

@@ -52,6 +52,10 @@ const SUPPORTED_V3_ARTIFACTS = new Set([
   "manifest",
   "frames",
   "sensorArchive",
+  // These are embedded in the verified runtime manifest. They are not separate browser-recording
+  // uploads, so they participate in intent validation without adding recording artifact rows.
+  "trace",
+  "annotations",
 ]);
 const PHASE_ORDER = new Map([
   ["preparing_assets", 0],
