@@ -1,0 +1,52 @@
+{
+  "name": "@uniscenarios/examiner",
+  "version": "0.1.0-alpha.1",
+  "description": "WS2 Examiner — the faithfulness critic: versioned claim schema (claims.v1), deterministic proposition checkers over the rl-env causal ground-truth channel, a model-agnostic NL→schema extraction harness, and a known-ground-truth grader benchmark (FACT-E/C2-Faith perturbation pattern).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "directory": "packages/examiner"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/extractor/cli.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "corpus:build": "tsx tools/build-corpus.ts",
+    "bench:claims": "tsx src/benchmark/run-benchmark.ts"
+  },
+  "dependencies": {
+    "@uniscenarios/cli": "workspace:*",
+    "@uniscenarios/rl-env": "workspace:*",
+    "@uniscenarios/sim-engine": "workspace:*",
+    "zod": "^4.4.3",
+    "@uniscenarios/anchor-matcher": "workspace:*",
+    "@uniscenarios/scenario-model": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "bin": {
+    "uniscenarios-extractor": "./dist/extractor/cli.js"
+  }
+}
