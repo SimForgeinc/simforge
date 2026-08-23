@@ -124,6 +124,29 @@ struct Args {
     /// Cinematic film-grain intensity (0 disables).
     #[arg(long, default_value_t = 0.06)]
     grain: f32,
+    /// Vegetation GLBs (absolute paths) with .instances.json sidecars,
+    /// comma-separated; instanced via render_core::veg.
+    #[arg(long, value_delimiter = ',')]
+    veg_glbs: Vec<String>,
+    /// Cinematic chromatic-aberration intensity (0 disables).
+    #[arg(long, default_value_t = 1.2)]
+    ca: f32,
+    /// Cinematic DoF aperture in f-stops (higher = deeper focus).
+    #[arg(long, default_value_t = 6.5)]
+    dof_fstops: f32,
+    /// Cinematic: disable depth of field entirely.
+    #[arg(long, default_value_t = false)]
+    no_dof: bool,
+    /// Cinematic motion-blur shutter angle in degrees (0 disables).
+    #[arg(long, default_value_t = 90.0)]
+    shutter: f32,
+    /// Wall-clock ms to wait after scene-ready before counting frames
+    /// (lets lazy GLB uploads land in the uncapped headless loop).
+    #[arg(long, default_value_t = 0)]
+    settle_ms: i64,
+    /// Cinematic bloom intensity (Bloom::NATURAL is 0.15; 0 disables).
+    #[arg(long, default_value_t = 0.15)]
+    bloom: f32,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -347,9 +370,18 @@ fn main() -> Result<()> {
             }
         })
         .add_systems(Startup, startup_setup)
-        .add_systems(Update, (check_assets, poll_roots))
-        .add_systems(Update, (build_id_pass, advance_seq_pose, tick_frames).chain())
+        .add_systems(
+            Update,
+            (
+                check_assets,
+                poll_roots,
+                render_core::veg::load_veg_roots,
+                render_core::veg::instantiate_veg,
+            )
+                .chain(),
+        )
         .add_systems(Update, (apply_wetness_once, attach_fog_sun))
+        .add_systems(Update, (build_id_pass, advance_seq_pose, tick_frames).chain())
         .add_systems(PostUpdate, collect_passes);
 
     let render_app = app.get_sub_app_mut(RenderApp).unwrap();
@@ -462,6 +494,13 @@ fn startup_setup(
             args.ssr,
             args.taa,
             args.grain,
+            render_core::profiles::CinematicFx {
+                chromatic_aberration: args.ca,
+                dof_aperture_f_stops: args.dof_fstops,
+                dof_enabled: !args.no_dof,
+                motion_shutter_angle: args.shutter,
+                bloom_intensity: args.bloom,
+            },
         );
         if LightingRung(args.rung).ao_contact() {
             lighting::apply_camera_ao(&mut commands, cam_id);
@@ -527,6 +566,7 @@ fn startup_setup(
         let handle: Handle<Gltf> = server.load(path);
         commands.spawn(TileLoad(handle));
     }
+    render_core::veg::spawn_veg(&mut commands, &server, &args.veg_glbs);
 }
 
 fn check_assets(
@@ -661,8 +701,17 @@ fn advance_seq_pose(
     seq.idx += 1;
 }
 
-fn tick_frames(mut frame: ResMut<GlobalFrame>, state: Res<SpikeState>) {
-    if state.build_ready_at.is_some() && state.id_clones_done {
+/// Frame ticking waits `--settle-ms` of wall-clock time after the scene
+/// reports ready before counting. The headless loop runs uncapped
+/// (ScheduleRunner ZERO), so without a settle window, capture can outrun
+/// lazy GLB mesh/material upload and produce sky-only frames. Default 0
+/// preserves the legacy hash-stable behavior.
+fn tick_frames(args: Res<Args>, mut frame: ResMut<GlobalFrame>, state: Res<SpikeState>) {
+    let settled = state
+        .build_ready_at
+        .map(|t| t.elapsed().as_millis() as u64 >= args.settle_ms.max(0) as u64)
+        .unwrap_or(false);
+    if settled && state.id_clones_done {
         frame.0 += 1;
     }
 }
@@ -761,7 +810,6 @@ fn collect_passes(
         }
     }
 }
-
 fn strip_padding(data: &[u8], width: usize, height: usize, pixel: usize) -> Vec<u8> {
     let row = width * pixel;
     let aligned = aligned_row(width, pixel);

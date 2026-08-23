@@ -25,6 +25,36 @@ pub enum RenderProfile {
     Cinematic,
 }
 
+/// Tunable cinematic lens/post parameters (CLI-exposed for stills work).
+///
+/// Defaults reproduce the committed cinematic profile; stills work (static
+/// camera, supersampled AA) wants chromatic aberration low or off, DoF at
+/// f/16-class, and motion blur disabled — a static camera only smears.
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct CinematicFx {
+    pub chromatic_aberration: f32,
+    pub dof_aperture_f_stops: f32,
+    pub dof_enabled: bool,
+    /// Shutter angle in degrees; 0 skips the motion-blur pass entirely.
+    pub motion_shutter_angle: f32,
+    /// Bloom intensity (`Bloom::NATURAL` is 0.15); 0 disables bloom.
+    pub bloom_intensity: f32,
+}
+
+impl Default for CinematicFx {
+    fn default() -> Self {
+        Self {
+            chromatic_aberration: 1.2,
+            dof_aperture_f_stops: 6.5,
+            dof_enabled: true,
+            motion_shutter_angle: 90.0,
+            bloom_intensity: 0.15,
+        }
+    }
+}
+
 impl RenderProfile {
     pub fn parse(s: &str) -> anyhow::Result<Self> {
         match s.to_ascii_lowercase().as_str() {
@@ -38,6 +68,7 @@ impl RenderProfile {
     ///
     /// `sky` is attached here too so both profiles share one scene state but
     /// carry their own skybox brightness (night dims it).
+
     #[allow(clippy::too_many_arguments)]
     pub fn apply(
         self,
@@ -49,6 +80,7 @@ impl RenderProfile {
         ssr: bool,
         taa: bool,
         grain_intensity: f32,
+        fx: CinematicFx,
     ) {
         let ev100 = weather.sensor_ev100();
         match self {
@@ -76,10 +108,10 @@ impl RenderProfile {
                 // capture loop (no wall-clock adaptation); cinematic uses a
                 // fixed weather-calibrated EV100 like sensor until the
                 // service loop provides real frame pacing.
-                commands.entity(entity).insert((
+                let mut cam = commands.entity(entity);
+                cam.insert((
                     Tonemapping::AgX,
                     Exposure { ev100 },
-                    Bloom::NATURAL,
                     Vignette {
                         intensity: 0.35,
                         ..Default::default()
@@ -89,21 +121,31 @@ impl RenderProfile {
                         ..Default::default()
                     },
                     ChromaticAberration {
-                        intensity: 1.2,
+                        intensity: fx.chromatic_aberration,
                         ..Default::default()
-                    },
-                    DepthOfField {
-                        mode: DepthOfFieldMode::Bokeh,
-                        focal_distance: 28.0,
-                        aperture_f_stops: 6.5,
-                        max_depth: 950.0,
-                        ..Default::default()
-                    },
-                    MotionBlur {
-                        shutter_angle: 90.0,
-                        samples: 4,
                     },
                 ));
+                if fx.bloom_intensity > 0.0 {
+                    cam.insert(Bloom {
+                        intensity: fx.bloom_intensity,
+                        ..Bloom::NATURAL
+                    });
+                }
+                if fx.dof_enabled {
+                    cam.insert(DepthOfField {
+                        mode: DepthOfFieldMode::Bokeh,
+                        focal_distance: 28.0,
+                        aperture_f_stops: fx.dof_aperture_f_stops,
+                        max_depth: 950.0,
+                        ..Default::default()
+                    });
+                }
+                if fx.motion_shutter_angle > 0.0 {
+                    cam.insert(MotionBlur {
+                        shutter_angle: fx.motion_shutter_angle,
+                        samples: 4,
+                    });
+                }
                 if let Some(sky) = sky {
                     commands.entity(entity).insert(Skybox {
                         image: Some(sky),
