@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "types": ["node"],
+    "typeRoots": ["../../../packages/browser-renderer/node_modules/@types"],
+    "paths": {
+      "@uniscenarios/playback": ["../../../packages/playback/src/index.ts"],
+      "@uniscenarios/render-runtime": ["../../../packages/render-runtime/src/index.ts"],
+      "@uniscenarios/scenario-model": ["../../../packages/scenario-model/src/index.ts"],
+      "@uniscenarios/sim-engine": ["../../../packages/sim-engine/src/index.ts"]
+    }
+  },
+  "include": ["./*.ts"]
+}
