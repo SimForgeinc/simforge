@@ -130,6 +130,24 @@ MAP_RGB_EXPOSURE: tuple[tuple[str, str], ...] = (
     ("Page_Mill", "-0.3"),
     ("Di_Rosa", "-0.2"),
 )
+
+
+def apply_supported_blueprint_attributes(
+    blueprint: Any,
+    requested: Mapping[str, str],
+) -> tuple[dict[str, str], list[str]]:
+    """Apply optional renderer tuning without turning an image-specific knob into a runtime gate."""
+    applied: dict[str, str] = {}
+    unsupported: list[str] = []
+    for name, value in requested.items():
+        if not blueprint.has_attribute(name):
+            unsupported.append(name)
+            continue
+        blueprint.set_attribute(name, value)
+        applied[name] = value
+    return applied, unsupported
+
+
 RICHMOND_COOKED_SIGNAL_ID_MAP: Mapping[str, str] = {
     "367": "423",
     "368": "429",
@@ -1053,19 +1071,16 @@ class CarlaBackend:
                         if map_token in loaded_map_name:
                             requested_grade["exposure_compensation"] = exposure
                             break
-                    applied_grade = {}
-                    for name, value in requested_grade.items():
-                        if not blueprint.has_attribute(name):
-                            raise RuntimeError(
-                                f"CARLA RGB camera is missing required HD grade attribute {name}"
-                            )
-                        blueprint.set_attribute(name, value)
-                        applied_grade[name] = value
+                    applied_grade, unsupported_grade = apply_supported_blueprint_attributes(
+                        blueprint,
+                        requested_grade,
+                    )
                     self.camera_grade_evidence[key] = {
                         "schema": "uniscenario.camera-grade-evidence/v1",
                         "profile": "rrmaps-accepted-v1",
                         "mapName": loaded_map_name,
                         "attributes": dict(sorted(applied_grade.items())),
+                        "unsupportedAttributes": sorted(unsupported_grade),
                         "postprocess": spec.quality != "preview",
                         "motionBlurIntensity": 0.0,
                     }

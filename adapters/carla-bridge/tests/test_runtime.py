@@ -26,6 +26,7 @@ from uniscenarios_carla_bridge.runtime.backend import (
     VEHICLE_DOOR_MEMBERS,
     VEHICLE_LIGHT_BITS,
     CarlaBackend,
+    apply_supported_blueprint_attributes,
     resolve_signal_lamp,
     runtime_asset_bindings,
 )
@@ -48,6 +49,28 @@ from uniscenarios_carla_bridge.runtime.validation import validate_xosc14
 
 def artifact_bytes(body: bytes | Path) -> bytes:
     return body.read_bytes() if isinstance(body, Path) else body
+
+
+def test_optional_camera_grade_attributes_never_block_a_supported_sensor() -> None:
+    class Blueprint:
+        def __init__(self) -> None:
+            self.attributes: dict[str, str] = {}
+
+        def has_attribute(self, name: str) -> bool:
+            return name == "exposure_compensation"
+
+        def set_attribute(self, name: str, value: str) -> None:
+            self.attributes[name] = value
+
+    blueprint = Blueprint()
+    applied, unsupported = apply_supported_blueprint_attributes(
+        blueprint,
+        {"temp": "5250", "exposure_compensation": "-0.4"},
+    )
+
+    assert applied == {"exposure_compensation": "-0.4"}
+    assert unsupported == ["temp"]
+    assert blueprint.attributes == applied
 
 
 def test_archive_sensor_data_preserves_relative_frame_paths(tmp_path: Path) -> None:
