@@ -33,6 +33,7 @@ from .runtime.contract import (
     RenderSpec,
     canonical_json,
     canonical_sha256,
+    _control_value,
     parse_lease,
 )
 from .runtime.executor import execute_lease, filesystem_validator
@@ -689,12 +690,7 @@ def _intent_lease(
         "assetCatalog": {"url": "local:catalog", "sha256": catalog_asset["sha256"], "sizeBytes": catalog_asset["sizeBytes"], "contractVersion": ASSET_CATALOG_SCHEMA, "catalogVersionId": catalog_version},
         "ambient": ambient, "runtimeRequirements": runtime_requirements,
     }
-    package["controlSha256"] = canonical_sha256({
-        "schema": "uniscenario.render-control-lineage/v1",
-        "intentSha256": intent_sha,
-        "executionPackageId": execution_package["id"],
-        "sourceInputDigest": execution_package["sourceInputDigest"],
-    })
+    package["controlSha256"] = canonical_sha256(_control_value(package))
     lease_value = {
         "leaseToken": "local-render-intent-" + intent_sha,
         "leaseExpiresAt": "9999-12-31T23:59:59Z",
