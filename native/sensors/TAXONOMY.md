@@ -5,8 +5,13 @@ intensity proxy, and frame conventions. Code: `native/sensors/src/taxonomy.rs`.
 
 ## Semantic classes (closed set)
 
-Encoded in the red channel of an unlit RGBA8 render (`Tonemapping::None`,
-black clear). Background/sky = 0.
+Carried in the BLUE channel of the shared aux (instance-ID) render — one
+unlit RGBA8 pass per camera (`Tonemapping::None`, black clear, neutral
+EV100 exposure); instance id low bytes in R/G. Bevy's opaque materials
+force alpha to 1.0 and default camera exposure (~1/39321) crushes small
+unlit values, hence blue + neutral exposure. The emitted
+`00000000.semantic.png` re-encodes the class id into its red channel.
+Background/sky = 0.
 
 | ID | Class      | Source                                                        |
 |----|------------|---------------------------------------------------------------|
