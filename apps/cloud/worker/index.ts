@@ -140,7 +140,6 @@ function failureCode(error: unknown): string {
 function delay(milliseconds: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolvePromise, rejectPromise) => {
     const timer = setTimeout(finish, milliseconds);
-    timer.unref();
     const abort = () => {
       clearTimeout(timer);
       rejectPromise(signal.reason);
@@ -155,6 +154,11 @@ function delay(milliseconds: number, signal: AbortSignal): Promise<void> {
 
 async function main(): Promise<void> {
   const baseUrl = process.env.UNISCENARIO_API_BASE_URL?.trim() || "http://127.0.0.1:5199";
+  process.stdout.write(`${JSON.stringify({
+    component: "uniscenarios-local-render-worker",
+    event: "worker.started",
+    baseUrl,
+  })}\n`);
   const worker = startLocalWorker(baseUrl);
   const stop = (name: string) => worker.stop(new Error(`received ${name}`));
   process.once("SIGINT", stop);
@@ -162,7 +166,8 @@ async function main(): Promise<void> {
   await worker.done;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+const entryHref = pathToFileURL(process.argv[1] ?? "").href;
+if (import.meta.url === entryHref || entryHref.endsWith("/worker/index.ts")) {
   main().catch((error: unknown) => {
     process.stderr.write(`${JSON.stringify({
       component: "uniscenarios-local-render-worker",
