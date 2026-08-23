@@ -1,0 +1,123 @@
+{
+ "reportVersion": 1,
+ "suiteHash": "84774a681ced81d1b9e0b2cd6cd71d70bce1730c20db68c1582d174417c5f949",
+ "suiteName": "policy-eval-suite.v1",
+ "entriesRun": 40,
+ "checkpoint": null,
+ "perturbations": {
+  "latencyTicks": 0,
+  "egoNoiseStd": 0.0
+ },
+ "arms": {
+  "authored": {
+   "perAbility": {
+    "cut-in-response": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 8.186,
+     "meanLength": 40.0,
+     "meanMinTtcS": 5.431,
+     "meanMinPetS": 0.077
+    },
+    "intersection-encroachment": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 5.012,
+     "meanLength": 50.0,
+     "meanMinTtcS": 1.896,
+     "meanMinPetS": 0.618
+    },
+    "intersection-left-turn": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.75,
+     "goalRate": 0.0,
+     "meanReturn": 5.24,
+     "meanLength": 57.5,
+     "meanMinTtcS": 0.259,
+     "meanMinPetS": 0.583
+    },
+    "intersection-violation": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 8.919,
+     "meanLength": 58.0,
+     "meanMinTtcS": 1.72,
+     "meanMinPetS": 0.489
+    },
+    "lane-discipline": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 8.593,
+     "meanLength": 50.0,
+     "meanMinTtcS": 1.176,
+     "meanMinPetS": 0.001
+    },
+    "obstacle-avoid": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 0.65,
+     "meanLength": 30.0,
+     "meanMinTtcS": 1.605,
+     "meanMinPetS": null
+    },
+    "overtake-return": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 10.589,
+     "meanLength": 80.0,
+     "meanMinTtcS": 1.895,
+     "meanMinPetS": 7.477
+    },
+    "pullout-yield": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 1.0,
+     "goalRate": 0.0,
+     "meanReturn": -3.865,
+     "meanLength": 38.0,
+     "meanMinTtcS": 0.0,
+     "meanMinPetS": 2.792
+    },
+    "queue-navigation": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 4.102,
+     "meanLength": 65.0,
+     "meanMinTtcS": 0.901,
+     "meanMinPetS": null
+    },
+    "signal-timing-pressure": {
+     "n": 4,
+     "successRate": 0.0,
+     "collisionRate": 0.0,
+     "goalRate": 0.0,
+     "meanReturn": 16.474,
+     "meanLength": 80.0,
+     "meanMinTtcS": null,
+     "meanMinPetS": 2.309
+    }
+   },
+   "composite": {
+    "successRate": 0.0,
+    "microCollisionRate": 0.175,
+    "meanReturn": 6.39,
+    "episodes": 40
+   }
+  }
+ }
+}

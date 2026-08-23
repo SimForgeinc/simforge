@@ -1,0 +1,924 @@
+{
+ "kind": "policy-eval-suite",
+ "suiteVersion": 1,
+ "name": "policy-eval-suite.v1",
+ "decisionHz": 5,
+ "reward": {
+  "progressWeight": 0.1
+ },
+ "appearanceShiftVariant": {
+  "id": "eval-appearance-rain-dusk",
+  "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+  "weather": "rain",
+  "timeOfDay": "dusk",
+  "traffic": "heavy",
+  "visibility": "headlight-limited with wet-road reflections"
+ },
+ "trainingExclusions": {
+  "sources": [
+   "scripts/rl/episodes/dartout-easterbrook-discovery-school-42d1a8ce33e0aefd-eval.json",
+   "scripts/rl/episodes/dartout-easterbrook-discovery-school-42d1a8ce33e0aefd-train.json",
+   "scripts/rl/episodes/dartout-easterbrook-discovery-school-a071e3466c9b3f8e-eval.json",
+   "scripts/rl/episodes/dartout-easterbrook-discovery-school-a071e3466c9b3f8e-train.json",
+   "scripts/rl/episodes/dartout-yale-street-4783ce656e89ff59-eval.json",
+   "scripts/rl/episodes/dartout-yale-street-4783ce656e89ff59-train.json",
+   "scripts/rl/episodes/dartout-yale-street-4b734228af447bad-eval.json",
+   "scripts/rl/episodes/dartout-yale-street-4b734228af447bad-train.json",
+   "scripts/rl/episodes/dartout-yale-street-4e4d98758b8a8fd5-eval.json",
+   "scripts/rl/episodes/dartout-yale-street-4e4d98758b8a8fd5-train.json",
+   "scripts/rl/episodes/dartout-yale-street-5189fe9553c4a635-eval.json",
+   "scripts/rl/episodes/dartout-yale-street-5189fe9553c4a635-train.json",
+   "scripts/rl/episodes/dartout-yale-street-5913fada2fca9e8a-eval.json",
+   "scripts/rl/episodes/dartout-yale-street-5913fada2fca9e8a-train.json",
+   "scripts/rl/episodes/dartout-yale-street-9c231a64d240c9ae-eval.json",
+   "scripts/rl/episodes/dartout-yale-street-9c231a64d240c9ae-train.json",
+   "scripts/rl/episodes/dartout-yale-street-c8465165b9447d47-eval.json",
+   "scripts/rl/episodes/dartout-yale-street-c8465165b9447d47-train.json",
+   "scripts/rl/episodes/merge-belmont-research-center-0ad5be6ac44af181-eval.json",
+   "scripts/rl/episodes/merge-belmont-research-center-0ad5be6ac44af181-train.json",
+   "scripts/rl/episodes/merge-belmont-research-center-b7e9b86ddb3218d9-eval.json",
+   "scripts/rl/episodes/merge-belmont-research-center-b7e9b86ddb3218d9-train.json",
+   "scripts/rl/episodes/merge-el-camino-road-356f47801fdae38d-eval.json",
+   "scripts/rl/episodes/merge-el-camino-road-356f47801fdae38d-train.json",
+   "scripts/rl/episodes/merge-el-camino-road-6605964bee9effe9-eval.json",
+   "scripts/rl/episodes/merge-el-camino-road-6605964bee9effe9-train.json"
+  ],
+  "templates": [
+   "cpnco-parked-row.template.json",
+   "merge-gap-collapse.template.json"
+  ],
+  "excludedSlotCount": 0,
+  "candidateSlotsConsidered": 500
+ },
+ "abilities": {
+  "intersection-left-turn": {
+   "title": "Unprotected left across opposing through traffic",
+   "templateSource": "examples/ltap-opposing.template.json"
+  },
+  "intersection-encroachment": {
+   "title": "Opposing turn encroaches into the ego path",
+   "templateSource": "examples/mechanisms/remaining/opposing-turn-encroachment.template.json"
+  },
+  "intersection-violation": {
+   "title": "Cross traffic violates its stop control",
+   "templateSource": "examples/mechanisms/remaining/cross-traffic-stop-violation.template.json"
+  },
+  "signal-timing-pressure": {
+   "title": "Late entry through a red signal",
+   "templateSource": "examples/mechanisms/remaining/red-light-late-entry.template.json"
+  },
+  "queue-navigation": {
+   "title": "Approach into a standing queue tail",
+   "templateSource": "examples/mechanisms/corridor/queue-tail.template.json"
+  },
+  "cut-in-response": {
+   "title": "Abrupt cut-in followed by hard braking",
+   "templateSource": "examples/mechanisms/corridor/cut-in-brake.template.json"
+  },
+  "lane-discipline": {
+   "title": "Slow lateral drift toward the ego lane (sideswipe)",
+   "templateSource": "examples/mechanisms/corridor/sideswipe.template.json"
+  },
+  "obstacle-avoid": {
+   "title": "Stopped obstacle revealed late in-lane",
+   "templateSource": "examples/mechanisms/obstacle/disabled-vehicle.template.json"
+  },
+  "pullout-yield": {
+   "title": "Vehicle pulls out from the kerb into the ego path",
+   "templateSource": "examples/mechanisms/parking-transit/vehicle-pulls-out.template.json"
+  },
+  "overtake-return": {
+   "title": "Oncoming overtake returning into the ego lane",
+   "templateSource": "examples/mechanisms/remaining/oncoming-overtake.template.json"
+  }
+ },
+ "entries": [
+  {
+   "entryId": "intersection-left-turn|base",
+   "ability": "intersection-left-turn",
+   "shift": "base",
+   "pairedWith": "intersection-left-turn|base",
+   "templateSource": "examples/ltap-opposing.template.json",
+   "mapId": "el-camino-road",
+   "matcherSiteId": "5c1b969514a2ff4d",
+   "seed": "a466592d72fc44bfa3f7cbfa35fd3eb9ec262193eb160507ffb4920d0aed4fb9",
+   "catalogIdentity": "el-camino-road-001-left-turn-across-opposing-through-a466592d72fc",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-left-turn|appearance",
+   "ability": "intersection-left-turn",
+   "shift": "appearance",
+   "pairedWith": "intersection-left-turn|base",
+   "templateSource": "examples/ltap-opposing.template.json",
+   "mapId": "el-camino-road",
+   "matcherSiteId": "5c1b969514a2ff4d",
+   "seed": "a466592d72fc44bfa3f7cbfa35fd3eb9ec262193eb160507ffb4920d0aed4fb9",
+   "catalogIdentity": "el-camino-road-001-left-turn-across-opposing-through-a466592d72fc",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-left-turn|behavioral",
+   "ability": "intersection-left-turn",
+   "shift": "behavioral",
+   "pairedWith": "intersection-left-turn|base",
+   "templateSource": "examples/ltap-opposing.template.json",
+   "mapId": "el-camino-road",
+   "matcherSiteId": "5c1b969514a2ff4d",
+   "seed": "a466592d72fc44bfa3f7cbfa35fd3eb9ec262193eb160507ffb4920d0aed4fb9",
+   "catalogIdentity": "el-camino-road-001-left-turn-across-opposing-through-a466592d72fc",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "arrivalTtc": 1.4
+   }
+  },
+  {
+   "entryId": "intersection-left-turn|layout",
+   "ability": "intersection-left-turn",
+   "shift": "layout",
+   "pairedWith": "intersection-left-turn|base",
+   "templateSource": "examples/ltap-opposing.template.json",
+   "mapId": "el-camino-road",
+   "matcherSiteId": "5c1b969514a2ff4d",
+   "seed": "27d64f87dbc96d5b6a7ab5780ad7089220c84c26a940dd56012f831c71a6550a",
+   "catalogIdentity": "el-camino-road-030-left-turn-across-opposing-through-4ec2722ab318",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-encroachment|base",
+   "ability": "intersection-encroachment",
+   "shift": "base",
+   "pairedWith": "intersection-encroachment|base",
+   "templateSource": "examples/mechanisms/remaining/opposing-turn-encroachment.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "67e164d96261211d",
+   "seed": "1c3eeb38afe94c4e3c6e21f31a31f2322fc0dca7f5320ebbb7ebef622559c4ad",
+   "catalogIdentity": "yale-street-005-opposing-turn-encroachment-1c3eeb38afe9",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-encroachment|appearance",
+   "ability": "intersection-encroachment",
+   "shift": "appearance",
+   "pairedWith": "intersection-encroachment|base",
+   "templateSource": "examples/mechanisms/remaining/opposing-turn-encroachment.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "67e164d96261211d",
+   "seed": "1c3eeb38afe94c4e3c6e21f31a31f2322fc0dca7f5320ebbb7ebef622559c4ad",
+   "catalogIdentity": "yale-street-005-opposing-turn-encroachment-1c3eeb38afe9",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-encroachment|behavioral",
+   "ability": "intersection-encroachment",
+   "shift": "behavioral",
+   "pairedWith": "intersection-encroachment|base",
+   "templateSource": "examples/mechanisms/remaining/opposing-turn-encroachment.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "67e164d96261211d",
+   "seed": "1c3eeb38afe94c4e3c6e21f31a31f2322fc0dca7f5320ebbb7ebef622559c4ad",
+   "catalogIdentity": "yale-street-005-opposing-turn-encroachment-1c3eeb38afe9",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "arrivalDeltaS": 0.65,
+    "encroachmentFrac": 0.62
+   }
+  },
+  {
+   "entryId": "intersection-encroachment|layout",
+   "ability": "intersection-encroachment",
+   "shift": "layout",
+   "pairedWith": "intersection-encroachment|base",
+   "templateSource": "examples/mechanisms/remaining/opposing-turn-encroachment.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "84552ea4a32b8326",
+   "seed": "cc92ebba403cdf2d20e529bf23a38f0eea6fefc7158e42b3589961c25e5fa087",
+   "catalogIdentity": "belmont-research-center-026-opposing-turn-encroachment-02385bbbc2c4",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-violation|base",
+   "ability": "intersection-violation",
+   "shift": "base",
+   "pairedWith": "intersection-violation|base",
+   "templateSource": "examples/mechanisms/remaining/cross-traffic-stop-violation.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "63766d5398e0c41c",
+   "seed": "1736142fa66d596de84571a306c1a2460a55bf3da1dea6698259c42938b72b41",
+   "catalogIdentity": "yale-street-001-cross-traffic-stop-violation-1736142fa66d",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-violation|appearance",
+   "ability": "intersection-violation",
+   "shift": "appearance",
+   "pairedWith": "intersection-violation|base",
+   "templateSource": "examples/mechanisms/remaining/cross-traffic-stop-violation.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "63766d5398e0c41c",
+   "seed": "1736142fa66d596de84571a306c1a2460a55bf3da1dea6698259c42938b72b41",
+   "catalogIdentity": "yale-street-001-cross-traffic-stop-violation-1736142fa66d",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "intersection-violation|behavioral",
+   "ability": "intersection-violation",
+   "shift": "behavioral",
+   "pairedWith": "intersection-violation|base",
+   "templateSource": "examples/mechanisms/remaining/cross-traffic-stop-violation.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "63766d5398e0c41c",
+   "seed": "1736142fa66d596de84571a306c1a2460a55bf3da1dea6698259c42938b72b41",
+   "catalogIdentity": "yale-street-001-cross-traffic-stop-violation-1736142fa66d",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "rollSpeedKph": 16
+   }
+  },
+  {
+   "entryId": "intersection-violation|layout",
+   "ability": "intersection-violation",
+   "shift": "layout",
+   "pairedWith": "intersection-violation|base",
+   "templateSource": "examples/mechanisms/remaining/cross-traffic-stop-violation.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "4e1b05cc59ac403f",
+   "seed": "078ec1f5e3bed7377731ea942c09bd5a2be84c5d31268f83ad416d711f7c4c15",
+   "catalogIdentity": "belmont-research-center-025-cross-traffic-stop-violation-5c31f106a435",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "signal-timing-pressure|base",
+   "ability": "signal-timing-pressure",
+   "shift": "base",
+   "pairedWith": "signal-timing-pressure|base",
+   "templateSource": "examples/mechanisms/remaining/red-light-late-entry.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "887600a74e1e2c0d",
+   "seed": "7f65638f49870b229b9e2a3b19c866019e44fba7f2fba39c21c86ea591e4cdf5",
+   "catalogIdentity": "yale-street-002-red-light-late-entry-7f65638f4987",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "signal-timing-pressure|appearance",
+   "ability": "signal-timing-pressure",
+   "shift": "appearance",
+   "pairedWith": "signal-timing-pressure|base",
+   "templateSource": "examples/mechanisms/remaining/red-light-late-entry.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "887600a74e1e2c0d",
+   "seed": "7f65638f49870b229b9e2a3b19c866019e44fba7f2fba39c21c86ea591e4cdf5",
+   "catalogIdentity": "yale-street-002-red-light-late-entry-7f65638f4987",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "signal-timing-pressure|behavioral",
+   "ability": "signal-timing-pressure",
+   "shift": "behavioral",
+   "pairedWith": "signal-timing-pressure|base",
+   "templateSource": "examples/mechanisms/remaining/red-light-late-entry.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "887600a74e1e2c0d",
+   "seed": "7f65638f49870b229b9e2a3b19c866019e44fba7f2fba39c21c86ea591e4cdf5",
+   "catalogIdentity": "yale-street-002-red-light-late-entry-7f65638f4987",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "arrivalDeltaS": 2.13
+   }
+  },
+  {
+   "entryId": "signal-timing-pressure|layout",
+   "ability": "signal-timing-pressure",
+   "shift": "layout",
+   "pairedWith": "signal-timing-pressure|base",
+   "templateSource": "examples/mechanisms/remaining/red-light-late-entry.template.json",
+   "mapId": "el-camino-road",
+   "matcherSiteId": "c5c55383871ac421",
+   "seed": "d3a0c220ba92143454c0f4e3b23d542010d09c6442d9994299d8a8bc9b11095e",
+   "catalogIdentity": "el-camino-road-031-red-light-late-entry-01355c8f8353",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "queue-navigation|base",
+   "ability": "queue-navigation",
+   "shift": "base",
+   "pairedWith": "queue-navigation|base",
+   "templateSource": "examples/mechanisms/corridor/queue-tail.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "450377435bfb2d85",
+   "seed": "ebf0e25487e2186acc2d3bd4f17bc6054eeb98f9d3826e2828c094247d583127",
+   "catalogIdentity": "belmont-research-center-001-queue-tail-ebf0e25487e2",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "queue-navigation|appearance",
+   "ability": "queue-navigation",
+   "shift": "appearance",
+   "pairedWith": "queue-navigation|base",
+   "templateSource": "examples/mechanisms/corridor/queue-tail.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "450377435bfb2d85",
+   "seed": "ebf0e25487e2186acc2d3bd4f17bc6054eeb98f9d3826e2828c094247d583127",
+   "catalogIdentity": "belmont-research-center-001-queue-tail-ebf0e25487e2",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "queue-navigation|behavioral",
+   "ability": "queue-navigation",
+   "shift": "behavioral",
+   "pairedWith": "queue-navigation|base",
+   "templateSource": "examples/mechanisms/corridor/queue-tail.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "450377435bfb2d85",
+   "seed": "ebf0e25487e2186acc2d3bd4f17bc6054eeb98f9d3826e2828c094247d583127",
+   "catalogIdentity": "belmont-research-center-001-queue-tail-ebf0e25487e2",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "approachSpeedFrac": 0.95,
+    "previewDistanceM": 48
+   }
+  },
+  {
+   "entryId": "queue-navigation|layout",
+   "ability": "queue-navigation",
+   "shift": "layout",
+   "pairedWith": "queue-navigation|base",
+   "templateSource": "examples/mechanisms/corridor/queue-tail.template.json",
+   "mapId": "el-camino-road",
+   "matcherSiteId": "414ee1aa2520773c",
+   "seed": "a5959717c752d612197402c95aff147606d001a29e4bbb871c5134535b7ca07e",
+   "catalogIdentity": "el-camino-road-013-queue-tail-b493807dca86",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "cut-in-response|base",
+   "ability": "cut-in-response",
+   "shift": "base",
+   "pairedWith": "cut-in-response|base",
+   "templateSource": "examples/mechanisms/corridor/cut-in-brake.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "0575e949f02b0705",
+   "seed": "888f47ea7ea5a50b16f658f2de5c419f2b0be47a7ac0c27d3598de53ed71a381",
+   "catalogIdentity": "yale-street-016-cut-in-brake-888f47ea7ea5",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "cut-in-response|appearance",
+   "ability": "cut-in-response",
+   "shift": "appearance",
+   "pairedWith": "cut-in-response|base",
+   "templateSource": "examples/mechanisms/corridor/cut-in-brake.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "0575e949f02b0705",
+   "seed": "888f47ea7ea5a50b16f658f2de5c419f2b0be47a7ac0c27d3598de53ed71a381",
+   "catalogIdentity": "yale-street-016-cut-in-brake-888f47ea7ea5",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "cut-in-response|behavioral",
+   "ability": "cut-in-response",
+   "shift": "behavioral",
+   "pairedWith": "cut-in-response|base",
+   "templateSource": "examples/mechanisms/corridor/cut-in-brake.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "0575e949f02b0705",
+   "seed": "888f47ea7ea5a50b16f658f2de5c419f2b0be47a7ac0c27d3598de53ed71a381",
+   "catalogIdentity": "yale-street-016-cut-in-brake-888f47ea7ea5",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "insertionLeadM": 16,
+    "lateralRateMps": 1.7
+   }
+  },
+  {
+   "entryId": "cut-in-response|layout",
+   "ability": "cut-in-response",
+   "shift": "layout",
+   "pairedWith": "cut-in-response|base",
+   "templateSource": "examples/mechanisms/corridor/cut-in-brake.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "4e6a7c2e681baa06",
+   "seed": "974294107e5b824c4255c62466883d3eb06ecd84b9bc8b93e3b405ba7cfda924",
+   "catalogIdentity": "belmont-research-center-011-cut-in-brake-5596f36c9055",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "lane-discipline|base",
+   "ability": "lane-discipline",
+   "shift": "base",
+   "pairedWith": "lane-discipline|base",
+   "templateSource": "examples/mechanisms/corridor/sideswipe.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "847c4467eb12db0d",
+   "seed": "2adcba33e3c73272459446f5cebae9e368c64a9bb1fdc3b73b512143bc1a9740",
+   "catalogIdentity": "yale-street-017-sideswipe-2adcba33e3c7",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "lane-discipline|appearance",
+   "ability": "lane-discipline",
+   "shift": "appearance",
+   "pairedWith": "lane-discipline|base",
+   "templateSource": "examples/mechanisms/corridor/sideswipe.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "847c4467eb12db0d",
+   "seed": "2adcba33e3c73272459446f5cebae9e368c64a9bb1fdc3b73b512143bc1a9740",
+   "catalogIdentity": "yale-street-017-sideswipe-2adcba33e3c7",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "lane-discipline|behavioral",
+   "ability": "lane-discipline",
+   "shift": "behavioral",
+   "pairedWith": "lane-discipline|base",
+   "templateSource": "examples/mechanisms/corridor/sideswipe.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "847c4467eb12db0d",
+   "seed": "2adcba33e3c73272459446f5cebae9e368c64a9bb1fdc3b73b512143bc1a9740",
+   "catalogIdentity": "yale-street-017-sideswipe-2adcba33e3c7",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "longitudinalOverlapM": -0.1,
+    "driftRateMps": 0.67
+   }
+  },
+  {
+   "entryId": "lane-discipline|layout",
+   "ability": "lane-discipline",
+   "shift": "layout",
+   "pairedWith": "lane-discipline|base",
+   "templateSource": "examples/mechanisms/corridor/sideswipe.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "fa673bc8bc1d6049",
+   "seed": "25385352cdcf0d7ff0bcfb3d4b9e5bd0ff0019fe1431841f893fcb0558afa978",
+   "catalogIdentity": "belmont-research-center-013-sideswipe-fe3fcd11dd8b",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "obstacle-avoid|base",
+   "ability": "obstacle-avoid",
+   "shift": "base",
+   "pairedWith": "obstacle-avoid|base",
+   "templateSource": "examples/mechanisms/obstacle/disabled-vehicle.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "6764d40bb39c30ae",
+   "seed": "55f55e541e08f49529e4d9f3bab3074a9d01d534c66782e6c68b761c0a3798e9",
+   "catalogIdentity": "yale-street-027-disabled-vehicle-55f55e541e08",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "obstacle-avoid|appearance",
+   "ability": "obstacle-avoid",
+   "shift": "appearance",
+   "pairedWith": "obstacle-avoid|base",
+   "templateSource": "examples/mechanisms/obstacle/disabled-vehicle.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "6764d40bb39c30ae",
+   "seed": "55f55e541e08f49529e4d9f3bab3074a9d01d534c66782e6c68b761c0a3798e9",
+   "catalogIdentity": "yale-street-027-disabled-vehicle-55f55e541e08",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "obstacle-avoid|behavioral",
+   "ability": "obstacle-avoid",
+   "shift": "behavioral",
+   "pairedWith": "obstacle-avoid|base",
+   "templateSource": "examples/mechanisms/obstacle/disabled-vehicle.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "6764d40bb39c30ae",
+   "seed": "55f55e541e08f49529e4d9f3bab3074a9d01d534c66782e6c68b761c0a3798e9",
+   "catalogIdentity": "yale-street-027-disabled-vehicle-55f55e541e08",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "previewDistanceM": 42
+   }
+  },
+  {
+   "entryId": "obstacle-avoid|layout",
+   "ability": "obstacle-avoid",
+   "shift": "layout",
+   "pairedWith": "obstacle-avoid|base",
+   "templateSource": "examples/mechanisms/obstacle/disabled-vehicle.template.json",
+   "mapId": "easterbrook-discovery-school",
+   "matcherSiteId": "1fefbb4bfd52f120",
+   "seed": "10f5a51433e3a8402bf3adec63e34452c7cc8bb81514ca62a6e5ff3e0c23d3b0",
+   "catalogIdentity": "easterbrook-discovery-school-018-disabled-vehicle-76145974406b",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "pullout-yield|base",
+   "ability": "pullout-yield",
+   "shift": "base",
+   "pairedWith": "pullout-yield|base",
+   "templateSource": "examples/mechanisms/parking-transit/vehicle-pulls-out.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "1d4c1066343ba9a5",
+   "seed": "596a59ae95b8cf84187935465b521c94b31ebe42f30862a5df5fe5f1ee03489b",
+   "catalogIdentity": "yale-street-020-vehicle-pulls-out-596a59ae95b8",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "pullout-yield|appearance",
+   "ability": "pullout-yield",
+   "shift": "appearance",
+   "pairedWith": "pullout-yield|base",
+   "templateSource": "examples/mechanisms/parking-transit/vehicle-pulls-out.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "1d4c1066343ba9a5",
+   "seed": "596a59ae95b8cf84187935465b521c94b31ebe42f30862a5df5fe5f1ee03489b",
+   "catalogIdentity": "yale-street-020-vehicle-pulls-out-596a59ae95b8",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "pullout-yield|behavioral",
+   "ability": "pullout-yield",
+   "shift": "behavioral",
+   "pairedWith": "pullout-yield|base",
+   "templateSource": "examples/mechanisms/parking-transit/vehicle-pulls-out.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "1d4c1066343ba9a5",
+   "seed": "596a59ae95b8cf84187935465b521c94b31ebe42f30862a5df5fe5f1ee03489b",
+   "catalogIdentity": "yale-street-020-vehicle-pulls-out-596a59ae95b8",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "triggerDistanceM": 19,
+    "pulloutSpeedKph": 18
+   }
+  },
+  {
+   "entryId": "pullout-yield|layout",
+   "ability": "pullout-yield",
+   "shift": "layout",
+   "pairedWith": "pullout-yield|base",
+   "templateSource": "examples/mechanisms/parking-transit/vehicle-pulls-out.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "4b8b596f841963b5",
+   "seed": "1ddf15e8d433fc6c5a4ad9676f5cd37554f4509c3653f497111e39c72f725a98",
+   "catalogIdentity": "belmont-research-center-016-vehicle-pulls-out-2f7564e22edd",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "overtake-return|base",
+   "ability": "overtake-return",
+   "shift": "base",
+   "pairedWith": "overtake-return|base",
+   "templateSource": "examples/mechanisms/remaining/oncoming-overtake.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "9274f136ce47a8f6",
+   "seed": "b1797b8f6b74b5813e3dd0cdddcc6e515168c518d68a4131e696c48cc8cd0a24",
+   "catalogIdentity": "yale-street-019-oncoming-overtake-b1797b8f6b74",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "overtake-return|appearance",
+   "ability": "overtake-return",
+   "shift": "appearance",
+   "pairedWith": "overtake-return|base",
+   "templateSource": "examples/mechanisms/remaining/oncoming-overtake.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "9274f136ce47a8f6",
+   "seed": "b1797b8f6b74b5813e3dd0cdddcc6e515168c518d68a4131e696c48cc8cd0a24",
+   "catalogIdentity": "yale-street-019-oncoming-overtake-b1797b8f6b74",
+   "variant": {
+    "id": "eval-appearance-rain-dusk",
+    "title": "Rain at dusk, heavy traffic, headlight-limited visibility",
+    "weather": "rain",
+    "timeOfDay": "dusk",
+    "traffic": "heavy",
+    "visibility": "headlight-limited with wet-road reflections"
+   },
+   "paramOverrides": null
+  },
+  {
+   "entryId": "overtake-return|behavioral",
+   "ability": "overtake-return",
+   "shift": "behavioral",
+   "pairedWith": "overtake-return|base",
+   "templateSource": "examples/mechanisms/remaining/oncoming-overtake.template.json",
+   "mapId": "yale-street",
+   "matcherSiteId": "9274f136ce47a8f6",
+   "seed": "b1797b8f6b74b5813e3dd0cdddcc6e515168c518d68a4131e696c48cc8cd0a24",
+   "catalogIdentity": "yale-street-019-oncoming-overtake-b1797b8f6b74",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": {
+    "returnTtcS": 1.85,
+    "lateralRateMps": 1.3
+   }
+  },
+  {
+   "entryId": "overtake-return|layout",
+   "ability": "overtake-return",
+   "shift": "layout",
+   "pairedWith": "overtake-return|base",
+   "templateSource": "examples/mechanisms/remaining/oncoming-overtake.template.json",
+   "mapId": "belmont-research-center",
+   "matcherSiteId": "dc1820a88872816c",
+   "seed": "1ed6905573a2e04cb02a5025cc5740c113813595d276732a4d55ca65f11f2cc1",
+   "catalogIdentity": "belmont-research-center-015-oncoming-overtake-2b13b8a085bc",
+   "variant": {
+    "id": "weekday-clear",
+    "title": "Weekday clear daylight",
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted except authored occluders"
+   },
+   "paramOverrides": null
+  }
+ ],
+ "suiteHash": "84774a681ced81d1b9e0b2cd6cd71d70bce1730c20db68c1582d174417c5f949"
+}
