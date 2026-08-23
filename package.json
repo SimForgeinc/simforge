@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "pnpm --filter @uniscenarios/cloud dev",
     "dev:worker": "UNISCENARIOS_LOCAL_WORKER=1 pnpm --filter @uniscenarios/cloud dev",
-    "dev:studio-legacy": "pnpm --filter @uniscenarios/studio dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:portable": "pnpm --filter @uniscenarios/scenario-model --filter @uniscenarios/sim-engine --filter @uniscenarios/scenario-materializer --filter @uniscenarios/editor-core --filter @uniscenarios/city-renderer --filter @uniscenarios/prop-catalog --filter @uniscenarios/ambient-traffic --filter @uniscenarios/camera-rig --filter @uniscenarios/playback --filter @uniscenarios/openscenario --filter @uniscenarios/trace-comparator --filter @uniscenarios/xodr-tools --filter @uniscenarios/map-intel --filter @uniscenarios/anchor-matcher --filter @uniscenarios/esmini-runner --filter @uniscenarios/browser-renderer test && pnpm --filter @uniscenarios/cli test:portable",

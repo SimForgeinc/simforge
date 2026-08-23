@@ -35,7 +35,7 @@ test('OpenSCENARIO standards behavior has one package owner', async () => {
 });
 
 test('Studio imports the standards package instead of CLI internals', async () => {
-  const roots = ['apps/studio/src', 'apps/studio/server'];
+  const roots = ['apps/cloud/app'];
   const pending = [...roots];
   const violations = [];
   while (pending.length) {

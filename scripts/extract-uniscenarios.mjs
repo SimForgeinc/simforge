@@ -249,9 +249,9 @@ It was extracted without modifying or deleting the source repository.
 - Package scope: \`@uniscenarios/*\`
 - Primary CLI: \`uniscenarios\`
 - Compatibility CLI alias: \`scen\`
-- Application workspace: \`apps/studio\` (\`@uniscenarios/studio\`)
+- Application workspace: \`apps/cloud\` (\`@uniscenarios/studio\`)
 
-The \`apps/studio\` directory name describes the authoring surface; it is not a
+The \`apps/cloud\` directory name describes the authoring surface; it is not a
 legacy product name. Public UI, schemas, package metadata, and documentation use
 UniScenarios naming.
 

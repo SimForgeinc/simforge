@@ -234,7 +234,7 @@ W0_POV_ROWS = [
 MILESTONES = [
     ("2026-07-31", "Foundation scaffold", "P0 monorepo: studio app, city-renderer, xodr-tools, Yale St fixtures."),
     ("2026-08-08", "Execution baseline audit", "Repository state audited and recorded (docs/uniscenarios-execution-baseline.md)."),
-    ("2026-08-21", "Foundation complete — rc.45", "Authoring CLI commands, shared editor-ui language, render runtime integration; release 0.1.0-rc.45."),
+    ("2026-08-21", "Foundation complete — rc.45", "Authoring CLI commands, shared editor components language, render runtime integration; release 0.1.0-rc.45."),
     ("2026-08-22 am", "Episode banks + criticality banding", "65 train + 39 held-out eval episodes; authored-choreography traces banded via uniscenarios evaluate (bands.json)."),
     ("2026-08-22 10:43", "First policy trained (r1)", "320k decisions from scratch, curriculum mix 25/30/45, lr 3e-4."),
     ("2026-08-22 11:21", "Warm-start policy (r2)", "+240k decisions, mix 10/30/60, reward retune; held-out eval beats baseline on critical band."),

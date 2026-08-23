@@ -9,14 +9,14 @@ import { verifyRepositoryNaming } from '../verify-repository-naming.mjs';
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'uniscenarios-naming-'));
   mkdirSync(join(root, 'packages/cli'), { recursive: true });
-  mkdirSync(join(root, 'apps/studio'), { recursive: true });
+  mkdirSync(join(root, 'apps/cloud'), { recursive: true });
   mkdirSync(join(root, 'docs'), { recursive: true });
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'uniscenarios', private: true }));
   writeFileSync(join(root, 'packages/cli/package.json'), JSON.stringify({
     name: '@uniscenarios/cli',
     bin: { uniscenarios: './bin/uniscenarios.js', scen: './bin/scen.js' },
   }));
-  writeFileSync(join(root, 'apps/studio/package.json'), JSON.stringify({ name: '@uniscenarios/studio' }));
+  writeFileSync(join(root, 'apps/cloud/package.json'), JSON.stringify({ name: '@uniscenarios/studio' }));
   writeFileSync(join(root, 'README.md'), '# UniScenarios\n');
   writeFileSync(join(root, 'docs/repository-transition.md'), 'Historical source: Scenario Studio.\n');
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
@@ -37,7 +37,7 @@ test('rejects legacy public documentation naming and a foreign package scope', (
   const item = fixture();
   t.after(item.cleanup);
   writeFileSync(join(item.root, 'README.md'), '# Scenario Studio\n');
-  writeFileSync(join(item.root, 'apps/studio/package.json'), JSON.stringify({ name: '@scenario-studio/studio' }));
+  writeFileSync(join(item.root, 'apps/cloud/package.json'), JSON.stringify({ name: '@scenario-studio/studio' }));
   assert.throws(
     () => verifyRepositoryNaming(item.root),
     /apps\/studio\/package\.json name must use the @uniscenarios\/ scope[\s\S]*README\.md:1 contains a legacy public product name/,

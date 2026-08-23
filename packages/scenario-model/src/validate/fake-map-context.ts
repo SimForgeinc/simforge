@@ -2,7 +2,7 @@
  * An in-memory {@link MapContext} — the reference implementation of the seam.
  *
  * Shipped rather than kept in `__tests__` for two reasons: it is how
- * `sim-engine` and `apps/studio` can exercise the validator before `map-intel`
+ * `sim-engine` and `apps/cloud` can exercise the validator before `map-intel`
  * lands, and it is the executable specification of what an implementation has
  * to answer. A straight corridor with a couple of features is enough to reach
  * every map-dependent check.

@@ -13,7 +13,7 @@ Two document kinds live here, and they are genuinely different claims:
 | entry points | `ScenarioDocument`, `parseScenario`, `migrate` | `parseTemplate`, `validateTemplate`, `migrateToTemplate` |
 | schema | `src/schema/v1.ts` | `src/schema/v2/` |
 
-v1 is unchanged and still what `apps/studio` edits. v2 is the authoring format
+v1 is unchanged and still what `apps/cloud` edits. v2 is the authoring format
 for retargetable scenarios and the emission target for LLM agents — jump to
 [Schema v2](#schema-v2--the-portable-scenariotemplate).
 

@@ -22,7 +22,7 @@
  *
  * v1 (`schema/v1.ts`) stays exactly as it was: a map-bound scene of absolutely
  * posed entities, still parsed by `parseScenario`, still edited by
- * `ScenarioDocument`, still the format `apps/studio` reads today. v2 is a
+ * `ScenarioDocument`, still the format `apps/cloud` reads today. v2 is a
  * different *kind* of document that happens to be the next number in the same
  * version sequence, so one `scenarioVersion` field still tells a loader which
  * parser to use (`detectScenarioKind`). The v1 → v2 migration is explicit
