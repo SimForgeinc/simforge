@@ -1,0 +1,30 @@
+{
+  "args": {
+    "clips_root": "/home/ubuntu/w0-data/clips-pov",
+    "teacher_root": "/home/ubuntu/ws3-bridge/teacher-frames",
+    "val_clips": [
+      "bus-stop-emergence",
+      "workzone-lane-shift"
+    ],
+    "out": "/home/ubuntu/ws3-bridge/runs/v0-wan-teacher",
+    "base": "stabilityai/sd-turbo",
+    "prompt": "photorealistic dashcam footage of an urban street",
+    "steps": 1500,
+    "batch": 4,
+    "res": 384,
+    "lr": 1e-05,
+    "log_interval": 10,
+    "sample_interval": 250,
+    "ckpt_interval": 500,
+    "timestep_mode": "uniform",
+    "seed": 20260822,
+    "cache_dir": "/home/ubuntu/ws3-bridge/cache/gbuffers",
+    "require_teacher": false,
+    "num_inference_steps": 4
+  },
+  "base": "stabilityai/sd-turbo",
+  "condition_channels": 6,
+  "train_pairs": 480,
+  "final_step": 1500,
+  "trainable_params_m": 364.47
+}
