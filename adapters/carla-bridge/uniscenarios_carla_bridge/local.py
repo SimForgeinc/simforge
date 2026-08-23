@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -770,16 +771,25 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
     def emit(event: str, payload: Mapping[str, object]) -> None:
         nonlocal sequence
-        record = {
-            "schema": "uniscenario.render-progress/v1", "intentId": intent["intentId"],
-            "intentSha256": intent_sha, "sequence": sequence, "event": event, **payload,
-        }
+        if event == "progress":
+            record = {
+                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "stage.progress", "stage": "rendering",
+                "completed": payload["completedFrames"], "total": payload["totalFrames"], "unit": "frames",
+            }
+        else:
+            record = {
+                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": event,
+            }
         with progress_path.open("a", encoding="utf-8", newline="\n") as target:
             target.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
         sequence += 1
 
     progress_path.write_text("", "utf-8")
-    emit("accepted", {"engine": "carla"})
+    emit("job.started", {})
     result = _execute_local_lease(
         lease, asset_paths, output_dir, DEFAULT_XSD, args.host, args.port, progress=emit,
     )
@@ -799,7 +809,6 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
     manifest_path = Path(args.manifest)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(artifact_manifest, sort_keys=True, separators=(",", ":")) + "\n", "utf-8")
-    emit("completed", {"manifest": str(manifest_path), "artifactCount": len(manifest_entries)})
     for internal in (output_dir / ".disabled-materialized-traffic.json", output_dir / ".execution-manifest.json"):
         internal.unlink(missing_ok=True)
     return artifact_manifest
