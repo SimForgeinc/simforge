@@ -194,7 +194,7 @@ def _strip_control(value: Any) -> Any:
     return value
 
 
-def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec]:
+def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec, str]:
     if not isinstance(value, Mapping) or set(value) not in (
         {"schema", "sources", "clip", "artifacts", "capabilityIntent", "authoredEnvironment"},
         {"schema", "sources", "clip", "video", "artifacts", "capabilityIntent", "authoredEnvironment"},
@@ -379,14 +379,14 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec]:
         "quality": quality, "environment": native_environment,
         "formats": ["png", "ply", "csv", "mp4-h264", "json", "jsonl"],
     }
-    return native_value, RenderSpec.parse(native_value)
+    return native_value, RenderSpec.parse(native_value), str(capability_intent["fidelity"])
 
 
 def _validate_pronto_sensor_selection(
     sensors: list[Any],
     host_actor_id: str,
     *,
-    smoke: bool,
+    representative: bool,
 ) -> None:
     camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
     chase_sensors = [
@@ -406,10 +406,10 @@ def _validate_pronto_sensor_selection(
         len({sensor.sensor_id for sensor in rig_sensors if sensor.modality == "radar"}),
     )
     actor_ids = {sensor.actor_id for sensor in sensors}
-    if smoke:
+    if representative:
         if actual_rig != (1, 1, 1) or actor_ids != {host_actor_id}:
             raise ContractError(
-                "CARLA smoke mode requires exactly one camera, one LiDAR, and one radar on sensorHost.actorId"
+                "CARLA review mode requires exactly one camera, one LiDAR, and one radar on sensorHost.actorId"
             )
     elif os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
         rgb_ids = {sensor.sensor_id for sensor in sensors if sensor.modality == "rgb"}
@@ -452,7 +452,7 @@ def _intent_lease(
         raise ContractError("render intent scenarioRevision has invalid fields")
     if not isinstance(assets, list):
         raise ContractError("render intent assets must be an array")
-    native_render_spec, parsed_spec = _render_spec_v3_to_native(intent.get("renderSpec"))
+    native_render_spec, parsed_spec, fidelity = _render_spec_v3_to_native(intent.get("renderSpec"))
     sensor_host = intent.get("sensorHost")
     if not isinstance(sensor_host, Mapping) or set(sensor_host) != {
         "actorId", "vehicleAsset", "sensorRig",
@@ -491,7 +491,7 @@ def _intent_lease(
     _validate_pronto_sensor_selection(
         parsed_spec.sensors,
         host_actor_id,
-        smoke=os.environ.get("UNISCENARIO_RENDER_SMOKE") == "1",
+        representative=fidelity == "review" or os.environ.get("UNISCENARIO_RENDER_SMOKE") == "1",
     )
     xosc_path = inputs.get("scenario.xosc")
     if xosc_path is None:
