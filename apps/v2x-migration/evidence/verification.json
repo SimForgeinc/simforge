@@ -1,0 +1,88 @@
+{
+  "firetruck-from-north": {
+    "schema": "uniscenarios.v2x-migration-verification.v1",
+    "scenario": "firetruck-from-north",
+    "source": {
+      "fileName": "firetruck_from_north.xosc",
+      "sha256": "712cc5c1e6b5bcaeccee473f971f4ba78fa8ec66d77fed322cae7c86af66813b"
+    },
+    "template": "apps/v2x-migration/scenarios/firetruck-from-north.template.json",
+    "evidence": {
+      "fullChoreography": "apps/v2x-migration/evidence/firetruck-from-north.debug.json/",
+      "clearRoadPassBranch": "apps/v2x-migration/evidence/firetruck-from-north.clearroad.debug.json/",
+      "fullTraceDigest": "27ed77f299bf7c959ed7aba1cbc5bee48bab708165b38fb5aad14f3676b8d9be",
+      "pathSampleSha256": "8e444c384528a5beae3f565e0594c9e5ec7129620241e99d2e1124a213fedefb"
+    },
+    "checks": [
+      {
+        "id": "actor-count",
+        "pass": true,
+        "detail": "full run 2 actors (xosc Entities: ego_vehicle + firetruck); clear-road variant 1"
+      },
+      {
+        "id": "continuous-approach",
+        "pass": true,
+        "detail": "rolling from t=0s, cruise reached 8.33 m/s (xosc AbsoluteTargetSpeed 8.33)"
+      },
+      {
+        "id": "approach-geometry",
+        "pass": true,
+        "detail": "clear-road lane chain [\"18:0:1\",\"243:0:1\",\"44:0:1\"] == xosc road waypoints [\"18:0:1\",\"243:0:1\",\"44:0:1\"]; yield-stop run stops within the chain at [\"18:0:1\"]"
+      },
+      {
+        "id": "no-collision",
+        "pass": true,
+        "detail": "criteria_CollisionTest: full run 0 contact(s), clear-road 0"
+      },
+      {
+        "id": "goal-reached-pass-branch",
+        "pass": true,
+        "detail": "clear-road run closes to 3.50 m of the goal at t=26s (ReachPositionCondition tolerance 6 m)"
+      }
+    ],
+    "ok": true
+  },
+  "firetruck-from-south": {
+    "schema": "uniscenarios.v2x-migration-verification.v1",
+    "scenario": "firetruck-from-south",
+    "source": {
+      "fileName": "firetruck_from_south.xosc",
+      "sha256": "9e18e996aef917c92853dac902d3256c0221671aedfa79158381fc68f03cb46f"
+    },
+    "template": "apps/v2x-migration/scenarios/firetruck-from-south.template.json",
+    "evidence": {
+      "fullChoreography": "apps/v2x-migration/evidence/firetruck-from-south.debug.json/",
+      "clearRoadPassBranch": "apps/v2x-migration/evidence/firetruck-from-south.clearroad.debug.json/",
+      "fullTraceDigest": "388480441317e0696d5c8c5f64cee499f0e69bb9f78bbd88b8a4d46698a2803e",
+      "pathSampleSha256": "e5ed8db07f2c20449c89fbce03186b9668d15904d8c74dd6853f4355c4c2a8d7"
+    },
+    "checks": [
+      {
+        "id": "actor-count",
+        "pass": true,
+        "detail": "full run 2 actors (xosc Entities: ego_vehicle + firetruck); clear-road variant 1"
+      },
+      {
+        "id": "continuous-approach",
+        "pass": true,
+        "detail": "rolling from t=0s, cruise reached 8.33 m/s (xosc AbsoluteTargetSpeed 8.33)"
+      },
+      {
+        "id": "approach-geometry",
+        "pass": true,
+        "detail": "clear-road lane chain [\"26:0:1\",\"143:0:1\",\"44:0:-1\",\"246:0:-1\",\"18:0:-1\"] == xosc road waypoints [\"26:0:1\",\"143:0:1\",\"44:0:-1\",\"246:0:-1\",\"18:0:-1\"]; yield-stop run stops within the chain at [\"26:0:1\",\"143:0:1\",\"44:0:-1\"]"
+      },
+      {
+        "id": "no-collision",
+        "pass": true,
+        "detail": "criteria_CollisionTest: full run 0 contact(s), clear-road 0"
+      },
+      {
+        "id": "goal-reached-pass-branch",
+        "pass": true,
+        "detail": "clear-road run closes to 3.90 m of the goal at t=34s (ReachPositionCondition tolerance 6 m)"
+      }
+    ],
+    "ok": true
+  }
+}

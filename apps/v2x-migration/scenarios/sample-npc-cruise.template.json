@@ -1,0 +1,124 @@
+{
+  "scenarioVersion": 2,
+  "meta": {
+    "name": "NPC follower cruise \u2014 migrated from sample.xosc",
+    "description": "V2XCarla sample scenario, re-expressed natively on UniScenarios. One NPC spawns at RFS spawn point #3 (78.9, -91.1) at rest, holds still for 1 s (xosc StartTrigger SimulationTimeCondition 1.0), then accelerates linearly to 12 m/s over 3 s (SpeedAction dynamics linear 3.0 s) and cruises for the remainder of the 30 s clip. The ego is external_control in the xosc \u2014 the drive session supplies it, so it is not authored here; the bridge's live session attaches exactly as ScenarioRunner did. Weather ClearNoon maps to clear/noon; the 30 s storyboard StopTrigger becomes clipSeconds.",
+    "createdAt": "2026-08-23T00:00:00.000Z",
+    "modifiedAt": "2026-08-23T00:00:00.000Z",
+    "appVersion": "uniscenarios/0.0.1",
+    "tags": [
+      "v2x-migration",
+      "openscenario",
+      "sample"
+    ],
+    "author": "v2x-scenario-migration",
+    "negativeControl": false
+  },
+  "sourceMap": {
+    "mapId": "richmond-field-station",
+    "mapName": "richmond-field-station"
+  },
+  "params": {
+    "declarations": [],
+    "constraints": []
+  },
+  "environment": {
+    "weather": "clear",
+    "timeOfDay": "noon"
+  },
+  "anchor": {
+    "id": "sample-npc-cruise",
+    "features": [],
+    "policy": {
+      "allowMirror": false,
+      "maxSitesPerMap": 1,
+      "diversity": "off",
+      "minScore": 0
+    },
+    "pin": {
+      "mapId": "richmond-field-station"
+    }
+  },
+  "roles": [
+    {
+      "id": "npc_follower",
+      "actor": {
+        "class": "car",
+        "catalogId": "vehicle.sedan",
+        "static": false,
+        "sensors": [],
+        "dims": {
+          "length": 4.3,
+          "width": 2.1,
+          "height": 1.6
+        }
+      },
+      "label": "NPC that spawns at rest and accelerates to a 12 m/s cruise",
+      "initialSpeedKph": 0,
+      "essentiality": "required",
+      "kind": "scene_absolute",
+      "pose": {
+        "position": {
+          "x": 78.9,
+          "y": 0,
+          "z": -91.1
+        },
+        "headingRad": 0.4
+      }
+    }
+  ],
+  "props": [],
+  "trafficControls": [],
+  "mapSignalPlans": [],
+  "choreography": {
+    "clipSeconds": 30,
+    "warmupSeconds": 0,
+    "interactions": [
+      {
+        "id": "npc-accelerate",
+        "label": "NpcCruiseEvent: SpeedAction to 12 m/s with linear 3 s ramp after the 1 s start trigger",
+        "actor": "npc_follower",
+        "verb": "speed",
+        "trigger": {
+          "kind": "at",
+          "t": 1
+        },
+        "target": {
+          "mode": "absolute",
+          "valueKph": 43.2
+        },
+        "dynamics": {
+          "shape": "linear",
+          "constraint": "time",
+          "value": 14.4
+        }
+      }
+    ]
+  },
+  "perception": {
+    "mapDivergences": []
+  },
+  "invariants": [],
+  "variants": [],
+  "metricSubject": "npc_follower",
+  "reasoningTrace": [],
+  "extensions": {
+    "v2xMigration": {
+      "version": 1,
+      "source": {
+        "kind": "openscenario",
+        "fileName": "sample.xosc",
+        "sha256": "273506da172fc3251ad724a266beafcf1bd25b6fd3fde13a40da2523a71503db",
+        "path": "/home/path/V2XCarla/v2x-backend/apps/bridge/scenarios/sample.xosc"
+      },
+      "semanticMap": {
+        "Init SpeedAction 0 m/s": "role initialSpeedKph 0",
+        "NpcCruiseEvent SpeedAction 12 m/s linear 3 s at t>1": "choreography.npc-accelerate (43.2 kph, 14.4 kph/s)",
+        "external_control ego": "not authored; the V2 BridgePort drive session spawns and attaches it",
+        "Storyboard StopTrigger 30 s": "clipSeconds 30",
+        "EnvironmentAction ClearNoon": "environment clear/noon"
+      },
+      "coordinateNote": "scene coordinates are the xosc CARLA world positions used verbatim (scene frame z = CARLA y); authored against V2XCarla Richmond_Field_Station_Richmond_CA \u2014 see docs/v2x-scenario-migration.md for the digest-pinned coordinate contract"
+    }
+  }
+}

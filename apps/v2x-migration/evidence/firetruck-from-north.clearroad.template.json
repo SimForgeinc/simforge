@@ -1,0 +1,164 @@
+{
+  "scenarioVersion": 2,
+  "meta": {
+    "name": "EVA firetruck from the north \u2014 migrated from firetruck_from_north.xosc \u2014 clear-road pass-branch check",
+    "description": "Evidence variant of firetruck-from-north.template.json with the externally-controlled ego removed, isolating the xosc PASS branch: AcquirePosition drives the firetruck to the goal within the ReachPositionCondition tolerance of 6 m.",
+    "createdAt": "2026-08-23T00:00:00.000Z",
+    "modifiedAt": "2026-08-23T00:00:00.000Z",
+    "appVersion": "uniscenarios/0.0.1",
+    "tags": [
+      "v2x-migration",
+      "openscenario",
+      "eva",
+      "firetruck"
+    ],
+    "author": "v2x-scenario-migration",
+    "negativeControl": false
+  },
+  "sourceMap": {
+    "mapId": "richmond-field-station",
+    "mapName": "richmond-field-station"
+  },
+  "params": {
+    "declarations": [],
+    "constraints": []
+  },
+  "environment": {
+    "weather": "clear",
+    "timeOfDay": "noon"
+  },
+  "anchor": {
+    "id": "eva-firetruck-north",
+    "features": [],
+    "policy": {
+      "allowMirror": false,
+      "maxSitesPerMap": 1,
+      "diversity": "off",
+      "minScore": 0
+    },
+    "pin": {
+      "mapId": "richmond-field-station"
+    }
+  },
+  "roles": [
+    {
+      "id": "firetruck",
+      "actor": {
+        "class": "truck",
+        "catalogId": "vehicle.fire_engine",
+        "static": false,
+        "sensors": [],
+        "dims": {
+          "length": 9.0,
+          "width": 2.5,
+          "height": 3.5
+        }
+      },
+      "label": "EVA firetruck, BasicAgent-equivalent route follower at cruise 8.33 m/s",
+      "initialSpeedKph": 29.988,
+      "essentiality": "required",
+      "kind": "scene_absolute",
+      "pose": {
+        "position": {
+          "x": -175.71,
+          "y": 0,
+          "z": 50.4
+        },
+        "headingRad": 5.0473
+      },
+      "driverProfile": "cautious",
+      "laneRef": {
+        "roadId": "18",
+        "section": 0,
+        "laneId": 1,
+        "s": 101.8,
+        "t": 0,
+        "headingOffsetRad": 0
+      },
+      "initialRoute": {
+        "mode": "lanePath",
+        "lanes": [
+          "18:0:1",
+          "243:0:1",
+          "44:0:1"
+        ]
+      }
+    }
+  ],
+  "props": [],
+  "trafficControls": [],
+  "mapSignalPlans": [],
+  "choreography": {
+    "clipSeconds": 120,
+    "warmupSeconds": 0,
+    "interactions": [
+      {
+        "id": "ego-holds",
+        "label": "external-control stand-in: the ego holds its teleport pose until the drive session commands it (in production the EVA toast asks the driver to yield)",
+        "actor": "ego_vehicle",
+        "verb": "speed",
+        "trigger": {
+          "kind": "at",
+          "t": 0
+        },
+        "target": {
+          "mode": "stop"
+        },
+        "dynamics": {
+          "shape": "step",
+          "constraint": "time",
+          "value": 0.1
+        }
+      },
+      {
+        "id": "firetruck-standoff",
+        "label": "BasicAgent obstacle standoff: hold ~8 m behind the ego while approaching along the lane route \u2014 emergency-stopping clear of it if it stands still, never ploughing through",
+        "actor": "firetruck",
+        "verb": "gap",
+        "trigger": {
+          "kind": "at",
+          "t": 0
+        },
+        "target": {
+          "role": "ego_vehicle",
+          "value": 8,
+          "unit": "distance"
+        },
+        "dynamics": {
+          "shape": "step",
+          "constraint": "time",
+          "value": 0.1
+        }
+      }
+    ]
+  },
+  "perception": {
+    "mapDivergences": []
+  },
+  "invariants": [],
+  "variants": [],
+  "metricSubject": "firetruck",
+  "reasoningTrace": [],
+  "extensions": {
+    "v2xMigration": {
+      "version": 1,
+      "source": {
+        "kind": "openscenario",
+        "fileName": "firetruck_from_north.xosc",
+        "sha256": "712cc5c1e6b5bcaeccee473f971f4ba78fa8ec66d77fed322cae7c86af66813b",
+        "path": "/home/path/V2XCarla/v2x-backend/apps/bridge/scenarios/firetruck_from_north.xosc"
+      },
+      "semanticMap": {
+        "AcquirePositionAction": "firetruck laneRef + initialRoute lanePath through the junction \u2014 the engine's lane-chain follower reproduces the GlobalRoutePlanner route; the default collision-avoidance follower (IDM) reproduces BasicAgent's stop-behind-obstacle behavior; goal arrival verified in the clear-road evidence run",
+        "external_control ego": "non-static scene_absolute role held by an explicit stop command \u2014 keeps the ego visible to the follower's leader detection exactly like the ScenarioRunner-attached ego was",
+        "ControllerAction overrides": "dropped: no SR controller fight to suppress on the deterministic engine",
+        "criteria_CollisionTest": "engine contact guard + debug --fail-on-collision",
+        "SimulationTimeCondition 120/125 s": "clipSeconds 120 safety timeout",
+        "EnvironmentAction ClearNoon": "environment clear/noon",
+        "ReachPositionCondition tolerance 6 m": "arrival check in the verification harness",
+        "basic_agent_control": "engine lane-route follower with default IDM collision avoidance and driverProfile 'cautious' \u2014 slows and stops behind a standing ego instead of ploughing through"
+      },
+      "coordinateNote": "scene coordinates are the xosc CARLA world positions used verbatim (scene frame z = CARLA y); authored against V2XCarla Richmond_Field_Station_Richmond_CA \u2014 see docs/v2x-scenario-migration.md for the digest-pinned coordinate contract"
+    }
+  }
+}

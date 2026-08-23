@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "preset": "moderate",
+  "densityVehiclesPerKm": 8,
+  "maxActors": 60,
+  "aggressiveness": 0.35,
+  "flows": {
+    "through": 0.7,
+    "left": 0.12,
+    "right": 0.16,
+    "uTurn": 0.02
+  },
+  "vehicleMix": {
+    "car": 0.72,
+    "van": 0.1,
+    "truck": 0.08,
+    "bus": 0.04,
+    "motorcycle": 0.06
+  },
+  "pedestrianShare": 0.0,
+  "cyclistShare": 0.04,
+  "seed": "v2x-medium",
+  "radiusM": 250,
+  "exclusionRadiusM": 12,
+  "_v2xCarlaSource": {
+    "drive_server.py TRAFFIC_PRESETS.medium": {
+      "vehicles": 60,
+      "speed_diff": 10,
+      "distance": 2.0,
+      "ignore_lights": 5,
+      "ignore_signs": 2
+    }
+  }
+}

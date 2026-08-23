@@ -1,0 +1,393 @@
+{
+  "schemaVersion": 1,
+  "mapId": "richmond-field-station",
+  "clipSeconds": 25,
+  "warmupSeconds": 0,
+  "dt": 0.02,
+  "seed": "404052dd5a07a256",
+  "physics": {
+    "mode": "dynamic-v1"
+  },
+  "operationalConditions": {
+    "weather": "clear",
+    "timeOfDay": "day",
+    "traffic": "moderate",
+    "visibility": "unrestricted",
+    "effects": {
+      "visibilityRangeM": 1000,
+      "frictionScale": 1,
+      "trafficSpeedFactor": 1
+    }
+  },
+  "metricSubject": "global_car_1",
+  "actors": [
+    {
+      "id": "global_car_1",
+      "kind": "car",
+      "dims": {
+        "l": 4.8,
+        "w": 1.9,
+        "h": 1.5
+      },
+      "initial": {
+        "pose": {
+          "x": -103.19342427303371,
+          "z": -43.679499461107866,
+          "headingRad": 0
+        },
+        "speedMps": 0
+      },
+      "behavior": {
+        "rules": {
+          "obeySignals": true,
+          "yield": true,
+          "yieldToVehicles": true,
+          "yieldToPedestrians": true,
+          "collisionAvoidance": true,
+          "aggression": 0.5,
+          "speedFactor": 1
+        },
+        "route": {
+          "kind": "polyline",
+          "points": [
+            {
+              "x": -103.19342427303371,
+              "z": -43.679499461107866
+            },
+            {
+              "x": -3.1934242730337132,
+              "z": -43.679499461107866
+            }
+          ]
+        },
+        "drivingProfile": {
+          "comfortableLateralAccelerationMps2": 2.2,
+          "comfortableDecelerationMps2": 2.5
+        },
+        "cruiseSpeedMps": 0
+      },
+      "presentAtStart": true,
+      "static": false,
+      "tags": [
+        "role:global_car_1",
+        "class:car",
+        "driver-profile:lawful",
+        "binding:scene_absolute"
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "id": "global_car_1-timed-route",
+      "actorId": "global_car_1",
+      "trigger": {
+        "kind": "at",
+        "t": 0
+      },
+      "verb": "route",
+      "target": {
+        "kind": "timedPolyline",
+        "points": [
+          {
+            "timeS": 0,
+            "x": -103.193,
+            "z": -43.679
+          },
+          {
+            "timeS": 0.25,
+            "x": -105.161,
+            "z": -44.384
+          },
+          {
+            "timeS": 0.5,
+            "x": -107.523,
+            "z": -45.229
+          },
+          {
+            "timeS": 0.75,
+            "x": -110.069,
+            "z": -46.14
+          },
+          {
+            "timeS": 1,
+            "x": -112.583,
+            "z": -47.04
+          },
+          {
+            "timeS": 1.25,
+            "x": -115.051,
+            "z": -47.923
+          },
+          {
+            "timeS": 1.5,
+            "x": -117.436,
+            "z": -48.777
+          },
+          {
+            "timeS": 1.75,
+            "x": -120.006,
+            "z": -48.77
+          },
+          {
+            "timeS": 2,
+            "x": -123.029,
+            "z": -47.061
+          },
+          {
+            "timeS": 2.25,
+            "x": -124.972,
+            "z": -47.757
+          },
+          {
+            "timeS": 2.5,
+            "x": -126.762,
+            "z": -48.397
+          },
+          {
+            "timeS": 2.75,
+            "x": -128.386,
+            "z": -48.979
+          },
+          {
+            "timeS": 3,
+            "x": -129.835,
+            "z": -49.497
+          },
+          {
+            "timeS": 3.25,
+            "x": -131.124,
+            "z": -50.017
+          },
+          {
+            "timeS": 3.5,
+            "x": -131.571,
+            "z": -51.907
+          },
+          {
+            "timeS": 3.75,
+            "x": -131.76,
+            "z": -53.666
+          },
+          {
+            "timeS": 4,
+            "x": -132.288,
+            "z": -53.767
+          },
+          {
+            "timeS": 4.25,
+            "x": -132.63,
+            "z": -53.821
+          },
+          {
+            "timeS": 4.5,
+            "x": -132.927,
+            "z": -53.864
+          },
+          {
+            "timeS": 4.75,
+            "x": -133.207,
+            "z": -53.901
+          },
+          {
+            "timeS": 5,
+            "x": -133.496,
+            "z": -53.935
+          },
+          {
+            "timeS": 5.25,
+            "x": -133.501,
+            "z": -54.521
+          },
+          {
+            "timeS": 5.5,
+            "x": -133.506,
+            "z": -55.108
+          },
+          {
+            "timeS": 5.75,
+            "x": -133.511,
+            "z": -55.694
+          },
+          {
+            "timeS": 6,
+            "x": -133.517,
+            "z": -56.28
+          },
+          {
+            "timeS": 6.25,
+            "x": -133.522,
+            "z": -56.866
+          },
+          {
+            "timeS": 6.5,
+            "x": -133.527,
+            "z": -57.452
+          },
+          {
+            "timeS": 6.75,
+            "x": -133.532,
+            "z": -58.038
+          },
+          {
+            "timeS": 7,
+            "x": -133.537,
+            "z": -58.625
+          },
+          {
+            "timeS": 7.25,
+            "x": -133.542,
+            "z": -59.211
+          },
+          {
+            "timeS": 7.5,
+            "x": -133.469,
+            "z": -59.536
+          },
+          {
+            "timeS": 7.75,
+            "x": -133.269,
+            "z": -59.924
+          },
+          {
+            "timeS": 8,
+            "x": -132.891,
+            "z": -60.704
+          },
+          {
+            "timeS": 8.25,
+            "x": -132.514,
+            "z": -61.484
+          },
+          {
+            "timeS": 8.5,
+            "x": -132.063,
+            "z": -62.429
+          },
+          {
+            "timeS": 8.75,
+            "x": -131.526,
+            "z": -63.558
+          },
+          {
+            "timeS": 9,
+            "x": -130.89,
+            "z": -64.893
+          },
+          {
+            "timeS": 9.25,
+            "x": -130.206,
+            "z": -66.33
+          },
+          {
+            "timeS": 9.5,
+            "x": -129.478,
+            "z": -67.852
+          },
+          {
+            "timeS": 9.75,
+            "x": -128.733,
+            "z": -69.408
+          },
+          {
+            "timeS": 10,
+            "x": -127.995,
+            "z": -70.949
+          },
+          {
+            "timeS": 10.25,
+            "x": -127.251,
+            "z": -72.502
+          },
+          {
+            "timeS": 10.5,
+            "x": -126.53,
+            "z": -74.008
+          },
+          {
+            "timeS": 10.75,
+            "x": -125.796,
+            "z": -75.54
+          },
+          {
+            "timeS": 11,
+            "x": -125.014,
+            "z": -77.171
+          },
+          {
+            "timeS": 11.25,
+            "x": -124.308,
+            "z": -78.646
+          },
+          {
+            "timeS": 11.5,
+            "x": -123.483,
+            "z": -80.368
+          },
+          {
+            "timeS": 11.75,
+            "x": -122.705,
+            "z": -81.993
+          },
+          {
+            "timeS": 12,
+            "x": -122.142,
+            "z": -83.169
+          },
+          {
+            "timeS": 12.25,
+            "x": -121.579,
+            "z": -84.344
+          },
+          {
+            "timeS": 12.5,
+            "x": -120.929,
+            "z": -85.7
+          },
+          {
+            "timeS": 12.75,
+            "x": -120.227,
+            "z": -87.166
+          },
+          {
+            "timeS": 13,
+            "x": -119.505,
+            "z": -88.672
+          },
+          {
+            "timeS": 13.25,
+            "x": -118.831,
+            "z": -90.078
+          },
+          {
+            "timeS": 13.5,
+            "x": -118.117,
+            "z": -91.57
+          },
+          {
+            "timeS": 13.75,
+            "x": -117.393,
+            "z": -93.081
+          },
+          {
+            "timeS": 14,
+            "x": -116.693,
+            "z": -94.543
+          },
+          {
+            "timeS": 14.25,
+            "x": -115.925,
+            "z": -96.146
+          }
+        ]
+      },
+      "bestEffortWorldPath": true
+    }
+  ],
+  "signalPrograms": [],
+  "roadControls": [],
+  "surfacePatches": [],
+  "props": [],
+  "occluders": [],
+  "occlusionPairs": [],
+  "nearMissCriteria": []
+}

@@ -1,0 +1,408 @@
+{
+  "scenarioVersion": 2,
+  "meta": {
+    "name": "GPS trajectory playback — event1.json (global_car_1)",
+    "description": "V2XCarla trajectory JSON converted to a timed-route actor on richmond-field-station. The vehicle walks the recorded WGS-84 samples as exact scene-space keyframes (customTimedRoute): time owns motion between samples, reproducing trajectory_player.py's timestamp-faithful playback without pure-pursuit drift.",
+    "createdAt": "2026-08-23T00:00:00.000Z",
+    "modifiedAt": "2026-08-23T00:00:00.000Z",
+    "appVersion": "uniscenarios/0.0.1",
+    "tags": [
+      "v2x-migration",
+      "trajectory-playback"
+    ],
+    "author": "v2x-scenario-migration",
+    "negativeControl": false
+  },
+  "sourceMap": {
+    "mapId": "richmond-field-station",
+    "mapName": "richmond-field-station"
+  },
+  "params": {
+    "declarations": [],
+    "constraints": []
+  },
+  "environment": {
+    "weather": "clear",
+    "timeOfDay": "noon"
+  },
+  "anchor": {
+    "id": "trajectory-global_car_1",
+    "features": [],
+    "policy": {
+      "allowMirror": false,
+      "maxSitesPerMap": 1,
+      "diversity": "off",
+      "minScore": 0
+    },
+    "pin": {
+      "mapId": "richmond-field-station"
+    }
+  },
+  "roles": [
+    {
+      "id": "global_car_1",
+      "actor": {
+        "class": "car",
+        "static": false,
+        "sensors": []
+      },
+      "label": "recorded GPS track, 58 samples over 14.3 s",
+      "initialSpeedKph": 0,
+      "essentiality": "required",
+      "kind": "scene_absolute",
+      "pose": {
+        "position": {
+          "x": -103.19342427303371,
+          "y": 0,
+          "z": -43.679499461107866
+        },
+        "headingRad": 0
+      }
+    }
+  ],
+  "props": [],
+  "trafficControls": [],
+  "mapSignalPlans": [],
+  "choreography": {
+    "clipSeconds": 20,
+    "warmupSeconds": 0,
+    "interactions": [
+      {
+        "id": "global_car_1-timed-route",
+        "label": "recorded timestamps drive the walk between keyframes",
+        "actor": "global_car_1",
+        "verb": "route",
+        "trigger": {
+          "kind": "at",
+          "t": 0
+        },
+        "target": {
+          "mode": "customTimedRoute",
+          "points": [
+            {
+              "timeS": 0,
+              "x": -103.193,
+              "z": -43.679
+            },
+            {
+              "timeS": 0.25,
+              "x": -105.161,
+              "z": -44.384
+            },
+            {
+              "timeS": 0.5,
+              "x": -107.523,
+              "z": -45.229
+            },
+            {
+              "timeS": 0.75,
+              "x": -110.069,
+              "z": -46.14
+            },
+            {
+              "timeS": 1,
+              "x": -112.583,
+              "z": -47.04
+            },
+            {
+              "timeS": 1.25,
+              "x": -115.051,
+              "z": -47.923
+            },
+            {
+              "timeS": 1.5,
+              "x": -117.436,
+              "z": -48.777
+            },
+            {
+              "timeS": 1.75,
+              "x": -120.006,
+              "z": -48.77
+            },
+            {
+              "timeS": 2,
+              "x": -123.029,
+              "z": -47.061
+            },
+            {
+              "timeS": 2.25,
+              "x": -124.972,
+              "z": -47.757
+            },
+            {
+              "timeS": 2.5,
+              "x": -126.762,
+              "z": -48.397
+            },
+            {
+              "timeS": 2.75,
+              "x": -128.386,
+              "z": -48.979
+            },
+            {
+              "timeS": 3,
+              "x": -129.835,
+              "z": -49.497
+            },
+            {
+              "timeS": 3.25,
+              "x": -131.124,
+              "z": -50.017
+            },
+            {
+              "timeS": 3.5,
+              "x": -131.571,
+              "z": -51.907
+            },
+            {
+              "timeS": 3.75,
+              "x": -131.76,
+              "z": -53.666
+            },
+            {
+              "timeS": 4,
+              "x": -132.288,
+              "z": -53.767
+            },
+            {
+              "timeS": 4.25,
+              "x": -132.63,
+              "z": -53.821
+            },
+            {
+              "timeS": 4.5,
+              "x": -132.927,
+              "z": -53.864
+            },
+            {
+              "timeS": 4.75,
+              "x": -133.207,
+              "z": -53.901
+            },
+            {
+              "timeS": 5,
+              "x": -133.496,
+              "z": -53.935
+            },
+            {
+              "timeS": 5.25,
+              "x": -133.501,
+              "z": -54.521
+            },
+            {
+              "timeS": 5.5,
+              "x": -133.506,
+              "z": -55.108
+            },
+            {
+              "timeS": 5.75,
+              "x": -133.511,
+              "z": -55.694
+            },
+            {
+              "timeS": 6,
+              "x": -133.517,
+              "z": -56.28
+            },
+            {
+              "timeS": 6.25,
+              "x": -133.522,
+              "z": -56.866
+            },
+            {
+              "timeS": 6.5,
+              "x": -133.527,
+              "z": -57.452
+            },
+            {
+              "timeS": 6.75,
+              "x": -133.532,
+              "z": -58.038
+            },
+            {
+              "timeS": 7,
+              "x": -133.537,
+              "z": -58.625
+            },
+            {
+              "timeS": 7.25,
+              "x": -133.542,
+              "z": -59.211
+            },
+            {
+              "timeS": 7.5,
+              "x": -133.469,
+              "z": -59.536
+            },
+            {
+              "timeS": 7.75,
+              "x": -133.269,
+              "z": -59.924
+            },
+            {
+              "timeS": 8,
+              "x": -132.891,
+              "z": -60.704
+            },
+            {
+              "timeS": 8.25,
+              "x": -132.514,
+              "z": -61.484
+            },
+            {
+              "timeS": 8.5,
+              "x": -132.063,
+              "z": -62.429
+            },
+            {
+              "timeS": 8.75,
+              "x": -131.526,
+              "z": -63.558
+            },
+            {
+              "timeS": 9,
+              "x": -130.89,
+              "z": -64.893
+            },
+            {
+              "timeS": 9.25,
+              "x": -130.206,
+              "z": -66.33
+            },
+            {
+              "timeS": 9.5,
+              "x": -129.478,
+              "z": -67.852
+            },
+            {
+              "timeS": 9.75,
+              "x": -128.733,
+              "z": -69.408
+            },
+            {
+              "timeS": 10,
+              "x": -127.995,
+              "z": -70.949
+            },
+            {
+              "timeS": 10.25,
+              "x": -127.251,
+              "z": -72.502
+            },
+            {
+              "timeS": 10.5,
+              "x": -126.53,
+              "z": -74.008
+            },
+            {
+              "timeS": 10.75,
+              "x": -125.796,
+              "z": -75.54
+            },
+            {
+              "timeS": 11,
+              "x": -125.014,
+              "z": -77.171
+            },
+            {
+              "timeS": 11.25,
+              "x": -124.308,
+              "z": -78.646
+            },
+            {
+              "timeS": 11.5,
+              "x": -123.483,
+              "z": -80.368
+            },
+            {
+              "timeS": 11.75,
+              "x": -122.705,
+              "z": -81.993
+            },
+            {
+              "timeS": 12,
+              "x": -122.142,
+              "z": -83.169
+            },
+            {
+              "timeS": 12.25,
+              "x": -121.579,
+              "z": -84.344
+            },
+            {
+              "timeS": 12.5,
+              "x": -120.929,
+              "z": -85.7
+            },
+            {
+              "timeS": 12.75,
+              "x": -120.227,
+              "z": -87.166
+            },
+            {
+              "timeS": 13,
+              "x": -119.505,
+              "z": -88.672
+            },
+            {
+              "timeS": 13.25,
+              "x": -118.831,
+              "z": -90.078
+            },
+            {
+              "timeS": 13.5,
+              "x": -118.117,
+              "z": -91.57
+            },
+            {
+              "timeS": 13.75,
+              "x": -117.393,
+              "z": -93.081
+            },
+            {
+              "timeS": 14,
+              "x": -116.693,
+              "z": -94.543
+            },
+            {
+              "timeS": 14.25,
+              "x": -115.925,
+              "z": -96.146
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "perception": {
+    "mapDivergences": []
+  },
+  "invariants": [],
+  "variants": [],
+  "metricSubject": "global_car_1",
+  "reasoningTrace": [],
+  "extensions": {
+    "v2xMigration": {
+      "version": 1,
+      "kind": "trajectory-json",
+      "source": {
+        "fileName": "event1.json",
+        "sha256": "af3b5c20d9a15c0421f1cb307dc452182b4104ebb06896dc4b91f746dbb4fe1b",
+        "format": "v2x-detection-list",
+        "objectId": "global_car_1",
+        "totalRecords": 36,
+        "objectRecords": 58
+      },
+      "coordinateContract": {
+        "doc": "docs/v2x-coordinate-contract.md",
+        "frame": "legacy-flat-earth (equirectangular around the XODR natural origin); scene.z = negated northing",
+        "originLat0": 37.9150891287087,
+        "originLon0": -122.333308830857,
+        "metersPerDegLat": 111320,
+        "metersPerDegLon": 87822.82847764558,
+        "mapId": "richmond-field-station",
+        "xodrSha256": "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643"
+      }
+    }
+  }
+}
