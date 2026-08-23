@@ -6,10 +6,41 @@
 use serde::{Deserialize, Serialize};
 
 /// Wire protocol version; bumped on any breaking frame change.
-pub const NATIVE_SERVICE_PROTOCOL_VERSION: u32 = 1;
+///
+/// V2 (V4 SensorRig): adds `load_scene_state`, `reset_cameras`,
+/// `encode_jpeg`; extends `render` with optional `tickIndex`; extends
+/// cameras with optional rigid `attach`, `semantic`, and CARLA
+/// `depthEncoding`. All V2 additions are optional; V1 clients keep working.
+pub const NATIVE_SERVICE_PROTOCOL_VERSION: u32 = 2;
+
+/// Rigid attachment of a camera to a scene-state actor (CARLA
+/// `AttachmentType.Rigid` analogue): the pose is re-resolved from the
+/// actor's transform on every rendered tick, so the camera never lags or
+/// springs. `offsetM` is the mount position in actor-local frame
+/// (x forward, y right, z up, metres); yaw/pitch are degrees relative to
+/// the actor heading.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CameraAttach {
+    pub actor_id: String,
+    #[serde(default)]
+    pub offset_m: [f32; 3],
+    #[serde(default)]
+    pub yaw_deg: f32,
+    #[serde(default)]
+    pub pitch_deg: f32,
+}
 
 /// Hard cap on one framed message; guards against a corrupt length prefix.
 pub const MAX_FRAME_BYTES: usize = 64 * 1024 * 1024;
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct WireRequest {
+    #[serde(default)]
+    pub i: u64,
+    #[serde(flatten)]
+    pub body: RequestBody,
+}
 
 /// One rig camera in a render request. Poses are absolute world-space
 /// eye/target points (y-up), matching the spike / W0 camera convention.
@@ -23,14 +54,19 @@ pub struct ServiceCamera {
     pub fov_deg: f32,
     pub eye: [f32; 3],
     pub target: [f32; 3],
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct WireRequest {
+    /// V2: also produce the semantic output (derived from the instance-ID
+    /// pass, CARLA byte layout). Requires an `id`-capable camera.
     #[serde(default)]
-    pub i: u64,
-    #[serde(flatten)]
-    pub body: RequestBody,
+    pub semantic: bool,
+    /// V2: `"linear"` (default, raw reverse-Z Depth32Float passthrough) or
+    /// `"carla"` (24-bit fixed point over a 1000 m far plane, BGRA order).
+    #[serde(default)]
+    pub depth_encoding: Option<String>,
+    /// V2: rigid attachment — when present, eye/target are re-resolved from
+    /// the attached actor's scene-state transform every render and the
+    /// explicit eye/target fields are ignored.
+    #[serde(default)]
+    pub attach: Option<CameraAttach>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -48,8 +84,31 @@ pub enum RequestBody {
         /// this directory (PNG demoted to async export per WSB5).
         #[serde(default)]
         export_dir: Option<String>,
+        /// V2: apply this frame index of the loaded scene-state stream before
+        /// rendering (actor spawn/update/despawn + ego attach resolution).
+        #[serde(default)]
+        tick_index: Option<u32>,
     },
+    /// V2: load a scene-state.v1 stream (one document per tick, in order).
+    /// Actors are created lazily on the first rendered tick that references
+    /// them. `mapId`/`xodrSha256` must match the prewarmed scene contract.
+    LoadSceneState { states: Vec<crate::scene::SceneState> },
+    /// V2: drop every registered camera; the next `render` re-registers with
+    /// fresh attributes (CARLA respawn-on-view-change analogue).
+    ResetCameras,
+    /// V2: JPEG-encode cached pass payloads from the last rendered tick and
+    /// publish the results into the shm ring as `jpeg` records.
+    EncodeJpeg { items: Vec<JpegItem> },
     Close,
+}
+
+/// One requested JPEG encoding from the last rendered tick's cache.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JpegItem {
+    pub sensor_id: String,
+    pub pass: String,
+    pub quality: u8,
 }
 
 #[derive(Debug, Serialize)]
@@ -72,6 +131,24 @@ pub enum ResponseBody {
     Load {
         ok: bool,
         tiles: usize,
+    },
+    /// V2: scene-state stream accepted.
+    LoadSceneState {
+        ok: bool,
+        ticks: usize,
+        map_id: String,
+    },
+    /// V2: all cameras dropped.
+    ResetCameras {
+        ok: bool,
+    },
+    /// V2: JPEG records published into the shm ring.
+    EncodeJpeg {
+        ok: bool,
+        tick_id: u64,
+        frames: Vec<FrameRecord>,
+        /// Server-side encode+publish wall time, milliseconds.
+        server_ms: f64,
     },
     Render {
         ok: bool,
@@ -111,15 +188,15 @@ impl WireResponse {
 #[serde(rename_all = "camelCase")]
 pub struct FrameRecord {
     pub sensor_id: String,
-    /// `rgb | id | depth`
+    /// `rgb | id | depth | semantic | jpeg`
     pub pass: String,
-    /// Physical byte offset of the record start inside the shm file.
     pub offset: u64,
     /// Payload byte length (row-padded).
     pub len: u64,
     pub width: u32,
     pub height: u32,
-    /// `rgba8` (RGB + ID) or `depth32f` (raw reverse-Z Depth32Float).
+    /// `rgba8` (RGB + ID + semantic), `depth32f` (raw reverse-Z
+    /// Depth32Float), or `jpeg` (V2 EncodeJpeg output; 1 byte per pixel).
     pub format: String,
     pub tick_id: u64,
 }

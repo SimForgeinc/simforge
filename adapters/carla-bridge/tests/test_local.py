@@ -21,6 +21,10 @@ def test_probe_is_read_only_and_always_cleans_up(monkeypatch: pytest.MonkeyPatch
             calls.append("server-version")
             return "0.10.0-test"
 
+        def get_world(self) -> object:
+            calls.append("world")
+            return object()
+
     class Backend:
         carla = type("Carla", (), {"__version__": "0.10.0-client"})()
         client = Client()
@@ -52,7 +56,7 @@ def test_probe_is_read_only_and_always_cleans_up(monkeypatch: pytest.MonkeyPatch
             "baseType": local.KIA_CARNIVAL_BASE_TYPE,
         },
     }
-    assert calls == [("carla.test", 2000), "server-version", "cleanup"]
+    assert calls == [("carla.test", 2000), "world", "server-version", "cleanup"]
 
 
 def test_probe_cleans_up_when_server_version_probe_fails(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -60,8 +64,10 @@ def test_probe_cleans_up_when_server_version_probe_fails(monkeypatch: pytest.Mon
 
     class Backend:
         carla = object()
-        client = type("Client", (), {"get_server_version": lambda _self: (_ for _ in ()).throw(RuntimeError("offline"))})()
-
+        client = type("Client", (), {
+            "get_world": lambda _self: object(),
+            "get_server_version": lambda _self: (_ for _ in ()).throw(RuntimeError("offline")),
+        })()
         def __init__(self, _host: str, _port: int) -> None:
             pass
 
@@ -72,3 +78,34 @@ def test_probe_cleans_up_when_server_version_probe_fails(monkeypatch: pytest.Mon
     with pytest.raises(RuntimeError, match="offline"):
         local._probe("carla.test", 2000)
     assert cleaned == [True]
+
+
+def test_artifact_manifest_accepts_sensor_data() -> None:
+    entries = local._artifact_manifest_entries([{
+        "kind": "sensorData:ego:lidar-front:lidar",
+        "artifactUrl": "sensor-data.zip",
+        "sha256": "a" * 64,
+        "sizeBytes": 42,
+        "mediaType": "application/zip",
+        "metadata": {
+            "actorId": "ego",
+            "sensorId": "lidar-front",
+            "modality": "lidar",
+        },
+    }])
+
+    assert entries == [{
+        "role": "sensorData",
+        "actorId": "ego",
+        "sensorId": "lidar-front",
+        "modality": "lidar",
+        "artifactUrl": "sensor-data.zip",
+        "sha256": "a" * 64,
+        "sizeBytes": 42,
+        "mediaType": "application/zip",
+        "metadata": {
+            "actorId": "ego",
+            "sensorId": "lidar-front",
+            "modality": "lidar",
+        },
+    }]

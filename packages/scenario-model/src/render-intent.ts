@@ -82,6 +82,10 @@ export const ProntoSensorHostSchema = z.strictObject({
 export const RenderIntentV1Schema = z.strictObject({
   schema: z.literal(RENDER_INTENT_V1_SCHEMA),
   intentId: RenderIntentIdSchema,
+  executionPackage: z.strictObject({
+    id: RenderIntentIdSchema,
+    sourceInputDigest: RenderSha256Schema,
+  }),
   scenarioRevision: RenderIntentScenarioRevisionSchema,
   sensorHost: ProntoSensorHostSchema,
   renderSpec: RenderSpecV3Schema,

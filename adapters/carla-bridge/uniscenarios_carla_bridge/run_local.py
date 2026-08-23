@@ -196,9 +196,20 @@ def build_intent(scenario_bytes: bytes, xodr_path: Path, catalog_path: Path,
         sources = expand_sdg(sources, sdg_modalities)
     digest = hashlib.sha256(json.dumps([scenario_sha, map_label], separators=(",", ":")).encode()).hexdigest()
     intent_id = f"usri_local_{digest[:24]}"
+    source_digests = [
+        item.get("value")
+        for item in root.findall("./FileHeader/Properties/Property")
+        if item.get("name") == "uniscenarios.provenance.inputHash"
+    ]
+    if len(source_digests) != 1 or not isinstance(source_digests[0], str) or len(source_digests[0]) != 64:
+        raise ContractError("OpenSCENARIO must carry exactly one source input digest")
     return {
         "schema": "uniscenario.render-intent/v1",
         "intentId": intent_id,
+        "executionPackage": {
+            "id": intent_id,
+            "sourceInputDigest": source_digests[0],
+        },
         "scenarioRevision": {
             "revisionId": f"local_{digest[:24]}",
             "scenarioSha256": scenario_sha,

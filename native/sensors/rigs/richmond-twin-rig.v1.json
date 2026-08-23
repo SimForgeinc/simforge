@@ -1,0 +1,209 @@
+{
+  "version": "v2x-twin-rig.v1",
+  "mapId": "richmond-field-station",
+  "xodrSha256": "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643",
+  "frameProvenance": {
+    "poseFrame": "legacy-carla@0737f3d9 (deployed lineage)",
+    "legacyXodrSha256": "0737f3d9f9f344c06b2c63fe669afa8a15f814568ee9c16046795338f56f5ee1",
+    "georeference": "+proj=tmerc +lat_0=37.9150891287087 +lon_0=-122.333308830857 +k=1 +x_0=0 +y_0=0 +datum=WGS84",
+    "georeferenceSharedWithUniBundle": true,
+    "legacyLocationFormula": "gps_to_carla CARLA-0.10 flat-earth inverse (geo_utils.py)",
+    "verdict": "V5 MapParity option (a): ingest the deployed 0737f3d9 XODR as a new Uni map derivative; calibrations stay legacy-anchored. Until then, renders against Uni-bundle (80704cd1) assets are EXPECTED to misalign where geometry moved between revisions (road 14 nearest the pole: median 16.9 m shift); do not 'fix' by nudging poses.",
+    "twinPoseOffsetsApplied": false
+  },
+  "site": {
+    "name": "Richmond Field Station",
+    "lat": 37.91560117034595,
+    "lon": -122.33478756387032,
+    "frameHeadingDeg": 226.3,
+    "frameHeadingProvenance": "PROVISIONAL. Compass bearing of the +Z axis of the shared pole survey frame that all four channels' calibration ground truth is expressed in (apps/perception/calibration/ch*_calibration_errors.csv). T"
+  },
+  "renderDefaults": {
+    "profile": "sensor",
+    "attachment": "fixed-world",
+    "sensorTickSeconds": 0.05,
+    "note": "20 fps product cadence; service renders on request."
+  },
+  "cameras": [
+    {
+      "id": "ch1",
+      "deviceId": "cam-001-ch1",
+      "heightM": 7.0,
+      "pitchDeg": -39.2,
+      "panDeg": -46.06,
+      "carlaYawDeg": 90.24,
+      "intrinsics": {
+        "fx": 1325.4,
+        "fy": 1325.4,
+        "cx": 1280.0,
+        "cy": 960.0,
+        "width": 2560,
+        "height": 1920
+      },
+      "distortion": {
+        "model": "radial_undistort_r2",
+        "u1Renormalised": 0.24280946427671718,
+        "u2Renormalised": 0.0,
+        "refFx": 1325.4,
+        "measured": true,
+        "note": "UNDISTORTION-direction radial model (r_u = r_d*(1 + u1*r_d^2 + u2*r_d^4)); never substitute an OpenCV (k1,k2) fit."
+      },
+      "fovDeg": {
+        "pinholeHorizontal": 88.003,
+        "trueHorizontal": 99.653,
+        "trueVertical": 78.468,
+        "renderNote": "Render at trueHorizontal/trueVertical to cover what the real lens sees; the twin is a pinhole approximation of an undistorted feed."
+      },
+      "rectifiedFx": 1080.67,
+      "legacyCarlaLocationXy": [
+        -129.8665,
+        -57.0005
+      ],
+      "sceneEyeXz": [
+        -129.8665,
+        57.0005
+      ],
+      "twinPose": {
+        "yaw_offset_deg": 0.0,
+        "pitch_offset_deg": 0.0,
+        "height_offset_m": 0.0,
+        "forward_offset_m": 0.5
+      }
+    },
+    {
+      "id": "ch2",
+      "deviceId": "cam-001-ch2",
+      "heightM": 7.0,
+      "pitchDeg": -40.52,
+      "panDeg": 71.25,
+      "carlaYawDeg": -152.45,
+      "intrinsics": {
+        "fx": 1325.4,
+        "fy": 1325.4,
+        "cx": 1280.0,
+        "cy": 960.0,
+        "width": 2560,
+        "height": 1920
+      },
+      "distortion": {
+        "model": "radial_undistort_r2",
+        "u1Renormalised": 0.0,
+        "u2Renormalised": 0.0,
+        "refFx": 1325.4,
+        "measured": false,
+        "note": "UNDISTORTION-direction radial model (r_u = r_d*(1 + u1*r_d^2 + u2*r_d^4)); never substitute an OpenCV (k1,k2) fit."
+      },
+      "fovDeg": {
+        "pinholeHorizontal": 88.003,
+        "trueHorizontal": 88.003,
+        "trueVertical": 71.832,
+        "renderNote": "Render at trueHorizontal/trueVertical to cover what the real lens sees; the twin is a pinhole approximation of an undistorted feed."
+      },
+      "rectifiedFx": 1325.4,
+      "legacyCarlaLocationXy": [
+        -129.8665,
+        -57.0005
+      ],
+      "sceneEyeXz": [
+        -129.8665,
+        57.0005
+      ],
+      "twinPose": {
+        "yaw_offset_deg": 5.74,
+        "pitch_offset_deg": 15.49,
+        "height_offset_m": 1.48,
+        "forward_offset_m": 0.5
+      }
+    },
+    {
+      "id": "ch3",
+      "deviceId": "cam-001-ch3",
+      "heightM": 7.0,
+      "pitchDeg": -30.42,
+      "panDeg": 14.58,
+      "carlaYawDeg": 150.88,
+      "intrinsics": {
+        "fx": 1325.4,
+        "fy": 1325.4,
+        "cx": 1280.0,
+        "cy": 960.0,
+        "width": 2560,
+        "height": 1920
+      },
+      "distortion": {
+        "model": "radial_undistort_r2",
+        "u1Renormalised": 0.2314682233270261,
+        "u2Renormalised": 0.0,
+        "refFx": 1325.4,
+        "measured": true,
+        "note": "UNDISTORTION-direction radial model (r_u = r_d*(1 + u1*r_d^2 + u2*r_d^4)); never substitute an OpenCV (k1,k2) fit."
+      },
+      "fovDeg": {
+        "pinholeHorizontal": 88.003,
+        "trueHorizontal": 99.163,
+        "trueVertical": 78.172,
+        "renderNote": "Render at trueHorizontal/trueVertical to cover what the real lens sees; the twin is a pinhole approximation of an undistorted feed."
+      },
+      "rectifiedFx": 1090.07,
+      "legacyCarlaLocationXy": [
+        -129.8665,
+        -57.0005
+      ],
+      "sceneEyeXz": [
+        -129.8665,
+        57.0005
+      ],
+      "twinPose": {
+        "yaw_offset_deg": 0.08,
+        "pitch_offset_deg": 0.26,
+        "height_offset_m": -0.04,
+        "forward_offset_m": 1.5
+      }
+    },
+    {
+      "id": "ch4",
+      "deviceId": "cam-001-ch4",
+      "heightM": 7.0,
+      "pitchDeg": -43.48,
+      "panDeg": -22.63,
+      "carlaYawDeg": 113.67,
+      "intrinsics": {
+        "fx": 1325.4,
+        "fy": 1325.4,
+        "cx": 1280.0,
+        "cy": 960.0,
+        "width": 2560,
+        "height": 1920
+      },
+      "distortion": {
+        "model": "radial_undistort_r2",
+        "u1Renormalised": 0.19805054171895198,
+        "u2Renormalised": 0.0,
+        "refFx": 1325.4,
+        "measured": true,
+        "note": "UNDISTORTION-direction radial model (r_u = r_d*(1 + u1*r_d^2 + u2*r_d^4)); never substitute an OpenCV (k1,k2) fit."
+      },
+      "fovDeg": {
+        "pinholeHorizontal": 88.003,
+        "trueHorizontal": 97.692,
+        "trueVertical": 77.289,
+        "renderNote": "Render at trueHorizontal/trueVertical to cover what the real lens sees; the twin is a pinhole approximation of an undistorted feed."
+      },
+      "rectifiedFx": 1118.75,
+      "legacyCarlaLocationXy": [
+        -129.8665,
+        -57.0005
+      ],
+      "sceneEyeXz": [
+        -129.8665,
+        57.0005
+      ],
+      "twinPose": {
+        "yaw_offset_deg": -2.16,
+        "pitch_offset_deg": 4.95,
+        "height_offset_m": -0.61,
+        "forward_offset_m": 0.5
+      }
+    }
+  ]
+}

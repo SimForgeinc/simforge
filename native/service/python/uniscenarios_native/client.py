@@ -173,12 +173,31 @@ class NativeRenderClient:
         return b"".join(chunks)
 
     # -- ops ---------------------------------------------------------------
-    def render(self, tick_id: int, cameras: list[dict], export_dir: str | None = None) -> dict:
-        # NOTE: RequestBody enum fields are still wire-snake_case server-side.
+    def render(self, tick_id: int, cameras: list[dict], export_dir: str | None = None,
+               tick_index: int | None = None) -> dict:
         req = {"i": self._next(), "op": "render", "tick_id": tick_id, "cameras": cameras}
         if export_dir is not None:
             req["export_dir"] = export_dir
+        if tick_index is not None:
+            req["tick_index"] = tick_index
         return self._rpc(req)
+
+    # -- V2 ops (V4 SensorRig) ---------------------------------------------
+    def load_scene_state(self, states: list[dict]) -> dict:
+        return self._rpc({"i": self._next(), "op": "load_scene_state", "states": states})
+
+    def reset_cameras(self) -> dict:
+        return self._rpc({"i": self._next(), "op": "reset_cameras"})
+
+    def encode_jpeg(self, items: list[dict]) -> dict:
+        """JPEG-encode cached pass payloads from the last rendered tick.
+        items: [{"sensorId": ..., "pass": "rgb", "quality": 70}]"""
+        return self._rpc({"i": self._next(), "op": "encode_jpeg", "items": items})
+
+    def read_record(self, frame: dict) -> memoryview:
+        """Raw payload bytes (row-padded) of one returned FrameRecord."""
+        offset = frame["offset"] + 128
+        return memoryview(self.shm)[offset:offset + frame["len"]]
 
     def close(self) -> None:
         try:
@@ -187,26 +206,39 @@ class NativeRenderClient:
             self.sock.close()
 
     # -- gym-shaped zero-copy observations ---------------------------------
-    def step(self, tick_id: int, cameras: list[dict]) -> tuple[dict, float]:
+    @staticmethod
+    def _stride(width: int, pixel_bytes: int) -> int:
+        """wgpu COPY_BYTES_PER_ROW_ALIGNMENT (256) padded row stride."""
+        row = width * pixel_bytes
+        return -(-row // 256) * 256
+
+    def step(self, tick_id: int, cameras: list[dict], tick_index: int | None = None) -> tuple[dict, float]:
         """One env step: send tick -> receive frame records -> numpy views.
 
         Returns (observations, server_ms). Each observation value is a numpy
-        array VIEW into the shared-memory ring: rgb/id are (H, W, 4) uint8,
-        depth is (H, W) float32. np.shares_memory(obs, self.shm) is True —
-        nothing is copied out of the ring.
+        array VIEW into the shared-memory ring with the 256-byte GPU row
+        padding handled via a strided view (V4 fix: the previous client
+        reshaped padded rows as tight and corrupted every image whose
+        W*4 was not 256-aligned — including the 736-wide product stream).
+        rgb/id/semantic are (H, W, 4) uint8; depth32f is (H, W) float32;
+        carla-depth-bgra and jpeg payloads stay raw byte arrays.
         """
-        response = self.render(tick_id, cameras)
+        response = self.render(tick_id, cameras, tick_index=tick_index)
         assert response["ok"], response
         obs: dict = {}
         for frame in response["frames"]:
             offset = frame["offset"]
-            length = frame["len"]
             w, h = frame["width"], frame["height"]
-            if frame["format"] == "depth32f":
-                arr = np.frombuffer(self.shm, dtype="<f4", count=w * h, offset=offset + 128)
-                view = arr.reshape(h, w)
-            else:
-                arr = np.frombuffer(self.shm, dtype=np.uint8, count=w * h * 4, offset=offset + 128)
-                view = arr.reshape(h, w, 4)
+            fmt = frame["format"]
+            if fmt == "depth32f":
+                stride = self._stride(w, 4)
+                arr = np.frombuffer(self.shm, dtype="<f4", count=stride * h // 4, offset=offset + 128)
+                view = arr.reshape(h, stride // 4)[:, :w]
+            elif fmt in ("rgba8", "carla-depth-bgra"):
+                stride = self._stride(w, 4)
+                arr = np.frombuffer(self.shm, dtype=np.uint8, count=stride * h, offset=offset + 128)
+                view = arr.reshape(h, stride)[:, : w * 4].reshape(h, w, 4)
+            else:  # jpeg / opaque byte payload
+                view = np.frombuffer(self.shm, dtype=np.uint8, count=frame["len"], offset=offset + 128)
             obs.setdefault(frame["sensorId"], {})[frame["pass"]] = view
         return obs, response["server_ms"]

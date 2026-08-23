@@ -139,3 +139,17 @@ would need a golden-hash-per-GPU policy rather than a universal hash.
 - Native per-object instance IDs and raw depth unlock sensor-grade supervision the three.js path lacks.
 - Risks: vegetation/actor fidelity, atmosphere parity with the W0 look, and A100 raster performance — all
   bounded, listed above, none blocking the decision.
+
+## 9. Follow-up: side-by-side video (PAUSED — incomplete, stopped on user pause)
+
+State at stop:
+- Sequence mode implemented in `bevy-spike` (`--poses out/poses.json --seq-out-dir <dir>`): loads the full
+  12-GLB corridor once (prewarm), then renders one RGB frame per solved camera from
+  `clips-pov/baseline-midblock/manifest.json` (60 poses, 736x416).
+- Run 1: hit the 900 s timeout with 59/60 frames (stall in final-frame readback polling; earlier builds
+  completed 60 frames in ~4.5 s, so the stall appeared after the CameraMarker fix — not root-caused).
+- Run 2: completed all 60 frames.
+- Not done: determinism hash-compare across runs for >=5 poses, ffmpeg hstack vs three.js `frames/*.png`,
+  scp to seablue:~/Downloads/w0-videos/sbs/.
+- Frames on disk: `out/seq_run1/` (59), `out/seq_run2/` (60); poses at `out/poses.json`.
+- Resume cost: ~10 min — re-run both sequence invocations (binary already built), hash-compare >=5 poses, ffmpeg hstack vs three.js frames/*.png, scp both mp4s to seablue:~/Downloads/w0-videos/sbs/.

@@ -49,6 +49,22 @@ from uniscenarios_carla_bridge.runtime.validation import validate_xosc14
 def artifact_bytes(body: bytes | Path) -> bytes:
     return body.read_bytes() if isinstance(body, Path) else body
 
+
+def test_archive_sensor_data_preserves_relative_frame_paths(tmp_path: Path) -> None:
+    sensor_dir = tmp_path / "lidar-front"
+    sensor_dir.mkdir()
+    (sensor_dir / "00000000.bin").write_bytes(b"first")
+    (sensor_dir / "00000001.bin").write_bytes(b"second")
+    destination = tmp_path / "lidar-front.zip"
+
+    worker_runner._archive_sensor_data(sensor_dir, destination, 1024)
+
+    import zipfile
+    with zipfile.ZipFile(destination) as archive:
+        assert archive.namelist() == ["00000000.bin", "00000001.bin"]
+        assert archive.read("00000000.bin") == b"first"
+        assert archive.read("00000001.bin") == b"second"
+
 SOURCE_INPUT_DIGEST = "e" * 64
 XOSC = f'''<?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>

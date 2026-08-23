@@ -25,8 +25,14 @@ pub struct ShmRing {
     cursor_total: u64,
 }
 
+
+/// Record payload format tags (shm header offset 20).
+pub const FORMAT_RGBA8: u32 = 1;
+pub const FORMAT_DEPTH32F: u32 = 2;
+/// V2: JPEG bytes (EncodeJpeg op).
+pub const FORMAT_JPEG: u32 = 3;
+
 impl ShmRing {
-    /// Create (or truncate) a shm-backed ring at `path`.
     pub fn create(path: &Path, capacity_bytes: usize) -> Result<Self> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).ok();

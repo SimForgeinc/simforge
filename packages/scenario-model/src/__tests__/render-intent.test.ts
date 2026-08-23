@@ -65,6 +65,10 @@ function intent(sources: readonly unknown[]) {
   return {
     schema: RENDER_INTENT_V1_SCHEMA,
     intentId: 'usri_test',
+    executionPackage: {
+      id: 'usepkg_test',
+      sourceInputDigest: DIGEST,
+    },
     scenarioRevision: {
       revisionId: 'usrev_test',
       scenarioSha256: DIGEST,

@@ -161,6 +161,25 @@ def _trace_to_path(plan: ExecutionPlan, readbacks: list[Mapping[str, Mapping[str
     return destination
 
 
+def _archive_sensor_data(
+    sensor_dir: Path,
+    destination: Path,
+    max_bytes: int,
+    abort: Callable[[], None] | None = None,
+) -> Path:
+    """Consolidate one LiDAR or radar stream into a single upload artifact."""
+    with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
+        for frame in sorted(sensor_dir.rglob("*")):
+            if not frame.is_file():
+                continue
+            if abort:
+                abort()
+            archive.write(frame, arcname=str(frame.relative_to(sensor_dir)))
+    if destination.stat().st_size > max_bytes:
+        raise ContractError(f"sensor data artifact {sensor_dir.name} exceeds its budget")
+    return destination
+
+
 def _expected_frame_paths(
     sensor_dir: Path,
     expected_frame_count: int,
@@ -1474,6 +1493,35 @@ def execute_lease(
                     "frameCount": expected_capture_count,
                     "fps": lease.render_spec.fps,
                     "durationS": plan.frames[-1].t,
+                },
+            ))
+        data_sensors = [
+            sensor for sensor in lease.render_spec.sensors
+            if sensor.modality in {"lidar", "semantic-lidar", "radar"}
+        ]
+        for sensor in data_sensors:
+            check_abort("package_sensor_data", 0, len(data_sensors))
+            sensor_dir = output_dir / sensor.artifact_name
+            if not sensor_dir.is_dir():
+                continue
+            data_body = _archive_sensor_data(
+                sensor_dir,
+                Path(directory) / f"sensor-data-{sensor.artifact_name}.zip",
+                MAX_ARTIFACT_BYTES,
+                lambda: check_abort("package_sensor_data", 0, len(data_sensors)),
+            )
+            upload_kind = f"sensorData:{sensor.artifact_name}"
+            add_artifact(make_artifact(
+                upload_kind,
+                data_body,
+                "application/zip",
+                lease.artifact_uploads.get(upload_kind),
+                {
+                    "actorId": sensor.actor_id,
+                    "sensorId": sensor.sensor_id,
+                    "modality": sensor.modality,
+                    "outputName": sensor.role,
+                    "fps": lease.render_spec.fps,
                 },
             ))
         if "annotations" in lease.render_spec.outputs:

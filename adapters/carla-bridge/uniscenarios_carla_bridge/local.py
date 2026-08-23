@@ -43,6 +43,9 @@ INPUT_PACKAGE_SCHEMA_FIELDS = {"intentSha256", "inputs"}
 def _probe(host: str, port: int) -> dict[str, object]:
     backend = CarlaBackend(host, port)
     try:
+        # A listening RPC socket is insufficient: wedged CARLA servers still
+        # answer version requests but fail every world operation.
+        backend.client.get_world()
         return {
             "schema": "uniscenarios.carla-probe/v2",
             "clientVersion": str(getattr(backend.carla, "__version__", "unknown")),
@@ -375,7 +378,7 @@ def _intent_lease(
     inputs: Mapping[str, Path],
     output_dir: Path,
 ) -> tuple[Any, dict[str, Path]]:
-    expected_fields = {"schema", "intentId", "scenarioRevision", "renderSpec", "sensorHost", "assets", "seed"}
+    expected_fields = {"schema", "intentId", "executionPackage", "scenarioRevision", "renderSpec", "sensorHost", "assets", "seed"}
     if set(intent) != expected_fields or intent.get("schema") != INTENT_SCHEMA:
         raise ContractError(f"render intent must use strict {INTENT_SCHEMA} fields")
     intent_id = intent.get("intentId")
@@ -468,6 +471,15 @@ def _intent_lease(
     }:
         raise ContractError("scenario.xosc does not match render intent OpenSCENARIO identity")
     source_digest = _xosc_source_digest(xosc)
+    execution_package = intent.get("executionPackage")
+    if (
+        not isinstance(execution_package, Mapping)
+        or set(execution_package) != {"id", "sourceInputDigest"}
+        or not isinstance(execution_package.get("id"), str)
+        or not execution_package["id"]
+        or execution_package.get("sourceInputDigest") != source_digest
+    ):
+        raise ContractError("render intent executionPackage identity is invalid")
     map_identity = revision.get("map")
     if not isinstance(map_identity, Mapping) or set(map_identity) != {"mapId", "revisionId", "sha256"}:
         raise ContractError("render intent map identity is invalid")
@@ -620,11 +632,14 @@ def _intent_lease(
     manifest_path = output_dir / ".execution-manifest.json"
     manifest_path.write_bytes(manifest_body)
     uploads: dict[str, dict[str, Any]] = {}
-    kinds = {"trace", *(output for output in parsed_spec.outputs if output != "frames")}
-    if "diagnostics" in intent["renderSpec"]["artifacts"]:
-        kinds.add("parity-report")
+    kinds = {"trace", "parity-report", *(output for output in parsed_spec.outputs if output != "frames")}
     if "frames" in parsed_spec.outputs:
         kinds.update(f"framesArchive:{sensor.artifact_name}" for sensor in parsed_spec.sensors)
+    kinds.update(
+        f"sensorData:{sensor.artifact_name}"
+        for sensor in parsed_spec.sensors
+        if sensor.modality in {"lidar", "semantic-lidar", "radar"}
+    )
     for index, kind in enumerate(sorted(kinds)):
         safe_kind = "".join(
             character if character.isalnum() or character in ".-_" else "_"
@@ -652,8 +667,8 @@ def _intent_lease(
         },
     }
     package = {
-        "schema": "uniscenario.execution-package/v1", "id": intent_id,
-        "revisionId": revision["revisionId"], "sourceInputDigest": source_digest,
+        "schema": "uniscenario.execution-package/v1", "id": execution_package["id"],
+        "revisionId": revision["revisionId"], "sourceInputDigest": execution_package["sourceInputDigest"],
         "materializedTrafficDigest": traffic_sha, "mapAssetId": map_identity["mapId"],
         "mapVersionId": map_identity["revisionId"],
         "manifest": {"url": "local:manifest", "sha256": hashlib.sha256(manifest_body).hexdigest(), "sizeBytes": len(manifest_body)},
@@ -662,7 +677,12 @@ def _intent_lease(
         "assetCatalog": {"url": "local:catalog", "sha256": catalog_asset["sha256"], "sizeBytes": catalog_asset["sizeBytes"], "contractVersion": ASSET_CATALOG_SCHEMA, "catalogVersionId": catalog_version},
         "ambient": ambient, "runtimeRequirements": runtime_requirements,
     }
-    package["controlSha256"] = canonical_sha256(_strip_control(package))
+    package["controlSha256"] = canonical_sha256({
+        "schema": "uniscenario.render-control-lineage/v1",
+        "intentSha256": intent_sha,
+        "executionPackageId": execution_package["id"],
+        "sourceInputDigest": execution_package["sourceInputDigest"],
+    })
     lease_value = {
         "leaseToken": "local-render-intent-" + intent_sha,
         "leaseExpiresAt": "9999-12-31T23:59:59Z",
@@ -693,13 +713,15 @@ def _artifact_manifest_entries(items: Any) -> list[dict[str, Any]]:
         metadata = metadata if isinstance(metadata, Mapping) else {}
         if isinstance(kind, str) and kind.startswith("framesArchive:"):
             role = "sensorArchive"
+        elif isinstance(kind, str) and kind.startswith("sensorData:"):
+            role = "sensorData"
         elif kind == "parity-report":
             role = "diagnostics"
         elif kind in {"video", "frames", "manifest", "trace", "annotations"}:
             role = kind
         else:
             raise RuntimeError(f"native executor returned unsupported artifact kind {kind!r}")
-        if role in {"video", "frames", "sensorArchive"}:
+        if role in {"video", "frames", "sensorArchive", "sensorData"}:
             actor_id = metadata.get("actorId")
             sensor_id = metadata.get("sensorId")
             modality = metadata.get("modality")
