@@ -67,10 +67,15 @@ pub struct PlaybackArgs {
     /// Warmup frames (shader compile) before tick 0 is captured.
     #[arg(long, default_value_t = 30)]
     pub warmup: u32,
+    /// First trace tick to play (skips everything before it).
+    #[arg(long)]
+    pub start_tick: Option<usize>,
     /// Road-surface elevation for actor origins (traces are heightless).
     #[arg(long, default_value_t = 12.99)]
     pub ground_y: f32,
-    /// `static` fixes the camera at the initial chase pose; `follow` tracks ego.
+    /// `static` fixes the camera at the initial chase pose; `follow` tracks
+    /// ego with a chase cam; `pov` pins a dashcam to the ego windshield
+    /// (W0 convention: eye +1.45 m, look-ahead 12 m along heading).
     #[arg(long, default_value = "follow")]
     pub camera: String,
     /// Chase-cam geometry: distance behind / height above the ego.
@@ -230,9 +235,13 @@ struct Metrics {
 
 pub fn run(mut args: PlaybackArgs) -> Result<()> {
     let path = args.scene_state.clone();
-    let doc = SceneState::load(&path)?;
+    let mut doc = SceneState::load(&path)?;
     if doc.version != crate::scene_state::SCENE_STATE_VERSION {
         bail!("unsupported scene-state version {}", doc.version);
+    }
+    if let Some(start) = args.start_tick {
+        let start = start.min(doc.frames.len().saturating_sub(1));
+        doc.frames.drain(..start);
     }
     let n_ticks = args.ticks.unwrap_or(120).min(doc.frames.len() as u32).max(1);
     if !args.glbs.iter().all(|g| Path::new(g).is_absolute()) {
@@ -809,7 +818,9 @@ fn apply_tick(
         transform.rotation = q;
 
     }
-    // Camera follows the ego unless explicitly static.
+    // Camera follows the ego unless explicitly static. `pov` pins a W0-style
+    // dashcam to the ego windshield (eye +1.45 m, 12 m look-ahead along the
+    // heading, slight downward tilt) matching scripts/w0/render-clip.mjs.
     if pb.args.camera != "static" {
         if let Ok(mut cam) = cams.single_mut() {
             let focus_rec = frame
@@ -822,15 +833,32 @@ fn apply_tick(
                     Vec3::new(focus.position[0] as f32, pb.args.ground_y, focus.position[2] as f32);
                 let yaw = focus.yaw_rad as f32;
                 let fwd = Vec3::new(yaw.cos(), 0.0, -yaw.sin());
-                let eye = pos - fwd * pb.args.chase_dist + Vec3::Y * pb.args.chase_height;
-                let look = pos + fwd * 8.0;
+                let (eye, look) = if pb.args.camera == "pov" {
+                    (
+                        pos + Vec3::Y * 1.45,
+                        pos + fwd * 12.0 + Vec3::Y * (1.2 - 1.45) * 0.35,
+                    )
+                } else {
+                    (
+                        pos - fwd * pb.args.chase_dist + Vec3::Y * pb.args.chase_height,
+                        pos + fwd * 8.0,
+                    )
+                };
                 cam.translation = eye;
                 cam.look_at(look, Vec3::Y);
                 *cam_pose = CameraPose {
                     eye: [f64::from(eye.x), f64::from(eye.y), f64::from(eye.z)],
                     target: [f64::from(look.x), f64::from(look.y), f64::from(look.z)],
                 };
-                }
+            }
+        }
+    }
+    // Dashcam POV hides the ego body so the windshield view is unobstructed.
+    if pb.args.camera == "pov" {
+        for (_, root, _, mut visibility) in roots.iter_mut() {
+            if root.id == "ego" {
+                *visibility = Visibility::Hidden;
+            }
         }
     }
 
