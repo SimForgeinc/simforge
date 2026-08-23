@@ -303,7 +303,7 @@ const width = Number(args.get('width') ?? 736);
 const height = Number(args.get('height') ?? 416);
 const fps = Math.max(1, Math.floor(Number(args.get('fps') ?? 12)));
 const seconds = Number(args.get('seconds') ?? 5);
-if (!(seconds >= 2 && seconds <= 8)) throw new Error('--seconds must be within [2, 8]');
+if (!(seconds >= 2 && seconds <= 30)) throw new Error('--seconds must be within [2, 30]');
 const frames = Math.round(seconds * fps);
 const weather = args.get('weather') ?? 'clear';
 // 'pov' (default) = ego dashcam view; 'framing' = cinematic frozen-azimuth fit.

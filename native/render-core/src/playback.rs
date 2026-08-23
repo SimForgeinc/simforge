@@ -282,7 +282,6 @@ pub fn run(mut args: PlaybackArgs) -> Result<()> {
                 }),
             ScheduleRunnerPlugin::run_loop(Duration::ZERO),
             MaterialPlugin::<MotionVectorMaterial>::default(),
-            bevy::post_process::auto_exposure::AutoExposurePlugin,
         ))
         .insert_resource(DirectionalLightShadowMap { size: 2048 })
         .insert_resource(weather)
@@ -318,7 +317,8 @@ pub fn run(mut args: PlaybackArgs) -> Result<()> {
                 attach_fog_sun,
             )
                 .chain(),
-        );
+        )
+        .add_systems(Update, collect_passes);
 
     readback::install(&mut app);
 

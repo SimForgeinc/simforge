@@ -11,7 +11,6 @@ use bevy::camera::Exposure;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::light::Skybox;
 use bevy::pbr::ScreenSpaceReflections;
-use bevy::post_process::auto_exposure::AutoExposure;
 use bevy::post_process::bloom::Bloom;
 use bevy::post_process::dof::{DepthOfField, DepthOfFieldMode};
 use bevy::post_process::effect_stack::{ChromaticAberration, LensDistortion, Vignette};
