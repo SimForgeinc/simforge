@@ -1,0 +1,20 @@
+{
+  "asset_load_ms": 2233.327517,
+  "avg_frame_ms": 6.363111,
+  "cameras": 1,
+  "fps": 157.1558314792874,
+  "height": 416,
+  "measured_frames": 2,
+  "p50_frame_ms": 5.683114000000001,
+  "p99_frame_ms": 5.683114000000001,
+  "passes": [
+    "rgb0",
+    "id0",
+    "depth0"
+  ],
+  "readback_us_total_per_triple_avg": 3033.0,
+  "scene_build_ms": 104.11804,
+  "tiles": 5,
+  "warmup_to_first_frame_ms": 196.763533,
+  "width": 736
+}
