@@ -135,6 +135,7 @@ export type {
   ActionHookContext,
   ActionOverride,
   AdvanceOptions,
+  EngineTickObservation,
   FixedStepSimulationProgress,
   FixedStepSimulationSession,
   RunOptions,
@@ -142,13 +143,14 @@ export type {
   SessionPairMinima,
   SimResult,
   SimulationSnapshot,
+  TickObserver,
 } from './sim/engine.js';
 export { evaluateCondition } from './sim/triggers.js';
 export type { ConditionContext } from './sim/triggers.js';
 export { buildOccluders, hasLineOfSight, blockingOccluder } from './sim/visibility.js';
 export type { OccluderShape } from './sim/visibility.js';
-export { SignalBook, phaseForbidsEntry } from './sim/signals.js';
-export type { SignalPhase, SignalState, StopLineAuthority, StopLineBinding } from './sim/signals.js';
+export { DEFAULT_DARK_DWELL_S, SignalBook, phaseForbidsEntry, SIGNAL_SNAPSHOT_TICK_HZ, signalSnapshotAt } from './sim/signals.js';
+export type { SignalPhase, SignalState, SignalSnapshot, StopLineAuthority, StopLineBinding } from './sim/signals.js';
 
 /* ----------------------------------------------------- localised conditions */
 export { SURFACE_KINDS, SURFACE_KIND_FRICTION_SCALE, SurfaceField } from './environment.js';

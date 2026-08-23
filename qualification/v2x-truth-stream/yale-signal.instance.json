@@ -1,0 +1,1622 @@
+{
+ "kind": "scenario-instance",
+ "version": 1,
+ "input": {
+  "schemaVersion": 1,
+  "mapId": "yale-street",
+  "clipSeconds": 12,
+  "warmupSeconds": 0,
+  "dt": 0.02,
+  "seed": "v2x-truthstream-yale-signal-1",
+  "operationalConditions": {
+   "weather": "overcast",
+   "timeOfDay": "dusk",
+   "traffic": "moderate",
+   "visibility": "dense-occlusion",
+   "effects": {
+    "visibilityRangeM": 300,
+    "frictionScale": 1,
+    "trafficSpeedFactor": 0.8
+   }
+  },
+  "metricSubject": "focus-vehicle",
+  "actors": [
+   {
+    "id": "cross-suv",
+    "kind": "car",
+    "dims": {
+     "l": 4.85,
+     "w": 1.95,
+     "h": 1.78
+    },
+    "initial": {
+     "pose": {
+      "x": 343,
+      "z": -1782,
+      "headingRad": -0.36
+     },
+     "speedMps": 0
+    },
+    "behavior": {
+     "rules": {
+      "obeySignals": true,
+      "yield": true,
+      "yieldToVehicles": true,
+      "yieldToPedestrians": true,
+      "collisionAvoidance": true,
+      "aggression": 0.45,
+      "speedFactor": 1
+     },
+     "route": {
+      "kind": "polyline",
+      "points": [
+       {
+        "x": 343,
+        "z": -1782
+       },
+       {
+        "x": 375,
+        "z": -1793
+       },
+       {
+        "x": 420,
+        "z": -1809
+       }
+      ]
+     },
+     "cruiseSpeedMps": 0
+    },
+    "presentAtStart": true,
+    "static": false,
+    "tags": [
+     "role:cross-suv",
+     "catalog:vehicle.suv"
+    ]
+   },
+   {
+    "id": "focus-vehicle",
+    "kind": "car",
+    "dims": {
+     "l": 4.7,
+     "w": 1.82,
+     "h": 1.45
+    },
+    "initial": {
+     "pose": {
+      "x": 385,
+      "z": -1808,
+      "headingRad": 2.14
+     },
+     "speedMps": 0
+    },
+    "behavior": {
+     "rules": {
+      "obeySignals": true,
+      "yield": true,
+      "yieldToVehicles": true,
+      "yieldToPedestrians": true,
+      "collisionAvoidance": true,
+      "aggression": 0.3,
+      "speedFactor": 1
+     },
+     "route": {
+      "kind": "polyline",
+      "points": [
+       {
+        "x": 385,
+        "z": -1808
+       },
+       {
+        "x": 375,
+        "z": -1793
+       },
+       {
+        "x": 360,
+        "z": -1769
+       }
+      ]
+     },
+     "cruiseSpeedMps": 0
+    },
+    "presentAtStart": true,
+    "static": false,
+    "tags": [
+     "role:focus-vehicle",
+     "catalog:vehicle.sedan"
+    ]
+   },
+   {
+    "id": "officer",
+    "kind": "pedestrian",
+    "dims": {
+     "l": 0.65,
+     "w": 0.65,
+     "h": 1.78
+    },
+    "initial": {
+     "pose": {
+      "x": 369,
+      "z": -1784,
+      "headingRad": 0
+     },
+     "speedMps": 0
+    },
+    "behavior": {
+     "rules": {
+      "obeySignals": true,
+      "yield": true,
+      "yieldToVehicles": true,
+      "yieldToPedestrians": true,
+      "collisionAvoidance": true,
+      "aggression": 0.5,
+      "speedFactor": 1
+     },
+     "route": {
+      "kind": "polyline",
+      "points": [
+       {
+        "x": 369,
+        "z": -1784
+       },
+       {
+        "x": 369.1,
+        "z": -1784
+       }
+      ]
+     },
+     "cruiseSpeedMps": 0
+    },
+    "presentAtStart": true,
+    "static": true,
+    "tags": [
+     "role:officer",
+     "authority:police",
+     "catalog:construction.flagger"
+    ]
+   },
+   {
+    "id": "pedestrian-group",
+    "kind": "pedestrian",
+    "dims": {
+     "l": 0.8,
+     "w": 1.4,
+     "h": 1.75
+    },
+    "initial": {
+     "pose": {
+      "x": 367,
+      "z": -1778,
+      "headingRad": 1.03
+     },
+     "speedMps": 0
+    },
+    "behavior": {
+     "rules": {
+      "obeySignals": true,
+      "yield": true,
+      "yieldToVehicles": true,
+      "yieldToPedestrians": true,
+      "collisionAvoidance": true,
+      "aggression": 0.2,
+      "speedFactor": 1
+     },
+     "route": {
+      "kind": "polyline",
+      "points": [
+       {
+        "x": 367,
+        "z": -1778
+       },
+       {
+        "x": 388,
+        "z": -1810
+       }
+      ]
+     },
+     "cruiseSpeedMps": 0
+    },
+    "presentAtStart": true,
+    "static": false,
+    "tags": [
+     "role:pedestrian-group",
+     "catalog:pedestrian.adult_standing"
+    ]
+   },
+   {
+    "id": "turning-bus",
+    "kind": "bus",
+    "dims": {
+     "l": 12.2,
+     "w": 2.55,
+     "h": 3.2
+    },
+    "initial": {
+     "pose": {
+      "x": 364,
+      "z": -1804,
+      "headingRad": 0.5
+     },
+     "speedMps": 0
+    },
+    "behavior": {
+     "rules": {
+      "obeySignals": true,
+      "yield": true,
+      "yieldToVehicles": true,
+      "yieldToPedestrians": true,
+      "collisionAvoidance": true,
+      "aggression": 0.35,
+      "speedFactor": 1
+     },
+     "route": {
+      "kind": "polyline",
+      "points": [
+       {
+        "x": 364,
+        "z": -1804
+       },
+       {
+        "x": 382,
+        "z": -1794
+       },
+       {
+        "x": 420,
+        "z": -1772
+       }
+      ]
+     },
+     "cruiseSpeedMps": 0
+    },
+    "presentAtStart": true,
+    "static": false,
+    "tags": [
+     "role:turning-bus",
+     "occluder:officer",
+     "catalog:vehicle.bus"
+    ]
+   }
+  ],
+  "interactions": [
+   {
+    "id": "bus-clears-officer",
+    "actorId": "turning-bus",
+    "trigger": {
+     "kind": "at",
+     "t": 12.5
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "absolute",
+     "value": 5
+    },
+    "dynamics": {
+     "shape": "linear",
+     "constraint": "time",
+     "value": 0.5
+    }
+   },
+   {
+    "id": "bus-turns",
+    "actorId": "turning-bus",
+    "trigger": {
+     "kind": "at",
+     "t": 5
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "absolute",
+     "value": 5
+    },
+    "dynamics": {
+     "shape": "linear",
+     "constraint": "time",
+     "value": 0.8
+    }
+   },
+   {
+    "id": "focus-vehicle-crosses",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 15.65
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "absolute",
+     "value": 3.333333
+    },
+    "dynamics": {
+     "shape": "linear",
+     "constraint": "time",
+     "value": 0.8
+    }
+   },
+   {
+    "id": "focus-vehicle-full-stop",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "stop"
+    },
+    "dynamics": {
+     "shape": "step",
+     "constraint": "time",
+     "value": 0.1
+    }
+   },
+   {
+    "id": "focus-vehicle-holds-ambiguous",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 9
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "stop"
+    },
+    "dynamics": {
+     "shape": "step",
+     "constraint": "time",
+     "value": 0.1
+    }
+   },
+   {
+    "id": "focus-vehicle-ignores-dark-heads",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 15.65
+    },
+    "verb": "set",
+    "target": {
+     "key": "rules.obeySignals",
+     "value": false
+    }
+   },
+   {
+    "id": "officer-ambiguous-point",
+    "actorId": "officer",
+    "trigger": {
+     "kind": "at",
+     "t": 9
+    },
+    "verb": "set",
+    "target": {
+     "key": "pose.gesture",
+     "value": "point"
+    }
+   },
+   {
+    "id": "officer-beckons-focus-vehicle",
+    "actorId": "officer",
+    "trigger": {
+     "kind": "at",
+     "t": 14.55
+    },
+    "verb": "set",
+    "target": {
+     "key": "pose.gesture",
+     "value": "wave_through"
+    }
+   },
+   {
+    "id": "officer-stops-suv",
+    "actorId": "officer",
+    "trigger": {
+     "kind": "at",
+     "t": 14
+    },
+    "verb": "set",
+    "target": {
+     "key": "pose.gesture",
+     "value": "halt"
+    }
+   },
+   {
+    "id": "officer-waves-cross",
+    "actorId": "officer",
+    "trigger": {
+     "kind": "at",
+     "t": 1
+    },
+    "verb": "set",
+    "target": {
+     "key": "pose.gesture",
+     "value": "wave_through"
+    }
+   },
+   {
+    "id": "pedestrians-held",
+    "actorId": "pedestrian-group",
+    "trigger": {
+     "kind": "at",
+     "t": 0
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "stop"
+    },
+    "dynamics": {
+     "shape": "step",
+     "constraint": "time",
+     "value": 0.1
+    }
+   },
+   {
+    "id": "signal-focus-vehicle-flashing-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:focus-vehicle.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "signal-focus-vehicle-flashing-red-flash-off",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0.5
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:focus-vehicle.phase",
+     "value": "off"
+    }
+   },
+   {
+    "id": "signal-focus-vehicle-flashing-red-flash-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 1
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:focus-vehicle.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "signal-left-flashing-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:left.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "signal-left-flashing-red-flash-off",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0.5
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:left.phase",
+     "value": "off"
+    }
+   },
+   {
+    "id": "signal-left-flashing-red-flash-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 1
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:left.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "signal-opposing-flashing-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:opposing.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "signal-opposing-flashing-red-flash-off",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0.5
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:opposing.phase",
+     "value": "off"
+    }
+   },
+   {
+    "id": "signal-opposing-flashing-red-flash-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 1
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:opposing.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "signal-right-flashing-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:right.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "signal-right-flashing-red-flash-off",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 0.5
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:right.phase",
+     "value": "off"
+    }
+   },
+   {
+    "id": "signal-right-flashing-red-flash-red",
+    "actorId": "focus-vehicle",
+    "trigger": {
+     "kind": "at",
+     "t": 1
+    },
+    "verb": "set",
+    "target": {
+     "key": "signal:dark-junction:right.phase",
+     "value": "red"
+    }
+   },
+   {
+    "id": "suv-false-start",
+    "actorId": "cross-suv",
+    "trigger": {
+     "kind": "at",
+     "t": 9.4
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "absolute",
+     "value": 2.222222
+    },
+    "dynamics": {
+     "shape": "linear",
+     "constraint": "time",
+     "value": 0.8
+    }
+   },
+   {
+    "id": "suv-yields",
+    "actorId": "cross-suv",
+    "trigger": {
+     "kind": "at",
+     "t": 14.15
+    },
+    "verb": "speed",
+    "target": {
+     "mode": "stop"
+    },
+    "dynamics": {
+     "shape": "linear",
+     "constraint": "time",
+     "value": 0.8
+    }
+   }
+  ],
+  "signalPrograms": [
+   {
+    "id": "signal:1425",
+    "phases": [
+     {
+      "phase": "red",
+      "durationS": 15
+     },
+     {
+      "phase": "green",
+      "durationS": 12
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     },
+     {
+      "phase": "red",
+      "durationS": 30
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "13:0:3",
+      "s": 1,
+      "connectingLaneRsls": [
+       "141:0:1"
+      ]
+     },
+     {
+      "rsl": "13:0:4",
+      "s": 1,
+      "connectingLaneRsls": [
+       "137:0:1"
+      ]
+     },
+     {
+      "rsl": "13:0:5",
+      "s": 1,
+      "connectingLaneRsls": [
+       "135:0:1"
+      ]
+     },
+     {
+      "rsl": "13:0:5",
+      "s": 1,
+      "connectingLaneRsls": [
+       "174:0:1"
+      ]
+     },
+     {
+      "rsl": "32:0:-3",
+      "s": 57.30871901393174,
+      "connectingLaneRsls": [
+       "182:0:-1"
+      ]
+     },
+     {
+      "rsl": "32:0:-4",
+      "s": 57.31167293610519,
+      "connectingLaneRsls": [
+       "192:0:-1"
+      ]
+     },
+     {
+      "rsl": "32:0:-5",
+      "s": 57.31503113586289,
+      "connectingLaneRsls": [
+       "185:0:-1"
+      ]
+     },
+     {
+      "rsl": "32:0:-5",
+      "s": 57.31503113586289,
+      "connectingLaneRsls": [
+       "205:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "134",
+     "controllerIds": [
+      "1562"
+     ],
+     "headIds": [
+      "1425",
+      "1463",
+      "1523",
+      "1536",
+      "1537",
+      "1541",
+      "1542",
+      "1546"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1562",
+       "headIds": [
+        "1425",
+        "1463",
+        "1523",
+        "1536",
+        "1537",
+        "1541",
+        "1542",
+        "1546"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1464",
+    "phases": [
+     {
+      "phase": "red",
+      "durationS": 30
+     },
+     {
+      "phase": "green",
+      "durationS": 27
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "100:0:-1",
+      "s": 7.81100699689253,
+      "connectingLaneRsls": [
+       "208:0:-1"
+      ]
+     },
+     {
+      "rsl": "100:0:-1",
+      "s": 7.81100699689253,
+      "connectingLaneRsls": [
+       "227:0:-1"
+      ]
+     },
+     {
+      "rsl": "100:0:-3",
+      "s": 7.857624084855429,
+      "connectingLaneRsls": [
+       "149:0:-1"
+      ]
+     },
+     {
+      "rsl": "85:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "158:0:1"
+      ]
+     },
+     {
+      "rsl": "85:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "216:0:1"
+      ]
+     },
+     {
+      "rsl": "85:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "231:0:1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "134",
+     "controllerIds": [
+      "1563",
+      "1564"
+     ],
+     "headIds": [
+      "1464",
+      "1511",
+      "1547",
+      "1548",
+      "1549",
+      "1550"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1563",
+       "headIds": [
+        "1464",
+        "1511",
+        "1547",
+        "1548",
+        "1549",
+        "1550"
+       ]
+      },
+      {
+       "controllerId": "1564",
+       "headIds": [
+        "1464",
+        "1511",
+        "1547",
+        "1548",
+        "1549",
+        "1550"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1538",
+    "phases": [
+     {
+      "phase": "green",
+      "durationS": 27
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     },
+     {
+      "phase": "red",
+      "durationS": 30
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "32:0:-2",
+      "s": 57.307185913903076,
+      "connectingLaneRsls": [
+       "145:0:-1"
+      ]
+     },
+     {
+      "rsl": "32:0:-2",
+      "s": 57.307185913903076,
+      "connectingLaneRsls": [
+       "195:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "134",
+     "controllerIds": [
+      "1561",
+      "1562"
+     ],
+     "headIds": [
+      "1538",
+      "1545"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1561",
+       "headIds": [
+        "1538",
+        "1545"
+       ]
+      },
+      {
+       "controllerId": "1562",
+       "headIds": [
+        "1538",
+        "1545"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1543",
+    "phases": [
+     {
+      "phase": "green",
+      "durationS": 12
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     },
+     {
+      "phase": "red",
+      "durationS": 45
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "13:0:2",
+      "s": 1,
+      "connectingLaneRsls": [
+       "162:0:1"
+      ]
+     },
+     {
+      "rsl": "13:0:2",
+      "s": 1,
+      "connectingLaneRsls": [
+       "178:0:1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "134",
+     "controllerIds": [
+      "1561"
+     ],
+     "headIds": [
+      "1543"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1561",
+       "headIds": [
+        "1543"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1432",
+    "phases": [
+     {
+      "phase": "green",
+      "durationS": 27
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     },
+     {
+      "phase": "red",
+      "durationS": 30
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "76:0:-1",
+      "s": 5.060005166383289,
+      "connectingLaneRsls": [
+       "320:0:-1"
+      ]
+     },
+     {
+      "rsl": "76:0:-1",
+      "s": 5.060005166383289,
+      "connectingLaneRsls": [
+       "326:0:-1"
+      ]
+     },
+     {
+      "rsl": "76:0:-2",
+      "s": 5.060248353701006,
+      "connectingLaneRsls": [
+       "334:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "303",
+     "controllerIds": [
+      "1566"
+     ],
+     "headIds": [
+      "1432",
+      "1433",
+      "1434",
+      "1443",
+      "1522"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1566",
+       "headIds": [
+        "1432",
+        "1433",
+        "1434",
+        "1443",
+        "1522"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1426",
+    "phases": [
+     {
+      "phase": "red",
+      "durationS": 30
+     },
+     {
+      "phase": "green",
+      "durationS": 12
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     },
+     {
+      "phase": "red",
+      "durationS": 15
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "18:0:-2",
+      "s": 7.406970529479786,
+      "connectingLaneRsls": [
+       "356:0:-1"
+      ]
+     },
+     {
+      "rsl": "71:0:-2",
+      "s": 7.511175490921346,
+      "connectingLaneRsls": [
+       "359:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "345",
+     "controllerIds": [
+      "1571"
+     ],
+     "headIds": [
+      "1426",
+      "1429",
+      "1480",
+      "1518"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1571",
+       "headIds": [
+        "1426",
+        "1429",
+        "1480",
+        "1518"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1427",
+    "phases": [
+     {
+      "phase": "red",
+      "durationS": 45
+     },
+     {
+      "phase": "green",
+      "durationS": 12
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "18:0:-3",
+      "s": 7.4024394915455005,
+      "connectingLaneRsls": [
+       "384:0:-1"
+      ]
+     },
+     {
+      "rsl": "18:0:-6",
+      "s": 7.399269934892359,
+      "connectingLaneRsls": [
+       "377:0:-1"
+      ]
+     },
+     {
+      "rsl": "18:0:-8",
+      "s": 7.396308348577504,
+      "connectingLaneRsls": [
+       "380:0:-1"
+      ]
+     },
+     {
+      "rsl": "71:0:-3",
+      "s": 7.510994857830839,
+      "connectingLaneRsls": [
+       "376:0:-1"
+      ]
+     },
+     {
+      "rsl": "71:0:-4",
+      "s": 7.510990143171178,
+      "connectingLaneRsls": [
+       "373:0:-1"
+      ]
+     },
+     {
+      "rsl": "71:0:-5",
+      "s": 7.510999917954207,
+      "connectingLaneRsls": [
+       "374:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "345",
+     "controllerIds": [
+      "1572"
+     ],
+     "headIds": [
+      "1427",
+      "1428",
+      "1430",
+      "1431",
+      "1475",
+      "1476",
+      "1479",
+      "1519"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1572",
+       "headIds": [
+        "1427",
+        "1428",
+        "1430",
+        "1431",
+        "1475",
+        "1476",
+        "1479",
+        "1519"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1477",
+    "phases": [
+     {
+      "phase": "green",
+      "durationS": 27
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     },
+     {
+      "phase": "red",
+      "durationS": 30
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "102:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "347:0:1"
+      ]
+     },
+     {
+      "rsl": "102:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "360:0:1"
+      ]
+     },
+     {
+      "rsl": "102:0:2",
+      "s": 1,
+      "connectingLaneRsls": [
+       "370:0:1"
+      ]
+     },
+     {
+      "rsl": "67:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "346:0:1"
+      ]
+     },
+     {
+      "rsl": "67:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "352:0:1"
+      ]
+     },
+     {
+      "rsl": "67:0:1",
+      "s": 1,
+      "connectingLaneRsls": [
+       "357:0:1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "345",
+     "controllerIds": [
+      "1569",
+      "1570"
+     ],
+     "headIds": [
+      "1477",
+      "1478",
+      "1525",
+      "1526",
+      "1527",
+      "1528"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1569",
+       "headIds": [
+        "1477",
+        "1478",
+        "1525",
+        "1526",
+        "1527",
+        "1528"
+       ]
+      },
+      {
+       "controllerId": "1570",
+       "headIds": [
+        "1477",
+        "1478",
+        "1525",
+        "1526",
+        "1527",
+        "1528"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1512",
+    "phases": [
+     {
+      "phase": "red",
+      "durationS": 30
+     },
+     {
+      "phase": "green",
+      "durationS": 27
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "105:0:-2",
+      "s": 11.132076117447129,
+      "connectingLaneRsls": [
+       "455:0:-1"
+      ]
+     },
+     {
+      "rsl": "105:0:-2",
+      "s": 11.132076117447129,
+      "connectingLaneRsls": [
+       "466:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-2",
+      "s": 25.20113031798848,
+      "connectingLaneRsls": [
+       "469:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-3",
+      "s": 25.2002767680445,
+      "connectingLaneRsls": [
+       "483:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-4",
+      "s": 25.20000003538935,
+      "connectingLaneRsls": [
+       "487:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-5",
+      "s": 25.200000152016653,
+      "connectingLaneRsls": [
+       "489:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-5",
+      "s": 25.200000152016653,
+      "connectingLaneRsls": [
+       "500:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "447",
+     "controllerIds": [
+      "1575",
+      "1576"
+     ],
+     "headIds": [
+      "1512",
+      "1534"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1575",
+       "headIds": [
+        "1512",
+        "1534"
+       ]
+      },
+      {
+       "controllerId": "1576",
+       "headIds": [
+        "1512",
+        "1534"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1514",
+    "phases": [
+     {
+      "phase": "red",
+      "durationS": 45
+     },
+     {
+      "phase": "green",
+      "durationS": 12
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "105:0:-3",
+      "s": 11.130670648758402,
+      "connectingLaneRsls": [
+       "459:0:-1"
+      ]
+     },
+     {
+      "rsl": "105:0:-4",
+      "s": 11.130004409993271,
+      "connectingLaneRsls": [
+       "461:0:-1"
+      ]
+     },
+     {
+      "rsl": "105:0:-5",
+      "s": 11.130012252560487,
+      "connectingLaneRsls": [
+       "448:0:-1"
+      ]
+     },
+     {
+      "rsl": "105:0:-5",
+      "s": 11.130012252560487,
+      "connectingLaneRsls": [
+       "463:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-3",
+      "s": 25.2002767680445,
+      "connectingLaneRsls": [
+       "483:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-4",
+      "s": 25.20000003538935,
+      "connectingLaneRsls": [
+       "487:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-5",
+      "s": 25.200000152016653,
+      "connectingLaneRsls": [
+       "489:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-5",
+      "s": 25.200000152016653,
+      "connectingLaneRsls": [
+       "500:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "447",
+     "controllerIds": [
+      "1576"
+     ],
+     "headIds": [
+      "1514",
+      "1529",
+      "1532"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1576",
+       "headIds": [
+        "1514",
+        "1529",
+        "1532"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   },
+   {
+    "id": "signal:1531",
+    "phases": [
+     {
+      "phase": "red",
+      "durationS": 30
+     },
+     {
+      "phase": "green",
+      "durationS": 12
+     },
+     {
+      "phase": "yellow",
+      "durationS": 3
+     },
+     {
+      "phase": "red",
+      "durationS": 15
+     }
+    ],
+    "offsetS": 23,
+    "loop": true,
+    "stopLines": [
+     {
+      "rsl": "30:0:-2",
+      "s": 25.20113031798848,
+      "connectingLaneRsls": [
+       "469:0:-1"
+      ]
+     },
+     {
+      "rsl": "30:0:-2",
+      "s": 25.20113031798848,
+      "connectingLaneRsls": [
+       "496:0:-1"
+      ]
+     }
+    ],
+    "mapBinding": {
+     "junctionId": "447",
+     "controllerIds": [
+      "1575"
+     ],
+     "headIds": [
+      "1531"
+     ],
+     "controllerHeadGroups": [
+      {
+       "controllerId": "1575",
+       "headIds": [
+        "1531"
+       ]
+      }
+     ],
+     "timingSource": "synthetic-default"
+    }
+   }
+  ],
+  "roadControls": [],
+  "props": [
+   {
+    "id": "temporary-control-1",
+    "catalogId": "construction.temporary_stop_sign",
+    "pose": {
+     "x": 387,
+     "z": -1811,
+     "headingRad": 2.14
+    },
+    "dims": {
+     "l": 0.82,
+     "w": 0.92,
+     "h": 2.16
+    },
+    "scale": 1,
+    "collidable": false,
+    "essentiality": "preferred"
+   },
+   {
+    "id": "temporary-control-2",
+    "catalogId": "construction.temporary_stop_sign",
+    "pose": {
+     "x": 340,
+     "z": -1784,
+     "headingRad": -0.36
+    },
+    "dims": {
+     "l": 0.82,
+     "w": 0.92,
+     "h": 2.16
+    },
+    "scale": 1,
+    "collidable": false,
+    "essentiality": "preferred"
+   },
+   {
+    "id": "temporary-control-turned-away",
+    "catalogId": "construction.temporary_stop_sign",
+    "pose": {
+     "x": 403,
+     "z": -1804,
+     "headingRad": 2.78
+    },
+    "dims": {
+     "l": 0.82,
+     "w": 0.92,
+     "h": 2.16
+    },
+    "scale": 1,
+    "collidable": false,
+    "essentiality": "preferred"
+   }
+  ],
+  "occluders": [],
+  "occlusionPairs": [
+   {
+    "observer": "focus-vehicle",
+    "target": "officer",
+    "occluderId": "actor:turning-bus"
+   }
+  ]
+ }
+}

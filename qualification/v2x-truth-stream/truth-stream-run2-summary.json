@@ -1,0 +1,19 @@
+{
+  "summary": {
+    "ticks": 200,
+    "accel_nonzero": 478,
+    "signal_records": 2200,
+    "signal_populated": 2200,
+    "failure_states": {},
+    "spawn_updates_despawns": [
+      5,
+      995,
+      0
+    ],
+    "decimated_10hz": 40,
+    "dropped_total": 0,
+    "episode_ends": 1,
+    "resets": 1
+  },
+  "sha256": "dfb18ca522c98e26207066ca1fc76cfabc66fb3a2f4c4622904b953114fbba11"
+}
