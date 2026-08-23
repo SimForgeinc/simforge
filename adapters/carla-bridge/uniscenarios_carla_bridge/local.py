@@ -23,6 +23,7 @@ from .runtime.backend import (
     PRONTO_CHASE_CAMERA_SENSOR_ID,
     CarlaBackend,
 )
+from .runtime.compiler import compile_xosc14
 from .runtime.contract import (
     ASSET_CATALOG_SCHEMA,
     EMPTY_AMBIENT_CONFIG_SHA256,
