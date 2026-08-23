@@ -1,4 +1,4 @@
-import { parseRenderSpecV3, ProntoSensorHostSchema, type ProntoSensorHost, type RenderSpecV3, type ResolvedFrameSchedule } from '@uniscenarios/scenario-model';
+import { parseRenderSpecV3, RenderSensorHostSchema, type RenderSensorHost, type RenderSpecV3, type ResolvedFrameSchedule } from '@uniscenarios/scenario-model';
 import type { PlaybackBundle } from '@uniscenarios/playback';
 
 export const RENDER_INTENT_V1_SCHEMA = 'uniscenario.render-intent/v1' as const;
@@ -15,7 +15,7 @@ export interface PortableRenderAsset {
 export interface BrowserRenderIntentV1 {
   readonly schema: typeof RENDER_INTENT_V1_SCHEMA;
   readonly engine: 'browser';
-  readonly sensorHost: ProntoSensorHost;
+  readonly sensorHost: RenderSensorHost;
   readonly assets: readonly PortableRenderAsset[];
   readonly renderSpec: RenderSpecV3;
   readonly schedule: ResolvedFrameSchedule;
@@ -37,7 +37,7 @@ export function parseBrowserRenderIntent(value: unknown): BrowserRenderIntentV1 
   if (!Array.isArray(input.assets)) throw new Error('Browser render intent is missing assets.');
   const assets = input.assets.map((asset, index) => parseAsset(asset, index));
   if (new Set(assets.map((asset) => asset.assetId)).size !== assets.length) throw new Error('Browser render intent contains duplicate assetId values.');
-  const sensorHost = ProntoSensorHostSchema.parse(input.sensorHost);
+  const sensorHost = RenderSensorHostSchema.parse(input.sensorHost);
   return Object.freeze({ schema: RENDER_INTENT_V1_SCHEMA, engine: 'browser', assets: Object.freeze(assets), sensorHost, renderSpec: parseRenderSpecV3(input.renderSpec), schedule: parseSchedule(input.schedule) });
 }
 

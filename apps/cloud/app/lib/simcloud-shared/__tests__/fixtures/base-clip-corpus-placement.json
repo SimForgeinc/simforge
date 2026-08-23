@@ -1,0 +1,3806 @@
+{
+  "case_count": 108,
+  "actor_count": 380,
+  "entries": [
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D2__di-rosa.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D4__page-mill.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D7__san-ramon-part-1.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D7__san-ramon-part-1.json",
+      "actor_id": "cross",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D9__el-camino.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D9__el-camino.json",
+      "actor_id": "npc-red-reader",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/I5__page-mill.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/I6__di-rosa.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A1-midblock-dart-out.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A1-midblock-dart-out.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A10-night-rain-ped-strike.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A10-night-rain-ped-strike.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A2-jaywalk-against-the-signal.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A2-jaywalk-against-the-signal.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A3-occluded-dart-out-behind-bus.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A3-occluded-dart-out-behind-bus.json",
+      "actor_id": "bus",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A3-occluded-dart-out-behind-bus.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A4-courtesy-gap-trap.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A4-courtesy-gap-trap.json",
+      "actor_id": "yielding_npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A4-courtesy-gap-trap.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A5-right-turn-hook-crosswalk-ped.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A5-right-turn-hook-crosswalk-ped.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "oncoming-near",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 22
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "oncoming-far",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 6.48
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 8
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "parked_west",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "parked_east",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ped1",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ped2",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ped3",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A9-road-edge-walker-no-sidewalk.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A9-road-edge-walker-no-sidewalk.json",
+      "actor_id": "walker",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A9-road-edge-walker-no-sidewalk.json",
+      "actor_id": "oncoming",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B1-reverse-out-of-parking-space.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B1-reverse-out-of-parking-space.json",
+      "actor_id": "npc-parked",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B10-night-heavy-rain-reverse-out.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B10-night-heavy-rain-reverse-out.json",
+      "actor_id": "npc-parked",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss-nodist.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss-nodist.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.76
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.76
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B3-dual-backover.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 6
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B3-dual-backover.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 6
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B4-space-contest.json",
+      "actor_id": "winner",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 10
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B4-space-contest.json",
+      "actor_id": "yielder",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 6
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B5-parallel-parking-pull-out.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B5-parallel-parking-pull-out.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B6-lot-lane-stop-and-go.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 8
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B6-lot-lane-stop-and-go.json",
+      "actor_id": "lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 8
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B6-lot-lane-stop-and-go.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B7-reverse-parallel-park.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B7-reverse-parallel-park.json",
+      "actor_id": "parked-rear",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B7-reverse-parallel-park.json",
+      "actor_id": "parked-front",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B8-debris-in-lot-lane.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 8
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B8-debris-in-lot-lane.json",
+      "actor_id": "debris-barrel",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "pullout",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "occluder",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "parked_east",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:9",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:10",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:11",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:12",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:13",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:14",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:15",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:16",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:17",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:18",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:19",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:20",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:21",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:22",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:23",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C10-low-visibility-cut-in.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C10-low-visibility-cut-in.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C2-highway-unsafe-cut-in.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C2-highway-unsafe-cut-in.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C3-highway-aborted-cut-in.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C3-highway-aborted-cut-in.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C4-late-exit-chained-double-lane-change.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C5-on-ramp-merge-gap-judgment.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C5-on-ramp-merge-gap-judgment.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C6-slow-truck-overtake.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 100
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C6-slow-truck-overtake.json",
+      "actor_id": "truck",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C7-same-gap-sideswipe.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C7-same-gap-sideswipe.json",
+      "actor_id": "npc-left",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 70
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C7-same-gap-sideswipe.json",
+      "actor_id": "npc-right",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 70
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 70
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "breakdown",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "cone-rear",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "cone-near",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C9-phantom-braking-lead.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C9-phantom-braking-lead.json",
+      "actor_id": "lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D1-red-light-runner.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D1-red-light-runner.json",
+      "actor_id": "runner",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D10-left-turn-trap.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 22
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D10-left-turn-trap.json",
+      "actor_id": "oncoming-lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D10-left-turn-trap.json",
+      "actor_id": "oncoming-follow",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D2-signalized-stop-and-go.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D3-permissive-left-across-oncoming.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D3-permissive-left-across-oncoming.json",
+      "actor_id": "oncoming",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D4-yellow-dilemma-zone.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D5-mid-scenario-preemption.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D5-mid-scenario-preemption.json",
+      "actor_id": "npc-cross",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 10
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D6-conflicting-green-misconfig.json",
+      "actor_id": "observer",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D6-conflicting-green-misconfig.json",
+      "actor_id": "through",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D6-conflicting-green-misconfig.json",
+      "actor_id": "uturn",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D7-right-turn-on-red.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D7-right-turn-on-red.json",
+      "actor_id": "cross",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D8-green-wave-corridor.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 35
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D9-dark-static-signal.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D9-dark-static-signal.json",
+      "actor_id": "npc-red-reader",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E1-four-way-stop-negotiation.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E1-four-way-stop-negotiation.json",
+      "actor_id": "npc_b",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E1-four-way-stop-negotiation.json",
+      "actor_id": "npc_c",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E10-skewed-junction-crossing.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 28
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E10-skewed-junction-crossing.json",
+      "actor_id": "cross",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E2-rolling-stop.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E3-two-way-stop.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 20
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E3-two-way-stop.json",
+      "actor_id": "cross_traffic",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E4-uncontrolled-t-junction-left.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E4-uncontrolled-t-junction-left.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E5-yield-sign-merge-onto-arterial.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E5-yield-sign-merge-onto-arterial.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E6-uturn-at-junction.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_south_west",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_south_east",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_north_west",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_north_east",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "crossing-guard",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "school-bus",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "child-1",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 6.48
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "child-2",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 6.48
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E9-ltap-od-inversion.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E9-ltap-od-inversion.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F1-blind-spot-lane-change.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F1-blind-spot-lane-change.json",
+      "actor_id": "closing-npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F10-against-lane-recovery.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F10-against-lane-recovery.json",
+      "actor_id": "oncoming",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F2-drift-sideswipe.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F2-drift-sideswipe.json",
+      "actor_id": "npc-drifter",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F3-double-lane-change.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F3-double-lane-change.json",
+      "actor_id": "target-lane-npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 90
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F4-aborted-lane-change-swerve.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 50
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F4-aborted-lane-change-swerve.json",
+      "actor_id": "npc-threat",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F5-cut-in-brake-check.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 50
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F5-cut-in-brake-check.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 50
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 50
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "npc-open-lane",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 50
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-1",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-2",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-3",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-4",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-5",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-6",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "closure-barrier",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F7-two-lane-road-overtake-against-oncoming.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 50
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F7-two-lane-road-overtake-against-oncoming.json",
+      "actor_id": "lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F7-two-lane-road-overtake-against-oncoming.json",
+      "actor_id": "oncoming",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F8-early-cut-back-after-overtake.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 90
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F8-early-cut-back-after-overtake.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 125
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F9-late-dive-turn-pocket.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F9-late-dive-turn-pocket.json",
+      "actor_id": "queued-npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-large-occluder-crosswalk.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-large-occluder-crosswalk.json",
+      "actor_id": "bus",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-large-occluder-crosswalk.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-occluded-crosswalk-dart-out.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-occluded-crosswalk-dart-out.json",
+      "actor_id": "bus",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-occluded-crosswalk-dart-out.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 50
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "npc-following",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 35
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-1",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-2",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-3",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-4",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-5",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-6",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G2-medium-occluder-van-dart-out.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G2-medium-occluder-van-dart-out.json",
+      "actor_id": "van",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G2-medium-occluder-van-dart-out.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G3-occluded-cross-traffic.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G3-occluded-cross-traffic.json",
+      "actor_id": "cross",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 36
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G3-occluded-cross-traffic.json",
+      "actor_id": "occluder",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 35
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "vegetation_north",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "vegetation_middle",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "vegetation_south",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G5-low-sun-glare-proxy.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G5-low-sun-glare-proxy.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G6-unlit-night-crossing.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G6-unlit-night-crossing.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G7-rain-spray-queue.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 55
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G7-rain-spray-queue.json",
+      "actor_id": "queue-tail",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G7-rain-spray-queue.json",
+      "actor_id": "queue-lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G8-fog-wall.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G8-fog-wall.json",
+      "actor_id": "stationary",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:9",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:10",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:11",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:12",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:13",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:14",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:15",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:16",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:17",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:18",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:19",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:20",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:21",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:22",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:23",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:18",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:19",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H4-region-polygon-spawn.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "bg-ped-2026072806-0",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "bg-ped-2026072806-1",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "bg-ped-2026072806-2",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 80
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:9",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:10",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:11",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:12",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "follower-1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 35
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "follower-2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 35
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 35
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "left-rear",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "left-front",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "center-front",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "right-rear",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "right-front",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "walker-left",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "walker-right",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 5.4
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "prop-cone",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "prop-barrel",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I2-three-vehicle-convoy-through-turns.json",
+      "actor_id": "lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I2-three-vehicle-convoy-through-turns.json",
+      "actor_id": "follower-one",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 15
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I2-three-vehicle-convoy-through-turns.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 15
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I3-police-intercept.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I3-police-intercept.json",
+      "actor_id": "police",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I4-cross-junction-chase.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I4-cross-junction-chase.json",
+      "actor_id": "chaser",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I5-32-anchor-route-tour.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I6-per-clip-reroute-rejection.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I7-formation-timed-crossing.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 40
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I7-formation-timed-crossing.json",
+      "actor_id": "cross",
+      "placement": {
+        "placement_mode": "path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I8-role-swap.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 65
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I8-role-swap.json",
+      "actor_id": "lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I9-timed-path-schedule-precision.json",
+      "actor_id": "scheduled",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I9-timed-path-schedule-precision.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "queue-tail",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "queue-lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "flagger",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-1",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-2",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-3",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-4",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "lane-barrier-1",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "lane-barrier-2",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J10-five-minute-endurance.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J10-five-minute-endurance.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J10-five-minute-endurance.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-avoidance.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-avoidance.json",
+      "actor_id": "debris-barrel",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-strike-avoidance-at-speed.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 60
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-strike-avoidance-at-speed.json",
+      "actor_id": "debris-box",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-strike-avoidance-at-speed.json",
+      "actor_id": "debris-barrel",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J3-weather-sweep.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J4-degenerate-params.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 15
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J4-degenerate-params.json",
+      "actor_id": "zero_cruise",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J5-map-edge-scenario.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 18
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J5-map-edge-scenario.json",
+      "actor_id": "npc",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 15
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J6-against-lane-reverse-combo.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "ped",
+      "placement": {
+        "placement_mode": "timed_path",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 7.2
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "cone-line-1",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "cone-line-2",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "cone-line-3",
+      "placement": {
+        "placement_mode": "point",
+        "autopilot": false,
+        "is_static": true,
+        "speed_kph": 0
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": true,
+        "is_static": false,
+        "speed_kph": null
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/SMOKE-1-ego-cruise.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/SMOKE-2-npc-stop-resume.json",
+      "actor_id": "ego",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 30
+      }
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/SMOKE-2-npc-stop-resume.json",
+      "actor_id": "npc-lead",
+      "placement": {
+        "placement_mode": "road",
+        "autopilot": false,
+        "is_static": false,
+        "speed_kph": 25
+      }
+    }
+  ]
+}

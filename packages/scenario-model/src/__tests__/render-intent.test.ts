@@ -150,3 +150,34 @@ describe('pronto render intent', () => {
       .toThrow(/at most one RGB trailing chase camera/);
   });
 });
+
+describe('authored browser sensor host', () => {
+  it('accepts one authored dash camera without Pronto vehicle metadata', () => {
+    const value = {
+      ...intent([camera('basic-dash-camera')]),
+      sensorHost: {
+        actorId: HOST,
+        vehicleAsset: { catalogAssetId: 'vehicle.tesla.model3' },
+        sensorRig: { rigId: 'authored', cameras: 1, lidars: 0, radars: 0 },
+      },
+    };
+
+    const parsed = parseRenderIntent(value);
+
+    expect(parsed.sensorHost.vehicleAsset.catalogAssetId).toBe('vehicle.tesla.model3');
+    expect(parsed.renderSpec.sources).toHaveLength(1);
+  });
+
+  it('rejects authored counts that do not match selected physical sensors', () => {
+    const value = {
+      ...intent([camera('basic-dash-camera')]),
+      sensorHost: {
+        actorId: HOST,
+        vehicleAsset: { catalogAssetId: 'vehicle.tesla.model3' },
+        sensorRig: { rigId: 'authored', cameras: 2, lidars: 0, radars: 0 },
+      },
+    };
+
+    expect(() => parseRenderIntent(value)).toThrow(/authored sensor counts do not match/);
+  });
+});

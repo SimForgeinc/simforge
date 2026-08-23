@@ -1,0 +1,1906 @@
+{
+  "case_count": 108,
+  "actor_count": 380,
+  "entries": [
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D2__di-rosa.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:864ea66cd29b00d1c7b89b79eb4ecdd600d00559e0ad1d1efb5b73b49650324a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D4__page-mill.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:1428750d32be7f74c989b95143d043c26c4f1e739fc13a0c833845763f6a7283"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D7__san-ramon-part-1.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:478205fcc11c4b96c569125a70eca14da058d17ad92a921bcc402206efa1441f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D7__san-ramon-part-1.json",
+      "actor_id": "cross",
+      "wire_sha": "sha256:643b9cf4703e589bc0d5820182e31f99f037f3a6509f372400c0b2f0201a9ff6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D9__el-camino.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:f848615617fc57f93a716baa90c037772c99f897299987ee340eb027c91a55cb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/D9__el-camino.json",
+      "actor_id": "npc-red-reader",
+      "wire_sha": "sha256:36a3361c32f4bf1badce8e55267e3042fd10df007276b845e25e7a993bc75068"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/I5__page-mill.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:2e261db4215ce927dba8c41a0d15cf8d061ed16e7ef48951ddfa156dc9859e95"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases-m4/I6__di-rosa.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:ad927913b8e7ca3fa999fe76bf6dc82528918eb5c87add981e9e6c6ab48d9774"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A1-midblock-dart-out.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:b03ac0f5259206dd094e71500f76d8061551cb3863b0c7c6984956c80429774f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A1-midblock-dart-out.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:e7fd8990472e9851c7321010312a3baf772043e9623bfe5916a14ebe44f8c178"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A10-night-rain-ped-strike.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:23f002e193839f51e986318a4ff4508dd8e35c12f6b31e73ac70ccbc208f4a35"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A10-night-rain-ped-strike.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:57a1718654163821efea86004f9d0982508e64a54e42a226420565e2f56aec56"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A2-jaywalk-against-the-signal.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:fde2d6f624e0abc8612f0113640bcf8abe003e47752e9f706ff7e60d1d2624d2"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A2-jaywalk-against-the-signal.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:34a2b4c893d318e9af9c999fc8f71dc1f8183aa3a05948b177506f652d7d95bd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A3-occluded-dart-out-behind-bus.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:bee026195ea000046afb694f25e1cbfe1c575290253b8e1a07d1ef4d53d8da86"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A3-occluded-dart-out-behind-bus.json",
+      "actor_id": "bus",
+      "wire_sha": "sha256:d4c15af8eac535f38145ae17574a0a9e7e5db57f31c03352280cc8f795adf350"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A3-occluded-dart-out-behind-bus.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:a3bf63ba5ab28a4abe31ff369d7bb63dc1ce460c3b9a6969e57f70540dcb6479"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A4-courtesy-gap-trap.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:6d9c6134d5854b1fe885b5ad437766b82cc5df0c981fc273e4fd5c007e6e66f1"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A4-courtesy-gap-trap.json",
+      "actor_id": "yielding_npc",
+      "wire_sha": "sha256:c51f0d9e5e6b2612eee8089ae11a177cb2545980bd6099bcb8f61079c23ae1bb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A4-courtesy-gap-trap.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:fc27b85b5a4b359cde47112fb99149d607916e206eb16488eadef826d16d8da3"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A5-right-turn-hook-crosswalk-ped.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:894575477146cb410252cd04f4c34a18312eeac9e60b5bac667c07d56c20867c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A5-right-turn-hook-crosswalk-ped.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:734288a69670144d528a7a29f7f54ee8133f60d5f7a7d9a1cdc0c9588b833cf0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:7cdfaaa76772495e432b66c8463a16d2edbbe6153c8d6c014539a6b38323d207"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "oncoming-near",
+      "wire_sha": "sha256:6319304fb805c94b1c69a9dc1cc3b70c6ca347a30d30189939a2e993ce4546d9"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "oncoming-far",
+      "wire_sha": "sha256:6217eeeec5ffec88151d1fa18cde08a0a1fa04b0514b2a3bff149ef54b441c3f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A6-unprotected-left-across-crosswalk.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:aadd6f2c25d62bb0938165d5ebebed7d15da854c931ba282f815a164ce1fcb23"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:26c9571c18e82b6cbd0cab9c9ec42049f293553365978eb866575dc0f16ce601"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:c1deccc5ebabb3a844d47d85e49b7f7c69ba72e820acca380aee51811e1e80d5"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "parked_west",
+      "wire_sha": "sha256:68db75816a89ee438b61d6942f00d36c0752c6c2582dab29036e45565f129cda"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A7-parking-lot-walker-between-parked-cars.json",
+      "actor_id": "parked_east",
+      "wire_sha": "sha256:6a2d12c9088b9a6b72405d8fdad4a1e7a2bf6246ec3f19582c576d1de215fc99"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:2d863f1302f5847c2a19c76a17df8d7ab21864f188297d1ae476176834d0d55d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ped1",
+      "wire_sha": "sha256:89e05bb225237747406d2e1f204aca6acc8f55b03bc6d760564235e471149fea"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ped2",
+      "wire_sha": "sha256:0d37b8a5915b9ec7a5bef0c88ecb1d2da8fe3f4bc1b3a93f8f0f99af8a604e60"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A8-staggered-group-crossing.json",
+      "actor_id": "ped3",
+      "wire_sha": "sha256:c6a7408515f09e7c0ea87f3d71e9c6bf051e4cb8e0d05e4f9e5d18ff9c1a094d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A9-road-edge-walker-no-sidewalk.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:77dcfc8c0fbe52810f94f1e54d81cb4cc571b8a85f7ad8cefb4182156d90c1e6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A9-road-edge-walker-no-sidewalk.json",
+      "actor_id": "walker",
+      "wire_sha": "sha256:3609e011eddde231d923baf02a831b456789a5115cd87543acb773aaf544c6a4"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/A9-road-edge-walker-no-sidewalk.json",
+      "actor_id": "oncoming",
+      "wire_sha": "sha256:9abef97737514ad9d1e86fae5561609b91960bd60c7e03c2cbbe5d63269fdc4a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B1-reverse-out-of-parking-space.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:f3ee1da430a609306f9e34d60c807d0be90083b4546de716f517916633cb500d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B1-reverse-out-of-parking-space.json",
+      "actor_id": "npc-parked",
+      "wire_sha": "sha256:a726563d8b68f6dfd7b715d1558e76dfaf1693c3bfe3d6ddb66b84efba80e4af"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B10-night-heavy-rain-reverse-out.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:f3ee1da430a609306f9e34d60c807d0be90083b4546de716f517916633cb500d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B10-night-heavy-rain-reverse-out.json",
+      "actor_id": "npc-parked",
+      "wire_sha": "sha256:a726563d8b68f6dfd7b715d1558e76dfaf1693c3bfe3d6ddb66b84efba80e4af"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss-nodist.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:c6951da3656a8ec20f0d8bb38a7d3616341f18e4d67de622b02abc3e891ce70a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss-nodist.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:6a7fd254ce56a87916f409da0e5327129772e3c76ebaf80f23540f3d94499420"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:a8159d7ecd6fb296887afbcd8f9476e26acd0f0868054086865378d41f5da637"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B2-backover-near-miss.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:6a7fd254ce56a87916f409da0e5327129772e3c76ebaf80f23540f3d94499420"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B3-dual-backover.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:8e0df6f1bdb2fdb095aa6501d15b7dd027e64350d1dad4903beaebad8d0d05e6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B3-dual-backover.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:d4dc248b89a888a053bfe2d54a26725f1608df0fd67e5f72e954c120287cf375"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B4-space-contest.json",
+      "actor_id": "winner",
+      "wire_sha": "sha256:72eb8f56136cfa236c5e2c3842f0a66dd0902a71d9678c5d41760246abbacb78"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B4-space-contest.json",
+      "actor_id": "yielder",
+      "wire_sha": "sha256:2b07f2e59ca6811fb4ae1355c6eb2f37b8a545c93b0d8f7a8ebdef45a2042fcc"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B5-parallel-parking-pull-out.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:fff49f8fca8a5d93b9888c3a3d564c63f4558dc379b6a67e17cf8be3cd854e8c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B5-parallel-parking-pull-out.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:1418570cc7795a057c3383b6d5c1c0e8490e00dc155b0018ed196be2ce7f9ef2"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B6-lot-lane-stop-and-go.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:b34e89d71037875e8d897b06d3ee5c8ddb9e33ddf37bfe783eaa2a3f755de925"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B6-lot-lane-stop-and-go.json",
+      "actor_id": "lead",
+      "wire_sha": "sha256:040c046656d3e909f752c27437b825a91a7dbd3374510795dab1d6be83c00aae"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B6-lot-lane-stop-and-go.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:9f03804b77a2282ba1fa05d2e80e597ce9d303cb163e97da7841b904260ff59f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B7-reverse-parallel-park.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:2d93f6a6c8af76b246679a6784d3b56522e1199f2364504f3d73df14550f2241"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B7-reverse-parallel-park.json",
+      "actor_id": "parked-rear",
+      "wire_sha": "sha256:71b469be625b90acc8719192493b84ebe148c50c3cfa4f7e1704c31cea505474"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B7-reverse-parallel-park.json",
+      "actor_id": "parked-front",
+      "wire_sha": "sha256:8c6b3fb19c7acbb3bfede0c69fea8fae9a4df0bd65abef6c541868f58241dc5f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B8-debris-in-lot-lane.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:a144fbcf8fda2afc24087e037468198fafca973d7f5985aeb05496b4cde20f7b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B8-debris-in-lot-lane.json",
+      "actor_id": "debris-barrel",
+      "wire_sha": "sha256:534233107e0c25b5e6924882e4a02e66f9ef266b4ac5167d8686173bfab8077c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:01e50760fb92a63565ea12b3006b03a4fe05a711e6a7397d6b385bae99feaf16"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "pullout",
+      "wire_sha": "sha256:69b453ff0d6207a01fc22ff365ffad4aa8179683d44eb9fcba92524d95d9bf3b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "occluder",
+      "wire_sha": "sha256:a61929586452e862208ec9c2ea87f19622a9f189ac6bf1469f13a430f0368b89"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/B9-occluded-angled-pull-out.json",
+      "actor_id": "parked_east",
+      "wire_sha": "sha256:cc8f5dcb7e9f78ee73d11f71cff7a663b4e28b9656fe1663f2eef2e17742582c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:493264f63caddb4f9567da232c60ad1805ec4397d765266689918c0731180153"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:cd8715afb91cf0c0be45c75c6157f1fc85609a0adec66f27386d3345b2a6d189"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:312ccad0657cc88bc50ce53a9e7472c7f70eb7d6480aa09c1bf0bf8695d0ca38"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:8281dd009b2ac90df576b1c643f8a8d0fc4830d593acf768a2c3a4883c8746ae"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:9ab8c0cf2acd6d4590dc65a66539ff09e766b6c9c4d87c83ac8dd160455101bd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:7a4df6bad8091220c17e5e9cdea66599b737a5999971dcc4b731a6de01df0400"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:1e7307f1491b34fb3eb5b88e1987a672bd970a10695f73906ff8878565a1c5a3"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "wire_sha": "sha256:48a93b8bfcefcfec9c33b77e29b378f24fc4ae45e6ca4dc05f6806da44d90282"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "wire_sha": "sha256:fa9d7a87c3ca4cdbd09e1a6d4847f95963f973e71c53b7fb7468a9d0fa700bcd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:9",
+      "wire_sha": "sha256:c3a94744f98d95ee395523dc444086c35ddf9cfcd4164891f013c7b40967a7b6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:10",
+      "wire_sha": "sha256:8a3bec75c1e4f2e4546098c562a84eaa21a34fb50b4c21ec479e87771c3d1a56"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:11",
+      "wire_sha": "sha256:f94979ee3ca9092ac485ef457ffbdf948d634a156150e4f4eea1652c535450fa"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:12",
+      "wire_sha": "sha256:efab1ea3684a1f47b601a0768ff42077692aaf219316a1fa420faaa6a3ff9e83"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:13",
+      "wire_sha": "sha256:a06b54b8dad2a7839ca8541dfc478bdbd86e5af65b0760194e2798803c1e4d92"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:14",
+      "wire_sha": "sha256:230d942a53cd88bc3a87d3e0c57cdfbe80e2fca9a7c6ea7a06be6b0e6c97c812"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:15",
+      "wire_sha": "sha256:b45f5d6f0a4afe088788cf1963ccd38d2ced1ea8af5e0e4b95ec5a7196770ca8"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:16",
+      "wire_sha": "sha256:0c625e70aaeefba80097162c32ab6b0a330d1f6581634b72cce1ea237be46299"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:17",
+      "wire_sha": "sha256:fc757ba01227d76b757baf96c847809d3f2bbc563f09d07305f32ac96c60355b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:18",
+      "wire_sha": "sha256:512133fed2358691929810e46c21d435e0f7422e96fbaf7f2024c755cd575caa"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:19",
+      "wire_sha": "sha256:7da719d173c8121d95d37812272355b7131369768f5c865a892fda8fcfea2d03"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:20",
+      "wire_sha": "sha256:79fc134d481679e578ae5b396babff9651e8e6d6ef92cc0150d1fab779309e14"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:21",
+      "wire_sha": "sha256:294585504f6cc99ef383e2bde2cea3f9d3068918edfe5091c5ef35d50ce53433"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:22",
+      "wire_sha": "sha256:b6d7434799c7f8a1182d7d5c697d523d2ce6430b0b5f1f7bedce4a96c45136db"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C1-highway-heavy-aggressive-lane-keep.json",
+      "actor_id": "carla-traffic:unified:vehicle:23",
+      "wire_sha": "sha256:f2c7ca1f70c4ba8aa603ade5c146c912531ef24fc66cd3f6e42e5ba6f39a001c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C10-low-visibility-cut-in.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:4355e6983afbfda82fe484969adb789311dc473578fb719801cc6dd44a26ed2e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C10-low-visibility-cut-in.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:4b802cb9f7b20cc3b3b3df9b5dc4a02a8a0f1c5821112c4eb45cbc7cea19918b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C2-highway-unsafe-cut-in.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:4355e6983afbfda82fe484969adb789311dc473578fb719801cc6dd44a26ed2e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C2-highway-unsafe-cut-in.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:4b802cb9f7b20cc3b3b3df9b5dc4a02a8a0f1c5821112c4eb45cbc7cea19918b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C3-highway-aborted-cut-in.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:c08522287bdd5fc8191a15633fc52179ff07b8f5ec1bfa7f682f15565a3d2def"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C3-highway-aborted-cut-in.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:37b1c552335fa0afbe1e78586837fdf3c2dfb9d9e6b2d8eec65a83db324e1005"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C4-late-exit-chained-double-lane-change.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:f66419cdd4e5db1d41c044da4829bd2c136eb1fd6cfe25ef3087d4f1fa9c5d0c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C5-on-ramp-merge-gap-judgment.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:82db123259977c70c2d3eaf557f1e12e4028bccd76ee329fd8800ff098f318e9"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C5-on-ramp-merge-gap-judgment.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:47368b72c2f7fd745d5814d93f217bda4948b75caf87bfc8c92e1778d60bbbe5"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C6-slow-truck-overtake.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:d562c3ca2911225271eae3eff1493179b76ddda6df9b666354b4d017ff7d280f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C6-slow-truck-overtake.json",
+      "actor_id": "truck",
+      "wire_sha": "sha256:9ae324080a4f1ed05adff343e86fa69a3c70717323572d68187e6b26c9f33717"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C7-same-gap-sideswipe.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:5408b9b8e64737290682878b5e43b57499287cff3e7bd3663198f9e019b9e964"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C7-same-gap-sideswipe.json",
+      "actor_id": "npc-left",
+      "wire_sha": "sha256:dcbc08982a46fb70da51359ae7f7340ac331740ae44f3a5ff31c0f654f97b59e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C7-same-gap-sideswipe.json",
+      "actor_id": "npc-right",
+      "wire_sha": "sha256:e6bbafca262259d976590a18b19bf17d761ef95d903aab5bf2652249a74a677a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:1c49f950293351ad1019de8d6bc821312f3136efeb41304ae1e440d6c28d3c4e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "breakdown",
+      "wire_sha": "sha256:2a56258e8e3b411b235412bcc90ebcfcf3209ef963d21494d0460065320a11b9"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "cone-rear",
+      "wire_sha": "sha256:28021e1b15cd70563dd1e79e05393977c8cee145c4fe614df6dab55baca6fd7d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C8-shoulder-breakdown.json",
+      "actor_id": "cone-near",
+      "wire_sha": "sha256:f43613e056737082a62100cbff46dd91248bd76b0f3d51d6352ce0969651fbfd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C9-phantom-braking-lead.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:ba6c17a78a15a2c462b17c1ae560dcc6f245865ca548dc822a5d4b633c816322"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/C9-phantom-braking-lead.json",
+      "actor_id": "lead",
+      "wire_sha": "sha256:f22eb4a73ba21f0b9d7479b1fb8e4fc56544b5462c9ea008e502bcd8bfd1c603"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D1-red-light-runner.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:211f9a94cd6c60ddf410dc9c4182461bf00a76ae4a3062251b4da38a79b530f6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D1-red-light-runner.json",
+      "actor_id": "runner",
+      "wire_sha": "sha256:f6e4ba3944deb45fba6940ce02ad48c7b6020ea2fd9b20718743598536c26df7"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D10-left-turn-trap.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:6e6d2cc5263a69a510490cd7453f84cb8b765343ce4c1b465e8845a7cd9da49b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D10-left-turn-trap.json",
+      "actor_id": "oncoming-lead",
+      "wire_sha": "sha256:1eb93a787c525a3cabc72c88056e8e9236ca0ee5475dc6f76e713a384f9fad6b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D10-left-turn-trap.json",
+      "actor_id": "oncoming-follow",
+      "wire_sha": "sha256:798f08c9cadedbbead22282d06cb67dc709be7217b7e39273268fd1e1dc3a434"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D2-signalized-stop-and-go.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:ba4c4304f46f4bcce39aec3dfd4e65ff19b6118434263663463e4814caa2b325"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D3-permissive-left-across-oncoming.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:3f57cebb5e73d9aec2afd7b8c11b12286933ecb1050c64c1b71a53fcef39c278"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D3-permissive-left-across-oncoming.json",
+      "actor_id": "oncoming",
+      "wire_sha": "sha256:dbbd20db17c3aa71ff8597e6e8f226eeabceaeee6893adb3ae530456db433978"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D4-yellow-dilemma-zone.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:8fb4c15f7357627f0ba3252207872ec9f99f06244240ca7694c5cd517964e032"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D5-mid-scenario-preemption.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:f04da5c3b58b41734afd58c083e9273cba95f47e53815afc4f78498399b5be7e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D5-mid-scenario-preemption.json",
+      "actor_id": "npc-cross",
+      "wire_sha": "sha256:dae96c9321301354e992d9ef87fdf8966dafab6658c9b2e8d852c1a95373d066"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D6-conflicting-green-misconfig.json",
+      "actor_id": "observer",
+      "wire_sha": "sha256:d72bbcbfc4f4feb0ad6739878d83daedb24b95b2ffd59ab6c01aa49efc175471"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D6-conflicting-green-misconfig.json",
+      "actor_id": "through",
+      "wire_sha": "sha256:fa045c11e85d7b893d857169fb52c760d5fca6031793a54f03250e7e58e26125"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D6-conflicting-green-misconfig.json",
+      "actor_id": "uturn",
+      "wire_sha": "sha256:08086fa373648bd3706c565646ea2f6fa7043bd9308126170552954c04e51af6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D7-right-turn-on-red.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:dc7660cde43bf16c89354835f40448c41a1142ebfedf061cae6133ad76e754ad"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D7-right-turn-on-red.json",
+      "actor_id": "cross",
+      "wire_sha": "sha256:d5d799d966d16b34d7764ae3d00de506b992a19c4a2d530c48ae8859bd2b9168"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D8-green-wave-corridor.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:1fd547eaa0d837c9f9f2c0122eafd826dbf74c66256429b1d3213482aa502ca5"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D9-dark-static-signal.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:91c94dfc1fcc25acd343ed829ff7dc5a87b79470ef2b86c638d54a2438193124"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/D9-dark-static-signal.json",
+      "actor_id": "npc-red-reader",
+      "wire_sha": "sha256:ffcf4eb4e2bea51b69055061b30487a54c93985fef3c5ebf1af535da5fedc40e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E1-four-way-stop-negotiation.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:69d8c6115c50a17c637fc175f0bc465064067d25f66a94608190beff41e954d6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E1-four-way-stop-negotiation.json",
+      "actor_id": "npc_b",
+      "wire_sha": "sha256:f12c43a304b1581eca17c566ef6e0f8777b1da7cccf253da4fccefdcbc69b81b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E1-four-way-stop-negotiation.json",
+      "actor_id": "npc_c",
+      "wire_sha": "sha256:50e6869416857cc2323c9cd13422446129907eba886f762d06e473f5ec6c407d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E10-skewed-junction-crossing.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:747db25c754aa9fb7c70e1229de6f9e7759b399030516dc6210cb97aa5e9da7a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E10-skewed-junction-crossing.json",
+      "actor_id": "cross",
+      "wire_sha": "sha256:ddc0efd3061e32b7cb9d832211e8fc1a07548fc2e6a52fb710c288b321f5493f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E2-rolling-stop.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:067752a72d1f9e3322c259c12300c8bcef8ce19148cec6a072ed61ecb3a5384a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E3-two-way-stop.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:37e4fc89057ce4ced92cd913c59375c3686c32ae682c770a0ec10324b4343985"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E3-two-way-stop.json",
+      "actor_id": "cross_traffic",
+      "wire_sha": "sha256:d181b259badf80e0a1ce38962232e54680d3d166e86ca6889cbeb8b437bbb002"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E4-uncontrolled-t-junction-left.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:99efee6241e1d80465d64c8bc1e583dd056c50b7540dae832021470a6b452840"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E4-uncontrolled-t-junction-left.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:6b22e791e3f2684652e0c2411802d7108f18fb4bc5a65bfe2bdebc38c0786640"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E5-yield-sign-merge-onto-arterial.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:3abe99fd1699af451fe90c4c162b83735080ed0313b4ff7b45ddb224e0ec779f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E5-yield-sign-merge-onto-arterial.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:778886437da9e9dd8e609ff7206d6b82df3349955c8bdbad18976b5c71400810"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E6-uturn-at-junction.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:0df4521b4a71ebad978d7d753c34dc9777f6f61b90b2c0c512c469b97c74fe69"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:454e8b0d157e5e9f5d532ebbc2381e453c8c628bce77e8511bfa2ce9ffa8e6ea"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:f7fc4a99d4fbe2e11cde4cbe10e8e0c5ca69b8806c8d824bb7336322568b7196"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_south_west",
+      "wire_sha": "sha256:c42939a7b1ef08205d425aa7bfdd29b5c210d652e077bfd6c8287e0d1fd823be"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_south_east",
+      "wire_sha": "sha256:9e8faf0c0ce363598f7d3e6e79d7abc88dd1a8d92180dafb5e675c8fc31259dd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_north_west",
+      "wire_sha": "sha256:dfd4271791af51b5646c4c7adb09097cc7f51f611e36e100fcefae5d4f10ba6a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E7-narrow-street-negotiation.json",
+      "actor_id": "parked_north_east",
+      "wire_sha": "sha256:212bca2396aee1d9f0cab9179ca4c3460254e36686b04706b5c64ee1c0a85ad8"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:bb8fc0f3530a5a5e2cb7fe9b91b6f99a15fc0496c96f3e9145045b36ce5e3cf6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "crossing-guard",
+      "wire_sha": "sha256:ee13139053e49d3ebfa27d98f13aeb7cff139244c1aa5f42c60c6c733d7d773c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "school-bus",
+      "wire_sha": "sha256:732d189be549921cf4e8ec8beb3ce6e2d09e813f7df5672263cd5bb4cbc89d5a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "child-1",
+      "wire_sha": "sha256:02b51148554576df4d4d92155a13cb616b1c42b317bcbc0ea6042e1928a818ab"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E8-school-zone.json",
+      "actor_id": "child-2",
+      "wire_sha": "sha256:26c7d930ef4c774c2df726be51724640c4e92bba778653b98a06504a9429986a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E9-ltap-od-inversion.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:e3bd9d3c6c425c302ce0b05951848750933acc8913a60b80cf518b93532370f0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/E9-ltap-od-inversion.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:8f4ad31f8461fb532efdd3e20f0fc2625ceb7946bb1d136f3dd693f122f64acd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F1-blind-spot-lane-change.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:9bebdde578771ec992ec05217bf06d45dc495f45104b2bf5d1722189d4698ddb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F1-blind-spot-lane-change.json",
+      "actor_id": "closing-npc",
+      "wire_sha": "sha256:5981e4375480303b885e292a44ab1de8f12221818f8a8afd2f0f26c8634bcb5e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F10-against-lane-recovery.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:0b582732730f78516bbd2848198b2a83c6a51117390484c66c9f3609d4bc39ac"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F10-against-lane-recovery.json",
+      "actor_id": "oncoming",
+      "wire_sha": "sha256:08bcf1edc1aad63d3ce774a5f3745625732439620af45549712761314f832568"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F2-drift-sideswipe.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:4e46776bca6a873423df16368f04d6280342e2afde5b6b8bde67150a0424d575"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F2-drift-sideswipe.json",
+      "actor_id": "npc-drifter",
+      "wire_sha": "sha256:2765c0ba0cbfde0aa26746e15461bc14cec186a27afe71e912fed4b48217c717"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F3-double-lane-change.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:254feb9015728ef0c3e42690d304b5898e20daaaf679097c85cf69ca555c4041"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F3-double-lane-change.json",
+      "actor_id": "target-lane-npc",
+      "wire_sha": "sha256:9c56766b2a35e6527fae7109075271b1d1aef22a8466e8527334d2fe5d21d2cf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F4-aborted-lane-change-swerve.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:734b3ef52a2dc76ac7c16dfbb86f40c51259d6e14377aac6ea867fa9483a8ff9"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F4-aborted-lane-change-swerve.json",
+      "actor_id": "npc-threat",
+      "wire_sha": "sha256:2dea7a4e54a1e6c6df46d2b06a82f6b12a4ff6851fd2270917de3c3b2306051c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F5-cut-in-brake-check.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:841295a5f220c448efa0642e364e226bd704a140b0800e75665faead7bc5b13f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F5-cut-in-brake-check.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:45499146a1ee06f024840137eda37ee59141444544b4069bc2b5c601e3809155"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:a2d10412b8097a00b49478960a568d1ab9b6338f6c498afa659e3e4a7471d093"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "npc-open-lane",
+      "wire_sha": "sha256:2b2d375c7c1e8f48dbe3a05b836c2c7e526a8b1a89ebff9668fc376aed6b4548"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-1",
+      "wire_sha": "sha256:9096c5f0feb551a3ea80c8ae8ca94d2e98155dea3b4177eb01142de86678b592"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-2",
+      "wire_sha": "sha256:a8cff70a63300188e2b16d48b04604679e037e62cf0427b08574bd30f5e7eb20"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-3",
+      "wire_sha": "sha256:dc9ae75fffa2cb2f7dea297e63e0f6899bc2016ef4d975657c8dd7f2782e07f0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-4",
+      "wire_sha": "sha256:de5705e44f28fc40c5fe1fd60bf7e979535132c9cbfed4791ff2b390d068d292"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-5",
+      "wire_sha": "sha256:5d6cb6bb03343f38d6b4e959fc11e9d475f475404fc9644e8b06043b0739cc56"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "cone-6",
+      "wire_sha": "sha256:65b20bfd821ed332c7d6e2d161b4fe597945523655a9f98702c058b2643c1619"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F6-zip-merge-lane-closure.json",
+      "actor_id": "closure-barrier",
+      "wire_sha": "sha256:ffbd23453db407c683e4f2cfa10fbb7cbfab7ae5ae8f943e8418c2097b4ac9c7"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F7-two-lane-road-overtake-against-oncoming.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:c0d59f1400831732946e31463d03dcfbc6077fbd37e98e90342806f6dffc8278"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F7-two-lane-road-overtake-against-oncoming.json",
+      "actor_id": "lead",
+      "wire_sha": "sha256:74fe61dcad65f59847a3a26ad2161af62cd7ab64bf4d49d308d2430c961acc02"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F7-two-lane-road-overtake-against-oncoming.json",
+      "actor_id": "oncoming",
+      "wire_sha": "sha256:42cc51412177b67887bf02da8025002cc376968b8d86a7e510a98f38643b532e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F8-early-cut-back-after-overtake.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:908468cb3ecedbc3d2114b80cba62c4ddba13c6547c07541617d8b0a0eb394d9"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F8-early-cut-back-after-overtake.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:de820a08b9b422a8ae282aa7fb34c21cc4e20a61a3a30015c2f995494eba8658"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F9-late-dive-turn-pocket.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:36a6d224171a45e1dbce15fb0b360a28126f09d96ad46372ba022dba182c6a92"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/F9-late-dive-turn-pocket.json",
+      "actor_id": "queued-npc",
+      "wire_sha": "sha256:90a934416ae66c6485a4f27de5b8642117af23d0ff41ea0bb61217861df8b3a2"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-large-occluder-crosswalk.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:a72be5f545aa86f16f600c7350930f18298cc17d987350f78d0db7981b51e0cb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-large-occluder-crosswalk.json",
+      "actor_id": "bus",
+      "wire_sha": "sha256:c8a32e495c1a8c42a4fc45c500c2ee2c892bbae6e139a6eadfc6623fd514e723"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-large-occluder-crosswalk.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:093b574e926f0534c60d70eed6edbb9addbc1c162324dbf3354c01f24825a9d4"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-occluded-crosswalk-dart-out.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:e09689884de166096cdc16d2055cce3d2b590e53b11a68af15478db91b6d1036"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-occluded-crosswalk-dart-out.json",
+      "actor_id": "bus",
+      "wire_sha": "sha256:438c1f394b6fbc44b5e52d1fc7d12457590cceea6ecd4e27a1e182d80d4cd2eb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G1-occluded-crosswalk-dart-out.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:53496ea80696cc8dd82f0a65bfdcd1d494cf6c9b70c2e8fd60aae747e60e17fd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:fb3f7ee8158797f6e736d56830752110b30776b9e9d70dcd7eef7625405467d0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "npc-following",
+      "wire_sha": "sha256:0514436b63f85705cf3756daa7949577c6a17a9bf19b1cb2ac0a62009154396e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-1",
+      "wire_sha": "sha256:3176dd0e7c1e989c52940bbc06d6f16dde21457eaf42654b87220d076d869e6c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-2",
+      "wire_sha": "sha256:9f21cc3e5cf6629dfa0cd48ff63d784d56f9daa40c01d0af75e3f5693ac555a6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-3",
+      "wire_sha": "sha256:b47bde20712a0b47008af3356397265a3a3af7a114dcdd7153f61d896cd554db"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-4",
+      "wire_sha": "sha256:82a30b7bdc4ff33236c3dcb98743c4d255f0ae9ac2131b12e23064a6506d2593"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-5",
+      "wire_sha": "sha256:38c67a4de2f75d1f86bb0bc0881232f1c6f115c22ec27ec8bc2979d694dc87a6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G10-blizzard-lane-closure.json",
+      "actor_id": "cone-6",
+      "wire_sha": "sha256:d68a50be072684f2ea335dda13e7dd12c10f27cc847bd1f0778d455206563d19"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G2-medium-occluder-van-dart-out.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:114c0569db0e3e7612178845545f5dd89512c907711a6565be5ac0a84197fd69"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G2-medium-occluder-van-dart-out.json",
+      "actor_id": "van",
+      "wire_sha": "sha256:25d4cc209f5354a6d2a181804d340e46ff75a11a6d379ac9df4d19705de76003"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G2-medium-occluder-van-dart-out.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:008a693358e53c348d2e8d4c1b5aadec82da22a4cd10e024dc345bdda02dad23"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G3-occluded-cross-traffic.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:52705e0dca6e620cb65fb1204d2f8f30274bb8fcc64862d97b0b44806fa16357"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G3-occluded-cross-traffic.json",
+      "actor_id": "cross",
+      "wire_sha": "sha256:f6313daee63c375a2210e3e87a1994dd6e16444c20b7fa5a13f8022b8ffb35fe"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G3-occluded-cross-traffic.json",
+      "actor_id": "occluder",
+      "wire_sha": "sha256:b3ff35327a63e398dd1f6273f2b923a76699389704702507e6ddf423c34f66a5"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:5b0ca6b8ef7fc45ca551dc268611f70dcbce4b45fa411aa52c7dcacb5de7cde6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:bd4b1349cea4f888c29297a17dc16ecc607e4073735eeb1e6acd1c136ffaf0f6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "vegetation_north",
+      "wire_sha": "sha256:97fbdecba2c3fae944b8843463c9d39ec0f4d47fb2be8c819f25b7e9d0fa8073"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "vegetation_middle",
+      "wire_sha": "sha256:03c913fac52ae60e20ae4bbb4e911b5830520977f90e3d7b725ed6c2dd5cabad"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G4-driveway-exit-behind-vegetation.json",
+      "actor_id": "vegetation_south",
+      "wire_sha": "sha256:8a86fe61ff712f1a98cc77e1bf1f614d332f1893501ffc04d4902c39d72d7c9e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G5-low-sun-glare-proxy.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:9c6a777eb8946dd17436bf20806777d4fd85e28ece1b70b4821b11d4e5a6fcaf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G5-low-sun-glare-proxy.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:cb151838849c26553539ad618a185ff6538d9841916dbdba605c3ae520bfab4e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G6-unlit-night-crossing.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:9c6a777eb8946dd17436bf20806777d4fd85e28ece1b70b4821b11d4e5a6fcaf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G6-unlit-night-crossing.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:bb034f0b0ea4c0053239979061f22029be1587c4cdae18e2f10e2bde89ac39ef"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G7-rain-spray-queue.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:4e21a80fa8e6ce807f162107adef4c835634abafa80d0d5c942a3f49b239592d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G7-rain-spray-queue.json",
+      "actor_id": "queue-tail",
+      "wire_sha": "sha256:ef7040faa9e4aca43cd2ab6a140325b5106617fe35df4048722aff90ded6137a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G7-rain-spray-queue.json",
+      "actor_id": "queue-lead",
+      "wire_sha": "sha256:b94f158a8ea17dd0d20abc207cda5f2bd77a222ba1f515b6be81eb85ff2425eb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G8-fog-wall.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:9b5de2cea64a9c6561c2531c2386d4f843a04238778ed5945d15b252630b72cf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/G8-fog-wall.json",
+      "actor_id": "stationary",
+      "wire_sha": "sha256:4129f0dc2a7fa9a64f7133bcfeb2b6afa69b53e2b7d57331eae88469079b2c86"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:99efee6241e1d80465d64c8bc1e583dd056c50b7540dae832021470a6b452840"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:6b22e791e3f2684652e0c2411802d7108f18fb4bc5a65bfe2bdebc38c0786640"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:6dcfdfe1063997db3837d44f29045a11cccbe9828f8ae84eebd845989454250b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:e7cd757d378c6e07b160db85521f573f179e360d05bc0a511ff20996072fbb96"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:cd3952164e4de050b7598a003ba91d50cef8c8375e87cfbfeaf01ef471cc88d6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:c7f4c158beae9269092b390d6572583d31e2de0ed34e6c2ca365c05161215845"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:38bf623544c8e144c592a768f3ccdc52b1f05f87de91d633edefd4074bf16256"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:7f581e75f22574f28af8a85ef6c257d4dd0ff38faaa79fb9fb3624caebf0111a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "wire_sha": "sha256:178566518740a5b74c7ad90b6630ffc560ffbcd40a1c17c8f30f7fc80438f73a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "wire_sha": "sha256:fcae30a7f49f7e279b9d1d109b202d07f7b6cd8709ee1e260201a79d86746aa0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:9",
+      "wire_sha": "sha256:4e21f07dc9b1c87fb9642dfd20cceecff21c44e0b7952df63de0779bac1a0562"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:10",
+      "wire_sha": "sha256:afac9f7c3f3c6210209a30eaff4fa994059b0883839c2a676ac12f8094fa2a20"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:11",
+      "wire_sha": "sha256:c3e4d366febb3de692e0f9964c54112b733b77465ada73af5976dbff0df41bba"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:12",
+      "wire_sha": "sha256:cb4577e475ecce4d3d4885aad77c5033a85de1d6ff1be5f0364f322af472bb64"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:13",
+      "wire_sha": "sha256:835d1bafb291427a69ea838491e750457f8ab08b070bb2d5366e7c5218d2455c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:14",
+      "wire_sha": "sha256:35c787cb13bd1903a46868fca2a235ca4f82699f6a0c6bd9027ca3c349fa4064"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:15",
+      "wire_sha": "sha256:07efa3232aa43d9786cafb9561908b167baec7ceaa7b7d41da1533d4a5422bf9"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:16",
+      "wire_sha": "sha256:1b8d4f8f8aab62278a542e412c3f732623b2133ba1b97843a1454c21cbca5fa4"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:17",
+      "wire_sha": "sha256:10dfd642ddaf2077bdb134af94af2966db93d973246f73ee42fc74e5361cdeb4"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:18",
+      "wire_sha": "sha256:25bbd1068e5b88c497dc654a55dab9eec08c60a2ed89ab841a2b1295e213eff2"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:19",
+      "wire_sha": "sha256:0f5fd2cb07ab9ed5bc047069b8de70837dd2c542823747164edc5b9fc198b25e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:20",
+      "wire_sha": "sha256:72301540f070217d04537693073a0550cb5ebc786bebb591bb852fce6ce67372"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:21",
+      "wire_sha": "sha256:2e46e2f9be4a751cced8f5d49de3229a71c59579dca5962699a32ae6df9f0f36"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:22",
+      "wire_sha": "sha256:ca62b4694d46adaf73a2158f3da51f39fbf218c3731562f8fca079f217d4c867"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H1-conflict-under-heavy-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:23",
+      "wire_sha": "sha256:a4cc6df16a5386760650a76ccc711fce6ca7c2908d99442363b90aa809c8b04b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:064a5be4967df56b3fc345d475614cacc32d9f51e992b321f01da2b9fcc3cb48"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:0d6332967e5c3abd977f8d6453621a3e4a48d8bbbef859cf75584e68269d84bf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:92df0c1b279866af514fdc38902ac7f4dc173925b255c7ec55e5bfd45fea8caf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:69219ea58f8159877e103982f957245487e1f9043b0ca9356cd4b7b96e702abe"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:ac641755899533d5fc646445a2f5855248671cbc978e9e96cbe59d6a9cbf1f57"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:600b14b9e710a0129c6a9a498c13a725cc88a23bf45d9a7aa113f6b7312c1670"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:87cdfede7bfbe20bce4067e4d9775776b3f0e343cfe8287f56f73b94bffb846e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "wire_sha": "sha256:93535152af072e0debcc392bb858277e8214f0721687e6ea62c271fa0d54807f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H10-autopilot-handoff-under-ambient.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "wire_sha": "sha256:524e1e58783099148a8e9953ec69e10c5e3cd676a151a6662ed3faa736203477"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:99efee6241e1d80465d64c8bc1e583dd056c50b7540dae832021470a6b452840"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:6b22e791e3f2684652e0c2411802d7108f18fb4bc5a65bfe2bdebc38c0786640"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:6dcfdfe1063997db3837d44f29045a11cccbe9828f8ae84eebd845989454250b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:e7cd757d378c6e07b160db85521f573f179e360d05bc0a511ff20996072fbb96"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:cd3952164e4de050b7598a003ba91d50cef8c8375e87cfbfeaf01ef471cc88d6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:c7f4c158beae9269092b390d6572583d31e2de0ed34e6c2ca365c05161215845"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:38bf623544c8e144c592a768f3ccdc52b1f05f87de91d633edefd4074bf16256"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:18",
+      "wire_sha": "sha256:752a8aa6ec8e78e7fd522e8a5d91f98a1e001e15cf1dc11db94cc86d47d9a119"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:19",
+      "wire_sha": "sha256:0f5fd2cb07ab9ed5bc047069b8de70837dd2c542823747164edc5b9fc198b25e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H2-density-sweep.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "wire_sha": "sha256:fcae30a7f49f7e279b9d1d109b202d07f7b6cd8709ee1e260201a79d86746aa0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:bf1e42c30858c9a21ba93955a5370987d305266ece201128974ab4322d6d8c4f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:1286c3f3546f31b9d4ada5485f6d2c70fa01a93426cf8963645cb338ab1eb1fe"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:6dcfdfe1063997db3837d44f29045a11cccbe9828f8ae84eebd845989454250b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:e7cd757d378c6e07b160db85521f573f179e360d05bc0a511ff20996072fbb96"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:cd3952164e4de050b7598a003ba91d50cef8c8375e87cfbfeaf01ef471cc88d6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:c7f4c158beae9269092b390d6572583d31e2de0ed34e6c2ca365c05161215845"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:38bf623544c8e144c592a768f3ccdc52b1f05f87de91d633edefd4074bf16256"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:ae6cdda125ce537385e5f7fdeba673a7682237777d50f899730c863b3252a09d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "wire_sha": "sha256:3fc3535825367754a2daa446212d59a9a0fedc1f4dbc3b4f0ab358549d5017e4"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H3-aggressive-ambient-unprotected-left.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "wire_sha": "sha256:fcae30a7f49f7e279b9d1d109b202d07f7b6cd8709ee1e260201a79d86746aa0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H4-region-polygon-spawn.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:4f863ff7a190424520d6d095e2714f8b6c5a309924c45b6c6a1992a0b503592e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:b7d5bd69711b316702059a3d119f88f4ab00f6879bb5a4667c614c52dda4d383"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:9263d6fdc70944f6be22ad55ae082c68d417afa54e31e76adad7bad9127ec0bb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:1cf843bfcde3853179960cbeb9ac4ef9b7fb5c8a8a79ee68c6aaf6624a91e7cb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:c94254da3bb1cb3ed44eb2dfc168be2d535a0a4611f0e36d6709406c2fe21e4b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:db4e77362502ce63881c93d8e266665faff38cb09875af2a6eb9ffe628a70276"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H5-custom-mix-trucks-buses.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:c89aeb8fcaebf58d354ed89a0c01cdddb21a7efb174a8f3e234d0d5d77a8afbe"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:4fd9c30692a27c466f88e6cf81e3fc4717bf1894af78c69a63f800a94c6157a5"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:faa1f083abfc4708174d1f79711a8ea95af627004febb2ecb8d9326eb4f43d52"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "bg-ped-2026072806-0",
+      "wire_sha": "sha256:545246f17a6419a5ac6667bfde08f09dd700d465d356372e94ac2af8cdf28eeb"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "bg-ped-2026072806-1",
+      "wire_sha": "sha256:e4e1b3032ec1470e282fe9a2c6034e05f0f6653fda2abeab24e660a217dc4af3"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H6-ambient-walkers-authored-ped-conflict.json",
+      "actor_id": "bg-ped-2026072806-2",
+      "wire_sha": "sha256:cf3a6e9b3c55b67b06e14649bb2f16f1822516e5fedb5a55b9de00e1a6425a91"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:ba6c17a78a15a2c462b17c1ae560dcc6f245865ca548dc822a5d4b633c816322"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "lead",
+      "wire_sha": "sha256:f22eb4a73ba21f0b9d7479b1fb8e4fc56544b5462c9ea008e502bcd8bfd1c603"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:0d6332967e5c3abd977f8d6453621a3e4a48d8bbbef859cf75584e68269d84bf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:92df0c1b279866af514fdc38902ac7f4dc173925b255c7ec55e5bfd45fea8caf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:69219ea58f8159877e103982f957245487e1f9043b0ca9356cd4b7b96e702abe"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:ac641755899533d5fc646445a2f5855248671cbc978e9e96cbe59d6a9cbf1f57"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:600b14b9e710a0129c6a9a498c13a725cc88a23bf45d9a7aa113f6b7312c1670"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:87cdfede7bfbe20bce4067e4d9775776b3f0e343cfe8287f56f73b94bffb846e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "wire_sha": "sha256:93535152af072e0debcc392bb858277e8214f0721687e6ea62c271fa0d54807f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H7-seed-determinism.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "wire_sha": "sha256:524e1e58783099148a8e9953ec69e10c5e3cd676a151a6662ed3faa736203477"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:06b249ef6973df376cb23802592ca9880cb0ed6b0c24a9718fcaadd73a7abb04"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:de5e73fa549c82ad77fd3987376d9247d0c6e31f20cdc238e697230a253eaf4a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:75518c4c1c8037f4f684aec9701a47ff18971bfc3c2084a1b05790541b7c1bda"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H8-ambient-obeys-authored-program.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:b51816b086da9397c62832b70255c8fdf2e67dd40620967ccb1b46853f956a71"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:059b92024c01fb9346fefe667f493294b410fb4643763d63f60a708ca924debc"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:3e95e2a54f38d9af871c6a60798c390f010b0ed0c261f7dcca1e5987a097c326"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:470fc4d069ddf3b8068567ea3425d19510ebd737d44ab17b31e12685d05d1ce3"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:68a9ba256600593e29ecc80ec10f7892c1accc85aaef8908440a90afac156ef2"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:7cf737364986bc1c6ebc6ba34b40f2c8a1c5d71502dd38e9f54797da3b3a4e53"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:b8b0b46fa76833907d17433526e6bc3f78bea9d393b0ada32de985a0599b9ea0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:8441e0d4a35f3b22fc05794f871b182f8fb3296d3e77caf9b9e085e00f61895b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:7",
+      "wire_sha": "sha256:3fc3535825367754a2daa446212d59a9a0fedc1f4dbc3b4f0ab358549d5017e4"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:8",
+      "wire_sha": "sha256:2e42a453d53072d86ce2c54c482025c116eac376d1348d420b4f65d018220000"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:9",
+      "wire_sha": "sha256:73d1b41eabce24fbf3a9cb25a7af479a7b39d08c63f167e459282b5ef44cbaba"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:10",
+      "wire_sha": "sha256:89251c3b54c9cadf293cd66b2175b65141eac5f3e1c6857c58d086bdce38b7f6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:11",
+      "wire_sha": "sha256:66a7c976a41a877e005312eaa835375f01058e8f3bd45198b17cb46c9c90f4ab"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/H9-default-12-cars-yale.json",
+      "actor_id": "carla-traffic:unified:vehicle:12",
+      "wire_sha": "sha256:401f42e59ec09d4d8255f1d0a31e1b080e35766e0d19763bf8abf233d6ccc384"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "lead",
+      "wire_sha": "sha256:40349c38133c3cb967a0f7e4f0c3f3115c3e99a34b5943b1be8565602031e830"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "follower-1",
+      "wire_sha": "sha256:8a2b1cf52e117f4bcf5156c0c5ff98d1b6da393c6532cdf1e2ff91f986c58578"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "follower-2",
+      "wire_sha": "sha256:62b17b1563763e2dba7996a925e9fcbd029d48e9be66ff5d73dbb2834a3be7bf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I1-queue-creep.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:8c304872b9b2b41ae0556a894f7c35a4c250fcf0ce9b914041e1620673d63f5a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:a53bb4e9b63d5616de4b0f9aae0a955b21e965bd7bbf185eb0ca3a3267603f2a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "left-rear",
+      "wire_sha": "sha256:dadb7f98d7d78eb09cc0d142b637fc3be5ae815f0c13525d78b766303ebee6a2"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "left-front",
+      "wire_sha": "sha256:73871ff5093ef3fb015468502769cf38dc23968a2960bf0616fd7b65a4964a7a"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "center-front",
+      "wire_sha": "sha256:2917bd372e5854cd79058d22c4f899ab71a995ff54a4bca565f54b18c22709f9"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "right-rear",
+      "wire_sha": "sha256:78dbac96f9c49f09b673e23ad364b4c028eef41ed6babec6146e8b60534f782e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "right-front",
+      "wire_sha": "sha256:064836de52c6bbc698fb1e25f4d39912b0767799b5311c88c7bbf5f37a7e9b06"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:90b64a5f708b933c9df4b50d79cb6a03d1cd98ac8d31177415cbf90b88685d80"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:48916c31489af181deb48d7e588f26d1555960eed4b23dc75358272a55f690a7"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:a0bf01d2d96509502d6aa1a86ffbe96c235f27c00b9227d1d745e688b873247c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:1adc08a55477f7e58c4e5901c56661234506fc74e9e0d54f723fcd70120198e0"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:d91da83eafc884faec3377f2e870f1d15f29e351b669449a812ed5e310d0274c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:7b199550503956e8e405eed89cb3805d0695ec7e026b7b3365f964ad31aa35bc"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "walker-left",
+      "wire_sha": "sha256:aa98db023c4fcd07f5520d9e95e9f11592db6058d0a4d8eea57d8ec5b1ffe20c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "walker-right",
+      "wire_sha": "sha256:f7f3e1ffd51f38b6aaff1b75b8982a90265544c58616990d66962702f2266213"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "prop-cone",
+      "wire_sha": "sha256:61baed19f55020314bdd9cc8700552c3df19fa54d6c4bd9592f046e6e6c161dd"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I10-load-stress.json",
+      "actor_id": "prop-barrel",
+      "wire_sha": "sha256:cd0591d5d85f2c699ed87ef80abaefd015531e8558bae11d63bd67a1f20b9af5"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I2-three-vehicle-convoy-through-turns.json",
+      "actor_id": "lead",
+      "wire_sha": "sha256:e3f8ceebd8c806eff888d9fa931b88735e717bfcf53baf649b4bb15f84af32ff"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I2-three-vehicle-convoy-through-turns.json",
+      "actor_id": "follower-one",
+      "wire_sha": "sha256:38f6dd65cdb1730f3989ea773ead0028470c6fecd810fce0e13eedecd0280b5f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I2-three-vehicle-convoy-through-turns.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:b2b192101c3430884f4fdf97183f21cb4574c74931ec284e5164082c3d6a367b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I3-police-intercept.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:e255a19217c1f64c683e8bd6f70a769a546f73fab569cfa54c0077499f577584"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I3-police-intercept.json",
+      "actor_id": "police",
+      "wire_sha": "sha256:3ac149b3e61a95bbdf36a54acbc81a89fa4d1d21d91c84a24dcaa37068acc2ec"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I4-cross-junction-chase.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:c39af1c01a2744d55459b455aeb99c9fe9b1e88e1f92586e6245568e9f696c4b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I4-cross-junction-chase.json",
+      "actor_id": "chaser",
+      "wire_sha": "sha256:34c909cc015030bb9267187269ae95bc5f6a3e35a8afe256e36df139be85b98f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I5-32-anchor-route-tour.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:8fe10784834b301234a6ab46c86eb3ad66fb61d147ebf809f98d8240f849f569"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I6-per-clip-reroute-rejection.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:18b5c000a47dbb2b333d28ddf90d6865e06ea02895faea4e921c6f6f7a7ef8fa"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I7-formation-timed-crossing.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:8a160afaee338048221e18b242cb4e2e23ca11a938c87ca67f52c199975d650f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I7-formation-timed-crossing.json",
+      "actor_id": "cross",
+      "wire_sha": "sha256:02113eaa449b8a922aae3a2c17d1538c4b301c9c8e66cbd6050adec9cd076ce6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I8-role-swap.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:f90d744cfda3ca01addc093941138bd7e21fc1fab8a3ba1324b701ec3e837036"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I8-role-swap.json",
+      "actor_id": "lead",
+      "wire_sha": "sha256:82baac45dfc4eac82282160056b226175a796ffcf3618cba7ec05df5de238c7f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I9-timed-path-schedule-precision.json",
+      "actor_id": "scheduled",
+      "wire_sha": "sha256:51557055476e2404679b52b5222b702e7086a3fafc167bb7ca126c7271c71a07"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/I9-timed-path-schedule-precision.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:fa3af30bc0012469ab5cf28cfea4f48096b6603bcfd2a805c57017c6acda9f64"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:d4dc80356087c94c216f25b044ca8c0557ab9860f2f8e1b54d67d80871cb01e7"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "queue-tail",
+      "wire_sha": "sha256:6879006e60b420457affbf1bc2dba6610c49c26cbfe12ed2171bb68e217f656e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "queue-lead",
+      "wire_sha": "sha256:7f815487b28ad566838378cd6b8e606a138ba8c6112468c194ec8f775a163901"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "flagger",
+      "wire_sha": "sha256:5d4f1ea68b12d4721ca4b2b7f368d64748e39ef5d7cd4bc90af3a75da0b1b659"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-1",
+      "wire_sha": "sha256:123f071d8b4a32602541f2d9a96ac72854f9cc7dcea28ff97dc6197e51be5378"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-2",
+      "wire_sha": "sha256:322ce49deaceb088c00f4b132f1cc2398bcbc488c20c8acbc4b4a6bfe9cb3781"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-3",
+      "wire_sha": "sha256:5af3d011358e0488da6045a1923d4e0064c7e7725517e514222427c8d7dfb6df"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "taper-cone-4",
+      "wire_sha": "sha256:5320af8808d06c97c7f6ae4f435b0801687d228bc222816b684a7b2dda0dce19"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "lane-barrier-1",
+      "wire_sha": "sha256:127bf9b050cadb666e965d85ed9749f3600ed31c98efa2fd008d68133036895c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J1-construction-zone-with-flagger.json",
+      "actor_id": "lane-barrier-2",
+      "wire_sha": "sha256:94bff6cda4ca97f3dedc7f550a31b2795471038bfbf18edbf58dcf68443fdbee"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J10-five-minute-endurance.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:dd3f30d60b0d4c9c3fa9285dbcab2f5a27ec084e620a705d571ffc08cd15b41e"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J10-five-minute-endurance.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:08f89bb2c24d143f70f49dbf8f8b838a135dd15cd68762a54cd3b807b75588ef"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J10-five-minute-endurance.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:2a69138672cd065940c8bea0639ba37f859e4b37c4bcbd55dbe542a08f3358c1"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-avoidance.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:5725bd869eb7929c91bd1e1650e2521f365374f548226d36b215c4d71ccd4d62"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-avoidance.json",
+      "actor_id": "debris-barrel",
+      "wire_sha": "sha256:a27ffe2c5d3c039378ef650f9e2b50e702f10c83bca8d7bcb9604d5459f35a23"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-strike-avoidance-at-speed.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:785d2b3acf112c3ccaeece5db10826e83ecf2ee9e8e78d77109b6abdd266332d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-strike-avoidance-at-speed.json",
+      "actor_id": "debris-box",
+      "wire_sha": "sha256:e2deccc10897ecedbc3407dd3dd8822eb1cc658284ac59d0a8cd610ab12c71bc"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J2-debris-strike-avoidance-at-speed.json",
+      "actor_id": "debris-barrel",
+      "wire_sha": "sha256:c2644f52d6206aee0dc6681ef63350d0f72fe5a40088b4a48db5be21ef9e5378"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J3-weather-sweep.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:043e8592967dee526948e8aca4936189e89cbf3edf9233714b7790a3ab1c55cf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J4-degenerate-params.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:d80340410d6bd9c1f462c6eca3cff349ad8c8cb07c32ef5b4079b8e62f9852b6"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J4-degenerate-params.json",
+      "actor_id": "zero_cruise",
+      "wire_sha": "sha256:daa15df88f864a2f523b9a842a0e4bcd002f38f6affbf867d038140e904d619d"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J5-map-edge-scenario.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:b7ddd5a8684430a0c957a4312a3f5486b17c02916d476f30d53e0f950b5a04e3"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J5-map-edge-scenario.json",
+      "actor_id": "npc",
+      "wire_sha": "sha256:55e6fde12d8430bd96c9f91ec3ab9b8077ad95a601118ddb803249ad166f0b99"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J6-against-lane-reverse-combo.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:284153fb85a1c0d75a6e4e18c44c9ec4d5fb1a9d700b0df2a00e0719351a2823"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:0f8f09dab54506b3a4955a0005f5da0f746add33d90cde3d5a2fde0987913016"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "ped",
+      "wire_sha": "sha256:5bbc3ee50e8004c6e4126a252fc99dc2bba1dce8d603168fc9b38b98e08c68cc"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "cone-line-1",
+      "wire_sha": "sha256:d3328ee6ee5cd48ea5881209d8ae1397c742ddbdbf8e62bac8b9565d841d81cf"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "cone-line-2",
+      "wire_sha": "sha256:528cb33b1b65d67f6f1a86ca99a859bc8e0ed3427a46648b32429c3b422f398b"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "cone-line-3",
+      "wire_sha": "sha256:f17c950b270a7dc5da96927ec44d90f86b305d7e4e3fb9ddcd12c27fb3491642"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:1",
+      "wire_sha": "sha256:11dce355901093efb9d81dda81b67a4490347c042d8e1f8ee66177ddc4b22454"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:2",
+      "wire_sha": "sha256:0c3ca22d5c7a45640804a8f540053e123e6e5d3f1ab14f8f04937db07707da7c"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:3",
+      "wire_sha": "sha256:55ad7a53cdc7334156051540b8f5fb251a5788e3b15e1faf044e58284ceb07f4"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:4",
+      "wire_sha": "sha256:b7e4296a0d0a6a45fa779c31dfe50a90eb014318ea7f2f2674501b866d95ae0f"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:5",
+      "wire_sha": "sha256:de78b17bffb72d8cb8f16fe5ebc84d6b0a5a65ce1ba27a5e8f6a8417b5a77aba"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/J7-kitchen-sink.json",
+      "actor_id": "carla-traffic:unified:vehicle:6",
+      "wire_sha": "sha256:22aa26c68ad316f5d5e8f463cd69406155e8f84b3ecdf7860baa799967e59f27"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/SMOKE-1-ego-cruise.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:15f2fc398a4ad4957431a944c8ae9e3f70636f40ec995360f7f8c055ece02a22"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/SMOKE-2-npc-stop-resume.json",
+      "actor_id": "ego",
+      "wire_sha": "sha256:15f2fc398a4ad4957431a944c8ae9e3f70636f40ec995360f7f8c055ece02a22"
+    },
+    {
+      "case_file": "scripts/agent/scenario-eval/cases/SMOKE-2-npc-stop-resume.json",
+      "actor_id": "npc-lead",
+      "wire_sha": "sha256:a89e5d7a30b56168f50f008236755b0bcd6ade4485aee738d5a9a51eab31aa66"
+    }
+  ]
+}

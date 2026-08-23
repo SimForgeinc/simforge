@@ -1,0 +1,165 @@
+{
+  "note": "Shared fixtures for the divert-tail parity test. `expected` is asserted by BOTH packages/shared/src/__tests__/divert-tail.test.ts and services/carla-worker/tests/test_behavior_program_divert.py, so neither implementation can be changed alone. Tolerance 1e-6 m.",
+  "cases": [
+    {
+      "label": "heading east, pure forward",
+      "pose": {
+        "x": 100,
+        "y": 200,
+        "z": 5,
+        "yawDeg": 0
+      },
+      "tail": [
+        {
+          "forward_m": 10,
+          "lateral_m": 0
+        },
+        {
+          "forward_m": 20,
+          "lateral_m": 0
+        }
+      ],
+      "expected": [
+        {
+          "x": 110,
+          "y": 200,
+          "z": 5
+        },
+        {
+          "x": 120,
+          "y": 200,
+          "z": 5
+        }
+      ],
+      "expectedLengthM": 20
+    },
+    {
+      "label": "heading east, swerve left then back",
+      "pose": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "yawDeg": 0
+      },
+      "tail": [
+        {
+          "forward_m": 10,
+          "lateral_m": 3.5
+        },
+        {
+          "forward_m": 25,
+          "lateral_m": 3.5
+        },
+        {
+          "forward_m": 35,
+          "lateral_m": 0
+        }
+      ],
+      "expected": [
+        {
+          "x": 10,
+          "y": 3.5,
+          "z": 0
+        },
+        {
+          "x": 25,
+          "y": 3.5,
+          "z": 0
+        },
+        {
+          "x": 35,
+          "y": 0,
+          "z": 0
+        }
+      ],
+      "expectedLengthM": 36.1896201
+    },
+    {
+      "label": "heading north, lateral is west",
+      "pose": {
+        "x": 10,
+        "y": -10,
+        "z": 1.5,
+        "yawDeg": 90
+      },
+      "tail": [
+        {
+          "forward_m": 0,
+          "lateral_m": 4
+        },
+        {
+          "forward_m": 12,
+          "lateral_m": 4
+        }
+      ],
+      "expected": [
+        {
+          "x": 6,
+          "y": -10,
+          "z": 1.5
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "z": 1.5
+        }
+      ],
+      "expectedLengthM": 16
+    },
+    {
+      "label": "heading south-west, reverse tail",
+      "pose": {
+        "x": -50.25,
+        "y": 33.75,
+        "z": -2,
+        "yawDeg": -135
+      },
+      "tail": [
+        {
+          "forward_m": -6,
+          "lateral_m": -2
+        },
+        {
+          "forward_m": -14,
+          "lateral_m": -2
+        }
+      ],
+      "expected": [
+        {
+          "x": -47.421572875,
+          "y": 39.406854249,
+          "z": -2
+        },
+        {
+          "x": -41.764718626,
+          "y": 45.063708499,
+          "z": -2
+        }
+      ],
+      "expectedLengthM": 14.32455532
+    },
+    {
+      "label": "awkward heading, single vertex",
+      "pose": {
+        "x": 626.788,
+        "y": 1812.109,
+        "z": 13,
+        "yawDeg": -48.146
+      },
+      "tail": [
+        {
+          "forward_m": 18.5,
+          "lateral_m": -5.25
+        }
+      ],
+      "expected": [
+        {
+          "x": 635.221393969,
+          "y": 1794.826339147,
+          "z": 13
+        }
+      ],
+      "expectedLengthM": 19.230509614
+    }
+  ]
+}

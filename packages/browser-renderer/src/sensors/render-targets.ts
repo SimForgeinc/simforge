@@ -31,7 +31,6 @@ export type OffscreenRenderInput = Readonly<{
 type RenderResource = {
   target: WebGLRenderTarget;
   readback: Uint8Array;
-  flipped: Uint8Array;
   width: number;
   height: number;
 };
@@ -48,7 +47,6 @@ export class RenderResourcePool {
     const resource = {
       target,
       readback: new Uint8Array(width * height * 4),
-      flipped: new Uint8Array(width * height * 4),
       width,
       height,
     };
@@ -115,9 +113,8 @@ export function renderOffscreenRgba(input: OffscreenRenderInput): Uint8Array {
     input.onTiming?.('scenePass', performance.now() - started);
     started = performance.now();
     renderer.readRenderTargetPixels(resources.target, 0, 0, input.width, input.height, resources.readback);
-    flipRgbaRowsInto(resources.readback, resources.flipped, input.width, input.height);
     input.onTiming?.('readback', performance.now() - started);
-    return resources.flipped;
+    return resources.readback;
   } finally {
     input.scene.overrideMaterial = previousOverrideMaterial;
     renderer.setRenderTarget(previousTarget);
@@ -132,16 +129,4 @@ export function renderOffscreenRgba(input: OffscreenRenderInput): Uint8Array {
     renderer.shadowMap.enabled = previousShadowsEnabled;
     temporaryPool?.dispose();
   }
-}
-
-export function flipRgbaRows(pixels: Uint8Array, width: number, height: number): Uint8Array {
-  const output = new Uint8Array(pixels.byteLength);
-  flipRgbaRowsInto(pixels, output, width, height);
-  return output;
-}
-
-function flipRgbaRowsInto(pixels: Uint8Array, output: Uint8Array, width: number, height: number): void {
-  if (pixels.byteLength !== width * height * 4 || output.byteLength !== pixels.byteLength) throw new Error('RGBA readback dimensions do not match its byte length.');
-  const stride = width * 4;
-  for (let row = 0; row < height; row += 1) output.set(pixels.subarray(row * stride, (row + 1) * stride), (height - row - 1) * stride);
 }

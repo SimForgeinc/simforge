@@ -1,7 +1,7 @@
 import { fixedStepCaptureFrames, samplePlaybackActors, type PlaybackBundle, type PlaybackController, type SampledActor } from '@uniscenarios/playback';
 import { lowerRenderSpecToBrowser, type BrowserRenderPass, type RenderSpecV3, type ResolvedFrameSchedule } from '@uniscenarios/scenario-model';
 import type { CityViewer } from '@uniscenarios/city-renderer';
-import { Matrix4, PerspectiveCamera, Quaternion, Vector3 } from 'three';
+import { Matrix4, PerspectiveCamera, Quaternion, Vector3, type Object3D } from 'three';
 import { HashedArtifactSink, StreamingZipWriter, sensorFramePath, throwIfAborted, type ArtifactReceipt, type ArtifactSinkFactory } from './artifacts.js';
 import { BoundedCpuPipeline } from './pipeline.js';
 import { captureLinearDepthMeters, depthMetersToPng16 } from './sensors/depth-pass.js';
@@ -155,10 +155,15 @@ function capturePass(input: { pass: BrowserRenderPass; frameIndex: number; fps: 
   if (pass.modality !== 'lidar' && pass.modality !== 'radar') {
     const camera = input.cameras.get(passKey(pass)) ?? new PerspectiveCamera(); input.cameras.set(passKey(pass), camera); applySensorCamera(camera, input.world, pass);
     const common = { renderer: input.viewer.renderer, scene: input.viewer.scene, camera, width: pass.width, height: pass.height, nearM: pass.nearM, farM: pass.farM, resourcePool: input.resources, resourceKey: passKey(pass), onTiming };
-    if (pass.modality === 'rgb') return { pixels: renderOffscreenRgba(common) };
-    if (pass.modality === 'depth') return { depth: captureLinearDepthMeters(common) };
-    const result = captureIdPass({ ...common, mode: pass.modality, encodePng: false });
-    return { pixels: result.pixels };
+    const restoreHost = hideSensorHost(input.viewer.scene, pass.actorId);
+    try {
+      if (pass.modality === 'rgb') return { pixels: renderOffscreenRgba(common) };
+      if (pass.modality === 'depth') return { depth: captureLinearDepthMeters(common) };
+      const result = captureIdPass({ ...common, mode: pass.modality, encodePng: false });
+      return { pixels: result.pixels };
+    } finally {
+      restoreHost();
+    }
   }
   const cubeResolution = 256;
   const sweep = pass.modality === 'lidar' ? 360 * Math.min(1, pass.rotationFrequencyHz / input.fps) : pass.horizontalFovDeg;
@@ -192,6 +197,18 @@ function sensorWorldMatrix(target: Matrix4, pass: BrowserRenderPass, x: number, 
 }
 function applySensorCamera(camera: PerspectiveCamera, world: Matrix4, pass: Exclude<BrowserRenderPass, { modality: 'lidar' | 'radar' }>): void {
   world.decompose(scratchPosition, scratchRotation, scratchScale); camera.position.copy(scratchPosition); camera.up.copy(scratchUp.set(0, 1, 0)).applyQuaternion(scratchRotation); camera.lookAt(scratchTarget.set(1, 0, 0).applyQuaternion(scratchRotation).add(scratchPosition)); camera.aspect = pass.width / pass.height; camera.fov = 2 * Math.atan(Math.tan(pass.horizontalFovDeg * Math.PI / 360) / camera.aspect) * 180 / Math.PI; camera.near = pass.nearM; camera.far = pass.farM; camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
+}
+function hideSensorHost(scene: Object3D, actorId: string): () => void {
+  const hidden: Object3D[] = [];
+  scene.traverse((object) => {
+    if (object.visible && object.userData.actorId === actorId) {
+      object.visible = false;
+      hidden.push(object);
+    }
+  });
+  return () => {
+    for (const object of hidden) object.visible = true;
+  };
 }
 function traceVelocity(speed: number, heading: number): TraceVelocity { return { x: speed * Math.cos(heading), y: 0, z: -speed * Math.sin(heading) }; }
 

@@ -75,6 +75,31 @@ export const ProntoSensorHostSchema = z.strictObject({
 });
 
 /**
+ * A browser-renderable sensor host authored directly on a catalog vehicle.
+ *
+ * CARLA's Pronto lane retains its pinned vehicle and image provenance above. The browser lane only
+ * needs the immutable actor/catalog identity and selected physical-sensor counts because it renders
+ * the authored meshes and sensors from the execution package.
+ */
+export const AuthoredSensorHostSchema = z.strictObject({
+  actorId: EntityIdSchema,
+  vehicleAsset: z.strictObject({
+    catalogAssetId: z.string().trim().min(1).max(200),
+  }),
+  sensorRig: z.strictObject({
+    rigId: z.literal('authored'),
+    cameras: z.number().int().nonnegative().max(1024),
+    lidars: z.number().int().nonnegative().max(1024),
+    radars: z.number().int().nonnegative().max(1024),
+  }),
+});
+
+export const RenderSensorHostSchema = z.union([
+  ProntoSensorHostSchema,
+  AuthoredSensorHostSchema,
+]);
+
+/**
  * Immutable, renderer-neutral input to every UniScenarios rendering backend.
  * Transfer URLs and lease data deliberately live in the worker-control claim,
  * so refreshing credentials never changes this document's content hash.
@@ -87,7 +112,7 @@ export const RenderIntentV1Schema = z.strictObject({
     sourceInputDigest: RenderSha256Schema,
   }),
   scenarioRevision: RenderIntentScenarioRevisionSchema,
-  sensorHost: ProntoSensorHostSchema,
+  sensorHost: RenderSensorHostSchema,
   renderSpec: RenderSpecV3Schema,
   assets: z.array(RenderIntentAssetSchema).max(4096),
   seed: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
@@ -111,29 +136,46 @@ export const RenderIntentV1Schema = z.strictObject({
     ctx.issues.push({
       code: 'custom',
       path: ['renderSpec', 'sources'],
-      message: 'every Pronto render source must attach to sensorHost.actorId',
+      message: 'every render source must attach to sensorHost.actorId',
       input: ctx.value.renderSpec.sources,
     });
+  }
+  const cameraIds = new Set(hostSources
+    .filter((source) => source.modality !== 'lidar' && source.modality !== 'radar')
+    .map((source) => source.sensorId));
+  const lidarIds = new Set(hostSources
+    .filter((source) => source.modality === 'lidar')
+    .map((source) => source.sensorId));
+  const radarIds = new Set(hostSources
+    .filter((source) => source.modality === 'radar')
+    .map((source) => source.sensorId));
+  if (ctx.value.sensorHost.sensorRig.rigId === 'authored') {
+    const counts = ctx.value.sensorHost.sensorRig;
+    if (cameraIds.size !== counts.cameras
+      || lidarIds.size !== counts.lidars
+      || radarIds.size !== counts.radars) {
+      ctx.issues.push({
+        code: 'custom',
+        path: ['sensorHost', 'sensorRig'],
+        message: `authored sensor counts do not match render sources; expected ${counts.cameras}/${counts.lidars}/${counts.radars}, got ${cameraIds.size}/${lidarIds.size}/${radarIds.size}`,
+        input: ctx.value.renderSpec.sources,
+      });
+    }
+    return;
   }
   const chaseCameras = hostSources.filter(
     (source) => source.sensorId === PRONTO_CHASE_CAMERA_SENSOR_ID,
   );
-  const cameraSensors = new Set(hostSources
+  const measurementCameraIds = new Set(hostSources
     .filter((source) => source.modality !== 'lidar'
       && source.modality !== 'radar'
       && source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID)
     .map((source) => source.sensorId));
-  const lidarSensors = new Set(hostSources
-    .filter((source) => source.modality === 'lidar')
-    .map((source) => source.sensorId));
-  const radarSensors = new Set(hostSources
-    .filter((source) => source.modality === 'radar')
-    .map((source) => source.sensorId));
-  if (cameraSensors.size !== 8 || lidarSensors.size !== 6 || radarSensors.size !== 4) {
+  if (measurementCameraIds.size !== 8 || lidarIds.size !== 6 || radarIds.size !== 4) {
     ctx.issues.push({
       code: 'custom',
       path: ['renderSpec', 'sources'],
-      message: `Pronto rig requires 8 cameras, 6 LiDARs, and 4 radars; got ${cameraSensors.size}/${lidarSensors.size}/${radarSensors.size}`,
+      message: `Pronto rig requires 8 cameras, 6 LiDARs, and 4 radars; got ${measurementCameraIds.size}/${lidarIds.size}/${radarIds.size}`,
       input: ctx.value.renderSpec.sources,
     });
   }
@@ -150,6 +192,8 @@ export const RenderIntentV1Schema = z.strictObject({
 export type RenderIntentAsset = z.infer<typeof RenderIntentAssetSchema>;
 export type RenderIntentScenarioRevision = z.infer<typeof RenderIntentScenarioRevisionSchema>;
 export type ProntoSensorHost = z.infer<typeof ProntoSensorHostSchema>;
+export type AuthoredSensorHost = z.infer<typeof AuthoredSensorHostSchema>;
+export type RenderSensorHost = z.infer<typeof RenderSensorHostSchema>;
 export type RenderIntentV1 = z.infer<typeof RenderIntentV1Schema>;
 
 export function parseRenderIntent(value: unknown): RenderIntentV1 {
