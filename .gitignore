@@ -35,3 +35,8 @@ catalog/*.json.work/
 scripts/rl/runs/
 scripts/rl/**/__pycache__/
 scripts/rl/*.log
+
+# WS1 RealityAnchor: raw eval-corpus downloads (BDD100K images, nuScenes
+# samples) and detector work caches are re-derivable from the committed
+# corpus-manifest.v1.json per-item sha256 values; only the manifest is versioned.
+tools/bridge-fidelity/.corpus/
