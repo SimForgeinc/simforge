@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 64, "column": 0}, "map": {"version":3,"sources":["file:///home/path/UniScenarios-ws/sc1-local-platform/apps/cloud/app/api/billing/balance/route.ts"],"sourcesContent":["import { NextResponse } from \"next/server\";\n\nexport const dynamic = \"force-dynamic\";\n\nexport async function GET(): Promise<NextResponse> {\n  return NextResponse.json({\n    plan: \"local\",\n    free: true,\n    unlimited: true,\n    creditsBalance: null,\n    pendingCreditsCents: 0,\n  });\n}\n"],"names":["dynamic","GET","json","plan","free","unlimited","creditsBalance","pendingCreditsCents"],"mappings":";;;;;;AAAA;;AAEO,MAAMA,UAAU;AAEhB,eAAeC;IACpB,OAAO,uXAAY,CAACC,IAAI,CAAC;QACvBC,MAAM;QACNC,MAAM;QACNC,WAAW;QACXC,gBAAgB;QAChBC,qBAAqB;IACvB;AACF"}}]
+}

@@ -1,0 +1,15 @@
+{
+  "app": {
+    "[project]/apps/cloud/app/smoke/page": [
+      "static/media/017d9bea37084d9b-s.p.41rroleoq1br7.woff2",
+      "static/media/c6e2684784a55443-s.p.2p4adm_386h58.woff2",
+      "static/media/a083361d37caf3d1-s.p.0s4utfvp8prsy.woff2",
+      "static/media/6c98c9fb873995d2-s.p.22ggkaf3lyu8c.woff2",
+      "static/media/dc0c65e819e3bb6c-s.p.1d4mg4yt567i3.woff2",
+      "static/media/374a88ea0960b3d4-s.p.2fz20jxmyia8o.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

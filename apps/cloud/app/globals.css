@@ -1,0 +1,1226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+  font-size: 100%;
+  scrollbar-gutter: stable;
+}
+
+/* Keep scroll position and overflow discoverable without visually dominating the UI. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+/* Floating dataset/scenario rails sit over a live 3D scene. Keep their native
+   scroll affordance translucent so it reads as part of the glass surface. */
+.uniscenario-glass-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.34) rgba(255, 255, 255, 0.045);
+  scrollbar-width: thin;
+}
+
+.uniscenario-glass-scrollbar::-webkit-scrollbar {
+  width: 9px;
+}
+
+.uniscenario-glass-scrollbar::-webkit-scrollbar-track {
+  margin-block: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.025),
+    rgba(255, 255, 255, 0.075)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.uniscenario-glass-scrollbar::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.58),
+      rgba(255, 255, 255, 0.24)
+    ) padding-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 12px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(12px) saturate(1.35);
+}
+
+.uniscenario-glass-scrollbar::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(232, 224, 68, 0.72),
+      rgba(255, 255, 255, 0.34)
+    ) padding-box;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --radius: 0rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 26.1%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 95.9%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 91%;
+    --sidebar-ring: 0 0% 3.9%;
+    --accent-brand: #E8E044;
+    /* Traffic-signal indications. Not semantic tokens: these are the physical
+     * colours of a lamp, so they are identical in both themes and must not be
+     * remapped to `--destructive` / `--primary` — a red light that follows the
+     * error colour and a green one that has no token at all is how v1's signal
+     * surfaces ended up with four hardcoded hexes. Values carried over from v1's
+     * `SIGNAL_STATE_COLORS` unchanged so the look is preserved exactly. */
+    --signal-green: 140 60% 53%;
+    --signal-yellow: 42 87% 55%;
+    --signal-red: 0 84% 62%;
+    --signal-off: 220 8% 28%;
+    /* A head whose indication is not stated at all, which is distinct from
+     * `off`: `off` is a commanded dark lamp, `unknown` is no information. */
+    --signal-unknown: 220 8% 46%;
+    /* --font-heavy is Chakra Petch, provided by next/font in app/layout.tsx.
+     * Do not alias it here: a :root fallback silently repoints every
+     * var(--font-heavy) consumer at the display font. */
+    --font-accent: var(--font-display);
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      "Liberation Mono", "Courier New", monospace;
+    /* The two list-chrome surfaces the semantic scale does not cover. Both sit
+     * BELOW --background: the dataset/document list frames itself against a
+     * near-black plate so the rows read as inset panels rather than as cards
+     * floating on the page background. Formerly re-inlined as #050607 and
+     * #0a0a0c across the list and editor trees. */
+    --surface-deep: 210 17% 2.4%;
+    --surface-raised: 240 9% 4.3%;
+    /* The meta face: uppercase, wide-tracked labels and counters. Distinct from
+     * --font-mono, which is the code face — this one is chosen for the
+     * instrument-panel look and is never used for code. */
+    --font-meta: "Share Tech Mono", "IBM Plex Mono", ui-monospace,
+      SFMono-Regular, Menlo, monospace;
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 53 78% 58%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 11%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 11%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 0% 11%;
+    --accent-foreground: 0 0% 93%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 53 78% 58%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 53 78% 58%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 53 78% 58%;
+    --accent-brand: #E8E044;
+    --surface-deep: 210 17% 2.4%;
+    --surface-raised: 240 9% 4.3%;
+    /* Repeated rather than inherited on purpose: every other token is declared
+     * in both blocks, and a signal colour that only exists on `:root` would
+     * silently disappear if the dark block ever became the only one applied. */
+    --signal-green: 140 60% 53%;
+    --signal-yellow: 42 87% 55%;
+    --signal-red: 0 84% 62%;
+    --signal-off: 220 8% 28%;
+    --signal-unknown: 220 8% 46%;
+  }
+}
+
+@keyframes editor-mode-sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes editor-detail-sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes editor-actor-popover-in-above {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Slides out of the sidebar it is anchored to, rather than up off the lane. */
+@keyframes editor-actor-popover-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* The actor details card is vertically centered with `transform`. Animate the
+ * independent translate/scale properties so its entrance cannot overwrite that
+ * centering transform and leave the card starting halfway down the viewport. */
+@keyframes editor-actor-details-in {
+  from {
+    opacity: 0;
+    translate: 10px 0;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+@keyframes editor-actor-popover-in-below {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes editor-mode-main-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes editor-mode-topbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scenario-sidebar-stage-list-exit {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% + 132px));
+  }
+}
+
+@keyframes scenario-sidebar-stage-editor-enter {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes editor-scenario-context-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Add-actor panel motion
+ *
+ * The panel is the icon rail growing sideways, so it enters from
+ * under the rail (which sits one z-index above it) rather than
+ * fading in on top of the map. Its contents arrive just behind
+ * it, staggered, so a wall of forty models reads as a list being
+ * dealt out instead of a block appearing.
+ *
+ * Hover states live here, not in the component's inline styles,
+ * because inline styles cannot express `:hover` and every one of
+ * these is a hover or a keyframe.
+ * ───────────────────────────────────────────────────────────── */
+@keyframes actor-add-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes actor-catalog-tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes actor-catalog-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes actor-rail-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-9px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@layer utilities {
+  /* `backwards`, never `both`: a forwards fill keeps the animation's final
+     transform winning over the `:hover` rules below, so a filled entrance
+     silently disables every hover lift — and leaves a permanent composited
+     layer over the WebGL scene these glass surfaces sample. */
+  .actor-add-panel-enter {
+    animation: actor-add-panel-in 240ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    will-change: transform, opacity;
+  }
+
+  .actor-catalog-chip-enter {
+    animation: actor-catalog-chip-in 200ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .actor-catalog-tile-enter {
+    animation: actor-catalog-tile-in 220ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .actor-rail-tooltip {
+    animation: actor-rail-tooltip-in 130ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  /* Chips and the close button answer the pointer; the icon rail's own hover
+     wash stays in the component, which already tracks the hovered tool. */
+  .actor-chip {
+    transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+  }
+
+  .actor-chip:hover {
+    transform: translateY(-1px);
+  }
+
+  .actor-chip:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .actor-tool-button svg {
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .actor-tool-button:hover svg {
+    transform: scale(1.16);
+  }
+
+  .actor-tool-button[aria-pressed="true"] svg {
+    transform: scale(1.08);
+  }
+
+  .actor-panel-close {
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 140ms ease, color 140ms ease;
+  }
+
+  .actor-panel-close:hover {
+    transform: rotate(90deg);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  /*
+   * The catalog's drag edge. Invisible until wanted: a permanent bar down the
+   * panel's side would read as a border on a surface whose whole right edge is
+   * already a rounded glass rim. The grip only appears under the pointer or on
+   * focus, which is also the only time it means anything.
+   */
+  .actor-add-panel-resize::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    width: 3px;
+    height: 34px;
+    transform: translateY(-50%);
+    border-radius: 2px;
+    background: rgba(232, 224, 68, 0);
+    transition: background-color 140ms ease;
+  }
+
+  .actor-add-panel-resize:hover::after,
+  .actor-add-panel-resize:focus-visible::after {
+    background: rgba(232, 224, 68, 0.72);
+  }
+
+  .actor-add-panel-resize:focus-visible {
+    outline: none;
+  }
+
+  /* The tile owns its resting look here so hover can lift it without an
+     inline style winning the specificity fight. */
+  .actor-catalog-tile {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color 160ms ease, background-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .actor-catalog-tile:hover {
+    transform: translateY(-3px);
+    border-color: rgba(232, 224, 68, 0.4);
+    background: rgba(232, 224, 68, 0.07);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.42);
+  }
+
+  .actor-catalog-tile:active {
+    transform: translateY(-1px) scale(0.985);
+  }
+
+  .actor-catalog-tile[data-active="true"] {
+    border-color: rgba(232, 224, 68, 0.62);
+    background: rgba(232, 224, 68, 0.12);
+  }
+
+  .actor-catalog-tile-icon {
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .actor-catalog-tile:hover .actor-catalog-tile-icon {
+    transform: scale(1.1) translateY(-1px);
+  }
+
+  .editor-mode-sidebar-enter {
+    animation: editor-mode-sidebar-in 180ms ease-out both;
+  }
+
+  .editor-detail-sidebar-enter {
+    animation: editor-detail-sidebar-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .editor-actor-popover-enter-above {
+    animation: editor-actor-popover-in-above 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .editor-actor-popover-enter-below {
+    animation: editor-actor-popover-in-below 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .editor-actor-popover-enter-right {
+    animation: editor-actor-popover-in-right 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .editor-actor-details-enter {
+    animation: editor-actor-details-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: translate, scale, opacity;
+  }
+
+  .editor-mode-main-enter {
+    /* Do not retain the animated opacity/transform after entry. A forwards
+       fill leaves this whole editor overlay as a permanent composited
+       backdrop root, preventing its glass timeline and actor rail from
+       sampling the persistent WebGL scene behind it. */
+    animation: editor-mode-main-in 180ms ease-out;
+  }
+
+  .editor-mode-topbar-enter {
+    animation: editor-mode-topbar-in 160ms ease-out both;
+  }
+
+  .scenario-sidebar-stage-list-exit {
+    animation: scenario-sidebar-stage-list-exit 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .scenario-sidebar-stage-editor-enter {
+    animation: scenario-sidebar-stage-editor-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .editor-scenario-context-enter {
+    animation: editor-scenario-context-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* ── List hero banner ────────────────────────────────────────────────────
+   * The photographic header on the dataset index, as five stacked layers.
+   *
+   * These live here rather than as arbitrary Tailwind values because every
+   * stop is an alpha over --surface-deep: expressed inline they were sixteen
+   * copies of rgba(5,6,7,…) that no longer tracked the surface token, and the
+   * scanline layer additionally needs mix-blend-mode, which has no utility.
+   *
+   * Order matters — photo, diagonal veil, lateral veil, brand glow,
+   * scanlines — and each is meant to be an absolutely-positioned,
+   * aria-hidden sibling filling the banner box. */
+  .list-hero-photo {
+    background-image: url("/dashboard/datasets-header.png");
+    background-size: cover;
+    background-position: center right;
+    opacity: 0.8;
+    filter: grayscale(1) saturate(0.9) contrast(1.32);
+  }
+
+  .list-hero-veil-diagonal {
+    background-image: linear-gradient(
+      202deg,
+      hsl(var(--surface-deep) / 0.72) 0%,
+      hsl(var(--surface-deep) / 0.28) 42%,
+      hsl(var(--surface-deep) / 0.82) 72%,
+      hsl(var(--surface-deep) / 0.98) 100%
+    );
+  }
+
+  .list-hero-veil-lateral {
+    background-image: linear-gradient(
+      90deg,
+      hsl(var(--surface-deep) / 0.99) 0%,
+      hsl(var(--surface-deep) / 0.9) 36%,
+      hsl(var(--surface-deep) / 0.3) 72%,
+      hsl(var(--surface-deep) / 0.66) 100%
+    );
+  }
+
+  .list-hero-veil-glow {
+    background-image:
+      radial-gradient(
+        circle at 78% 26%,
+        hsl(var(--primary) / 0.2),
+        transparent 28%
+      ),
+      linear-gradient(
+        180deg,
+        transparent 0%,
+        hsl(var(--surface-deep) / 0.18) 54%,
+        hsl(var(--surface-deep) / 0.92) 100%
+      );
+  }
+
+  .list-hero-scanlines {
+    opacity: 0.055;
+    mix-blend-mode: overlay;
+    background-image: repeating-linear-gradient(
+      0deg,
+      hsl(var(--foreground) / 0.65) 0 1px,
+      transparent 1px 3px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-actor-popover-enter-above,
+  .editor-actor-popover-enter-below,
+  .editor-actor-popover-enter-right,
+  .editor-actor-details-enter,
+  .actor-add-panel-enter,
+  .actor-catalog-chip-enter,
+  .actor-catalog-tile-enter,
+  .actor-rail-tooltip {
+    animation: none !important;
+  }
+
+  .actor-chip,
+  .actor-chip:hover,
+  .actor-chip:active,
+  .actor-tool-button svg,
+  .actor-tool-button:hover svg,
+  .actor-panel-close,
+  .actor-panel-close:hover,
+  .actor-catalog-tile,
+  .actor-catalog-tile:hover,
+  .actor-catalog-tile:active,
+  .actor-catalog-tile-icon,
+  .actor-catalog-tile:hover .actor-catalog-tile-icon {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Motion-safe editor affordances
+ *
+ * Tailwind's `animate-pulse` and `transition` utilities have no
+ * reduced-motion behaviour of their own, so the editor's mode
+ * banner dot pulsed and every palette row cross-faded regardless
+ * of the OS setting. These two utilities carry the same visuals
+ * plus the guard, and are the only motion the editor shell uses.
+ * ───────────────────────────────────────────────────────────── */
+@keyframes editor-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@layer utilities {
+  .editor-pulse {
+    animation: editor-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .editor-motion {
+    transition-property: color, background-color, border-color,
+      text-decoration-color, fill, stroke, opacity;
+    transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-pulse {
+    animation: none !important;
+  }
+
+  .editor-motion {
+    transition: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Armed intersection-control placement
+ *
+ * Dim, never hide. The author places an intersection control while
+ * looking at the traffic it will govern, so the basemap, the roads
+ * and the actors stay legible — they just stop competing with the
+ * candidate fans, which keep full strength.
+ * ───────────────────────────────────────────────────────────── */
+.editor-map-dim-non-candidates .maplibregl-canvas {
+  opacity: 0.55;
+  transition: opacity 140ms ease-out;
+}
+
+.editor-map-dim-non-candidates
+  .maplibregl-marker:not(:has([data-intersection-candidate-id])):not(
+    :has([data-junction-marker-id])
+  ) {
+  opacity: 0.35;
+  transition: opacity 140ms ease-out;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Global sharp-corner mandate
+ *
+ * The product uses strictly rectangular surfaces. This reset must
+ * win over every source of rounding — Tailwind rounded-* utilities
+ * (including arbitrary values), Radix/portal-rendered components,
+ * inline styles, and third-party CSS (map popups, embeds) — hence
+ * the universal selector with !important. Add per-element radii
+ * nowhere; the only sanctioned exception is below.
+ * ───────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+/* Exception: CSS border spinners must stay circular or the spin
+ * animation reads as a tumbling square. Applies only to elements
+ * that are both spinning and explicitly declared round. */
+.animate-spin.rounded-full {
+  border-radius: 9999px !important;
+}
+
+@layer base {
+  * {
+    @apply border-border box-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body), system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display), system-ui, sans-serif;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Dataset browser → scenario list morph
+ *
+ * Drives the View Transitions API morph between the clicked
+ * dataset snapshot tile and the dataset header that lands at the
+ * top of the scenario list once the aside collapses. Names are
+ * applied dynamically per dataset id (`dataset-tile-{id}` on the
+ * tile, same name on the header) so the browser pairs the two
+ * snapshots and animates a single morphing element.
+ * The aside itself ships under `dataset-aside` so the width
+ * collapse rides the same easing as the tile-to-header glide.
+ * ───────────────────────────────────────────────────────────── */
+::view-transition-group(dataset-aside) {
+  animation-duration: 180ms;
+  animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(dataset-aside) {
+    animation: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Placement toolbar "needs action" cue
+ *
+ * When a path/timed-path actor was just dropped and still has no
+ * route waypoints, the placement toolbar swaps to a red surface
+ * and pulses an outer glow so the user can see — without looking
+ * away from the canvas — that an action is required before the
+ * editor will continue normally.
+ * ───────────────────────────────────────────────────────────── */
+.editor-intent-toolbar-urgent {
+  animation: editor-intent-toolbar-urgent-pulse 1.4s ease-in-out infinite;
+}
+
+.editor-guided-frame-urgent {
+  animation: editor-guided-frame-urgent-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes editor-intent-toolbar-urgent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 77, 77, 0);
+  }
+}
+
+@keyframes editor-guided-frame-urgent-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 60px rgba(255, 77, 77, 0.18),
+      inset 0 0 0 0 rgba(255, 77, 77, 0.45);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 80px rgba(255, 77, 77, 0.32),
+      inset 0 0 0 4px rgba(255, 77, 77, 0.18);
+  }
+}
+
+/*
+  Tutorial spotlight. The ring breathes so the eye finds it without the copy
+  having to say "top right"; the dot is the click affordance, and it sits
+  BESIDE the target rather than on it so it never covers the thing it is
+  pointing at.
+*/
+.tutorial-spotlight-ring {
+  animation: tutorial-spotlight-breathe 2s ease-in-out infinite;
+}
+
+.tutorial-click-dot {
+  animation: tutorial-click-dot-pulse 1.3s ease-out infinite;
+}
+
+@keyframes tutorial-spotlight-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(232, 224, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(232, 224, 68, 0.75);
+  }
+}
+
+@keyframes tutorial-click-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(232, 224, 68, 0.6);
+    transform: scale(0.85);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(232, 224, 68, 0);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 224, 68, 0);
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-spotlight-ring,
+  .tutorial-click-dot {
+    animation: none;
+  }
+}
+
+@keyframes route-loading-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scene-loading-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* A scene that starts without a preceding route load enters once. Route to
+ * scene handoffs keep the dashboard surface mounted and never replay this. */
+.dashboard-scene-loading-enter {
+  animation: scene-loading-enter 500ms ease-out both;
+}
+
+/* Opacity-only so the fixed -50% centering transform never gets replaced. */
+@keyframes app-switcher-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes app-switcher-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Scene-loading choreography: cloud cover arrives first, the message resolves
+   out of that blur, and the loaded scene is revealed by stretching the cloud
+   field horizontally instead of fading the entire overlay at once. */
+@keyframes scene-loader-cloud-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+    filter: blur(0px);
+  }
+  48% {
+    opacity: 1;
+    transform: scale(1.08);
+    filter: blur(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes scene-loader-content-enter {
+  0%,
+  52% {
+    opacity: 0;
+    transform: scale(0.94);
+    filter: blur(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes scene-loader-cloud-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+  45% {
+    opacity: 0.82;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.85, 0.58);
+    filter: blur(24px);
+  }
+}
+
+@keyframes scene-loader-content-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.035);
+    filter: blur(10px);
+  }
+}
+
+.scene-loader-cloud-enter {
+  animation: scene-loader-cloud-enter 900ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  transform-origin: 50% 50%;
+  will-change: opacity, transform, filter;
+}
+
+.scene-loader-content-enter {
+  animation: scene-loader-content-enter 1050ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  transform-origin: 50% 50%;
+  will-change: opacity, transform, filter;
+}
+
+.scene-loader-cloud-exit {
+  animation: scene-loader-cloud-exit 900ms cubic-bezier(0.4, 0, 0.15, 1) both;
+  transform-origin: 50% 50%;
+  will-change: opacity, transform, filter;
+}
+
+.scene-loader-content-exit {
+  animation: scene-loader-content-exit 260ms ease-in both;
+  transform-origin: 50% 50%;
+  will-change: opacity, transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-loader-cloud-enter,
+  .scene-loader-content-enter,
+  .scene-loader-cloud-exit,
+  .scene-loader-content-exit {
+    animation-duration: 1ms;
+  }
+}
+
+@keyframes app-topbar-cloud-drift {
+  from {
+    transform: translate3d(-1.5%, 0, 0) scale(1.04);
+  }
+
+  to {
+    transform: translate3d(1.5%, -2%, 0) scale(1.08);
+  }
+}
+
+.app-topbar-clouds {
+  background:
+    radial-gradient(
+      ellipse 16% 34% at 7% 50%,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.12) 44%,
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 22% 40% at 27% 58%,
+      rgba(255, 255, 255, 0.17) 0%,
+      rgba(255, 255, 255, 0.08) 48%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 19% 38% at 51% 43%,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.09) 45%,
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 24% 42% at 74% 59%,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.07) 50%,
+      transparent 80%
+    ),
+    radial-gradient(
+      ellipse 17% 35% at 95% 46%,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.1) 45%,
+      transparent 76%
+    );
+  filter: blur(11px);
+  opacity: 0.95;
+  animation: app-topbar-cloud-drift 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.app-switcher-center-fade[data-state="open"] {
+  animation: app-switcher-fade-in 180ms ease-out both;
+}
+
+.app-switcher-center-fade[data-state="closed"] {
+  animation: app-switcher-fade-out 120ms ease-in both;
+}
+
+/* Avoid flashing a full loading state during fast, cached navigations. */
+.route-loading {
+  animation: route-loading-enter 120ms ease-out 180ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-intent-toolbar-urgent,
+  .editor-guided-frame-urgent,
+  .route-loading,
+  .dashboard-scene-loading-enter {
+    animation: none !important;
+  }
+
+  .app-switcher-center-fade,
+  .app-topbar-clouds {
+    animation: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Render surface
+ *
+ * The render pane sits over the live world, so it is glass, not a
+ * black card: every layer is translucent and the scene stays
+ * legible behind it. The pane also changes shape — gallery, one
+ * render's theater, the create form — and those are transitions
+ * between states of one surface rather than dialogs on top of it,
+ * so each has an entrance and the scenario list slides rather
+ * than disappears.
+ * ───────────────────────────────────────────────────────────── */
+@keyframes render-view-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes render-tile-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.render-view-enter {
+  animation: render-view-enter 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/*
+ * Staggered by index via `--render-tile-index`, capped so a long
+ * gallery does not make the last tile arrive noticeably late.
+ */
+.render-tile-enter {
+  animation: render-tile-enter 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(min(var(--render-tile-index, 0), 11) * 28ms);
+}
+
+/*
+ * Transform, width and both filters are deliberately included here:
+ * `editor-motion` covers only colour and opacity, and the list slide,
+ * the pane reflow and the world's blur behind the render tab are all
+ * geometry or compositing rather than colour.
+ */
+.render-surface-motion {
+  transition-property: opacity, transform, margin, width, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-duration: 420ms;
+}
+
+/*
+ * Where a wizard step's decisions sit inside the render pane's step area.
+ *
+ * A named utility because Tailwind 3's `justify-*` is a fixed set with no
+ * arbitrary value, so `justify-[safe_center]` compiles to nothing at all.
+ *
+ * `safe` is the whole point. The step area clips instead of scrolling, and
+ * plain `center` overflows a clipped box in both directions — measured in
+ * Chrome, an overflowing column starts 80px above its own top edge, which
+ * would eat the step's heading on a scenario carrying many sensors. `safe
+ * center` centres a step that fits and falls back to start alignment for one
+ * that does not; a browser that does not know the keyword drops the
+ * declaration and keeps the top alignment this replaced.
+ */
+.render-step-center {
+  justify-content: safe center;
+}
+
+/*
+ * The render surface's only two backgrounds.
+ *
+ * Both are white at low alpha rather than a dark fill, so they lighten
+ * whatever is behind them instead of punching a hole in it. Named
+ * utilities rather than per-element arbitrary values because the whole
+ * point is that every card, header and footer in the pane agrees; when
+ * these were `bg-card`, `bg-muted/20` and `bg-background/60` in
+ * different files the pane read as several stacked panels.
+ */
+.render-glass {
+  background-color: rgb(255 255 255 / 4%);
+  border-color: rgb(255 255 255 / 10%);
+}
+
+.render-glass-raised {
+  background-color: rgb(255 255 255 / 7%);
+  border-color: rgb(255 255 255 / 14%);
+}
+
+/*
+ * The pane's own backdrop tint: barely there, so the world stays
+ * readable behind the renders that were made from it.
+ *
+ * The blur is a Tailwind `backdrop-blur-*` utility on the element,
+ * not a declaration here. The production CSS minifier keeps only the
+ * `-webkit-` prefixed form of a hand-written `backdrop-filter` and
+ * drops the standard property, which Chrome then reports as `none` —
+ * the pane shipped with no blur at all. Tailwind's utility emits both.
+ */
+.render-glass-pane {
+  background: linear-gradient(
+    180deg,
+    rgb(9 11 16 / 46%) 0%,
+    rgb(9 11 16 / 62%) 100%
+  );
+}
+
+/*
+ * Structural hairline. Pair with Tailwind's side utilities
+ * (`border-b`, `border-t`, `xl:border-l`) which set width only.
+ */
+.render-hairline {
+  border-color: rgb(255 255 255 / 10%);
+}
+
+.render-divide > * + * {
+  border-color: rgb(255 255 255 / 10%);
+}
+
+/* A chip: a state, a mode, a count. Reads on video or on the pane. */
+.render-chip {
+  background-color: rgb(255 255 255 / 10%);
+}
+
+.render-chip-strong {
+  background-color: rgb(255 255 255 / 15%);
+}
+
+.render-glass-hover:hover {
+  background-color: rgb(255 255 255 / 15%);
+}
+
+/*
+ * A control that floats on top of a still or a video, where the
+ * artwork behind it is arbitrary. Dark and blurred rather than
+ * light, because it has to hold contrast over a bright frame.
+ */
+.render-overlay-control {
+  background-color: rgb(0 0 0 / 45%);
+  color: rgb(255 255 255 / 80%);
+}
+
+/*
+ * The mat behind a letterboxed video. Darker than the pane so the
+ * frame's own edges are where the eye lands.
+ */
+.render-video-mat {
+  background-color: rgb(0 0 0 / 25%);
+}
+
+/*
+ * Scrim under a tile's caption. Renders are often bright daylight
+ * frames and the timestamp sits directly on them.
+ */
+.render-scrim {
+  background-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 75%) 0%,
+    rgb(0 0 0 / 35%) 50%,
+    transparent 100%
+  );
+}
+
+/* Hover lift for a gallery tile. */
+.render-lift:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 10px 24px -8px rgb(0 0 0 / 55%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .render-view-enter,
+  .render-tile-enter {
+    animation: none !important;
+  }
+
+  .render-lift:hover {
+    transform: none;
+  }
+
+  .render-surface-motion {
+    transition: none !important;
+  }
+}

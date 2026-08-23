@@ -1,0 +1,4 @@
+{
+  "/api/billing/balance/route": "app/api/billing/balance/route.js",
+  "/smoke/page": "app/smoke/page.js"
+}

@@ -1,0 +1,92 @@
+/* [next]/internal/font/google/chakra_petch_c053ea0e.module.css [app-client] (css) */
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../media/664b8486c44baa2d-s.02rcwld1m-ji4.woff2") format("woff2");
+  unicode-range: U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../media/c5ac7bd8b2d9fce6-s.17ncvpysp7y4m.woff2") format("woff2");
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../media/8457265da2739722-s.23gs_p123xcz8.woff2") format("woff2");
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../media/dc0c65e819e3bb6c-s.p.1d4mg4yt567i3.woff2") format("woff2");
+  unicode-range: U+??, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../media/087f4c42b279024d-s.1kvbj6zk-dn_f.woff2") format("woff2");
+  unicode-range: U+2D7, U+303, U+331, U+E01-E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../media/891a32df73aa4402-s.3jgirgqxkqq7r.woff2") format("woff2");
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../media/9186901afaa5c996-s.2t53t_nth6shn.woff2") format("woff2");
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C7-2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308, U+329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Chakra Petch;
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../media/374a88ea0960b3d4-s.p.2fz20jxmyia8o.woff2") format("woff2");
+  unicode-range: U+??, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Chakra Petch Fallback;
+  src: local(Arial);
+  ascent-override: 96.77%;
+  descent-override: 30.05%;
+  line-gap-override: 0.0%;
+  size-adjust: 102.51%;
+}
+
+.chakra_petch_c053ea0e-module__6bSuea__className {
+  font-family: Chakra Petch, Chakra Petch Fallback;
+  font-style: normal;
+}
+
+.chakra_petch_c053ea0e-module__6bSuea__variable {
+  --font-heavy: "Chakra Petch", "Chakra Petch Fallback";
+}
+
+/*# sourceMappingURL=%5Bnext%5D_internal_font_google_chakra_petch_c053ea0e_module_css_1igg3k2._.single.css.map*/
