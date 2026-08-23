@@ -1187,6 +1187,7 @@ def execute_lease(
     control: Control | None = None,
     authorize_upload: Callable[[str, str, int, str, Mapping[str, Any]], Mapping[str, Any]] | None = None,
     deadline_monotonic: Deadline | None = None,
+    runtime_asset_overrides: Mapping[str, Mapping[str, str]] | None = None,
 ) -> dict[str, object]:
     emit = progress or (lambda _event, _payload: None)
     def deadline_value() -> float | None:
@@ -1291,6 +1292,11 @@ def execute_lease(
         expected_catalog_version_id=package.asset_catalog.catalog_version_id,
         abort=lambda: check_abort("index_asset_catalog"),
     )
+    for catalog_id, binding in (runtime_asset_overrides or {}).items():
+        existing = catalog.get(catalog_id)
+        if existing is not None and existing != binding:
+            raise ContractError(f"runtime asset override conflicts with catalog entry {catalog_id}")
+        catalog[catalog_id] = dict(binding)
     check_abort("index_asset_catalog")
     _preflight_asset_semantics(lease, plan, catalog)
     accumulator = ParityAccumulator(lease.parity_thresholds)

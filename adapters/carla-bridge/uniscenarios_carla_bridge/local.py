@@ -129,6 +129,9 @@ def _execute_local_lease(
         uploader=upload_local,
         authorize_upload=bind_local,
         progress=progress,
+        runtime_asset_overrides={
+            KIA_CARNIVAL_CATALOG_ID: {"blueprintId": KIA_CARNIVAL_BLUEPRINT_ID},
+        },
     )
 
 
