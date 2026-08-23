@@ -20,8 +20,9 @@ const JOB_FAMILY = "openscenario_render" as const;
 type UploadReservation = {
   readonly artifactId: string;
   readonly key: string;
-  readonly uploadUrl: string;
+  readonly uploadUrl: string | null;
   readonly headers: Readonly<Record<string, string>>;
+  readonly reused: boolean;
 };
 type ReservedRecording = {
   readonly recordingId: string;
@@ -119,6 +120,8 @@ export class CpuJobsClient {
     artifact: RecordingArtifact,
     signal: AbortSignal,
   ): Promise<void> {
+    if (reservation.reused) return;
+    if (!reservation.uploadUrl) throw new Error(`new ${reservation.key} reservation is missing an upload URL`);
     const response = await fetch(reservation.uploadUrl, {
       method: "PUT",
       headers: reservation.headers,
@@ -323,14 +326,20 @@ function artifactKey(artifact: RecordingArtifact): string {
 }
 
 function parseReservation(row: JsonObject, expected: RecordingArtifact): UploadReservation {
-  const upload = row.upload === undefined ? row : object(row.upload);
   const kind = row.role ?? row.kind ?? expected.kind;
   if (kind !== expected.kind) throw new Error(`reserved ${String(kind)} while expecting ${expected.kind}`);
+  const reused = row.reused === true;
+  const upload = reused
+    ? null
+    : row.upload === undefined
+      ? row
+      : object(row.upload);
   return {
     artifactId: stringField(row, "artifactId", "id"),
     key: artifactKey(expected),
-    uploadUrl: stringField(upload, "url", "uploadUrl"),
-    headers: stringRecord(upload.headers ?? upload.requiredHeaders),
+    uploadUrl: upload ? stringField(upload, "url", "uploadUrl") : null,
+    headers: upload ? stringRecord(upload.headers ?? upload.requiredHeaders) : {},
+    reused,
   };
 }
 
