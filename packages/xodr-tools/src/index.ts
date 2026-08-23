@@ -51,7 +51,12 @@ export {
   type Vec3Like,
 } from './coordinate-frame.js';
 
-export { loadGzipJson, decodeMaybeGzippedJson, isGzipped } from './gzip.js';
+export {
+  LegacyFlatEarthFrame,
+  METERS_PER_DEG_LAT,
+  type LatLon,
+} from './legacy-flat-earth.js';
+export  { loadGzipJson, decodeMaybeGzippedJson, isGzipped } from './gzip.js';
 
 export type {
   Feature,
