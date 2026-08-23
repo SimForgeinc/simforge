@@ -90,6 +90,37 @@ describe('emitSceneState', () => {
     expect(doc.weather.preset).toBe('clear');
     expect(doc.timeOfDay).toBe(12);
   });
+
+  it('derives acceleration by backward finite difference of the velocity channel', () => {
+    // Ego accelerates 10 → 10.5 → 11 m/s along +x at 50 Hz: Δv = 0.5 m/s per tick
+    // → 25 m/s² world-frame; first record has no prior sample and reports zeros.
+    const accelDoc = emitSceneState({
+      header: { mapId: 'yale-street', dt: 0.02 },
+      ticks: {
+        t: [0, 0.02, 0.04],
+        actors: {
+          ego: {
+            x: [100, 100.2, 100.41],
+            y: [50, 50, 50],
+            headingRad: [0, 0, 0],
+            speedMps: [10, 10.5, 11],
+            present: [true, true, true],
+          },
+        },
+      },
+    });
+    const frames = accelDoc.frames.map((f) => f.actors[0]!);
+    expect(frames[0]!.acceleration).toEqual([0, 0, 0]); // spawn/first sample
+    expect(frames[1]!.acceleration).toEqual([25, 0, 0]);
+    expect(frames[2]!.acceleration).toEqual([25, 0, 0]);
+  });
+
+  it('resets acceleration history on spawn so re-entering bodies never inherit it', () => {
+    const doc2 = emitSceneState(fixtureTrace());
+    const pedSpawn = doc2.frames[1]!.actors.find((a) => a.id === 'ped')!;
+    expect(pedSpawn.kind).toBe('spawn');
+    expect(pedSpawn.acceleration).toEqual([0, 0, 0]);
+  });
 });
 
 describe('yawToQuaternion', () => {

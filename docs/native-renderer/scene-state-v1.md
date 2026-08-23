@@ -42,8 +42,27 @@ browser and native bind identical geometry.
   rotation: [qx, qy, qz, qw],        // yaw about +Y expanded to quaternion
   yawRad,                            // redundant exact heading
   velocity: [vx, vy, vz],            // m/s world frame = speed × heading
+  acceleration?: [ax, ay, az],       // m/s² world frame (see below)
 }]}
 ```
+
+### Acceleration (added 2026-08-22, V1 TruthStream)
+
+`acceleration` is an **additive optional** field; the schema remains
+`scene-state.v1`. Provenance is emitter-declared:
+
+- **Trace playback** (`emitSceneState`): backward finite difference of the
+  velocity channel over one `dt`, so it carries the centripetal term when a
+  body turns. First samples and fresh spawns report `[0, 0, 0]` — zero, not
+  unknown — and despawn records keep their last computed value.
+- **Live stream** (env-server truth-stream): the engine's planned
+  longitudinal acceleration (`SessionActorSnapshot.accelMps2`) projected onto
+  the actor heading.
+
+Consumers MUST tolerate its absence on older documents; emitters that can
+compute it include it on every record.
+
+### Frame conventions
 
 Frame conventions (from `packages/sim-engine/src/frames.ts`):
 `scene = (x_local, height, −y_local)`; headings are numerically identical.

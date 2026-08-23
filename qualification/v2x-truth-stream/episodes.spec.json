@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "instances": [
+    {
+      "input": "yale-signal.instance.json"
+    }
+  ]
+}

@@ -195,6 +195,23 @@ export type ActionOverride = Partial<
  */
 export type ActionHook = (context: ActionHookContext) => ActionOverride | undefined;
 
+export interface EngineTickObservation {
+  /** Simulation time of the completed tick (negative during warm-up). */
+  readonly tS: number;
+  /** Absolute engine tick index (0 = first warm-up tick). */
+  readonly tickIndex: number;
+  /** Read-only per-actor state exactly as {@link peek} would report it. */
+  readonly actors: readonly SessionActorSnapshot[];
+}
+
+/**
+ * Deterministic per-tick observer invoked once after each completed engine
+ * tick inside {@link FixedStepSimulationSession.advance}. The observer sees
+ * frozen snapshot data and cannot influence simulation state, so traces are
+ * byte-identical whether or not one is attached.
+ */
+export type TickObserver = (observation: EngineTickObservation) => void;
+
 export interface AdvanceOptions {
   /**
    * Build the full trace before returning. Mid-episode traces are expensive;
@@ -203,6 +220,8 @@ export interface AdvanceOptions {
    * for cheap read-only state between batches.
    */
   readonly trace?: boolean;
+  /** Invoked after every completed tick when set (live scene streams). */
+  readonly onTick?: TickObserver;
 }
 
 /** Read-only per-actor state, safe to inspect between batches. */
@@ -212,8 +231,9 @@ export interface SessionActorSnapshot {
   readonly y: number;
   readonly headingRad: number;
   readonly speedMps: number;
-  /** Longitudinal acceleration of the current tick's plan, m/s². */
   readonly accelMps2: number;
+  /** Whether the actor exists in the world at this instant (spawn/despawn truth). */
+  readonly present: boolean;
   /** Lane-relative lateral offset, metres (positive = left). */
   readonly lateralOffsetM: number;
   readonly lateralRateMps: number;
@@ -278,6 +298,12 @@ export interface FixedStepSimulationSession {
   advance(maxTicks?: number, opts?: AdvanceOptions): FixedStepSimulationProgress;
   /** Read-only world snapshot (poses, speeds, running metric minima). */
   peek(): SimulationSnapshot;
+  /**
+   * The engine's own {@link SignalBook} — the same instance runtime
+   * `signal:*.phase` overrides land in, so external observers snapshot
+   * exactly the law the simulation obeys.
+   */
+  signalBook(): SignalBook;
   /**
    * Events recorded since the previous call, in record order. Purely a
    * session-side read: the trace's event list is untouched either way, so
@@ -1163,6 +1189,7 @@ class Simulation {
         this.finished = true;
       }
       advanced += 1;
+      opts.onTick?.({ tS: t, tickIndex: i, actors: this.actorSnapshots() });
     }
     return {
       input: this.resolvedInput,
@@ -1174,9 +1201,14 @@ class Simulation {
     };
   }
 
-  /** Read-only world snapshot. Never calls `buildTrace` and never mutates state. */
-  peek(): SimulationSnapshot {
-    const actors = [...this.actors]
+  /** The engine's own SignalBook: the instance overrides land in. */
+  signalBook(): SignalBook {
+    return this.signals;
+  }
+
+  /** Sorted per-actor read-only snapshot shared by peek and tick observers. */
+  private actorSnapshots(): SessionActorSnapshot[] {
+    return [...this.actors]
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
       .map((a) => ({
         id: a.id,
@@ -1185,11 +1217,17 @@ class Simulation {
         headingRad: a.headingRad,
         speedMps: a.speedMps,
         accelMps2: a.accelMps2,
+        present: a.present,
         lateralOffsetM: a.lateralOffsetM,
         lateralRateMps: a.lateralRateMps,
         s: a.routeS,
         laneRsl: a.route.poseAt(a.routeS).rsl ?? null,
       }));
+  }
+
+  /** Read-only world snapshot. Never calls `buildTrace` and never mutates state. */
+  peek(): SimulationSnapshot {
+    const actors = this.actorSnapshots();
     const minima = [...this.metrics.pairs.values()]
       .map((p) => ({
         a: p.a,

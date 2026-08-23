@@ -56,6 +56,7 @@ import { z } from 'zod';
 import {
   buildLaneGraph,
   parseSimScenarioInput,
+  type EngineTickObservation,
   type LaneGraph,
   type SimScenarioInput,
   type TopologyIndex,
@@ -64,6 +65,14 @@ import {
 import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@uniscenarios/cli';
 
 import { EnvSession } from './session.js';
+import {
+  SubscriberQueue,
+  TruthStreamBuilder,
+  type SceneStateMeta,
+  type TruthTickDocument,
+} from './truth-stream.js';
+
+
 import type { CausalConflictGenesis, CausalFrame, CausalLosTransition, CausalTriggerRecord } from './causal.js';
 import type { RewardTerms } from './reward.js';
 import type { EnvAction, EpisodeConfig, Observation } from './types.js';
@@ -182,6 +191,12 @@ export function decodeAction(a: unknown): EnvAction {
 export interface LoadedEpisode {
   readonly input: SimScenarioInput;
   readonly graph: LaneGraph;
+  /**
+   * Map identity for the truth stream's digest pair ({mapId, xodrSha256}).
+   * Absent/null when the episode rides an unnamed or synthetic topology.
+   */
+  readonly mapId: string | null;
+  readonly xodrSha256: string | null;
 }
 
 /** Spec-level episode configuration; validated by EnvSession itself. */
@@ -282,7 +297,7 @@ async function loadInstances(specDir: string, spec: EpisodeSpecFile, graphs: Gra
       if (typeof mapId === 'string' && availableMaps().includes(mapId)) {
         const bundle = await loadMap(mapId);
         const input = parseSimScenarioInput(rawInput as SimScenarioInput);
-        episodes.push({ input, graph: bundle.graph });
+        episodes.push({ input, graph: bundle.graph, mapId, xodrSha256: bundle.graph.topologyDigest || null });
         continue;
       }
       throw new Error('episode instance needs a topology: an entry "topology", a spec-level "topology", or a known map id');
@@ -295,7 +310,14 @@ async function loadInstances(specDir: string, spec: EpisodeSpecFile, graphs: Gra
       typeof topologyRef === 'string'
         ? await graphs.forPath(resolveRelative(specDir, topologyRef))
         : graphs.forInline(topologyRef as unknown as TopologyIndex);
-    episodes.push({ input, graph });
+    episodes.push({
+      input,
+      graph,
+      mapId: typeof (rawInput as { mapId?: unknown } | null)?.mapId === 'string'
+        ? (rawInput as { mapId: string }).mapId
+        : null,
+      xodrSha256: graph.topologyDigest || null,
+    });
   }
   return episodes;
 }
@@ -311,7 +333,7 @@ async function loadTemplate(specDir: string, spec: EpisodeSpecFile): Promise<Loa
   for (const seed of spec.seeds) {
     const seedOverride = typeof seed === 'number' ? String(seed) : seed;
     const result = materialize(template, bundle, site, { seed: seedOverride });
-    episodes.push({ input: result.input, graph: bundle.graph });
+    episodes.push({ input: result.input, graph: bundle.graph, mapId: spec.map, xodrSha256: bundle.graph.topologyDigest || null });
   }
   return episodes;
 }
@@ -356,6 +378,8 @@ export interface HelloInfo {
   engineHz: number;
   egos: string[];
   obs: { sv: boolean; bev: boolean };
+  /** Live per-tick ground-truth side channel (`subscribe`/`unsubscribe`). */
+  truthStream: boolean;
 }
 
 /** Loose request shape; `handle` validates each op's fields before use. */
@@ -382,16 +406,86 @@ export class EnvServer {
   readonly sessions: EnvSession[];
   readonly decisionHz: number;
 
+  /** Outbound frame sinks by connection id (request replies AND tick pushes). */
+  private readonly sinks = new Map<number, (doc: WireResponse | TruthTickDocument) => void>();
+  /** Per-connection, per-session subscription queues. */
+  private readonly subscriptions = new Map<number, Map<number, SubscriberQueue>>();
+  /** Per-session scene metadata for the truth stream. */
+  private readonly truthMeta: SceneStateMeta[];
+  private nextConnectionId = 1;
+
   constructor(options: EnvServerOptions) {
     this.decisionHz = options.decisionHz ?? options.episode?.decisionHz ?? DEFAULT_DECISION_HZ;
+    this.truthMeta = options.episodes.map(({ input, mapId, xodrSha256 }) => ({
+      mapId,
+      xodrSha256,
+      dtS: input.dt,
+    }));
+    const builders = options.episodes.map((episode) => new TruthStreamBuilder(this.truthMetaFor(episode)));
     this.sessions = options.episodes.map(
-      ({ input, graph }) =>
+      ({ input, graph }, index) =>
         new EnvSession({
           input,
           graph,
           episode: { ...options.episode, decisionHz: this.decisionHz },
+          // Fan-out observer: built once per engine tick, shared by every
+          // subscriber of the session; pure read of frozen snapshot data.
+          tickObserver: (obs) => this.onEngineTick(index, obs, builders[index]!),
         }),
     );
+  }
+
+  private truthMetaFor(episode: LoadedEpisode): SceneStateMeta {
+    return { mapId: episode.mapId, xodrSha256: episode.xodrSha256, dtS: episode.input.dt };
+  }
+
+  /** Engine-tick fan-out: no-op unless someone subscribes; never blocks. */
+  private onEngineTick(index: number, obs: EngineTickObservation, builder: TruthStreamBuilder): void {
+    if (!this.subscriptions.size) return;
+    const book = this.sessions[index]?.signalBook();
+    if (!book) return;
+    let anyListener = false;
+    for (const perSession of this.subscriptions.values()) {
+      const queue = perSession.get(index);
+      if (!queue) continue;
+      anyListener = true;
+      break;
+    }
+    if (!anyListener) return;
+    const payload = builder.observe(obs, book);
+    for (const perSession of this.subscriptions.values()) {
+      perSession.get(index)?.push(payload);
+    }
+  }
+
+  /* -- connection sink registry (used by chunkHandler/attachDuplex) -- */
+
+  /** Register one connection's outbound sink; returns its connection id. */
+  openSink(send: (doc: WireResponse | TruthTickDocument) => void): number {
+    const id = this.nextConnectionId++;
+    this.sinks.set(id, send);
+    return id;
+  }
+
+  /** Drop a connection's sink and any live subscriptions it holds. */
+  closeSink(connectionId: number): void {
+    this.sinks.delete(connectionId);
+    this.subscriptions.delete(connectionId);
+  }
+
+  /**
+   * Drain every subscription queue to its connection's wire. Called between
+   * request/reply exchanges — never during a tick — so the engine loop never
+   * waits on socket writes.
+   */
+  flush(): void {
+    for (const [connectionId, send] of this.sinks) {
+      const perSession = this.subscriptions.get(connectionId);
+      if (!perSession) continue;
+      for (const [sessionIndex, queue] of perSession) {
+        for (const doc of queue.drain(sessionIndex)) send(doc);
+      }
+    }
   }
 
   info(): HelloInfo {
@@ -402,6 +496,7 @@ export class EnvServer {
       engineHz: ENGINE_HZ,
       egos: this.sessions.map((session) => session.ego),
       obs: { sv: true, bev: false },
+      truthStream: true,
     };
   }
 
@@ -423,8 +518,12 @@ export class EnvServer {
     return encodeStepResult(this.requireSession(index).step(decodeAction(action)));
   }
 
-  /** Handles one decoded request; throws become `{ok: 0}` error responses. */
-  handle(request: WireRequest): WireResponse {
+  /**
+   * Handles one decoded request; throws become `{ok: 0}` error responses.
+   * `connectionId` identifies the transport sink the request arrived on; the
+   * subscription ops bind their pushes to it and are rejected without one.
+   */
+  handle(request: WireRequest, connectionId: number | null = null): WireResponse {
     const id = request.i ?? 0;
     try {
       switch (request.op) {
@@ -453,6 +552,25 @@ export class EnvServer {
           });
           return { i: id, ok: 1, r: { rs } };
         }
+        case 'subscribe': {
+          if (connectionId === null || !this.sinks.has(connectionId)) {
+            throw new Error('subscribe requires a transport connection');
+          }
+          const sessionIndex = z.number().int().nonnegative().parse(request['s'] ?? 0);
+          this.requireSession(sessionIndex);
+          let perSession = this.subscriptions.get(connectionId);
+          if (!perSession) {
+            perSession = new Map();
+            this.subscriptions.set(connectionId, perSession);
+          }
+          perSession.set(sessionIndex, new SubscriberQueue());
+          return { i: id, ok: 1, r: { subscribed: true, s: sessionIndex, engineHz: ENGINE_HZ } };
+        }
+        case 'unsubscribe': {
+          if (connectionId === null) throw new Error('unsubscribe requires a transport connection');
+          this.subscriptions.get(connectionId)?.delete(z.number().int().nonnegative().parse(request['s'] ?? 0));
+          return { i: id, ok: 1, r: { subscribed: false } };
+        }
         case 'close':
           return { i: id, ok: 1, r: { bye: true } };
         default:
@@ -479,23 +597,29 @@ function decodeRequest(frame: Buffer): WireRequest {
 
 /**
  * Build a chunk handler that drains complete frames, dispatches them in
- * arrival order, and stops at the first `close` or protocol error.
+ * arrival order, and stops at the first `close` or protocol error. The
+ * connection's sink is registered with the server on creation so truth-stream
+ * pushes can ride the same wire; every handled request is followed by a
+ * flush of any queued subscription frames.
  */
 export function chunkHandler(
   server: EnvServer,
   reader: FrameReader,
-  send: (response: WireResponse) => void,
+  send: (doc: WireResponse | TruthTickDocument) => void,
   finish: () => void,
 ): (chunk: Buffer) => void {
   let closing = false;
+  const connectionId = server.openSink(send);
   return (chunk: Buffer) => {
     if (closing) return;
     try {
       for (const frame of reader.push(chunk)) {
         const request = decodeRequest(frame);
-        send(server.handle(request));
+        send(server.handle(request, connectionId));
+        server.flush();
         if (server.closes(request)) {
           closing = true;
+          server.closeSink(connectionId);
           finish();
           return;
         }
@@ -503,6 +627,7 @@ export function chunkHandler(
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       closing = true;
+      server.closeSink(connectionId);
       finish();
     }
   };
@@ -511,7 +636,7 @@ export function chunkHandler(
 /** Attach the server to a bidirectional duplex (socket or stdio pair). */
 export function attachDuplex(server: EnvServer, input: NodeJS.ReadableStream, output: NodeJS.WritableStream, onEnd: () => void): void {
   const reader = new FrameReader();
-  input.on('data', chunkHandler(server, reader, (response) => writeFrame(output, encode(response)), onEnd));
+  input.on('data', chunkHandler(server, reader, (doc) => writeFrame(output, encode(doc)), onEnd));
   input.on('end', onEnd);
   input.on('error', onEnd);
   input.resume();

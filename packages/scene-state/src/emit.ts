@@ -153,6 +153,9 @@ export function emitSceneState(trace: TraceInput): SceneState {
   // prevPresent is undefined until the actor's first record: traces start at
   // t=0 with present=false for delayed entrances, true for immediate ones.
   const prevPresent = new Map<string, boolean>();
+  // Previous world-frame velocity per actor, for the backward acceleration
+  // difference. Reset on spawn so a re-entering body never inherits history.
+  const prevVelocity = new Map<string, [number, number, number]>();
 
   for (let i = 0; i < t.length; i++) {
     const records: ActorTick[] = [];
@@ -171,13 +174,28 @@ export function emitSceneState(trace: TraceInput): SceneState {
 
       const headingRad = tr.headingRad[i]!;
       const speedMps = tr.speedMps[i]!;
+      const velocity: [number, number, number] = [
+        speedMps * Math.cos(headingRad),
+        0,
+        -speedMps * Math.sin(headingRad),
+      ];
+      // Backward finite difference of the velocity channel — includes the
+      // centripetal term when the heading turns. First record and fresh
+      // spawns have no prior sample: acceleration is zero, not unknown.
+      const prev = kind === 'update' ? prevVelocity.get(id) : undefined;
+      const invDt = 1 / header.dt;
+      const acceleration: [number, number, number] = prev
+        ? [(velocity[0] - prev[0]) * invDt, 0, (velocity[2] - prev[2]) * invDt]
+        : [0, 0, 0];
+      prevVelocity.set(id, velocity);
       records.push({
         id,
         kind,
         position: [q(tr.x[i]!), 0, q(-tr.y[i]!)],
         rotation: yawToQuaternion(headingRad).map(q) as [number, number, number, number],
         yawRad: q(headingRad),
-        velocity: [q(speedMps * Math.cos(headingRad)), 0, q(-speedMps * Math.sin(headingRad))],
+        velocity: [q(velocity[0]), 0, q(velocity[2])],
+        acceleration: [q(acceleration[0]), 0, q(acceleration[2])],
       });
     }
     frames.push({ tick: i, t: q(t[i]!), actors: records });
