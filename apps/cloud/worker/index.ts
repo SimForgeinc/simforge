@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 
 import type { RenderProgressRecord } from "@uniscenarios/render-runtime";
 
+import { runCompilerLoop } from "./compiler.js";
 import { executeRender } from "./executor.js";
 import { CpuJobsClient, downloadInputs } from "./http-client.js";
 import type { CpuJobClaim } from "./types.js";
@@ -20,7 +21,10 @@ export function startLocalWorker(baseUrl: string | URL): LocalWorkerHandle {
   const workerId = process.env.UNISCENARIO_RENDER_WORKER_ID?.trim()
     || `local-${hostname().replace(/[^A-Za-z0-9._:-]/g, "-")}-${process.pid}`;
   const client = new CpuJobsClient(new URL(baseUrl), token, workerId);
-  const done = runClaimLoop(client, controller.signal);
+  const done = Promise.all([
+    runClaimLoop(client, controller.signal),
+    runCompilerLoop(baseUrl, token, controller.signal),
+  ]).then(() => undefined);
   return {
     done,
     stop(reason = new Error("local render worker stopped")) {
@@ -45,7 +49,9 @@ async function runClaimLoop(client: CpuJobsClient, signal: AbortSignal): Promise
 }
 
 async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal: AbortSignal): Promise<void> {
-  const workspace = join(homedir(), ".uniscenarios", "cloud", "worker", `${claim.jobId}-${claim.attemptId}`);
+  const root = process.env.UNISCENARIO_LOCAL_WORKER_ROOT?.trim()
+    || join(homedir(), ".uniscenarios", "cloud", "worker");
+  const workspace = join(root, `${claim.jobId}-${claim.attemptId}`);
   await rm(workspace, { recursive: true, force: true });
   const job = new AbortController();
   const signal = AbortSignal.any([workerSignal, job.signal]);
@@ -104,6 +110,8 @@ async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal:
       jobId: claim.jobId,
       error: detail,
     })}\n`);
+  } finally {
+    await rm(workspace, { recursive: true, force: true });
   }
 }
 

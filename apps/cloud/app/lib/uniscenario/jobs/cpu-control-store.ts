@@ -129,11 +129,47 @@ async function browserClaimPayload(source: BrowserRenderSource) {
   const storedPreview = Buffer.from(
     await getS3ObjectBytes(source.preview_bucket, source.preview_key),
   );
-  const playbackBytes =
+  const decodedPreview =
     storedPreview[0] === 0x1f && storedPreview[1] === 0x8b
       ? gunzipSync(storedPreview)
       : storedPreview;
-  const playback = parseJsonObject(playbackBytes.toString("utf8"));
+  const storedPlayback = parseJsonObject(decodedPreview.toString("utf8"));
+  const instance = parseJsonObject(storedPlayback.instance as Record<string, unknown>);
+  const input = parseJsonObject(instance.input as Record<string, unknown>);
+  const trace = parseJsonObject(storedPlayback.trace as Record<string, unknown>);
+  const ticks = parseJsonObject(trace.ticks as Record<string, unknown>);
+  const previewTimes = Array.isArray(ticks.t)
+    ? ticks.t.filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+    : [];
+  const actors = Array.isArray(input.actors)
+    ? input.actors.map((value) => {
+        const actor = parseJsonObject(value as Record<string, unknown>);
+        const initial = parseJsonObject(actor.initial as Record<string, unknown>);
+        const pose = parseJsonObject(initial.pose as Record<string, unknown>);
+        const tags = Array.isArray(actor.tags) ? actor.tags.filter((tag): tag is string => typeof tag === "string") : [];
+        return {
+          id: actor.id,
+          kind: actor.kind,
+          static: actor.static === true,
+          tags,
+          catalogId: tags.find((tag) => tag.startsWith("catalog:"))?.slice("catalog:".length),
+          modelBasis: "input-tag",
+          dims: actor.dims,
+          initial: { x: pose.x, z: pose.z, headingRad: pose.headingRad },
+        };
+      })
+    : [];
+  const playback = {
+    instance,
+    trace,
+    actors,
+    props: Array.isArray(input.props) ? input.props : [],
+    signals: [],
+    source: { instanceName: "saved scenario", traceName: "saved simulation" },
+    startTime: previewTimes[0] ?? 0,
+    endTime: previewTimes.at(-1) ?? 0,
+  };
+  const playbackBytes = Buffer.from(JSON.stringify(playback));
   const playbackSha256 = sha256(playbackBytes);
   const playbackKey =
     `${source.workspace_id}/browser-render-inputs/playback/${playbackSha256}.json`;
@@ -221,6 +257,11 @@ async function browserClaimPayload(source: BrowserRenderSource) {
         "artifact.manifest",
         "artifact.frames",
         "artifact.sensor_archive",
+        // The browser recording adapter derives these from the immutable
+        // playback evidence carried by the claim. They are not frame-capture
+        // products of the Three.js renderer itself.
+        "artifact.trace",
+        "artifact.annotations",
       ],
     },
     revisionEnvironment: {
@@ -402,7 +443,7 @@ async function expireCpuAttempts() {
         `UPDATE uniscenario.cpu_job_attempts attempt
             SET attempt_state = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE 'expired' END,
                 completed_at = NOW(),
-                failure_code = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE failure_code END
+                failure_code = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE attempt.failure_code END
            FROM uniscenario.${table} job
           WHERE job.id = :job_id AND attempt.job_family = :job_family AND attempt.job_id = job.id
             AND attempt.attempt_state = 'active' AND attempt.expires_at <= NOW()

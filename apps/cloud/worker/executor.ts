@@ -1,14 +1,15 @@
+import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
+import { createRenderEngine as createBrowserRenderEngine } from "@uniscenarios/browser-renderer";
 import type { RenderIntentV1 } from "@uniscenarios/scenario-model";
 import {
   RenderArtifactManifestSchema,
   assertEngineSupportsIntent,
   createFixedSchedules,
   hashFile,
-  hashRenderIntent,
   loadBuiltinRenderEngine,
 } from "@uniscenarios/render-runtime";
 
@@ -19,8 +20,10 @@ import type {
 } from "./types.js";
 
 export async function executeRender(request: RenderExecutionRequest): Promise<RenderExecutionResult> {
-  const intent = request.intent as unknown as RenderIntentV1;
-  const intentSha256 = hashRenderIntent(intent);
+  const wireIntent = request.intent as unknown as RenderIntentV1 & { engine?: unknown; schedule?: unknown };
+  const { engine: _engine, schedule: _schedule, ...portableIntent } = wireIntent;
+  const intent = portableIntent as RenderIntentV1;
+  const intentSha256 = createHash("sha256").update(canonicalJson(wireIntent)).digest("hex");
   if (request.intentSha256 && request.intentSha256 !== intentSha256) {
     throw new Error(`render intent digest mismatch: claim=${request.intentSha256} computed=${intentSha256}`);
   }
@@ -40,13 +43,20 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
   }
 
   await mkdir(request.workspace, { recursive: true, mode: 0o700 });
-  const engine = await loadBuiltinRenderEngine(request.engine, browserEngineOptions(request.engine));
+  const engine = request.engine === "browser"
+    ? createBrowserRenderEngine(browserEngineOptions(request.engine))
+    : await loadBuiltinRenderEngine(request.engine, browserEngineOptions(request.engine));
   try {
-    assertEngineSupportsIntent(engine.capabilities, intent);
-    const schedules = createFixedSchedules(intent);
     const executionIntent = request.engine === "browser"
       ? browserExecutionIntent(intent)
       : intent;
+    assertEngineSupportsIntent(
+      engine.capabilities,
+      request.engine === "browser"
+        ? { ...intent, renderSpec: executionIntent.renderSpec }
+        : intent,
+    );
+    const schedules = createFixedSchedules(intent);
     const runtimeManifest = RenderArtifactManifestSchema.parse(await engine.execute({
       jobId: request.jobId,
       attempt: request.attempt,
@@ -182,6 +192,20 @@ function browserExecutionIntent(intent: RenderIntentV1): RenderIntentV1 {
   const frameCount = Math.ceil(exactFrames - Number.EPSILON * Math.max(1, exactFrames) * 8);
   return {
     ...intent,
+    renderSpec: {
+      ...intent.renderSpec,
+      // Trace and annotations are control-plane products of the frozen
+      // playback evidence. The browser engine captures only image artifacts.
+      artifacts: intent.renderSpec.artifacts.filter((kind) =>
+        kind !== "trace" && kind !== "annotations"
+      ),
+      capabilityIntent: {
+        ...intent.renderSpec.capabilityIntent,
+        required: intent.renderSpec.capabilityIntent.required.filter((capability) =>
+          capability !== "artifact.trace" && capability !== "artifact.annotations"
+        ),
+      },
+    },
     engine: "browser",
     schedule: {
       startSeconds,
@@ -228,6 +252,20 @@ function qualityCrf(quality: "draft" | "standard" | "high" | "lossless" | undefi
   if (quality === "high") return "18";
   if (quality === "standard") return "23";
   return "28";
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value === "boolean" || typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw new TypeError("canonical JSON cannot contain non-finite numbers");
+    return JSON.stringify(Object.is(value, -0) ? 0 : value);
+  }
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(",")}}`;
+  }
+  throw new TypeError(`canonical JSON cannot contain ${typeof value}`);
 }
 
 function runProcess(command: string, args: readonly string[], signal: AbortSignal): Promise<string> {

@@ -47,3 +47,6 @@ scripts/rl/*.log
 # samples) and detector work caches are re-derivable from the committed
 # corpus-manifest.v1.json per-item sha256 values; only the manifest is versioned.
 tools/bridge-fidelity/.corpus/
+
+# Next build output
+apps/cloud/.next/

@@ -67,7 +67,7 @@ export class CpuJobsClient {
     ));
     return {
       cancelRequested: body.cancelRequested === true,
-      leaseExpiresAt: stringField(body, "leaseExpiresAt", "expiresAt"),
+      leaseExpiresAt: stringField(body, "leaseExpiresAt", "expiresAt", "expires_at"),
     };
   }
 
