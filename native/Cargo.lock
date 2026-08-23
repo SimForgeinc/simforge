@@ -1164,10 +1164,7 @@ dependencies = [
  "bevy_render",
  "bevy_scene",
  "bevy_shader",
-<<<<<<< HEAD
-=======
  "bevy_solari",
->>>>>>> wsb4-realism-stack
  "bevy_sprite",
  "bevy_sprite_render",
  "bevy_state",
@@ -1611,8 +1608,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "bevy_solari"
 version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1643,7 +1638,6 @@ dependencies = [
 ]
 
 [[package]]
->>>>>>> wsb4-realism-stack
 name = "bevy_sprite"
 version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5071,10 +5065,7 @@ dependencies = [
  "bevy",
  "clap",
  "crossbeam-channel",
-<<<<<<< HEAD
  "half",
-=======
->>>>>>> wsb4-realism-stack
  "image",
  "serde",
  "serde_json",
