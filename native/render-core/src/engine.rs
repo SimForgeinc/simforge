@@ -271,12 +271,72 @@ struct GroupEntities {
 /// The Bevy `App` is never `run()`; every [`Self::render_once`] performs one
 /// full main-world + render-world iteration ending in a blocking GPU
 /// readback of all registered passes.
+
+// ---------------------------------------------------------------------------
+// Dynamic actors + ground height (V4 SensorRig)
+// ---------------------------------------------------------------------------
+
+/// Coarse ground-height lookup: minimum world vertex Y per grid cell.
+///
+/// Traces carry no height channel (scene-state.v1 groundY may be null), so
+/// actor origins are snapped onto the static scene. Taking the per-cell
+/// MINIMUM keeps walls/roofs from inflating the estimate: every mesh that
+/// meets the ground contributes ground-level vertices, while anything
+/// elevated (roofs, foliage) only raises the maximum.
+#[derive(Default)]
+struct GroundField {
+    cell_m: f32,
+    min_y: HashMap<(i64, i64), f32>,
+}
+
+impl GroundField {
+    fn build(app: &mut App, cell_m: f32) -> GroundField {
+        let world = app.world_mut();
+        let mut field = GroundField { cell_m, min_y: HashMap::new() };
+        let mut q = world.query::<(&Mesh3d, &GlobalTransform)>();
+        let meshes = world.resource::<Assets<Mesh>>();
+        for (mesh, gt) in q.iter(world) {
+            let Some(mesh) = meshes.get(&mesh.0) else { continue };
+            let Some(pos) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) else { continue };
+            let bevy::mesh::VertexAttributeValues::Float32x3(values) = pos else { continue };
+            let gt = gt.to_matrix();
+            for v in values.iter() {
+                let p = gt.transform_point3(Vec3::from(*v));
+                let key = (
+                    (p.x / cell_m).floor() as i64,
+                    (p.z / cell_m).floor() as i64,
+                );
+                field
+                    .min_y
+                    .entry(key)
+                    .and_modify(|y| *y = y.min(p.y))
+                    .or_insert(p.y);
+            }
+        }
+        field
+    }
+
+    /// Ground height under (x, z); 0.0 where the scene has no geometry.
+    fn sample(&self, x: f32, z: f32) -> f32 {
+        let key = ((x / self.cell_m).floor() as i64, (z / self.cell_m).floor() as i64);
+        self.min_y.get(&key).copied().unwrap_or(0.0)
+    }
+}
+
 pub struct SceneApp {
     app: App,
     receiver: crossbeam_channel::Receiver<SentPass>,
     groups: Vec<GroupEntities>,
     next_camera_order: isize,
     ready: bool,
+    /// Scene-state actors: id -> (cuboid entity, allocated instance id).
+    actors: HashMap<String, (Entity, u32)>,
+    /// Instance id -> semantic class name for dynamically spawned actors.
+    actor_classes: HashMap<u32, String>,
+    /// Next instance id for dynamic actors (beyond the static legend range).
+    next_instance_id: u32,
+    /// Coarse ground-height field (min vertex y per cell), built at readiness.
+    ground: GroundField,
 }
 
 impl SceneApp {
@@ -357,8 +417,19 @@ impl SceneApp {
         }
         app.finish();
         app.cleanup();
-        Self { app, receiver: rx, groups: Vec::new(), next_camera_order: 0, ready: false }
+        Self {
+            app,
+            receiver: rx,
+            groups: Vec::new(),
+            next_camera_order: 0,
+            ready: false,
+            actors: HashMap::new(),
+            actor_classes: HashMap::new(),
+            next_instance_id: 0,
+            ground: GroundField::default(),
+        }
     }
+
 
     /// Queue GLB tiles for loading. Call before [`Self::wait_until_ready`].
     pub fn load_tiles(&mut self, glbs: &[String]) -> Result<()> {
@@ -377,8 +448,12 @@ impl SceneApp {
     }
 
     /// Register a camera group (RGB target + optional ID camera + depth copy).
+    ///
+    /// Registration is allowed both before [`Self::wait_until_ready`] and
+    /// after it (V4: per-request dynamic camera registration in the service).
+    /// Post-ready groups join the already-finalized ID-pass layer directly;
+    /// the legend is not re-derived, so IDs stay stable.
     pub fn add_camera(&mut self, spec: CameraSpec, profile: Profile) {
-        assert!(!self.ready, "cameras must be added before rendering starts");
 
         let rgb_image = {
             let mut images = self.app.world_mut().resource_mut::<Assets<Image>>();
@@ -463,11 +538,154 @@ impl SceneApp {
         }
 
         self.groups.push(GroupEntities { spec, rgb_entity, id_entity });
+        if self.ready {
+            // Post-ready registration: pump one update so extraction and
+            // pipeline compilation happen before the next render_once.
+            self.app.update();
+            while self.receiver.try_recv().is_ok() {}
+        }
     }
 
     /// Registered camera specs (diagnostics).
     pub fn cameras(&self) -> impl Iterator<Item = &CameraSpec> {
         self.groups.iter().map(|g| &g.spec)
+    }
+
+    /// Frozen legend (static instance ids). Dynamic actors get ids above the
+    /// static maximum; see [`Self::actor_instance_class`].
+    pub fn legend(&self) -> Vec<LegendEntry> {
+        self.app.world().resource::<Legend>().0.clone()
+    }
+
+    /// Ground height under (x, z) from the readiness height field.
+    pub fn ground_at(&self, x: f32, z: f32) -> f32 {
+        self.ground.sample(x, z)
+    }
+
+    /// Spawn or move one scene-state actor cuboid. The box is named
+    /// `actor:<id>` and carries an instance id above the static legend range
+    /// so ID-pass pixels resolve to the actor class.
+    ///
+    /// `position` is the actor origin on the ground; when `snap_ground` is
+    /// set the y coordinate is replaced by the sampled ground height (traces
+    /// carry no height channel).
+    pub fn upsert_actor(
+        &mut self,
+        id: &str,
+        class: &str,
+        position: [f32; 3],
+        yaw_rad: f32,
+        dims: [f32; 3],
+        color: [f32; 3],
+        snap_ground: bool,
+    ) {
+        let y = if snap_ground { self.ground.sample(position[0], position[2]) } else { position[1] };
+        let transform = Transform {
+            translation: Vec3::new(position[0], y, position[2]),
+            rotation: Quat::from_rotation_y(yaw_rad),
+            scale: Vec3::ONE,
+        };
+        let world = self.app.world_mut();
+        if let Some((entity, _)) = self.actors.get(id) {
+            if let Some(mut t) = world.get_mut::<Transform>(*entity) {
+                *t = transform;
+            }
+            return;
+        }
+        let instance_id = self.next_instance_id + 1;
+        self.next_instance_id = instance_id;
+        let mesh_handle = {
+            let mut meshes = world.resource_mut::<Assets<Mesh>>();
+            meshes.add(Cuboid::new(dims[0], dims[1], dims[2]))
+        };
+        let mat_handle = {
+            let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
+            materials.add(StandardMaterial {
+                base_color: Color::srgb(color[0], color[1], color[2]),
+                ..default()
+            })
+        };
+        // Deterministic instance-ID material for the layer-1 clone: same
+        // RGB24 encoding as finalize_scene.
+        let bytes = instance_id.to_le_bytes();
+        let id_mat = {
+            let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
+            materials.add(StandardMaterial {
+                base_color: Color::srgb_u8(bytes[0], bytes[1], bytes[2]),
+                unlit: true,
+                ..default()
+            })
+        };
+        let e = world.spawn((
+            Name::new(format!("actor:{id}")),
+            Mesh3d(mesh_handle.clone()),
+            MeshMaterial3d(mat_handle),
+            transform,
+        )).id();
+        world.spawn((
+            IdClone,
+            Name::new(format!("actor:{id}")),
+            Mesh3d(mesh_handle),
+            MeshMaterial3d(id_mat),
+            RenderLayers::layer(1),
+            transform,
+        ));
+        self.actors.insert(id.to_string(), (e, instance_id));
+        self.actor_classes.insert(instance_id, class.to_string());
+    }
+
+    /// Remove a despawned scene-state actor (both the visible box and its
+    /// layer-1 ID clone).
+    pub fn remove_actor(&mut self, id: &str) {
+        if let Some((entity, instance)) = self.actors.remove(id) {
+            let world = self.app.world_mut();
+            let name = format!("actor:{id}");
+            let mut q = world.query_filtered::<(Entity, &Name), With<IdClone>>();
+            let clones: Vec<Entity> = q
+                .iter(world)
+                .filter(|(_, n)| n.as_str() == name)
+                .map(|(e, _)| e)
+                .collect();
+            world.despawn(entity);
+            self.actor_classes.remove(&instance);
+        }
+    }
+
+    /// Semantic class name of a dynamic-actor instance id, if any.
+    pub fn actor_instance_class(&self, instance_id: u32) -> Option<&str> {
+        self.actor_classes.get(&instance_id).map(|s| s.as_str())
+    }
+
+    /// Drop every registered camera group (respawn-on-view-change primitive:
+    /// the next render re-registers with fresh attributes). Also prunes the
+    /// render-world staging buffers for the removed targets.
+    pub fn clear_cameras(&mut self) {
+        let sensor_ids: Vec<String> =
+            self.groups.drain(..).map(|g| g.spec.sensor_id).collect();
+        if sensor_ids.is_empty() {
+            return;
+        }
+        let world = self.app.world_mut();
+        let mut to_despawn: Vec<Entity> = Vec::new();
+        let mut q = world.query::<(Entity, &ReadbackTarget)>();
+        for (e, t) in q.iter(world) {
+            if sensor_ids.iter().any(|s| t.key.starts_with(s.as_str())) {
+                to_despawn.push(e);
+            }
+        }
+        for e in to_despawn {
+            world.despawn(e);
+        }
+        if let Some(render_app) = self.app.get_sub_app_mut(RenderApp) {
+            if let Some(mut staging) = render_app.world_mut().get_resource_mut::<Staging>() {
+                staging.0.retain(|b| {
+                    !sensor_ids
+                        .iter()
+                        .any(|s| b.key.starts_with(format!("{s}:").as_str()))
+                });
+            }
+        }
+        self.next_camera_order = 0;
     }
 
     /// Update until all tiles are loaded, scenes spawned and instances built.
@@ -512,6 +730,7 @@ impl SceneApp {
             }
         }
         self.finalize_scene()?;
+        self.ground = GroundField::build(&mut self.app, 2.0);
         self.ready = true;
         Ok(self.app.world().resource::<Legend>().0.clone())
     }

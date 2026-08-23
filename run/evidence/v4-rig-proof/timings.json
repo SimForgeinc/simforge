@@ -1,0 +1,28 @@
+{
+  "ticks": 100,
+  "cameras": [
+    "ch1",
+    "ch2",
+    "ch3",
+    "ch4",
+    "ego"
+  ],
+  "renderMs": {
+    "mean": 60.53324913,
+    "p50": 61.711625,
+    "p95": 70.84905499999999,
+    "max": 77.209163
+  },
+  "jpegMs": {
+    "mean": 4.791641019999999,
+    "p95": 5.52631625
+  },
+  "sustainedFpsWallClock": 14.530751325102273,
+  "renderOnlyFpsAtMean": 16.51984676805337,
+  "jpegOnlyFpsAtMean": 208.69676919161196,
+  "jpegThroughputPxS": 63897942.00401098,
+  "targetFps": 20.0,
+  "meetsTarget": false,
+  "wallSeconds": 6.881956601049751,
+  "protocol": 2
+}
