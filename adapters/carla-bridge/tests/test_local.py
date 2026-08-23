@@ -12,6 +12,19 @@ from uniscenarios_carla_bridge.runtime.contract import OFFICIAL_XSD_SHA256
 def test_default_schema_is_bundled_and_digest_pinned() -> None:
     assert local.DEFAULT_XSD.is_file()
     assert hashlib.sha256(local.DEFAULT_XSD.read_bytes()).hexdigest() == OFFICIAL_XSD_SHA256
+def test_render_control_lineage_digest_matches_simcloud_contract() -> None:
+    intent = {
+        "executionPackage": {
+            "id": "usepkg_1",
+            "sourceInputDigest": "b" * 64,
+        },
+    }
+
+    assert local._render_control_lineage_sha256(intent, "a" * 64) == (
+        "778a97137de36a25e2fc215804ef86da8518dd282ed99a581ebdb88625ecb30c"
+    )
+
+
 
 
 def test_probe_is_read_only_and_always_cleans_up(monkeypatch: pytest.MonkeyPatch) -> None:

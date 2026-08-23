@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import xml.etree.ElementTree as ET
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -192,6 +193,16 @@ def _strip_control(value: Any) -> Any:
     if isinstance(value, list):
         return [_strip_control(item) for item in value]
     return value
+
+def _render_control_lineage_sha256(intent: Mapping[str, Any], intent_sha256: str) -> str:
+    execution_package = intent["executionPackage"]
+    return canonical_sha256({
+        "schema": "uniscenario.render-control-lineage/v1",
+        "intentSha256": intent_sha256,
+        "executionPackageId": execution_package["id"],
+        "sourceInputDigest": execution_package["sourceInputDigest"],
+    })
+
 
 
 def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec, str]:
@@ -721,6 +732,15 @@ def _intent_lease(
         },
     }
     lease = parse_lease(lease_value)
+    # The local package digest authenticates the derived runtime package during parsing. Artifacts
+    # must carry the control-plane lineage digest that identifies the immutable claimed attempt.
+    lease = replace(
+        lease,
+        execution_package=replace(
+            lease.execution_package,
+            control_sha256=_render_control_lineage_sha256(intent, intent_sha),
+        ),
+    )
     return lease, {
         "local:manifest": manifest_path, "local:xosc": xosc_path,
         "local:xodr": xodr_path, "local:catalog": catalog_path, "local:traffic": traffic_path,
