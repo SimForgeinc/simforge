@@ -1,0 +1,437 @@
+{
+  "schema": "sensor-corpus.v1",
+  "mapId": "richmond-field-station",
+  "sourceRoot": "dev-assets/richmond-field-station/browser/3d",
+  "tools": {
+    "node": "v22.23.2",
+    "gltfTransform": "4.4.2",
+    "meshoptimizer": "1.2.0",
+    "sharp": "0.34.5"
+  },
+  "counts": {
+    "glbFiles": 45,
+    "staticGlbs": 29,
+    "vegGlbs": 16,
+    "vegSidecars": 4,
+    "sceneManifests": 1
+  },
+  "totalBytes": 662891358,
+  "files": [
+    {
+      "path": "scene-manifest.json",
+      "bytes": 10065,
+      "sha256": "ce70e813de6b93ee9b959cbcea60c1c9de4714d7550f92ebcc4d18ca4c1fa032",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/manifest.json",
+      "srcSha256": "ce70e813de6b93ee9b959cbcea60c1c9de4714d7550f92ebcc4d18ca4c1fa032",
+      "kind": "scene"
+    },
+    {
+      "path": "tiles/road.glb",
+      "bytes": 87262976,
+      "sha256": "f38cb39ebf03d525964acdbdc15b8aec79512c7d7e3a51d079a1f3ce57df6a39",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/road.glb",
+      "srcSha256": "27b7ef6ec45995136aa40c70ab0b67f4ddc9d51542d8706c317478ff80347523",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod0.glb",
+      "bytes": 13781068,
+      "sha256": "6a7cb2bb8222b7d0dd3a82d264e091718756b8b300f3534fc2d7586e03609d93",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_1.lod0.glb",
+      "srcSha256": "c61a516611fd532c6dd305928e708da2142f9c93dbdb6cf53689ab23bdfcd8be",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod1.glb",
+      "bytes": 3802276,
+      "sha256": "ff3633ff366069c1947adfab54fa41b251652523f7be4160ed8ddd22495a69e8",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_1.lod1.glb",
+      "srcSha256": "7ce7d706abf02ca4593f5be4996194bde87089c8910c704242cf284537d6106f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod2.glb",
+      "bytes": 1063100,
+      "sha256": "8065bec5f46c3e36a301f466460f0f2469b6ef524e830f5907f92cff0092a224",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_1.lod2.glb",
+      "srcSha256": "388a84cb0d16d0e6244142b196e5bb1dda1d383228f5ff81963245eecea21d8c",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod3.glb",
+      "bytes": 313260,
+      "sha256": "810aaa605187b6daf834d2dcfec0a14086316a3951e3839df4fe5f2c6892c26e",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_1.lod3.glb",
+      "srcSha256": "11729709427b20cf62b576ba4da7f856f4a16aaa1cb5c5f1abd20508c95c7a58",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod0.glb",
+      "bytes": 127515612,
+      "sha256": "b0fc0520c577e4c67067d849da8ea19f6d4f589deed9751c3a43d5e0fb374969",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_2.lod0.glb",
+      "srcSha256": "c7e7fdba632eb26815943b4567dfce875a759bb2a5977389afc23b7241fd9282",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod1.glb",
+      "bytes": 68772888,
+      "sha256": "bdffa84aaad6cbeac9de300b9048b12323f7210785ffec0b35df70f6c5b7d4dd",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_2.lod1.glb",
+      "srcSha256": "b9da4c67b3eea34045eb4eb95185b50b83cc974fba9cd9795c631756c8b1f63d",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod2.glb",
+      "bytes": 25712840,
+      "sha256": "5ccfe2288f0183396ac3bcfd0a469008ffd2398e043f87542db917dec6452ad4",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_2.lod2.glb",
+      "srcSha256": "3cf2ca6a7f8e73d19044b6a91d9f4adad79c700563afceae340f9a1136db651c",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod3.glb",
+      "bytes": 10459580,
+      "sha256": "c82bf86e25b0a5734d7c41c55a3b652630951dbf5e0e56eb4a09ed9b836e112f",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_0_2.lod3.glb",
+      "srcSha256": "f08d4f14bc6ebb9636f6c68432b36ea3291a63ff79726804892aa7f7f8920b97",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod0.glb",
+      "bytes": 11512740,
+      "sha256": "5b55361cb859fb3f8a8f960db352120719a7f73c99932fd00e99244672adeee9",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_0.lod0.glb",
+      "srcSha256": "8e2816947f3d38897e004bb994f861a5827ad1b4efeee8aa7627924415f3c811",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod1.glb",
+      "bytes": 11278812,
+      "sha256": "118c05e35821b5b2a8deeba207613c9e537f1851600c91a2ee22500efe1e67ab",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_0.lod1.glb",
+      "srcSha256": "b45901ecfc8a48ff624155495abb4b0e2fb5cea8204af16eb117a7ea87be54d8",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod2.glb",
+      "bytes": 5760656,
+      "sha256": "48da022d341942a942d78436bc4c5a1cf70c9f31dae7ff0c1dce21da27520b36",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_0.lod2.glb",
+      "srcSha256": "d37053ee850a9186b4ae1f86a56498d625d4e2173aedf0a2fedea1eb37b4b48e",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod3.glb",
+      "bytes": 3123224,
+      "sha256": "d51dd30207282253e6ba6535c56d927da12469fa733bd2c8a66a2c3a0de81e72",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_0.lod3.glb",
+      "srcSha256": "c1d5d2531e703f502531f9b7c6aacf4838102f9ce7c5b858c4b1d3792a1e686a",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod0.glb",
+      "bytes": 35963024,
+      "sha256": "9af93bc7a76d3cefb1be5c7394e49a27d0e8dfcfe57f3dc9ffbd697d0826478c",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_1.lod0.glb",
+      "srcSha256": "a65c86bcba7a7653e286a488afba948c44dfb09c30a9c3af7ad76bcca6e7474b",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod1.glb",
+      "bytes": 27874876,
+      "sha256": "c41c99b075fae34afef2f16ac0863685768711221a6ec8f848770273949239cf",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_1.lod1.glb",
+      "srcSha256": "88bb7a2dbf51a8686a4cd69626292bf462ff7eb9fb9cfe364a56ffbcedf93170",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod2.glb",
+      "bytes": 11797156,
+      "sha256": "9573e5c195b8f7bdcc6701ff569befe8c16c4dbf876b0ec355c583d765b4ebb0",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_1.lod2.glb",
+      "srcSha256": "f2bb9cdb3267dcf36f44cb888989a13da96244cba432aef14116dfd1e39668e5",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod3.glb",
+      "bytes": 5420148,
+      "sha256": "a519b7a6f9089a62e87659fe5b50680186302867effef945d576e854dec74162",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_1.lod3.glb",
+      "srcSha256": "8c4642885f3e45a54d7ef1a85e0b46b5e8b55ea613fcb884a029da9f4d272922",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod0.glb",
+      "bytes": 47177680,
+      "sha256": "03567f2d4909286c6644b12632d302922b694e6c6a74429968ae4bbe88810576",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_2.lod0.glb",
+      "srcSha256": "fd3113855495beebeef83a6eafda08b66f78c067e2328088a5392f8d9a556c99",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod1.glb",
+      "bytes": 33694960,
+      "sha256": "1453645ac572f629ceab10dfffe6abf92a89ae920f65aa53d8e8eb3a187a4890",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_2.lod1.glb",
+      "srcSha256": "8e82ded6f35aa0378e3fda504d9857b69ac6ee03806c596d35c37281f0883c35",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod2.glb",
+      "bytes": 13058236,
+      "sha256": "639a566a7f5872687e0bd8253f47baa96db6ac446f161f7053795c6f3815f3ac",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_2.lod2.glb",
+      "srcSha256": "0a8b1aed2ea4081bb543821ff414520e34cd65e16b448f61c08b1f7382d657a3",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod3.glb",
+      "bytes": 5007800,
+      "sha256": "5a3f168ed457344bbfa502320f2efaec4a21fb7ff6ea55f86f7bb16660e0cfcf",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_1_2.lod3.glb",
+      "srcSha256": "5389ba96293952380b2c590ef718be98ce5932b9cfaeef38cb3ea23133c3833c",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod0.glb",
+      "bytes": 6217856,
+      "sha256": "29ad7c18391e6efa1761241b6d83e62773eb14e634746da5e0e1791536e8e927",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_0.lod0.glb",
+      "srcSha256": "9843b3c56389ab811535d04d6a476160ee7285171daaf759b0f8dba385656c33",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod1.glb",
+      "bytes": 6172336,
+      "sha256": "7c284870246e11d1fdc4260335558c23185fe4ceeed89b094a44728d4ef26b33",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_0.lod1.glb",
+      "srcSha256": "2c001887bf74da172c4b948d92e3061677b81719b1f8c6dc664dbe9e1f8cb703",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod2.glb",
+      "bytes": 2777136,
+      "sha256": "014daa8457f276b51046597f40f1c4645bfbf45e6f07e57a914be32dcd8e163d",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_0.lod2.glb",
+      "srcSha256": "184b30b032c639ce4eeb6d75bb9cdaeab18efdd3ec60d303895ebc57e8fc4b8f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod3.glb",
+      "bytes": 1170240,
+      "sha256": "f70b8351905044538db8ad5b5e9959a0c6db0a2588d74c514efd3b9475d0cd89",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_0.lod3.glb",
+      "srcSha256": "5fa751aab1fe1894feff6e918e25b12de46151fce9bffe513c2d05b045a3c93a",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod0.glb",
+      "bytes": 9905032,
+      "sha256": "d380635dd9230bdb7cbf2b16c17f6d9f1a992d167aa520b6b6327ea0c4ae3ea4",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_1.lod0.glb",
+      "srcSha256": "0c28b4dc7e0b9efaca809612a65497ac9c1be881046088d609ce658c98b5ba86",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod1.glb",
+      "bytes": 7889180,
+      "sha256": "f61cd1dd300d3b37f486f1f473b7be7d4ff7501b6d9392e690a613f92e60b427",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_1.lod1.glb",
+      "srcSha256": "2eddd603a29affc2ab379fc53046e9585bf0d81e9ab93d56f54c1ba440d97534",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod2.glb",
+      "bytes": 4580288,
+      "sha256": "1e198b3fe6e16bae02c8583fe081f8cd544596ed17fd18914016878e93b0e6ff",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_1.lod2.glb",
+      "srcSha256": "fda25c8abb52fad9c59fc8560f6e61b5874904fd90ed2e1a5a8a6fcc7b917571",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod3.glb",
+      "bytes": 3327748,
+      "sha256": "837af08b51bd19b88c32741552091afaff7d6a79d192b08adfa46f0ed81d6992",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/tile_2_1.lod3.glb",
+      "srcSha256": "8f0e584334747083d13a93728199703c940d52462d5ae33400ea86b9219ffbf1",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/veg_0_2.instances.json",
+      "bytes": 4788,
+      "sha256": "c1fc70287972ac13844bd279dd7db5dec55773b16d5d74b4411ccff6d4bcf9c8",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_0_2.instances.json",
+      "srcSha256": "c1fc70287972ac13844bd279dd7db5dec55773b16d5d74b4411ccff6d4bcf9c8",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_0_2.lod0.glb",
+      "bytes": 6758868,
+      "sha256": "4ef66034e97591cadba1635c1e0d8be0ff29e01282dc8322b2963adaf4715866",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_0_2.lod0.glb",
+      "srcSha256": "6e2db71ec87bcabba5e740cdbc16dcd513c9b30ca028c2fd84446173a0d20e15",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_0_2.lod1.glb",
+      "bytes": 6614304,
+      "sha256": "a3a6ca7476b58fa6b70538adb70e2d2c5d749a69df5948bb267019ffb8f31f71",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_0_2.lod1.glb",
+      "srcSha256": "2093cfd617fb665fbcff4e2b571072533a826b4121fdbb3b1755a40f6e7fa915",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_0_2.lod2.glb",
+      "bytes": 2704260,
+      "sha256": "3bca4af72c8fbab5965f1da3165dedf65386b001d4008993fcf71fc73ffc6466",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_0_2.lod2.glb",
+      "srcSha256": "be436a8ff60c587dfd32fc5752406593dc3b74dc11fc0caac5874bdaf34a9ab4",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_0_2.lod3.glb",
+      "bytes": 1537008,
+      "sha256": "80c19354a79ff942b88bc6f7a661354751b6c7d9009b051bd18d4847c13edc08",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_0_2.lod3.glb",
+      "srcSha256": "ece5449ee5463677e3e097f33006b804535e9b8c63eaa37c8b56483108cfb732",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_0.instances.json",
+      "bytes": 7637,
+      "sha256": "eb5473ab14f484ac80e49583e5ab66d345cdc9baf4e394931b8dc93c9339b9d4",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_0.instances.json",
+      "srcSha256": "eb5473ab14f484ac80e49583e5ab66d345cdc9baf4e394931b8dc93c9339b9d4",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_0.lod0.glb",
+      "bytes": 6758868,
+      "sha256": "4ef66034e97591cadba1635c1e0d8be0ff29e01282dc8322b2963adaf4715866",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_0.lod0.glb",
+      "srcSha256": "6e2db71ec87bcabba5e740cdbc16dcd513c9b30ca028c2fd84446173a0d20e15",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_0.lod1.glb",
+      "bytes": 6614304,
+      "sha256": "a3a6ca7476b58fa6b70538adb70e2d2c5d749a69df5948bb267019ffb8f31f71",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_0.lod1.glb",
+      "srcSha256": "2093cfd617fb665fbcff4e2b571072533a826b4121fdbb3b1755a40f6e7fa915",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_0.lod2.glb",
+      "bytes": 2704260,
+      "sha256": "3bca4af72c8fbab5965f1da3165dedf65386b001d4008993fcf71fc73ffc6466",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_0.lod2.glb",
+      "srcSha256": "be436a8ff60c587dfd32fc5752406593dc3b74dc11fc0caac5874bdaf34a9ab4",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_0.lod3.glb",
+      "bytes": 1537008,
+      "sha256": "80c19354a79ff942b88bc6f7a661354751b6c7d9009b051bd18d4847c13edc08",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_0.lod3.glb",
+      "srcSha256": "ece5449ee5463677e3e097f33006b804535e9b8c63eaa37c8b56483108cfb732",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_1.instances.json",
+      "bytes": 15279,
+      "sha256": "f8525801e524767557255abbde7b444693e5207b04caf0ede76e114be5d3cc1d",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_1.instances.json",
+      "srcSha256": "f8525801e524767557255abbde7b444693e5207b04caf0ede76e114be5d3cc1d",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_1.lod0.glb",
+      "bytes": 6758996,
+      "sha256": "3ea1beabe8f64d903606f3f4251f6f8842deecbc15caab9871b417af4e208cad",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_1.lod0.glb",
+      "srcSha256": "c3d99641480eeef4dbca8580762650945891cee4422492f8e79a19434d27abb4",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_1.lod1.glb",
+      "bytes": 6614436,
+      "sha256": "a380f0e6e3257936e9ef724ab25a073887c4575b350dd2855fc2809dfeb66e7d",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_1.lod1.glb",
+      "srcSha256": "d12789eb8233d50e6af2f26e1655a6ff741b6ce787fbadd0c082213f39ceccf1",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_1.lod2.glb",
+      "bytes": 2704392,
+      "sha256": "f76ae66eb3a78cbc710927da387e8eb69ce0ba14b41e0afd8436925956eb29ea",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_1.lod2.glb",
+      "srcSha256": "c2a9ecfe234e930987308547f71f330c83d619b09377ca923e73c8b848d88b0e",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_1.lod3.glb",
+      "bytes": 1537140,
+      "sha256": "2a4f4d409524ab6ca3216f9dc41a05888c3a756890eff9f03f73f0d6af82234e",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_1.lod3.glb",
+      "srcSha256": "5077769adf646a8d4728fc7e586a95d302f8e78e6e2233676b83fab96c2d3514",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_2.instances.json",
+      "bytes": 2577,
+      "sha256": "3c1a29cc6ef2c8ea7582513df3a62a77cdc713f03eb219afadd2172b74c6a535",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_2.instances.json",
+      "srcSha256": "3c1a29cc6ef2c8ea7582513df3a62a77cdc713f03eb219afadd2172b74c6a535",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_2.lod0.glb",
+      "bytes": 6758868,
+      "sha256": "4ef66034e97591cadba1635c1e0d8be0ff29e01282dc8322b2963adaf4715866",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_2.lod0.glb",
+      "srcSha256": "6e2db71ec87bcabba5e740cdbc16dcd513c9b30ca028c2fd84446173a0d20e15",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_2.lod1.glb",
+      "bytes": 6614304,
+      "sha256": "a3a6ca7476b58fa6b70538adb70e2d2c5d749a69df5948bb267019ffb8f31f71",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_2.lod1.glb",
+      "srcSha256": "2093cfd617fb665fbcff4e2b571072533a826b4121fdbb3b1755a40f6e7fa915",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_2.lod2.glb",
+      "bytes": 2704260,
+      "sha256": "3bca4af72c8fbab5965f1da3165dedf65386b001d4008993fcf71fc73ffc6466",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_2.lod2.glb",
+      "srcSha256": "be436a8ff60c587dfd32fc5752406593dc3b74dc11fc0caac5874bdaf34a9ab4",
+      "kind": "glb",
+      "texturesConverted": 4
+    },
+    {
+      "path": "tiles/veg_1_2.lod3.glb",
+      "bytes": 1537008,
+      "sha256": "80c19354a79ff942b88bc6f7a661354751b6c7d9009b051bd18d4847c13edc08",
+      "srcPath": "dev-assets/richmond-field-station/browser/3d/tiles/veg_1_2.lod3.glb",
+      "srcSha256": "ece5449ee5463677e3e097f33006b804535e9b8c63eaa37c8b56483108cfb732",
+      "kind": "glb",
+      "texturesConverted": 4
+    }
+  ]
+}

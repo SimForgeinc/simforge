@@ -42,11 +42,15 @@
     "@uniscenarios/anchor-matcher": "workspace:*",
     "@uniscenarios/map-intel": "workspace:*",
     "@uniscenarios/openscenario": "workspace:*",
+    "@uniscenarios/sim-engine": "workspace:*",
     "@uniscenarios/render-runtime": "workspace:*",
     "@uniscenarios/scenario-materializer": "workspace:*",
     "@uniscenarios/scenario-model": "workspace:*",
-    "@uniscenarios/sim-engine": "workspace:*",
-    "tsx": "^4.20.0"
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
+    "meshoptimizer": "^1.2.0",
+    "sharp": "0.34.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

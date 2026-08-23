@@ -1,0 +1,2853 @@
+{
+  "schema": "sensor-corpus.v1",
+  "mapId": "yale-street",
+  "sourceRoot": "dev-assets/yale-street/browser/3d",
+  "tools": {
+    "node": "v22.23.2",
+    "gltfTransform": "4.4.2",
+    "meshoptimizer": "1.2.0",
+    "sharp": "0.34.5"
+  },
+  "counts": {
+    "glbFiles": 293,
+    "staticGlbs": 133,
+    "vegGlbs": 160,
+    "vegSidecars": 40,
+    "sceneManifests": 1
+  },
+  "totalBytes": 5136588174,
+  "files": [
+    {
+      "path": "scene-manifest.json",
+      "bytes": 76998,
+      "sha256": "b01da272fdbc47fe1de4dbc2fbc6913670745ab74fb3449836a3a76272cfc0cb",
+      "srcPath": "dev-assets/yale-street/browser/3d/manifest.json",
+      "srcSha256": "b01da272fdbc47fe1de4dbc2fbc6913670745ab74fb3449836a3a76272cfc0cb",
+      "kind": "scene"
+    },
+    {
+      "path": "tiles/road.glb",
+      "bytes": 81562056,
+      "sha256": "49e497a63f2aa41213972ceed413f4b73e880b267996513e5ea1848dee61a422",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/road.glb",
+      "srcSha256": "2902ec939052fbc2e5c6f5bdfacc479b97cbc60b72e5f6af5c52fa0dfb60b98d",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod0.glb",
+      "bytes": 17845460,
+      "sha256": "11f8cee446fa5d195ab50dc94ede1b56e3fba6b5142d5605741a098856bd9184",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_1.lod0.glb",
+      "srcSha256": "74d8e14519e62c26b9200df9a821bb24ea753ca19894a39ea643369399287f0a",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod1.glb",
+      "bytes": 5056440,
+      "sha256": "68e783c9812b450bc4ad03e8d73710a29879374d22f949b1397583140ee14934",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_1.lod1.glb",
+      "srcSha256": "7778ec742a866c309b34416f1fc28ec4996c5cf4d63e17bcbd381cbec7123630",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod2.glb",
+      "bytes": 1769316,
+      "sha256": "e0db18fa96ecb4ee980485782aaa6a0fa45c4922ceb5634e38c77632cde3b324",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_1.lod2.glb",
+      "srcSha256": "be929545ae5826e0ae8ca386dae0332c4a47f68cc6ddc81a9c88e09dd4761ec8",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_1.lod3.glb",
+      "bytes": 907376,
+      "sha256": "5af0e684d2fcf98af6af85080b08792557aee5f51a878328da404b34cd4152d3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_1.lod3.glb",
+      "srcSha256": "7cc003a3469e2bf36aee22de68f7e2f9818106d2e88a720ed170130a6b489676",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod0.glb",
+      "bytes": 140278212,
+      "sha256": "30341d8af6cfd899c8e336f2ad44e3fca264f86b15fb47f01d16415f7fbc3409",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_2.lod0.glb",
+      "srcSha256": "28c64b0acd9475995db23de51b7fd18010d00d4853f3bc6eec0511d0684c4d06",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod1.glb",
+      "bytes": 42106012,
+      "sha256": "0b3768c48f399fdc58802323d6be8957942257043d4c2b403ece33c38c21fe1b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_2.lod1.glb",
+      "srcSha256": "50de834da864763dea6f519a341215679d3712ae04458b4c8fbd8bafd8ffb519",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod2.glb",
+      "bytes": 12718484,
+      "sha256": "1d0c452556fb7c19f05c4a3ba0b4797667dd08dd44d6f10e8c5854bad61eed08",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_2.lod2.glb",
+      "srcSha256": "05274bc327a7c1665c824a9e1f062c9f775941c9bc4ad913dddcfd2de6b44171",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_2.lod3.glb",
+      "bytes": 4898036,
+      "sha256": "1784d5542fbf49652f6619e4b6d48cc9339ef235e9a98c744d43d9cf7c6be73d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_2.lod3.glb",
+      "srcSha256": "052f9d528ea7890195005dca473650ee8fc25548566361a215b2902614ae71a5",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_3.lod0.glb",
+      "bytes": 128298516,
+      "sha256": "4ff0efaf30b0b5f4274521a76418b7c561026bbeba6f3cbb5c39f772f5435f29",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_3.lod0.glb",
+      "srcSha256": "a7027d7c2196838834bb7bbd1618350984f0ebfc1caf63a575dd3a8ef7472af8",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_3.lod1.glb",
+      "bytes": 38711212,
+      "sha256": "8a65cffaa4f31d98d2dc5f4b20cc553eabc0477c0008ab138e4fdc42c50be06a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_3.lod1.glb",
+      "srcSha256": "0613997c4479ebe764b4153f113758eb28a91e42cffe2a4ab54962b26f304539",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_3.lod2.glb",
+      "bytes": 12317820,
+      "sha256": "58f93d619e5b2ec8da8201047ed2819af13d3379c096da0801f3bfd31fa7ef61",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_3.lod2.glb",
+      "srcSha256": "924fcb9d706ef26272096aa30e60d11ef1412340a7b0dc959dc67b352aa59ae8",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_3.lod3.glb",
+      "bytes": 4913032,
+      "sha256": "5825fc5ef0118ca86516e09db20e3ad42327691a26a903485791518586c6948a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_3.lod3.glb",
+      "srcSha256": "f777b4ef663bd3ae89ab0c5daed6e409c2ec9eda3ee06f871225d58a8f6f0d43",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_4.lod0.glb",
+      "bytes": 37093308,
+      "sha256": "8e2688466c5ab9c6c54f893fe28f5ce70e98b4ccbabbc7f29a0f2d3d22a65c7c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_4.lod0.glb",
+      "srcSha256": "da83036e5865e63c7d7bdb8581a2e3bde0e5b4d875c6de8f66a34b9164331667",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_4.lod1.glb",
+      "bytes": 10130972,
+      "sha256": "be3c63795b80a06e0e45658b9effe484ee3c90be76a38d59e13243b3343f9d8d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_4.lod1.glb",
+      "srcSha256": "cefac42c26308b9d5622f63e232658e8e7293cfad0ad5efe1643e8001c0143d3",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_4.lod2.glb",
+      "bytes": 3026988,
+      "sha256": "992f3677f09ce933c894753962a80af85b8b7106850a353c068b27f3ffa3a980",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_4.lod2.glb",
+      "srcSha256": "b487ce20dc94ae77b11241f5ddc22e8792cbe05f6e1913a53ee22d5f970c518b",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_0_4.lod3.glb",
+      "bytes": 1115088,
+      "sha256": "9c08c7dddf0ffc30bcd590108a4ecba0858cd1025155cd01a1496eb5e8c3af53",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_0_4.lod3.glb",
+      "srcSha256": "aeeca36e0f18f51a31444aa5e6b7845f7c098671d6a16d4771df8278f3d59f0f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod0.glb",
+      "bytes": 44170732,
+      "sha256": "1b3389216bf0cbb856ea81e7127e8baef30121c1084832ea02250c47787e1d5a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_0.lod0.glb",
+      "srcSha256": "88a6e9735ab87f339a834b6dfc8dbe1bf838c3ed012b346f3a77284b76a81922",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod1.glb",
+      "bytes": 15378900,
+      "sha256": "141e086adb2a2c51cd7ea597c1c7b685630ee18a28491b3149a6fdfc75e45b75",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_0.lod1.glb",
+      "srcSha256": "60bfe0080b716b88d5dbdfe8bff5e2819fc6618a5f19456a2109e8f5d8d06de2",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod2.glb",
+      "bytes": 4601256,
+      "sha256": "72cb42a9d116b94ad671e5d986b3de6389be3444320478f21ef473030c6c7dee",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_0.lod2.glb",
+      "srcSha256": "e06a63a71d23ad1230f68657e8c35ada2c3f74c8212be0165cc68e1048cecbb2",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_0.lod3.glb",
+      "bytes": 2100656,
+      "sha256": "1e148dc1f9102bab0fa3dbba6a2ed8c36e4777ecdcfaf5bc11139b2136daf329",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_0.lod3.glb",
+      "srcSha256": "1b72cfb69e6497ae6caffd1d67cf73a93debdb720ce235e56f2b4dc965b69c25",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod0.glb",
+      "bytes": 47071104,
+      "sha256": "2195b29db5d53f61ee4665aa336299a85b5d7ad804774837461cafdbe706de30",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_1.lod0.glb",
+      "srcSha256": "f6af6d69a207411c90ec9cce2c79af7093ccbc1e0ebc767221d94a66b5a29363",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod1.glb",
+      "bytes": 14497240,
+      "sha256": "5dc881c5d46300966fdfb3996f8b646db2ce74a80113154bc6aa831102831468",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_1.lod1.glb",
+      "srcSha256": "3f6bf76afa9ed62c13779cb24341a9b3abc0b1f999e350d36033a574d5fbc1f4",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod2.glb",
+      "bytes": 5089304,
+      "sha256": "ddc9b607f389492dc2c8a9cfdc2755abf55b459bc689c25c03788b284546f5df",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_1.lod2.glb",
+      "srcSha256": "70859cf82024a76b268ec14c88f2d2b8dff3341f6d74032454d2cd8ad3beef41",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_1.lod3.glb",
+      "bytes": 2727088,
+      "sha256": "48604d976339f05ba1a400595cbeed0802ec95251c9a7f7591a17e848126d6bf",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_1.lod3.glb",
+      "srcSha256": "9d2e41a5a84c3f7906b3ffa34d0434f465210025745af4a0c28f634e379365fb",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod0.glb",
+      "bytes": 76237836,
+      "sha256": "6d9553bdadfd0b3f09fbd7f2f868058b1ad5cc55d6bb72119965f289910ebfe0",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_2.lod0.glb",
+      "srcSha256": "dc2bd5f8271d406dfbd60a43fd82686ade64e26f06615e5fe9a8761d39921ab3",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod1.glb",
+      "bytes": 20512452,
+      "sha256": "b7c51933b380fbce5fee7805f127932dd07a3406293ad51457fa78e5151d0c57",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_2.lod1.glb",
+      "srcSha256": "96b1e2ebd497aee9fd5b000164a30decd71a6dd8d5c0a3bac5e37ae584b22707",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod2.glb",
+      "bytes": 5988080,
+      "sha256": "49608bbc199b123be885713ca2fa5320c231ca544b935107f6d367e8f1fb7a8f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_2.lod2.glb",
+      "srcSha256": "bb78fdc370f92fbc667643c3565c08bea91764b938bf85afc00e83b05902cfed",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_2.lod3.glb",
+      "bytes": 2155460,
+      "sha256": "9b89c05f235f95e5ce228257d7fcb4e8ae2420224e1b10847d163223fd9a147e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_2.lod3.glb",
+      "srcSha256": "cf981e68b1097b67c2362897ab91aea25645fe040557b7948df320b19a51391b",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_3.lod0.glb",
+      "bytes": 95703216,
+      "sha256": "12b0716325c18177844a4fad32e926228a741e0e53e8cdd684556fb9f716dc65",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_3.lod0.glb",
+      "srcSha256": "99ac29e433c2c6b45ab7a19808b112e28bd06d2c0d60221e7beefe0dda1468b5",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_3.lod1.glb",
+      "bytes": 28985228,
+      "sha256": "910d135795112c01174601e66746d03cbed8d2aacd438aa11747c6f0e2b2eede",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_3.lod1.glb",
+      "srcSha256": "ea2fa75148f8a3da4af4236065b76047118b7d09b2f7f22c258b1612234f278f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_3.lod2.glb",
+      "bytes": 9880044,
+      "sha256": "c98570c8e6f90cee10cccde9c2add0041bfca02b6cd3dacae7d21e6d9cc0d80f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_3.lod2.glb",
+      "srcSha256": "3a99a5d6cb18a676bd65e878b41c7ebed87b6b35fccf9aaab17ee21bb312f276",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_3.lod3.glb",
+      "bytes": 4708664,
+      "sha256": "e816be088661d545a9e4c2ad61bbaa8b1f1f2850aa29174ecc65ac9324e35156",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_3.lod3.glb",
+      "srcSha256": "23f8873f1fe5c1b438f1d8296fa065f42554b763209d019e19ce35da71f853e2",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_4.lod0.glb",
+      "bytes": 75161404,
+      "sha256": "4c9893e1ca7494a6209650a55ddc7267f7171e0150ef5dd644a7c32c50604104",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_4.lod0.glb",
+      "srcSha256": "cd2a9a1feedf60669d3152a74bc4092714ff6d45d8aece880c32137d31105823",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_4.lod1.glb",
+      "bytes": 21138460,
+      "sha256": "c640ba9690c1b98374ed5d0c90818b0a5766d6cf6a76bf8ef33740239ea249b5",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_4.lod1.glb",
+      "srcSha256": "c7a743de802f7d7bf18f6703877834dfe8f8caf97cda764c07b87b06155b77dc",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_4.lod2.glb",
+      "bytes": 6435472,
+      "sha256": "8497d285715be963b8afedd68ff4fa977d3d2f8afb45c3c4593f0aa679fa7837",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_4.lod2.glb",
+      "srcSha256": "3329393d2e7a92bc08345eebb6d1ea87c4fd082e2ba1b7f225e87fec2603473e",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_1_4.lod3.glb",
+      "bytes": 2706668,
+      "sha256": "47b5b0aab02c9799396b7efe895b300ffc31983e8b069f47d69eee117c3c3faf",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_1_4.lod3.glb",
+      "srcSha256": "755da0a2bcd1d77a13f9b897b13e35683b8faacb0f87fb7c6bf828752a11fe34",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod0.glb",
+      "bytes": 3472552,
+      "sha256": "375605bad4b05e95c6adcfc95a3fef2a3d0928fb7d342f609f122924245cc7f6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_0.lod0.glb",
+      "srcSha256": "af250343e6299de20a17b0500c7aaf092f1b4897632cf55f1cc93468abe04900",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod1.glb",
+      "bytes": 3448820,
+      "sha256": "79c2df9a2695e8731a0cc4c67f7cb9d750f9967fe34c1bc099ef4c8bb86eebff",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_0.lod1.glb",
+      "srcSha256": "e62915e17bf77dc786c548cb8fea089e5f09bb4008f0cc85a87c57f0feab471c",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod2.glb",
+      "bytes": 1106872,
+      "sha256": "44713753d0eda74d10bf5a6fc33a9d3ec7f9239e1f91ee681a502604bfc588e9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_0.lod2.glb",
+      "srcSha256": "455574d038c23da635a2e0bd3a9c40a7162b68491cce995037a3196182d8aac5",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_0.lod3.glb",
+      "bytes": 343536,
+      "sha256": "2d01419ecab3a0372ba5dbe879205a676f98f257d527e34d5d179770d6eb068d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_0.lod3.glb",
+      "srcSha256": "421cc913e83caa1f1722e344da029a5e7e3e88d389366e2bbd9e389bf806ee42",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod0.glb",
+      "bytes": 74758964,
+      "sha256": "be02e3167b5332bf9bfe7d4e8b7bc981daa7fd9929aadcf407587702932c1ffe",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_1.lod0.glb",
+      "srcSha256": "e18b3087aeaeda1b8226a0d2fd69d2eea953195caa94e858c2e0016b5aac9ddc",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod1.glb",
+      "bytes": 26695132,
+      "sha256": "94f55259090ae15dbd0a2110f6960b1896886e04fb3f797555a19a48f646ca22",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_1.lod1.glb",
+      "srcSha256": "a00c657ed1adad65fd9c938a26a6812e34553f836259a84228542c60aee9e8a1",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod2.glb",
+      "bytes": 8208568,
+      "sha256": "daf81c74276ce9a9203692ca541e179bbc0aed15a5ed4e5325c504af818d4acd",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_1.lod2.glb",
+      "srcSha256": "8b26f7c83032c6809efe16336536b3e8ced56e3443368cefede40fa097925b9a",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_1.lod3.glb",
+      "bytes": 3566332,
+      "sha256": "343481885e6be8abaa9e9c70089420be01684ed053f995653af9a44606195454",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_1.lod3.glb",
+      "srcSha256": "6892c948f515a600bee5e0a5bd821a30c4c6063ae90fd33ebef2f1510e176137",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_2.lod0.glb",
+      "bytes": 7791956,
+      "sha256": "8ffeee388b66f453f492efc3e65b6dec8f711c46f5c3a589ff43b0183e4032ff",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_2.lod0.glb",
+      "srcSha256": "af3d21680ee1620f923828cc1d0f28c82a892080fee58ee0c2a0f9191f706265",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_2.lod1.glb",
+      "bytes": 2166912,
+      "sha256": "960c29fbb10d7d2c8aec2a43d352cacd28904c2d8cb94f1122da967820cdf98d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_2.lod1.glb",
+      "srcSha256": "340b6e1e699d64d8f237d51f31e43f12f6128ea77708e3f9e87563f6d2f48fd3",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_2.lod2.glb",
+      "bytes": 673240,
+      "sha256": "02dccf76d6b6de83b0485a35c80dd0f837455e9ccb989773466bf16235bede8e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_2.lod2.glb",
+      "srcSha256": "0dc07da914cbdf268a23cf77981aa2147687d0bd8e2a847701384495c4e56293",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_2.lod3.glb",
+      "bytes": 261892,
+      "sha256": "aa5db3c9a317c78b9e1d6e98b53961e4520a94b495a71c60d1a188b0e3cf41d6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_2.lod3.glb",
+      "srcSha256": "e9ceb0de8f62dde694c6fb82ef47bf43f6bbf4fc43399a87ac35fae2a8859998",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_3.lod0.glb",
+      "bytes": 118787952,
+      "sha256": "ed8e14c18b11492f4cfe5204ebfc24a2c63c5f3e6e2a0b02ee89acb235f8ed74",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_3.lod0.glb",
+      "srcSha256": "22321c92e5ee9b875418f72dbaf0a3dbf49a811f6b1d72829b1cbb2bc4bea68f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_3.lod1.glb",
+      "bytes": 36917328,
+      "sha256": "5c94aaaf0dc7b92885e3b3b8d6d9372aa5df5bd93936bae3e784c7fedb47bed8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_3.lod1.glb",
+      "srcSha256": "174fdbd73e9d871c4def1d469b7e60e64b073945846129b8829fdfecb5b8e419",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_3.lod2.glb",
+      "bytes": 12253904,
+      "sha256": "0fc6e33446feb2f08faa06110eff42d4ef37cf8c7af391ac93f6a55a1ca7501a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_3.lod2.glb",
+      "srcSha256": "43ab86c34f8d3f37a3232cf4bcf4325f96ddb0f083bcb1070773fdb1985eccdc",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_3.lod3.glb",
+      "bytes": 5472168,
+      "sha256": "7f21eada361ff4d1ebd0538284e6352a6747ec75624d3ac25b54a7614839112d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_3.lod3.glb",
+      "srcSha256": "a13a54c360f09b307c74bee50756e97a704137be51618ef93eee412c54f8eee5",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_4.lod0.glb",
+      "bytes": 106919220,
+      "sha256": "2e94cd339c1a764690ca29d26fea1f24f3c2bd630a175cb7a42c0c7e69a5d305",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_4.lod0.glb",
+      "srcSha256": "22089ca789e2d1fa0df58fb28dd22a23511b6cdd955b5db672e551fe5b111959",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_4.lod1.glb",
+      "bytes": 32142176,
+      "sha256": "83a8eec1a4660280783f8128b6a12a912df2b460cad785431d1d8a76e4236f61",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_4.lod1.glb",
+      "srcSha256": "316fc0b007e7d14b6e6379ce589fb4a66821087f362f91814ef6b8df6d2019ee",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_4.lod2.glb",
+      "bytes": 9858992,
+      "sha256": "b7c8bc38509055d1095ad2bbe583d903cbbd9430805c205db0b77a47a36e917b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_4.lod2.glb",
+      "srcSha256": "5612756f0f8a7590dafc725115de4db37becb7e3e314efbee9617cd11b9cf1f2",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_4.lod3.glb",
+      "bytes": 3862408,
+      "sha256": "4b0fb62dace2eae46b886af4ccdea0eebeb874507c6331a7ca0c11971eef8e83",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_4.lod3.glb",
+      "srcSha256": "d2f782ea5e315e41b2968af4509f922f9192763edf2fcf9fb4e05317d72feecf",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_5.lod0.glb",
+      "bytes": 22019256,
+      "sha256": "604754819f94844bbbed64295dfb67932791cdc79c6e98d5e2d143da6fde47fe",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_5.lod0.glb",
+      "srcSha256": "82282267f12d55bd07c43751e49eb3af394a79e9265f3e551b34394b91ebe982",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_5.lod1.glb",
+      "bytes": 6739364,
+      "sha256": "14eb3d5f4cee6f32d087a164355ac8f59095698b71e13fdfc2c1dfe346acfce1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_5.lod1.glb",
+      "srcSha256": "4c8332e591bb7d2fa9ef397abbefb03b19d57299002ef5c3ef0edcd21e7194c3",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_5.lod2.glb",
+      "bytes": 2194984,
+      "sha256": "9fe547e988957f57b95a5bb87d6fda5fdff9cfeaf07cb4ce4c75469d268328a9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_5.lod2.glb",
+      "srcSha256": "9d28ef7e5691074f174c9e8b1d8421e93089b6ad032e96c7fcc9ebe9921ed3c7",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_5.lod3.glb",
+      "bytes": 887068,
+      "sha256": "2a9ad589aff953549b091e237540e6e7431ba8daa854271c1dd81afb88ef9bee",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_5.lod3.glb",
+      "srcSha256": "fd9e414da6245e00cee6d1734e883063a5a10aca5b567c797de46c13a1b3c0ed",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_6.lod0.glb",
+      "bytes": 19498664,
+      "sha256": "8d78d4b0e5bf8f1b5e150d294bd1042f4f4e42031bf3f731ebecba902c8137de",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_6.lod0.glb",
+      "srcSha256": "2318dbb44d8a9bc6f118ce790d81593fb5a9348cd499458dbc0bff8e53587638",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_6.lod1.glb",
+      "bytes": 6164880,
+      "sha256": "5846684c69ccf19b217a695a36a92f172b2470df81d5f369ef23c780f8141721",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_6.lod1.glb",
+      "srcSha256": "c29f69abfc2a711d5d033ea88d51f5b5c3fabf844d1fc5cf8a9720a2c3993f05",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_6.lod2.glb",
+      "bytes": 2627460,
+      "sha256": "15e65abc2531f6de34673724f7d240d478d4396337045abebe464461436a3ea9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_6.lod2.glb",
+      "srcSha256": "17c5ab485169668113781398129130c5d98afb7b68aad5d11dc8ea6f234d37d6",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_2_6.lod3.glb",
+      "bytes": 1684284,
+      "sha256": "4f8e6e140d621dbacd96348110f9d11df8b2b9d8dad5eec081df070ab35f7820",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_2_6.lod3.glb",
+      "srcSha256": "25abbac6df43117a489db6374bf574ade4eb814163472a14d7c95338de29aaa5",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_2.lod0.glb",
+      "bytes": 41466664,
+      "sha256": "73f88b22506d755c64d0d23b20c935f15ff71861707c4ff8ce4dc8c7a0065367",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_2.lod0.glb",
+      "srcSha256": "f985d3c74e7b8c3e56cdeb87ba890c52d9deb3beaeb32a62ba70f844791b285f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_2.lod1.glb",
+      "bytes": 12811512,
+      "sha256": "759bac661bd534e3875b347dd8ed2ae58c830d2dd8c02f2fd4d150a3049b0177",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_2.lod1.glb",
+      "srcSha256": "6059489f8d96822eac2bb8653bdf66ed2dfc577fe7c9e04d47f523013dd8f9f1",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_2.lod2.glb",
+      "bytes": 4246340,
+      "sha256": "f0ec172bbc744d2c85daa54685d0946088a25e468c71e234fdf637e1601b9d1c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_2.lod2.glb",
+      "srcSha256": "ece8da88ac176b37f15b3c39baefa7cb3baaa343ddffca15859ef72d6ae3be73",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_2.lod3.glb",
+      "bytes": 1979524,
+      "sha256": "3473eebe44b88670a2d45ac8f9b6bb5573df4b046be2b58a6921fbb974eb99d5",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_2.lod3.glb",
+      "srcSha256": "9fef7f4927f91013be712064fb07fa852dbb116eb47592bad38dd416c1624c74",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_3.lod0.glb",
+      "bytes": 5783512,
+      "sha256": "08a3f511696fb3732183a382c5a43b2064e2b0ad4f82f61162d399922a23cc85",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_3.lod0.glb",
+      "srcSha256": "641a4f07a5fb84f20f849e68951772d11bfc51358569cc70d784bc59ba454752",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_3.lod1.glb",
+      "bytes": 1759260,
+      "sha256": "326751bf620261d05e3f64035105948b91c3884f3511b267d5804208f529700b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_3.lod1.glb",
+      "srcSha256": "e29f6268e2fbb8480095126e273cce9bf08eab6ad4f69b830269f469f89ab0cc",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_3.lod2.glb",
+      "bytes": 378792,
+      "sha256": "3a135d3522236cc6047c78058c65263fbdb13f27f13990deff43e06f7f06aa10",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_3.lod2.glb",
+      "srcSha256": "1efa9936ad4a4352aa321f5640e773f8b0353fd2771af8588d94489dad8ee12c",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_3.lod3.glb",
+      "bytes": 117488,
+      "sha256": "858d373c9683e0af55c5b637050938637d00d56537eb4c93b978e2829bcab1df",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_3.lod3.glb",
+      "srcSha256": "af03f8bf6be6b7b7bc2944f73b3431e7a3570343cfe9240bfb12483a3ce15c5f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_4.lod0.glb",
+      "bytes": 29767592,
+      "sha256": "cc7d30eedb696128319c2d0086dfba5dd35b7dd69255027964819d4ed887b62a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_4.lod0.glb",
+      "srcSha256": "f07370ec2495300cd48cd506f6fae4fbd48abe80919038cbf42664e7242280be",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_4.lod1.glb",
+      "bytes": 9955060,
+      "sha256": "5a1b9997680d7ad672c9b677dd90d9c85bbbae26d65bc48ff53f1d313b29efd9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_4.lod1.glb",
+      "srcSha256": "60386d8eb87d0ee61f08aac6e791a0353f71c66c560cf045918be82c591f9714",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_4.lod2.glb",
+      "bytes": 3902920,
+      "sha256": "cf7c6e76cda3e342fd1d68aa9605c0bfc8b4865652132904b46b21fbda808d1c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_4.lod2.glb",
+      "srcSha256": "a51cfc3fa98da6b2f4bed84fc39ec44f08e6d7702ae8aa7613475103812c4670",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_4.lod3.glb",
+      "bytes": 2241136,
+      "sha256": "f7a938e82b3a9939e71dd4fccebf60e4a90388bbf6b51113f8ef96c3d1fd8d71",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_4.lod3.glb",
+      "srcSha256": "4cc4b8b055304d95421d47dc250d2b5b84ae8a50fb069112f99fc69e409702d8",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_5.lod0.glb",
+      "bytes": 91016124,
+      "sha256": "5b6fb5635556be93719cc0c1410dbbef8ba9732dfce6b735fb7a031d8c1d1e8f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_5.lod0.glb",
+      "srcSha256": "0632c8a82bf922f811a68770c9a5ed7adc0e8b1787ac338fadd8ecaef3d0ede4",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_5.lod1.glb",
+      "bytes": 26188780,
+      "sha256": "c70ef75d4118112d288fb61fd16c282112ad70e929365ed8c7b6b0e27bfe971a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_5.lod1.glb",
+      "srcSha256": "ea96c2681292d629ba635db0fa2f2d8b976c6bfdf8b9ad511f2451c762ab196a",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_5.lod2.glb",
+      "bytes": 8251344,
+      "sha256": "06cebd1943dae9ef5f58c7dcef1e34e47755a1950655b51b5bd49765867c7937",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_5.lod2.glb",
+      "srcSha256": "fac9e7660369c2f96478328ba01071def53a732ce532132ac2a7f59a43ea3cb8",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_5.lod3.glb",
+      "bytes": 3445968,
+      "sha256": "dd62606caaf5c30c9b80d015d5a595fb99ad37c3c6babb3b28a96d7ce16207e3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_5.lod3.glb",
+      "srcSha256": "a29e1e89268731123c7a6df1302138eefcc80b4d6772807f8975bae7cbb194c9",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_6.lod0.glb",
+      "bytes": 107980936,
+      "sha256": "e6223babf7f4b3dd7114f65c37d98c9c042de6bae7794e8c066fa778b007ef4a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_6.lod0.glb",
+      "srcSha256": "79b15ba78b002f2d42ab33d9eecd001998d543bb040fb8c1f2d192c3111b2b6e",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_6.lod1.glb",
+      "bytes": 31197192,
+      "sha256": "1c8d12f552b3c212bcdeca9c2d81e2465f3af3b1ed90751c3e77b6eeab03abaf",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_6.lod1.glb",
+      "srcSha256": "cf51fcccf5bd551358daf6edb8b68e1ff77774ca8972bd395b1c907ebee497d3",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_6.lod2.glb",
+      "bytes": 9555620,
+      "sha256": "1da50bd1a52d58625b650f2498e4a4a20a50975364962408dac2271aefe10511",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_6.lod2.glb",
+      "srcSha256": "ce1bcdafe8d3d88812acb10e46a40be56d7d542052400bf0c3e01ef3328fe177",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_3_6.lod3.glb",
+      "bytes": 3605092,
+      "sha256": "ab5354e60a7582d2f304bfef201806b71c7c694cf7f135030727a61fb9deb81b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_3_6.lod3.glb",
+      "srcSha256": "ccda704d92c9f47acb9432043be642c7b5eaf716b2e0068df25b2bbec4c09565",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_3.lod0.glb",
+      "bytes": 39755404,
+      "sha256": "b9c53b61af0ff3197012458f342caec1d2b1d47951c951d309495be516174bf5",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_3.lod0.glb",
+      "srcSha256": "b9997ef339448c7458a14f4f52f8201f90dcb9dd5df3acc17033f035a40b63df",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_3.lod1.glb",
+      "bytes": 12818756,
+      "sha256": "8dff1238029ee832cfb42cbfc8d62e4602eb7f0481bb4115b01839adfaf5fda7",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_3.lod1.glb",
+      "srcSha256": "5de5dc4de9028b80068223c68677dd49523f08575e293d2d1cf1b636457af12a",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_3.lod2.glb",
+      "bytes": 5099232,
+      "sha256": "9778caeb11a751952204d0b53383cde98d1384e7f441a08e5504cbeefaf914d0",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_3.lod2.glb",
+      "srcSha256": "fa15cd15784fcd32939baef22bf6969d38569348b5f639e3111732fc1f747595",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_3.lod3.glb",
+      "bytes": 3193400,
+      "sha256": "f46d6e7e884110be508c15d2c2b48e33eaf054f64a3970ee69d03f0cb2d2b8bd",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_3.lod3.glb",
+      "srcSha256": "901cc423c04939252c6a63d3228b3ec8c5e2e63caa7b205b403124520b02995f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_4.lod0.glb",
+      "bytes": 41517100,
+      "sha256": "ea4b3297536f192c1b332e133077c09f44739c7556885df00d30a341de33a333",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_4.lod0.glb",
+      "srcSha256": "af5dbe1472829dedadbbe9dda5ae339a87035d1dbf7ef7249812b341e21c6beb",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_4.lod1.glb",
+      "bytes": 15101208,
+      "sha256": "4eb424b42a1c9efb8667cfb2ad43e5f46ae6c0db156c120498d51ee189c55d9d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_4.lod1.glb",
+      "srcSha256": "ba530bb713fe508f0763d773831924dcdf85e8dcac5f6237c3c893514fcd762b",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_4.lod2.glb",
+      "bytes": 4680652,
+      "sha256": "fd58a3feca91fcebaa5c5d6256a284cda86c5bdf6aef53fee59a938c90d429d5",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_4.lod2.glb",
+      "srcSha256": "cc84e1491189adb53d7d84fc7e170bf893494dda9935db6161ec98b618a73136",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_4.lod3.glb",
+      "bytes": 2312772,
+      "sha256": "64e3d79f4c235d73bf5d96541ed0570b0f0602c87f7d8a90f5e8a10c9d8491e3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_4.lod3.glb",
+      "srcSha256": "e4d56932a7bed5616df7dfaee94205e21e8769c102ab921bce059a146b9380f9",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_5.lod0.glb",
+      "bytes": 29404892,
+      "sha256": "95a48bc7bf6b9ca2ce0c36c52b6bd5e622441046446fc98e161fcbca2abe6060",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_5.lod0.glb",
+      "srcSha256": "e293f90d953c3375ea7d0ebdb5fefe1085dee2535b641d4bb68f95621ed8a985",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_5.lod1.glb",
+      "bytes": 9820884,
+      "sha256": "12a6e1b7d7fa5e80a012d4c882a2248a3b1bcb2f7e4b96cd0c7e8ab89cde5ec4",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_5.lod1.glb",
+      "srcSha256": "10aff0cca4e507603167eb6ececc2374d9c429e3511b256eb42a36cbb8a392ba",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_5.lod2.glb",
+      "bytes": 3793400,
+      "sha256": "8e1b0ee34fb687d64010677c62a463786d2287fae34afaa4947b701e17ef163d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_5.lod2.glb",
+      "srcSha256": "e7d47799f94490b14804c8cf2656b28cb0a11c051c581fb45a096cb041b8a050",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_5.lod3.glb",
+      "bytes": 2219328,
+      "sha256": "a95c13912f8e39984dd1bd0ee9f1fe3ebb5090ca8ffb38ed40c2bb929c09664b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_5.lod3.glb",
+      "srcSha256": "cc50779a89d3289599cf376cc5934183b55928d875483c156360548e2ccc127f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_6.lod0.glb",
+      "bytes": 75814144,
+      "sha256": "aff3888298f6ff756fe7a31380d810920f5aa9fa15e203b3d556b1cb2f39ec3c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_6.lod0.glb",
+      "srcSha256": "61511585d851c35d1274e1ea1b58bb12071b575cbeec63caf98356f1d3d6d4af",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_6.lod1.glb",
+      "bytes": 21841540,
+      "sha256": "b8c9b944804084895f89c7194d6a6d30251fb57946fe69cea1843671faf555ef",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_6.lod1.glb",
+      "srcSha256": "bf5fe4ed449c5607427d4feb9743d92e680647cb39b8b157d55dca867bcadebf",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_6.lod2.glb",
+      "bytes": 7030084,
+      "sha256": "f1cf330d41396784ac81f5af14a0623015eae382b8aa471acb7227efaa511008",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_6.lod2.glb",
+      "srcSha256": "ce4112193345fe98e4eface7f290cda6b777263c02f9e3c24adc7e630b1cd61e",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_6.lod3.glb",
+      "bytes": 3035908,
+      "sha256": "9978d5e5c5153c011106b28bf5baeac07aa3031bcd8f8c2268fab3dc3a6e3c32",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_6.lod3.glb",
+      "srcSha256": "b345d6d90dbc31958570ca41df9be314343af191aeb2b2e84247f55b2407f0ee",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_7.lod0.glb",
+      "bytes": 61254196,
+      "sha256": "72bacd0fa23d520a4a5891ac090e053194038c9296a80f4f43c306211aa97937",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_7.lod0.glb",
+      "srcSha256": "725530aa87413c761a92abd316f5cea0bcd3de8b20e3435cf1e666e426bc11cc",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_7.lod1.glb",
+      "bytes": 17955876,
+      "sha256": "c96ecb21f866cf15ece6e86ffa971ec9018ecd3c84cf097e84087168ea19183c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_7.lod1.glb",
+      "srcSha256": "c9036c0c619c4dcd06926f37ee63fe2d9dc943b75093da960394294b58a9cfab",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_7.lod2.glb",
+      "bytes": 5740492,
+      "sha256": "28eef09ca5793113d9e41b08b345a3909ef96f19c91a28291dfa178318289a4f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_7.lod2.glb",
+      "srcSha256": "4d3dd2208e99e52d328cdb6d85fb36cb2a49834b4aea4ed46731c4ca312c399f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_4_7.lod3.glb",
+      "bytes": 2442408,
+      "sha256": "db6bdc597b31c2ab09e44c9c74d3270db3690f23a741c29ff7fc9c8775bb3646",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_4_7.lod3.glb",
+      "srcSha256": "7c4d38b77f0bb40af109c0d81530a313a5bfde646682857b796894e91077e635",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_4.lod0.glb",
+      "bytes": 7978488,
+      "sha256": "94c0d0c727595c77af5ef9b986b2017522df96c9c850fbadf0e8615696799bb1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_4.lod0.glb",
+      "srcSha256": "ca45510d44863c7e819e9117d98fd7999883151c3611e242302c6b0f961b8fc5",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_4.lod1.glb",
+      "bytes": 3040180,
+      "sha256": "3272eac3607990e020973ea9df9f81dd7b7359b5e3ad7ff0e26ca331d4753d25",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_4.lod1.glb",
+      "srcSha256": "3cbd588c1fa4a13213d8bb22b6a0a04a33629efa5e89b140a3468ed372fac732",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_4.lod2.glb",
+      "bytes": 1487196,
+      "sha256": "d7f7e714ee90a200a2112ffd3e546c7348f937d447ee9ceba4b005dc47d48ad3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_4.lod2.glb",
+      "srcSha256": "e5ecd608c722a355915129d619fdbae5100364c3fff9614ea1b92cf87fec80ac",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_4.lod3.glb",
+      "bytes": 1113400,
+      "sha256": "9e101d2ccbe7e28866307a8ec99e523c90732741632a2a7ddccb2f5367c4ce31",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_4.lod3.glb",
+      "srcSha256": "0ac9548a92535f5a9b9f816ffd62c44669dd5f5a4c5c02abe39efc72117cfe73",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_5.lod0.glb",
+      "bytes": 22947236,
+      "sha256": "5fbb1af065f6dc1fea8d5132adee55e81aa0a6b7e0336e1a86ab8af08e04e25b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_5.lod0.glb",
+      "srcSha256": "03e472ae068662e176c6fdc2375c5ba864d7b80926044639f49fa61d50a5a37a",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_5.lod1.glb",
+      "bytes": 6554608,
+      "sha256": "53579a375ec566fc8315e74868417d235128724a6b9a47ebd76b9b637a121a84",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_5.lod1.glb",
+      "srcSha256": "337f0f8c7c3a0c9969a611a5021c926fb3b2b0d894a58d3d4bb3b5336b4b6595",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_5.lod2.glb",
+      "bytes": 1777900,
+      "sha256": "1a0ec5b434b49bf8075dc2f53ef2024c5143b20ded648c7819f8cad99818d5c3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_5.lod2.glb",
+      "srcSha256": "ab4ae612bd4f47e610c0b40f5f3487417d6f60fe00ab99bc7db993356de637d2",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_5.lod3.glb",
+      "bytes": 760712,
+      "sha256": "cb5589535872cfc013e0003349eb815627d0a91bb8573028033c8d3ce943c68a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_5.lod3.glb",
+      "srcSha256": "9d79dd6e78d8c0b0d0b8b305262481374c9d912e630ac36296f56c2c9162ee01",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_6.lod0.glb",
+      "bytes": 753200,
+      "sha256": "4e4196aa9b442ec1d6ca4d54cdfb0bcd41ca44c693faf20118f3415903ae9440",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_6.lod0.glb",
+      "srcSha256": "a1239f3cce32b3345336773dc1505d96f1bb5207a6dcc4b62983139edcc453e3",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_6.lod1.glb",
+      "bytes": 424740,
+      "sha256": "b492821620570a2478dff1063e7e96d6f206bac4615b513dea42c4f6693f1309",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_6.lod1.glb",
+      "srcSha256": "1f8b35a4ceeee3e78ca6cb922fd5fc06c0620df0c1310a23b69b4996fd4b4a8b",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_6.lod2.glb",
+      "bytes": 184200,
+      "sha256": "8ca90bfabb2ec41087d75c1d766ce28b47bec811d9c678ff3cbaa57d8f746c8c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_6.lod2.glb",
+      "srcSha256": "ee547566a88a5f77cbb1c304d6d1507939d8c497c0e61c37d520798e2d65d577",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_5_6.lod3.glb",
+      "bytes": 185040,
+      "sha256": "369351e7f3ce7891207ce4f8a424e31a2791299a336640cd9e311b630fc57547",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_5_6.lod3.glb",
+      "srcSha256": "04706c6fcbf4c5e1948755528a4434b8dc6bcc48b024fd5da3df17bf881f91ec",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_5.lod0.glb",
+      "bytes": 35379200,
+      "sha256": "e6ad2a9227f4afb39824d9770d996bd7e287a2008559911f7e3f7b32dd42ceea",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_5.lod0.glb",
+      "srcSha256": "b6305ef2cbd27bc9ae425388ff8ecb3858d7aaaf3d1a6746515e6ca10cf61680",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_5.lod1.glb",
+      "bytes": 14857044,
+      "sha256": "ea89c3f516db65ea41749ca045773f4f153168bffcc411c1488b3943682076bc",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_5.lod1.glb",
+      "srcSha256": "b984a5908a86653ce76757989ef424564e56e6e6b8bd4e9813c8919c55190cae",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_5.lod2.glb",
+      "bytes": 9334216,
+      "sha256": "1f4c7d658609753dcb95fce73474342a155fd4a441a9580679c3adf061a58deb",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_5.lod2.glb",
+      "srcSha256": "02ebe2a717a5302325c7e64c1fdba73c940810133289ab7191e1b4e570f8c79b",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_5.lod3.glb",
+      "bytes": 7938932,
+      "sha256": "963ea487c8fea95d476d01e6017bb9684b9e60a9326c69cf88dbd29f9df7cfd5",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_5.lod3.glb",
+      "srcSha256": "21faba01b079102577eaa46d84f1a89ce8f81d7df7884736f84bdc372c959e5f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_6.lod0.glb",
+      "bytes": 3314456,
+      "sha256": "e1c168739cb08e064238115101ed79e6856fbb08bbe6e2e18339fc2106049afb",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_6.lod0.glb",
+      "srcSha256": "9dbd7cd0709338bac127048c75149f22ab9d127f5ccf4f018329e35923ceba85",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_6.lod1.glb",
+      "bytes": 3018020,
+      "sha256": "5872e83e26ca711270310c11510fe576411b24d930614cb49249298575ddf74c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_6.lod1.glb",
+      "srcSha256": "78413e67c32be75f921cb6b31afb6b5bf6172461ca2d716ed3b038fae8aae786",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_6.lod2.glb",
+      "bytes": 2074860,
+      "sha256": "0c19c416d84c70ce37e0e244b9f59927672b52bdbae70431022ddca845611325",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_6.lod2.glb",
+      "srcSha256": "1281de3ddb375a434c646d4616d72257d0644eb1b2287f6d969d26dfa9faa288",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_6_6.lod3.glb",
+      "bytes": 1819000,
+      "sha256": "1cc9a1358b68ca18d7fc89e8a1fde91b78d2955fdd554caffac5b02cb56c1603",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_6_6.lod3.glb",
+      "srcSha256": "00e626fa77b136a5a54dd9bf8314a19b3b1bb5c5ec22d441a1ad97dbe588f2db",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_6.lod0.glb",
+      "bytes": 8512472,
+      "sha256": "77dac3947815ab3bdeaf85e433f9426c54d573fe0603ab5d9df4b1a5104b815c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_6.lod0.glb",
+      "srcSha256": "3a30622eb429ef16e40dbd544b360b94de17739c3d889d7d2a81a5b21a2de0ad",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_6.lod1.glb",
+      "bytes": 3714536,
+      "sha256": "baf41adc5ed5b73ecc1c78384fed8bd74c98d6d299abf164d10b46034e36fbfb",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_6.lod1.glb",
+      "srcSha256": "054c5880f3bca2cb670b66198c45ce2c8f890517eb121405b87771fd1ce8db9f",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_6.lod2.glb",
+      "bytes": 2186532,
+      "sha256": "8a5d07902f5519fd4304d6553d2b9aabcc73a99f5122cc20763f2fc7fb61ea3a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_6.lod2.glb",
+      "srcSha256": "52fbc925df3f5696f1cd9473ab6c28c21e01cb23b47482dcdecb8f09d116f064",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_6.lod3.glb",
+      "bytes": 1806476,
+      "sha256": "26bd7449d4cf213436f1de0409324229171b51c6072bd7bc95e1c55e0ed9b455",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_6.lod3.glb",
+      "srcSha256": "725e41b3c1dc5596b3345cc632efbed6c8e385b6be7c57d693ab7809437ffdad",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_7.lod0.glb",
+      "bytes": 7575048,
+      "sha256": "351ea34db089b2add0b3a43a6dfbfce481783bc144d7b444e04668acaef2c05f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_7.lod0.glb",
+      "srcSha256": "8493124b3b61774eff60a2ade23744f3cafe309367b656277bbdd7957f7d8ecd",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_7.lod1.glb",
+      "bytes": 3278944,
+      "sha256": "16856c4b39450f31fa53eb10c8325d6a489be5b5a713279d17f3788a4831b676",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_7.lod1.glb",
+      "srcSha256": "b5189d8ee57fd69e5b1de9c8f5792caa216192fc2b71f184d1e6937fb4e5ac14",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_7.lod2.glb",
+      "bytes": 1827472,
+      "sha256": "e14811ad3dc594ed20d33ff8ec6381dea1a80a05b21fdc600f27c325a6f5fa9a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_7.lod2.glb",
+      "srcSha256": "e7d3c4e815861431523a8dc41244bd88056323e86faa564b8bb27c561b1ddcab",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/tile_7_7.lod3.glb",
+      "bytes": 1481384,
+      "sha256": "94726179bb64d9b94d9df2ba2e69a399689809ca30f88e170f6f99a71dc43930",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/tile_7_7.lod3.glb",
+      "srcSha256": "4fcb4c6474f499c67c52b1738aff3dd4e79f08f592c1d0226fa1cdc8500e0aa1",
+      "kind": "glb"
+    },
+    {
+      "path": "tiles/veg_0_1.instances.json",
+      "bytes": 2919,
+      "sha256": "5cbbe16b412f72310e0f13b7c02aab5872092ff81fbbd3131f39335fbdf423e0",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_1.instances.json",
+      "srcSha256": "5cbbe16b412f72310e0f13b7c02aab5872092ff81fbbd3131f39335fbdf423e0",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_0_1.lod0.glb",
+      "bytes": 24140776,
+      "sha256": "48d48bbee6c80d4b4825ab1cd3a5ec8bf8519f8f0b0bd0f6a8c0631372a3b600",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_1.lod0.glb",
+      "srcSha256": "97ffb4e529f1ca3f9a1f4544f605e44f0e0ae69cf69b0c9c7d4ae09b3c4fb32f",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_0_1.lod1.glb",
+      "bytes": 24140776,
+      "sha256": "48d48bbee6c80d4b4825ab1cd3a5ec8bf8519f8f0b0bd0f6a8c0631372a3b600",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_1.lod1.glb",
+      "srcSha256": "97ffb4e529f1ca3f9a1f4544f605e44f0e0ae69cf69b0c9c7d4ae09b3c4fb32f",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_0_1.lod2.glb",
+      "bytes": 11358968,
+      "sha256": "b76a19318504283ef1ef850eff92c5956559f26dc8a8f8d23f0175f813e5d13a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_1.lod2.glb",
+      "srcSha256": "9cb1df47f044540b8260fee2233fb823daafbc72e57bdcf62690fc86d10e1026",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_0_1.lod3.glb",
+      "bytes": 7716792,
+      "sha256": "594bf20b79e40601812e0cf8fb75dec2e2e432f50c4d8707e62b4e7a6c729f0b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_1.lod3.glb",
+      "srcSha256": "d1af1f1325117e5153e82f5c4106d2cd73ead4d420a4b7d41cc201c99cbcdd29",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_0_2.instances.json",
+      "bytes": 5600,
+      "sha256": "910e4ce63dcf921b45386f730718b62842c8c9d1dc8b8f9d1ddcd289ee81931e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_2.instances.json",
+      "srcSha256": "910e4ce63dcf921b45386f730718b62842c8c9d1dc8b8f9d1ddcd289ee81931e",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_0_2.lod0.glb",
+      "bytes": 30181788,
+      "sha256": "4f893aeb0e7bf8dcde0d18716ef68cbdc2eeaa2379393e17e3b903947ace8dd9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_2.lod0.glb",
+      "srcSha256": "7a11d60ee166cc683295a414caf2b409568d2dcf84071404dc80f3a9146c3b8a",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_2.lod1.glb",
+      "bytes": 30181788,
+      "sha256": "4f893aeb0e7bf8dcde0d18716ef68cbdc2eeaa2379393e17e3b903947ace8dd9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_2.lod1.glb",
+      "srcSha256": "7a11d60ee166cc683295a414caf2b409568d2dcf84071404dc80f3a9146c3b8a",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_2.lod2.glb",
+      "bytes": 16341036,
+      "sha256": "66cef2460c950da15378c19b082546877046705281cd0b89db5250814390d782",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_2.lod2.glb",
+      "srcSha256": "8d805f27c3c7c71f19519d5403f831b37cecc860c58dce12fd6ff24d667e92b4",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_2.lod3.glb",
+      "bytes": 11879784,
+      "sha256": "9de9c7eebe84f8feb0d7a493cd4af3281339a05c3b54a9b2221f629518e90df0",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_2.lod3.glb",
+      "srcSha256": "56d994bce16eb3b417fdf02e41dfef7d34985f33267aa2c855f25020936d21dc",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_3.instances.json",
+      "bytes": 5739,
+      "sha256": "b3c233b92692f96b564f864f5812389cb1d995fca023c2dbce31ee19c3e85c9a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_3.instances.json",
+      "srcSha256": "b3c233b92692f96b564f864f5812389cb1d995fca023c2dbce31ee19c3e85c9a",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_0_3.lod0.glb",
+      "bytes": 28409692,
+      "sha256": "7f1b494e293c280c8303b4b63a65c9096a3d5c63bebd6123a53eebc2c9a9eaef",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_3.lod0.glb",
+      "srcSha256": "36390a5fd810e3bc4a033beba9d63bad71c24c4705762d1f35a1d75397240056",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_3.lod1.glb",
+      "bytes": 28409692,
+      "sha256": "7f1b494e293c280c8303b4b63a65c9096a3d5c63bebd6123a53eebc2c9a9eaef",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_3.lod1.glb",
+      "srcSha256": "36390a5fd810e3bc4a033beba9d63bad71c24c4705762d1f35a1d75397240056",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_3.lod2.glb",
+      "bytes": 14568936,
+      "sha256": "7e5d9b062101b1087f59bd001b28ad2be09197262494e90a546b01b2b378b21c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_3.lod2.glb",
+      "srcSha256": "962dd3f7a1fc46096d5c8bffd0d6496c3efe753b9a89f6e424051ad01ae4c974",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_3.lod3.glb",
+      "bytes": 10107672,
+      "sha256": "21a8842f12a18ace188db4a7094cd3b07642655f927819a664702c00c8994331",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_3.lod3.glb",
+      "srcSha256": "01ae8110cf206cd64572e7c0c50e1914bdb7cade0584e0e9c5edc327ffa4cf7d",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_0_4.instances.json",
+      "bytes": 1764,
+      "sha256": "bdc4e660ef41a5a6951dba7e2037a42b48d7d411a4be1db40e902adeb7342d64",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_4.instances.json",
+      "srcSha256": "bdc4e660ef41a5a6951dba7e2037a42b48d7d411a4be1db40e902adeb7342d64",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_0_4.lod0.glb",
+      "bytes": 21588964,
+      "sha256": "effcefb9a5474f7edb1aca854de36687a1ec10edf88442c22eea0f288665ad72",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_4.lod0.glb",
+      "srcSha256": "83a8e0f3bbaf25f38a12bd541e08375c9ca60158b7fb3d62d402adeb24e30ae6",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_0_4.lod1.glb",
+      "bytes": 21588964,
+      "sha256": "effcefb9a5474f7edb1aca854de36687a1ec10edf88442c22eea0f288665ad72",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_4.lod1.glb",
+      "srcSha256": "83a8e0f3bbaf25f38a12bd541e08375c9ca60158b7fb3d62d402adeb24e30ae6",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_0_4.lod2.glb",
+      "bytes": 8752900,
+      "sha256": "3c0d4086d2d6bb845b9aa1b5934ae489874cd1c95920f9a8b92ca7b5e20bde81",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_4.lod2.glb",
+      "srcSha256": "f38e1b9e7675f3c347b86da9a327a8c250fd14e5b7ef10284dfdad1742e162c3",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_0_4.lod3.glb",
+      "bytes": 4702616,
+      "sha256": "e0418ee65f78669503c35da4d749b67dbcd37c003c358e9cfda354057acd8175",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_0_4.lod3.glb",
+      "srcSha256": "86621579cab7f7a8d7fe5a79087bfa8966a69ffb57a2844abd0fede13cc76027",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_1_1.instances.json",
+      "bytes": 10602,
+      "sha256": "8fe2e065d51142503c3bc343298cf63079bace65cf3ac49caa4aba7b6da0368e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_1.instances.json",
+      "srcSha256": "8fe2e065d51142503c3bc343298cf63079bace65cf3ac49caa4aba7b6da0368e",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_1.lod0.glb",
+      "bytes": 28750384,
+      "sha256": "bdee62ec41ea534b0beeb52bdada9d83b17b16eaa6391ad75e002085094c4a24",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_1.lod0.glb",
+      "srcSha256": "604f4188d7d841d01646dd083c0b07866db45b552ece1c3ce524c89cb7a8f7d0",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_1.lod1.glb",
+      "bytes": 28750384,
+      "sha256": "bdee62ec41ea534b0beeb52bdada9d83b17b16eaa6391ad75e002085094c4a24",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_1.lod1.glb",
+      "srcSha256": "604f4188d7d841d01646dd083c0b07866db45b552ece1c3ce524c89cb7a8f7d0",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_1.lod2.glb",
+      "bytes": 14909628,
+      "sha256": "4fd2395c3ad8c1c4905b3cb433ddcd0230bf8c2e243338e25582963e1ee280fb",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_1.lod2.glb",
+      "srcSha256": "5ba7e71b98bd4223bf992d6d46931c2e45b813a9deb860ac3d9c74a122f91c5d",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_1.lod3.glb",
+      "bytes": 10448364,
+      "sha256": "b221bf7b4700df897f89e36db49599abff477075a4e35344f26c6c80fce9faa3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_1.lod3.glb",
+      "srcSha256": "178acbfcce4b25170f5cc3aa0a1713c4b83f9be9ed7f6a0703eb18f6d8b6f6dd",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_2.instances.json",
+      "bytes": 4620,
+      "sha256": "bcdac2903ce4be5f0f8e3ab55414b355b75029100e09c7d454b1a3c430ef7239",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_2.instances.json",
+      "srcSha256": "bcdac2903ce4be5f0f8e3ab55414b355b75029100e09c7d454b1a3c430ef7239",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_2.lod0.glb",
+      "bytes": 29981540,
+      "sha256": "b6b5e3a20dc03f90b67503a0b83f4c1846e878a1e2d85eec2e182352866ee0f4",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_2.lod0.glb",
+      "srcSha256": "28cab82e181efac0236726ab1f7e4dc2696926bc14f19d3f4ff98a4b8e69685d",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_2.lod1.glb",
+      "bytes": 29981540,
+      "sha256": "b6b5e3a20dc03f90b67503a0b83f4c1846e878a1e2d85eec2e182352866ee0f4",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_2.lod1.glb",
+      "srcSha256": "28cab82e181efac0236726ab1f7e4dc2696926bc14f19d3f4ff98a4b8e69685d",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_2.lod2.glb",
+      "bytes": 16140780,
+      "sha256": "df66d918af857a75150992cd7c45abd1806ce14ccfe4f2398a0e796486160b7a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_2.lod2.glb",
+      "srcSha256": "924edf2a4cd9a86077786c06794f324c40512d56e62ca91f0b4078d8b51fe5d2",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_2.lod3.glb",
+      "bytes": 11679528,
+      "sha256": "6a12e069a2d9e96cc7b5b549490840aff30c2e421c6805e8518b88250fdf8388",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_2.lod3.glb",
+      "srcSha256": "4b0d55522d6b16b5ca5f9af5ab74106b11fa0ea599cd25811496c535082a319e",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_3.instances.json",
+      "bytes": 7198,
+      "sha256": "9cbb048bc4053e6e1ec39a37dc4b0531441bb17977af71feba4949e1b999e5bc",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_3.instances.json",
+      "srcSha256": "9cbb048bc4053e6e1ec39a37dc4b0531441bb17977af71feba4949e1b999e5bc",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_3.lod0.glb",
+      "bytes": 26173692,
+      "sha256": "d60fc82892d1f091a6a0c0a2305131225ff1fe3cefdc69d3cd58d73f9a233764",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_3.lod0.glb",
+      "srcSha256": "a7f9c69e0d08cec002bb2652eb4d4669c0f65b217dd106ae01ca6aea2dcd93b9",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_3.lod1.glb",
+      "bytes": 26173692,
+      "sha256": "d60fc82892d1f091a6a0c0a2305131225ff1fe3cefdc69d3cd58d73f9a233764",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_3.lod1.glb",
+      "srcSha256": "a7f9c69e0d08cec002bb2652eb4d4669c0f65b217dd106ae01ca6aea2dcd93b9",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_3.lod2.glb",
+      "bytes": 12332924,
+      "sha256": "9ac94b63c5e9fe132974c0b00fea4f14c1d129a14ba05466939ab0053c2c233c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_3.lod2.glb",
+      "srcSha256": "1ebcb6e82b6a87ab30642450802f4dc8dedda67e4cc535fa1a5b44eff6df8c7e",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_3.lod3.glb",
+      "bytes": 7871664,
+      "sha256": "d1dfbe10b9b1f8ff453f7deae5f2a9924b26b5ae755cb1fb28b0268061aa5727",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_3.lod3.glb",
+      "srcSha256": "41002ebe6f99b67077568876d605c9da981a37df544b5616909de81fc46cc7b0",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_4.instances.json",
+      "bytes": 15761,
+      "sha256": "782e910d753d69854d193608ec8efd4f866370b30eef91a9ea63f0cdc8a455a5",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_4.instances.json",
+      "srcSha256": "782e910d753d69854d193608ec8efd4f866370b30eef91a9ea63f0cdc8a455a5",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_4.lod0.glb",
+      "bytes": 28610680,
+      "sha256": "221fb69977945780fb37438527358e78e9031878f8da85a89374dc6ebc03e4ab",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_4.lod0.glb",
+      "srcSha256": "942f7093344e8171921d9efc790b4df17e7ecb5f9c337e6c1e68cca4cdd3f3cd",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_4.lod1.glb",
+      "bytes": 28610680,
+      "sha256": "221fb69977945780fb37438527358e78e9031878f8da85a89374dc6ebc03e4ab",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_4.lod1.glb",
+      "srcSha256": "942f7093344e8171921d9efc790b4df17e7ecb5f9c337e6c1e68cca4cdd3f3cd",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_4.lod2.glb",
+      "bytes": 14769916,
+      "sha256": "0346e8dbcf21f8726cd76581bb367bacaf97bee69509d5dc8dea91522f9101f6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_4.lod2.glb",
+      "srcSha256": "42c19139ece88400c529d5d34e3a15069d1800cd2d830b9f63545c4b355894b6",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_4.lod3.glb",
+      "bytes": 10308652,
+      "sha256": "77ec7e1e9bb87ea1c376b951af1329045dc818257debc35bb5548bd2e6e6a5fd",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_4.lod3.glb",
+      "srcSha256": "f93acfea83f5364b9bc21577ff917fa4432d71719ef917b822777b4c7e950454",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_1_5.instances.json",
+      "bytes": 2340,
+      "sha256": "46385cd1f4aa311ed752eddc4288154e583d4f20f38b5a08d33654b71105f81d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_5.instances.json",
+      "srcSha256": "46385cd1f4aa311ed752eddc4288154e583d4f20f38b5a08d33654b71105f81d",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_1_5.lod0.glb",
+      "bytes": 17814448,
+      "sha256": "89641644098523cc845a846a9f972636f0c89ec5aae14b3e53cb187ad33eef97",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_5.lod0.glb",
+      "srcSha256": "3c20c4141f3fa3adc01e2aac0067ed1c6ddec6384764817a406f4188d3c0776a",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_1_5.lod1.glb",
+      "bytes": 17814448,
+      "sha256": "89641644098523cc845a846a9f972636f0c89ec5aae14b3e53cb187ad33eef97",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_5.lod1.glb",
+      "srcSha256": "3c20c4141f3fa3adc01e2aac0067ed1c6ddec6384764817a406f4188d3c0776a",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_1_5.lod2.glb",
+      "bytes": 7580208,
+      "sha256": "b4b8ade060672639d41c68fcc08b12d4b5a0d0a1dc0d21262fa7025934244f39",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_5.lod2.glb",
+      "srcSha256": "e93d0291a35fd3a10de1ee03033e7f4998c65697d7634b7aac2d312de3e54bd8",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_1_5.lod3.glb",
+      "bytes": 4479776,
+      "sha256": "840c4250db558822d00897a4701881b36ea5dc58529e66b0c5e4a2d2a5a6dead",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_1_5.lod3.glb",
+      "srcSha256": "c5c5d7fbc3f67a1c6433a39dad12808f30f6914c5805a1b0ee17341b880997ef",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_2_0.instances.json",
+      "bytes": 280,
+      "sha256": "33ca7c472077f371492767588fc0998ebbeea5a476ce6641c3970dbc7e20d6a9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_0.instances.json",
+      "srcSha256": "33ca7c472077f371492767588fc0998ebbeea5a476ce6641c3970dbc7e20d6a9",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_2_0.lod0.glb",
+      "bytes": 7776400,
+      "sha256": "f73d5a7ea0542b29d2c3ed49209c248849d58608b01517a07a6783ef23331fc9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_0.lod0.glb",
+      "srcSha256": "f4a5742e355d589c4592db8e8cb778e3099f39dda9c64094550255c62688e828",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_2_0.lod1.glb",
+      "bytes": 7776400,
+      "sha256": "f73d5a7ea0542b29d2c3ed49209c248849d58608b01517a07a6783ef23331fc9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_0.lod1.glb",
+      "srcSha256": "f4a5742e355d589c4592db8e8cb778e3099f39dda9c64094550255c62688e828",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_2_0.lod2.glb",
+      "bytes": 3048296,
+      "sha256": "523b03e7805f97a2f616fc21e9a56b26162c04ca6e46463f4b0aab24798e25b6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_0.lod2.glb",
+      "srcSha256": "66fe760fd82e7badad3d474a3a57208d16120c624a1e42f388a1e681fecf0278",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_2_0.lod3.glb",
+      "bytes": 1745668,
+      "sha256": "81e8ff5d02310fce63afcf99929561d5375a3942c6c0b52a11f10401ce1a82ff",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_0.lod3.glb",
+      "srcSha256": "284e32a4f32cc74f3fc711b03755e7905c5b63f192ac7c2848e56db4fec838c1",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_2_1.instances.json",
+      "bytes": 5474,
+      "sha256": "117038151d99e556a67543b33f53c9bd204ed387eea34ad2976545071b76d0a8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_1.instances.json",
+      "srcSha256": "117038151d99e556a67543b33f53c9bd204ed387eea34ad2976545071b76d0a8",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_2_1.lod0.glb",
+      "bytes": 24888224,
+      "sha256": "6e601fa2372191e428f194ed35c86f41de48be5c48f15b50a9e34f893579ce01",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_1.lod0.glb",
+      "srcSha256": "ec5bfc897106811c0c4ea0bdeb0c5c995410c1beb79432999118082b7f0161da",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_2_1.lod1.glb",
+      "bytes": 24888224,
+      "sha256": "6e601fa2372191e428f194ed35c86f41de48be5c48f15b50a9e34f893579ce01",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_1.lod1.glb",
+      "srcSha256": "ec5bfc897106811c0c4ea0bdeb0c5c995410c1beb79432999118082b7f0161da",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_2_1.lod2.glb",
+      "bytes": 11047464,
+      "sha256": "0ad3041db548b775b627af5263bf52cb88e40127d0c86d354a2523b30f6b8966",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_1.lod2.glb",
+      "srcSha256": "3101d531a0697285a61131d473a47908a9db8f0834d97498cde37fc3b63f32f5",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_2_1.lod3.glb",
+      "bytes": 6953900,
+      "sha256": "de30ffde580d7811941b118513b84db6ba8733112dfe794343285c6fa032298f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_1.lod3.glb",
+      "srcSha256": "1fddfb4684b474d24fbfea959e343dc3b779aca1baf9943461f0e015aa19dfcb",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_2_2.instances.json",
+      "bytes": 3339,
+      "sha256": "24307c1ab97616fad90b645ea2d7ab803275e6be23b03d117efc9b16491b91a2",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_2.instances.json",
+      "srcSha256": "24307c1ab97616fad90b645ea2d7ab803275e6be23b03d117efc9b16491b91a2",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_2_2.lod0.glb",
+      "bytes": 25998520,
+      "sha256": "04cfdaa3b90b3b893c06f09c50192a491308a4d519a161db6315c3cdc6a88339",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_2.lod0.glb",
+      "srcSha256": "89ca3b1262b6ac28bdd6755bcd468d8bf6b4ac5f2438a3d57430dc46821aab20",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_2.lod1.glb",
+      "bytes": 25998520,
+      "sha256": "04cfdaa3b90b3b893c06f09c50192a491308a4d519a161db6315c3cdc6a88339",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_2.lod1.glb",
+      "srcSha256": "89ca3b1262b6ac28bdd6755bcd468d8bf6b4ac5f2438a3d57430dc46821aab20",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_2.lod2.glb",
+      "bytes": 12157760,
+      "sha256": "b2fea0866e0b9fca12cec68a6a757dd736a60448087627f3a28d341fbbe7d38b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_2.lod2.glb",
+      "srcSha256": "de2a15fb17638a1b5f8ea503d38f5e16aa0423da42c97d7640f68437e8a35dbe",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_2.lod3.glb",
+      "bytes": 7696500,
+      "sha256": "d192b6f30e95189872ed47fbf995a14797ece97c833d4fdab8e80e47154ae482",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_2.lod3.glb",
+      "srcSha256": "a8db74b4759cea0f3706f1c739cbbd2bdcf9b06f83a64dd6f1b06f30ce17886c",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_3.instances.json",
+      "bytes": 10784,
+      "sha256": "01de9ab3af98cc4a86cde63b0a164343fababa89fc84388f8fb46af9bb8c2c53",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_3.instances.json",
+      "srcSha256": "01de9ab3af98cc4a86cde63b0a164343fababa89fc84388f8fb46af9bb8c2c53",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_2_3.lod0.glb",
+      "bytes": 25974544,
+      "sha256": "877c475594a5fb0a265b7c368250a621942e09ca1358dc64291cd48d9b4fc0cd",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_3.lod0.glb",
+      "srcSha256": "23222553322b79b789c5cd9dcf6216c15c99306e52b1d24e84b8e1907cea8892",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_3.lod1.glb",
+      "bytes": 25974544,
+      "sha256": "877c475594a5fb0a265b7c368250a621942e09ca1358dc64291cd48d9b4fc0cd",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_3.lod1.glb",
+      "srcSha256": "23222553322b79b789c5cd9dcf6216c15c99306e52b1d24e84b8e1907cea8892",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_3.lod2.glb",
+      "bytes": 12133788,
+      "sha256": "717efcc28f0129005644f741dc6213169d691f9db38c6f6abb4c7545323e4200",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_3.lod2.glb",
+      "srcSha256": "7a2b434dc3e4c514a62cd49c1d592930a37e0058f22da85b7e67e3faa0ca1592",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_3.lod3.glb",
+      "bytes": 7672528,
+      "sha256": "3997e24dc550ef3cf3c904c2a13fd7eaaa6831cc594a394696675dda8d9e64a0",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_3.lod3.glb",
+      "srcSha256": "18d6202646c149ba42b9c8fbe6b4f177649685ca8f0402140933f85ac5b56f87",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_4.instances.json",
+      "bytes": 4611,
+      "sha256": "5a1ab0898479b86e5a5645f551cd7a1b1aff9d566e87f77aa4544217a0fff1ef",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_4.instances.json",
+      "srcSha256": "5a1ab0898479b86e5a5645f551cd7a1b1aff9d566e87f77aa4544217a0fff1ef",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_2_4.lod0.glb",
+      "bytes": 28209712,
+      "sha256": "993aa9364bac3e8482922447804b6c6775f518eeb3c29b187155cfeda3a38656",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_4.lod0.glb",
+      "srcSha256": "cced7ea41abf6866556facf68b4121ff8a2fa60133a2e71e6dc78de85f195d0b",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_4.lod1.glb",
+      "bytes": 28209712,
+      "sha256": "993aa9364bac3e8482922447804b6c6775f518eeb3c29b187155cfeda3a38656",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_4.lod1.glb",
+      "srcSha256": "cced7ea41abf6866556facf68b4121ff8a2fa60133a2e71e6dc78de85f195d0b",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_4.lod2.glb",
+      "bytes": 14368948,
+      "sha256": "4d8541f36351bc4b73f377ff55cedf5c5179da3fe9c81c2c8dec2b932a8f2be3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_4.lod2.glb",
+      "srcSha256": "a189b5b75645678db4999564112fe10b92c4909550e2858b36ed271768596fb0",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_4.lod3.glb",
+      "bytes": 9907680,
+      "sha256": "d8244557d26059fe122e8c3d589f6ab67e66fb2d3364e27a5fcd4bcd243521a1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_4.lod3.glb",
+      "srcSha256": "c2a292b435f7ae61ca36ec7f497075c9a3e515dd77410cb7ab2d4c6ff6c44296",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_5.instances.json",
+      "bytes": 10795,
+      "sha256": "c966383421af4bd80f06b91305f30cb054d0c4b6d97d81c9f4e0aa26100d293b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_5.instances.json",
+      "srcSha256": "c966383421af4bd80f06b91305f30cb054d0c4b6d97d81c9f4e0aa26100d293b",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_2_5.lod0.glb",
+      "bytes": 26677168,
+      "sha256": "bf47790a393c9a5605efd2dd0394341ea04021f2162b2a37e9b631618d416fb6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_5.lod0.glb",
+      "srcSha256": "608bcc49b17def8c4a49e6547e2db4b5faa044591287484ed52938c7c4f431ab",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_5.lod1.glb",
+      "bytes": 26677168,
+      "sha256": "bf47790a393c9a5605efd2dd0394341ea04021f2162b2a37e9b631618d416fb6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_5.lod1.glb",
+      "srcSha256": "608bcc49b17def8c4a49e6547e2db4b5faa044591287484ed52938c7c4f431ab",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_5.lod2.glb",
+      "bytes": 12836408,
+      "sha256": "e94a3b6629173e82544c685dfbebe7cacdbcbe1a0fa935b6bb2ee0c6d5c02ed8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_5.lod2.glb",
+      "srcSha256": "525d66cd312b92b03249d2d3fa7593732fb351862244dd833a69797f977279a9",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_5.lod3.glb",
+      "bytes": 8375148,
+      "sha256": "a740021c56cbf08a44abed3a424d4209d6f3b7db9d945d69b1d34e45450447ce",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_5.lod3.glb",
+      "srcSha256": "a48cb345659f04f0bae6be226d8d120d5c3abea0ab899fc7e9267288497baa79",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_2_6.instances.json",
+      "bytes": 1269,
+      "sha256": "d06e1cec6f354930cf0744956514a526a51b605bb37414f99d15987ea1c8a389",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_6.instances.json",
+      "srcSha256": "d06e1cec6f354930cf0744956514a526a51b605bb37414f99d15987ea1c8a389",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_2_6.lod0.glb",
+      "bytes": 24482188,
+      "sha256": "d85a2139b1294d3dc985bb8709856c28b83af658384ab9b3c9f6be9c79c0a58f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_6.lod0.glb",
+      "srcSha256": "23b5339985e0703448c18160130810d843af1a0457d540968905a059a190a9b0",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_2_6.lod1.glb",
+      "bytes": 24482188,
+      "sha256": "d85a2139b1294d3dc985bb8709856c28b83af658384ab9b3c9f6be9c79c0a58f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_6.lod1.glb",
+      "srcSha256": "23b5339985e0703448c18160130810d843af1a0457d540968905a059a190a9b0",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_2_6.lod2.glb",
+      "bytes": 10641412,
+      "sha256": "75c3a0b6cd62e3a39b788b4fe970e43ede2e985f7d06354a2fb85cf14cc90755",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_6.lod2.glb",
+      "srcSha256": "2e5cffad10b6384459a0684ae02782c469107e0164708010cad6d76b30b341aa",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_2_6.lod3.glb",
+      "bytes": 6547848,
+      "sha256": "5bbfd1a12c1fc51d970007b5978fda6200953eaf88e649bf983f593ce350a262",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_2_6.lod3.glb",
+      "srcSha256": "b4437946daaae6af5f05a6234dbc0e4ec25f8524a00feef682f2ce6bc93ae32c",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_3_1.instances.json",
+      "bytes": 877,
+      "sha256": "9b263780ba97142930ae4eea560ab8ba027fb0075dc94253b6a0025c796b9f0d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_1.instances.json",
+      "srcSha256": "9b263780ba97142930ae4eea560ab8ba027fb0075dc94253b6a0025c796b9f0d",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_3_1.lod0.glb",
+      "bytes": 19574724,
+      "sha256": "eadbff0265bb6161e390cc92a26fb18b0f24aa1d18ec9d859d453dae935b2a8e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_1.lod0.glb",
+      "srcSha256": "8b5f212a3b39650d1254778e28f04eca5fb45cf5eebfaf6c46d705c4dd80844d",
+      "kind": "glb",
+      "texturesConverted": 12
+    },
+    {
+      "path": "tiles/veg_3_1.lod1.glb",
+      "bytes": 19574724,
+      "sha256": "eadbff0265bb6161e390cc92a26fb18b0f24aa1d18ec9d859d453dae935b2a8e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_1.lod1.glb",
+      "srcSha256": "8b5f212a3b39650d1254778e28f04eca5fb45cf5eebfaf6c46d705c4dd80844d",
+      "kind": "glb",
+      "texturesConverted": 12
+    },
+    {
+      "path": "tiles/veg_3_1.lod2.glb",
+      "bytes": 9340476,
+      "sha256": "4685b6c264fe13b9df3fe506a9f633edc3dd8d7554f9afdb7c9d6e3dfa103e0b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_1.lod2.glb",
+      "srcSha256": "1ca87ed43161b87644f1e3bad91ce1de60805c664a09c3b7d647b64e17ba5afe",
+      "kind": "glb",
+      "texturesConverted": 12
+    },
+    {
+      "path": "tiles/veg_3_1.lod3.glb",
+      "bytes": 6607744,
+      "sha256": "27e0c7424b7152cb0452115e8c8132d35201634e646e0a4f76dd5b16e294b1ff",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_1.lod3.glb",
+      "srcSha256": "d4630b702c3968e221d5a4198215ffa98bfb2292dca8560000378d57d6163f0c",
+      "kind": "glb",
+      "texturesConverted": 12
+    },
+    {
+      "path": "tiles/veg_3_2.instances.json",
+      "bytes": 6318,
+      "sha256": "f578f4e7caa80905c5596c9c6a9f51f3047d14f10e500ef8eef5092e36d55d85",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_2.instances.json",
+      "srcSha256": "f578f4e7caa80905c5596c9c6a9f51f3047d14f10e500ef8eef5092e36d55d85",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_3_2.lod0.glb",
+      "bytes": 29510280,
+      "sha256": "c16c5295e8f3eb02083d629f11dde4ea4cea6e9cc27ead077769b1fd98d2a398",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_2.lod0.glb",
+      "srcSha256": "924545ee5dae026574974b84ea12f406d4a9a3bcb6332e481d3aab711a941b52",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_2.lod1.glb",
+      "bytes": 29510280,
+      "sha256": "c16c5295e8f3eb02083d629f11dde4ea4cea6e9cc27ead077769b1fd98d2a398",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_2.lod1.glb",
+      "srcSha256": "924545ee5dae026574974b84ea12f406d4a9a3bcb6332e481d3aab711a941b52",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_2.lod2.glb",
+      "bytes": 15669528,
+      "sha256": "f9c11509b072fe338175ee5470c4a912713697035f32e4b7d39dbc657f0b7afb",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_2.lod2.glb",
+      "srcSha256": "dfec1c173d601e8a229cdce6b3ebf2c1ed911f6730e405666ffdd5292fc73f37",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_2.lod3.glb",
+      "bytes": 11208268,
+      "sha256": "9d184efc0e68839345521c64171b790256e080c0ef9399c7de99ab92375724f6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_2.lod3.glb",
+      "srcSha256": "d9bfb8fc1072f4fb4d372faa5442f9e97d27ec6d3d63c1ab5b6503fcf6330bf4",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_3.instances.json",
+      "bytes": 2954,
+      "sha256": "a4125e0a5300e4a282757dde66339f5b3ee0f9c7badc1251c8ab57ffc7605f11",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_3.instances.json",
+      "srcSha256": "a4125e0a5300e4a282757dde66339f5b3ee0f9c7badc1251c8ab57ffc7605f11",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_3_3.lod0.glb",
+      "bytes": 24885604,
+      "sha256": "4ae0ff5a7e210bebc2a4e18e7409a2b530d15a959dee35b42d10c86b7a91e9aa",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_3.lod0.glb",
+      "srcSha256": "caa30cfb1fe203fea0fe01f8c5a51060be1ed4a4bbe2ba99597cc710a35ed20c",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_3_3.lod1.glb",
+      "bytes": 24885604,
+      "sha256": "4ae0ff5a7e210bebc2a4e18e7409a2b530d15a959dee35b42d10c86b7a91e9aa",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_3.lod1.glb",
+      "srcSha256": "caa30cfb1fe203fea0fe01f8c5a51060be1ed4a4bbe2ba99597cc710a35ed20c",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_3_3.lod2.glb",
+      "bytes": 11044844,
+      "sha256": "1d6915223647f5c70cc39d43a955d3d5a440670d0a8a790201ee22a667eb199f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_3.lod2.glb",
+      "srcSha256": "5894dec8135cef5676a0f40e86241d2736878984c1a44a409b933d7a9ade5bd7",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_3_3.lod3.glb",
+      "bytes": 6951276,
+      "sha256": "5ed4caeda2926f66a59d39ebe165eeccb5b8fe2944ede4c6d039b0f9817bd0e0",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_3.lod3.glb",
+      "srcSha256": "342523b965bed45cb5bbb13b12f174aaa78a348f954fa3ab124e3715fcc8b076",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_3_4.instances.json",
+      "bytes": 4831,
+      "sha256": "d34bbfe839127296f5cb1e081be4e8c7bf3625c746537c30752e6219fce4f389",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_4.instances.json",
+      "srcSha256": "d34bbfe839127296f5cb1e081be4e8c7bf3625c746537c30752e6219fce4f389",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_3_4.lod0.glb",
+      "bytes": 23678368,
+      "sha256": "f58c09d4b06cffa95cd775a35b210dfa8218f29270af2048e73e39d6052ec63b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_4.lod0.glb",
+      "srcSha256": "8fa6563a272a490c73fc33362bd95ec7e8805a828d2cb5515d9c745098b2955c",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_4.lod1.glb",
+      "bytes": 23678368,
+      "sha256": "f58c09d4b06cffa95cd775a35b210dfa8218f29270af2048e73e39d6052ec63b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_4.lod1.glb",
+      "srcSha256": "8fa6563a272a490c73fc33362bd95ec7e8805a828d2cb5515d9c745098b2955c",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_4.lod2.glb",
+      "bytes": 9837604,
+      "sha256": "7788cf4e657e8bf05d3f3f8777eb5afd5e5091ce48686e1fa088f2a0e0106ecc",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_4.lod2.glb",
+      "srcSha256": "1775729e00f087e34f2db654acd859f592f38ca222ea5cf740911bcbdfb8840c",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_4.lod3.glb",
+      "bytes": 5376352,
+      "sha256": "ad3c665db349f4334eca3c8ac40b4636cbb908a03d3a2eee14c8d9629e89a5f3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_4.lod3.glb",
+      "srcSha256": "916913f4dfbdf590d2584de3336230a68e90aa5e6b98927dc80d35e711fed7ca",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_5.instances.json",
+      "bytes": 5648,
+      "sha256": "fbede82c31adeb71a756861bca9056de126618a008a6afc42bf86920a3b0b165",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_5.instances.json",
+      "srcSha256": "fbede82c31adeb71a756861bca9056de126618a008a6afc42bf86920a3b0b165",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_3_5.lod0.glb",
+      "bytes": 23678368,
+      "sha256": "f58c09d4b06cffa95cd775a35b210dfa8218f29270af2048e73e39d6052ec63b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_5.lod0.glb",
+      "srcSha256": "8fa6563a272a490c73fc33362bd95ec7e8805a828d2cb5515d9c745098b2955c",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_5.lod1.glb",
+      "bytes": 23678368,
+      "sha256": "f58c09d4b06cffa95cd775a35b210dfa8218f29270af2048e73e39d6052ec63b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_5.lod1.glb",
+      "srcSha256": "8fa6563a272a490c73fc33362bd95ec7e8805a828d2cb5515d9c745098b2955c",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_5.lod2.glb",
+      "bytes": 9837604,
+      "sha256": "7788cf4e657e8bf05d3f3f8777eb5afd5e5091ce48686e1fa088f2a0e0106ecc",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_5.lod2.glb",
+      "srcSha256": "1775729e00f087e34f2db654acd859f592f38ca222ea5cf740911bcbdfb8840c",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_5.lod3.glb",
+      "bytes": 5376352,
+      "sha256": "ad3c665db349f4334eca3c8ac40b4636cbb908a03d3a2eee14c8d9629e89a5f3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_5.lod3.glb",
+      "srcSha256": "916913f4dfbdf590d2584de3336230a68e90aa5e6b98927dc80d35e711fed7ca",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_6.instances.json",
+      "bytes": 6866,
+      "sha256": "47024136a7cd4b650a170474d45850b4c980d616269fd6257c9c0c15cb78ce2d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_6.instances.json",
+      "srcSha256": "47024136a7cd4b650a170474d45850b4c980d616269fd6257c9c0c15cb78ce2d",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_3_6.lod0.glb",
+      "bytes": 29281124,
+      "sha256": "b65b88624c346777c038339703dc5533c8ceb3db4b7cb9f49302d226a19fa49f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_6.lod0.glb",
+      "srcSha256": "ccd44249535be4eb6dc119c6b431c1c697e133fb9cf1c524c1de0e89ee3d2b87",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_6.lod1.glb",
+      "bytes": 29281124,
+      "sha256": "b65b88624c346777c038339703dc5533c8ceb3db4b7cb9f49302d226a19fa49f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_6.lod1.glb",
+      "srcSha256": "ccd44249535be4eb6dc119c6b431c1c697e133fb9cf1c524c1de0e89ee3d2b87",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_6.lod2.glb",
+      "bytes": 15440372,
+      "sha256": "d575ed7da4afab0f04e44fbb8e83079649da445b421ade051445e0e3deb606c9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_6.lod2.glb",
+      "srcSha256": "46c74a6f6900320c7b6b22a62d12182df46b1b9fe9fb2ff265207e67b2402cf4",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_3_6.lod3.glb",
+      "bytes": 10979112,
+      "sha256": "c4057111d617c906fcc41c07ea2e358ec8f35ef2b3229dfdcf4c224acf334aca",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_3_6.lod3.glb",
+      "srcSha256": "99aab978ea8ed2bb953c02a7160f6c4ebb08f16885098725a0abb8995812ab1e",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_2.instances.json",
+      "bytes": 639,
+      "sha256": "092a146eaf73cb2a94cc1ed63ca09edc4d1667946ab62a43d3e09d6ca079ffe7",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_2.instances.json",
+      "srcSha256": "092a146eaf73cb2a94cc1ed63ca09edc4d1667946ab62a43d3e09d6ca079ffe7",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_4_2.lod0.glb",
+      "bytes": 8964212,
+      "sha256": "bb9e9e550547ca18f9ad8db922657112b83d97cd760746f8b9751fdc496e2402",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_2.lod0.glb",
+      "srcSha256": "7d3512960687387512a26411b120999a0c597618f732eb2a657d3c77a127a581",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_4_2.lod1.glb",
+      "bytes": 8964212,
+      "sha256": "bb9e9e550547ca18f9ad8db922657112b83d97cd760746f8b9751fdc496e2402",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_2.lod1.glb",
+      "srcSha256": "7d3512960687387512a26411b120999a0c597618f732eb2a657d3c77a127a581",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_4_2.lod2.glb",
+      "bytes": 3458088,
+      "sha256": "90f8e954070cae168f0464785b5ab788637337d5c3e0cdf08f05755689366365",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_2.lod2.glb",
+      "srcSha256": "c18ace260ffe985b03c096bf92514cc55d13a4fcbfdc9994720b10ee5af77b1c",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_4_2.lod3.glb",
+      "bytes": 2027972,
+      "sha256": "079ca5fc05a0202f39881c2fefca18561338bc0b6c775b3f8461db6cc13e526f",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_2.lod3.glb",
+      "srcSha256": "cdd591aa41ca2a22dfb1a4d13b52c92990355f501ac47d3de077ec30a77498ac",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_4_3.instances.json",
+      "bytes": 2893,
+      "sha256": "93e380a9768afc4746ed634c6b02fcd972278c5914777519047e7faf79d10b13",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_3.instances.json",
+      "srcSha256": "93e380a9768afc4746ed634c6b02fcd972278c5914777519047e7faf79d10b13",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_4_3.lod0.glb",
+      "bytes": 19698092,
+      "sha256": "aba0887dea48621f17926796294ad5a604576fc5bae80e591d58b7f5c3e9b220",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_3.lod0.glb",
+      "srcSha256": "9078bfb0382dc9d65dcc4df88b4bc94524029c808e279a32b16f8731a24c43f6",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_4_3.lod1.glb",
+      "bytes": 19698092,
+      "sha256": "aba0887dea48621f17926796294ad5a604576fc5bae80e591d58b7f5c3e9b220",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_3.lod1.glb",
+      "srcSha256": "9078bfb0382dc9d65dcc4df88b4bc94524029c808e279a32b16f8731a24c43f6",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_4_3.lod2.glb",
+      "bytes": 10585440,
+      "sha256": "ff936fddc4d2aac726a34d4ccf46c55f735622067e64646e8ff4a93446f7b440",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_3.lod2.glb",
+      "srcSha256": "879742614c1db02c84569231335986a217f9aee3984b85e73a2411e51b50b4e6",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_4_3.lod3.glb",
+      "bytes": 7794500,
+      "sha256": "1b29077759308ebe45d51ac4c31fb21cd75c2fc6dcdff0caa3026db6c0b8ea7a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_3.lod3.glb",
+      "srcSha256": "983bf3eb39de1e8c5dd35b1887aee409b1677cebfdecd41beb842ffeb80ab7ce",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_4_4.instances.json",
+      "bytes": 2738,
+      "sha256": "3fe05730587beeb680a4c12090d0eea877b40a00de0a1a3fc329bab52f3e1779",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_4.instances.json",
+      "srcSha256": "3fe05730587beeb680a4c12090d0eea877b40a00de0a1a3fc329bab52f3e1779",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_4_4.lod0.glb",
+      "bytes": 23897844,
+      "sha256": "a1e44ca96f063b96a5eab4637d4a79471dea451ba673aa5d6caec71f84bd61f1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_4.lod0.glb",
+      "srcSha256": "fb028d296dc7940dd3c4eae6b067a517c0adc372ce463c29a79311dcc75657ca",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_4_4.lod1.glb",
+      "bytes": 23897844,
+      "sha256": "a1e44ca96f063b96a5eab4637d4a79471dea451ba673aa5d6caec71f84bd61f1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_4.lod1.glb",
+      "srcSha256": "fb028d296dc7940dd3c4eae6b067a517c0adc372ce463c29a79311dcc75657ca",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_4_4.lod2.glb",
+      "bytes": 11061776,
+      "sha256": "3e75c2b4a8914d8acf8eac8a3887bc54a437b7199dd0bea4bc6c1280f034f6df",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_4.lod2.glb",
+      "srcSha256": "8acc21f12ac4d841b5e0458abd9ddf2718438806cc51fc3ec67d6878c7c7e347",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_4_4.lod3.glb",
+      "bytes": 7379176,
+      "sha256": "7030cbcfc453a5ad310783c7027dbd3c96f106f4f973e0a58ff25caff3d9a6d9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_4.lod3.glb",
+      "srcSha256": "6525de8c75f8582b5596cf7e042cbf23d8a70257eda176a30d57263ce8129bb5",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_4_5.instances.json",
+      "bytes": 10221,
+      "sha256": "1e75b81976ba2b20f014eeaf00c8e29bd97a83bb75eda1608cbe0f2e27d7d05a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_5.instances.json",
+      "srcSha256": "1e75b81976ba2b20f014eeaf00c8e29bd97a83bb75eda1608cbe0f2e27d7d05a",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_4_5.lod0.glb",
+      "bytes": 28362760,
+      "sha256": "e09c13da3cbe6808577086a35141a0d269372eab4424fe5ac811f9157ed047a1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_5.lod0.glb",
+      "srcSha256": "1fdc984737cfe9ce0a49bc29b4762e84dd17836c2d8eb8fc2b0c3ebc83cb1caf",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_5.lod1.glb",
+      "bytes": 28362760,
+      "sha256": "e09c13da3cbe6808577086a35141a0d269372eab4424fe5ac811f9157ed047a1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_5.lod1.glb",
+      "srcSha256": "1fdc984737cfe9ce0a49bc29b4762e84dd17836c2d8eb8fc2b0c3ebc83cb1caf",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_5.lod2.glb",
+      "bytes": 14522000,
+      "sha256": "8886805322d01d324bd651b4d74d30366da4dc7947d3c65c4a0162600afcd20b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_5.lod2.glb",
+      "srcSha256": "c64fcda1a7a56f5a2e05f47ad51d68c1696dbbbc200f6edd6434e9bca10df2cd",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_5.lod3.glb",
+      "bytes": 10060732,
+      "sha256": "77deebc563cb0f72f463f5351f7884c18560aa6d289bd82598cf47abafbee00c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_5.lod3.glb",
+      "srcSha256": "a62ebe528bcde704270b94c381e7674b5f16c9cd44c880d8aed75f95b469e0c0",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_6.instances.json",
+      "bytes": 7026,
+      "sha256": "df0ac62d134a00a2f0f3fcb40486a4e7980f5913ae23e50167c368dfe07a4ba0",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_6.instances.json",
+      "srcSha256": "df0ac62d134a00a2f0f3fcb40486a4e7980f5913ae23e50167c368dfe07a4ba0",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_4_6.lod0.glb",
+      "bytes": 29711700,
+      "sha256": "101df1dcce266934a255c1660a4d26c07b76645c7a835de625727ce4a4b393f8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_6.lod0.glb",
+      "srcSha256": "1ea4c7c9db497192e61f621ce8c03eb4e1c07e74bcc35dd3df28c71e130f3294",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_6.lod1.glb",
+      "bytes": 29711700,
+      "sha256": "101df1dcce266934a255c1660a4d26c07b76645c7a835de625727ce4a4b393f8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_6.lod1.glb",
+      "srcSha256": "1ea4c7c9db497192e61f621ce8c03eb4e1c07e74bcc35dd3df28c71e130f3294",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_6.lod2.glb",
+      "bytes": 15870952,
+      "sha256": "77731b19a2b5b8c314174ef39e770a6d8ee6290e69135659300b89f69274f7a6",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_6.lod2.glb",
+      "srcSha256": "42afdc817ba158846bd5a0dae218cc00f7a3d695533170d89852f4820c8e5379",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_6.lod3.glb",
+      "bytes": 11409692,
+      "sha256": "8dfd3bb9b6a468caf9f05187b65a51f3a7174ec11b3da2c6c32b0c6a020151ce",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_6.lod3.glb",
+      "srcSha256": "d77b7a874dfd2305973dc41cb0ee2e74a5c8c3dbdde8f82530584e3ae2a17b27",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_7.instances.json",
+      "bytes": 5518,
+      "sha256": "22b97645b32844f1fa49bc715ee9bc84ed16943d0f83476dedc6acd2a5b28ddc",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_7.instances.json",
+      "srcSha256": "22b97645b32844f1fa49bc715ee9bc84ed16943d0f83476dedc6acd2a5b28ddc",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_4_7.lod0.glb",
+      "bytes": 28207248,
+      "sha256": "0784aab594d25ddc08d0b72309ef0b589ca60f2316ccfc23022ea64ab7bba246",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_7.lod0.glb",
+      "srcSha256": "4202dd052e87128be171a62809d2c1f26d3a2f56a9e8d33ebfbec409dcafb153",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_7.lod1.glb",
+      "bytes": 28207248,
+      "sha256": "0784aab594d25ddc08d0b72309ef0b589ca60f2316ccfc23022ea64ab7bba246",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_7.lod1.glb",
+      "srcSha256": "4202dd052e87128be171a62809d2c1f26d3a2f56a9e8d33ebfbec409dcafb153",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_7.lod2.glb",
+      "bytes": 14366484,
+      "sha256": "c95d00934e7c7f0ec84053aa75c466cd24acf5d6695309af0af1bb816d643a00",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_7.lod2.glb",
+      "srcSha256": "63362a6baeeb336dc76a0afa9e7aebc2f19c7695d7fe65a99abc95e65ae52e9b",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_4_7.lod3.glb",
+      "bytes": 9905208,
+      "sha256": "6750a61826f3dc12fb141966e0e348bf726aecd29ee9324c0fe3b3b19e8c9e4b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_4_7.lod3.glb",
+      "srcSha256": "0642862c7590480321f298a338a19248a1d28449b0ffd88a01a9bdd31e01b5bc",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_3.instances.json",
+      "bytes": 461,
+      "sha256": "44b075d9331c2133f6d70bf6ec669eb6edec5e1f7a512267fd636f0aa1f86438",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_3.instances.json",
+      "srcSha256": "44b075d9331c2133f6d70bf6ec669eb6edec5e1f7a512267fd636f0aa1f86438",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_5_3.lod0.glb",
+      "bytes": 9348724,
+      "sha256": "3e6946573500a0c68ff6e936947aa3d03a1e7b10478695b161e838f10eb9d89d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_3.lod0.glb",
+      "srcSha256": "1b7c6a7ef20830db488e0a1cbb9ac95061a1b5a18e40ddec88c4b43e8d1bab1e",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_5_3.lod1.glb",
+      "bytes": 9348724,
+      "sha256": "3e6946573500a0c68ff6e936947aa3d03a1e7b10478695b161e838f10eb9d89d",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_3.lod1.glb",
+      "srcSha256": "1b7c6a7ef20830db488e0a1cbb9ac95061a1b5a18e40ddec88c4b43e8d1bab1e",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_5_3.lod2.glb",
+      "bytes": 3842592,
+      "sha256": "d511095654794a6a4f7130a1c63a7058f568c9fa04a84d4bda33c78bead327db",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_3.lod2.glb",
+      "srcSha256": "ade5ce60e09e881eeba8978498f3fa7b6cca22cf6601a57583ab204c3e0d5165",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_5_3.lod3.glb",
+      "bytes": 2412484,
+      "sha256": "bdb97aa9aef8700ec3f399f93010e246d465e919f4e28bb8babb85aba3a0c00e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_3.lod3.glb",
+      "srcSha256": "7f6c8c228afea31253cc4a2f378192d8ebe4ca415056d7c732f6afba2830a054",
+      "kind": "glb",
+      "texturesConverted": 6
+    },
+    {
+      "path": "tiles/veg_5_4.instances.json",
+      "bytes": 1628,
+      "sha256": "915efbdfeab8b0481f8293dd80fc6b3d3d3cc55ae6ce28e3bbca58489d4bc4e3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_4.instances.json",
+      "srcSha256": "915efbdfeab8b0481f8293dd80fc6b3d3d3cc55ae6ce28e3bbca58489d4bc4e3",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_5_4.lod0.glb",
+      "bytes": 24046120,
+      "sha256": "12a3c9ef9c4fda23d4fc474e807bf522f6c830bbc632384a189787045404832e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_4.lod0.glb",
+      "srcSha256": "7b8be8f42fefe447e4ce5e34c9b4855f1bbd825d8142b31793c99688167b6890",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_5_4.lod1.glb",
+      "bytes": 24046120,
+      "sha256": "12a3c9ef9c4fda23d4fc474e807bf522f6c830bbc632384a189787045404832e",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_4.lod1.glb",
+      "srcSha256": "7b8be8f42fefe447e4ce5e34c9b4855f1bbd825d8142b31793c99688167b6890",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_5_4.lod2.glb",
+      "bytes": 11264320,
+      "sha256": "16bb21ebb5682425565663204ab3c17a59c1438c9e534fdf959e1c227d6fa00a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_4.lod2.glb",
+      "srcSha256": "e8bf7c8e31e1623564e5a23d42ac06f66b4c2e6ec4114502a600dbd3c8cb1455",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_5_4.lod3.glb",
+      "bytes": 7622148,
+      "sha256": "795155d55e30af1c548fd1e0c7028c4327c3f1967d1fb21f22bdc718ff272d16",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_4.lod3.glb",
+      "srcSha256": "f254d136f4731b488cc209c87637f408d70c91cb62f4a29b1e317067cbae42c2",
+      "kind": "glb",
+      "texturesConverted": 18
+    },
+    {
+      "path": "tiles/veg_5_5.instances.json",
+      "bytes": 5417,
+      "sha256": "ef49fad91b17a033f0a0d2ae6721cc7f5059aafe5a7f86132180969ffe6e11c1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_5.instances.json",
+      "srcSha256": "ef49fad91b17a033f0a0d2ae6721cc7f5059aafe5a7f86132180969ffe6e11c1",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_5_5.lod0.glb",
+      "bytes": 28563120,
+      "sha256": "dcedb8b5f3f0098d466a2eec0c98800e65fe0e32a529c29e83de1cff693158a8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_5.lod0.glb",
+      "srcSha256": "4c8ca4555e9c21bbbd2f0df53fc7438ecd6ad7fb81697c819d8f170e5d4d3153",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_5.lod1.glb",
+      "bytes": 28563120,
+      "sha256": "dcedb8b5f3f0098d466a2eec0c98800e65fe0e32a529c29e83de1cff693158a8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_5.lod1.glb",
+      "srcSha256": "4c8ca4555e9c21bbbd2f0df53fc7438ecd6ad7fb81697c819d8f170e5d4d3153",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_5.lod2.glb",
+      "bytes": 14722364,
+      "sha256": "d1aa07e8604792f65d9f058e86cc75e6a4899e3e550e0165cf158e3c28d295cc",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_5.lod2.glb",
+      "srcSha256": "1773a4955a892ca28a22183d118362949c88550729a9311152f0272729362de2",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_5.lod3.glb",
+      "bytes": 10261100,
+      "sha256": "96815a3c44f7b357ce85d7c571f0824961f176168c68d24cd8ca3456272f7060",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_5.lod3.glb",
+      "srcSha256": "0a70b3512a6bfb77413543f499443bdb76ddc20046b70675700313701826efe9",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_6.instances.json",
+      "bytes": 10584,
+      "sha256": "f5cf619b01bf46cfd1b6991907d237f30cbc998c28dde8403989511d173f3c66",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_6.instances.json",
+      "srcSha256": "f5cf619b01bf46cfd1b6991907d237f30cbc998c28dde8403989511d173f3c66",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_5_6.lod0.glb",
+      "bytes": 28610064,
+      "sha256": "7c85cc80725b6c952efd9b058000b7155605575e0aa7f3e2f60cc9c310886e9b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_6.lod0.glb",
+      "srcSha256": "e8f4cac4da3443a76f6f7fbeb9d90085d002136a1383e76321a7cb5c9e551826",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_6.lod1.glb",
+      "bytes": 28610064,
+      "sha256": "7c85cc80725b6c952efd9b058000b7155605575e0aa7f3e2f60cc9c310886e9b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_6.lod1.glb",
+      "srcSha256": "e8f4cac4da3443a76f6f7fbeb9d90085d002136a1383e76321a7cb5c9e551826",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_6.lod2.glb",
+      "bytes": 14769300,
+      "sha256": "e0d8c519356366723c130b85845e6ee3413034be30ace0d97b32975344e72eaa",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_6.lod2.glb",
+      "srcSha256": "6af0da4714eaaa93bce4b27f09d6d3b2bcc0a1537d6759e47a40d7183faab2fb",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_6.lod3.glb",
+      "bytes": 10308036,
+      "sha256": "beb1fb3ba62ab7bb5221074bb5ce24a4c45e72c30b966f79b8826c3bc33549c8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_6.lod3.glb",
+      "srcSha256": "3adea6428f047d3799f09f7e1c6dddcc1185aaa159d64f6290f04c3f8ccbd510",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_7.instances.json",
+      "bytes": 12250,
+      "sha256": "57e9ad9e3b5970d3c47e92ccc5974d16fbe44decb63255c0f9f0e915f344d65c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_7.instances.json",
+      "srcSha256": "57e9ad9e3b5970d3c47e92ccc5974d16fbe44decb63255c0f9f0e915f344d65c",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_5_7.lod0.glb",
+      "bytes": 27282640,
+      "sha256": "5d610c30650452306bae22b66038e90158da46f8a6590c88df652959376c4b73",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_7.lod0.glb",
+      "srcSha256": "c80f9217b26ad42ae056df1621f7c2b7bdbfda55631e3902eb82324cab9f7db2",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_7.lod1.glb",
+      "bytes": 27282640,
+      "sha256": "5d610c30650452306bae22b66038e90158da46f8a6590c88df652959376c4b73",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_7.lod1.glb",
+      "srcSha256": "c80f9217b26ad42ae056df1621f7c2b7bdbfda55631e3902eb82324cab9f7db2",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_7.lod2.glb",
+      "bytes": 13441884,
+      "sha256": "7e558c7b0bad48458cb37b3e92aee0df4a06c1eceae291e3b2d370b231b826bf",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_7.lod2.glb",
+      "srcSha256": "9107673adfb80927fa0ca5cc18ea457b946f223df93b716a90c98bd03f089387",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_5_7.lod3.glb",
+      "bytes": 8980620,
+      "sha256": "1416a83aa265bb14e75403831c16103339387a460e4f9333fdc0aaa38fc82735",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_5_7.lod3.glb",
+      "srcSha256": "849f9e5f3f0c7928b877caac831dcbc58af9f2227c8bd38130886d147ecc860e",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_4.instances.json",
+      "bytes": 488,
+      "sha256": "ee8f4e34d9bccb16fdbc8ea5123837eeb968d80e66dd2be1a74a558325905c66",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_4.instances.json",
+      "srcSha256": "ee8f4e34d9bccb16fdbc8ea5123837eeb968d80e66dd2be1a74a558325905c66",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_6_4.lod0.glb",
+      "bytes": 13621408,
+      "sha256": "2fc9af3370da882d1517708b6267d8a8526d4a0c76bf58300bcd452f7cea98b2",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_4.lod0.glb",
+      "srcSha256": "f0fa77562655bb8d413841b6ac140e246418bbf26aa3713db56de747a6d75c32",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_6_4.lod1.glb",
+      "bytes": 13621408,
+      "sha256": "2fc9af3370da882d1517708b6267d8a8526d4a0c76bf58300bcd452f7cea98b2",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_4.lod1.glb",
+      "srcSha256": "f0fa77562655bb8d413841b6ac140e246418bbf26aa3713db56de747a6d75c32",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_6_4.lod2.glb",
+      "bytes": 5286756,
+      "sha256": "aef01f1854460f758ab32499789bca62506bcf9f0e63adeb9b9227d41a145d01",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_4.lod2.glb",
+      "srcSha256": "52ffb0e43d188b86b3bae5fe595e387242e3c602cc80c089e6a1d2908271ea84",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_6_4.lod3.glb",
+      "bytes": 2623320,
+      "sha256": "feb2b7b91fe0c7341d0d864bab8da426fa71aa67deb55fef58f43ffd7e3286c1",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_4.lod3.glb",
+      "srcSha256": "2d073cc2e48969295e37a8dc1e327e900336681e1f18626dc3f441f00ccad9d8",
+      "kind": "glb",
+      "texturesConverted": 14
+    },
+    {
+      "path": "tiles/veg_6_5.instances.json",
+      "bytes": 4445,
+      "sha256": "205626cf2135d69212107ddbfd18eafe56cc221d81a14aa5d39d24a6daca3f36",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_5.instances.json",
+      "srcSha256": "205626cf2135d69212107ddbfd18eafe56cc221d81a14aa5d39d24a6daca3f36",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_6_5.lod0.glb",
+      "bytes": 25774188,
+      "sha256": "6d7e0a1495084368a6ab3a7a3c9d08bcdbba91607ce9ae4ed77de58a6833e1b4",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_5.lod0.glb",
+      "srcSha256": "b237f84048ed6edc3f3c33ea81e074f91a0b2979a7c65175ab1880ae0f81be02",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_5.lod1.glb",
+      "bytes": 25774188,
+      "sha256": "6d7e0a1495084368a6ab3a7a3c9d08bcdbba91607ce9ae4ed77de58a6833e1b4",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_5.lod1.glb",
+      "srcSha256": "b237f84048ed6edc3f3c33ea81e074f91a0b2979a7c65175ab1880ae0f81be02",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_5.lod2.glb",
+      "bytes": 11933420,
+      "sha256": "7930b587343df9e2c3b1f0fe4398b10a912bdaeea8ba8caf91675fff1cc3f542",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_5.lod2.glb",
+      "srcSha256": "8efe680131c5004ad21c5fc70d7b530bef24a2249ae42209de15076ea0dafa38",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_5.lod3.glb",
+      "bytes": 7472160,
+      "sha256": "7d3921d601329524fb83ca5abf9844282ddeb243e85e3e5d67ad243d37d262b9",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_5.lod3.glb",
+      "srcSha256": "5ae95a6ad29874d0a803e0c5b16774991c081462337c0201518910ded0234c72",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_6.instances.json",
+      "bytes": 5001,
+      "sha256": "1585f8200c3aadd38812f693eb933290bbac6829cc7ddf5cd206f6b31e4d36b3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_6.instances.json",
+      "srcSha256": "1585f8200c3aadd38812f693eb933290bbac6829cc7ddf5cd206f6b31e4d36b3",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_6_6.lod0.glb",
+      "bytes": 25405316,
+      "sha256": "f2a2c297794c12fbfda665b185f073a5e8263f04bb1fe252708f612cb71da2df",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_6.lod0.glb",
+      "srcSha256": "8e73b1d76e1f706e4d9666d799e8ca9bca25b15f818c4b75e6b1e16c0ad26084",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_6.lod1.glb",
+      "bytes": 25405316,
+      "sha256": "f2a2c297794c12fbfda665b185f073a5e8263f04bb1fe252708f612cb71da2df",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_6.lod1.glb",
+      "srcSha256": "8e73b1d76e1f706e4d9666d799e8ca9bca25b15f818c4b75e6b1e16c0ad26084",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_6.lod2.glb",
+      "bytes": 11564556,
+      "sha256": "a5bc768c13aae4ee5800b85b747c6924f52f2203ec67a5fea280943d313c1324",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_6.lod2.glb",
+      "srcSha256": "cc1d7c26203208f6591e2a46f0311f9a7335eef03a16548f541d3dab3e820abb",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_6.lod3.glb",
+      "bytes": 7103300,
+      "sha256": "db481d6f6bd11b18cea98aa9a67bbbec17be342b5f229fc2fd27080f8072ea1a",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_6.lod3.glb",
+      "srcSha256": "36ee425197d72aa23251fc11e6fefcc2bdcfd87150d400a9911757e68e2286cd",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_7.instances.json",
+      "bytes": 16613,
+      "sha256": "d4f6ca5cc5ff26f920ed718ddd5e652f25e133ba7845bd10d1623095acdc3633",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_7.instances.json",
+      "srcSha256": "d4f6ca5cc5ff26f920ed718ddd5e652f25e133ba7845bd10d1623095acdc3633",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_6_7.lod0.glb",
+      "bytes": 29379516,
+      "sha256": "e6f3399cc6f3467a020fd0c7d4bf6293a4dae684cee145a0a893b4449bc75e57",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_7.lod0.glb",
+      "srcSha256": "3b0a07dae1328f4a190f72884623786a2d2bd0b86ad245c505ff7c1d210f8ec8",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_7.lod1.glb",
+      "bytes": 29379516,
+      "sha256": "e6f3399cc6f3467a020fd0c7d4bf6293a4dae684cee145a0a893b4449bc75e57",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_7.lod1.glb",
+      "srcSha256": "3b0a07dae1328f4a190f72884623786a2d2bd0b86ad245c505ff7c1d210f8ec8",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_7.lod2.glb",
+      "bytes": 15538764,
+      "sha256": "30856fc78d48de2485830c721221604c2ce8abfa14ed162cd72e7d10b2f997f8",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_7.lod2.glb",
+      "srcSha256": "affa12d44e786cafce7f42ec119cb2086d9009061373cb1632c0be168f955bd2",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_6_7.lod3.glb",
+      "bytes": 11077504,
+      "sha256": "46650bed4f5f6129549a330e4d7ecc5ad64905c8cb0c5e67e9c1f852614dacb2",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_6_7.lod3.glb",
+      "srcSha256": "2da7fbc5fa024926ef9ec1744031908eb4bd146578992d96464aab8289e70d4a",
+      "kind": "glb",
+      "texturesConverted": 22
+    },
+    {
+      "path": "tiles/veg_7_5.instances.json",
+      "bytes": 704,
+      "sha256": "834e98e682feeef922d6649768fb5dd7ebf1f934e9099866fe362c70e1dffa67",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_5.instances.json",
+      "srcSha256": "834e98e682feeef922d6649768fb5dd7ebf1f934e9099866fe362c70e1dffa67",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_7_5.lod0.glb",
+      "bytes": 6249728,
+      "sha256": "8dadc3cfbb82672f87fae56a2c68a326484f2d0e216c3baea51669e72d49bde7",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_5.lod0.glb",
+      "srcSha256": "aae9c2f0590fab5a58d0c9288697683cdaa4f2ab0f527a04c12b83da1f902bc3",
+      "kind": "glb",
+      "texturesConverted": 8
+    },
+    {
+      "path": "tiles/veg_7_5.lod1.glb",
+      "bytes": 6249728,
+      "sha256": "8dadc3cfbb82672f87fae56a2c68a326484f2d0e216c3baea51669e72d49bde7",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_5.lod1.glb",
+      "srcSha256": "aae9c2f0590fab5a58d0c9288697683cdaa4f2ab0f527a04c12b83da1f902bc3",
+      "kind": "glb",
+      "texturesConverted": 8
+    },
+    {
+      "path": "tiles/veg_7_5.lod2.glb",
+      "bytes": 2643196,
+      "sha256": "02f2a566bb0bdbecac5017b0ad4c91ff5f6f82c2c69841d6a5b038d5fc317860",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_5.lod2.glb",
+      "srcSha256": "01d6e8761197e568315ea5100b4813e03e42f783c242bc9cc850c14252718eda",
+      "kind": "glb",
+      "texturesConverted": 8
+    },
+    {
+      "path": "tiles/veg_7_5.lod3.glb",
+      "bytes": 1282372,
+      "sha256": "92db22dae8a16619802f4f1086275624f135b29f8f9a54357bf46fc9f15cd45b",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_5.lod3.glb",
+      "srcSha256": "8f4b5d97c912e893e7e84864e36d672057d28d1b519f8593ed4753668d5f9c6a",
+      "kind": "glb",
+      "texturesConverted": 8
+    },
+    {
+      "path": "tiles/veg_7_6.instances.json",
+      "bytes": 7415,
+      "sha256": "4f0b942343ec5f9024fbc4c0eade8f727e705524958434ae933519b8cd35a172",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_6.instances.json",
+      "srcSha256": "4f0b942343ec5f9024fbc4c0eade8f727e705524958434ae933519b8cd35a172",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_7_6.lod0.glb",
+      "bytes": 28590412,
+      "sha256": "0ff62475f18fda609be97ddc6a208be51d2535809ef82479dd8653224d9ee566",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_6.lod0.glb",
+      "srcSha256": "dee84adf4963d4efbc2ab573bc0f22145fcde34ba81d4506d290a0451021641b",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_7_6.lod1.glb",
+      "bytes": 28590412,
+      "sha256": "0ff62475f18fda609be97ddc6a208be51d2535809ef82479dd8653224d9ee566",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_6.lod1.glb",
+      "srcSha256": "dee84adf4963d4efbc2ab573bc0f22145fcde34ba81d4506d290a0451021641b",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_7_6.lod2.glb",
+      "bytes": 14749660,
+      "sha256": "0d8c9869ce44bcbf99eed40c3e53eb33196a663abff07cc23a1b09c88879e225",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_6.lod2.glb",
+      "srcSha256": "581a59fb128379a90fa64b2de992edcf8191851ff4f1350490d9e40904c2a4ac",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_7_6.lod3.glb",
+      "bytes": 10656088,
+      "sha256": "ce497b1185c5ca89bda31a8d0f7c9e4f2462ddea09396d27a2cfb11029137f7c",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_6.lod3.glb",
+      "srcSha256": "a1ad28b7dabe239665135cb2b384a1d86899a0f7e170b96436c25dca1b06221a",
+      "kind": "glb",
+      "texturesConverted": 20
+    },
+    {
+      "path": "tiles/veg_7_7.instances.json",
+      "bytes": 18470,
+      "sha256": "0f3622a05c3ac2344d072f887886512965df0bef100d096fe02d2e29f56e5a43",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_7.instances.json",
+      "srcSha256": "0f3622a05c3ac2344d072f887886512965df0bef100d096fe02d2e29f56e5a43",
+      "kind": "sidecar"
+    },
+    {
+      "path": "tiles/veg_7_7.lod0.glb",
+      "bytes": 16154988,
+      "sha256": "7b90d2b4b4b7a6683472dcd9ab9da1bca1434ae6968fe51aeedcbbf052b4c9cd",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_7.lod0.glb",
+      "srcSha256": "9defceba9250e8ffa094262a8e0274d6885a4ea883750cec2c2cc5d00ec0c652",
+      "kind": "glb",
+      "texturesConverted": 16
+    },
+    {
+      "path": "tiles/veg_7_7.lod1.glb",
+      "bytes": 16154988,
+      "sha256": "7b90d2b4b4b7a6683472dcd9ab9da1bca1434ae6968fe51aeedcbbf052b4c9cd",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_7.lod1.glb",
+      "srcSha256": "9defceba9250e8ffa094262a8e0274d6885a4ea883750cec2c2cc5d00ec0c652",
+      "kind": "glb",
+      "texturesConverted": 16
+    },
+    {
+      "path": "tiles/veg_7_7.lod2.glb",
+      "bytes": 7042340,
+      "sha256": "8fd6effe5f0af7cc026493ffc18ab0cdb87c7f11234834e65d1a21cea570cafb",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_7.lod2.glb",
+      "srcSha256": "a1177969b6feb53c78a9e2d3465554ef9e3598d41189836fd075c9b9dad7c4c6",
+      "kind": "glb",
+      "texturesConverted": 16
+    },
+    {
+      "path": "tiles/veg_7_7.lod3.glb",
+      "bytes": 3883712,
+      "sha256": "85d46942c62463055fb35b32e1121f4955016726286e7d7dca603e6b0dc3aaa3",
+      "srcPath": "dev-assets/yale-street/browser/3d/tiles/veg_7_7.lod3.glb",
+      "srcSha256": "cde781b87963a1dc05d0f88d4eddf03755d54c3a9ba42af18e6d29f1843e38fc",
+      "kind": "glb",
+      "texturesConverted": 16
+    }
+  ]
+}
