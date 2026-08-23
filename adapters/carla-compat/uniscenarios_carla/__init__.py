@@ -10,18 +10,26 @@ from .client import Client, ScenarioInfo
 from ._envclient import ProtocolError, ServerError
 from .actors import Actor, Sensor, SensorFrame, TrafficLight, Vehicle, VehicleControl, Walker, WalkerControl
 from .blueprint import ActorBlueprint, BlueprintLibrary
+from .debug import Color, DebugHelper
 from .frames import BrowserClipFrameSource, FrameSource, NullFrameSource
+from .geoloc import GeoLocation
 from .geom import Location, Rotation, Transform, Vector3D
+from .lane_types import LaneType
 from .map import Map, Waypoint
+from .physics import VehiclePhysicsControl, WheelPhysicsControl
+from .trafficmanager import TrafficManager
+from .weather import WeatherParameters
 from .world import World, WorldSettings, WorldSnapshot
 
 __version__ = "0.1.0"
 
 __all__ = [
     "Actor", "ActorBlueprint", "BlueprintLibrary", "BrowserClipFrameSource",
-    "Client", "FrameSource", "Location", "Map", "NullFrameSource",
-    "ProtocolError", "Rotation", "ScenarioInfo", "Sensor", "SensorFrame",
-    "ServerError", "TrafficLight", "Transform", "Vector3D", "Vehicle",
-    "VehicleControl", "Walker", "WalkerControl", "Waypoint", "World",
+    "Client", "Color", "DebugHelper", "FrameSource", "GeoLocation",
+    "LaneType", "Location", "Map", "NullFrameSource", "ProtocolError",
+    "Rotation", "ScenarioInfo", "Sensor", "SensorFrame", "ServerError",
+    "TrafficLight", "TrafficManager", "Transform", "Vector3D", "Vehicle",
+    "VehicleControl", "VehiclePhysicsControl", "Walker", "WalkerControl",
+    "Waypoint", "WeatherParameters", "WheelPhysicsControl", "World",
     "WorldSettings", "WorldSnapshot", "__version__",
 ]

@@ -1,0 +1,13 @@
+map: richmond-field-station  xodrSha256=80704cd1bc2563a6…
+physics control: wheelbase=2.70 m  max_steer=33.2 deg  mass=1500 kg
+reference path: 65 points over ~130 m (road 48, lane 1)
+reached path end at decision 275
+
+after 275 tracked decisions (10 Hz):
+  final speed      : 7.89 m/s
+  cross-track mean : 2.96 m
+  cross-track p95  : 10.33 m
+  cross-track max  : 12.49 m
+  debug overlay    : 28 lines recorded (frontends draw these)
+
+RESULT: PASS (pure pursuit tracked the lane centerline using facade physics control)

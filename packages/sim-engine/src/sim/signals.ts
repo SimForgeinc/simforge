@@ -94,6 +94,9 @@ export type SignalPhase = ControlIndication;
 export const DEFAULT_DARK_FALLBACK = 'all_way_stop' as const;
 /** Standstill required at a dark or flashing-red line when unspecified, seconds. */
 export const DEFAULT_DARK_DWELL_S = 1;
+/** Tick rate every tick-denominated {@link SignalSnapshot} field assumes when
+ * the caller does not pass an explicit step; matches the env-server's engine Hz. */
+export const SIGNAL_SNAPSHOT_TICK_HZ = 50;
 
 /** Observable phase plus the source that currently owns it. Program timing
  * provenance remains on `SignalProgram.mapBinding.timingSource`; `source`
@@ -123,6 +126,49 @@ export interface StopLineAuthority {
   readonly dwellS: number;
   /** Why this authority applies, for the trace and for a human reading a failure. */
   readonly reason: 'program' | 'blackout' | 'flashing_red' | 'static_stop' | 'blackout_uncontrolled';
+}
+
+/**
+ * Public, wire-ready truth about one signal at one instant — everything a
+ * consumer outside the engine (scene stream, SPaT encoder, renderer overlay)
+ * needs to reproduce the head's behaviour without re-implementing the law.
+ *
+ * Tick-denominated fields assume the engine's fixed step via `dtS`; they are
+ * integers derived from the same arithmetic `stateAt` uses, so a snapshot at
+ * the simulation's own dt is exact at phase boundaries.
+ */
+export interface SignalSnapshot {
+  readonly signalId: string;
+  /** Physical heads this program drives, sorted (stop-line lanes for legacy inputs without a map binding). */
+  readonly headIds: readonly string[];
+  /** First OpenDRIVE controller id bound to this program, when known. */
+  readonly controllerId: string | null;
+  readonly junctionId: string | null;
+  readonly phase: SignalPhase;
+  /** `program` cycles on the authored timeline; `override` pins an external phase. */
+  readonly source: 'program' | 'override';
+  readonly timingSource: 'map' | 'synthetic-default' | 'authored';
+  /**
+   * Engine tick index (t × tickHz, rounded) of the current phase's boundaries,
+   * in absolute simulation time. Null when no transition is scheduled from
+   * this instant: under an override, or while a non-looping program is held on
+   * its first/last phase outside its authored window.
+   */
+  readonly phaseStartTick: number | null;
+  readonly phaseEndTick: number | null;
+  readonly remainingTicks: number | null;
+  readonly nextPhase: SignalPhase | null;
+  readonly cycleLengthTicks: number | null;
+  /** Present only while the head is dark (`off`) or flashing red. */
+  readonly failureState?: 'off' | 'flashing-red';
+}
+
+const SNAPSHOT_EPS_S = 1e-9;
+
+function failureStateOf(phase: SignalPhase): 'off' | 'flashing-red' | undefined {
+  if (phase === 'off') return 'off';
+  if (phase === 'flashing_red' || phase === 'flashing_red_arrow') return 'flashing-red';
+  return undefined;
 }
 
 export interface StopLineBinding {
@@ -235,6 +281,123 @@ export class SignalBook {
     }
     return { phase: p.phases[p.phases.length - 1]!.phase, source: 'program', timingSource };
   }
+  /**
+   * The full observable snapshot for `signalId` at simulation time `t`
+   * (which may be negative), with timing boundaries denominated in engine
+   * ticks of `dtS` seconds (default: the 50 Hz engine step).
+   *
+   * Deterministic and allocation-light per call; derived from exactly the
+   * arithmetic {@link stateAt} uses, so the phase can never disagree between
+   * the two. An active override reports the forced phase with all scheduled
+   * boundaries null — the program timeline is suspended, not shifted.
+   */
+  snapshotAt(signalId: string, t: number, dtS = 1 / SIGNAL_SNAPSHOT_TICK_HZ): SignalSnapshot | null {
+    const p = this.byId.get(signalId);
+    if (!p) return null;
+    const hz = 1 / dtS;
+    const cycleS = this.cycleLength.get(signalId)!;
+    const headIds = p.mapBinding
+      ? [...p.mapBinding.headIds].sort()
+      : [...new Set(p.stopLines.map((sl) => sl.rsl))].sort();
+    const base = {
+      signalId,
+      headIds,
+      controllerId: p.mapBinding && p.mapBinding.controllerIds.length > 0 ? p.mapBinding.controllerIds[0]! : null,
+      junctionId: p.mapBinding?.junctionId ?? null,
+      timingSource: p.mapBinding?.timingSource ?? ('authored' as const),
+      cycleLengthTicks: Math.round(cycleS * hz),
+    };
+
+    const forced = this.overrides.get(signalId);
+    if (forced !== undefined) {
+      return {
+        ...base,
+        phase: forced,
+        source: 'override',
+        phaseStartTick: null,
+        phaseEndTick: null,
+        remainingTicks: null,
+        nextPhase: null,
+        ...(failureStateOf(forced) !== undefined ? { failureState: failureStateOf(forced) } : {}),
+      };
+    }
+
+    // Locate the phase containing `t` plus its in-cycle boundaries, mirroring
+    // stateAt's walk exactly (same clamping semantics for non-loop programs).
+    const elapsedAbs = t + this.warmupSeconds + p.offsetS;
+    let index = p.phases.length - 1;
+    let startCycS = 0;
+    let endCycS = cycleS;
+    let clamped = false;
+    if (p.loop) {
+      const e = ((elapsedAbs % cycleS) + cycleS) % cycleS;
+      let acc = 0;
+      for (let i = 0; i < p.phases.length; i++) {
+        acc += p.phases[i]!.durationS;
+        if (e < acc) {
+          index = i;
+          endCycS = acc;
+          startCycS = acc - p.phases[i]!.durationS;
+          break;
+        }
+      }
+    } else if (elapsedAbs < 0 || elapsedAbs >= cycleS) {
+      clamped = true;
+      index = elapsedAbs < 0 ? 0 : p.phases.length - 1;
+      if (elapsedAbs >= cycleS) startCycS = cycleS - p.phases[index]!.durationS;
+    } else {
+      let acc = 0;
+      for (let i = 0; i < p.phases.length; i++) {
+        acc += p.phases[i]!.durationS;
+        if (elapsedAbs < acc) {
+          index = i;
+          endCycS = acc;
+          startCycS = acc - p.phases[i]!.durationS;
+          break;
+        }
+      }
+    }
+
+    const phase = p.phases[index]!.phase;
+    if (clamped) {
+      return {
+        ...base,
+        phase,
+        source: 'program',
+        phaseStartTick: null,
+        phaseEndTick: null,
+        remainingTicks: null,
+        nextPhase: null,
+        ...(failureStateOf(phase) !== undefined ? { failureState: failureStateOf(phase) } : {}),
+      };
+    }
+
+    // Absolute simulation time of the current phase's end: the first boundary
+    // at or after `t`. Remaining ticks derive from the same rounded fields the
+    // boundaries publish, so consumers never see a 1-tick rounding seam.
+    const endBaseS = endCycS - this.warmupSeconds - p.offsetS;
+    const k = Math.ceil((t - endBaseS) / cycleS - SNAPSHOT_EPS_S);
+    const phaseEndT = endBaseS + k * cycleS;
+    const phaseStartT = phaseEndT - p.phases[index]!.durationS;
+    const nextPhase = p.phases[(index + 1) % p.phases.length]!.phase;
+    const phaseStartTick = Math.round(phaseStartT * hz);
+    const phaseEndTick = Math.round(phaseEndT * hz);
+    return {
+      ...base,
+      phase,
+      source: 'program',
+      phaseStartTick,
+      phaseEndTick,
+      remainingTicks: Math.max(0, phaseEndTick - Math.round(t * hz)),
+      nextPhase,
+      ...(failureStateOf(phase) !== undefined ? { failureState: failureStateOf(phase) } : {}),
+    };
+  }
+
+  /** Snapshots for every program, in sorted signal-id order. */
+  snapshotsAt(t: number, dtS?: number): SignalSnapshot[] {
+    return this.ids().map((id) => this.snapshotAt(id, t, dtS)!);
+  }
 
   /**
    * The law this stop line is executing at `t`.
@@ -305,4 +468,16 @@ export function phaseForbidsEntry(phase: SignalPhase): boolean {
   // never reaches here. Leaving `off` permissive here as well would let a dark
   // head be waved through by whichever check ran first.
   return !['green', 'green_arrow', 'proceed', 'flashing_yellow', 'flashing_yellow_arrow'].includes(phase);
+}
+
+/** Free-function form of {@link SignalBook.snapshotAt} — the public
+ * `signalSnapshotAt(book, signalId, t)` entry point consumers outside the
+ * engine call when they hold a book but should not depend on its class. */
+export function signalSnapshotAt(
+  book: SignalBook,
+  signalId: string,
+  t: number,
+  dtS?: number,
+): SignalSnapshot | null {
+  return book.snapshotAt(signalId, t, dtS);
 }

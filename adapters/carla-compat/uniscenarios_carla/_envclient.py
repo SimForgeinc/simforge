@@ -114,7 +114,12 @@ class EnvServerClient:
             self._proc.stdin.write(_HEADER.pack(len(payload)) + payload)
             self._proc.stdin.flush()
             while True:
-                for response in self._reader.push(self._proc.stdout.read1(1 << 20)):
+                chunk = self._proc.stdout.read1(1 << 20)
+                if not chunk:
+                    raise ProtocolError(
+                        f"env-server exited before replying (exit={self._proc.poll()}); "
+                        "check the episode spec / topology paths")
+                for response in self._reader.push(chunk):
                     if response.get("i") != request_id:
                         continue
                     if response.get("ok") == 1:

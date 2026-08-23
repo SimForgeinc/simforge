@@ -16,6 +16,7 @@
 
 import {
   createFixedStepSimulation,
+  type SignalBook,
   normalizeSimScenarioInput,
   type ActionHook,
   type ActionOverride,
@@ -26,6 +27,7 @@ import {
   type SessionPairMinima,
   type SimEvent,
   type SimScenarioInput,
+  type TickObserver,
 } from '@uniscenarios/sim-engine';
 
 import { CausalChannelCollector, type CausalChannel, type CausalFrame } from './causal.js';
@@ -63,6 +65,12 @@ export interface EnvSessionOptions {
   readonly runOptions?: Partial<Omit<RunOptions, 'graph' | 'actionHook'>>;
   readonly episode?: Partial<EpisodeConfig>;
   readonly settledInputProvider?: SettledInputProvider;
+  /**
+   * Live ground-truth seam (TruthStream): invoked once per engine tick with a
+   * frozen read-only observation. Purely observational — attaching one never
+   * changes tick order, traces, or digests.
+   */
+  readonly tickObserver?: TickObserver;
 }
 
 /** Fully resolved episode configuration. */
@@ -118,6 +126,7 @@ export class EnvSession {
   private readonly graph: LaneGraph;
   private readonly runOptions: Partial<Omit<RunOptions, 'graph' | 'actionHook'>>;
   private readonly settledInputProvider: SettledInputProvider | null;
+  private readonly tickObserver: TickObserver | null;
   private readonly episode: ResolvedEpisode;
   private readonly rewardConfig: RewardConfig;
   private obsCtx: ObservationContextInput;
@@ -138,6 +147,7 @@ export class EnvSession {
     this.graph = options.graph;
     this.runOptions = options.runOptions ?? {};
     this.settledInputProvider = options.settledInputProvider ?? null;
+    this.tickObserver = options.tickObserver ?? null;
 
     const cfg = options.episode ?? {};
     const decisionHz = cfg.decisionHz ?? 10;
@@ -204,7 +214,7 @@ export class EnvSession {
     // warmupTicks leaves the snapshot at t=-dt; one more tick parks the
     // world exactly at t=0, the first policy-visible instant.
     const warmupTicks = this.episode.warmupExcluded ? Math.round(input.warmupSeconds / input.dt) + 1 : 0;
-    if (warmupTicks > 0) this.engineSession.advance(warmupTicks);
+    if (warmupTicks > 0) this.engineSession.advance(warmupTicks, this.advanceOpts());
 
     const snap = this.engineSession.peek();
     return {
@@ -232,7 +242,7 @@ export class EnvSession {
       throw new Error('step() called on a finished or un-reset EnvSession');
     }
     this.pendingAction = action;
-    this.engineSession.advance(this.episode.decisionTicks);
+    this.engineSession.advance(this.episode.decisionTicks, this.advanceOpts());
     const events = this.engineSession.drainEvents();
     const snap = this.engineSession.peek();
     this.decisionCount += 1;
@@ -276,6 +286,17 @@ export class EnvSession {
         rewardTerms: reward.terms,
       },
     };
+  }
+
+
+  /** Advance options carrying the live truth observer when one is attached. */
+  private advanceOpts(): { onTick?: TickObserver } {
+    return this.tickObserver ? { onTick: this.tickObserver } : {};
+  }
+
+  /** The live engine's SignalBook (overrides included); null before reset(). */
+  signalBook(): SignalBook | null {
+    return this.engineSession?.signalBook() ?? null;
   }
 
   private requireCollector(): CausalChannelCollector {

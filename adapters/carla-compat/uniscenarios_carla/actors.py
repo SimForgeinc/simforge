@@ -100,6 +100,7 @@ class Vehicle(Actor):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._pending_control: VehicleControl | None = None
+        self._target_velocity: Vector3D | None = None
         self.autopilot_enabled = True
 
     def apply_control(self, control: VehicleControl) -> None:
@@ -113,21 +114,71 @@ class Vehicle(Actor):
     def get_control(self) -> VehicleControl:
         return self._pending_control or VehicleControl()
 
-    def set_autopilot(self, enabled: bool) -> None:
-        """Recorded on the handle only — see README: no runtime autopilot toggle.
+    def set_autopilot(self, enabled: bool, tm_port: int | None = None) -> None:
+        """Recorded on the handle + TrafficManager registry — see README.
 
-        With autopilot "off" and no ``apply_control`` queued, ticks send empty
-        actions and the engine keeps the authored choreography.
+        The engine has no per-vehicle autopilot daemon: ambient road users
+        are generated at session build from the ambient-traffic profile,
+        and authored actors keep their choreography unless overridden by
+        controls or a speed intent.
         """
         self.autopilot_enabled = enabled
+        tm = getattr(self._world, "traffic_manager", None)
+        if tm is not None:
+            tm.register_autopilot(self.id, enabled)
 
     @property
     def pending_action(self) -> dict | None:
-        """Wire action for the next tick; consumed by ``World.tick``."""
+        """Wire action for the next tick; consumed by ``World.tick``.
+
+        A queued ``VehicleControl`` takes precedence; otherwise a
+        ``set_target_velocity`` request becomes the env-server's
+        ``{ts, dir}`` speed-intent action.
+        """
         ctrl = self._pending_control
-        if ctrl is None:
-            return None
-        return {"control": ctrl}
+        if ctrl is not None:
+            return {"ctrl": [ctrl.throttle, ctrl.brake, ctrl.steer]}
+        tv = self._target_velocity
+        if tv is not None:
+            yaw = self.get_transform().yaw_rad
+            longitudinal = tv.x * math.cos(yaw) + tv.y * math.sin(yaw)
+            action: dict = {"ts": abs(longitudinal)}
+            if longitudinal < 0:
+                action["dir"] = -1
+            return action
+        return None
+
+    def set_target_velocity(self, velocity: Vector3D) -> None:
+        """Speed-intent control (carla ``set_target_velocity``).
+
+        Mapped onto the env-server's ``targetSpeedMps`` action field: the
+        requested world-frame velocity is projected onto the vehicle's
+        forward axis at apply time; the engine's speed controller then drives
+        toward it each tick until changed. A later ``apply_control``
+        overrides it for as long as controls keep being applied.
+        """
+        self._target_velocity = Vector3D(velocity.x, velocity.y, velocity.z)
+
+    def get_target_velocity(self) -> Vector3D | None:
+        return self._target_velocity
+
+    def get_physics_control(self):
+        """VehiclePhysicsControl from the engine's dynamics profile.
+
+        Pure-pursuit consumers read ``wheelbase_m`` and front-wheel
+        ``max_steer_angle``; see uniscenarios_carla/physics.py for the exact
+        mapping from sim-engine's ACTOR_PHYSICS_PROFILES and any per-actor
+        ``input.physics.vehicleProfiles`` overrides.
+        """
+        from .physics import build_physics_control
+
+        authored = {r["id"]: r for r in self._world.scenario.roles}
+        actor = authored.get(self.role_name)
+        if actor is None:
+            raise RuntimeError(
+                f"actor {self.id} ({self.type_id}) has no authored role "
+                f"{self.role_name!r}; no physics profile available")
+        return build_physics_control(actor, self._world.scenario.vehicle_profiles)
 
 
 class Walker(Actor):

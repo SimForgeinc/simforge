@@ -74,6 +74,16 @@ export const actorTickSchema = z.object({
   yawRad: z.number().finite(),
   /** World-frame linear velocity m/s `[vx, vy, vz]`. */
   velocity: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]),
+  /**
+   * World-frame linear acceleration m/s² `[ax, ay, az]`. Additive optional
+   * field (schema stays v1): emitters that can compute it include it;
+   * consumers must tolerate its absence on older documents. Provenance is
+   * emitter-declared, not encoded — the trace emitter derives it by backward
+   * finite difference of the velocity channel (so it carries the centripetal
+   * term when a body turns); the live env-server stream projects the engine's
+   * planned longitudinal acceleration onto the heading.
+   */
+  acceleration: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]).optional(),
 });
 export type ActorTick = z.infer<typeof actorTickSchema>;
 
