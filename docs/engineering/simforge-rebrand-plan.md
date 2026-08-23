@@ -1,4 +1,8 @@
 # SimForge Rebrand & Repository Reorganization Plan
+> **Status (2026-08-23):** This branch program executes the rebrand and the
+> 24→13 consolidation in §8. Earlier rename-only tables remain as decision
+> history; §8 and `package-consolidation-analysis.md` are authoritative.
+
 
 Decision basis (Michael, 2026-08-23, recorded in the context MCP as
 `simforge-professional-naming`): the platform brands as **SimForge** with

@@ -1,4 +1,7 @@
 # Native Renderer Production Plan — Bevy as `--engine native`
+> **Historical plan:** Pre-rebrand package, CLI, and `native/` paths are
+> retained verbatim; the implemented Rust workspace now lives at `renderer/`.
+
 
 Status: proposed 2026-08-22. Builds on the GO verdict in
 `scripts/renderer-spike/FINDINGS.md` (4.33 ms/frame RGB+ID+Depth @736×416,

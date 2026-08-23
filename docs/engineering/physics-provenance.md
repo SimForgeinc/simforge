@@ -1,8 +1,9 @@
 # Physics Provenance — measured golden references (WS6)
 
-Status: delivered 2026-08-22. Companion to `fixtures/physics/golden-maneuvers.v2.json`
-and `docs/physics-validation.md` (v1). Governing plan:
-`docs/rl-platform-hardening-plan.md`, workstream WS6.
+Status: delivered 2026-08-22. Companion to
+`fixtures/physics/golden-maneuvers.v2.json` and
+`physics-validation.md` (v1). Governing plan:
+`../research/rl-platform-hardening-plan.md`, workstream WS6.
 
 ## What changed
 
@@ -24,8 +25,8 @@ two maneuvers whose oracle runs did not yet produce valid numbers (below).
 
 ## Oracle
 
-Tool: `tools/physics-oracle/carla_oracle.py` (own runner; the existing
-`adapters/carla-bridge` was read-only for this workstream).
+Tool: `research/physics-oracle/carla_oracle.py` (own runner; the existing
+`adapters/carla-exec` was read-only for this workstream).
 
 * CARLA server 0.9.16 (`carlasim/carla:0.9.16`, docker), client 0.9.16.
   Local host: RTX 5080 box, server in GPU container with rendering disabled
@@ -42,7 +43,7 @@ Tool: `tools/physics-oracle/carla_oracle.py` (own runner; the existing
   OpenDRIVE waypoints, probe-driven station-by-station (speed retention + free-fall
   detection), and the longest fully clear window is used.
 
-Raw evidence: `tools/physics-oracle/results/oracle-ground.json`,
+Raw evidence: `research/physics-oracle/results/oracle-ground.json`,
 `oracle-dlc.json`, `oracle-skidpad.json`, `oracle-step.json` — each carries
 `carlaServerVersion`, map, vehicle blueprint, dt, per-maneuver records and
 error blocks.
@@ -50,7 +51,7 @@ error blocks.
 ## Parity table — TS engine vs CARLA 0.9.16
 
 Measured with the same maneuver definitions on both sides. TS figures come from
-the shared harness (`packages/sim-engine/src/validation/golden-maneuvers.ts`),
+the shared harness (`packages/engine/src/validation/golden-maneuvers.ts`),
 CARLA figures from the oracle runs above.
 
 | maneuver | metric | TS engine (dynamic-v1) | CARLA 0.9.16 (Lincoln MKZ) | published anchor | v2 band |

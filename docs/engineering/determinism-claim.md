@@ -1,6 +1,6 @@
 # Determinism claim — what is byte-exact, what is not (WS4.3)
 
-Status: measured 2026-08-22. This document scopes UniScenarios' byte-exactness
+Status: measured 2026-08-22. This document scopes SimForge's byte-exactness
 claim after running a two-pass render determinism harness against the real
 Chrome/three.js export path. It replaces assumption with measurement.
 
@@ -8,16 +8,16 @@ Chrome/three.js export path. It replaces assumption with measurement.
 
 | Tier | Scope | Byte-exact? | Evidence |
 | --- | --- | --- | --- |
-| 1. Symbolic engine + traces | sim-engine ticks, trace JSON, evidence verify (`same-input-hash`) | **Yes** — fixed-step 20ms, integer/canonical serialization; re-simulation reproduces byte-identical traces on any hardware | `campaigns/occluded-pedestrian/determinism-check.json` (trace sha256 equality across cells); engine test suite |
-| 2. Structured sensor passes (ID / depth / instance semantics) | G-buffer passes from the sensor-rig pipeline (`packages/browser-renderer` `src/sensors/`), LiDAR/radar point records | **Yes on the Bevy path** (measured bit-identical across process runs, below); intended-but-unmeasured for the browser sensor pipeline | spike hash table §4; harness manifests |
+| 1. Symbolic engine + traces | `@simforge/engine` ticks, trace JSON, evidence verify (`same-input-hash`) | **Yes** — fixed-step 20ms, integer/canonical serialization; re-simulation reproduces byte-identical traces on any hardware | `campaigns/occluded-pedestrian/determinism-check.json` (trace sha256 equality across cells); engine test suite |
+| 2. Structured sensor passes (ID / depth / instance semantics) | G-buffer passes from `@simforge/render/web`, LiDAR/radar point records | **Yes on the Bevy path** (measured bit-identical across process runs, below); intended-but-unmeasured for the browser sensor pipeline | spike hash table §4; harness manifests |
 | 3. RGB pixels through Bevy headless | `scripts/renderer-spike/bevy-spike` offscreen wgpu renders | **Yes on one GPU** — RGB, instance-ID and depth f32 all sha256-identical across two independent process runs (RTX 5080). Cross-vendor/cross-driver: NOT guaranteed → golden-hash-per-GPU policy | `scripts/renderer-spike/FINDINGS.md` §4 |
 | 4. RGB pixels through Chrome | `scripts/export-render.mjs` → Studio dev server → headless Chrome → three.js WebGL canvas screenshots | **No.** Measured NOT byte-stable even on one machine, one Chrome build, sequential runs. RGB byte-exactness through Chrome is claimed only when *additionally* pinned to one hardware+driver+browser build AND shown stable by this harness per release | see manifest below |
 
 ## Measured result (first evidence manifest)
 
 
-Harness: `tools/render-determinism/determinism-harness.mjs`
-(`--record` copies the manifest into `tools/render-determinism/evidence/`).
+Harness: `qualification/render-determinism/determinism-harness.mjs`
+(`--record` copies the manifest into `qualification/render-determinism/evidence/`).
 
 Run `ws4-run-001-map`: yale-street map-orbit scene state rendered **twice**
 through independent headless-Chrome processes with identical arguments
@@ -102,17 +102,17 @@ HDRI sky and lighting-calibration parity remain open spike work
 ## Reproducing
 
 ```sh
-pnpm install && pnpm -r --filter './packages/*' --filter '@uniscenarios/studio' build
+pnpm install && pnpm -r --filter './packages/*' --filter '@simforge/studio' build
 
 # Map-orbit mode (no scenario evidence needed):
-node tools/render-determinism/determinism-harness.mjs \
+node qualification/render-determinism/determinism-harness.mjs \
   --map yale-street --frames-count 8 \
   --out artifacts/render-determinism/<run-id> --record
 
 # Bound-scenario mode (instance + trace + result triple; requires the
 # topology-index.json.gz sidecar for the map, which local dev-assets lack —
 # regenerate via the map pipeline first):
-node tools/render-determinism/determinism-harness.mjs \
+node qualification/render-determinism/determinism-harness.mjs \
   --scenario catalog/evidence/belmont-research-center/belmont-research-center-001-child-dartout-parked-cars-afeb89eed1e5 \
   --out artifacts/render-determinism/<run-id> --record
 ```
@@ -121,5 +121,6 @@ Exit code is 0 when the measurement completes regardless of stability (this is
 a measurement tool); `--require-stable` turns instability into exit code 2 for
 use as a CI gate once tier-3 pins land.
 
-First manifests: `tools/render-determinism/evidence/ws4-run-001-map.json`,
-`tools/render-determinism/evidence/ws4-run-002-map.json`.
+First manifests:
+`qualification/render-determinism/evidence/ws4-run-001-map.json` and
+`qualification/render-determinism/evidence/ws4-run-002-map.json`.

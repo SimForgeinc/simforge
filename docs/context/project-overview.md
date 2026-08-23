@@ -1,120 +1,78 @@
-# UniScenarios: Project Overview
+# SimForge: Project Overview
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-23. The SimForge rebrand and 24→13 package consolidation
+are the current repository layout.
 
 ## What it is
 
-UniScenarios is a scenario platform for Physical AI / autonomous-vehicle
-simulation. It owns the portable, deterministic core:
+SimForge is an open-source scenario simulation and ML training platform for
+Physical AI. It is designed as a CARLA competitor with explicit CARLA
+compatibility in both directions. Its portable deterministic core includes:
 
-- **Scenario model** (`packages/scenario-model`): versioned scenario documents
-  (ScenarioTemplateV2), drafts/revisions, content hashing, storage adapters.
-- **Simulation engine** (`packages/sim-engine`): fixed-step deterministic
-  simulation — actors, routes, triggers, interactions, physics, traces. The
-  determinism moat: editor == simulation == replay, byte-for-byte.
-- **Editor runtime** (`packages/editor-core` + `packages/city-renderer`):
-  EditorDocument/EditorController over a persistent three.js CityViewer that
-  streams real city map tiles (GLB + baked lightmaps) with lane-snapping from
-  topology indexes.
-- **Map pipeline**: OpenDRIVE (XODR) ingestion, topology/lane-polygon/signal
-  derivation, SUMO network derivation, collision derivatives, publication into
-  immutable map versions (`dev-assets/<map>/` holds five real maps:
-  yale-street, belmont-research-center, el-camino-road,
-  easterbrook-discovery-school, richmond-field-station).
-- **Interchange**: OpenSCENARIO 1.4 import/export with XSD validation
-  (`packages/openscenario`), CARLA compatibility facade (`import carla`
-  Python shim over the native stack).
-- **Renderers**:
-  - Browser: `packages/browser-renderer` / city-renderer (three.js), used for
-    in-editor preview, playback, and browser render jobs (recording → mp4).
-  - Native: `native/` Bevy (Rust) renderer behind the same render-runtime
-    contract (`render run --engine native`) with two profiles — `sensor`
-    (linear, fixed exposure, hash-stable output; 18-sensor suite incl.
-    lidar/radar/IMU/GNSS) and `cinematic` (AgX, bloom, realism ladder). Byte
-    determinism is CI-gated per GPU fingerprint (golden-hash CI).
-- **Adapters**: `adapters/uniscenarios-gym` (RL environment boundary — Python
-  stays at the gym/adapter seam, the core stays TypeScript), SUMO ambient
-  traffic, V2X digital-twin bridge (WS :8765 byte-compatible protocol),
-  esmini/CARLA execution adapters.
+- **Scenario documents** (`packages/scenario`): versioned templates, concrete
+  instances, schemas, hashing, and storage-neutral types.
+- **Simulation** (`packages/engine`): fixed-step actors, routes, triggers,
+  interactions, physics, traces, and the frozen `scene-state.v1` output. The
+  determinism boundary is editor == sim == replay.
+- **World compilation** (`packages/maps`, `packages/compiler`): OpenDRIVE map
+  intelligence, logical anchor matching, site selection, and deterministic
+  scenario materialization.
+- **Studio runtime** (`packages/editor`, `packages/viewer`,
+  `packages/playback`, `packages/asset-catalog`): framework-neutral authoring,
+  a streaming three.js viewport, replay and traffic, and canonical assets.
+- **Rendering** (`packages/render`, `renderer/`): one render-job contract with
+  web and native adapters; the Rust/Bevy SimForge Renderer provides sensor and
+  cinematic profiles and the 18-sensor suite.
+- **Interchange** (`packages/openscenario`): ASAM OpenSCENARIO import/export,
+  esmini conformance execution, and trace comparison.
+- **Training and evaluation** (`packages/training-env`,
+  `packages/evaluation`): Gymnasium-semantics execution, causal ground truth,
+  frozen policy evaluation, and scenario-faithfulness examination.
+- **Automation** (`packages/cli`): the `simforge` binary and `sf` alias.
 
-## Relationship to SimCloud / SimForge
+All 13 TypeScript packages use the `@simforge/*` scope and lockstep
+`0.1.0-rc.45` version.
 
-SimForge (design system: "Mission Console" — telemetry amber #E8E044 on
-near-black, zero radius, Share Tech Mono labels) is the brand; SimCloud
-(`/home/path/simcloud-platform`) is the commercial cloud product: Next.js
-dashboard + scenario editor + datasets + maps + assets + render fleet, backed
-by Aurora Postgres, S3, and GPU workers. SimCloud vendors immutable
-UniScenarios releases (npm tarball stack + CARLA wheel) and builds its own
-presentation layer over the vendored engine — it intentionally does NOT use
-`@uniscenarios/editor-ui`.
+## Products and compatibility
 
-Dependency direction is one-way (UniScenarios → release → SimCloud), per
-`docs/simcloud-convergence.md`. As of 2026-08-23 there is one deliberate,
-scoped exception: **`apps/cloud`** is a 1:1 copy of SimCloud's product surface
-living in this repo so the full product runs locally (see below). It is kept
-byte-faithful to SimCloud source except at three local seams; it must not
-become a fork that grows its own product behavior.
+**SimForge Studio** is the local Next.js product in `studio/`. Root `pnpm dev`
+runs it on <http://127.0.0.1:5199>. It is a byte-faithful copy of SimForge
+Cloud's product surface except for workspace dependency specifiers and its
+explicit local infrastructure seams. Product behavior must not fork between
+Studio and Cloud.
 
-## The local product: `apps/cloud`
+**SimForge Cloud** is the hosted product. Portable behavior is authored here,
+released as one immutable stack, and mechanically synchronized into Cloud. The
+legacy `uniscenario.*` database schemas, `/api/uniscenario/**` routes, scenario
+format identifiers, `scene-state.v1`, and worker environment variables are
+frozen wire contracts, not public branding.
 
-Running UniScenarios locally launches the SimCloud product itself:
+CARLA interoperability remains two separate adapters:
 
-- `pnpm dev` (root) → `apps/cloud` boot: migrate → seed → Next.js dev on
-  **http://127.0.0.1:5199**. `pnpm run dev:worker` also starts the local
-  render/compile worker (`UNISCENARIOS_LOCAL_WORKER=1` / `--with-worker`).
-- Same UI as production SimCloud: app switcher (Maps / Assets / Datasets;
-  Exports disabled "In development"), shared top bar (the editor has no top
-  bar of its own — it portals actions into the app chrome), datasets
-  workspace, full scenario editor (actor rail with Car / Two-wheelers /
-  Pedestrian / robots / Animals / Object / Asset gallery / Weather / Traffic /
-  Parked cars; floating timeline dock; right inspector with
-  appearance/placement/sensors; simple vs advanced experience chooser;
-  first-run graphics page at `/dashboard/render-settings`).
-- **Local seams** (the only intentional divergences from SimCloud source):
-  1. DB: embedded Postgres (PGlite) behind SimCloud's unchanged
-     `app/lib/db/data-api.ts` adapter API; data at `~/.uniscenarios/cloud/db`;
-     `DATABASE_URL` switches to a real Postgres pool. Graceful close on
-     SIGINT/SIGTERM (PGlite corrupts on abrupt kill; adapter drains + closes).
-     Never open the data dir from two processes.
-  2. Storage: filesystem object store keyed `{bucket,key}` under
-     `~/.uniscenarios/cloud/artifacts` behind the `s3-presign`/`s3-object`
-     APIs; presigned URLs are local routes.
-  3. Identity: fixed Local Owner user + workspace at the
-     `route-session`/app-context seam; billing returns free/unlimited; Meshy
-     asset generation and enrichment fleets are disabled with explicit UI
-     states.
-- **Local workers** (`apps/cloud/worker/`): one process, two lanes speaking
-  the production HTTP protocols against localhost (workers never touch the
-  DB): the browser render lane (cpu-jobs claim → download input closure →
-  render with the repo renderer → encode mp4 → reserve/upload/finalize
-  recording) and the compiler lane (exports claim → materialize → OpenSCENARIO
-  1.4 export + XSD validation → execution package artifacts).
-- Maps are seeded through the REAL publication pipeline (not hand-inserted
-  rows): full browser asset closures (~1088 members for Yale) including
-  collision derivatives, SUMO networks (packaged SUMO 1.27.1 wasm runtime),
-  parking stalls, road-network GeoJSON, and generated thumbnails.
+- `adapters/carla-api`: drop-in Python `import carla` over SimForge Engine.
+- `adapters/carla-exec`: execute SimForge scenarios in a real CARLA runtime.
 
-## Repo layout (top level)
+## Repository layout
 
-- `packages/*` — the canonical npm stack (scenario-model, sim-engine,
-  editor-core, city-renderer, browser-renderer, playback, openscenario,
-  prop-catalog, ambient-traffic, camera-rig, xodr-tools, render-runtime, …).
-- `apps/cloud` — the local SimCloud product (Next.js 16 / React 19 /
-  Tailwind 3.4). **The launch surface.**
-- `apps/studio` — the legacy Vite studio UI, retired from entry points
-  (`pnpm run dev:studio-legacy` only); scheduled for removal once `apps/cloud`
-  fully supersedes it.
-- `native/` — Bevy renderer (render-core, service, sensors) + shm zero-copy
-  service.
-- `adapters/`, `qualification/`, `catalog/`, `dev-assets/` (symlink to local
-  map corpus), `tools/` (bridge-fidelity instrument, h3-reproduce, …),
-  `docs/`.
+- `packages/` — the 13-package `@simforge/*` TypeScript stack.
+- `studio/` — SimForge Studio, the local product and default launch surface.
+- `renderer/` — SimForge Renderer Rust workspace.
+- `adapters/` — Gymnasium, CARLA API, and CARLA execution boundaries.
+- `qualification/` — deterministic release gates, golden harnesses, and frozen
+  evaluation assets.
+- `research/` — experimental lanes that do not ship as product code.
+- `catalog/`, `campaigns/`, `fixtures/`, `dev-assets/`, `examples/`,
+  `services/`, `config/` — product data, evidence, services, and stack config.
+- `docs/product`, `docs/engineering`, `docs/research`, `docs/context` — product,
+  architecture, research, and historical context documentation.
 
 ## Verification culture
 
-Determinism and evidence are load-bearing: frozen eval suites
-(`qualification/`), golden-maneuver oracles with provenance CI, golden-hash
-render CI per GPU fingerprint, a frozen detection instrument (yolo11s,
-ultralytics 8.4.126, conf 0.25/IoU 0.5, weights checked in) for all
-render-fidelity scoring, and real executed evidence required from every
-program lane (no scaffolds).
+Claims require receipts. Symbolic traces and evidence identities are
+byte-exact; native renderer goldens are keyed to an explicit GPU fingerprint;
+Chrome RGB is not claimed cross-machine byte-exact. The 18-sensor native suite,
+OpenSCENARIO conformance matrix, physics provenance, and byte-compatible V2X
+contracts are maintained as explicit qualification artifacts. See
+[determinism-claim.md](../engineering/determinism-claim.md),
+[native-golden-ci.md](../engineering/native-golden-ci.md), and
+[simcloud-convergence.md](../engineering/simcloud-convergence.md).

@@ -1,4 +1,4 @@
-# UniScenarios scenario-fidelity gates
+# SimForge scenario-fidelity gates
 
 These checks define the minimum machine-verifiable contract for a generated
 scenario instance and its trace. They are correctness gates, not visual-quality
@@ -62,13 +62,13 @@ explicit `exist(absent)` interaction remains the way to remove an actor.
 
 ## Focused proof
 
-- `packages/sim-engine/src/__tests__/arrival.test.ts`
-- `packages/sim-engine/src/__tests__/occlusion-metrics.test.ts`
-- `packages/sim-engine/src/__tests__/route-end.test.ts`
-- `packages/sim-engine/src/__tests__/static-actors.test.ts`
-- `packages/sim-engine/src/__tests__/triggers.test.ts`
+- `packages/engine/src/__tests__/arrival.test.ts`
+- `packages/engine/src/__tests__/occlusion-metrics.test.ts`
+- `packages/engine/src/__tests__/route-end.test.ts`
+- `packages/engine/src/__tests__/static-actors.test.ts`
+- `packages/engine/src/__tests__/triggers.test.ts`
 - `packages/cli/src/__tests__/evidence.test.ts`
-- `packages/cli/src/__tests__/materialize.test.ts`
+- `packages/compiler/src/__tests__/materialize.test.ts`
 - `scripts/__tests__/export-render.test.mjs`
 
 The focused Yale artifact lives under

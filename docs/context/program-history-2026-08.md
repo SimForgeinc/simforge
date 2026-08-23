@@ -1,4 +1,7 @@
 # Program History — August 2026
+> **Historical record:** Pre-rebrand UniScenarios package, CLI, and directory
+> names are retained verbatim below.
+
 
 Last updated: 2026-08-23. Condensed record of the multi-wave agent programs
 that produced the current tree. Each wave ran as parallel worktree lanes with

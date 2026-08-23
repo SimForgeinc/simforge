@@ -1,4 +1,4 @@
-# UniScenarios scenario visual QA
+# SimForge scenario visual QA
 
 This pipeline turns one concrete catalog slot's instance, exact simulation
 trace, and accepted evaluation result into reviewable incident evidence. It does not treat map screenshots,
@@ -29,7 +29,7 @@ scenario evidence.
    errors. Rejected output never counts toward coverage.
 5. A passing machine manifest is still only `pending-human-review`. Generate a
    review template and inspect the exact four PNG hashes and MP4 hash in the
-   actual UniScenarios Studio browser surface, recording its URL and inspection
+   actual SimForge Studio browser surface, recording its URL and inspection
    session ID. Only an
    `accepted` review with all five artifacts marked observed can enter the
    scenario review ledger with `countsTowardScenarioCoverage: true`.

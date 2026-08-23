@@ -1,4 +1,7 @@
 # First-run graphics preset benchmark
+> **Historical benchmark:** The pre-rebrand output filename and capture port
+> are retained verbatim so the recorded measurement remains reproducible.
+
 
 Captured 2026-08-03 for the first-browser-use graphics chooser.
 

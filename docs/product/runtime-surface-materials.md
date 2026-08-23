@@ -1,6 +1,6 @@
 # Runtime surface materials
 
-UniScenarios improves map surfaces at runtime without modifying the external
+SimForge improves map surfaces at runtime without modifying the external
 GLB source assets. The semantic classifier uses object ancestry, mesh name,
 material name, layer identity, and a stable geometry digest. It intentionally
 defaults to `unknown`; unknown and road-marking materials remain byte-for-byte

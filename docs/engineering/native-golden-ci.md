@@ -1,7 +1,7 @@
 # Native golden store + regression gate (WSB6)
 
 Status: implemented 2026-08-22. Enforces the byte-exactness policy measured and
-documented in `docs/determinism-claim.md` (WSB4): Bevy/wgpu sensor-profile
+documented in `determinism-claim.md` (WSB4): Bevy/wgpu sensor-profile
 passes are byte-stable on one pinned GPU; Chrome RGB is provably not
 goldenable (0/8 and 5/6 frames byte-equal) and is excluded from this suite.
 
@@ -9,14 +9,15 @@ goldenable (0/8 and 5/6 frames byte-equal) and is excluded from this suite.
 
 | Path | What |
 |---|---|
-| `tools/golden-harness/golden.mjs` | record / verify CLI driving the native renderer binary |
-| `tools/golden-harness/scenes/*.json` | scene definitions (corpus files + renderer args + expected passes) |
-| `tools/golden-harness/goldens/<gpuFingerprint>/<scene>.json` | the golden store (committed) |
-| `tools/golden-harness/ci-local.sh` | local execution of the exact CI steps |
+| `qualification/golden-harness/golden.mjs` | record / verify CLI driving the native renderer binary |
+| `qualification/golden-harness/scenes/*.json` | scene definitions (corpus files + renderer args + expected passes) |
+| `qualification/golden-harness/goldens/<gpuFingerprint>/<scene>.json` | the golden store (committed) |
+| `qualification/golden-harness/ci-local.sh` | local execution of the exact CI steps |
 | `.github/workflows/native-golden.yml` | self-hosted 5080 runner workflow |
 
-Renderer binary resolution order: `--bin` flag → `native/target/release/native-render`
-(production, `native/render-core`) → spike fallback `scripts/renderer-spike/bevy-spike/target/release/bevy-spike`.
+Renderer binary resolution order: `--bin` flag →
+`renderer/target/release/native-render` (production, `renderer/render-core`) →
+spike fallback `scripts/renderer-spike/bevy-spike/target/release/bevy-spike`.
 Today both binaries are byte-identical (the scaffold is the spike verbatim), so
 goldens recorded against either are interchangeable until render-core diverges —
 at which point goldens are re-recorded because the `rendererPath.sha256` pin moves.
@@ -25,7 +26,8 @@ at which point goldens are re-recorded because the `rendererPath.sha256` pin mov
 
 `gpuFingerprint` = first 16 hex of `sha256(canonical_json({gpus:[{name,
 driverVersion, vbiosVersion, pciBusId}], kernel, arch}))`, with GPU facts from
-the **same nvidia-smi query** as WSB4's `tools/render-determinism/gpu-fingerprint.mjs`
+the **same nvidia-smi query** as WSB4's
+`qualification/render-determinism/gpu-fingerprint.mjs`
 so fingerprint facts are comparable across Chrome evidence manifests and native goldens.
 Rationale: same-device wgpu is empirically bitwise-stable; cross-driver/
 cross-vendor equality is NOT claimed → goldens are keyed per fingerprint, never
@@ -53,7 +55,7 @@ compatible). Additions:
   "profile": "sensor",                    // render profile; only sensor is goldenable today
   "rendererPath": {
     "engine": "native-bevy",              // was chrome/three.js in WSB4 manifests
-    "file": "native/target/release/native-render",
+    "file": "renderer/target/release/native-render",
     "sha256": "…",                        // binary pin
     "invocation": { "args": ["…"] },
     "versions": { "bevy": "0.19.1", "wgpu": "29.0.4", "rustc": "…", "backend": "vulkan" }
@@ -113,7 +115,7 @@ applies both gates. Frame-time uses the renderer-reported steady-state
 1. **Multi-GLB spawn-order hygiene fix.** `check_assets` spawned tile content as
    each GLB finished loading, so entity/draw order raced async load completion.
    Fixed to spawn only after all GLBs resolve, in CLI `--glbs` order
-   (native/render-core/src/bin/native-render.rs; WSB2 notified).
+   (`renderer/render-core/src/bin/native-render.rs`; WSB2 notified).
 2. **Residual rare RGB instability under co-tenant load.** Even after the fix,
    during heavy GPU sharing (load avg ~30, 10.6/16.3 GiB VRAM in use) ~1-in-10
    processes produced a second RGB population: the same 88 scattered pixels on
@@ -154,9 +156,9 @@ Invalidation triggers — any of these means the golden must be re-recorded:
 Re-record procedure:
 
 ```sh
-cargo build --release -p render-core --bin native-render --manifest-path native/Cargo.toml
-SCEN_SENSOR_CORPUS=<corpus root> node tools/golden-harness/golden.mjs record yale-frame0
-node tools/golden-harness/golden.mjs verify all
+cargo build --release -p render-core --bin native-render --manifest-path renderer/Cargo.toml
+SIMFORGE_SENSOR_CORPUS=<corpus-root> node qualification/golden-harness/golden.mjs record yale-frame0
+node qualification/golden-harness/golden.mjs verify all
 ```
 
 Record appends the superseded golden to `previousVersions` in the stored JSON
@@ -170,6 +172,7 @@ WSB4's `--rung`, `--profile`, `--weather`).
 `.github/workflows/native-golden.yml` targets `[self-hosted, Linux, X64,
 gpu-rtx5080]`; jobs are serialized (`concurrency: native-golden-gpu`) because
 the 5080 is shared. The runner itself may not be registered yet — until then
-the workflow queues indefinitely; run `tools/golden-harness/ci-local.sh`
-locally (identical steps; log committed under `tools/golden-harness/evidence/`).
+the workflow queues indefinitely; run `qualification/golden-harness/ci-local.sh`
+locally (identical steps; log committed under
+`qualification/golden-harness/evidence/`).
 Registration steps are documented at the top of the workflow file.

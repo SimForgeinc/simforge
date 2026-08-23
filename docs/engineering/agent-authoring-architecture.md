@@ -1,11 +1,15 @@
 # UniScenarios — agent-authoring architecture
+> **Historical architecture:** Pre-rebrand package, CLI, and application names
+> are retained verbatim below.
+
 
 **Date:** 2026-07-31 · **Status:** APPROVED (Michael, 2026-07-31) — clip length
 is parameterized (`clipSeconds`, default 20); actor/editor UX approved with a
 "Premiere Pro / Blender-grade" interaction bar; full build ordered.
-**Inputs:** `docs/research/location-catalog.md`, `docs/research/retargeting.md`,
-`docs/research/interactions-and-edge-cases.md` (read those for full detail;
-this doc is the synthesis and the build contract).
+**Inputs:** [`../research/location-catalog.md`](../research/location-catalog.md),
+[`../research/retargeting.md`](../research/retargeting.md), and
+[`../research/interactions-and-edge-cases.md`](../research/interactions-and-edge-cases.md)
+(read those for full detail; this doc is the synthesis and build contract).
 
 ## 0. What this enables, in one paragraph
 

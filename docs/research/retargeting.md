@@ -1,4 +1,7 @@
 # Research: retargetable scenarios (logical anchors + site matching)
+> **Historical research record:** Pre-consolidation package names are retained
+> verbatim below.
+
 
 Condensed from the 2026-07-31 first-principles + prior-art investigation
 (Scenic, OpenSCENARIO 1.x/2.x, PEGASUS, RoadRunner Scenario, CommonRoad).
