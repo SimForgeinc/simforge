@@ -25,41 +25,61 @@ No new proper nouns.
 
 ```
 simforge/
-├── packages/              # the published TypeScript stack (@simforge/*)
-│   ├── engine/            # was sim-engine        → @simforge/engine
-│   ├── scenario/          # was scenario-model    → @simforge/scenario
-│   ├── editor-core/       #                        → @simforge/editor-core
-│   ├── web-renderer/      # was city-renderer     → @simforge/web-renderer
-│   ├── browser-renderer/  #                        → @simforge/browser-renderer
-│   ├── playback/ openscenario/ prop-catalog/ ambient-traffic/
-│   ├── camera-rig/ xodr-tools/ map-intel/ anchor-matcher/
-│   ├── scenario-materializer/ scene-state/ trace-comparator/
-│   ├── render-runtime/ native-renderer/ esmini-runner/
-│   ├── training-env/      # was rl-env            → @simforge/training-env
-│   ├── evaluation/        # was policy-eval+examiner merged namespace: keep
-│   │                      #   policy-eval → @simforge/policy-eval,
-│   │                      #   examiner   → @simforge/examiner (phase 2 merge optional)
-│   ├── editor-ui/         # legacy shared UI — deleted with apps/studio (see §5)
-│   └── cli/               # → @simforge/cli, binary `simforge` (alias `sf`)
-├── renderer/              # was native/ — SimForge Renderer (Rust workspace)
-├── studio/                # was apps/cloud — SimForge Studio (Next.js product)
+├── packages/               # the published TypeScript stack (@simforge/*)
+│   ├── engine/             # was sim-engine           → @simforge/engine
+│   ├── scenario/           # was scenario-model       → @simforge/scenario
+│   ├── editor/             # was editor-core          → @simforge/editor
+│   ├── viewer/             # was city-renderer        → @simforge/viewer
+│   │                       #   (interactive 3D world viewport, three.js)
+│   ├── web-renderer/       # was browser-renderer     → @simforge/web-renderer
+│   │                       #   (offline web capture/recording pipeline)
+│   ├── native-renderer/    # TS contract for the Rust renderer (unchanged name)
+│   ├── render-runtime/     # render job contract/runtime (unchanged name)
+│   ├── playback/           # unchanged                → @simforge/playback
+│   ├── scene-state/        # unchanged                → @simforge/scene-state
+│   ├── openscenario/       # unchanged (standard's name)
+│   ├── opendrive/          # was xodr-tools           → @simforge/opendrive
+│   ├── maps/               # was map-intel            → @simforge/maps
+│   ├── retargeting/        # was anchor-matcher       → @simforge/retargeting
+│   │                       #   (matches scenario anchors across maps)
+│   ├── materializer/       # was scenario-materializer → @simforge/materializer
+│   ├── asset-catalog/      # was prop-catalog         → @simforge/asset-catalog
+│   ├── traffic/            # was ambient-traffic      → @simforge/traffic
+│   ├── camera-rig/         # unchanged                → @simforge/camera-rig
+│   ├── training-env/       # was rl-env               → @simforge/training-env
+│   ├── evaluation/         # was policy-eval          → @simforge/evaluation
+│   ├── examiner/           # unchanged                → @simforge/examiner
+│   ├── trace-diff/         # was trace-comparator     → @simforge/trace-diff
+│   ├── esmini-runner/      # unchanged (external tool adapter)
+│   └── cli/                # → @simforge/cli, binary `simforge` (alias `sf`)
+├── renderer/               # was native/ — SimForge Renderer (Rust workspace)
+├── studio/                 # was apps/cloud — SimForge Studio (Next.js product)
 ├── adapters/
-│   ├── gym/               # was uniscenarios-gym — Python training adapter
-│   └── carla/             # CARLA compatibility layer (import carla facade)
-├── research/              # was tools/* research lanes + experiments/
+│   ├── gym/                # was uniscenarios-gym — Python training adapter
+│   └── carla/              # CARLA compatibility layer (import carla facade)
+├── research/               # was tools/* research lanes + experiments/
 │   ├── bridge-fidelity/ h3-reproduce/ vla-posttrain/ …
 │   └── (research is NOT product; nothing here ships in releases)
-├── qualification/         # frozen eval suites, golden maneuvers (unchanged)
+├── qualification/          # frozen eval suites, golden maneuvers (unchanged)
 ├── catalog/ campaigns/ fixtures/ dev-assets/ examples/ services/ config/
-├── scripts/               # repo tooling incl. verify-repository-naming
+├── scripts/                # repo tooling incl. verify-repository-naming
 └── docs/
-    ├── README.md          # ground-up rewrite: open-source CARLA competitor
-    ├── product/           # Studio/Cloud user-facing docs
-    ├── engineering/       # architecture, determinism claim, convergence,
-    │                      #   renderer plans, port plans (moved, not rewritten)
-    ├── research/          # research plans/verdicts (rl-hardening, teacher, …)
-    └── context/           # canonical context source (kept, updated)
+    ├── README.md           # ground-up rewrite: open-source CARLA competitor
+    ├── product/            # Studio/Cloud user-facing docs
+    ├── engineering/        # architecture, determinism claim, convergence,
+    │                       #   renderer plans, port plans (moved, not rewritten)
+    ├── research/           # research plans/verdicts (rl-hardening, teacher, …)
+    └── context/            # canonical context source (kept, updated)
 ```
+
+Naming rules applied to the sweep:
+- A package is named for WHAT IT IS, one or two plain words; implementation
+  tech never appears in the name (no "city", "browser", "xodr", "rl").
+- Industry-standard names stay (openscenario, opendrive, esmini, carla, gym).
+- "viewer" = interactive viewport; "renderer" = produces frames offline.
+  The Rust renderer owns the public name SimForge Renderer; the web capture
+  pipeline is the web-renderer; the editor viewport is the viewer.
+- `editor-ui` and the legacy Vite `apps/studio` are deleted, not renamed.
 
 Principles:
 - `apps/` disappears: Studio is THE app; promoting it to a top-level
@@ -74,11 +94,23 @@ Principles:
 | Current | New | Notes |
 |---|---|---|
 | npm scope `@uniscenarios/*` | `@simforge/*` | Phase 2 (release-coordinated, see §6) |
-| `@uniscenarios/sim-engine` | `@simforge/engine` | |
-| `@uniscenarios/scenario-model` | `@simforge/scenario` | exports keep `ScenarioTemplateV2` |
-| `@uniscenarios/city-renderer` | `@simforge/web-renderer` | |
-| `@uniscenarios/rl-env` | `@simforge/training-env` | "ML training environment" positioning |
-| `@uniscenarios/cloud` (apps/cloud) | `@simforge/studio` | product app |
+| `sim-engine` | `engine` | |
+| `scenario-model` | `scenario` | exports keep `ScenarioTemplateV2` |
+| `editor-core` | `editor` | |
+| `city-renderer` | `viewer` | interactive 3D viewport |
+| `browser-renderer` | `web-renderer` | offline web capture pipeline |
+| `xodr-tools` | `opendrive` | standard's name over jargon |
+| `map-intel` | `maps` | |
+| `anchor-matcher` | `retargeting` | named for its purpose |
+| `scenario-materializer` | `materializer` | |
+| `prop-catalog` | `asset-catalog` | |
+| `ambient-traffic` | `traffic` | |
+| `rl-env` | `training-env` | "ML training environment" positioning |
+| `policy-eval` | `evaluation` | |
+| `trace-comparator` | `trace-diff` | |
+| unchanged | `playback`, `scene-state`, `openscenario`, `camera-rig`, `examiner`, `esmini-runner`, `native-renderer`, `render-runtime`, `cli` | already descriptive |
+| `@uniscenarios/cloud` (apps/cloud) | `@simforge/studio` at `studio/` | product app |
+| adapters `uniscenarios-gym` | `adapters/gym` (`simforge-gym` on PyPI) | Python training adapter |
 | CLI `uniscenarios` / `scen` | `simforge` / `sf` | old names become erroring stubs pointing at the new binary for one release |
 | Repo dir `/home/path/UniScenarios` | `/home/path/simforge` | plus workspace name in package.json |
 | Env vars `UNISCENARIO_*` / `UNISCENARIOS_*` | `SIMFORGE_*` | accept old names with a deprecation warning for one release (Studio/worker boot) |
