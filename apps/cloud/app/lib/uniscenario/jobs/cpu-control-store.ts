@@ -1100,37 +1100,39 @@ export async function completeCpuJob(
   }
   const attempt = await activeCpuAttempt(jobId, input.attemptId, input.fenceToken);
   if (!attempt || attempt.job_family !== input.jobFamily) return null;
-  const rows = await queryRows<{
-    id: string;
-    artifact_kind: string;
-    storage_bucket: string;
-    storage_key: string;
-    sha256: string;
-    byte_length: number;
-  }>(
-    `SELECT a.id, a.artifact_kind, a.storage_bucket, a.storage_key, a.sha256, a.byte_length
-       FROM uniscenario.operational_job_artifact_links l
-       JOIN uniscenario.artifacts a ON a.id = l.artifact_id AND a.workspace_id = l.workspace_id
-      WHERE l.job_family = :job_family AND l.job_id = :job_id
-        AND l.attempt_id = :attempt_id
-        AND a.id = ANY(string_to_array(:artifact_ids, ','))`,
-    {
-      job_family: input.jobFamily,
-      job_id: jobId,
-      attempt_id: input.attemptId,
-      artifact_ids: input.artifacts.map((item) => item.id).join(","),
-    },
-  );
-  if (rows.length !== input.artifacts.length) throw new Error("cpu_job_artifact_closure_incomplete");
-  for (const row of rows) {
-    const declared = input.artifacts.find((item) => item.id === row.id);
-    if (!declared || row.artifact_kind !== declared.kind || row.sha256 !== declared.sha256 || Number(row.byte_length) !== declared.sizeBytes) {
-      throw new Error("cpu_job_artifact_metadata_mismatch");
-    }
-    const head = await headS3Object(row.storage_key, row.storage_bucket);
-    const checksum = head.checksumSha256 ? Buffer.from(head.checksumSha256, "base64").toString("hex") : null;
-    if (head.contentLength !== declared.sizeBytes || checksum !== declared.sha256) {
-      throw new Error("cpu_job_artifact_upload_mismatch");
+  if (input.jobFamily !== "openscenario_render") {
+    const rows = await queryRows<{
+      id: string;
+      artifact_kind: string;
+      storage_bucket: string;
+      storage_key: string;
+      sha256: string;
+      byte_length: number;
+    }>(
+      `SELECT a.id, a.artifact_kind, a.storage_bucket, a.storage_key, a.sha256, a.byte_length
+         FROM uniscenario.operational_job_artifact_links l
+         JOIN uniscenario.artifacts a ON a.id = l.artifact_id AND a.workspace_id = l.workspace_id
+        WHERE l.job_family = :job_family AND l.job_id = :job_id
+          AND l.attempt_id = :attempt_id
+          AND a.id = ANY(string_to_array(:artifact_ids, ','))`,
+      {
+        job_family: input.jobFamily,
+        job_id: jobId,
+        attempt_id: input.attemptId,
+        artifact_ids: input.artifacts.map((item) => item.id).join(","),
+      },
+    );
+    if (rows.length !== input.artifacts.length) throw new Error("cpu_job_artifact_closure_incomplete");
+    for (const row of rows) {
+      const declared = input.artifacts.find((item) => item.id === row.id);
+      if (!declared || row.artifact_kind !== declared.kind || row.sha256 !== declared.sha256 || Number(row.byte_length) !== declared.sizeBytes) {
+        throw new Error("cpu_job_artifact_metadata_mismatch");
+      }
+      const head = await headS3Object(row.storage_key, row.storage_bucket);
+      const checksum = head.checksumSha256 ? Buffer.from(head.checksumSha256, "base64").toString("hex") : null;
+      if (head.contentLength !== declared.sizeBytes || checksum !== declared.sha256) {
+        throw new Error("cpu_job_artifact_upload_mismatch");
+      }
     }
   }
   const result = await withUniScenarioJobTransaction(jobId, async (tx) => {
