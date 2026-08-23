@@ -94,7 +94,7 @@ score. Boxes compared in resolution-normalized coords.
 | E2 | **fl2va first+last keyframes** of source clip + user prompt, 20 steps, 416p | **0.375** | **0.750** | **0.620** |
 | A7 | **website-replica**: video-only reference + exact user prompt, 50 steps, 15 s, 768p | **0.114** | **0.841** | **0.810** |
 | E3-H3 | candidate `905f752e…` supplied for restyled-keyframe scoring (see identity finding below), 8 s, 416p | **0.149** | **0.813** | **0.682** |
-| E3-Wan | Wan 2.2 I2V, graded first keyframe, 8 s | **0.115** | **0.713** | **0.502** |
+| E3-Wan **[RETIRED — Wan removed from project 2026-08-23]** | Wan 2.2 I2V, graded first keyframe, 8 s | **0.115** | **0.713** | **0.502** |
 
 Matrix arms A1–A6, D1, and E1–E2 used the first 8 s of the richmond-20s
 chase render (1280×720@24), `target {short_edge 416→or 768, aspect 16:9,
@@ -123,18 +123,23 @@ That is positive ingestion evidence: poor binding is model/path behavior, not
 a silently omitted video reference.
 
 ### E3 — restyled-keyframe transfer
+**E3-Wan: [RETIRED — Wan removed from project 2026-08-23].** Its scores
+below are retained solely as an accurate historical experiment record; it is
+not an operative model or recommendation.
+
 
 | arm | aligned frames | vehicle recall | binding IoU | hallucination | output/source luma | vs graded-keyframe target |
 |---|---:|---:|---:|---:|---:|---|
 | H3 candidate `905f752e…` | 96 stride-2 / 192 decoded | 0.149 | 0.813 | 0.682 | **0.277** | 33% darker than 0.41–0.42 |
-| Wan 2.2 (production teacher) | 97 stride-2 / 193 decoded | 0.115 | 0.713 | 0.502 | **0.335** | 18% darker than 0.41–0.42 |
+| Wan 2.2 historical arm **[RETIRED — removed 2026-08-23]** | 97 stride-2 / 193 decoded | 0.115 | 0.713 | 0.502 | **0.335** | 18% darker than 0.41–0.42 |
 
 Luminance is mean 8-bit grayscale over decoded output frames divided by the
 mean of the index-aligned source frames from t=0. Both outputs transfer a
 strong night look, but overshoot the graded endpoints' 0.41–0.42
-midnight-depth target. Wan visibly retains the chase-car viewpoint and road
-axis, but detector recall is poor and extra motorcycles/pedestrians appear;
-it is **DEGRADED**, not a production-ready structure-preserving teacher.
+midnight-depth target. The retired Wan arm visibly retained the chase-car
+viewpoint and road axis, but detector recall was poor and extra
+motorcycles/pedestrians appeared; its historical verdict was **DEGRADED**, not
+a production-ready structure-preserving teacher.
 
 The H3 inventory also closes an important provenance problem: candidate
 `87d3b9e3…` is byte-identical to prior A4

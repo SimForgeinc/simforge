@@ -1,6 +1,6 @@
 # W0 Kill-Test Inputs
 
-Rendered clip set for the Phase-5W W0 H3/Wan translation kill test: 10
+Rendered clip set for the Phase-5W W0 H3 translation kill test: 10
 driving-scene clips (5 s @ 12 fps, 736x416 = H3's true 0.3 MP) with per-frame
 engine ground truth, staged for transfer to `simforge1:~/w0-data/`.
 

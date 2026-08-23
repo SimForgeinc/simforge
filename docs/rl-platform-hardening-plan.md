@@ -86,9 +86,9 @@ committing.
    (2412.07772) upgraded to frame-wise 1–2-step (Causal Forcing++ 2605.15141)
    for the interactive loop; DOLLAR/AnyFlow (2412.15689, 2605.13724) as
    fallbacks. Target ≤35 ms/frame @480p, ≤10 GB.
-4. **License resolution (blocking for H3):** obtain and read the MiniMax H3
-   Community License distillation/derivative-training clauses. If restricted,
-   Wan 2.2 (Apache-2.0) becomes primary teacher; H3 demoted to eval reference.
+4. **Teacher decision (updated 2026-08-23):** H3 (MiniMax) is the only video
+   model for research tasks. The user explicitly waived the documented license
+   concern for that research scope; no alternate video-model path remains.
 5. Fold in the IsolationX factor-matrix verdict: if drift is inherent, item 1
    is the mitigation, not better prompts.
 

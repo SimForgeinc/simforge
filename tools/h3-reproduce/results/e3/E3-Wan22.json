@@ -1,4 +1,5 @@
 {
+  "historical_record": "[RETIRED — Wan removed from project 2026-08-23]; scores retained for accuracy",
   "label": "E3-Wan22-restyled-first-frame",
   "instrument": {
     "name": "yolo11s",
@@ -16,6 +17,7 @@
   },
   "output": {
     "path": "tools/h3-reproduce/results/e3/media/E3-Wan22.mp4",
+    "artifact_status": "[RETIRED — media removed from project 2026-08-23]; historical path retained",
     "width": 832,
     "height": 480,
     "nb_frames": "193",
