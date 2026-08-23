@@ -15,13 +15,13 @@ import {
   validateTemplate,
   type Interaction,
   type ScenarioTemplateV2,
-} from '@uniscenarios/scenario-model';
+} from '@simforge/scenario';
 
 import { adaptTemplate } from '../adapt.js';
 import { INCIDENT_TAXONOMY } from '../catalog-taxonomy.js';
-import { REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { REPO_ROOT } from '@simforge/compiler';
 import { resolveParams } from '../params.js';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { readTemplate } from '@simforge/compiler';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'remaining');
 const CASES = [

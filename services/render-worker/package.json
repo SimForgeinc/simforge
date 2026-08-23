@@ -1,5 +1,5 @@
 {
-  "name": "@uniscenarios/render-worker",
+  "name": "@simforge/render-worker",
   "version": "0.1.0-rc.45",
   "repository": {
     "type": "git",
@@ -28,8 +28,8 @@
     "bin"
   ],
   "dependencies": {
-    "@uniscenarios/render-runtime": "workspace:*",
-    "@uniscenarios/scenario-model": "workspace:*",
+    "@simforge/render": "workspace:*",
+    "@simforge/scenario": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

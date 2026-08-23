@@ -16,11 +16,11 @@ import {
   intentRubricSchema,
   type EvaluateFilters,
   type IntentEvaluation,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readTraceFile, writeJsonFile } from '@uniscenarios/scenario-materializer';
+import { readTraceFile, writeJsonFile } from '@simforge/compiler';
 import { metricsSummary } from './simulate.js';
 
 export type EvaluateFilterMode = 'critical' | 'negative-control' | 'all';

@@ -16,7 +16,7 @@ import path from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { DEV_ASSETS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'uniscenarios.js');
 const FIXTURE = path.join(REPO_ROOT, 'packages', 'openscenario', 'conformance', 'actor-despawn.xosc');

@@ -37,9 +37,9 @@ const platformArg = option('--platform-root') ?? process.env.SIMCLOUD_PLATFORM_R
 if (!platformArg) throw new Error('Usage: compare-engine-behavior.ts --platform-root <path> [--out <file>] [--require-parity]');
 const platformRoot = path.resolve(platformArg);
 
-const upstream = await import(pathToFileURL(path.join(repoRoot, 'packages/sim-engine/src/index.ts')).href);
+const upstream = await import(pathToFileURL(path.join(repoRoot, 'packages/engine/src/index.ts')).href);
 const product = await import(pathToFileURL(path.join(platformRoot, 'packages/uniscenario-sim-engine/src/index.ts')).href);
-const topologyFixture = await import(pathToFileURL(path.join(repoRoot, 'packages/sim-engine/src/__tests__/fixtures/synthetic-map.ts')).href);
+const topologyFixture = await import(pathToFileURL(path.join(repoRoot, 'packages/engine/src/__tests__/fixtures/synthetic-map.ts')).href);
 const topology = topologyFixture.syntheticTopology();
 
 const fixtures = [

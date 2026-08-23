@@ -1,12 +1,12 @@
 /**
- * `@uniscenarios/cli` — layer 4 of `docs/agent-authoring-architecture.md`.
+ * `@simforge/cli` — layer 4 of `docs/agent-authoring-architecture.md`.
  *
  * The `uniscenarios` binary is the product; this module is its library face, so the
  * editor, the workflows in layer 5 and the tests can call the same code paths
  * without shelling out.
  *
  * ```ts
- * import { loadMap, matchOnMap, materialize } from '@uniscenarios/cli';
+ * import { loadMap, matchOnMap, materialize } from '@simforge/cli';
  *
  * const bundle = await loadMap('yale-street');
  * const { report } = await matchOnMap(template, 'yale-street');
@@ -39,7 +39,7 @@ export {
   resolveMapSelection,
   type MapArtifactPresence,
   type MapBundle,
-} from '@uniscenarios/scenario-materializer';
+} from '@simforge/compiler';
 
 export {
   buildSiteSignalPlan,
@@ -52,7 +52,7 @@ export {
   type MapSignalJunction,
   type SiteSignalPlan,
 } from './map-signals.js';
-export { loadMapSignalCatalog } from '@uniscenarios/scenario-materializer';
+export { loadMapSignalCatalog } from '@simforge/compiler';
 
 export {
   CLAUSE_UNMATCHABLE,
@@ -88,7 +88,7 @@ export {
   type ReplayKey,
 } from './materialize.js';
 
-export { createMapContext } from '@uniscenarios/scenario-materializer';
+export { createMapContext } from '@simforge/compiler';
 
 export {
   assertMatchableAnchor,
@@ -97,7 +97,7 @@ export {
   matchOnMaps,
   siteSummary,
   type SiteMatch,
-} from '@uniscenarios/scenario-materializer';
+} from '@simforge/compiler';
 
 export {
   checkInvariants,
@@ -121,7 +121,7 @@ export {
   writeJsonFile,
   writeTraceFile,
   type InstanceFile,
-} from '@uniscenarios/scenario-materializer';
+} from '@simforge/compiler';
 
 export { PROP_DIMS, propDims, type PropDims } from './prop-dims.js';
 
@@ -165,4 +165,4 @@ export {
   type BuiltinRenderEngineId,
   type RenderEngineAdapter,
   type RenderExecutionContext,
-} from '@uniscenarios/render-runtime';
+} from '@simforge/render';

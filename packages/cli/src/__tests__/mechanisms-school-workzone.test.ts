@@ -12,24 +12,24 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
+import { evaluateTrace, runSimulation } from '@simforge/engine';
 import {
   checkSetValue,
   lookupSetKey,
   validateTemplate,
   type Interaction,
   type ScenarioTemplateV2,
-} from '@uniscenarios/scenario-model';
+} from '@simforge/scenario';
 
 import { adaptTemplate } from '../adapt.js';
 import { matcherSiteClosesLocation } from '../catalog.js';
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '@simforge/compiler';
 import { mapSetKey, materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { findSite, matchOnMap } from '@uniscenarios/scenario-materializer';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { findSite, matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'school-workzone');
 

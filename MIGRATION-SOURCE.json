@@ -14,10 +14,10 @@
       " M docs/agent-authoring-architecture.md",
       " M examples/bus-stop-emergence.template.json",
       " M package.json",
-      " M packages/anchor-matcher/src/__tests__/matcher.test.ts",
-      " M packages/anchor-matcher/src/clauses.ts",
-      " M packages/anchor-matcher/src/normalize.ts",
-      " M packages/anchor-matcher/src/types/map-index.ts",
+      " M packages/compiler/src/__tests__/matcher.test.ts",
+      " M packages/compiler/src/clauses.ts",
+      " M packages/compiler/src/normalize.ts",
+      " M packages/compiler/src/types/map-index.ts",
       " M packages/cli/README.md",
       " M packages/cli/src/__tests__/cli-smoke.test.ts",
       " M packages/cli/src/__tests__/materialize.test.ts",
@@ -29,25 +29,25 @@
       " M packages/cli/src/index.ts",
       " M packages/cli/src/main.ts",
       " M packages/cli/src/materialize.ts",
-      " M packages/map-intel/src/__tests__/query.test.ts",
-      " M packages/map-intel/src/query/find.ts",
-      " M packages/scenario-model/schema/scenario-template.v2.schema.json",
-      " M packages/scenario-model/src/__tests__/v2-schema.test.ts",
-      " M packages/scenario-model/src/schema/v2/props.ts",
-      " M packages/scenario-model/src/schema/v2/roles.ts",
-      " M packages/sim-engine/src/__tests__/arrival.test.ts",
-      " M packages/sim-engine/src/__tests__/triggers.test.ts",
-      " M packages/sim-engine/src/index.ts",
-      " M packages/sim-engine/src/schema/input.ts",
-      " M packages/sim-engine/src/sim/controllers.ts",
-      " M packages/sim-engine/src/sim/engine.ts",
-      " M packages/sim-engine/src/sim/signals.ts",
-      " M packages/sim-engine/src/sim/state.ts",
-      " M packages/sim-engine/src/sim/visibility.ts",
-      " M packages/sim-engine/src/solve/arrival.ts",
-      " M packages/sim-engine/src/solve/guards.ts",
-      " M packages/sim-engine/src/trace/metrics.ts",
-      " M packages/sim-engine/src/trace/trace.ts",
+      " M packages/maps/src/__tests__/query.test.ts",
+      " M packages/maps/src/query/find.ts",
+      " M packages/scenario/schema/scenario-template.v2.schema.json",
+      " M packages/scenario/src/__tests__/v2-schema.test.ts",
+      " M packages/scenario/src/schema/v2/props.ts",
+      " M packages/scenario/src/schema/v2/roles.ts",
+      " M packages/engine/src/__tests__/arrival.test.ts",
+      " M packages/engine/src/__tests__/triggers.test.ts",
+      " M packages/engine/src/index.ts",
+      " M packages/engine/src/schema/input.ts",
+      " M packages/engine/src/sim/controllers.ts",
+      " M packages/engine/src/sim/engine.ts",
+      " M packages/engine/src/sim/signals.ts",
+      " M packages/engine/src/sim/state.ts",
+      " M packages/engine/src/sim/visibility.ts",
+      " M packages/engine/src/solve/arrival.ts",
+      " M packages/engine/src/solve/guards.ts",
+      " M packages/engine/src/trace/metrics.ts",
+      " M packages/engine/src/trace/trace.ts",
       " M pnpm-lock.yaml",
       " M scripts/verify-editor.mjs",
       "?? apps/studio/src/playback/PlaybackPanel.tsx",
@@ -294,14 +294,14 @@
       "?? artifacts/qa/uniscenarios-catalog-sample-20260801/verification.json",
       "?? docs/uniscenarios-execution-baseline.md",
       "?? docs/uniscenarios-repository-extraction.md",
-      "?? packages/anchor-matcher/src/__tests__/real-bus-stop.test.ts",
+      "?? packages/compiler/src/__tests__/real-bus-stop.test.ts",
       "?? packages/cli/src/__tests__/catalog.test.ts",
       "?? packages/cli/src/catalog.ts",
       "?? packages/cli/src/commands/catalog.ts",
       "?? packages/cli/src/commands/evidence.ts",
       "?? packages/cli/src/evidence.ts",
-      "?? packages/sim-engine/src/__tests__/occlusion-metrics.test.ts",
-      "?? packages/sim-engine/src/__tests__/static-actors.test.ts",
+      "?? packages/engine/src/__tests__/occlusion-metrics.test.ts",
+      "?? packages/engine/src/__tests__/static-actors.test.ts",
       "?? scripts/.ss-probe.mjs",
       "?? scripts/__tests__/export-render.test.mjs",
       "?? scripts/export-render-lib.mjs",
@@ -11125,307 +11125,307 @@
       "sha256": "c86481f641b21f7cb3506ba3d9c4186b3e3de774c998c0cfe5373e673d393101"
     },
     {
-      "path": "packages/anchor-matcher/package.json",
+      "path": "packages/compiler/package.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "6ebd23864e3c6bd0e53c4a612fb0fdb237f15413595c0e756cb361f2de1295b8"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/derive.test.ts",
+      "path": "packages/compiler/src/__tests__/derive.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "7110ab5c728c0a5a8d337fe46eec28185d275644baa2d6588f7569b41ba2bee9"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/determinism.test.ts",
+      "path": "packages/compiler/src/__tests__/determinism.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5adcfca738e2510fb1c63a605505ad809afbcf3a3e26098883fe0079102333a0"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/fixtures/anchors.ts",
+      "path": "packages/compiler/src/__tests__/fixtures/anchors.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "05f472201df8f00f9da984145869a06466bda94e403334cea6ab725777ffa0cb"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/fixtures/map-intel-derived.sample.json",
+      "path": "packages/compiler/src/__tests__/fixtures/map-intel-derived.sample.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "1d8d54a236541e368a36dab2df6b721300f402456126778b6b73cad2e9894847"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/fixtures/synthetic-map.ts",
+      "path": "packages/compiler/src/__tests__/fixtures/synthetic-map.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "3f7843464bace1f4fd321c5278284d74beda29c1e8b6db904d2aef0555133d60"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/frame-and-roles.test.ts",
+      "path": "packages/compiler/src/__tests__/frame-and-roles.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "3acf65bb222401f3b593161c95bba15e388a36eb3338b051a753fc950e72367e"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/matcher.test.ts",
+      "path": "packages/compiler/src/__tests__/matcher.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c4bbba60eb65bf336bfcc665601172bd6e8feff9190e73991e4aa4047f41fc3f"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/normalize.test.ts",
+      "path": "packages/compiler/src/__tests__/normalize.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c2bddf5ecd8d56c0fda4e0fb833e4cd90fe07ea7eb8ac4fa97bbd20d5475f7d4"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/real-bus-stop.test.ts",
+      "path": "packages/compiler/src/__tests__/real-bus-stop.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "59cba17f4f2b0e7c619b25d8bdeb417c28474d4bc6b9a25fb69f8172fc78ae6b"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/scoring.test.ts",
+      "path": "packages/compiler/src/__tests__/scoring.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b1d97c982fedde435ad7d6837f2bed689df30295c0bf7d0a3d4a318e528627c3"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/yale.test.ts",
+      "path": "packages/compiler/src/__tests__/yale.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bc7864d6e9e8701163923888ac9b65238a190a767b01cc66c8c45c25613cfab5"
     },
     {
-      "path": "packages/anchor-matcher/src/__tests__/yale.ts",
+      "path": "packages/compiler/src/__tests__/yale.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "200f4a0bc95d8608262484514fc6d349ad6e18c3fbd62267424d253960b89543"
     },
     {
-      "path": "packages/anchor-matcher/src/bind.ts",
+      "path": "packages/compiler/src/bind.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "faaead9d56c348c3d75d78728d83ebca9bd1cf3f397af7892d3c739866822909"
     },
     {
-      "path": "packages/anchor-matcher/src/clauses.ts",
+      "path": "packages/compiler/src/clauses.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "4fbe141393503df90e67375572c96546126ae3e29bb23b7c8b227f491450799e"
     },
     {
-      "path": "packages/anchor-matcher/src/cross-section.ts",
+      "path": "packages/compiler/src/cross-section.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "8617a3469c2716d58e6a2b850071c78470969beb9cb9290f9be133c8419ad9c4"
     },
     {
-      "path": "packages/anchor-matcher/src/degradation.ts",
+      "path": "packages/compiler/src/degradation.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5f16a97525554951be15901742b795eada43362ad86127241064128d231d4ded"
     },
     {
-      "path": "packages/anchor-matcher/src/derive.ts",
+      "path": "packages/compiler/src/derive.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "aa302d7ac4371f6d149b4279999e0ac3e9db03f29c19a48fe24954391588d2b9"
     },
     {
-      "path": "packages/anchor-matcher/src/frame.ts",
+      "path": "packages/compiler/src/frame.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "8e6dd193cd166a5d37b7a13739e380ed7788e1017c865be69c59f32cb2442a92"
     },
     {
-      "path": "packages/anchor-matcher/src/geometry.ts",
+      "path": "packages/compiler/src/geometry.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "59d3b5b0638d9fc1f3013471e549b847195ffa28f8a9b3b061406d68af5efc66"
     },
     {
-      "path": "packages/anchor-matcher/src/index.ts",
+      "path": "packages/compiler/src/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "cd7eb325d1d83c83efd344d32389b5a5cc2321adb03d4469ee257467dcd4ff73"
     },
     {
-      "path": "packages/anchor-matcher/src/matcher.ts",
+      "path": "packages/compiler/src/matcher.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "6ed1093975cfe679d02417a2dcd5d02e73a4dfe4275e825592b498eb81ff92bd"
     },
     {
-      "path": "packages/anchor-matcher/src/mirror.ts",
+      "path": "packages/compiler/src/mirror.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "fdc21ee7e0ee8226f5551431b44ccf647e73cb83b1a025f832f3c9689c52f833"
     },
     {
-      "path": "packages/anchor-matcher/src/normalize.ts",
+      "path": "packages/compiler/src/normalize.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "59347773fd685a67ec44eb3af730fc14590139be2bc02f397a4565f7c63b9183"
     },
     {
-      "path": "packages/anchor-matcher/src/scoring.ts",
+      "path": "packages/compiler/src/scoring.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bbed70e373e6b9e5cd15bad4fd07da87d7e975852a21140faab949015e479344"
     },
     {
-      "path": "packages/anchor-matcher/src/sha256.ts",
+      "path": "packages/compiler/src/sha256.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c51988b496cb67f4caa912b0ee84a528880b73cb8ec8a383c0b0b51c98e5b0c7"
     },
     {
-      "path": "packages/anchor-matcher/src/site-id.ts",
+      "path": "packages/compiler/src/site-id.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "2081260f27b960f320e76bc0fe000a48483c7ec0184688d9166cfdf34a5d6686"
     },
     {
-      "path": "packages/anchor-matcher/src/types/anchor.ts",
+      "path": "packages/compiler/src/types/anchor.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "f95859c491ecd75f317c4342ad9840a91d7731f490ea1b8a79ecefa4928be92e"
     },
     {
-      "path": "packages/anchor-matcher/src/types/map-index.ts",
+      "path": "packages/compiler/src/types/map-index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0d8d79ec9cb301f627bcf875e4f0e2731b894ea636880859ce571e7f9e5f4a7f"
     },
     {
-      "path": "packages/anchor-matcher/src/types/roles.ts",
+      "path": "packages/compiler/src/types/roles.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "94bad0f4ba96c62a76ea975731430171bd98b49852699627fa6bb46a812dccef"
     },
     {
-      "path": "packages/anchor-matcher/src/types/site.ts",
+      "path": "packages/compiler/src/types/site.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0cbf7896a6ed8691ecaa24bd8079c2cfc802fcc3b897ae9cff9154b277922225"
     },
     {
-      "path": "packages/anchor-matcher/src/version.ts",
+      "path": "packages/compiler/src/version.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "f6030ec7f530a51373bc225b7533eb5ee7ccd8cf7b80e78eebb9cdbc58400e02"
     },
     {
-      "path": "packages/anchor-matcher/tsconfig.json",
+      "path": "packages/compiler/tsconfig.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "8f6e85eeaa8025fe7b2f01763e03f32540d3e2869ae857490d685098460f4e3a"
     },
     {
-      "path": "packages/city-renderer/package.json",
+      "path": "packages/viewer/package.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "da02bc04e430cc8b36cedcdf2f33cab08f606119c31d9b79a2ff5b8fa3c7a539"
     },
     {
-      "path": "packages/city-renderer/src/camera-controls.ts",
+      "path": "packages/viewer/src/camera-controls.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0824d957d1084901c91785512ba82a2f9ae0bf1d92cb5c515493c1a56d3bd4e7"
     },
     {
-      "path": "packages/city-renderer/src/environment.ts",
+      "path": "packages/viewer/src/environment.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b3164ffce3942ecb82604c94c2e0e953bc05e9dbf8860dfdf9d300d12b564753"
     },
     {
-      "path": "packages/city-renderer/src/frame-stats.ts",
+      "path": "packages/viewer/src/frame-stats.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "47522546a3e705b993185a5e0f9a548bd6fbcab8c38cd2f2735553d25edf5ebf"
     },
     {
-      "path": "packages/city-renderer/src/gltf.ts",
+      "path": "packages/viewer/src/gltf.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "1ab201dd4f12737daf56b5d9d61f1f9ad4f8f4011515d597d261961cd48f10f0"
     },
     {
-      "path": "packages/city-renderer/src/ground-index.test.ts",
+      "path": "packages/viewer/src/ground-index.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "07d41073072ab215baece94151c7aa98ac2f40033fc4b246e3a5903a13eb6bd2"
     },
     {
-      "path": "packages/city-renderer/src/ground-index.ts",
+      "path": "packages/viewer/src/ground-index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c68d81b8e2594579ba34c91a14eb4cec96162beca3394d01607c7efeba3a4f19"
     },
     {
-      "path": "packages/city-renderer/src/index.ts",
+      "path": "packages/viewer/src/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0aa68a7243e22b7686e8a42e8433112ebe74e4130aace6b8452f7193689f6a74"
     },
     {
-      "path": "packages/city-renderer/src/manifest.test.ts",
+      "path": "packages/viewer/src/manifest.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ea4d4043d451b5cb1361661d441336a6f824075c986e5984c887ee7f74641041"
     },
     {
-      "path": "packages/city-renderer/src/manifest.ts",
+      "path": "packages/viewer/src/manifest.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "1d595e5d5d59adfb76e43537c4be03ed936d33d5886e39835c454d1ab220d393"
     },
     {
-      "path": "packages/city-renderer/src/materials.ts",
+      "path": "packages/viewer/src/materials.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "cfe40a3f9f219437af79e2a6a7cabfd3644c087396623d33d760c024b8d1497e"
     },
     {
-      "path": "packages/city-renderer/src/react.tsx",
+      "path": "packages/viewer/src/react.tsx",
       "kind": "file",
       "mode": "0644",
       "sha256": "9fb6d601c1fb764932aa9df6b5448d8940e8c09f887831380c1faae5d32aaed8"
     },
     {
-      "path": "packages/city-renderer/src/shadow-atlas.ts",
+      "path": "packages/viewer/src/shadow-atlas.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c490de6d7c7cd9ac9e59b6fed6ba1e97469d382b4db39b92757ea2d646c3e097"
     },
     {
-      "path": "packages/city-renderer/src/streaming.ts",
+      "path": "packages/viewer/src/streaming.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a354f413bc095c11ac46b85ea9d6a5601632689ed850c611d20153b36f9d3348"
     },
     {
-      "path": "packages/city-renderer/src/types.ts",
+      "path": "packages/viewer/src/types.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "47e7c9a711f8f5ef8c2fc5b4d7a6d97e620584ada5bcb39c08f2c32f005a3be5"
     },
     {
-      "path": "packages/city-renderer/src/vegetation.ts",
+      "path": "packages/viewer/src/vegetation.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b99f9411b7edea2810c7dc7d44785298150b2c44ebe3ee13988fac398b0d9ba9"
     },
     {
-      "path": "packages/city-renderer/src/viewer.ts",
+      "path": "packages/viewer/src/viewer.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5d5f4c88933118f63b1ae2dfd1d88af26950818d08316f392a8156381c2805d6"
     },
     {
-      "path": "packages/city-renderer/tsconfig.json",
+      "path": "packages/viewer/tsconfig.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "13d485112db149621599c426fcef06bb9293168a8d0be6799d9ac1e1ba113617"
@@ -11677,1189 +11677,1189 @@
       "sha256": "55eef7ce4d8d3abab59922bca1ef81bc84a1249b29db61119d60cee707c2b577"
     },
     {
-      "path": "packages/map-intel/README.md",
+      "path": "packages/maps/README.md",
       "kind": "file",
       "mode": "0644",
       "sha256": "dcc1133f0855816066a640c682b683e6756f9ebd4072fb3ca07a5a92194e8c39"
     },
     {
-      "path": "packages/map-intel/package.json",
+      "path": "packages/maps/package.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "f1d3475b48b7b2692a75807e53f155e7711013da7b936d306944824ec390dff5"
     },
     {
-      "path": "packages/map-intel/scripts/extract-fixture.ts",
+      "path": "packages/maps/scripts/extract-fixture.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "66324b8fbb33e0940c0b5590109732af2b80d83a2ac45fa1bc5c95388f07a074"
     },
     {
-      "path": "packages/map-intel/src/__tests__/anchor-lift.test.ts",
+      "path": "packages/maps/src/__tests__/anchor-lift.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "6b68439f3434fea9e10aa49ad79f0ea2000d892f7a05c4902213685cd2911e16"
     },
     {
-      "path": "packages/map-intel/src/__tests__/conflict-pairs.test.ts",
+      "path": "packages/maps/src/__tests__/conflict-pairs.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "983417d533acb8e4fb14406b3e15d88403df3069f466ff9b38af6d537835aa1e"
     },
     {
-      "path": "packages/map-intel/src/__tests__/conventions.test.ts",
+      "path": "packages/maps/src/__tests__/conventions.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "6edd5b7c014b67eec36c2108cdaee195c49747ea60b0efce1cd94569c89c8c7b"
     },
     {
-      "path": "packages/map-intel/src/__tests__/facts.test.ts",
+      "path": "packages/maps/src/__tests__/facts.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "76556e2a844fb46ba2d1ffb9466cb8add7ca1289b3be1dd584c0a52f676f6e5e"
     },
     {
-      "path": "packages/map-intel/src/__tests__/fixtures/mini-yale.json.gz",
+      "path": "packages/maps/src/__tests__/fixtures/mini-yale.json.gz",
       "kind": "file",
       "mode": "0644",
       "sha256": "70deca6de9b8e8429718587c9fd27b6dcca2b5139b72b17382cb07f328a0b42a"
     },
     {
-      "path": "packages/map-intel/src/__tests__/geometry.test.ts",
+      "path": "packages/maps/src/__tests__/geometry.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "82615a63c2e297dac268980bd354f2c00170901953bb2e471c6d40cdbfe185f9"
     },
     {
-      "path": "packages/map-intel/src/__tests__/handles.test.ts",
+      "path": "packages/maps/src/__tests__/handles.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "24fd5ffc713e4208389d22b280ad07169155c0a9d85534d269f027f9bdd5f3dd"
     },
     {
-      "path": "packages/map-intel/src/__tests__/helpers.ts",
+      "path": "packages/maps/src/__tests__/helpers.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c0dd091f09c4fcd52d33bfe0ee97f2907b83a5b0d117e949ff0d70c14facc508"
     },
     {
-      "path": "packages/map-intel/src/__tests__/id-stability.test.ts",
+      "path": "packages/maps/src/__tests__/id-stability.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "9e1de568c3eb7c3c0e4e4ac46737c4af5e021e507e412f0882586d3e21caef35"
     },
     {
-      "path": "packages/map-intel/src/__tests__/query.test.ts",
+      "path": "packages/maps/src/__tests__/query.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "207398511f26e205e753e8e36ff1dde6fb2466bc4f0e3af73f955a5bd3c6e957"
     },
     {
-      "path": "packages/map-intel/src/__tests__/segments.test.ts",
+      "path": "packages/maps/src/__tests__/segments.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "35e6e43a05756a25747bd8eceebb1d6b021cdb94140815c3926da992e3308539"
     },
     {
-      "path": "packages/map-intel/src/build/adopt.ts",
+      "path": "packages/maps/src/build/adopt.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "19ca485081200ab84aa87c3dddb13db0c5eeb2c42bc12571a8c4c490ad1b28c4"
     },
     {
-      "path": "packages/map-intel/src/build/anchor-lift.ts",
+      "path": "packages/maps/src/build/anchor-lift.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "1418cc4b21dee6f6970f603db892ec581cd2c879451bdcb8897793cabe97c17c"
     },
     {
-      "path": "packages/map-intel/src/build/build.ts",
+      "path": "packages/maps/src/build/build.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5c99840337cc846602afc3e9e0580fdb68a0542bd7d9d60077792771991e7ab6"
     },
     {
-      "path": "packages/map-intel/src/build/compare.ts",
+      "path": "packages/maps/src/build/compare.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0f35eab6d4cadc4cd29f3f7ee18e59985a637f6119e5bb45868f3965fede562f"
     },
     {
-      "path": "packages/map-intel/src/build/context.ts",
+      "path": "packages/maps/src/build/context.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "e9fcb32c53f591db030c1cf65b6f3a4f87e9734d8439a670286bc69ff7967c7f"
     },
     {
-      "path": "packages/map-intel/src/build/densify/building-entrances.ts",
+      "path": "packages/maps/src/build/densify/building-entrances.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "43cd6af8fe31b7696770e883560eff77d1efc06b0279f4bbf4df30112c3b131b"
     },
     {
-      "path": "packages/map-intel/src/build/densify/junction-movements.ts",
+      "path": "packages/maps/src/build/densify/junction-movements.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b9f92683d2a3ddf6b58d1744d0265a263dbbfaaa24c7e2e0222497112ea9db13"
     },
     {
-      "path": "packages/map-intel/src/build/densify/midblock-segments.ts",
+      "path": "packages/maps/src/build/densify/midblock-segments.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "776d404b553f108a9a3b0a2976c3511c1a7c9832f297242cee944c193231da81"
     },
     {
-      "path": "packages/map-intel/src/build/densify/parking-spaces.ts",
+      "path": "packages/maps/src/build/densify/parking-spaces.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "267739cd10fa9f2ae8b55d3a25076a2103049658196b76661ebe1500eeb5de7c"
     },
     {
-      "path": "packages/map-intel/src/build/densify/school-zones.ts",
+      "path": "packages/maps/src/build/densify/school-zones.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c86c5a5dfdc0254fef221178e958b48a25f59d3891fb31b534ac9aaabee61a11"
     },
     {
-      "path": "packages/map-intel/src/build/densify/work-zones.ts",
+      "path": "packages/maps/src/build/densify/work-zones.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "65f0e6a5fd3548ca853fc9c8a662352b53ac2ecbd063613bd871e107b3380340"
     },
     {
-      "path": "packages/map-intel/src/build/draft.ts",
+      "path": "packages/maps/src/build/draft.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bb8ba385a1ebae4104c0bae4a9114856e0322bcec08d4f9a201d33e212ac98e2"
     },
     {
-      "path": "packages/map-intel/src/build/fact-index.ts",
+      "path": "packages/maps/src/build/fact-index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "30bb936a97e9d81d919abf0e36b6760a9057101dbdbe7efa736d36d3484e4aa5"
     },
     {
-      "path": "packages/map-intel/src/build/facts.ts",
+      "path": "packages/maps/src/build/facts.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "cc5500e25304bc416f9b5c2c3405d5e21efbdcdd79bc722fd05c7f3ce422517c"
     },
     {
-      "path": "packages/map-intel/src/build/handles.ts",
+      "path": "packages/maps/src/build/handles.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "f7559e7d7cb3756bdbb3a5516387686380aa966bb6f106ec8582b2d3e2cde497"
     },
     {
-      "path": "packages/map-intel/src/build/hash.ts",
+      "path": "packages/maps/src/build/hash.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5f39749f71e5e275d5c1153e684a68ddb042af09137a188f3a091263ff9d41a9"
     },
     {
-      "path": "packages/map-intel/src/build/junctions.ts",
+      "path": "packages/maps/src/build/junctions.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "67e386614c33df934d3c94698fafd10059e81a9447db86bcf8b4978c0edff30f"
     },
     {
-      "path": "packages/map-intel/src/build/relations.ts",
+      "path": "packages/maps/src/build/relations.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "60df4ea6751dd611b988f1b89145f1e7c61084699bfcf4e12dea3bb061defc35"
     },
     {
-      "path": "packages/map-intel/src/build/segments.ts",
+      "path": "packages/maps/src/build/segments.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "cd243c2615b4014c65b75cf8de70f1dbe6947b572e50ac70e44e7e30a9320117"
     },
     {
-      "path": "packages/map-intel/src/build/slug.ts",
+      "path": "packages/maps/src/build/slug.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "25dd974a602cdeccd6dbdb54399bc6bb4c7e4a60a2cba45cd030af7adce45048"
     },
     {
-      "path": "packages/map-intel/src/build/sources.ts",
+      "path": "packages/maps/src/build/sources.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "21eaff6318188816dd1e36204c13d67301f9e5f15821340225b1b33ab2cc7c8f"
     },
     {
-      "path": "packages/map-intel/src/cli/build-map.ts",
+      "path": "packages/maps/src/cli/build-map.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "05ac56c989809c3aabc32bb06f769f9ced9ca7a90f0937364b5e768f0e2bb5de"
     },
     {
-      "path": "packages/map-intel/src/geometry/elevation.ts",
+      "path": "packages/maps/src/geometry/elevation.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b6c4d8514b7d711ae7bdf51544ee4d6652978e121351e6d06ae7fde4470d6a0f"
     },
     {
-      "path": "packages/map-intel/src/geometry/lane-graph.ts",
+      "path": "packages/maps/src/geometry/lane-graph.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "38032a12e512ed066425b9fbf06f85d5f7ddfcf0088d032bb8e1612c7d3a2c43"
     },
     {
-      "path": "packages/map-intel/src/geometry/vec.ts",
+      "path": "packages/maps/src/geometry/vec.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "65de2e6b6f3a47c0aa0a0c33f05cd7f6a5d5444492fdf1208589b68e86453216"
     },
     {
-      "path": "packages/map-intel/src/index.ts",
+      "path": "packages/maps/src/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "fdae21e6f5a7f5b4ed327eee8036c7d8d29a5676ef63cfe10b470f81ef59ab79"
     },
     {
-      "path": "packages/map-intel/src/query/describe.ts",
+      "path": "packages/maps/src/query/describe.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a65d32ca6a80bbc3088c4bd069676df421cf60cb5aa9180dfed1a95754bf0396"
     },
     {
-      "path": "packages/map-intel/src/query/find.ts",
+      "path": "packages/maps/src/query/find.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "fd9ed2f88fa511bca1ab95490c3c0b5cfb2b647d46d6d8fd84f5824f1b2cfa41"
     },
     {
-      "path": "packages/map-intel/src/query/resolve.ts",
+      "path": "packages/maps/src/query/resolve.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "38cb8329e8dfbf00fc141a5ccf6f3e4d65328054aa70360d9432c2dc30f79d2d"
     },
     {
-      "path": "packages/map-intel/src/query/types.ts",
+      "path": "packages/maps/src/query/types.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "63d4477fda8b4dfec279d3f8b16045719dfaa11852b51e145468e2d82669b118"
     },
     {
-      "path": "packages/map-intel/src/types/ids.ts",
+      "path": "packages/maps/src/types/ids.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "07c6da3c5d4873d9a77a338971c5e0f3ff0910dee3760e06414c7e1527715e33"
     },
     {
-      "path": "packages/map-intel/src/types/location.ts",
+      "path": "packages/maps/src/types/location.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "cfe1017a2823523d64c7dfc5fb5750857acfbabb002691d652b8b50851889a69"
     },
     {
-      "path": "packages/map-intel/src/types/sources.ts",
+      "path": "packages/maps/src/types/sources.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "04f8a26f00985103767c28b43f72419a58f9cd5367b844098601c8e9c24e2e7c"
     },
     {
-      "path": "packages/map-intel/src/types/topology.ts",
+      "path": "packages/maps/src/types/topology.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "323665cbb6227010ffd10528074088aa5d455a6ffa330b8c06827ec3eed9ebfb"
     },
     {
-      "path": "packages/map-intel/tsconfig.json",
+      "path": "packages/maps/tsconfig.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "6f57755bb4b70ddfc76a4d3e8d87e17e4730e9d1aa68efeaca01b33faf5be71c"
     },
     {
-      "path": "packages/prop-catalog/.gitignore",
+      "path": "packages/asset-catalog/.gitignore",
       "kind": "file",
       "mode": "0644",
       "sha256": "0ffd8de9ad24a2c1ee7f27fa375021fa67a67b86158ab7d89e1c4fd34c2b0742"
     },
     {
-      "path": "packages/prop-catalog/catalog.json",
+      "path": "packages/asset-catalog/catalog.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "6e25810ee8d6bb06161d9b6eb816e8df8b9438b6cc4b41005c751c3a3971e0f9"
     },
     {
-      "path": "packages/prop-catalog/contact-sheet/index.html",
+      "path": "packages/asset-catalog/contact-sheet/index.html",
       "kind": "file",
       "mode": "0644",
       "sha256": "d40054205189b82f85459b35848f578ff5b5599e347d912130608702cdbc6c51"
     },
     {
-      "path": "packages/prop-catalog/contact-sheet/main.ts",
+      "path": "packages/asset-catalog/contact-sheet/main.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "e8d01da4d21cf22ba333376c425b4f19a0102f56b28182f6f878437faa8e418b"
     },
     {
-      "path": "packages/prop-catalog/contact-sheet/vite.config.ts",
+      "path": "packages/asset-catalog/contact-sheet/vite.config.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5b3a0cfcd7a7f437e02a5458e17c3fab296bcbdda9c4f4f437ad485a6a830e87"
     },
     {
-      "path": "packages/prop-catalog/package.json",
+      "path": "packages/asset-catalog/package.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "a365ef3e819e6e5294a7edced2f5666ef2ce76c3eccb98c81b601e4926a6e651"
     },
     {
-      "path": "packages/prop-catalog/scripts/generate-catalog.ts",
+      "path": "packages/asset-catalog/scripts/generate-catalog.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "770608d5ba9cc28026cf2649b38510f3d751f6f3e42a198790326cb6a2d85c8a"
     },
     {
-      "path": "packages/prop-catalog/scripts/measure-dims.ts",
+      "path": "packages/asset-catalog/scripts/measure-dims.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b79a48f0bc52ed372d37f499268e8d4bca66dcd897e01ba68fb5300aaca6c07a"
     },
     {
-      "path": "packages/prop-catalog/scripts/render-contact-sheet.mjs",
+      "path": "packages/asset-catalog/scripts/render-contact-sheet.mjs",
       "kind": "file",
       "mode": "0644",
       "sha256": "9dd1c3ba1330119b36bd08e4e05af26a9120403f452e38e1efefa3775c2f3b3b"
     },
     {
-      "path": "packages/prop-catalog/src/__tests__/builders.test.ts",
+      "path": "packages/asset-catalog/src/__tests__/builders.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "19978041ee13bef127c71edf7d3fa4b8ba72615c08dc0523fc189b5eb61fd61a"
     },
     {
-      "path": "packages/prop-catalog/src/__tests__/catalog.test.ts",
+      "path": "packages/asset-catalog/src/__tests__/catalog.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "fe62e0ffc6f7e23dbdc1b3ac64825c4e1f1a78e2e80ab7b238bc1d01d2a222ef"
     },
     {
-      "path": "packages/prop-catalog/src/__tests__/composites.test.ts",
+      "path": "packages/asset-catalog/src/__tests__/composites.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "427fe5f920010c25cea9d9827c0e7ef8b8a8d5ad3b2d3b8eb15a55efe65e52f0"
     },
     {
-      "path": "packages/prop-catalog/src/builders/construction.ts",
+      "path": "packages/asset-catalog/src/builders/construction.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b7e7b89c3eeef210bcb520abe564064fec918d1e7b0dff7d41813287caf79f01"
     },
     {
-      "path": "packages/prop-catalog/src/builders/hazards.ts",
+      "path": "packages/asset-catalog/src/builders/hazards.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b5512b5723df64dc159ae3407f609bbc713e24f43bd93c605e346e7e6d60e4fc"
     },
     {
-      "path": "packages/prop-catalog/src/builders/pedestrians.ts",
+      "path": "packages/asset-catalog/src/builders/pedestrians.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bd860914911db488f9666c2cc3a46adafd18e04194cec5e0bc3b2d41a0513f6f"
     },
     {
-      "path": "packages/prop-catalog/src/builders/street.ts",
+      "path": "packages/asset-catalog/src/builders/street.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a9677c9ebec9343406f37eea47de89d5d552fa55c360490c4775fdb6905512fa"
     },
     {
-      "path": "packages/prop-catalog/src/builders/vehicles.ts",
+      "path": "packages/asset-catalog/src/builders/vehicles.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "8d517cfc9487c48f87877e974505b52db94dc3ff32a735e9f12dbd4b9ec06354"
     },
     {
-      "path": "packages/prop-catalog/src/catalog.ts",
+      "path": "packages/asset-catalog/src/catalog.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "e385f41a242af8ccba166dc29943f2153e030bdc06e883dfed4ed06fa7f14b53"
     },
     {
-      "path": "packages/prop-catalog/src/composites.ts",
+      "path": "packages/asset-catalog/src/composites.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "2ee3923e3bfc9a1fcd1c39d9047c4b205ede4c29a7868be9cd89e6b8d2209f32"
     },
     {
-      "path": "packages/prop-catalog/src/geometry.ts",
+      "path": "packages/asset-catalog/src/geometry.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "41784e44b01bb4bf308afe18fab4dc7e0c2c2eeb40676476174da804bf1d0e34"
     },
     {
-      "path": "packages/prop-catalog/src/index.ts",
+      "path": "packages/asset-catalog/src/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "84f28258ad5eae677f88e8540a629d3048e49d976d0f0d3c7a951477c58f36ba"
     },
     {
-      "path": "packages/prop-catalog/src/materials.ts",
+      "path": "packages/asset-catalog/src/materials.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "508fd32d1e99909336adbacf0a19db474b229619bb366613ce18ce506489513a"
     },
     {
-      "path": "packages/prop-catalog/src/registry.ts",
+      "path": "packages/asset-catalog/src/registry.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "eaa28e97a33477e1a44ab4ba7bc7009215cbb187f5799c6b79db8a651e5f8346"
     },
     {
-      "path": "packages/prop-catalog/src/schema.ts",
+      "path": "packages/asset-catalog/src/schema.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "f1123a9d4967cd7ff578ace80802da4fe7d10fca1b6f50093c3183cc0f4bcca6"
     },
     {
-      "path": "packages/prop-catalog/src/types.ts",
+      "path": "packages/asset-catalog/src/types.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ed13bb226b29115e9dc9677e77b097fb93274d1a0b86a2408fc051809aa0076e"
     },
     {
-      "path": "packages/prop-catalog/tsconfig.json",
+      "path": "packages/asset-catalog/tsconfig.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "9343d7ecd770f826ad4907520b2cfe21327fd2f6033e44ea688fd6eefb054810"
     },
     {
-      "path": "packages/scenario-model/README.md",
+      "path": "packages/scenario/README.md",
       "kind": "file",
       "mode": "0644",
       "sha256": "3f1f7bcbd4f3d67303465a692443ba897cba871dade93e51146f51d7523522c5"
     },
     {
-      "path": "packages/scenario-model/package.json",
+      "path": "packages/scenario/package.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "3d30e76258eb2110effce5018c3eb179fc1eb48680cbb8a91619697339cbb140"
     },
     {
-      "path": "packages/scenario-model/schema/interactions.v2.schema.json",
+      "path": "packages/scenario/schema/interactions.v2.schema.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "32fd81c1e1f847c110cdc45744a3a118e492ffc88e7ec7a29f89c6a5e61e903e"
     },
     {
-      "path": "packages/scenario-model/schema/logical-anchor.v2.schema.json",
+      "path": "packages/scenario/schema/logical-anchor.v2.schema.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "498ca6cd00fdaa92864d0b17faaae585820feb4f548956b9865c402af43ade68"
     },
     {
-      "path": "packages/scenario-model/schema/scenario-template.v2.schema.json",
+      "path": "packages/scenario/schema/scenario-template.v2.schema.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "9b0ad8edc65f5dd93aec7e34e6b931a4a3666dd7fc1a068a90ac8b922550d554"
     },
     {
-      "path": "packages/scenario-model/schema/scenario.v1.schema.json",
+      "path": "packages/scenario/schema/scenario.v1.schema.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "55cc499558216d4e672936e49c7eaec842c885b2d4cbd61e1908fd99508871c5"
     },
     {
-      "path": "packages/scenario-model/scripts/generate-json-schema.ts",
+      "path": "packages/scenario/scripts/generate-json-schema.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5ae96ac9dc5ce1aab2f78cb8911ad1783f5ac94f2f4e6090507b3a8f879e20b4"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/document.test.ts",
+      "path": "packages/scenario/src/__tests__/document.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "1876c5f09004a6922ac697864c69f930e5be4f8a1f82cda241166c37916521b9"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/expr.test.ts",
+      "path": "packages/scenario/src/__tests__/expr.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b02b2aa1e841c275f5d7bfc7af70275f2e1e2a7b334eed0620458d6bb087a4e0"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/fixtures.ts",
+      "path": "packages/scenario/src/__tests__/fixtures.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "68863046d03bdb5e24d72e881d038b11843b255a6ab21517811582a87bd1e78c"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/frame-convention.test.ts",
+      "path": "packages/scenario/src/__tests__/frame-convention.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5ccc41282002c42b99c3655016402258c5098aa044fb523b229bac4399ad0571"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/history-property.test.ts",
+      "path": "packages/scenario/src/__tests__/history-property.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "d76252641c42523db30665054c4b1800d6b5dbf7a8477cde62c85292bf1aca98"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/json-schema.test.ts",
+      "path": "packages/scenario/src/__tests__/json-schema.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a74a71de1d183635354d96599b61d1057470659b39879909d41af84ca6c58a6a"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/migrate-v2.test.ts",
+      "path": "packages/scenario/src/__tests__/migrate-v2.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "66a345b69849e07f8793e68fec50cfe358a6a246a5c35911727473eb8e1530e9"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/migrate.test.ts",
+      "path": "packages/scenario/src/__tests__/migrate.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "fa23ee8eac53451dd554be2331985888f167585ad7fd50b083192cbc5266e295"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/schema.test.ts",
+      "path": "packages/scenario/src/__tests__/schema.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "7eb8d6d77144166a6450d897edf6838d916cca8eb7175ed7e5a558151fe10510"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/serialize.test.ts",
+      "path": "packages/scenario/src/__tests__/serialize.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "2e790bd8a12f632022e753727a9c84bb2c93a27ba3faff1ce90f22edd9380390"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/stores.test.ts",
+      "path": "packages/scenario/src/__tests__/stores.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "8a5b96e9db6d57587b2f64b6cbfe745486888108aada0a70b0a4f50f5c81cc4c"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/v2-fixtures.ts",
+      "path": "packages/scenario/src/__tests__/v2-fixtures.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "1711361689fbbbe787e5d3c3a050a636d0a8ced72762facbe25de076f80f7c07"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/v2-json-schema.test.ts",
+      "path": "packages/scenario/src/__tests__/v2-json-schema.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5dc46b985c972d3b15c938daa512c771e041497c44fd9343a051f0739e0a6422"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/v2-property.test.ts",
+      "path": "packages/scenario/src/__tests__/v2-property.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "469baa9d4680348efbe18238b954c2de6d5dae55f2af5250ad20782264de612b"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/v2-schema.test.ts",
+      "path": "packages/scenario/src/__tests__/v2-schema.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ed7aae0ae45970de457830fd0b96c8bb5bfad84c7bc28024bf700ca2ca4a68e9"
     },
     {
-      "path": "packages/scenario-model/src/__tests__/v2-validate.test.ts",
+      "path": "packages/scenario/src/__tests__/v2-validate.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "94f2ed83ce859d877c5b41a7204612bad8bd0edaf6609c7c645ce55e739d0ac5"
     },
     {
-      "path": "packages/scenario-model/src/document.ts",
+      "path": "packages/scenario/src/document.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "4d9b4164f91ba52b7659a83a5b1a2113a7a03aff9ba3596ee5644285e5519d1c"
     },
     {
-      "path": "packages/scenario-model/src/errors.ts",
+      "path": "packages/scenario/src/errors.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a5fe23aea46a6404bd6832a438f943b6ce178bce7a99ff2111a899ef7512e745"
     },
     {
-      "path": "packages/scenario-model/src/expr/ast.ts",
+      "path": "packages/scenario/src/expr/ast.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a846774cf080224587e8e82c105444dfc45c8ea7825dd43e285dc7038f8070d7"
     },
     {
-      "path": "packages/scenario-model/src/expr/evaluate.ts",
+      "path": "packages/scenario/src/expr/evaluate.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "66405e8bb09eb62f0e5f35504d6147e6630c3cdec0be08520fbffbc531270958"
     },
     {
-      "path": "packages/scenario-model/src/expr/index.ts",
+      "path": "packages/scenario/src/expr/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5f95e1722a75737998ae0560dae7b07e5febc727bc8058258638feca3e1606ef"
     },
     {
-      "path": "packages/scenario-model/src/expr/parse.ts",
+      "path": "packages/scenario/src/expr/parse.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bc747e8fcb46fcabeb75b4b1862f225d87547a62adb9abab536e51def88bf270"
     },
     {
-      "path": "packages/scenario-model/src/ids.ts",
+      "path": "packages/scenario/src/ids.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ce5b2e26671c65e5cc821949c424078c093550648d63f6d5e5b6b45ff4f83952"
     },
     {
-      "path": "packages/scenario-model/src/index.ts",
+      "path": "packages/scenario/src/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "9e211f79aba1d8acb970cd18ec5efb5c215d8ff36b868f1a6e3e87dd498f3cb9"
     },
     {
-      "path": "packages/scenario-model/src/json-schema-v2.ts",
+      "path": "packages/scenario/src/json-schema-v2.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "84de3f1789c8bb432da1c6186b3925d8fbcfab962cb1d03aa6eaf83d9c5fe7d3"
     },
     {
-      "path": "packages/scenario-model/src/json-schema.ts",
+      "path": "packages/scenario/src/json-schema.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b737ed1b68d6c9a00082b91f182ab7611d7b279860ea3abef519a2659eb9f7ea"
     },
     {
-      "path": "packages/scenario-model/src/migrate-v2.ts",
+      "path": "packages/scenario/src/migrate-v2.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "225f79ae156ef3c6de510a92caca1da2a8b69b334d6e51de4f5e29f4009c6243"
     },
     {
-      "path": "packages/scenario-model/src/migrate.ts",
+      "path": "packages/scenario/src/migrate.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "4cd04908bce8aa8830dc9dc66cb198f683fdc656d283bc6d460c79e55c72cba0"
     },
     {
-      "path": "packages/scenario-model/src/operations.ts",
+      "path": "packages/scenario/src/operations.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "59744ddef9fcd2ac2ebb403dd1c538a4e593c61b1c8b72aca74439c9264f520c"
     },
     {
-      "path": "packages/scenario-model/src/schema/v1.ts",
+      "path": "packages/scenario/src/schema/v1.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "93eb01be3ab82a30dde52a0c7cd85fb1b1ccf8f732933ce3f887d0a78d2fe51d"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/anchor.ts",
+      "path": "packages/scenario/src/schema/v2/anchor.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "d5c3d5d6cd409155b220447281bf4e7f9ed44baa9a96c014d3cdf8d0ce753747"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/common.ts",
+      "path": "packages/scenario/src/schema/v2/common.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "7e21d6c750bbc2457232eac26e5876261295caf0e502236216ee14fa1e0110c7"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/environment.ts",
+      "path": "packages/scenario/src/schema/v2/environment.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "f1e01f88a0acce1554d4d27b93c08a1057ff2f6d3d58e6bd5be943828a8bc40f"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/index.ts",
+      "path": "packages/scenario/src/schema/v2/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bed357f3f838cb0093a77f029b0b9d68124db15dde188ee3230bcc7c6a70ae8c"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/interactions.ts",
+      "path": "packages/scenario/src/schema/v2/interactions.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "df314b05a6d342518f40b5ffb01d54cd6061ba66e16d66dccfe9affef7e86a4c"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/invariants.ts",
+      "path": "packages/scenario/src/schema/v2/invariants.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "af53c703f1ff93f8b9ac964f0cb97abeef8e0675cd7293f2655dcfdce5761865"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/params.ts",
+      "path": "packages/scenario/src/schema/v2/params.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "04a9d1e15a6890c89b5e335802afd7aae3fc598e22a223dcb01e86b36e8c0e97"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/props.ts",
+      "path": "packages/scenario/src/schema/v2/props.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0095fbcf083ee25324aedf0928ac8015d2cc6c6db15b70c6ef58005b82ca05f7"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/roles.ts",
+      "path": "packages/scenario/src/schema/v2/roles.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "63fe58b0f7948568a64e23970f7c6a8b7574d4dfe4c1d5b10a01fb61217d490c"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/set-keys.ts",
+      "path": "packages/scenario/src/schema/v2/set-keys.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "4a69bef02ef43ce94ea160dadaf61ed24997c0f5db46afa784c1ad31301f553f"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/template.ts",
+      "path": "packages/scenario/src/schema/v2/template.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c478fe62ed30bacb436843b8b3d10da97260d89563862bf91f416e3341e95041"
     },
     {
-      "path": "packages/scenario-model/src/schema/v2/variants.ts",
+      "path": "packages/scenario/src/schema/v2/variants.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bc26624aff80d39e84e81ac7d1bfaf2d23619b3ee59ebd7eee842b52e1ff1e36"
     },
     {
-      "path": "packages/scenario-model/src/serialize.ts",
+      "path": "packages/scenario/src/serialize.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "9e44d7cbae141eee20dec977ea03860a839ca1d7a28ef240a49d008e61df05c4"
     },
     {
-      "path": "packages/scenario-model/src/stores/memory.ts",
+      "path": "packages/scenario/src/stores/memory.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "728bd43faf552cbb8577a64c12af8305ba3e8d51448fd75c3cb2b288801a7055"
     },
     {
-      "path": "packages/scenario-model/src/stores/types.ts",
+      "path": "packages/scenario/src/stores/types.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a335e2c436503ef20ef8ac696cf26c26b27863aa6d0a1746528d487cd6e5fc7a"
     },
     {
-      "path": "packages/scenario-model/src/stores/web.ts",
+      "path": "packages/scenario/src/stores/web.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "79d017c254762a7fb6bf9caf4d1fbd1c33fc1de80209b79128f48f50c5f43c73"
     },
     {
-      "path": "packages/scenario-model/src/validate/fake-map-context.ts",
+      "path": "packages/scenario/src/validate/fake-map-context.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "7ccd786f0cba991f5cfef2a337ad45f21daefa0352e73cb615e611bbed9529a0"
     },
     {
-      "path": "packages/scenario-model/src/validate/index.ts",
+      "path": "packages/scenario/src/validate/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "892e45b1c66ad4cb7ce3b202cc0d247ebdccf034c878b8b198ac9548ffd72b2f"
     },
     {
-      "path": "packages/scenario-model/src/validate/issues.ts",
+      "path": "packages/scenario/src/validate/issues.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "7969fdb2b85ca16a06d899c2e1ecdddf32cd051b849a831d38d364a13fbf58da"
     },
     {
-      "path": "packages/scenario-model/src/validate/map-checks.ts",
+      "path": "packages/scenario/src/validate/map-checks.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "50e5fa322dc0c340a3eb4e498a126b80c892c625e05b4e52024d5a349bff4c8a"
     },
     {
-      "path": "packages/scenario-model/src/validate/map-context.ts",
+      "path": "packages/scenario/src/validate/map-context.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ae0cdba9d8ce23ffbd047b815b1f47bbc0b384c04d9fd97663c4f6cd220fb524"
     },
     {
-      "path": "packages/scenario-model/src/validate/structural.ts",
+      "path": "packages/scenario/src/validate/structural.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ce5c20d40c069dacac72191476d3b102ba3b3a26acfacf31fd601174feeb68a7"
     },
     {
-      "path": "packages/scenario-model/src/validate/timing.ts",
+      "path": "packages/scenario/src/validate/timing.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "2dfb340ab88927463603cf8c669142e1c4978b78557202c2c03c78d33677da5f"
     },
     {
-      "path": "packages/scenario-model/tsconfig.json",
+      "path": "packages/scenario/tsconfig.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "c8883d83061cc25eeeff7a8f2ee64d0223786d6173a37a6813af94210e97c33f"
     },
     {
-      "path": "packages/sim-engine/README.md",
+      "path": "packages/engine/README.md",
       "kind": "file",
       "mode": "0644",
       "sha256": "6787c25397f13d549565d8629b4c9700e2c8e3abd631ea961c419408bef5f68a"
     },
     {
-      "path": "packages/sim-engine/package.json",
+      "path": "packages/engine/package.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "88b8cd2fd40dd81bdf151c970f0bbe890736a0562f3ba03d454bdad6fcaf1ac0"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/arrival.test.ts",
+      "path": "packages/engine/src/__tests__/arrival.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "30377b79c31af36552b5cb221ba8a3e0edda47fbb7e253043e555ebd64943f35"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/cruise.test.ts",
+      "path": "packages/engine/src/__tests__/cruise.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "c22a0e1e47e01dc44a723fc4111a3ca94e70b3ab03792e3bb239f102ff3c3389"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/cut-in.test.ts",
+      "path": "packages/engine/src/__tests__/cut-in.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "8ea73d0e6dbef07a8d965a987c2ba3f111e7f816274c003c9fc0688d80eb76d7"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/determinism.test.ts",
+      "path": "packages/engine/src/__tests__/determinism.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "426e7977059eb0493bbd275214fad325ea7c8db3e05d8b87a6ca5bdd20b14fce"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/evaluate.test.ts",
+      "path": "packages/engine/src/__tests__/evaluate.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0c5aec3e50b48913e4a4c518c2eeed1e40485d9d0a588bfe2b5e419eca9e9f67"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/fixtures/scenarios.ts",
+      "path": "packages/engine/src/__tests__/fixtures/scenarios.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b77057462c9809826e5d005ef9575af39d64f34b9bc67194a54dc30d6a4114eb"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/fixtures/synthetic-map.ts",
+      "path": "packages/engine/src/__tests__/fixtures/synthetic-map.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ef0e8bb059a839e20ac226b56fdb229ccb2cea46daa303745a6125e1de41b8d5"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/gap.test.ts",
+      "path": "packages/engine/src/__tests__/gap.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "e5ec1a27ca3aa92d0fd9fa482edb779d64845380db6247eeafa7336723c52e99"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/guards.test.ts",
+      "path": "packages/engine/src/__tests__/guards.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "8b3b1b8873b6ee156d7cd962d593562f66fc91dfb7b1a04fa6f04c24975ec6f9"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/occlusion-metrics.test.ts",
+      "path": "packages/engine/src/__tests__/occlusion-metrics.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "4f0eb93b3d1b9231c64c00b3b29781b83dfd05b24baa97d317bbf8fc93316927"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/signals.test.ts",
+      "path": "packages/engine/src/__tests__/signals.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "3479433282a6971a4b0442f72fb92c7aef5f3e6c70a725a81415cb2c531b4343"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/static-actors.test.ts",
+      "path": "packages/engine/src/__tests__/static-actors.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "840dd2f03accb8e336ebea9f741368281b0d72578ad37748a615a08e47b29ea9"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/triggers.test.ts",
+      "path": "packages/engine/src/__tests__/triggers.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "77e1767fefc15cf559bfdc0d4219430ff0d84f465a2c2b3ee35cfaf6470ab5e8"
     },
     {
-      "path": "packages/sim-engine/src/__tests__/yale-street.test.ts",
+      "path": "packages/engine/src/__tests__/yale-street.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5e8399521c12f6a68b488a723aac62b2794c9db02b958b3c57f1ab5a8ca5809a"
     },
     {
-      "path": "packages/sim-engine/src/core/hash.ts",
+      "path": "packages/engine/src/core/hash.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "476f5ed3358896008014f6e8beffcf1ece3f2ca9aacc1b9dd1e903636d72b919"
     },
     {
-      "path": "packages/sim-engine/src/core/math.ts",
+      "path": "packages/engine/src/core/math.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a0918a9b2f8e3266d5dcf60f5a42a347e34dbd477ed2776e6bb5d206368773e5"
     },
     {
-      "path": "packages/sim-engine/src/core/rng.ts",
+      "path": "packages/engine/src/core/rng.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "cafd20f69e790c70f7b4e0f27115098b21b25324819adf78b73ceca68eb7a4b1"
     },
     {
-      "path": "packages/sim-engine/src/errors.ts",
+      "path": "packages/engine/src/errors.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "589d41aa55d015697e766336133012a4596350b6fedc7ddf44f854417e0835da"
     },
     {
-      "path": "packages/sim-engine/src/frames.ts",
+      "path": "packages/engine/src/frames.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a78e3b3d4195464afe17d5d25b96e14f22cd5e1fed20ad643be61055e254ae3e"
     },
     {
-      "path": "packages/sim-engine/src/index.ts",
+      "path": "packages/engine/src/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ddea77e6babb33541f646a29bf81dae7cb1e650bb10b156580a750513d9bf0c1"
     },
     {
-      "path": "packages/sim-engine/src/map/lane-graph.ts",
+      "path": "packages/engine/src/map/lane-graph.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "7bba99e32921186fb2ec3102dfcb8d03410f16a37eba89584abc8581acca5495"
     },
     {
-      "path": "packages/sim-engine/src/map/route.ts",
+      "path": "packages/engine/src/map/route.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "325fc0381b58dd1df9e1fc29e9d4149e094c7f5ba3ef9b307be601ca579a8e9d"
     },
     {
-      "path": "packages/sim-engine/src/map/topology.ts",
+      "path": "packages/engine/src/map/topology.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "4e5b4c6489495906392147be64f719b7509e3180959e42c603eb559028531e5d"
     },
     {
-      "path": "packages/sim-engine/src/schema/input.ts",
+      "path": "packages/engine/src/schema/input.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "2a371652ed6a0ae3d2bf247eeba04029a860adf41a37244cbcaaee15f12bca0f"
     },
     {
-      "path": "packages/sim-engine/src/sim/controllers.ts",
+      "path": "packages/engine/src/sim/controllers.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "bd320fe565c5558cf2d92db9679617cb5c5ebc2c0a3351d8b79ebb2a037458cb"
     },
     {
-      "path": "packages/sim-engine/src/sim/dynamics.ts",
+      "path": "packages/engine/src/sim/dynamics.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "777821c537f48608c104f9f658f7305cfd30caee878c42cbaff4c9cc410a96cd"
     },
     {
-      "path": "packages/sim-engine/src/sim/engine.ts",
+      "path": "packages/engine/src/sim/engine.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "e697a051dd98e0677aeee39a0bfdbc08c20f2f543f7021266ab16cf866abab60"
     },
     {
-      "path": "packages/sim-engine/src/sim/pairs.ts",
+      "path": "packages/engine/src/sim/pairs.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "45ee824cc16b09fec31707258c5b80f4eda362fd7cdbb20009bc7f932b04f433"
     },
     {
-      "path": "packages/sim-engine/src/sim/signals.ts",
+      "path": "packages/engine/src/sim/signals.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "9de8060580247baeebef426057d468cd6a59dd838e7996f1c6c87d67b2a52e80"
     },
     {
-      "path": "packages/sim-engine/src/sim/state.ts",
+      "path": "packages/engine/src/sim/state.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "433aab6c02c8de760502e53ae3cc6f2332559375be009bc7eef057fe616534b2"
     },
     {
-      "path": "packages/sim-engine/src/sim/triggers.ts",
+      "path": "packages/engine/src/sim/triggers.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "145d91a65c24fcac739b0aea6e1d9b8bbbda217e1bcf9fe94bdfccba369bbc94"
     },
     {
-      "path": "packages/sim-engine/src/sim/visibility.ts",
+      "path": "packages/engine/src/sim/visibility.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "3a0f01eb70e450eb868f3d5587f554ecc7cde7094fe1fc05a642a23b5ec511fe"
     },
     {
-      "path": "packages/sim-engine/src/solve/arrival.ts",
+      "path": "packages/engine/src/solve/arrival.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "efc41a6ed51bc677a9358e474f5b6515386466f841df487b32c7ad1730d939f9"
     },
     {
-      "path": "packages/sim-engine/src/solve/guards.ts",
+      "path": "packages/engine/src/solve/guards.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "26f7766c365b339940a081cc0f945d79b482ac739c5a594ed146e7f0de7a9e0d"
     },
     {
-      "path": "packages/sim-engine/src/solve/nominal.ts",
+      "path": "packages/engine/src/solve/nominal.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "cd9bb5c2e94de608446658bb138050e27302ff4dd46f9e5d56d2e9109370a067"
     },
     {
-      "path": "packages/sim-engine/src/trace/evaluate.ts",
+      "path": "packages/engine/src/trace/evaluate.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "32c6d6c28c3216f36b13273dfbebb03832eaad0ffa6a76717b26e0811d25d215"
     },
     {
-      "path": "packages/sim-engine/src/trace/gzip.ts",
+      "path": "packages/engine/src/trace/gzip.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ea0f8561478fd81a1fdbbdc761dda265f54bf51937c09f1cf92058a3582abd6e"
     },
     {
-      "path": "packages/sim-engine/src/trace/metrics.ts",
+      "path": "packages/engine/src/trace/metrics.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "3c66ee3fa658f1519e3cdaed4d942f9167f7c5d40594616cf97eb4593f1f7d66"
     },
     {
-      "path": "packages/sim-engine/src/trace/trace.ts",
+      "path": "packages/engine/src/trace/trace.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "fd3c398ff79cf2f30043e70de3cec9d1aaf653f9e599920c5cd7d49c5674cf14"
     },
     {
-      "path": "packages/sim-engine/src/version.ts",
+      "path": "packages/engine/src/version.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b48a8a579ebfd1a03ac0b4f0ffdce73d2d21f009ab7118a91ffb680be190048c"
     },
     {
-      "path": "packages/sim-engine/tsconfig.json",
+      "path": "packages/engine/tsconfig.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "8f6e85eeaa8025fe7b2f01763e03f32540d3e2869ae857490d685098460f4e3a"
     },
     {
-      "path": "packages/xodr-tools/package.json",
+      "path": "packages/maps/package.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "8e35210ec585d2aef00859b5830e7f77e025a94b304f5f241f57723b74971b23"
     },
     {
-      "path": "packages/xodr-tools/src/__tests__/coordinate-frame.test.ts",
+      "path": "packages/maps/src/__tests__/coordinate-frame.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "89e8e973952b59d292fc743d266ea04df4cec3d895dcf75f8fa248813f277c96"
     },
     {
-      "path": "packages/xodr-tools/src/__tests__/fixtures.ts",
+      "path": "packages/maps/src/__tests__/fixtures.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5685be1433122ae469a644c0105eb6ac44377741d91dcd194a6bfc18ef20762a"
     },
     {
-      "path": "packages/xodr-tools/src/__tests__/full-map.test.ts",
+      "path": "packages/maps/src/__tests__/full-map.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "0c454bf7c2445b873843b65c4b79a6f515695bd9170b5272fb62d0cdee01919f"
     },
     {
-      "path": "packages/xodr-tools/src/__tests__/gzip.test.ts",
+      "path": "packages/maps/src/__tests__/gzip.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "3eea8dc926c620261fb7eefef43d4ea46255ecf44210d0c8a766bafc68fb54e4"
     },
     {
-      "path": "packages/xodr-tools/src/__tests__/header.test.ts",
+      "path": "packages/maps/src/__tests__/header.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "1b1f8acad6c7d1733680b810028b4951a4c3f5c261c93941c4d4ca5143625350"
     },
     {
-      "path": "packages/xodr-tools/src/__tests__/lanes.test.ts",
+      "path": "packages/maps/src/__tests__/lanes.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "181dc60b87897e0e94552a1ab60642aba8e9951efbd149bb6df82f038975c955"
     },
     {
-      "path": "packages/xodr-tools/src/__tests__/signals.test.ts",
+      "path": "packages/maps/src/__tests__/signals.test.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "72535583d0d9ef76367220b5829759a7dad45e0e37fd3d913308c52746700119"
     },
     {
-      "path": "packages/xodr-tools/src/coordinate-frame.ts",
+      "path": "packages/maps/src/coordinate-frame.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "ccb0ba24f6a1f98e821e679aad6b7fa1ac0f63ef5781d6f4c9e0e2bcde1ff9b6"
     },
     {
-      "path": "packages/xodr-tools/src/geojson.ts",
+      "path": "packages/maps/src/geojson.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a653dcbf4a88b568ec3cd551de2f3a843c59073415020867ddfd97d9177592b9"
     },
     {
-      "path": "packages/xodr-tools/src/gzip.ts",
+      "path": "packages/maps/src/gzip.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "dd3e5426c384fedd53935cc5394e83a95895de961fdfab3d6e3e6774f6f6657f"
     },
     {
-      "path": "packages/xodr-tools/src/header.ts",
+      "path": "packages/maps/src/header.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "efb11f7184dbf2d1a41108a25e2f79950bdaf74bdbc12d51200141074770c242"
     },
     {
-      "path": "packages/xodr-tools/src/index.ts",
+      "path": "packages/maps/src/index.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "b3ed1780e9210888b0e0eb42056d699db9df4ddb7aa76ef2905e0af915964321"
     },
     {
-      "path": "packages/xodr-tools/src/lanes.ts",
+      "path": "packages/maps/src/lanes.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "11b4f2cfd9c35592361a03dddc2c930650f3712a51e0dbc5825ea15cff9e0f2c"
     },
     {
-      "path": "packages/xodr-tools/src/overlays/height.ts",
+      "path": "packages/maps/src/overlays/height.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "a4c4c956fe69bc4b65e960b53d27c6b872621869dd98a303d830bd5db748d801"
     },
     {
-      "path": "packages/xodr-tools/src/overlays/lanes.ts",
+      "path": "packages/maps/src/overlays/lanes.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5bcf59aaf29b5d49dbe49324045c980d8b0774cb9261a7685fa3f4aede7e46a9"
     },
     {
-      "path": "packages/xodr-tools/src/overlays/signals.ts",
+      "path": "packages/maps/src/overlays/signals.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "5e0477318ce89d5848dcf399644223f3f4abfb98af1af1d2367756688e23aff6"
     },
     {
-      "path": "packages/xodr-tools/src/signals.ts",
+      "path": "packages/maps/src/signals.ts",
       "kind": "file",
       "mode": "0644",
       "sha256": "8fc94a0aa98d333b22330825be5e19e53a43c8f686b29161e839dfa07f5301e7"
     },
     {
-      "path": "packages/xodr-tools/tsconfig.json",
+      "path": "packages/maps/tsconfig.json",
       "kind": "file",
       "mode": "0644",
       "sha256": "8f6e85eeaa8025fe7b2f01763e03f32540d3e2869ae857490d685098460f4e3a"

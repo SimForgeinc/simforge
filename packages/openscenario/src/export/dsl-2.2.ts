@@ -1,4 +1,4 @@
-import { actorPhysicsBackends, DYNAMIC_V1_DEFAULT_SUBSTEP_S, resolvePhysicsConfig, type Interaction, type Pose, type SimActor, type SimScenarioInput } from '@uniscenarios/sim-engine';
+import { actorPhysicsBackends, DYNAMIC_V1_DEFAULT_SUBSTEP_S, resolvePhysicsConfig, type Interaction, type Pose, type SimActor, type SimScenarioInput } from '@simforge/engine';
 
 import {
   analyzeAsamCapabilities,

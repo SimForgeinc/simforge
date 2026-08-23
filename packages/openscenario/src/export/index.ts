@@ -1,4 +1,4 @@
-import type { SimScenarioInput } from '@uniscenarios/sim-engine';
+import type { SimScenarioInput } from '@simforge/engine';
 
 import { exportOpenScenarioDsl22 } from './dsl-2.2.js';
 import type { AsamExportOptions, AsamExportResult, AsamFormat } from './types.js';

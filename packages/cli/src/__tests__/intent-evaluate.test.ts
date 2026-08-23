@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { combinedEvaluationVerdict } from '../commands/evaluate.js';
-import type { IntentEvaluation } from '@uniscenarios/sim-engine';
+import type { IntentEvaluation } from '@simforge/engine';
 
 function intent(verdict: 'accept' | 'reject'): IntentEvaluation {
   return {

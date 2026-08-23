@@ -10,8 +10,8 @@
 
 import { EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { matchOnMaps, siteSummary, round3 } from '@uniscenarios/scenario-materializer';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { matchOnMaps, siteSummary, round3 } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 export interface SitesMatchOptions {
   readonly file: string;

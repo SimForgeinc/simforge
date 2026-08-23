@@ -28,7 +28,7 @@ expected to misalign until 0737f3d9 is ingested as a Uni map derivative.
 Usage:
   python3 scripts/v2x/generate_twin_rig.py \
       [--cameras /home/path/V2XCarla/v2x-backend/config/cameras.json] \
-      --out native/sensors/rigs/richmond-twin-rig.v1.json
+      --out renderer/sensors/rigs/richmond-twin-rig.v1.json
 """
 from __future__ import annotations
 
@@ -77,7 +77,7 @@ def edge_to_edge_fov(near: float, far: float, u1: float, u2: float) -> float:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cameras", default="/home/path/V2XCarla/v2x-backend/config/cameras.json")
-    ap.add_argument("--out", default="native/sensors/rigs/richmond-twin-rig.v1.json")
+    ap.add_argument("--out", default="renderer/sensors/rigs/richmond-twin-rig.v1.json")
     args = ap.parse_args()
 
     cfg = json.loads(Path(args.cameras).read_text())

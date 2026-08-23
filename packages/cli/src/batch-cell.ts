@@ -8,23 +8,23 @@
 
 import path from 'node:path';
 
-import { runSimulation, traceDigest, type AmbientTrafficProfile, type SimTrace } from '@uniscenarios/sim-engine';
-import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
-import type { InstanceManifest } from '@uniscenarios/scenario-materializer';
+import { runSimulation, traceDigest, type AmbientTrafficProfile, type SimTrace } from '@simforge/engine';
+import type { ScenarioTemplateV2 } from '@simforge/scenario';
+import type { InstanceManifest } from '@simforge/compiler';
 
 import { criticalityBand, filtersFor, type EvaluateFilterMode } from './commands/evaluate.js';
 import { metricsSummary } from './commands/simulate.js';
-import { evaluateTrace } from '@uniscenarios/sim-engine';
-import { loadMap } from '@uniscenarios/scenario-materializer';
+import { evaluateTrace } from '@simforge/engine';
+import { loadMap } from '@simforge/compiler';
 import { verifyEvidenceHashes, type EvidenceHashReport } from './evidence.js';
 import { checkInvariants, type InvariantResidualReport } from './invariants.js';
 import { materialize } from './materialize.js';
-import { findSite } from '@uniscenarios/scenario-materializer';
-import { writeJsonFile, writeTraceFile } from '@uniscenarios/scenario-materializer';
+import { findSite } from '@simforge/compiler';
+import { writeJsonFile, writeTraceFile } from '@simforge/compiler';
 import { toStructuredError } from './errors.js';
 
-export type { CatalogArtifactProvenance } from '@uniscenarios/scenario-materializer';
-import type { CatalogArtifactProvenance } from '@uniscenarios/scenario-materializer';
+export type { CatalogArtifactProvenance } from '@simforge/compiler';
+import type { CatalogArtifactProvenance } from '@simforge/compiler';
 
 export interface CellCoords {
   readonly mapId: string;

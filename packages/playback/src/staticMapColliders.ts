@@ -4,7 +4,7 @@ import {
   type SimScenarioInput,
   type StaticColliderClass,
   type StaticMapCollider,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 const SCHEMA = 'uniscenarios.static-map-colliders/v1';
 const CLASSES = new Set<StaticColliderClass>(['building', 'wall', 'barrier', 'prop', 'road-boundary']);

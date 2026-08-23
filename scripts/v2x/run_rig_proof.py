@@ -12,7 +12,7 @@ Outputs (default run/evidence/v4-rig-proof/):
 Usage:
   native-render-service --socket ... --scene <scene.json> &   # separate
   python3 scripts/v2x/run_rig_proof.py --socket /tmp/v4.sock \
-      --rig native/sensors/rigs/richmond-twin-rig.v1.json \
+      --rig renderer/sensors/rigs/richmond-twin-rig.v1.json \
       --scene-state /tmp/richmond-scene-state.json \
       --ticks 100 --out run/evidence/v4-rig-proof
 """
@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "native/service/python"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "renderer/service/python"))
 from uniscenarios_native.client import NativeRenderClient  # noqa: E402
 
 TICK_S = 0.05  # product cadence: 20 Hz (CARLA sensor_tick 0.05 analogue)
@@ -96,7 +96,7 @@ def ego_camera() -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--socket", default="/tmp/v4-proof.sock")
-    ap.add_argument("--rig", default="native/sensors/rigs/richmond-twin-rig.v1.json")
+    ap.add_argument("--rig", default="renderer/sensors/rigs/richmond-twin-rig.v1.json")
     ap.add_argument("--scene-state", required=True, help="scene-state.v1 stream JSON (list of tick docs)")
     ap.add_argument("--ticks", type=int, default=100)
     ap.add_argument("--out", default="run/evidence/v4-rig-proof")

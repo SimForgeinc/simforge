@@ -11,7 +11,7 @@ import {
   type LaneGraph,
   type SimScenarioInput,
   type SimTrace,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 import {
   analyzeEsminiCompatibility,
@@ -62,7 +62,7 @@ export interface EsminiBundleFile {
   readonly sha256: string;
 }
 
-/** Stable hand-off contract consumed by @uniscenarios/esmini-runner. */
+/** Stable hand-off contract consumed by ../esmini/index.js. */
 export interface EsminiBundleManifest {
   readonly kind: 'uniscenarios-esmini-runnable-bundle';
   readonly version: typeof ESMINI_BUNDLE_VERSION;

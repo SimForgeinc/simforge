@@ -1,0 +1,54 @@
+{
+  "name": "@simforge/render",
+  "version": "0.1.0-rc.45",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "directory": "packages/render"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "default": "./dist/web/index.js"
+    },
+    "./native": {
+      "types": "./dist/native/index.d.ts",
+      "default": "./dist/native/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@simforge/playback": "workspace:*",
+    "@simforge/scenario": "workspace:*",
+    "@simforge/viewer": "workspace:*",
+    "fflate": "^0.8.3",
+    "playwright-core": "^1.62.1",
+    "three": "^0.185.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/three": "^0.185.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/web/index.ts src/native/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "typecheck": "tsc --noEmit"
+  }
+}

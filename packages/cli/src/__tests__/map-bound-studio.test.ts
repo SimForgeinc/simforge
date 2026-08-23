@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseTemplate, TemplateDocument } from '@uniscenarios/scenario-model';
-import { materializeMapBound } from '@uniscenarios/scenario-materializer';
-import { buildSeededPlacementRoute, createFixedStepSimulation, runSimulation } from '@uniscenarios/sim-engine';
-import { loadMap } from '@uniscenarios/scenario-materializer';
+import { parseTemplate, TemplateDocument } from '@simforge/scenario';
+import { materializeMapBound } from '@simforge/compiler';
+import { buildSeededPlacementRoute, createFixedStepSimulation, runSimulation } from '@simforge/engine';
+import { loadMap } from '@simforge/compiler';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
 const studioMapAssets = localMapAssetRequirement(['yale-street', 'belmont-research-center']);

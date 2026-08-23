@@ -31,7 +31,7 @@ Two reachable ways in:
    (`materialize.ts:3016`, `occluderId: actor:${role.id}`) when the declaration is written on the
    **target's own role** rather than on the occluding role. Nothing rejects that.
 
-Reproduced in `packages/sim-engine/src/perception/__tests__/self-occlusion.test.ts`: two bodies on
+Reproduced in `packages/engine/src/perception/__tests__/self-occlusion.test.ts`: two bodies on
 an empty straight road with *no occluding geometry whatsoever* report `firstBlockedT = 0`,
 `losOpenT = null`, status != `revealed_before_conflict`.
 

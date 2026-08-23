@@ -4,10 +4,10 @@ Five agents work the same worktree concurrently. Ownership is strict; collisions
 
 | agent | owns | closes the gap |
 |---|---|---|
-| `caps-catalog` | `packages/prop-catalog/**`, `scenario-materializer/src/prop-dims.ts`, `roles.ts` (DEFAULT_ACTOR_DIMS + ACTOR_CLASSES only) | no `animal.*` id despite an `animal` actor class; no debris; no traffic furniture |
-| `caps-reverse` | `packages/sim-engine/src/**` except `environment*`/`weather*`/`sensors*`/`perception*`; `interactions.ts` if a new target mode is needed | 1 body in 1642 moved >0.8 m backwards — no reversing |
+| `caps-catalog` | `packages/asset-catalog/**`, `scenario-materializer/src/prop-dims.ts`, `roles.ts` (DEFAULT_ACTOR_DIMS + ACTOR_CLASSES only) | no `animal.*` id despite an `animal` actor class; no debris; no traffic furniture |
+| `caps-reverse` | `packages/engine/src/**` except `environment*`/`weather*`/`sensors*`/`perception*`; `interactions.ts` if a new target mode is needed | 1 body in 1642 moved >0.8 m backwards — no reversing |
 | `caps-surface` | `environment.ts`, `traffic-controls.ts`, `set-keys.ts`, `anchor.ts` (surface_patch only), `sim-engine/src/environment*`, `cli/src/map-signals*` | friction is one global scalar; no signal blackout or flashing arrow |
-| `caps-map` | `packages/map-intel/**`, `packages/xodr-tools/**`, `materialize.ts` (lane-offset resolution only), a NEW dev-assets map id | 87.8% of sections are single-lane; materializer silently clamps impossible lane offsets |
+| `caps-map` | `packages/maps/**`, `packages/maps/**`, `materialize.ts` (lane-offset resolution only), a NEW dev-assets map id | 87.8% of sections are single-lane; materializer silently clamps impossible lane offsets |
 | `caps-sensor` | `sensors.ts`, `invariants.ts` (perception invariants only), new `sim-engine/src/sensors*`/`perception*` files | `dash_camera` is declared and nothing consumes it; no perception layer at all |
 
 Rules: never `git commit -a`, never `git checkout`; `git add` only your own files; escalate to the

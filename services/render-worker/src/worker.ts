@@ -19,7 +19,7 @@ import {
   type JobLeasedResponse,
   type RenderEngineAdapter,
   type RenderProgressRecord,
-} from '@uniscenarios/render-runtime';
+} from '@simforge/render';
 
 import type { RenderWorkerConfig } from './config.js';
 import { acquireGpuJobLock, type GpuJobLock } from './gpu-lock.js';

@@ -13,8 +13,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import { MATCH_SEMANTICS_VERSION, type MatchedSite } from '@uniscenarios/anchor-matcher';
-import { ENGINE_VERSION, traceDigest } from '@uniscenarios/sim-engine';
+import { MATCH_SEMANTICS_VERSION, type MatchedSite } from '@simforge/compiler';
+import { ENGINE_VERSION, traceDigest } from '@simforge/engine';
 
 import type { CatalogArtifactProvenance, CellOptions, CellResult } from '../batch-cell.js';
 import {
@@ -29,9 +29,9 @@ import {
 import { CliError, EXIT, toStructuredError, type StructuredError } from '../errors.js';
 import { verifyEvidenceHashes } from '../evidence.js';
 import { emit, emitLines } from '../output.js';
-import { CATALOG_EXACT_SITE_OPTIONS, matchOnMap } from '@uniscenarios/scenario-materializer';
-import { REPO_ROOT } from '@uniscenarios/scenario-materializer';
-import { readTemplate, readTraceFile, type InstanceFile } from '@uniscenarios/scenario-materializer';
+import { CATALOG_EXACT_SITE_OPTIONS, matchOnMap } from '@simforge/compiler';
+import { REPO_ROOT } from '@simforge/compiler';
+import { readTemplate, readTraceFile, type InstanceFile } from '@simforge/compiler';
 import type { EvaluateFilterMode } from './evaluate.js';
 
 export const CATALOG_EXECUTOR_VERSION = '1.0.1' as const;

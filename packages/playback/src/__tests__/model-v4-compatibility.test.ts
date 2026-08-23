@@ -6,7 +6,7 @@ import {
   parseSimScenarioInput,
   type SimScenarioInput,
   type SimTrace,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 import {
   PlaybackLoadError,
   canonicalPreviewIdentity,

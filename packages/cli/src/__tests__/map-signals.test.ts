@@ -3,9 +3,9 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
-import type { MatchedSite } from '@uniscenarios/anchor-matcher';
-import { ScenarioTemplateV2Schema } from '@uniscenarios/scenario-model';
-import { buildRoute, createAmbientCandidatePool, runSimulation } from '@uniscenarios/sim-engine';
+import type { MatchedSite } from '@simforge/compiler';
+import { ScenarioTemplateV2Schema } from '@simforge/scenario';
+import { buildRoute, createAmbientCandidatePool, runSimulation } from '@simforge/engine';
 
 import {
   buildSiteSignalPlan,
@@ -15,10 +15,10 @@ import {
   parseMapSignalCatalog,
   resolveSiteSignalProgram,
 } from '../map-signals.js';
-import { createMapContext } from '@uniscenarios/scenario-materializer';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@uniscenarios/scenario-materializer';
-import { matchOnMap } from '@uniscenarios/scenario-materializer';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { createMapContext } from '@simforge/compiler';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge/compiler';
+import { matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 import {
   assertMaterializableMapControls,
   mapSetKey,

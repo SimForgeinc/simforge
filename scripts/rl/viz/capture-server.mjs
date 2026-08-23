@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * capture-server — visualization rollout host over @uniscenarios/rl-env dist.
+ * capture-server — visualization rollout host over @simforge/training-env dist.
  *
  * Mirrors scripts/rl/reactive-env-server.mjs session construction exactly
  * (reactive ambient traffic, BEV shim, decisionHz 5, goal routeEnd) so captured
@@ -22,8 +22,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 import readline from 'node:readline';
-const { loadEpisodeSpec } = await import(path.join(repoRoot, 'packages/rl-env/dist/env-server.js'));
-const { EnvSession } = await import(path.join(repoRoot, 'packages/rl-env/dist/index.js'));
+const { loadEpisodeSpec } = await import(path.join(repoRoot, 'packages/training-env/dist/env-server.js'));
+const { EnvSession } = await import(path.join(repoRoot, 'packages/training-env/dist/index.js'));
 
 /** Mid-level BEV geometry — identical to reactive-env-server.mjs. */
 const BEV_CONFIG = { resolutionM: 0.5, forwardM: 32, backwardM: 8, halfWidthM: 10 };

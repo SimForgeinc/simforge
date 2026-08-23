@@ -1,14 +1,14 @@
 import { Quaternion, Vector3 } from 'three';
-import type { CameraMode, CameraView, CityViewer } from '@uniscenarios/city-renderer';
-import type { DashCameraSensor } from '@uniscenarios/scenario-model';
-import { CONTROL_INDICATIONS, type ControlIndication, type SceneTrace } from '@uniscenarios/sim-engine';
+import type { CameraMode, CameraView, CityViewer } from '@simforge/viewer';
+import type { DashCameraSensor } from '@simforge/scenario';
+import { CONTROL_INDICATIONS, type ControlIndication, type SceneTrace } from '@simforge/engine';
 import {
   ActorRenderer,
   type ActorView,
   type DoorName,
   type DoorState,
   type DoorStates,
-} from '@uniscenarios/city-renderer';
+} from '@simforge/viewer';
 import {
   samplePlaybackActors,
   samplePlaybackSignals,

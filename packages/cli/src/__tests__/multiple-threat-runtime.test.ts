@@ -4,12 +4,12 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
+import { evaluateTrace, runSimulation } from '@simforge/engine';
 
-import { REPO_ROOT, artifactPresence } from '@uniscenarios/scenario-materializer';
+import { REPO_ROOT, artifactPresence } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '@uniscenarios/scenario-materializer';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const MAP = 'yale-street';
 const TEMPLATE = path.join(REPO_ROOT, 'examples', 'multiple-threat.template.json');

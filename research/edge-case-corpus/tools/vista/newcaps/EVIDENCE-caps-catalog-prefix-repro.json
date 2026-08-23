@@ -42,5 +42,5 @@
   }
  ],
  "reading": "class:animal, catalog:pedestrian.adult_walking, dims 1.2x0.5x1.0 (the generic animal class default). The catalog model is a walking adult human; nothing in the pipeline objected, and two cells were ACCEPTED.",
- "fix": "buildActor in packages/scenario-materializer/src/materialize.ts now calls actorCatalogMismatch() and refuses the pair; the same template must now fail with actor_catalog_class_mismatch."
+ "fix": "buildActor in packages/compiler/src/materialize.ts now calls actorCatalogMismatch() and refuses the pair; the same template must now fail with actor_catalog_class_mismatch."
 }

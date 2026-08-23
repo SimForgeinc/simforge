@@ -10,8 +10,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
-import { materializeMapBound, type InstanceManifest } from '@uniscenarios/scenario-materializer';
-import type { ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
+import { materializeMapBound, type InstanceManifest } from '@simforge/compiler';
+import type { ScenarioTemplateV2 } from '@simforge/scenario';
 import {
   buildLaneGraph,
   parseSimScenarioInput,
@@ -23,15 +23,15 @@ import {
   type SimScenarioInput,
   type SimTrace,
   type TopologyIndex,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 import { CliError, EXIT } from '../errors.js';
 import { checkInvariants, type InvariantResidualReport } from '../invariants.js';
-import { loadMap, type MapBundle } from '@uniscenarios/scenario-materializer';
+import { loadMap, type MapBundle } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
 import { emit } from '../output.js';
-import { findSite, matchOnMap } from '@uniscenarios/scenario-materializer';
-import { detectKind, readInstance, readTemplate, writeJsonFile, writeTraceFile, type InstanceFile } from '@uniscenarios/scenario-materializer';
+import { findSite, matchOnMap } from '@simforge/compiler';
+import { detectKind, readInstance, readTemplate, writeJsonFile, writeTraceFile, type InstanceFile } from '@simforge/compiler';
 import { runHeadlessSumo, type HeadlessSumoResult } from '../sumo-headless.js';
 import { instanceFile } from './instantiate.js';
 import { metricsSummary } from './simulate.js';

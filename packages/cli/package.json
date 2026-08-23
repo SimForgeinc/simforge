@@ -1,5 +1,5 @@
 {
-  "name": "@uniscenarios/cli",
+  "name": "@simforge/cli",
   "version": "0.1.0-rc.45",
   "repository": {
     "type": "git",
@@ -15,8 +15,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "uniscenarios": "./bin/uniscenarios.js",
-    "scen": "./bin/scen.js"
+    "simforge": "./bin/simforge.js",
+    "sf": "./bin/sf.js",
+    "uniscenarios": "./bin/uniscenarios.js"
   },
   "exports": {
     ".": {
@@ -35,20 +36,19 @@
     "test": "vitest run",
     "test:portable": "vitest run src/__tests__/asam-export.test.ts src/__tests__/esmini-bundle.test.ts src/__tests__/xml14-suite-audit.test.ts src/__tests__/evidence.test.ts src/__tests__/intent-evaluate.test.ts src/__tests__/invariants.test.ts src/__tests__/seeding.test.ts src/__tests__/prop-dims.test.ts",
     "audit:xml14-suite": "tsx src/tools/audit-xml14-suite.ts",
-    "scen": "tsx src/main.ts",
-    "uniscenarios": "tsx src/main.ts"
+    "uniscenarios": "tsx src/main.ts",
+    "simforge": "tsx src/main.ts"
   },
   "dependencies": {
-    "@uniscenarios/anchor-matcher": "workspace:*",
-    "@uniscenarios/map-intel": "workspace:*",
-    "@uniscenarios/openscenario": "workspace:*",
-    "@uniscenarios/sim-engine": "workspace:*",
-    "@uniscenarios/render-runtime": "workspace:*",
-    "@uniscenarios/scenario-materializer": "workspace:*",
-    "@uniscenarios/scenario-model": "workspace:*",
     "@gltf-transform/core": "^4.4.2",
     "@gltf-transform/extensions": "^4.4.2",
     "@gltf-transform/functions": "^4.4.2",
+    "@simforge/compiler": "workspace:*",
+    "@simforge/engine": "workspace:*",
+    "@simforge/maps": "workspace:*",
+    "@simforge/openscenario": "workspace:*",
+    "@simforge/render": "workspace:*",
+    "@simforge/scenario": "workspace:*",
     "meshoptimizer": "^1.2.0",
     "sharp": "0.34.5"
   },

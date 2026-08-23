@@ -8,7 +8,7 @@ only when the site's origin junction is literally declared with `<controller>` c
 `<junction>` element in the OpenDRIVE file (`map-signals.ts:230-240,355-367`). Across the five dev
 maps only **6 of 246 junctions** satisfy that (yale 134/303/345/447, richmond 238, el-camino 590),
 while map-intel labels **23** junctions `signalized` — because `deriveControl` in
-`packages/map-intel/src/build/junctions.ts:277-303` sets `signalized` from nothing more than
+`packages/maps/src/build/junctions.ts:277-303` sets `signalized` from nothing more than
 "≥1 `traffic_light` point from `signals.geojson` falls within `sizeM/2 + 22 m` of the junction
 centre"; it never checks that the head sits on one of the junction's own roads, that it is dynamic,
 or that any `<controller>` references it. So yes — **`junction.control = signalized` is derived from
@@ -91,7 +91,7 @@ roads at all.** They are labelled signalized purely by proximity.
 
 ### Is `junction.control` weaker than a real signal program? Yes.
 
-`packages/map-intel/src/build/junctions.ts:277-303`:
+`packages/maps/src/build/junctions.ts:277-303`:
 
 ```ts
 const radius = sizeM / 2 + SIGNAL_RADIUS_PAD_M;      // :281   (SIGNAL_RADIUS_PAD_M = 22, :75)
@@ -123,7 +123,7 @@ but in `dev-assets/yale-street/map.xodr` the `<junction id="387">` element conta
 incoming or connecting roads**. Its centre is 51.6 m from junction **345** (`sizeM` 64.56), the real
 signalized intersection with controllers 1569–1572. With `radius = 33.74/2 + 22 = 38.9 m`, junction
 387 vacuums up 8 of junction 345's physical heads and calls itself signalized. This is the junction
-`packages/map-intel/src/__tests__/helpers.ts:5,68` describes as "387 (a signalized four-way)". The
+`packages/maps/src/__tests__/helpers.ts:5,68` describes as "387 (a signalized four-way)". The
 5 delivered `c4g-circulating-sudden-stop` scenarios on `yale-street/13d91f73d99d7917` bind exactly
 this junction and get zero signal programs.
 
@@ -135,7 +135,7 @@ was right.)
 
 ## 2. Where are signals loaded and ticked, and what predicate is false?
 
-**Load.** `packages/sim-engine/src/sim/engine.ts:363`
+**Load.** `packages/engine/src/sim/engine.ts:363`
 
 ```ts
 this.signals = new SignalBook(input.signalPrograms, input.warmupSeconds, input.roadControls);
@@ -174,7 +174,7 @@ So the exact predicate is:
 the same map), so the `if (phase)` guard never suppresses anything. There is no other gate — not
 `obeySignals`, not `warmupSeconds`, not the map, not the site score.
 
-**Where `signalPrograms` comes from.** `packages/scenario-materializer/src/materialize.ts:3535`
+**Where `signalPrograms` comes from.** `packages/compiler/src/materialize.ts:3535`
 
 ```ts
 signalPrograms: [...(this.compiledMapSignalPrograms ?? this.signalPlan.programs), ...this.authoredControlPrograms],
@@ -233,7 +233,7 @@ Two mechanisms exist; one is portable and works anywhere.
 
 ### 3a. `trafficControls` — portable, works on any site (recommended)
 
-Schema: `packages/scenario-model/src/schema/v2/traffic-controls.ts:54-95`
+Schema: `packages/scenario/src/schema/v2/traffic-controls.ts:54-95`
 (`kind`, frame-relative `stopLines`, `phases[{indication,durationS}]`, `offsetS`, `loop`,
 `darkFallback`, `darkDwellS`), wired at `schema/v2/template.ts:89`, lowered at
 `materialize.ts:2354-2391` into a `SignalProgram` with id `control:<id>` whose stop lines are
@@ -330,7 +330,7 @@ Caveats found while proving it:
 
 ### 3b. `mapSignalPlans` — map-bound, restricted to the 6 real junctions
 
-Schema `packages/scenario-model/src/schema/v2/map-signal-plans.ts:34-66`: non-overlapping half-open
+Schema `packages/scenario/src/schema/v2/map-signal-plans.ts:34-66`: non-overlapping half-open
 `clips[{startS,endS,reference:{controllerId,headId},indication}]` over a binding
 `{mapId, junctionId, controlDigest}`. Compiled by `compileMapSignalPlans`
 (`map-signal-plan-compiler.ts`, invoked at `materialize.ts:2415-2440`). It rejects a plan whose
@@ -359,7 +359,7 @@ which has no heads of its own — that one needs `deriveControl` fixed instead.
 
 **Not when the whole `SignalBook` is empty, no.** It is read in exactly one place in the engine:
 
-`packages/sim-engine/src/sim/controllers.ts:453-461`
+`packages/engine/src/sim/controllers.ts:453-461`
 
 ```ts
 export function distanceToStopLine(a, signals, t, lookaheadM, leader = null, canReleaseStop = null): number | null {
@@ -385,7 +385,7 @@ empty `ticks.signals`. Only the 260 records with **both** arrays empty have a ge
 
 Two downstream consequences of an empty `ticks.signals`:
 * `evaluateCriterion` for a `control_indication`/signal criterion returns
-  **`unchecked`**, not `fail` (`packages/sim-engine/src/trace/intent-rubric.ts:272`:
+  **`unchecked`**, not `fail` (`packages/engine/src/trace/intent-rubric.ts:272`:
   `if (!signal) return result(c, 'unchecked', 'signal … has no trace channel', …)`), and
   `evaluateIntentRubric` only rejects on `c.required && status !== 'pass'` — so a non-required
   signal criterion silently disappears from the verdict.

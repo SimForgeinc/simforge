@@ -2,7 +2,7 @@
 import { readTemplate } from '../src/template-io.ts';
 import { findSite } from '../src/sites.ts';
 import { materialize } from '../src/materialize.ts';
-import { createAmbientCandidatePool, materializeAmbientCandidatePool, resolveAmbientTrafficProfile } from '@uniscenarios/sim-engine';
+import { createAmbientCandidatePool, materializeAmbientCandidatePool, resolveAmbientTrafficProfile } from '@simforge/engine';
 
 const [tpl, mapId, siteId] = process.argv.slice(2);
 const template = await readTemplate(tpl);

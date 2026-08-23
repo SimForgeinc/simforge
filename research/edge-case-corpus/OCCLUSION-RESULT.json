@@ -11,5 +11,5 @@
  },
  "conclusion": "The occlusion MECHANISM is real and now declarable and measurable, but occlusion and criticality rarely co-occur under the current placement geometry. Solving for occlusion alone loses criticality; the joint objective finds almost nothing. C7 is NOT closed.",
  "blocker": "props.pose.tFrac clamped to [-1,1]. A roadside occluder (hedge, wall, parked row on the verge) is unrepresentable. The adjacent-lane workaround requires a multi-lane road, which is rare on these maps (throughLanesSameDir>=2 fails at 157/210 candidate sites), so it cannot generalise across sites.",
- "nextStep": "Add a lateral placement form for props that can reach the verge \u2014 e.g. lateral_m with reference:'lane_edge'|'verge' \u2014 in packages/scenario-model/src/schema/v2/roles.ts FramePoseSchema plus the materializer lateral resolution. That is the single change standing between this corpus and a proven C7."
+ "nextStep": "Add a lateral placement form for props that can reach the verge \u2014 e.g. lateral_m with reference:'lane_edge'|'verge' \u2014 in packages/scenario/src/schema/v2/roles.ts FramePoseSchema plus the materializer lateral resolution. That is the single change standing between this corpus and a proven C7."
 }

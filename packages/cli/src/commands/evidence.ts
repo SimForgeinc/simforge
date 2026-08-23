@@ -1,7 +1,7 @@
 import { EXIT } from '../errors.js';
 import { verifyEvidenceHashes } from '../evidence.js';
 import { emit, emitLines, pad } from '../output.js';
-import { readInstance, readTraceFile } from '@uniscenarios/scenario-materializer';
+import { readInstance, readTraceFile } from '@simforge/compiler';
 
 export interface EvidenceVerifyOptions {
   readonly instance: string;

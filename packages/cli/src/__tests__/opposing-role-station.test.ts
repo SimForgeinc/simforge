@@ -2,12 +2,12 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
-import { ScenarioTemplateV2Schema } from '@uniscenarios/scenario-model';
+import { ScenarioTemplateV2Schema } from '@simforge/scenario';
 
-import { DEV_ASSETS, REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
-import { findSite } from '@uniscenarios/scenario-materializer';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { findSite } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const TEMPLATE = path.join(REPO_ROOT, 'examples', 'edge-cases', 'wrong-way-sedan-blind-crest', 'scenario.template.json');
 const MAP = 'yale-street';

@@ -6,10 +6,10 @@ import {
   parseSimScenarioInput,
   runSimulation,
   type TopologyIndex,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 import { verifyEvidenceHashes } from '../evidence.js';
-import type { InstanceFile } from '@uniscenarios/scenario-materializer';
+import type { InstanceFile } from '@simforge/compiler';
 const LANE = '1:0:-1';
 const topology: TopologyIndex = {
   schemaVersion: 1,

@@ -14,7 +14,7 @@ import {
   type SimScenarioInput,
   type SimTrace,
   type SignalProgram,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 import {
   analyzeAsamCapabilities,

@@ -6,9 +6,9 @@ COPY --from=source /package.json /pnpm-lock.yaml /pnpm-workspace.yaml /tsconfig.
 COPY --from=source /packages ./packages
 COPY --from=source /services/render-worker ./services/render-worker
 RUN pnpm install --frozen-lockfile --ignore-scripts \
- && pnpm --filter @uniscenarios/browser-renderer... --filter @uniscenarios/render-worker... build \
- && pnpm deploy --legacy --filter @uniscenarios/render-worker --prod /out/worker \
- && pnpm deploy --legacy --filter @uniscenarios/browser-renderer --prod /out/browser-renderer
+ && pnpm --filter @simforge/render... --filter @simforge/render-worker... build \
+ && pnpm deploy --legacy --filter @simforge/render-worker --prod /out/worker \
+ && pnpm deploy --legacy --filter @simforge/render --prod /out/browser-renderer
 
 FROM node:22.14.0-bookworm-slim AS runtime
 ARG SOURCE_REVISION

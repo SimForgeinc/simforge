@@ -19,11 +19,11 @@ import {
   buildAnchorJsonSchema,
   buildInteractionsJsonSchema,
   buildTemplateJsonSchema,
-} from '@uniscenarios/scenario-model';
+} from '@simforge/scenario';
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
-import { REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { REPO_ROOT } from '@simforge/compiler';
 
 const MODEL_PKG = path.join(REPO_ROOT, 'packages', 'scenario-model');
 

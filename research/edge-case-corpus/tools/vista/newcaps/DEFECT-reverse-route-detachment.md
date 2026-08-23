@@ -1,6 +1,6 @@
 # DEFECT: a reversing actor detaches from its route under the default physics backend
 
-**Package:** `packages/sim-engine` (`sim/dynamic-v1.ts`, `sim/engine.ts`)
+**Package:** `packages/engine` (`sim/dynamic-v1.ts`, `sim/engine.ts`)
 **Severity:** silent — produces confidently wrong trajectories, no error, no warning
 **Status:** fixed on branch `vista-lane` by `caps-reverse`; recorded here because the root cause is a
 general physics error independent of the reverse *authoring* feature.

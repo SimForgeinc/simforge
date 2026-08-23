@@ -434,7 +434,7 @@ export function validateCorpusScenarioResult(instanceDoc, trace, result, options
  * line-of-sight reveal and the predicted conflict instant, and that metric is
  * always preferred. It is only emitted for a declared occlusion monitor that
  * was blocked and then revealed before conflict
- * (`packages/sim-engine/src/trace/metrics.ts` `declaredOcclusion` ->
+ * (`packages/engine/src/trace/metrics.ts` `declaredOcclusion` ->
  * `revealed_before_conflict`), so non-occlusion incidents (cut-in, illegal
  * U-turn, hard brake, stalled lead) never produce it. For those traces the
  * window is derived from the same trace's own recorded facts and nothing

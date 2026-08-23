@@ -3,17 +3,17 @@ FROM node:22.14.0-bookworm-slim AS node-build
 WORKDIR /src
 RUN corepack enable && corepack prepare pnpm@11.18.0 --activate
 COPY --from=source /package.json /pnpm-lock.yaml /pnpm-workspace.yaml /tsconfig.base.json ./
-COPY --from=source /packages/scenario-model ./packages/scenario-model
-COPY --from=source /packages/render-runtime ./packages/render-runtime
+COPY --from=source /packages/scenario ./packages/scenario
+COPY --from=source /packages/render ./packages/render
 COPY --from=source /services/render-worker ./services/render-worker
 RUN pnpm install --frozen-lockfile --ignore-scripts \
- && pnpm --filter @uniscenarios/scenario-model --filter @uniscenarios/render-runtime --filter @uniscenarios/render-worker build \
- && pnpm deploy --legacy --filter @uniscenarios/render-worker --prod /out/worker
+ && pnpm --filter @simforge/scenario --filter @simforge/render --filter @simforge/render-worker build \
+ && pnpm deploy --legacy --filter @simforge/render-worker --prod /out/worker
 
 FROM python:3.12.10-slim-bookworm AS python-build
 WORKDIR /src
-COPY --from=source /adapters/carla-bridge ./adapters/carla-bridge
-RUN python -m pip wheel --no-cache-dir --wheel-dir /wheels ./adapters/carla-bridge
+COPY --from=source /adapters/carla-exec ./adapters/carla-exec
+RUN python -m pip wheel --no-cache-dir --wheel-dir /wheels ./adapters/carla-exec
 
 FROM ghcr.io/simforgeinc/carla-rfs-munich-belmont:0.10.0-kia@sha256:baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64 AS runtime
 ARG SOURCE_REVISION

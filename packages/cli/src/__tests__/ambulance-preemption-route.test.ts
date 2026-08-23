@@ -4,10 +4,10 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildLanePathRoute, runSimulation } from '@uniscenarios/sim-engine';
+import { buildLanePathRoute, runSimulation } from '@simforge/engine';
 
-import { DEV_ASSETS, REPO_ROOT, loadMap } from '@uniscenarios/scenario-materializer';
-import { readInstance } from '@uniscenarios/scenario-materializer';
+import { DEV_ASSETS, REPO_ROOT, loadMap } from '@simforge/compiler';
+import { readInstance } from '@simforge/compiler';
 
 const MAP = 'yale-street';
 const INSTANCE = path.join(

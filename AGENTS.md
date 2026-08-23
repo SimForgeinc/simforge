@@ -16,7 +16,7 @@ node packages/cli/bin/uniscenarios.js --help        # the command surface, as JS
   (yale-street, belmont-research-center, el-camino-road,
   easterbrook-discovery-school, richmond-field-station). They are git-ignored;
   override the location with `SCEN_DEV_ASSETS=<dir>`.
-- Build a package in isolation: `pnpm --filter @uniscenarios/cli build`.
+- Build a package in isolation: `pnpm --filter @simforge/cli build`.
 - Run one test file: `cd packages/cli && npx vitest run src/__tests__/cli-smoke.test.ts`.
 
 ## CLI contract

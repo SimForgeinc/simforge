@@ -3,14 +3,14 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
+import { evaluateTrace, runSimulation } from '@simforge/engine';
 
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { artifactPresence, REPO_ROOT } from '@uniscenarios/scenario-materializer';
+import { artifactPresence, REPO_ROOT } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '@uniscenarios/scenario-materializer';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const MAP = 'el-camino-road';
 const SITE = '0a8fc7e0ff2a6cad';

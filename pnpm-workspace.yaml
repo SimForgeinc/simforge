@@ -2,6 +2,7 @@ packages:
   - apps/*
   - packages/*
   - services/*
+  - studio
 allowBuilds:
   esbuild: true
   sharp: true

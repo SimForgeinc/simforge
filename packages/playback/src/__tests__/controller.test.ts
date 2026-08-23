@@ -1,4 +1,4 @@
-import type { SimEvent } from '@uniscenarios/sim-engine';
+import type { SimEvent } from '@simforge/engine';
 import { describe, expect, it, vi } from 'vitest';
 import type { PlaybackBundle } from '../model';
 import { Group, PerspectiveCamera, Scene, Vector3 } from 'three';
@@ -13,7 +13,7 @@ import {
   samplePlaybackDoors,
   samplePlaybackVehicleCues,
 } from '../controller';
-import { DashCameraSensorSchema } from '@uniscenarios/scenario-model';
+import { DashCameraSensorSchema } from '@simforge/scenario';
 
 describe('actor dash-camera transform', () => {
   const sensor = DashCameraSensorSchema.parse({

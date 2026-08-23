@@ -1,4 +1,4 @@
-import type { SimScenarioInput } from '@uniscenarios/sim-engine';
+import type { SimScenarioInput } from '@simforge/engine';
 
 import { analyzeAsamCapabilities } from './common.js';
 import { exportOpenScenarioXml14 } from './xml-1.4.js';

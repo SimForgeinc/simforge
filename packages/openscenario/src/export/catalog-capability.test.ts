@@ -1,4 +1,4 @@
-import { parseSimScenarioInput } from '@uniscenarios/sim-engine';
+import { parseSimScenarioInput } from '@simforge/engine';
 import { describe, expect, it } from 'vitest';
 import { analyzeAsamCapabilities } from './common.js';
 

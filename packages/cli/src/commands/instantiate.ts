@@ -11,8 +11,8 @@ import path from 'node:path';
 import { EXIT } from '../errors.js';
 import { materialize, type MaterializeResult } from '../materialize.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { findSite } from '@uniscenarios/scenario-materializer';
-import { readTemplate, writeJsonFile, type InstanceFile } from '@uniscenarios/scenario-materializer';
+import { findSite } from '@simforge/compiler';
+import { readTemplate, writeJsonFile, type InstanceFile } from '@simforge/compiler';
 
 export interface InstantiateOptions {
   readonly file: string;

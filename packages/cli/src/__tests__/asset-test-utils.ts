@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { ARTIFACTS, DEV_ASSETS } from '@uniscenarios/scenario-materializer';
+import { ARTIFACTS, DEV_ASSETS } from '@simforge/compiler';
 
 const REQUIRED_MAP_ARTIFACTS = [
   ARTIFACTS.topology,

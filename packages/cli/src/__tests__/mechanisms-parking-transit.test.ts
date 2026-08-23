@@ -13,16 +13,16 @@ import {
   validateTemplate,
   type Interaction,
   type ScenarioTemplateV2,
-} from '@uniscenarios/scenario-model';
-import { runSimulation } from '@uniscenarios/sim-engine';
+} from '@simforge/scenario';
+import { runSimulation } from '@simforge/engine';
 
 import { adaptTemplate } from '../adapt.js';
 import { checkInvariants } from '../invariants.js';
-import { KNOWN_MAPS, REPO_ROOT, artifactPresence } from '@uniscenarios/scenario-materializer';
+import { KNOWN_MAPS, REPO_ROOT, artifactPresence } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { matchOnMap } from '@uniscenarios/scenario-materializer';
-import { readTemplate } from '@uniscenarios/scenario-materializer';
+import { matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'parking-transit');
 const CASES = [

@@ -19,10 +19,10 @@ import {
   type FindLocationsQuery,
   type LocationMatch,
   type StudioLocation,
-} from '@uniscenarios/map-intel';
+} from '@simforge/maps';
 
 import { CliError } from '../errors.js';
-import { loadMap } from '@uniscenarios/scenario-materializer';
+import { loadMap } from '@simforge/compiler';
 import { emit, emitLines, pad } from '../output.js';
 import { EXIT } from '../errors.js';
 

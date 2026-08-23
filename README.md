@@ -29,24 +29,24 @@ ledger intentionally gives no credit to incomplete or rejected evidence.
 
 - `apps/studio` — interactive UniScenarios authoring and playback surface
 - `packages/cli` — `uniscenarios`, the machine-readable workflow entry point
-- `packages/scenario-model` — versioned scenario documents and JSON Schemas
-- `packages/editor-core` — shared framework-neutral v2 editor document,
+- `packages/scenario` — versioned scenario documents and JSON Schemas
+- `packages/editor` — shared framework-neutral v2 editor document,
   interaction controller, route overlays, and viewer contract
-- `packages/map-intel` — semantic location and map queries
-- `packages/anchor-matcher` — logical scenario anchors to concrete map sites
-- `packages/sim-engine` — deterministic simulation and trace generation
-- `packages/scenario-materializer` — logical template to concrete instance
+- `packages/maps` — semantic location and map queries
+- `packages/compiler` — logical scenario anchors to concrete map sites
+- `packages/engine` — deterministic simulation and trace generation
+- `packages/compiler` — logical template to concrete instance
   materialization
-- `packages/ambient-traffic` — deterministic ambient traffic generation
+- `packages/playback` — deterministic ambient traffic generation
 - `packages/playback` — framework-neutral trace playback state and timing
-- `packages/camera-rig` — shared scenario camera models and controls
+- `packages/viewer` — shared scenario camera models and controls
 - `packages/openscenario` — ASAM OpenSCENARIO XML 1.4 import, export, and XSDs
-- `packages/trace-comparator` — deterministic trace and behavior comparison
-- `packages/city-renderer` — tile-streamed 3D city viewport
-- `packages/xodr-tools` — OpenDRIVE coordinates, lanes, and signals
-- `packages/esmini-runner` — optional esmini execution adapter
-- `packages/prop-catalog` — canonical actor and prop definitions
-- `adapters/carla-bridge` — optional public CARLA execution runtime
+- `packages/openscenario` — deterministic trace and behavior comparison
+- `packages/viewer` — tile-streamed 3D city viewport
+- `packages/maps` — OpenDRIVE coordinates, lanes, and signals
+- `packages/openscenario` — optional esmini execution adapter
+- `packages/asset-catalog` — canonical actor and prop definitions
+- `adapters/carla-exec` — optional public CARLA execution runtime
 - `catalog` — the authored five-map incident catalog and taxonomy
 
 ## Start the studio
@@ -58,7 +58,7 @@ pnpm dev
 
 Local map data belongs under `dev-assets/<map>/`. It is intentionally excluded
 from Git; the required layout is defined by
-`packages/city-renderer/src/manifest.ts`.
+`packages/viewer/src/manifest.ts`.
 
 ## Use the CLI
 

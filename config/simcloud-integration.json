@@ -1,7 +1,7 @@
 {
   "schema": "uniscenarios.simcloud-integration/v2",
   "platformRepository": "https://github.com/SimForgeinc/simcloud-platform",
-  "sourceStackConfig": "config/uniscenarios-stack.json",
+  "sourceStackConfig": "config/simforge-stack.json",
   "vendorLock": "vendor/uniscenarios/stack-lock.json",
   "consumerManifest": "package.json",
   "consumerLock": "package-lock.json",
