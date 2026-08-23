@@ -157,8 +157,6 @@ struct SceneSpawned;
 #[derive(Component)]
 struct IdClone;
 #[derive(Component)]
-struct SemanticClone(#[allow(dead_code)] u8);
-#[derive(Component)]
 struct ActorBox;
 
 
@@ -486,7 +484,7 @@ fn build_id_and_semantic_passes(
     mut materials: ResMut<Assets<StandardMaterial>>,
     meshes: Res<Assets<Mesh>>,
     scene_state: Option<Res<crate::scene_state::SceneState>>,
-    mut sensor_scene: Option<ResMut<SensorScene>>,
+    sensor_scene: Option<ResMut<SensorScene>>,
     meshes_q: Query<
         (
             Entity,
@@ -496,11 +494,7 @@ fn build_id_and_semantic_passes(
             Option<&GlobalTransform>,
             Option<&Transform>,
         ),
-        (
-            Without<IdClone>,
-            Without<SemanticClone>,
-            Without<WorldAssetRoot>,
-        ),
+        (Without<IdClone>, Without<WorldAssetRoot>),
     >,
     mut state: ResMut<HarnessState>,
     mut setup: ResMut<HarnessSetup>,
@@ -586,13 +580,14 @@ fn build_id_and_semantic_passes(
         let class = SemanticClass::ALL
             .iter()
             .copied()
-            .find(|c| c.id() == instance_class_lookup(&state.instance_classes, id))
+            .find(|c| c.id() == instance_class_lookup(&instance_classes, id))
             .unwrap_or(SemanticClass::Prop);
 
-        // ID clone on layer 1.
+        // Aux clone on layer 1: instance id low bytes in R/G, semantic class
+        // in B. (Alpha is unusable: opaque materials force it to 1.0.)
         let bytes = id.to_le_bytes();
         let id_mat = materials.add(StandardMaterial {
-            base_color: Color::srgb_u8(bytes[0], bytes[1], bytes[2]),
+            base_color: Color::srgb_u8(bytes[0], bytes[1], class.id()),
             unlit: true,
             ..default()
         });
@@ -604,23 +599,6 @@ fn build_id_and_semantic_passes(
         ));
         // Local transform: the clone re-parents under the same parent, so it
         // must carry the node's LOCAL transform (world would double-apply).
-        cmd.insert(local.copied().unwrap_or(Transform::IDENTITY));
-        if let Some(p) = child_of.map(|c| c.parent()) {
-            cmd.insert(ChildOf(p));
-        }
-
-        // Semantic clone on layer 2 (class id in red channel).
-        let sem_mat = materials.add(StandardMaterial {
-            base_color: Color::srgb_u8(class.id(), 0, 0),
-            unlit: true,
-            ..default()
-        });
-        let mut cmd = commands.spawn((
-            SemanticClone(class.id()),
-            Mesh3d(mesh3d.0.clone()),
-            MeshMaterial3d(sem_mat),
-            RenderLayers::layer(2),
-        ));
         cmd.insert(local.copied().unwrap_or(Transform::IDENTITY));
         if let Some(p) = child_of.map(|c| c.parent()) {
             cmd.insert(ChildOf(p));
@@ -805,6 +783,7 @@ fn spawn_sensors(
             Tonemapping::AgX,
             cam_order,
             rgb_image.into(),
+            None,
         );
         cam_order += 1;
 
@@ -816,15 +795,10 @@ fn spawn_sensors(
         });
 
         if !is_chase {
-            // Instance-ID pass: unlit ID colors on render-layer 1, black clear.
+            // Aux pass: instance id in RGB + semantic class in alpha,
+            // unlit on render-layer 1, black clear, neutral exposure.
             spawn_pass_camera(
                 &mut commands, &mut images, &device, &args, &format!("inst{i}"), tf, vfov, 1,
-                true, Tonemapping::None, cam_order,
-            );
-            cam_order += 1;
-            // Semantic-class pass: class id in red channel, layer 2.
-            spawn_pass_camera(
-                &mut commands, &mut images, &device, &args, &format!("sem{i}"), tf, vfov, 2,
                 true, Tonemapping::None, cam_order,
             );
             cam_order += 1;
@@ -854,9 +828,17 @@ fn spawn_pass_camera(
         src_image: image.clone(),
         key: key.to_string(),
     });
-    spawn_camera_entity(commands, transform, vfov_rad, layer, clear_black, tonemap, order, image.into());
+    // Unlit ID/semantic colors are absolute values: neutralize the camera's
+    // default EV100 exposure (sunlight ≈ 1/39321 would crush them to black).
+    let exposure = if clear_black {
+        Some(bevy::camera::Exposure { ev100: -1.2f32.log2() }) // multiplier == 1.0
+    } else {
+        None
+    };
+    spawn_camera_entity(commands, transform, vfov_rad, layer, clear_black, tonemap, order, image.into(), exposure);
 }
 
+#[allow(clippy::too_many_arguments)]
 #[allow(clippy::too_many_arguments)]
 fn spawn_camera_entity(
     commands: &mut Commands,
@@ -867,8 +849,9 @@ fn spawn_camera_entity(
     tonemap: Tonemapping,
     order: isize,
     target: RenderTarget,
+    exposure: Option<bevy::camera::Exposure>,
 ) {
-    commands.spawn((
+    let mut e = commands.spawn((
         Camera3d {
             depth_texture_usages: (TextureUsages::RENDER_ATTACHMENT | TextureUsages::COPY_SRC).into(),
             ..default()
@@ -889,6 +872,10 @@ fn spawn_camera_entity(
         target,
         RenderLayers::layer(layer as usize),
     ));
+    // Neutral exposure for the aux pass: unlit ID/class colors are absolute.
+    if let Some(exposure) = exposure {
+        e.insert(exposure);
+    }
 }
 
 fn ego_transform(ss: Option<&crate::scene_state::SceneState>, tick_index: u32) -> Transform {
@@ -983,7 +970,6 @@ fn collect_passes(
         expected.push(format!("depth{i}"));
         if !is_chase {
             expected.push(format!("inst{i}"));
-            expected.push(format!("sem{i}"));
         }
     }
     let min_steady_frame = args.warmup as u64 + 1;
@@ -1025,14 +1011,22 @@ fn collect_passes(
         };
         save_png(&format!("rgb{i}"), "00000000.rgb.png").expect("save rgb");
         if !is_chase {
-            save_png(&format!("inst{i}"), "00000000.instance.png").expect("save instance");
-            save_png(&format!("sem{i}"), "00000000.semantic.png").expect("save semantic");
-            let depth = latest
-                .get(&format!("depth{i}"))
-                .with_context(|| format!("missing depth pass {i}"))
-                .expect("depth pass");
-            let raw = strip_padding(&depth.data, w, h, 4);
-            std::fs::write(dir.join("00000000.depth.f32.bin"), &raw).expect("write depth bin");
+            let raw = {
+                let p = latest.get(&format!("inst{i}")).expect("instance pass");
+                strip_padding(&p.data, w, h, 4)
+            };
+            let img = image::RgbaImage::from_raw(w as u32, h as u32, raw.clone()).expect("rgba");
+            img.save(dir.join("00000000.instance.png")).expect("save instance");
+            // Semantic class lives in the aux pass blue channel; re-encode
+            // into the red channel for the standard semantic artifact shape.
+            let mut sem = image::RgbaImage::new(w as u32, h as u32);
+            for (x, y, px) in img.enumerate_pixels() {
+                sem.put_pixel(x, y, image::Rgba([px[2], 0, 0, 255]));
+            }
+            sem.save(dir.join("00000000.semantic.png")).expect("save semantic");
+            let depth = latest.get(&format!("depth{i}")).expect("depth pass");
+            let draw = strip_padding(&depth.data, w, h, 4);
+            std::fs::write(dir.join("00000000.depth.f32.bin"), &draw).expect("write depth bin");
         }
     }
 

@@ -14,7 +14,7 @@
     },
     {
       "path": "legend.json",
-      "sha256": "a8917a5435281bf2de817d4a50f529c3ecb5bf148db7987712c4ec23b7cdaea2"
+      "sha256": "e4126f77aa626df454af80ed975ebccc667a5a66fdd626989c844578bc7a2c47"
     },
     {
       "path": "pronto-cam0/00000000.depth.f32.bin",
@@ -22,7 +22,7 @@
     },
     {
       "path": "pronto-cam0/00000000.instance.png",
-      "sha256": "c9e176357da971997ef219f3362e1229cdd50c2381fc3935897a21cf01f53cf6"
+      "sha256": "1d8e6907c062dc9ba61ed01f06f2c6ea071bb39e72eb8facd34677e0ea0d38b8"
     },
     {
       "path": "pronto-cam0/00000000.rgb.png",
@@ -30,7 +30,7 @@
     },
     {
       "path": "pronto-cam0/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "301d26cab19b250a87acfacc9b5a53f250b340acb083de8cfd1c4219f39c9a41"
     },
     {
       "path": "pronto-cam1/00000000.depth.f32.bin",
@@ -38,7 +38,7 @@
     },
     {
       "path": "pronto-cam1/00000000.instance.png",
-      "sha256": "2827710b794ffe55876ec52f2db87adcead1cf3df6a35d1307fa7888b578ffdd"
+      "sha256": "8849a683b1f40f6c4a6eac571566439fbdb15373a614753582af737c22e2787e"
     },
     {
       "path": "pronto-cam1/00000000.rgb.png",
@@ -46,7 +46,7 @@
     },
     {
       "path": "pronto-cam1/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "95e9c114c8a29794fd5e2d50d9af22f7104aedc9b52c3615d13f67244929dbbe"
     },
     {
       "path": "pronto-cam2/00000000.depth.f32.bin",
@@ -54,7 +54,7 @@
     },
     {
       "path": "pronto-cam2/00000000.instance.png",
-      "sha256": "d9bebead3acb32d8aef0f1c9a3efbdb06e63d12f7b045d681d3e1804deacee0f"
+      "sha256": "e6f156c595d19e0f2a62db882c6920077fdc92b3ba7807ccf8f13a3ba77de515"
     },
     {
       "path": "pronto-cam2/00000000.rgb.png",
@@ -62,7 +62,7 @@
     },
     {
       "path": "pronto-cam2/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "64ef2f8ae30fdbfb51c8be76f2291a9357596d7b3a39d2dd26992b5b0bec80e6"
     },
     {
       "path": "pronto-cam3/00000000.depth.f32.bin",
@@ -70,7 +70,7 @@
     },
     {
       "path": "pronto-cam3/00000000.instance.png",
-      "sha256": "674389c0edc3ef52c86849aace286f314ea8ba12560a1a895345019973cff837"
+      "sha256": "032618bcb9c328258b268802f4b1a1b333e071cc3e40d3d4f3e9fd0a8f5e4b96"
     },
     {
       "path": "pronto-cam3/00000000.rgb.png",
@@ -78,7 +78,7 @@
     },
     {
       "path": "pronto-cam3/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "b777d245511f88172d84b1884e6087845277d6677753290be317c1a5e2a8ca95"
     },
     {
       "path": "pronto-cam4/00000000.depth.f32.bin",
@@ -86,7 +86,7 @@
     },
     {
       "path": "pronto-cam4/00000000.instance.png",
-      "sha256": "5c6e082a06b407d296d13d187b88cb97f74bfbe42540fa11c7270e1e6c5e40aa"
+      "sha256": "86c6cf2784617e1a28775cc84ae01f0c02312b40e9c9cc38c2ded647f6720311"
     },
     {
       "path": "pronto-cam4/00000000.rgb.png",
@@ -94,7 +94,7 @@
     },
     {
       "path": "pronto-cam4/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "a790e9c7beec9824d8fab88486e189edcd7e0291bc8c09bb022c229fffbbc8b2"
     },
     {
       "path": "pronto-cam5/00000000.depth.f32.bin",
@@ -102,7 +102,7 @@
     },
     {
       "path": "pronto-cam5/00000000.instance.png",
-      "sha256": "199dea17daae75a42d386354e2b33c092270253c8b1a81a9bba37fe49af46418"
+      "sha256": "e846ecd6c2d3d3db7fdcf38ea45f06a67c271ed2ddc6505dedcdaa3cb30d167f"
     },
     {
       "path": "pronto-cam5/00000000.rgb.png",
@@ -110,7 +110,7 @@
     },
     {
       "path": "pronto-cam5/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "5252c39352d870f411807239511aa2a8cac44acc707657a8fbee04dfde3155f9"
     },
     {
       "path": "pronto-cam6/00000000.depth.f32.bin",
@@ -118,7 +118,7 @@
     },
     {
       "path": "pronto-cam6/00000000.instance.png",
-      "sha256": "c922380fa5ca658c817742ba977fe02c134bbd6f7c2dd029a3732b40e3dac11f"
+      "sha256": "1c57dca177f3a8d85bda12a1ee2080777a99d8955b4ee44b88616b0980abea80"
     },
     {
       "path": "pronto-cam6/00000000.rgb.png",
@@ -126,7 +126,7 @@
     },
     {
       "path": "pronto-cam6/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "501b5e4e54b76ed698038005e4ae080362dd29f8bd8b15c37d7ce131b6674608"
     },
     {
       "path": "pronto-cam7/00000000.depth.f32.bin",
@@ -134,7 +134,7 @@
     },
     {
       "path": "pronto-cam7/00000000.instance.png",
-      "sha256": "3accab5529b8deb3e4ded500407a7e187574de4d2ff1993fe57f558296d73a29"
+      "sha256": "ed22d85162c435cb002470cc08db28f906de01dc1ddea1a89887b5244dd0df10"
     },
     {
       "path": "pronto-cam7/00000000.rgb.png",
@@ -142,7 +142,7 @@
     },
     {
       "path": "pronto-cam7/00000000.semantic.png",
-      "sha256": "8455e0f311aaa64f29e4cb67dd258e3b2b33be45f7f3f54a400590e8f38e67ac"
+      "sha256": "24a2b2356256fdb73c222786fd7ca166d923463b87ca956d2bc4f6dcd7d58d69"
     },
     {
       "path": "pronto-lidar-front-left-wide/00000000.ply",
