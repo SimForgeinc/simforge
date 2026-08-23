@@ -1,7 +1,19 @@
-# Teacher License Decision — MiniMax H3 vs Wan 2.2
+# Teacher License Decision — MiniMax H3 (operative) and retired Wan 2.2 analysis
 
-Workstream: WS3 (Bridge). Date: 2026-08-22. Status: **DECIDED — Wan 2.2 is the
-primary distillation teacher; H3 is NO-GO for any student training use.**
+**Decision update — 2026-08-23 (OPERATIVE):** By user directive, H3 (MiniMax)
+is the only video model for research tasks. The user explicitly waives the H3
+license concern for that research scope. The prior recommendation to use Wan
+2.2 as a production teacher is **RESCINDED**, and Wan 2.2 is removed from the
+project entirely.
+
+The analysis below is retained unchanged as a historical record of the
+2026-08-22 review and experiments. It is not current project policy and does
+not authorize or recommend any Wan implementation.
+
+## Historical license analysis (superseded 2026-08-23)
+
+Workstream: WS3 (Bridge). Original decision date: 2026-08-22. Status:
+**SUPERSEDED — historical record only.**
 
 Sources verified 2026-08-22:
 

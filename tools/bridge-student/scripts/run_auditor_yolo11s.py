@@ -5,7 +5,7 @@ Produces reports/auditor-yolo11s-<set>.json with per-clip verdicts and the
 aggregate rejection rate against the <20% gate.
 
   python scripts/run_auditor_yolo11s.py --det-dir ~/ws3-bridge/det \
-      --sets yolo11s-h3-pov yolo11s-wan-pov \
+      --sets yolo11s-h3-pov \
       --gt-dir ~/w0-audit/gt_boxes/pov --out-dir ~/ws3-bridge/reports
 """
 

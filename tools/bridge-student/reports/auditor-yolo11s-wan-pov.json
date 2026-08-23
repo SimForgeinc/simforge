@@ -1,4 +1,5 @@
 {
+  "historical_record": "[RETIRED — Wan removed from project 2026-08-23]; scored report retained for accuracy",
   "schema": "uniscenarios.bridge-auditor.v1",
   "frozen_detector": {
     "name": "yolo11s",

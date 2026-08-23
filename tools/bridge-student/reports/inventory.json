@@ -109,10 +109,9 @@
   "scale_out": {
     "target_pairs": 100000,
     "clips_needed_60f": 1667,
-    "wan_seconds_per_clip_measured": 257.4,
-    "wan_clip_gpu_seconds": 257.4,
-    "wan_generation_gpu_days_4xa100": 1.24,
-    "h3_reference_gpu_days_4xa100_forbidden": 4.32,
+    "h3_seconds_per_clip_measured": 895.0,
+    "h3_clip_gpu_seconds": 895.0,
+    "h3_generation_gpu_days_4xa100": 4.32,
     "render_wall_hours_local_gpu": 55.6
   }
 }

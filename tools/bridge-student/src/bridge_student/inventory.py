@@ -55,10 +55,8 @@ def main(argv=None):
     # measured constants (W0_REPORT.md / V2_RESULTS.md / render logs):
     p.add_argument("--h3-s-per-clip", type=float, default=895.0,
                    help="measured H3 Ref2VA warm latency per 60-frame clip on one A100")
-    p.add_argument("--wan-s-per-clip", type=float, default=None,
-                   help="measured Wan 2.2 seconds per clip; falls back to estimate")
-    p.add_argument("--wan-gpu", type=int, default=1,
-                   help="GPUs per Wan translation job")
+    p.add_argument("--h3-gpu", type=int, default=1,
+                   help="GPUs per H3 translation job")
     p.add_argument("--render-s-per-frame", type=float, default=2.0,
                    help="local RTX 5080 render+GT capture per frame (upper bound incl. browser overhead)")
     p.add_argument("--train-gpu-days-per-100k", type=float, default=None,
@@ -109,23 +107,15 @@ def main(argv=None):
     target = args.target_pairs
     frames_per_clip = 60
     clips_needed = -(-target // frames_per_clip)  # ceil
-    h3_frames_per_gpu_s = frames_per_clip / args.h3_s_per_clip
-    if args.wan_s_per_clip:
-        wan_clip_s = args.wan_s_per_clip
-    else:
-        # TI2V-5B estimate pending measurement; conservative 5x H3 throughput
-        wan_clip_s = args.h3_s_per_clip * 5.0
-    wan_clip_gpu_s = wan_clip_s * args.wan_gpu
+    h3_clip_gpu_s = args.h3_s_per_clip * args.h3_gpu
 
     gen = {
         "target_pairs": target,
         "clips_needed_60f": clips_needed,
-        "wan_seconds_per_clip_measured": args.wan_s_per_clip,
-        "wan_clip_gpu_seconds": round(wan_clip_gpu_s, 1),
-        "wan_generation_gpu_days_4xa100": round(
-            clips_needed * wan_clip_gpu_s / (4 * 86400.0), 2),
-        "h3_reference_gpu_days_4xa100_forbidden": round(
-            clips_needed * frames_per_clip / h3_frames_per_gpu_s / (4 * 86400.0), 2),
+        "h3_seconds_per_clip_measured": args.h3_s_per_clip,
+        "h3_clip_gpu_seconds": round(h3_clip_gpu_s, 1),
+        "h3_generation_gpu_days_4xa100": round(
+            clips_needed * h3_clip_gpu_s / (4 * 86400.0), 2),
         "render_wall_hours_local_gpu": round(
             clips_needed * frames_per_clip * args.render_s_per_frame / 3600.0, 1),
     }

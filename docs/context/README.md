@@ -13,7 +13,7 @@ shaped the current tree. Start here; follow links for depth.
 | [../rl-platform-hardening-plan.md](../rl-platform-hardening-plan.md) | RL/sim-to-real pipeline hardening plan (WS1–WS7) |
 | [../native-renderer-production-plan.md](../native-renderer-production-plan.md) | Bevy native renderer production plan (WSB1–WSB7) |
 | [../v2x-port-plan.md](../v2x-port-plan.md) | V2XCarla digital-twin port plan (V1–V7) |
-| [../teacher-license-decision.md](../teacher-license-decision.md) | Video-teacher licensing decision (H3 NO-GO, Wan 2.2 production teacher) |
+| [../teacher-license-decision.md](../teacher-license-decision.md) | Video-teacher decision: H3-only for research by user directive (2026-08-23); prior license analysis retained as history |
 
 ## One-paragraph summary
 

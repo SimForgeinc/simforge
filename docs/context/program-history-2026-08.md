@@ -13,10 +13,11 @@ never fired collision termination.
 - **WS1 Real corpus**: 1760 frames (BDD100K + nuScenes mirrors), frozen
   detection instrument (yolo11s, weights sha `85a76fe8…` checked in).
 - **WS2 Examiner**: claims.v1 examiner, 423-case benchmark, 100% recovery.
-- **WS3 Teacher licensing**: MiniMax H3 open weights are LICENSE-PROHIBITED
-  for training (Community License §V.3 bans distillation; USA is an Excluded
-  Territory) — capability proofs only. Wan 2.2 (Apache-2.0) is the production
-  video teacher. Wan student v0 exists; student sampling-collapse fix is open.
+- **WS3 Teacher decision**: The 2026-08-22 license review found MiniMax H3
+  restricted for training. The user superseded that recommendation on
+  2026-08-23: H3 is the only video model for research tasks, the license concern
+  is explicitly waived for that scope, and Wan 2.2 was removed. The retired
+  Wan student v0 scores remain only as annotated experiment history.
 - **WS4 Determinism**: Chrome/SwiftShader rendering is NOT byte-stable (0/8);
   Bevy native is (59/59) — grounded the native-renderer program.
 - **WS5**: frozen 40-entry policy eval suite
@@ -56,9 +57,11 @@ The earlier 0.0-binding score was a harness payload artifact (source video
 sent as `role:"reference"` = style-only). Working recipe: `task:"fl2va"` with
 first+last source frames as `role:"keyframe"` → recall 0.375 / IoU 0.750 vs
 the user's Hailuo-website bar 0.354 / 0.711. Caveat: keyframes pin style
-(midnight restyle fails); restyled-keyframe arm ran as follow-up. Licensing
-unchanged: H3 stays NO-GO for training; the keyframe-conditioning lesson
-transfers to Wan 2.2. Verdict doc: `tools/h3-reproduce/VERDICT.md`.
+(midnight restyle fails); restyled-keyframe arms ran as follow-up. On
+2026-08-23 the user made H3 the only video model for research and explicitly
+waived the documented license concern for that scope. Wan 2.2 was removed;
+its scored results remain annotated as historical records. Verdict doc:
+`tools/h3-reproduce/VERDICT.md`.
 
 ## Wave 4 — SimCloud local port (SC1–SC7, 2026-08-22/23)
 
