@@ -1233,7 +1233,7 @@ export async function completeCpuJob(
         await tx.execute(
           `INSERT INTO uniscenario.artifact_links (
              id, workspace_id, artifact_id, render_job_id, relationship
-           ) VALUES (:id, :workspace_id, :artifact_id, :job_id, 'output')
+           ) VALUES (:id, :workspace_id, :artifact_id, :job_id, 'job_level')
            ON CONFLICT DO NOTHING`,
           {
             id: uniscenarioId("usal"),
