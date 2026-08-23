@@ -24,6 +24,9 @@ export function createChatModel() {
   });
 }
 
-export function traceableFunction<T extends (...args: never[]) => unknown>(fn: T): T {
+export function traceableFunction<T extends (...args: never[]) => unknown>(
+  fn: T,
+  _config?: { name?: string; metadata?: Record<string, unknown> },
+): T {
   return fn;
 }
