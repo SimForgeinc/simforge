@@ -27,29 +27,104 @@ export type Transaction = {
   queryOne: <T>(sql: string, params?: SqlParams) => Promise<T | null>;
 };
 
-let pglitePromise: Promise<PGlite> | undefined;
-let pool: Pool | undefined;
-let operationTail: Promise<void> = Promise.resolve();
+type DatabaseState = {
+  acceptingOperations: boolean;
+  hooksInstalled: boolean;
+  operationTail: Promise<void>;
+  pglitePromise?: Promise<PGlite>;
+  pool?: Pool;
+  shutdownPromise?: Promise<void>;
+  signalExitStarted: boolean;
+};
+
+const stateKey = Symbol.for("uniscenarios.cloud.database");
+const globalState = globalThis as typeof globalThis & {
+  [stateKey]?: DatabaseState;
+};
+const state = globalState[stateKey] ??= {
+  acceptingOperations: true,
+  hooksInstalled: false,
+  operationTail: Promise.resolve(),
+  signalExitStarted: false,
+};
 
 function serialize<T>(operation: () => Promise<T>): Promise<T> {
-  const run = operationTail.then(operation, operation);
-  operationTail = run.then(() => undefined, () => undefined);
+  if (!state.acceptingOperations) {
+    return Promise.reject(new Error("The local database is shutting down"));
+  }
+  const run = state.operationTail.then(operation, operation);
+  state.operationTail = run.then(() => undefined, () => undefined);
   return run;
 }
 
 async function getPGlite(): Promise<PGlite> {
-  if (!pglitePromise) {
-    pglitePromise = (async () => {
+  if (!state.pglitePromise) {
+    state.pglitePromise = (async () => {
       await mkdir(LOCAL_DATABASE_DIR, { recursive: true });
-      return new PGlite(pathToFileURL(LOCAL_DATABASE_DIR).href);
+      const db = new PGlite(pathToFileURL(LOCAL_DATABASE_DIR).href, {
+        relaxedDurability: false,
+      });
+      try {
+        await db.waitReady;
+        return db;
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        console.error(
+          `[SimCloud] The local database at ${LOCAL_DATABASE_DIR} could not be opened and may contain a corrupt checkpoint. The data directory was left untouched; preserve it for recovery or restore it from a backup.`,
+        );
+        throw new Error(`Unable to open local database at ${LOCAL_DATABASE_DIR}: ${detail}`, {
+          cause: error,
+        });
+      }
     })();
   }
-  return pglitePromise;
+  return state.pglitePromise;
 }
 
 function getPool(): Pool {
-  if (!pool) pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  return pool;
+  if (!state.pool) state.pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  return state.pool;
+}
+
+async function shutdownDatabase(): Promise<void> {
+  if (!state.shutdownPromise) {
+    state.acceptingOperations = false;
+    state.shutdownPromise = (async () => {
+      await state.operationTail;
+      if (state.pglitePromise) {
+        const db = await state.pglitePromise.catch(() => undefined);
+        if (db) await db.close();
+        state.pglitePromise = undefined;
+      }
+      if (state.pool) {
+        await state.pool.end();
+        state.pool = undefined;
+      }
+    })();
+  }
+  return state.shutdownPromise;
+}
+
+function reportShutdownFailure(error: unknown): void {
+  console.error("[SimCloud] Failed to close the local database cleanly:", error);
+  process.exitCode = 1;
+}
+
+function handleSignal(): void {
+  if (state.signalExitStarted) return;
+  state.signalExitStarted = true;
+  void shutdownDatabase()
+    .catch(reportShutdownFailure)
+    .finally(() => process.exit(process.exitCode ?? 0));
+}
+
+if (!state.hooksInstalled) {
+  state.hooksInstalled = true;
+  process.once("SIGINT", handleSignal);
+  process.once("SIGTERM", handleSignal);
+  process.once("beforeExit", () => {
+    void shutdownDatabase().catch(reportShutdownFailure);
+  });
 }
 
 function bindValue(value: SqlValue | undefined): unknown {
