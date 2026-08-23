@@ -1,0 +1,18 @@
+{
+  "method": "Mean 8-bit grayscale luminance over index-aligned decoded frames from t=0; ratio = output mean / source mean over the same frame count.",
+  "graded_keyframe_target_ratio": [0.41, 0.42],
+  "arms": {
+    "E3-H3-fl2va-candidate-905f752e": {
+      "frames_aligned": 192,
+      "source_mean_luma": 144.1954,
+      "output_mean_luma": 39.8893,
+      "luminance_ratio": 0.2766
+    },
+    "E3-Wan22": {
+      "frames_aligned": 193,
+      "source_mean_luma": 144.1783,
+      "output_mean_luma": 48.2903,
+      "luminance_ratio": 0.3349
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "label": "A7-website-replica-15s",
+  "instrument": {
+    "name": "yolo11s",
+    "weightsSha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+    "confThreshold": 0.25,
+    "iouMatch": 0.5,
+    "device": "cpu"
+  },
+  "source": {
+    "path": "tools/h3-reproduce/results/e3/media/source-richmond15s.mp4",
+    "width": 1280,
+    "height": 720,
+    "nb_frames": "360",
+    "avg_frame_rate": "24/1"
+  },
+  "output": {
+    "path": "tools/h3-reproduce/results/e3/media/A7-website-replica.mp4",
+    "width": 1344,
+    "height": 768,
+    "nb_frames": "362",
+    "avg_frame_rate": "24/1"
+  },
+  "frames_compared": 180,
+  "per_class": {
+    "vehicle": {
+      "src_det": 1933,
+      "out_det": 1158,
+      "recall": 0.1138,
+      "binding_iou": 0.8405,
+      "hallucination": 0.81,
+      "deletion": 0.8862
+    },
+    "pedestrian": {
+      "src_det": 12,
+      "out_det": 0,
+      "recall": 0.0,
+      "binding_iou": null,
+      "hallucination": null,
+      "deletion": 1.0
+    },
+    "bicycle": {
+      "src_det": 0,
+      "out_det": 0,
+      "recall": null,
+      "binding_iou": null,
+      "hallucination": null,
+      "deletion": null
+    },
+    "motorcycle": {
+      "src_det": 0,
+      "out_det": 0,
+      "recall": null,
+      "binding_iou": null,
+      "hallucination": null,
+      "deletion": null
+    }
+  },
+  "overall": {
+    "recall": 0.1131,
+    "hallucination": 0.81
+  }
+}

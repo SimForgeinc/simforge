@@ -92,10 +92,61 @@ score. Boxes compared in resolution-normalized coords.
 | D1 | real-footage control | N/A — no real driving video exists in the environment (WS1 corpus = BDD stills; simforge1 `nuplan_demo.mp4` is a BEV visualization render, not camera footage; first attempt scored vacuously: 0 vehicle dets in source) | | |
 | E1 | fl2va first-frame keyframe only + user prompt, 20 steps, 416p | 0.149 | 0.811 | 0.682 |
 | E2 | **fl2va first+last keyframes** of source clip + user prompt, 20 steps, 416p | **0.375** | **0.750** | **0.620** |
+| A7 | **website-replica**: video-only reference + exact user prompt, 50 steps, 15 s, 768p | **0.114** | **0.841** | **0.810** |
+| E3-H3 | candidate `905f752e…` supplied for restyled-keyframe scoring (see identity finding below), 8 s, 416p | **0.149** | **0.813** | **0.682** |
+| E3-Wan | Wan 2.2 I2V, graded first keyframe, 8 s | **0.115** | **0.713** | **0.502** |
 
-All arms: engine clip = first 8 s of richmond-20s chase render (1280×720@24),
-`target {short_edge 416→or 768, aspect 16:9, duration 8 s}`, `flow_shift 12`,
-`audio_flow_shift 3`, `seed 44`, single output.
+Matrix arms A1–A6, D1, and E1–E2 used the first 8 s of the richmond-20s
+chase render (1280×720@24), `target {short_edge 416→or 768, aspect 16:9,
+duration 8 s}`, `flow_shift 12`, `audio_flow_shift 3`, `seed 44`, one output.
+A7 and E3 are described separately below.
+
+### A7 — 15 s website-replica arm: **FAIL**
+
+A7 used the exact 15 s source trim, the user's prompt verbatim, Ref2VA at
+768p/50 steps, and output `7fc15b64-2093-41a9-97c5-6b3903a65b77.mp4`.
+Against that same trim it scores **0.114 vehicle recall / 0.841 binding IoU /
+0.810 hallucination** (180 stride-2 frames). Recall is only 32% of the
+website bar (**0.354**) and well below the prior E2 keyframe recipe
+(**0.375**), though its few accepted matches are tight (IoU exceeds both
+0.711 and 0.750 bars). Visual review of the four-frame contact sheet finds a
+convincing photoreal midnight grade—dark sky, head/tail lights, practical
+building light—but the camera/road trajectory and vehicle layout diverge.
+Thus base Ref2VA + reference + prompt does **not** reproduce the website's
+combination of style and scene preservation.
+
+**Reference wiring was not dropped.** `req_A7.json` contains
+`richmond15s.mp4` as a `type:"video", role:"reference"` condition. The Ref2VA
+worker accepted the request, then spent **88.8193 s** in
+`MiniMaxH3VisualEncodingStage` before denoising and wrote the named output.
+That is positive ingestion evidence: poor binding is model/path behavior, not
+a silently omitted video reference.
+
+### E3 — restyled-keyframe transfer
+
+| arm | aligned frames | vehicle recall | binding IoU | hallucination | output/source luma | vs graded-keyframe target |
+|---|---:|---:|---:|---:|---:|---|
+| H3 candidate `905f752e…` | 96 stride-2 / 192 decoded | 0.149 | 0.813 | 0.682 | **0.277** | 33% darker than 0.41–0.42 |
+| Wan 2.2 (production teacher) | 97 stride-2 / 193 decoded | 0.115 | 0.713 | 0.502 | **0.335** | 18% darker than 0.41–0.42 |
+
+Luminance is mean 8-bit grayscale over decoded output frames divided by the
+mean of the index-aligned source frames from t=0. Both outputs transfer a
+strong night look, but overshoot the graded endpoints' 0.41–0.42
+midnight-depth target. Wan visibly retains the chase-car viewpoint and road
+axis, but detector recall is poor and extra motorcycles/pedestrians appear;
+it is **DEGRADED**, not a production-ready structure-preserving teacher.
+
+The H3 inventory also closes an important provenance problem: candidate
+`87d3b9e3…` is byte-identical to prior A4
+`A4_control_styleimgs_w0_20st.mp4`, while `905f752e…` is byte-identical to
+prior E1 `E1_fl2va_firstframe_20st.mp4`. The new
+`fl2va_worker_e3.log` contains model startup through “ready” but no POST,
+job ID, visual encoding, denoising, or completion. Therefore there is **no
+distinct completed H3 restyled-keyframe artifact** in the stated candidates.
+The scored `905f752e…` result is the old source-first-frame arm (its exact
+0.149 recall also reproduces E1), so it cannot establish transfer from the
+graded E3 keyframes. H3 E3 is **FAIL (artifact/provenance)**, not a positive
+or negative model-quality result.
 
 ## 3. Verdict
 
