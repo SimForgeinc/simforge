@@ -6,7 +6,7 @@
   "packageManager": "pnpm@11.18.0",
   "scripts": {
     "dev": "pnpm --filter @simforge/studio dev",
-    "dev:worker": "UNISCENARIOS_LOCAL_WORKER=1 pnpm --filter @simforge/studio dev",
+    "dev:worker": "pnpm --filter @simforge/studio worker",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:portable": "pnpm --filter @simforge/scenario --filter @simforge/engine --filter @simforge/maps --filter @simforge/compiler --filter @simforge/viewer --filter @simforge/editor --filter @simforge/playback --filter @simforge/asset-catalog --filter @simforge/render --filter @simforge/openscenario test && pnpm --filter @simforge/cli test:portable",
@@ -29,7 +29,8 @@
     "test:release": "node --test scripts/release/*.test.mjs",
     "integration:audit": "node scripts/integration/audit-simcloud-divergence.mjs",
     "integration:compare-engine": "tsx scripts/integration/compare-engine-behavior.ts",
-    "test:integration": "node --test scripts/integration/*.test.mjs"
+    "test:integration": "node --test scripts/integration/*.test.mjs",
+    "dev:all": "UNISCENARIOS_LOCAL_WORKER=1 pnpm --filter @simforge/studio dev"
   },
   "devDependencies": {
     "playwright-core": "^1.62.1",
