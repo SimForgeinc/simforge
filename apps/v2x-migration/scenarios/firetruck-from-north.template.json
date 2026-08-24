@@ -2,10 +2,10 @@
   "scenarioVersion": 2,
   "meta": {
     "name": "EVA firetruck from the north \u2014 migrated from firetruck_from_north.xosc",
-    "description": "V2XCarla EVA pull-over choreography, re-expressed natively on UniScenarios. A firetruck approaches the RFS intersection from the north on road 18 lane +1 at 30 km/h and drives through it toward a goal on road 45 lane +1. The ego sits on the same lane between spawn and intersection (externally controlled in the drive session; stationary here) so the truck must approach it from behind. Original semantics preserved: BasicAgent route-following with obstacle yield becomes the engine's collision-avoiding customRoute follower; AcquirePositionAction becomes a t=0.5s route interaction; the 120 s storyboard safety timeout becomes clipSeconds; the collision evaluation criterion becomes the engine's contact guard. Weather ClearNoon maps to clear/noon.",
+    "description": "V2XCarla EVA pull-over choreography, re-expressed natively on SimForge. A firetruck approaches the RFS intersection from the north on road 18 lane +1 at 30 km/h and drives through it toward a goal on road 45 lane +1. The ego sits on the same lane between spawn and intersection (externally controlled in the drive session; stationary here) so the truck must approach it from behind. Original semantics preserved: BasicAgent route-following with obstacle yield becomes the engine's collision-avoiding customRoute follower; AcquirePositionAction becomes a t=0.5s route interaction; the 120 s storyboard safety timeout becomes clipSeconds; the collision evaluation criterion becomes the engine's contact guard. Weather ClearNoon maps to clear/noon.",
     "createdAt": "2026-08-23T00:00:00.000Z",
     "modifiedAt": "2026-08-23T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "tags": [
       "v2x-migration",
       "openscenario",

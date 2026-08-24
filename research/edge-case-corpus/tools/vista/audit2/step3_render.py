@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
-DEV = '/Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/dev-assets'
+DEV = '/Users/michaelvu-simforge/Documents/Programming/SimForge-vista/dev-assets'
 RD = os.path.join(HERE, 'renders')
 
 

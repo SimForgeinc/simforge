@@ -1,6 +1,6 @@
 # Third-party asset ledger
 
-This ledger covers assets added by UniScenarios itself. Original external map
+This ledger covers assets added by SimForge itself. Original external map
 bundles retain their upstream provenance and are not redistributed by the
 runtime material feature.
 

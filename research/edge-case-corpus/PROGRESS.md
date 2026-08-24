@@ -212,7 +212,7 @@ current matcher, across 37 incident types. `catalog verify` failing is *correct 
 recomputing the 6 digests would be the silent re-bind `retargeting.md` explicitly forbids and would
 hide the other 372.
 
-`uniscenarios catalog create` re-derives cleanly (verify exit 0, 0 issues). Re-derived catalog and a
+`simforge catalog create` re-derives cleanly (verify exit 0, 0 issues). Re-derived catalog and a
 full drift report are in `catalog-drift/`. **Not applied automatically** — the committed catalog is a
 provenance artifact. Nothing downstream depends on it (`generated 0, simulated 0, visuallyAccepted 0`).
 

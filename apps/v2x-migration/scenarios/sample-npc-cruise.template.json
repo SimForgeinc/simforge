@@ -2,10 +2,10 @@
   "scenarioVersion": 2,
   "meta": {
     "name": "NPC follower cruise \u2014 migrated from sample.xosc",
-    "description": "V2XCarla sample scenario, re-expressed natively on UniScenarios. One NPC spawns at RFS spawn point #3 (78.9, -91.1) at rest, holds still for 1 s (xosc StartTrigger SimulationTimeCondition 1.0), then accelerates linearly to 12 m/s over 3 s (SpeedAction dynamics linear 3.0 s) and cruises for the remainder of the 30 s clip. The ego is external_control in the xosc \u2014 the drive session supplies it, so it is not authored here; the bridge's live session attaches exactly as ScenarioRunner did. Weather ClearNoon maps to clear/noon; the 30 s storyboard StopTrigger becomes clipSeconds.",
+    "description": "V2XCarla sample scenario, re-expressed natively on SimForge. One NPC spawns at RFS spawn point #3 (78.9, -91.1) at rest, holds still for 1 s (xosc StartTrigger SimulationTimeCondition 1.0), then accelerates linearly to 12 m/s over 3 s (SpeedAction dynamics linear 3.0 s) and cruises for the remainder of the 30 s clip. The ego is external_control in the xosc \u2014 the drive session supplies it, so it is not authored here; the bridge's live session attaches exactly as ScenarioRunner did. Weather ClearNoon maps to clear/noon; the 30 s storyboard StopTrigger becomes clipSeconds.",
     "createdAt": "2026-08-23T00:00:00.000Z",
     "modifiedAt": "2026-08-23T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "tags": [
       "v2x-migration",
       "openscenario",

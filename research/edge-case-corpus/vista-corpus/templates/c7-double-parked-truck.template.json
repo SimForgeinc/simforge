@@ -5,7 +5,7 @@
   "description": "A pedestrian concealed beside a pair of curbside box trucks steps into the ego lane with insufficient warning, creating a critical but non-contact encounter that depends on a blocked-then-revealed sight line.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C7.occlusion",
   "tags": [
    "occlusion",

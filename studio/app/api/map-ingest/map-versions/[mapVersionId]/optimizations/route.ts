@@ -11,7 +11,7 @@ import { RELEASE_SUFFIX_PATTERN } from "@/app/lib/map-ingest/server/release-id";
 import { presignMapClosureUploads } from "@/app/lib/map-ingest/server/storage";
 import { requireRouteSession } from "@/app/lib/auth/route-session";
 import { getAppContext } from "@/app/lib/db/app-context";
-import { readJson, requireUniScenarioMutationOrigin } from "@/app/lib/uniscenario/http";
+import { readJson, requireScenarioMutationOrigin } from "@/app/lib/scenario/http";
 
 /**
  * Plan a deferred optimization: tell the operator which of the closure members
@@ -24,7 +24,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ mapVersionId: string }> },
 ) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
 
   const auth = await requireRouteSession(request);

@@ -69,7 +69,7 @@ def test_blueprint_roles():
     roles = [{"id": "ego", "kind": "car", "tags": ["class:car"], "dims": {"l": 4.8}},
              {"id": "ped", "kind": "pedestrian", "tags": ["class:pedestrian"]}]
     lib = default_blueprint_library(roles)
-    assert lib.find("vehicle.uniscenarios.car") is not None
+    assert lib.find("vehicle.simforge.car") is not None
     bp = lib.find("sensor.camera.rgb").set_attribute("fov", "60")
     assert bp.get_attribute("fov") == "60"
     assert len(lib.filter("walker.*")) >= 1

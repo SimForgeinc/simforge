@@ -169,7 +169,7 @@ export const CLAIMS_V1_JSON_SCHEMA = {
   name: 'claims_v1',
   schema: {
     $id: CLAIMS_SCHEMA_ID,
-    title: 'UniScenarios claims.v1',
+    title: 'SimForge claims.v1',
     type: 'object',
     additionalProperties: false,
     required: ['schema', 'scenarioId', 'claims'],

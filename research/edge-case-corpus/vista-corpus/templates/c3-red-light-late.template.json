@@ -5,7 +5,7 @@
   "description": "At a junction, an opposing vehicle disregards the junction control and enters the intersection late to turn left across the ego path. Its crossing movement is arrival-synchronized to the moving ego, producing a difficult but survivable near miss rather than a static obstacle encounter.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C3.intersection-late-control-violation",
   "tags": [
    "intersection",

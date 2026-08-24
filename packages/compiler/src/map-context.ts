@@ -9,7 +9,7 @@
  * reason the seam was drawn in frame coordinates: the validator never learns a
  * road id, and this file never learns what a template is.
  *
- * Without a site (`uniscenarios template validate --map` with no `--site`) there is no
+ * Without a site (`simforge template validate --map` with no `--site`) there is no
  * frame, so there is no context: the map-dependent checks are skipped and the
  * report says `mapChecked: false` rather than passing checks it did not run.
  */

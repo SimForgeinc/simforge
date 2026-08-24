@@ -13,7 +13,7 @@ import {
 } from './render-qualification-lib.mjs';
 
 function usage() {
-  return `UniScenarios render qualification
+  return `SimForge render qualification
 
 Commands:
   inventory --output inventory.json

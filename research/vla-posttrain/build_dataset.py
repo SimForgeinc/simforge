@@ -1,4 +1,4 @@
-"""Build the GRPO prompt set from real UniScenarios W0 dashcam-POV clips.
+"""Build the GRPO prompt set from real SimForge W0 dashcam-POV clips.
 
 Input : <w0-root>/clips-pov/<clip>/{manifest.json, gt.jsonl, frames/*.png}
 Output: prompts.jsonl — one decision point per row:

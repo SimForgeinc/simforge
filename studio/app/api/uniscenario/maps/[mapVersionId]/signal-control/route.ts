@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
 import {
-  requireUniScenarioContext,
-  uniScenarioJsonWithEtag,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
-import { getUniScenarioSignalControlProjection } from "@/app/lib/uniscenario/signals/projection-store.server";
+  requireScenarioContext,
+  scenarioJsonWithEtag,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
+import { getScenarioSignalControlProjection } from "@/app/lib/scenario/signals/projection-store.server";
 
 type Context = { params: Promise<{ mapVersionId: string }> };
 
@@ -30,14 +30,14 @@ type Context = { params: Promise<{ mapVersionId: string }> };
  * cannot go stale.
  */
 export async function GET(request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { mapVersionId } = await route.params;
-  const projection = await getUniScenarioSignalControlProjection(auth.context, mapVersionId);
+  const projection = await getScenarioSignalControlProjection(auth.context, mapVersionId);
   return projection
-    ? await uniScenarioJsonWithEtag(request, projection)
+    ? await scenarioJsonWithEtag(request, projection)
     : NextResponse.json(
         { error: "signal_control_unavailable" },
-        { status: 404, headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+        { status: 404, headers: SCENARIO_PRIVATE_CACHE_HEADERS },
       );
 }

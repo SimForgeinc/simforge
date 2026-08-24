@@ -5,7 +5,7 @@
   "description": "A parked vehicle remains hidden at the edge of a kerbside parking area until it suddenly reverses laterally into the ego path, creating a time-critical but survivable braking conflict.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C11.parking",
   "tags": [
    "parking",

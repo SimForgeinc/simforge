@@ -488,12 +488,12 @@ export function MapDetailPageClient({
 
   const createScenarioFromMap = useCallback(async () => {
     const query = new URLSearchParams({ map: currentAsset.map_asset_id });
-    return `/dashboard/uniscenario?${query}`;
+    return `/dashboard/scenario?${query}`;
   }, [currentAsset.map_asset_id]);
 
   const handleCreateBlankScenario = useCallback(async () => {
     if (!scenariosReady) {
-      toast.error("This map is not ready for UniScenarios authoring yet.");
+      toast.error("This map is not ready for SimForge authoring yet.");
       return;
     }
     setCreateBlankBusy(true);

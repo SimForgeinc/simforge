@@ -1,7 +1,7 @@
 {
   "schema": "simforge.stack-config/v1",
   "stackVersion": "0.1.0-rc.45",
-  "repository": "https://github.com/SimForgeinc/SimForge",
+  "repository": "https://github.com/SimForgeinc/simforge",
   "contracts": {
     "scenarioTemplate": "2",
     "simulationStepSeconds": 0.02,

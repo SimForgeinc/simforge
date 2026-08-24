@@ -9,9 +9,9 @@ engine ground truth, staged for transfer to `simforge1:~/w0-data/`.
 1. **Select** — one catalog slot per content class from
    `catalog/uniscenarios-five-map-v2.catalog.json` (500 authored slots,
    template x site x seed identities).
-2. **Instantiate** — `uniscenarios instantiate <template> --map --site --seed`
+2. **Instantiate** — `simforge instantiate <template> --map --site --seed`
    using each slot's recorded matcher site + seed → `/home/path/w0-data/instances/`.
-3. **Simulate** — `uniscenarios simulate <instance> --trace …` → deterministic
+3. **Simulate** — `simforge simulate <instance> --trace …` → deterministic
    50 Hz engine trace → `/home/path/w0-data/traces/`.
 4. **Render** — `scripts/w0/render-clip.mjs` drives the live Studio viewer
    headless via Playwright (`--use-gl=angle --use-angle=vulkan` selects the real

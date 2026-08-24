@@ -1,5 +1,5 @@
 /**
- * `uniscenarios template new` end to end, through the real binary.
+ * `simforge template new` end to end, through the real binary.
  *
  * The command's whole point is a *deterministic* skeleton an agent can start
  * from, so these assert byte-identical output, schema validity (by feeding the
@@ -26,7 +26,7 @@ interface Run {
   stderr: string;
 }
 
-async function uniscenarios(...args: string[]): Promise<Run> {
+async function simforge(...args: string[]): Promise<Run> {
   try {
     const r = await execa('node', [BIN, ...args], { reject: false, timeout: 60_000 });
     return { code: r.exitCode ?? 0, stdout: r.stdout, stderr: r.stderr };
@@ -45,16 +45,16 @@ afterAll(async () => {
   await Promise.all(tmpFiles.map((f) => rm(f, { force: true })));
 });
 
-describe('uniscenarios template new', () => {
+describe('simforge template new', () => {
   it('appears in the machine-readable command surface', async () => {
-    const run = await uniscenarios();
+    const run = await simforge();
     expect(run.code).toBe(0);
     const payload = json<{ commands: Array<{ name: string }> }>(run);
     expect(payload.commands.map((c) => c.name)).toContain('template new');
   });
 
   it('emits a schema-valid skeleton that template validate accepts', async () => {
-    const run = await uniscenarios('template', 'new');
+    const run = await simforge('template', 'new');
     expect(run.code).toBe(0);
     const payload = json<{
       ok: boolean;
@@ -66,25 +66,25 @@ describe('uniscenarios template new', () => {
     expect(payload.template.roles.length).toBeGreaterThan(0);
     expect(payload.out).toBeNull();
 
-    const file = path.join(os.tmpdir(), `uniscenarios-new-${Date.now()}.json`);
+    const file = path.join(os.tmpdir(), `simforge-new-${Date.now()}.json`);
     tmpFiles.push(file);
     await writeFile(file, JSON.stringify(payload.template, null, 2));
-    const validated = await uniscenarios('template', 'validate', file);
+    const validated = await simforge('template', 'validate', file);
     expect(validated.code).toBe(0);
     expect(json<{ ok: boolean }>(validated).ok).toBe(true);
   });
 
   it('is deterministic: identical flags produce byte-identical documents', async () => {
-    const first = await uniscenarios('template', 'new');
-    const second = await uniscenarios('template', 'new');
+    const first = await simforge('template', 'new');
+    const second = await simforge('template', 'new');
     expect(second.stdout).toBe(first.stdout);
   });
 
   it('writes the same document to --out as it prints', async () => {
-    const out = path.join(os.tmpdir(), `uniscenarios-new-out-${Date.now()}.json`);
+    const out = path.join(os.tmpdir(), `simforge-new-out-${Date.now()}.json`);
     tmpFiles.push(out);
-    const printed = await uniscenarios('template', 'new');
-    const written = await uniscenarios('template', 'new', '--out', out);
+    const printed = await simforge('template', 'new');
+    const written = await simforge('template', 'new', '--out', out);
     expect(written.code).toBe(0);
     const onDisk = await readFile(out, 'utf8');
     expect(JSON.parse(onDisk)).toEqual(json<{ template: unknown }>(printed).template);
@@ -92,7 +92,7 @@ describe('uniscenarios template new', () => {
   });
 
   it('rejects --site without --map as a structured command error', async () => {
-    const run = await uniscenarios('template', 'new', '--site', 'some-site');
+    const run = await simforge('template', 'new', '--site', 'some-site');
     expect(run.code).toBe(1);
     expect(run.stdout).toBe('');
     const error = JSON.parse(run.stderr) as { code: string; path: string };
@@ -101,7 +101,7 @@ describe('uniscenarios template new', () => {
   });
 
   it('reports unknown flags on stderr with exit 1', async () => {
-    const run = await uniscenarios('template', 'new', '--naem', 'x');
+    const run = await simforge('template', 'new', '--naem', 'x');
     expect(run.code).toBe(1);
     const error = JSON.parse(run.stderr) as { code: string; path: string };
     expect(error.code).toBe('unknown_flag');
@@ -109,7 +109,7 @@ describe('uniscenarios template new', () => {
   });
 
   it.skipIf(!haveArtifacts)('pre-binds --map/--site through anchor.pin', async () => {
-    const run = await uniscenarios('template', 'new', '--map', 'yale-street', '--site', 'site-123');
+    const run = await simforge('template', 'new', '--map', 'yale-street', '--site', 'site-123');
     expect(run.code).toBe(0);
     const payload = json<{
       template: { sourceMap: { mapId: string }; anchor: { pin: { mapId: string; siteId?: string } } };
@@ -119,7 +119,7 @@ describe('uniscenarios template new', () => {
   });
 
   it.skipIf(!haveArtifacts)('rejects an unknown map with the closed vocabulary attached', async () => {
-    const run = await uniscenarios('template', 'new', '--map', 'not-a-map');
+    const run = await simforge('template', 'new', '--map', 'not-a-map');
     expect(run.code).toBe(1);
     const error = JSON.parse(run.stderr) as { code: string; detail: { known: string[] } };
     expect(error.code).toBe('unknown_map');

@@ -47,7 +47,7 @@ export function keepInRoadsOnly(mesh: Mesh, minGroundFootprintM = 10): boolean {
 }
 
 export function isLowFidelityHiddenHelper(object: Object3D): boolean {
-  return object.userData.uniscenariosRole === LOW_FIDELITY_HIDDEN_ROLE;
+  return object.userData.simforgeRole === LOW_FIDELITY_HIDDEN_ROLE;
 }
 
 export const isRoadsOnlyHiddenHelper = isLowFidelityHiddenHelper;

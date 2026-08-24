@@ -2,7 +2,7 @@
   "schema": "uniscenarios.gallery-validation.v1",
   "validatedAt": "2026-08-03T13:57:36.000Z",
   "provider": "native",
-  "command": "uniscenarios debug 03-red-light-ambulance-preemption/scenario.instance.json --sample 0.1 --fail-on-fallback --fail-on-never-fired --fail-on-collision",
+  "command": "simforge debug 03-red-light-ambulance-preemption/scenario.instance.json --sample 0.1 --fail-on-fallback --fail-on-never-fired --fail-on-collision",
   "acceptance": {
     "ok": true,
     "failures": []

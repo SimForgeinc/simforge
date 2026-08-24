@@ -98,7 +98,7 @@ function templateWith(subject: ActorSpecInput, props: unknown[] = [], bodyColor?
       name: 'actor catalog agreement fixture',
       createdAt: '2026-08-01T00:00:00.000Z',
       modifiedAt: '2026-08-01T00:00:00.000Z',
-      appVersion: 'uniscenarios/0.0.1',
+      appVersion: 'simforge/0.0.1',
       archetype: 'test.actor-catalog-agreement',
       author: 'test',
     },

@@ -17,7 +17,7 @@ for (let index = 2; index < process.argv.length; index += 2) {
   args.set(process.argv[index]?.replace(/^--/, ''), process.argv[index + 1]);
 }
 const baseUrl = args.get('url') ?? 'http://127.0.0.1:5199/';
-const output = args.get('out') ?? '/tmp/uniscenarios-first-run-graphics.json';
+const output = args.get('out') ?? '/tmp/simforge-first-run-graphics.json';
 const maps = (args.get('maps') ?? 'easterbrook-discovery-school,yale-street').split(',');
 const presets = (args.get('presets') ?? 'roads-only,ultra-low-3d,minimal,high').split(',');
 const allConditions = [

@@ -312,7 +312,7 @@ async function writeAcceptedEvidence(repositoryRoot, entry) {
 }
 
 test('counts only byte-verified, machine-passed evidence with an exact observed review binding', async () => {
-  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-render-batch-'));
+  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'simforge-render-batch-'));
   const source = catalog();
   const ledger = createBatchLedger(source, provenance(), config());
   const entry = ledger.entries[0];
@@ -336,7 +336,7 @@ test('counts only byte-verified, machine-passed evidence with an exact observed 
 });
 
 test('missing source evidence always has zero credit even if stale ledger state claimed acceptance', async () => {
-  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-render-missing-'));
+  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'simforge-render-missing-'));
   const ledger = createBatchLedger(catalog(), provenance(), config());
   const stale = {
     ...ledger.entries[0],
@@ -350,7 +350,7 @@ test('missing source evidence always has zero credit even if stale ledger state 
 });
 
 test('refuses a rejected or tampered result even when instance, trace, and render evidence exist', async () => {
-  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-render-result-'));
+  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'simforge-render-result-'));
   const ledger = createBatchLedger(catalog(), provenance(), config());
   const entry = ledger.entries[0];
   await writeAcceptedEvidence(repositoryRoot, entry);
@@ -365,7 +365,7 @@ test('refuses a rejected or tampered result even when instance, trace, and rende
 });
 
 test('refuses non-hard-eligible results and broken atomic artifact commit hashes', async () => {
-  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-render-hard-eligibility-'));
+  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'simforge-render-hard-eligibility-'));
   const ledger = createBatchLedger(catalog(), provenance(), config());
   const entry = ledger.entries[0];
   await writeAcceptedEvidence(repositoryRoot, entry);
@@ -382,7 +382,7 @@ test('refuses non-hard-eligible results and broken atomic artifact commit hashes
 });
 
 test('source byte mutation invalidates the result commit marker before render', async () => {
-  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-render-commit-marker-'));
+  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'simforge-render-commit-marker-'));
   const ledger = createBatchLedger(catalog(), provenance(), config());
   const entry = ledger.entries[0];
   await writeAcceptedEvidence(repositoryRoot, entry);
@@ -412,7 +412,7 @@ test('cancelled renders are truthful, terminal attempts and deterministic resume
 });
 
 test('a failed attempt cannot inherit credit from an older bundle at the same output path', async () => {
-  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-render-failed-stale-'));
+  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'simforge-render-failed-stale-'));
   const ledger = createBatchLedger(catalog(), provenance(), config());
   const entry = ledger.entries[0];
   await writeAcceptedEvidence(repositoryRoot, entry);
@@ -429,7 +429,7 @@ test('a failed attempt cannot inherit credit from an older bundle at the same ou
 });
 
 test('duplicate instance/trace provenance cannot fill two catalog slots', async () => {
-  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-render-duplicate-'));
+  const repositoryRoot = await mkdtemp(path.join(os.tmpdir(), 'simforge-render-duplicate-'));
   const source = catalog();
   const ledger = createBatchLedger(source, provenance(), config());
   await writeAcceptedEvidence(repositoryRoot, ledger.entries[0]);

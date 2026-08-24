@@ -10,7 +10,7 @@ import type {
   ScenarioSimulationStreamMessage,
 } from "@/app/lib/runtime/runtime-types";
 import type { NormalizedScenarioDraft } from "@/app/lib/scenario-editor/draft-normalization";
-import type { HistoricalGalleryPreview as ScenarioRuntimeGalleryPreview } from "@/app/lib/uniscenario/render/gallery-preview-compat";
+import type { HistoricalGalleryPreview as ScenarioRuntimeGalleryPreview } from "@/app/lib/scenario/render/gallery-preview-compat";
 
 export type WorkspaceTab = "datasets" | "editor" | "render";
 export type SidebarMode = "manual" | "assistant" | "tools";

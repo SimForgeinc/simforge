@@ -34,7 +34,7 @@ for (let i = 2; i < process.argv.length; i += 2) {
   args.set(process.argv[i]?.replace(/^--/, ''), process.argv[i + 1]);
 }
 const url = args.get('url') ?? 'http://localhost:5199/';
-const outDir = args.get('out') ?? '/tmp/uniscenarios-overlays';
+const outDir = args.get('out') ?? '/tmp/simforge-overlays';
 const benchMs = Number(args.get('bench') ?? 15000);
 const alignSamples = Number(args.get('align') ?? 300);
 

@@ -16,7 +16,7 @@ export const LOCAL_SESSION_ID = "00000000-0000-4000-8000-000000000004";
 
 export const LOCAL_SESSION: AuthenticatedUser = Object.freeze({
   sub: LOCAL_USER_ID,
-  email: "owner@local.uniscenarios",
+  email: "owner@local.simforge",
   name: "Local Owner",
   role: "owner",
   emailVerified: true,

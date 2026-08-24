@@ -5,7 +5,7 @@
     "description": "Crossing Pedestrian, Not at Crossing, Obscured — the portable rendition. The sibling template `cpnco-dartout` requires a true kerb-parking cross-section (`requiresAdjacent: ['parking']`), which exists on exactly one of the five maps: every other map has parking *lots*, not parking *lanes*. This variant carries its own occluder wall instead: a row of four parked SUVs placed as L3 props at the kerb edge of the ego lane, so the scenario transfers to any urban corridor with enough runway. The pedestrian walks the pavement line behind that row and steps into the carriageway without looking (`rules.collisionAvoidance: false`), and the arrival solver back-solves its start so it reaches the ego lane `arrivalTtc` seconds before the ego does. The metric that carries the archetype is reveal-to-conflict: how long ego has line of sight before the conflict, tuned by `occluderGapM` — how far the last parked car sits upstream of the dart point.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "C5.cpnco-dartout",
     "tags": [
       "vru",

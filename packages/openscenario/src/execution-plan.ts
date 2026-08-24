@@ -525,7 +525,7 @@ function environmentPlan(xml: ParsedXml, values: ReadonlyMap<string, string>): O
     standard.visibilityClass === authored.visibility,
   ];
   if (mismatches.some((matches) => !matches)) {
-    throw new OpenScenarioExecutionPlanError('environment_metadata_mismatch', 'Storyboard.Init.EnvironmentAction', 'standard environment fields disagree with exact UniScenarios environment metadata');
+    throw new OpenScenarioExecutionPlanError('environment_metadata_mismatch', 'Storyboard.Init.EnvironmentAction', 'standard environment fields disagree with exact SimForge environment metadata');
   }
   return { authored, standard };
 }
@@ -590,7 +590,7 @@ export function extractOpenScenarioExecutionPlan(
     requiredProperty(values, 'uniscenarios.export.profile') !== 'xml-1.4-trajectory-replay'
     || requiredProperty(values, 'uniscenarios.export.intent') !== 'trajectory-replay'
   ) {
-    throw new OpenScenarioExecutionPlanError('unknown_profile', 'FileHeader.Properties', 'unrecognized UniScenarios trajectory-replay profile markers');
+    throw new OpenScenarioExecutionPlanError('unknown_profile', 'FileHeader.Properties', 'unrecognized SimForge trajectory-replay profile markers');
   }
   const actorIds = jsonProperty<string[]>(values, 'uniscenarios.trajectoryReplay.actorIds.v1');
   const authoredActorIds = jsonProperty<string[]>(values, 'uniscenarios.trajectoryReplay.authoredActorIds.v1');

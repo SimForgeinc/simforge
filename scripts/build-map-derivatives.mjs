@@ -104,7 +104,7 @@ if (variant === 'geometry-only' || variant === 'all') {
     atomicWrite(path.join(mapRoot, relative), output);
     files[sourceFile] = { file: relative, sourceSha256: sha256(source), outputSha256: sha256(output), bytes: output.length };
   }
-  const geometryVariant = { id: 'geometry-only', generatedAt, generator: { name: 'uniscenarios-map-derivatives', version: '2.0.0', command: process.argv.join(' ') }, files };
+  const geometryVariant = { id: 'geometry-only', generatedAt, generator: { name: 'simforge-map-derivatives', version: '2.0.0', command: process.argv.join(' ') }, files };
   if (road && roadPlan?.safe && tool.status === 0) {
     const geometryRoad = fs.readFileSync(path.join(mapRoot, files[road.file].file));
     const tiledFiles = [];
@@ -153,7 +153,7 @@ if (variant === 'roads-only' || variant === 'all') {
   const output = fs.readFileSync(outputPath);
   variants['roads-only'] = {
     id: 'roads-only', generatedAt,
-    generator: { name: 'uniscenarios-map-derivatives', version: '1.0.0', command: process.argv.join(' ') },
+    generator: { name: 'simforge-map-derivatives', version: '1.0.0', command: process.argv.join(' ') },
     files: { [road.file]: { file: relative, sourceSha256: sha256(source), outputSha256: sha256(output), bytes: output.length } },
     audit: { keptRoots: selection.kept, droppedRootCount: selection.dropped.length },
   };
@@ -240,7 +240,7 @@ if (variant === 'roads-only-v2' || variant === 'all') {
   const prior = variants['roads-only']?.files?.[road.file];
   variants['roads-only'] = {
     id: 'roads-only', generatedAt,
-    generator: { name: 'uniscenarios-map-derivatives', version: '2.0.0', command: process.argv.join(' ') },
+    generator: { name: 'simforge-map-derivatives', version: '2.0.0', command: process.argv.join(' ') },
     files: {
       [road.file]: {
         file: relative,
@@ -281,7 +281,7 @@ if (variant === 'static-colliders' || variant === 'all') {
   variants['static-colliders'] = {
     id: 'static-colliders',
     schemaVersion: 1,
-    generator: { name: 'uniscenarios-static-map-colliders', version: '1.0.0' },
+    generator: { name: 'simforge-static-map-colliders', version: '1.0.0' },
     file: relative,
     digest: artifact.digest,
     outputSha256: sha256(Buffer.from(serialized)),

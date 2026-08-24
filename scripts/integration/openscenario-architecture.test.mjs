@@ -23,12 +23,10 @@ async function sourceFiles(relative) {
 test('OpenSCENARIO standards behavior has one package owner', async () => {
   const canonical = await readJson('packages/openscenario/package.json');
   const cli = await readJson('packages/cli/package.json');
-  const runner = await readJson('packages/openscenario/package.json');
 
+  // The esmini runner is consolidated into @simforge/openscenario itself.
   assert.equal(canonical.dependencies?.['@simforge/cli'], undefined);
   assert.equal(cli.dependencies?.['@simforge/openscenario'], 'workspace:*');
-  assert.equal(runner.dependencies?.['@simforge/openscenario'], 'workspace:*');
-  assert.equal(runner.dependencies?.['@simforge/cli'], undefined);
   assert.deepEqual(await sourceFiles('packages/cli/src/asam'), []);
   assert.equal(await exists('packages/openscenario/src/export/index.ts'), true);
   assert.equal(await exists('packages/openscenario/src/node/index.ts'), true);

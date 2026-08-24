@@ -10,7 +10,7 @@ import {
 } from "@/app/lib/asset-gallery/store";
 import { hasCapability, resolveAdminAccess } from "@/app/lib/auth/capabilities";
 import { requireRouteSession } from "@/app/lib/auth/route-session";
-import { readJson, requireUniScenarioMutationOrigin } from "@/app/lib/uniscenario/http";
+import { readJson, requireScenarioMutationOrigin } from "@/app/lib/scenario/http";
 
 type AssetRouteContext = { params: Promise<{ assetId: string }> };
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: AssetRouteContext) {
 }
 
 export async function PATCH(request: NextRequest, { params }: AssetRouteContext) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
 
   const auth = await requireRouteSession(request);
@@ -88,7 +88,7 @@ export async function PATCH(request: NextRequest, { params }: AssetRouteContext)
 }
 
 export async function DELETE(request: NextRequest, { params }: AssetRouteContext) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
 
   const auth = await requireRouteSession(request);

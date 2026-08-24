@@ -11,7 +11,7 @@ Reply with **ONE JSON object only** — the complete template. No prose, no mark
 `scenarioVersion` (=2), `meta`, `params`, `environment`, `anchor`, `roles`, `props`, `choreography`,
 `invariants`, `variants` (=[]), `metricSubject` (="ego").
 
-`meta`: {name, description, createdAt, modifiedAt (ISO, modifiedAt >= createdAt), appVersion:"uniscenarios/0.0.1",
+`meta`: {name, description, createdAt, modifiedAt (ISO, modifiedAt >= createdAt), appVersion:"simforge/0.0.1",
 archetype, tags[], author, negativeControl:false}
 
 ## anchor — the predicate over road structure

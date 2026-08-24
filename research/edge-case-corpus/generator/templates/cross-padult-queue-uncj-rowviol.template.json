@@ -5,7 +5,7 @@
   "description": "Auto-synthesised archetype from the mechanism grammar. {'topology': 'crossing_lateral', 'challenger': 'ped_adult', 'occlusion': 'queue', 'control': 'uncontrolled_junction', 'fault': 'challenger_row_violation', 'id': 'cross-padult-queue-uncj-rowviol'}",
   "createdAt": "2026-08-06T00:00:00.000Z",
   "modifiedAt": "2026-08-06T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "cross-padult-queue-uncj-rowviol",
   "tags": [
    "crossing_lateral",

@@ -5,7 +5,7 @@
   "description": "A group of three pedestrians emerges together from behind a roadside box truck and crosses the ego lane at a midblock crossing. Their crossing is synchronized to arrive shortly before the ego, creating a late but survivable hidden-hazard response.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C5.pedestrian-group-crossing",
   "tags": [
    "vru",

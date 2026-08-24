@@ -1,7 +1,7 @@
 # `catalog verify` failure — diagnosis
 
 ## Symptom
-`uniscenarios catalog verify catalog/uniscenarios-five-map-v2.catalog.json` exits 2 with
+`simforge catalog verify catalog/uniscenarios-five-map-v2.catalog.json` exits 2 with
 7 issues: 6 x `invalid_provenance` (designDigest mismatch) + 1 `catalog_digest_mismatch`.
 All 6 are the same incident, `lane-change.lane-drop-late-merge`, on yale-street and el-camino-road.
 
@@ -23,7 +23,7 @@ silently re-bind." Recomputing the 6 digests would be precisely the silent re-bi
 forbids, and would leave the other 372 drifted bindings hidden.
 
 ## Fix
-Re-derive. `uniscenarios catalog create` regenerates all 500 slots and the result **verifies clean**
+Re-derive. `simforge catalog create` regenerates all 500 slots and the result **verifies clean**
 (exit 0, 0 issues, 100 slots per map, all five maps). The re-derived catalog is checked in here as
 `uniscenarios-five-map-v2.rederived.catalog.json` (digest `ae4a28462693cd4c...` vs
 committed `688dd78dadc62d5c...`).
@@ -35,6 +35,6 @@ so no evidence is invalidated by re-deriving.
 
 To apply:
 ```sh
-node packages/cli/bin/uniscenarios.js catalog create --out catalog/uniscenarios-five-map-v2.catalog.json
-node packages/cli/bin/uniscenarios.js catalog verify catalog/uniscenarios-five-map-v2.catalog.json
+node packages/cli/bin/simforge.js catalog create --out catalog/uniscenarios-five-map-v2.catalog.json
+node packages/cli/bin/simforge.js catalog verify catalog/uniscenarios-five-map-v2.catalog.json
 ```

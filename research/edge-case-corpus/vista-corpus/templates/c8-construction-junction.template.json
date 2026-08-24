@@ -5,7 +5,7 @@
   "description": "A portable junction workzone occupies the edge of an approach and partially constrains the intersection. A large plant vehicle and barrier line obscure an opposing left-turn movement that reaches the ego conflict point at late critical timing, while a traffic marshal enters near the ego path and then signals a stop.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C8.workzone",
   "tags": [
    "workzone",

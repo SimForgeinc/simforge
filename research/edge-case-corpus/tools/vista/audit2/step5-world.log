@@ -1,4 +1,4 @@
-mode=world reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-world.json
+mode=world reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-world.json
   5/80 131s
   10/80 131s
   15/80 163s
@@ -16,4 +16,4 @@ mode=world reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Progra
   75/80 684s
   80/80 703s
 verdicts: {'rejected': 62, 'uncertain': 10, 'verified': 8}
-wrote /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-world.json
+wrote /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-world.json

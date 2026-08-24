@@ -13,7 +13,7 @@ export async function ingestRunnableBundle(
   store: WritableContentStore,
   request: Readonly<{ jobId: string; options?: Partial<EsminiExecutionOptions> }>,
 ): Promise<EsminiExecutionJob> {
-  if (bundle.manifest.kind !== 'uniscenarios-esmini-runnable-bundle' || bundle.manifest.version !== 1) {
+  if (bundle.manifest.kind !== 'simforge-esmini-runnable-bundle' || bundle.manifest.version !== 1) {
     throw new BundleSecurityError('bad_schema', 'unsupported CLI esmini bundle manifest');
   }
   const declared = new Set(bundle.manifest.files.map((file) => file.path));

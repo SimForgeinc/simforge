@@ -42,7 +42,7 @@ def main() -> int:
     from scenic import scenarioFromFile  # type: ignore
 
     started = time.perf_counter()
-    with tempfile.TemporaryDirectory(prefix="uniscenarios-scenic-") as directory:
+    with tempfile.TemporaryDirectory(prefix="simforge-scenic-") as directory:
         path = Path(directory) / "candidate.scenic"
         path.write_text(source, encoding="utf-8")
         compile_started = time.perf_counter()

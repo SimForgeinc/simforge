@@ -44,7 +44,7 @@ export interface CarlaVehicleFallbackCandidate {
   readonly catalogId: string;
   /**
    * Container blueprint the repo-canonical catalog binds this id to
-   * (config/uniscenario/carla/carla-object-catalog.json). Dimension
+   * (config/scenario/carla/carla-object-catalog.json). Dimension
    * provenance only: the manifest active at render time decides the spawn.
    */
   readonly blueprintId: string;

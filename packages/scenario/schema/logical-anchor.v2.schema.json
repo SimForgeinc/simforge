@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.uniscenarios.dev/logical-anchor.v2.schema.json",
-  "title": "UniScenarios logical anchor, schema v2",
+  "title": "SimForge logical anchor, schema v2",
   "description": "A predicate over road structure that a scenario can be matched onto. Contains no coordinates, no road ids and no map names: only lane counts, speed limits, junction classes, turn relations and distances along a corridor. Every clause is {value, essentiality: required|preferred|cosmetic, weight?}; ranges are [min, max] with null for an open end. `required` clauses are pass/fail for the matcher; `preferred` and `cosmetic` are scored and may be substituted or dropped. Features are ordered along the corridor by `atM`, measured from the frame origin, negative upstream.",
   "type": "object",
   "properties": {

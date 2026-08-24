@@ -748,7 +748,7 @@ def regression_suite(verbose=True):
 
 
 def score_batch(summary_path, predicates, only_passing=True):
-    """Score every cell in a `uniscenarios batch` summary."""
+    """Score every cell in a `simforge batch` summary."""
     s = json.load(open(summary_path))
     rows = []
     for r in s.get('results', []):

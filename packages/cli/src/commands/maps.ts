@@ -1,4 +1,4 @@
-/** `uniscenarios maps list` — what is on disk, and whether it is derived yet. */
+/** `simforge maps list` — what is on disk, and whether it is derived yet. */
 
 import { KNOWN_MAPS, artifactPresence, loadMap, mapDir, DEV_ASSETS } from '@simforge/compiler/node';
 import { emit, emitLines, pad } from '../output.js';

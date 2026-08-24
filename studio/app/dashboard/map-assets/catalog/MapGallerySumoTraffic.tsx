@@ -9,9 +9,9 @@ import {
   DISABLED_SUMO_STATUS,
   type SumoTrafficStatus,
 } from "@simforge/playback/traffic";
-import type { UniScenarioMapDescriptorDto } from "@/app/lib/uniscenario/contracts";
-import type { MapEntry } from "@/app/lib/uniscenario/maps";
-import { useSumoTraffic } from "@/app/lib/uniscenario/ambient/useSumoTraffic";
+import type { ScenarioMapDescriptorDto } from "@/app/lib/scenario/contracts";
+import type { MapEntry } from "@/app/lib/scenario/maps";
+import { useSumoTraffic } from "@/app/lib/scenario/ambient/useSumoTraffic";
 
 // SUMO's gallery demand replenishes vehicles for one hour. Rotate shortly
 // before that window closes so a gallery left open indefinitely never empties.
@@ -29,7 +29,7 @@ export function MapGallerySumoTraffic({
   onStatusChange,
 }: {
   enabled: boolean;
-  map: UniScenarioMapDescriptorDto;
+  map: ScenarioMapDescriptorDto;
   viewer: CityViewer | null;
   actorRenderer: ActorRenderer | null;
   loadedMapVersionId: string | null;
@@ -106,7 +106,7 @@ export function MapGallerySumoTraffic({
   return null;
 }
 
-export function gallerySumoMapEntry(map: UniScenarioMapDescriptorDto): MapEntry {
+export function gallerySumoMapEntry(map: ScenarioMapDescriptorDto): MapEntry {
   const root = map.browserAssetRootUrl.replace(/\/+$/, "");
   const asset = (path: string) => `${root}/${path}`;
   return {

@@ -19,7 +19,7 @@
     "invocation": {
       "args": [
         "--glbs",
-        "/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_4.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_5.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_6.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_3_5.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/road.glb",
+        "/home/path/SimForge/scripts/renderer-spike/corpus/tile_2_4.glb,/home/path/SimForge/scripts/renderer-spike/corpus/tile_2_5.glb,/home/path/SimForge/scripts/renderer-spike/corpus/tile_2_6.glb,/home/path/SimForge/scripts/renderer-spike/corpus/tile_3_5.glb,/home/path/SimForge/scripts/renderer-spike/corpus/road.glb",
         "--eye",
         "580.45",
         "14.44",
@@ -49,7 +49,7 @@
         "--ambient",
         "0.6",
         "--out",
-        "/home/path/UniScenarios-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-frame0/runA/yale-frame0"
+        "/home/path/SimForge-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-frame0/runA/yale-frame0"
       ],
       "passesRenderedSequentially": false
     },
@@ -163,7 +163,7 @@
         "invocation": {
           "args": [
             "--glbs",
-            "/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_4.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_5.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_2_6.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/tile_3_5.glb,/home/path/UniScenarios/scripts/renderer-spike/corpus/road.glb",
+            "/home/path/SimForge/scripts/renderer-spike/corpus/tile_2_4.glb,/home/path/SimForge/scripts/renderer-spike/corpus/tile_2_5.glb,/home/path/SimForge/scripts/renderer-spike/corpus/tile_2_6.glb,/home/path/SimForge/scripts/renderer-spike/corpus/tile_3_5.glb,/home/path/SimForge/scripts/renderer-spike/corpus/road.glb",
             "--eye",
             "580.45",
             "14.44",
@@ -193,7 +193,7 @@
             "--ambient",
             "0.6",
             "--out",
-            "/home/path/UniScenarios-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-frame0/runA/yale-frame0"
+            "/home/path/SimForge-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-frame0/runA/yale-frame0"
           ],
           "passesRenderedSequentially": false
         },

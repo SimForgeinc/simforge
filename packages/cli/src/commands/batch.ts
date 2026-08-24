@@ -1,5 +1,5 @@
 /**
- * `uniscenarios batch <template> --maps a,b,c --draws N --out dir/` — the matrix.
+ * `simforge batch <template> --maps a,b,c --draws N --out dir/` — the matrix.
  *
  * ```
  * for each map:   sites = match(anchor, map)

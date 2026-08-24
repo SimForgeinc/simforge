@@ -1,5 +1,5 @@
 import { LaneIndex } from './laneIndex';
-import type { UniScenarioMapEntry } from './map';
+import type { ScenarioMapEntry } from './map';
 
 type Warmup = {
   readonly promise: Promise<LaneIndex>;
@@ -9,7 +9,7 @@ type Warmup = {
 const warmups = new Map<string, Warmup>();
 const simulationWarms = new Set<string>();
 
-function assetRoot(map: UniScenarioMapEntry): string {
+function assetRoot(map: ScenarioMapEntry): string {
   const root = map.browserAssetRootUrl.replace(/\/+$/, '');
   if (map.browserManifestUrl !== `${root}/3d/manifest.json`) {
     throw new Error(`Map ${map.mapVersionId} has a browser manifest outside its declared asset root`);
@@ -18,7 +18,7 @@ function assetRoot(map: UniScenarioMapEntry): string {
 }
 
 /** Browser assets consumed by the scenario worker, excluding visual tiles. */
-export function simulationRuntimeAssetUrls(map: UniScenarioMapEntry): readonly string[] {
+export function simulationRuntimeAssetUrls(map: ScenarioMapEntry): readonly string[] {
   const root = assetRoot(map);
   return [
     `${root}/map.xodr`,
@@ -40,7 +40,7 @@ async function prefetch(url: string): Promise<void> {
 }
 
 /** Begin loading the lane index, keyed by the immutable map version. */
-export function warmAuthoringRuntime(map: UniScenarioMapEntry): Promise<LaneIndex> {
+export function warmAuthoringRuntime(map: ScenarioMapEntry): Promise<LaneIndex> {
   const existing = warmups.get(map.mapVersionId);
   if (existing) return existing.promise;
 
@@ -63,7 +63,7 @@ export function authoringRuntimeReady(mapVersionId: string | null | undefined): 
 }
 
 /** Warm scenario-worker map assets after visual scene loading has completed. */
-export function warmSimulationAssets(map: UniScenarioMapEntry): void {
+export function warmSimulationAssets(map: ScenarioMapEntry): void {
   if (simulationWarms.has(map.mapVersionId)) return;
   const urls = simulationRuntimeAssetUrls(map);
   simulationWarms.add(map.mapVersionId);

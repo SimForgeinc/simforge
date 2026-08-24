@@ -11,13 +11,13 @@ for (let index = 2; index < process.argv.length; index += 2) {
 
 const url = args.get('url') ?? 'http://localhost:5204/?map=yale-street';
 const instancePath = path.resolve(
-  args.get('instance') ?? 'artifacts/qa/uniscenarios-traffic-light-slice/yale-signal.instance.json',
+  args.get('instance') ?? 'artifacts/qa/simforge-traffic-light-slice/yale-signal.instance.json',
 );
 const tracePath = path.resolve(
-  args.get('trace') ?? 'artifacts/qa/uniscenarios-traffic-light-slice/yale-signal.trace.json.gz',
+  args.get('trace') ?? 'artifacts/qa/simforge-traffic-light-slice/yale-signal.trace.json.gz',
 );
 const outDir = path.resolve(
-  args.get('out') ?? 'artifacts/qa/uniscenarios-traffic-light-standalone',
+  args.get('out') ?? 'artifacts/qa/simforge-traffic-light-standalone',
 );
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 

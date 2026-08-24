@@ -5,7 +5,7 @@
     "description": "Scenario-authored cones, channelizers, and a red-X lane control close a real travel lane. A late merger remains in that closing lane beside ego, ignores the advance lane-control indication, and merges into the adjacent surviving lane at the taper.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-02T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "lane-change.lane-drop-late-merge",
     "tags": ["lane-change", "temporary-lane-drop", "late-merge", "channelizer", "red-x"],
     "author": "agent/remaining-mechanisms",

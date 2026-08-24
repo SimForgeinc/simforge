@@ -197,7 +197,7 @@ function message(action: () => unknown): string {
   }
 }
 
-describe('UniScenarios concrete playback import', () => {
+describe('SimForge concrete playback import', () => {
   it.each(READABLE_TRACE_FORMAT_VERSIONS)('accepts explicitly supported trace format v%s', (traceVersion) => {
     const fixture = pair();
     (fixture.trace.header as { traceVersion: number }).traceVersion = traceVersion;

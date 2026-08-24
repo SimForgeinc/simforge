@@ -54,6 +54,6 @@ jobs:
           python -m pip install "build==1.3.0" "./adapters/carla-exec[dev]"
           python -m pytest adapters/carla-exec/tests -q
           python -m build adapters/carla-exec
-          python -m venv /tmp/uniscenarios-carla-smoke
-          /tmp/uniscenarios-carla-smoke/bin/python -m pip install adapters/carla-exec/dist/*.whl
-          /tmp/uniscenarios-carla-smoke/bin/uniscenarios-carla --help
+          python -m venv /tmp/simforge-carla-smoke
+          /tmp/simforge-carla-smoke/bin/python -m pip install adapters/carla-exec/dist/*.whl
+          /tmp/simforge-carla-smoke/bin/simforge-carla-api --help

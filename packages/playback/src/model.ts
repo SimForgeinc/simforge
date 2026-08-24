@@ -233,7 +233,7 @@ export async function readPlaybackFiles(
   } catch (error) {
     throw new PlaybackLoadError(`Could not read instance “${instanceFile.name}”`, [
       `instance JSON is invalid: ${messageOf(error)}`,
-      'Choose a concrete *.instance.json file produced by uniscenarios instantiate.',
+      'Choose a concrete *.instance.json file produced by simforge instantiate.',
     ]);
   }
 
@@ -244,7 +244,7 @@ export async function readPlaybackFiles(
   } catch (error) {
     throw new PlaybackLoadError(`Could not read trace “${traceFile.name}”`, [
       `trace is neither valid plain JSON nor gzip JSON: ${messageOf(error)}`,
-      'Choose the matching *.trace.json or *.trace.json.gz file produced by uniscenarios simulate.',
+      'Choose the matching *.trace.json or *.trace.json.gz file produced by simforge simulate.',
     ]);
   }
 

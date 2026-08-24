@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getArtifactUpload } from "@/app/lib/uniscenario/control-plane-store";
-import { requireUniScenarioContext } from "@/app/lib/uniscenario/http";
+import { getArtifactUpload } from "@/app/lib/scenario/control-plane-store";
+import { requireScenarioContext } from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ uploadId: string }> };
 
 export async function GET(_request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { uploadId } = await route.params;
   const upload = await getArtifactUpload(auth.context, uploadId);

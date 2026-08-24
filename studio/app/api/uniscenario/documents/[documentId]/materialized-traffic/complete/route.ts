@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
-import { CompleteUniScenarioMaterializedTrafficSchema } from "@/app/lib/uniscenario/contracts";
-import { readJson, requireUniScenarioContext, requireUniScenarioMutableDocumentContext, requireUniScenarioMutationOrigin } from "@/app/lib/uniscenario/http";
-import { completeMaterializedTraffic } from "@/app/lib/uniscenario/materialized-traffic-store";
+import { CompleteScenarioMaterializedTrafficSchema } from "@/app/lib/scenario/contracts";
+import { readJson, requireScenarioContext, requireScenarioMutableDocumentContext, requireScenarioMutationOrigin } from "@/app/lib/scenario/http";
+import { completeMaterializedTraffic } from "@/app/lib/scenario/materialized-traffic-store";
 
 type Context = { params: Promise<{ documentId: string }> };
 export async function POST(request: Request, route: Context) {
-  const origin = requireUniScenarioMutationOrigin(request);
+  const origin = requireScenarioMutationOrigin(request);
   if (origin) return origin;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
-  const parsed = CompleteUniScenarioMaterializedTrafficSchema.safeParse(await readJson(request));
+  const parsed = CompleteScenarioMaterializedTrafficSchema.safeParse(await readJson(request));
   if (!parsed.success) return NextResponse.json({ error: "invalid_materialized_traffic" }, { status: 400 });
   const { documentId } = await route.params;
-  const access = await requireUniScenarioMutableDocumentContext(auth.context, documentId, "mutateContent");
+  const access = await requireScenarioMutableDocumentContext(auth.context, documentId, "mutateContent");
   if (access.response) return access.response;
   const result = await completeMaterializedTraffic(auth.context, documentId, parsed.data);
   return result ? NextResponse.json(result) : NextResponse.json({ error: "materialized_traffic_not_found" }, { status: 404 });

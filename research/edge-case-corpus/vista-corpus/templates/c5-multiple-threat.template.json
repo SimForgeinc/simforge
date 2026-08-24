@@ -5,7 +5,7 @@
   "description": "A stopped vehicle in the neighboring same-direction lane conceals a pedestrian who walks out into the ego lane shortly before the ego reaches the crossing line. The pedestrian is timed as a moving challenger rather than spawned as a static obstacle, preserving a hidden, urgent but survivable encounter across retargeted sites.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C5.pedestrian-adjacent-vehicle-emergence",
   "tags": [
    "pedestrian",

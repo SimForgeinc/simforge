@@ -1,5 +1,5 @@
 /**
- * `../index.js` — layer 1 of the UniScenarios stack.
+ * `../index.js` — layer 1 of the SimForge stack.
  *
  * Per map, offline, one build step, cached by source hashes:
  *

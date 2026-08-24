@@ -5,7 +5,7 @@
   "description": "A same-lane lead vehicle encounters a late low-friction patch, sheds speed and slews toward the lane edge while the ego closes rapidly, producing a hard but survivable evasive response rather than a spawn-time coincidence.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C14.loss-of-control",
   "tags": [
    "loss-of-control",

@@ -1,13 +1,13 @@
 import { connection, NextResponse, type NextRequest } from "next/server";
 import {
-  UNISCENARIO_REVIEW_QUEUE_MAX_PAGE_SIZE,
-  UNISCENARIO_REVIEW_QUEUE_PAGE_SIZE,
-} from "@/app/lib/uniscenario/review-contracts";
-import { listUniScenarioReviewQueue } from "@/app/lib/uniscenario/review-store";
+  SCENARIO_REVIEW_QUEUE_MAX_PAGE_SIZE,
+  SCENARIO_REVIEW_QUEUE_PAGE_SIZE,
+} from "@/app/lib/scenario/review-contracts";
+import { listScenarioReviewQueue } from "@/app/lib/scenario/review-store";
 import {
-  requireUniScenarioContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 /**
  * Operator review queue: pending documents, oldest first (manifest #42).
@@ -18,7 +18,7 @@ import {
  */
 export async function GET(request: NextRequest) {
   await connection();
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
 
   const params = request.nextUrl.searchParams;
@@ -26,15 +26,15 @@ export async function GET(request: NextRequest) {
   // `Number.isInteger` rather than a truthiness check: a `limit=0` must fall back to the default
   // rather than be treated as "no limit", and NaN must not reach the clamp.
   const limit = Number.isInteger(rawLimit) && rawLimit > 0
-    ? Math.min(rawLimit, UNISCENARIO_REVIEW_QUEUE_MAX_PAGE_SIZE)
-    : UNISCENARIO_REVIEW_QUEUE_PAGE_SIZE;
+    ? Math.min(rawLimit, SCENARIO_REVIEW_QUEUE_MAX_PAGE_SIZE)
+    : SCENARIO_REVIEW_QUEUE_PAGE_SIZE;
 
-  const page = await listUniScenarioReviewQueue(auth.context, {
+  const page = await listScenarioReviewQueue(auth.context, {
     limit,
     cursor: params.get("cursor"),
     // `datasetId` is intentionally not read yet — the store accepts it so per-dataset scoping is a
     // query parameter away rather than a route reshape.
   });
 
-  return NextResponse.json(page, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS });
+  return NextResponse.json(page, { headers: SCENARIO_PRIVATE_CACHE_HEADERS });
 }

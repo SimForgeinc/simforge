@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="1" revMinor="4" date="1970-01-01T00:00:00.000Z" description="cross-language conformance golden: appearance-sets" author="UniScenario conformance corpus">
+  <FileHeader revMajor="1" revMinor="4" date="1970-01-01T00:00:00.000Z" description="cross-language conformance golden: appearance-sets" author="Scenario conformance corpus">
     <Properties>
       <Property name="uniscenarios.executionMode" value="trajectory-replay"/>
       <Property name="uniscenarios.export.profile" value="xml-1.4-trajectory-replay"/>
@@ -1188,7 +1188,7 @@
               <Action name="event_set_13_action_0"><PrivateAction>
                 <AppearanceAction>
                   <AnimationAction loop="false" animationDuration="0">
-                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="uniscenarios:audio.horn:true"/></AnimationType>
+                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="simforge:audio.horn:true"/></AnimationType>
                   </AnimationAction>
                 </AppearanceAction>
               </PrivateAction></Action>
@@ -1198,7 +1198,7 @@
               <Action name="event_set_14_action_0"><PrivateAction>
                 <AppearanceAction>
                   <AnimationAction loop="false" animationDuration="0">
-                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="uniscenarios:pose.stopArm:extended"/></AnimationType>
+                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="simforge:pose.stopArm:extended"/></AnimationType>
                   </AnimationAction>
                 </AppearanceAction>
               </PrivateAction></Action>
@@ -1213,7 +1213,7 @@
               <Action name="event_set_15_action_0"><PrivateAction>
                 <AppearanceAction>
                   <AnimationAction loop="false" animationDuration="0">
-                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="uniscenarios:pose.paddle:stop"/></AnimationType>
+                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="simforge:pose.paddle:stop"/></AnimationType>
                   </AnimationAction>
                 </AppearanceAction>
               </PrivateAction></Action>
@@ -1223,7 +1223,7 @@
               <Action name="event_set_16_action_0"><PrivateAction>
                 <AppearanceAction>
                   <AnimationAction loop="false" animationDuration="0">
-                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="uniscenarios:pose.gesture:halt"/></AnimationType>
+                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="simforge:pose.gesture:halt"/></AnimationType>
                   </AnimationAction>
                 </AppearanceAction>
               </PrivateAction></Action>
@@ -1233,7 +1233,7 @@
               <Action name="event_set_17_action_0"><PrivateAction>
                 <AppearanceAction>
                   <AnimationAction loop="false" animationDuration="0">
-                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="uniscenarios:pose.headingLookDeg:-30"/></AnimationType>
+                    <AnimationType><UserDefinedAnimation userDefinedAnimationType="simforge:pose.headingLookDeg:-30"/></AnimationType>
                   </AnimationAction>
                 </AppearanceAction>
               </PrivateAction></Action>

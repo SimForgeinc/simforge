@@ -21,7 +21,7 @@ const expectedXodrSha256 = 'af763016da63ab2f072e8a6d340bd0136b77c34eb9d6ea7b62db
 const sha256 = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
 
 await createVerifiedMacOsLocalExecutor(binary);
-const root = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-esmini-capability-'));
+const root = await mkdtemp(path.join(os.tmpdir(), 'simforge-esmini-capability-'));
 const xodr = path.join(root, 'straight_500m.xodr');
 const sourceXodrBytes = await readFile(sourceXodr);
 const sourceXodrSha256 = sha256(sourceXodrBytes);

@@ -163,7 +163,7 @@ const _sunTravel = new Vector3();
 const SUN_SYNC_TOLERANCE_RAD = MathUtils.degToRad(0.25);
 
 export function isRendererOwnedVisualRoot(object: Object3D): boolean {
-  const role = object.userData.uniscenariosRole;
+  const role = object.userData.simforgeRole;
   return role === 'city-weather'
     || role === 'city-snow-cover'
     || role === 'city-sky'

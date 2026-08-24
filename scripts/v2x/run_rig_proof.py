@@ -26,7 +26,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "renderer/service/python"))
-from uniscenarios_native.client import NativeRenderClient  # noqa: E402
+from simforge_native.client import NativeRenderClient  # noqa: E402
 
 TICK_S = 0.05  # product cadence: 20 Hz (CARLA sensor_tick 0.05 analogue)
 

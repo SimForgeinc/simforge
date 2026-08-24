@@ -196,7 +196,7 @@ export async function makeGeometryOnlyGlb(sourceBuffer, options = {}) {
       },
       extras: {
         ...(material.extras ?? {}),
-        uniscenariosGeometryOnly: { version: 2, source: representative ? 'base-color-average' : 'factor-or-semantic' },
+        simforgeGeometryOnly: { version: 2, source: representative ? 'base-color-average' : 'factor-or-semantic' },
       },
     });
   }

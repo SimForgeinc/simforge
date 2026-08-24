@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
-import type { CarlaCompatibility } from "@/app/lib/uniscenario/carla-compatibility";
+import type { CarlaCompatibility } from "@/app/lib/scenario/carla-compatibility";
 
 export interface CarlaCompatibilityRow {
   catalogId: string;

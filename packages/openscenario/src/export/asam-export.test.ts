@@ -837,7 +837,7 @@ describe('honest unsupported-feature failures', () => {
       }],
     });
     const result = exportOpenScenarioXml14(input, { graph });
-    expect(result.content).toContain('userDefinedAnimationType="uniscenarios:pose.headingLookDeg:-90"');
+    expect(result.content).toContain('userDefinedAnimationType="simforge:pose.headingLookDeg:-90"');
     expect(result.warnings).toContainEqual(expect.objectContaining({
       code: 'user_defined_animation',
       path: 'interactions.look-left.target.key',
@@ -1136,7 +1136,7 @@ async function acquireOfficialXml14Xsd(dir: string): Promise<string> {
 describe('official ASAM XML 1.4.0 schema', () => {
   let dir = '';
   let officialXsd = '';
-  beforeAll(async () => { dir = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-asam-')); });
+  beforeAll(async () => { dir = await mkdtemp(path.join(os.tmpdir(), 'simforge-asam-')); });
   afterAll(async () => { if (dir) await rm(dir, { recursive: true, force: true }); });
 
   it('validates the generated .xosc with the official XSD deliverable', async () => {
@@ -1226,7 +1226,7 @@ describe('pinned ASAM OpenSCENARIO DSL 2.2.0 grammar profile', () => {
     expect(response.ok, `failed to fetch official ASAM DSL domain library: HTTP ${response.status}`).toBe(true);
     const archiveBytes = new Uint8Array(await response.arrayBuffer());
     expect(sha256(archiveBytes), 'official ASAM DSL 2.2 domain library checksum changed').toBe(OFFICIAL_DSL_22_DOMAIN.sha256);
-    const dir = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-osc-domain-'));
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'simforge-osc-domain-'));
     try {
       const archive = path.join(dir, 'domain.zip');
       await writeFile(archive, archiveBytes);

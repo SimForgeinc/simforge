@@ -1,5 +1,5 @@
 //! Artifact writers with format parity against the CARLA path
-//! (`adapters/carla-bridge/uniscenarios_carla_bridge/runtime/backend.py`):
+//! (`adapters/carla-exec/simforge_carla_exec/runtime/backend.py`):
 //!
 //! - LiDAR: ASCII PLY with `property float x/y/z/intensity`, rows after
 //!   `end_header` — the shape CARLA's `save_to_disk` writes and what

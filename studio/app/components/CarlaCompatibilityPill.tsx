@@ -4,7 +4,7 @@ import {
   CARLA_COMPATIBILITY_HINT,
   CARLA_COMPATIBILITY_LABEL,
   type CarlaCompatibility,
-} from "@/app/lib/uniscenario/carla-compatibility";
+} from "@/app/lib/scenario/carla-compatibility";
 
 interface CarlaCompatibilityPillProps {
   compatibility: CarlaCompatibility;

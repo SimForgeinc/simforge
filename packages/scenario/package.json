@@ -3,7 +3,7 @@
   "version": "0.1.0-rc.45",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/SimForge.git",
+    "url": "git+https://github.com/SimForgeinc/simforge.git",
     "directory": "packages/scenario"
   },
   "publishConfig": {

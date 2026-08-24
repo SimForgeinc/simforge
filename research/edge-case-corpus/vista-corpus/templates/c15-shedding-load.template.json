@@ -5,7 +5,7 @@
   "description": "A moving box truck unexpectedly drops a large piece of its load into the ego lane. The load is absent at clip start and appears only as the truck reaches the conflict point, forcing a late hard-braking response.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C15.adversarial-load-shed",
   "tags": [
    "adversarial",

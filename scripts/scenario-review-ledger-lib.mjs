@@ -310,7 +310,7 @@ export function createScenarioReviewTemplate(manifest, manifestFile = 'manifest.
       completedAt: null,
       verdict: null,
       environment: {
-        application: 'UniScenarios Studio',
+        application: 'SimForge Studio',
         surface: 'browser',
         studioUrl: null,
         sessionId: null,
@@ -435,8 +435,8 @@ export function adjudicateScenarioReview(manifest, review, context = {}) {
     reasons.push('review verdict must be accepted or rejected');
   }
   const environment = review?.inspection?.environment;
-  if (environment?.application !== 'UniScenarios Studio' || environment?.surface !== 'browser') {
-    reasons.push('review must be performed in the UniScenarios Studio browser surface');
+  if (environment?.application !== 'SimForge Studio' || environment?.surface !== 'browser') {
+    reasons.push('review must be performed in the SimForge Studio browser surface');
   }
   if (typeof environment?.studioUrl !== 'string' || !/^https?:\/\//.test(environment.studioUrl)) {
     reasons.push('review must record the inspected Studio URL');

@@ -380,7 +380,7 @@ function doorAnimationAction(
 }
 
 function userDefinedAnimationAction(key: string, value: boolean | number | string): string {
-  const type = `uniscenarios:${key}:${String(value)}`;
+  const type = `simforge:${key}:${String(value)}`;
   return [
     '<PrivateAction>',
     '  <AppearanceAction>',
@@ -512,7 +512,7 @@ function interactionActions(
       return {
         code: 'unsupported_gap_dynamics',
         path: `interactions.${interaction.id}`,
-        reason: 'XML LongitudinalDistanceAction cannot preserve UniScenarios transition shape and dimension',
+        reason: 'XML LongitudinalDistanceAction cannot preserve SimForge transition shape and dimension',
       };
     case 'laneOffset':
       if (interaction.target.mode === 'meters' && interaction.dynamics.shape === 'step') {
@@ -530,7 +530,7 @@ function interactionActions(
       return {
         code: 'unsupported_lane_offset_dynamics',
         path: `interactions.${interaction.id}`,
-        reason: 'XML LaneOffsetAction cannot preserve UniScenarios transition dimension and value',
+        reason: 'XML LaneOffsetAction cannot preserve SimForge transition dimension and value',
       };
   }
 }
@@ -1333,7 +1333,7 @@ export function exportOpenScenarioXml14(
   const content = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<OpenSCENARIO>',
-    `  <FileHeader revMajor="1" revMinor="4" date="${xml(date)}" description="${xml(options.description ?? 'Concrete UniScenarios scenario instance')}" author="${xml(options.author ?? 'UniScenarios')}">`,
+    `  <FileHeader revMajor="1" revMinor="4" date="${xml(date)}" description="${xml(options.description ?? 'Concrete SimForge scenario instance')}" author="${xml(options.author ?? 'SimForge')}">`,
     ...(headerProperties.length > 0 ? [
       '    <Properties>',
       ...headerProperties.map((property) => `      ${property}`),
@@ -1384,7 +1384,7 @@ export function exportOpenScenarioXml14(
       ...((options.nearMissCriteria?.length || input.nearMissCriteria?.length) ? [{
         code: 'near_miss_criterion_metadata',
         path: 'FileHeader.Properties',
-        reason: 'OSC 1.4 preserves the executable condition and pedestrian trajectory; exact OBB-clearance acceptance remains UniScenarios metadata and must be re-evaluated from the simulator trace',
+        reason: 'OSC 1.4 preserves the executable condition and pedestrian trajectory; exact OBB-clearance acceptance remains SimForge metadata and must be re-evaluated from the simulator trace',
       }] : []),
       ...input.interactions.flatMap((interaction) =>
         interaction.verb === 'set' && interaction.target.key.startsWith('pose.')

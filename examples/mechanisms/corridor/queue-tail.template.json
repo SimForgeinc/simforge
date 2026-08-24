@@ -5,7 +5,7 @@
     "description": "Ego approaches a two-vehicle stopped queue. A tall roadside vehicle and mild corridor curvature form an explicit sight restriction for the queue tail.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "longitudinal.queue-tail",
     "tags": ["corridor", "longitudinal", "stopped-queue", "limited-preview"],
     "author": "agent/corridor-mechanisms",

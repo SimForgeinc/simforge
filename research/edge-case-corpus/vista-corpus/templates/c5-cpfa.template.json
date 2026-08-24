@@ -5,7 +5,7 @@
   "description": "A pedestrian begins on the far side of a straight road, concealed by a roadside box truck, then crosses into the ego vehicle's path without yielding. The crossing is arrival-timed to create a late, survivable near miss.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C5.pedestrian-far-side-crossing",
   "tags": [
    "vru",

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # WSB4 lighting-ladder + weather-ladder capture script (deterministic inputs).
 set -e
-BIN="/home/path/UniScenarios-ws/wsb4-realism-stack/renderer/target/debug/native-render"
-CORPUS=/home/path/UniScenarios/scripts/renderer-spike/corpus
+BIN="/home/path/SimForge-ws/wsb4-realism-stack/renderer/target/debug/native-render"
+CORPUS=/home/path/SimForge/scripts/renderer-spike/corpus
 GLBS="$CORPUS/road.glb,$CORPUS/tile_2_4.glb,$CORPUS/tile_2_5.glb,$CORPUS/tile_2_6.glb,$CORPUS/tile_3_5.glb"
 EYE="580.45 14.44 -1655.66"; TGT="590.40 14.35 -1648.96"
 OUT="$(dirname "$0")/out"; mkdir -p "$OUT"

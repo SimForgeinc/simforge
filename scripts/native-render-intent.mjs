@@ -214,7 +214,7 @@ const xoscPath = path.join(outDir, 'scenario.xosc');
 // The export pipeline needs dev-assets/topology-index.json.gz, which lives in
 // the training-grade checkout; its CLI is version-compatible for xosc-1.4.
 const exportCli = process.env.UNISCENARIOS_EXPORT_CLI
-  ?? '/home/path/UniScenarios-training-grade/packages/cli/bin/uniscenarios.js';
+  ?? '/home/path/SimForge-training-grade/packages/cli/bin/simforge.js';
 const exportCwd = path.dirname(path.dirname(path.dirname(exportCli)));
 execFileSync(process.execPath, [
   exportCli, 'export', path.resolve(instancePath), '--format', 'xosc-1.4', '--out', xoscPath,

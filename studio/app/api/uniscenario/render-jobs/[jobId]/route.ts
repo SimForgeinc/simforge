@@ -1,32 +1,32 @@
 import { NextResponse } from "next/server";
-import { getRenderJob } from "@/app/lib/uniscenario/control-plane-store";
-import { cancelOperationalJobWithResult } from "@/app/lib/uniscenario/jobs/store";
+import { getRenderJob } from "@/app/lib/scenario/control-plane-store";
+import { cancelOperationalJobWithResult } from "@/app/lib/scenario/jobs/store";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutableRenderJobContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRenderJobContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ jobId: string }> };
 
 export async function GET(_request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { jobId } = await route.params;
   const job = await getRenderJob(auth.context, jobId);
   return job
-    ? NextResponse.json(job, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS })
+    ? NextResponse.json(job, { headers: SCENARIO_PRIVATE_CACHE_HEADERS })
     : NextResponse.json({ error: "render_job_not_found" }, { status: 404 });
 }
 
 export async function DELETE(request: Request, route: Context) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { jobId } = await route.params;
-  const access = await requireUniScenarioMutableRenderJobContext(
+  const access = await requireScenarioMutableRenderJobContext(
     auth.context,
     jobId,
     "mutateContent",

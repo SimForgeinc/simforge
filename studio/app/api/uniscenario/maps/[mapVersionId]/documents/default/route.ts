@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import { TemplateDocument } from "@simforge/scenario";
 import {
-  DEFAULT_UNISCENARIO_AUTHORING_QUALITY_ID,
-  UNISCENARIO_SCHEMA_VERSION,
-} from "@/app/lib/uniscenario/contracts";
+  DEFAULT_SCENARIO_AUTHORING_QUALITY_ID,
+  SCENARIO_SCHEMA_VERSION,
+} from "@/app/lib/scenario/contracts";
 import {
-  createUniScenarioDocument,
-  listUniScenarioMapDescriptors,
-} from "@/app/lib/uniscenario/document-store";
-import { ensureDefaultUniScenarioDataset } from "@/app/lib/uniscenario/dataset-store";
+  createScenarioDocument,
+  listScenarioMapDescriptors,
+} from "@/app/lib/scenario/document-store";
+import { ensureDefaultScenarioDataset } from "@/app/lib/scenario/dataset-store";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
-import { withSceneMinutes } from "@/app/dashboard/uniscenario/editor/scene-time";
+  requireScenarioContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
+import { withSceneMinutes } from "@/app/dashboard/scenario/editor/scene-time";
 
 const EDITOR_APP_VERSION = "0.1.0-editor";
 
@@ -22,24 +22,24 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ mapVersionId: string }> },
 ) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
 
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
 
   const { mapVersionId } = await params;
-  const map = (await listUniScenarioMapDescriptors(auth.context)).find(
+  const map = (await listScenarioMapDescriptors(auth.context)).find(
     (candidate) => candidate.mapVersionId === mapVersionId,
   );
   if (!map) {
     return NextResponse.json(
       { error: "map_not_found" },
-      { status: 404, headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+      { status: 404, headers: SCENARIO_PRIVATE_CACHE_HEADERS },
     );
   }
 
-  const dataset = await ensureDefaultUniScenarioDataset(auth.context);
+  const dataset = await ensureDefaultScenarioDataset(auth.context);
   const template = TemplateDocument.create({
     name: `${map.label} scenario`,
     sourceMap: { mapId: map.sourceMapId, mapName: map.label },
@@ -58,17 +58,17 @@ export async function POST(
         environment: withSceneMinutes(template.data.environment, localMinutes),
       }
     : template.data;
-  const document = await createUniScenarioDocument(auth.context, {
+  const document = await createScenarioDocument(auth.context, {
     title: template.data.meta.name,
-    schemaVersion: UNISCENARIO_SCHEMA_VERSION,
+    schemaVersion: SCENARIO_SCHEMA_VERSION,
     content,
     mapVersionId: map.mapVersionId,
     datasetId: dataset.id,
-    authoringQualityId: DEFAULT_UNISCENARIO_AUTHORING_QUALITY_ID,
+    authoringQualityId: DEFAULT_SCENARIO_AUTHORING_QUALITY_ID,
   });
 
   return NextResponse.json(
     { document },
-    { status: 201, headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { status: 201, headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }

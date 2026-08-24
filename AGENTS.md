@@ -1,15 +1,15 @@
-# AGENTS.md — driving UniScenarios from an agent
+# AGENTS.md — driving SimForge from an agent
 
-UniScenarios is a deterministic scenario-generation pipeline: author a portable
+SimForge is a deterministic scenario-generation pipeline: author a portable
 **template** (logical anchor + choreography, no road IDs, no coordinates), match
 it to concrete **sites** on real maps, sample **instances**, simulate, filter,
-and verify. The `uniscenarios` CLI is the stable surface for every step.
+and verify. The `simforge` CLI is the stable surface for every step.
 
 ## Setup
 
 ```sh
 pnpm install
-node packages/cli/bin/uniscenarios.js --help        # the command surface, as JSON
+node packages/cli/bin/simforge.js --help        # the command surface, as JSON
 ```
 
 - **dev-assets are required** for anything map-bound: `dev-assets/<mapId>/`
@@ -33,7 +33,7 @@ node packages/cli/bin/uniscenarios.js --help        # the command surface, as JS
 ## The authoring loop
 
 ```sh
-U=node packages/cli/bin/uniscenarios.js
+U=node packages/cli/bin/simforge.js
 
 $U schemas --content > /tmp/template.schema.json    # the emission contract
 
@@ -50,7 +50,7 @@ $U evidence verify i.instance.json i.trace.json.gz  # same-input-hash proof
 $U export i.instance.json --format xosc-1.4 --out i.xosc
 ```
 
-`uniscenarios batch s.template.json --all-maps --draws 5 --out out/` runs the
+`simforge batch s.template.json --all-maps --draws 5 --out out/` runs the
 whole matrix (instantiate → simulate → evaluate) with per-cell seeds and a
 resumable ledger. `catalog create/verify/batch` manage the 100-slot per-map
 scenario catalog.

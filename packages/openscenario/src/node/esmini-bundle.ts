@@ -64,7 +64,7 @@ export interface EsminiBundleFile {
 
 /** Stable hand-off contract consumed by ../esmini/index.js. */
 export interface EsminiBundleManifest {
-  readonly kind: 'uniscenarios-esmini-runnable-bundle';
+  readonly kind: 'simforge-esmini-runnable-bundle';
   readonly version: typeof ESMINI_BUNDLE_VERSION;
   readonly scenarioEntry: 'scenario.xosc';
   readonly roadEntry: 'maps/map.xodr';
@@ -206,7 +206,7 @@ export async function buildEsminiRunnableBundle(request: EsminiBundleRequest): P
   const traceBytes = serializeTrace(request.canonicalTrace);
   const capabilityBytes = utf8(canonicalJson({ ...compatibility, xsdValidation: validation }));
   const provenanceBytes = utf8(canonicalJson({
-    kind: 'uniscenarios-esmini-provenance',
+    kind: 'simforge-esmini-provenance',
     version: 1,
     instanceId: request.instanceId,
     inputHash: request.inputHash,
@@ -226,7 +226,7 @@ export async function buildEsminiRunnableBundle(request: EsminiBundleRequest): P
     ['trace/canonical.trace.json', { mediaType: 'application/json', bytes: traceBytes }],
     ['reports/capability.json', { mediaType: 'application/json', bytes: capabilityBytes }],
     ['reports/provenance.json', { mediaType: 'application/json', bytes: provenanceBytes }],
-    ['catalogs/manifest.json', { mediaType: 'application/json', bytes: utf8(canonicalJson({ kind: 'uniscenarios-catalog-references', version: 1, catalogs: [], assets: [] })) }],
+    ['catalogs/manifest.json', { mediaType: 'application/json', bytes: utf8(canonicalJson({ kind: 'simforge-catalog-references', version: 1, catalogs: [], assets: [] })) }],
   ]);
   const fileEntries = [...payloads.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([file, payload]) => ({
     path: file,
@@ -235,7 +235,7 @@ export async function buildEsminiRunnableBundle(request: EsminiBundleRequest): P
     sha256: sha256(payload.bytes),
   }));
   const manifest: EsminiBundleManifest = {
-    kind: 'uniscenarios-esmini-runnable-bundle',
+    kind: 'simforge-esmini-runnable-bundle',
     version: ESMINI_BUNDLE_VERSION,
     scenarioEntry: 'scenario.xosc',
     roadEntry: 'maps/map.xodr',

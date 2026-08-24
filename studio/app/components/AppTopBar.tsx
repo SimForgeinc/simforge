@@ -57,7 +57,7 @@ export function AppTopBar({
 
   const slotCtx = useTopBarSlotContext();
   const activeItem = activeNavItem(pathname);
-  const routePageTitle = pathname.startsWith("/dashboard/uniscenario")
+  const routePageTitle = pathname.startsWith("/dashboard/scenario")
     ? "Dataset"
     : activeItem?.label ?? null;
   // Page-level title effects can commit before this Suspense boundary hydrates.

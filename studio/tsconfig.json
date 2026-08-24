@@ -32,8 +32,8 @@
       "@simcloud/shared": [
         "./app/lib/simcloud-shared/index.ts"
       ],
-      "@simcloud/shared/uniscenario-render-control": [
-        "./app/lib/simcloud-shared/uniscenario-render-control.ts"
+      "@simcloud/shared/scenario-render-control": [
+        "./app/lib/simcloud-shared/scenario-render-control.ts"
       ],
       "@simcloud/shared/*": [
         "./app/lib/simcloud-shared/*"

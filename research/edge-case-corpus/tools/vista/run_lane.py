@@ -4,7 +4,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import author, gate
 
-CORPUS = ('/Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/'
+CORPUS = ('/Users/michaelvu-simforge/Documents/Programming/SimForge-vista/'
           'research/edge-case-corpus/agent-authoring/brief-corpus.json')
 
 

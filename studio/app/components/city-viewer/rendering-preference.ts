@@ -1,7 +1,7 @@
 import {
-  UNISCENARIO_AUTHORING_QUALITY_IDS,
-  type UniScenarioAuthoringQuality,
-} from "@/app/lib/uniscenario/contracts";
+  SCENARIO_AUTHORING_QUALITY_IDS,
+  type ScenarioAuthoringQuality,
+} from "@/app/lib/scenario/contracts";
 
 export const RENDERING_PREFERENCE_STORAGE_KEY =
   "simforge.rendering-preference.v1";
@@ -11,10 +11,10 @@ export const OPEN_RENDERING_PREFERENCE_EVENT =
 export const RENDERING_PREFERENCE_CHANGE_EVENT =
   "simforge:rendering-preference-change";
 
-export type RenderingPreference = UniScenarioAuthoringQuality;
+export type RenderingPreference = ScenarioAuthoringQuality;
 
 function isRenderingPreference(value: unknown): value is RenderingPreference {
-  return UNISCENARIO_AUTHORING_QUALITY_IDS.some((quality) => quality === value);
+  return SCENARIO_AUTHORING_QUALITY_IDS.some((quality) => quality === value);
 }
 
 export function usesLightweightRendering(preference: RenderingPreference): boolean {

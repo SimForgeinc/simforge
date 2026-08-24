@@ -14,7 +14,7 @@ async function write(root, file, content) {
 }
 
 async function fixture() {
-  const uniscenariosRoot = await mkdtemp(path.join(tmpdir(), 'uniscenarios-audit-'));
+  const simforgeRoot = await mkdtemp(path.join(tmpdir(), 'simforge-audit-'));
   const simcloudRoot = await mkdtemp(path.join(tmpdir(), 'simcloud-audit-'));
   const tarball = Buffer.from('immutable package');
   const wheel = Buffer.from('immutable Python wheel');
@@ -40,10 +40,10 @@ async function fixture() {
   const stack = {
     schema: 'uniscenarios.stack-config/v1',
     stackVersion: '1.2.3',
-    repository: 'https://example.test/uniscenarios',
+    repository: 'https://example.test/simforge',
     packages: [{ path: 'packages/engine', role: 'simulation-kernel' }],
     pythonPackages: [{
-      path: 'adapters/carla-exec', name: 'uniscenarios-carla-bridge',
+      path: 'adapters/carla-exec', name: 'simforge-carla-exec',
       version: '1.2.3', role: 'optional-carla-execution-adapter', registry: 'pypi',
     }],
   };
@@ -56,23 +56,23 @@ async function fixture() {
       tarball: 'engine-1.2.3.tgz', sha256,
     }],
     pythonPackages: [{
-      name: 'uniscenarios-carla-bridge', version: '1.2.3',
+      name: 'simforge-carla-exec', version: '1.2.3',
       role: 'optional-carla-execution-adapter', registry: 'pypi',
-      wheel: 'uniscenarios_carla_bridge-1.2.3-py3-none-any.whl', sha256: wheelSha256,
+      wheel: 'simforge_carla_exec-1.2.3-py3-none-any.whl', sha256: wheelSha256,
     }],
   };
-  await write(uniscenariosRoot, 'config/simcloud-integration.json', JSON.stringify(integration));
-  await write(uniscenariosRoot, 'config/simforge-stack.json', JSON.stringify(stack));
-  await write(uniscenariosRoot, 'packages/engine/package.json', JSON.stringify({ name: '@simforge/engine', version: '1.2.3' }));
+  await write(simforgeRoot, 'config/simcloud-integration.json', JSON.stringify(integration));
+  await write(simforgeRoot, 'config/simforge-stack.json', JSON.stringify(stack));
+  await write(simforgeRoot, 'packages/engine/package.json', JSON.stringify({ name: '@simforge/engine', version: '1.2.3' }));
   await write(simcloudRoot, 'vendor/uniscenarios/stack-lock.json', JSON.stringify(vendorLock));
   await write(simcloudRoot, 'vendor/uniscenarios/engine-1.2.3.tgz', tarball);
-  await write(simcloudRoot, 'vendor/uniscenarios/uniscenarios_carla_bridge-1.2.3-py3-none-any.whl', wheel);
+  await write(simcloudRoot, 'vendor/uniscenarios/simforge_carla_exec-1.2.3-py3-none-any.whl', wheel);
   await write(simcloudRoot, 'package.json', JSON.stringify({ dependencies: { '@simforge/engine': 'file:vendor/uniscenarios/engine-1.2.3.tgz' } }));
   await write(simcloudRoot, 'package-lock.json', JSON.stringify({ packages: { 'node_modules/@simforge/engine': { resolved: 'file:vendor/uniscenarios/engine-1.2.3.tgz', integrity } } }));
-  await write(simcloudRoot, 'services/worker/pyproject.toml', 'dependencies = ["uniscenarios-carla-bridge==1.2.3"]');
-  await write(simcloudRoot, 'services/worker/uv.lock', 'uniscenarios_carla_bridge-1.2.3-py3-none-any.whl');
+  await write(simcloudRoot, 'services/worker/pyproject.toml', 'dependencies = ["simforge-carla-exec==1.2.3"]');
+  await write(simcloudRoot, 'services/worker/uv.lock', 'simforge_carla_exec-1.2.3-py3-none-any.whl');
   await write(simcloudRoot, 'app/playback/adapter.ts', 'export const cloudAdapter = true;');
-  return { uniscenariosRoot, simcloudRoot };
+  return { simforgeRoot, simcloudRoot };
 }
 
 test('passes when SimCloud consumes the exact immutable stack and only product adapters', async () => {

@@ -5,7 +5,7 @@
     "description": "An adult walks continuously along the road edge, turns into ego's travel lane at an unmarked midblock location, passes through the declared lane-centre conflict point, and finishes beyond the far edge for a stable aftermath. The portable frame-relative path does not claim a mapped or controlled crossing.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "vru.adult-midblock-crossing",
     "tags": ["vru", "adult", "midblock", "unmarked-crossing", "stable-aftermath"],
     "author": "agent/junction-vru",

@@ -353,11 +353,11 @@ def _trajectories(root: ET.Element, actors: Mapping[str, ActorBinding], abort: C
             raise ContractError(f"actor {actor_id} has multiple replay trajectories")
         result[actor_id] = _trajectory_vertices(action, abort)
 
-    # The canonical UniScenario trajectory-replay profile starts each actor's
+    # The canonical Scenario trajectory-replay profile starts each actor's
     # FollowTrajectoryAction from Storyboard/Init. OpenSCENARIO 1.4 permits
     # private routing actions there and this avoids a second, trigger-mediated
     # start time. Keep accepting the equivalent Story/ManeuverGroup form for
-    # standards-compliant packages authored outside UniScenario.
+    # standards-compliant packages authored outside Scenario.
     for private in root.findall("./Storyboard/Init/Actions/Private"):
         abort()
         actor_id = by_ref.get(private.get("entityRef", ""))

@@ -10,15 +10,15 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import type { RenderingPreference } from "@/app/components/city-viewer/rendering-preference";
-import { listMapOptions } from "@/app/dashboard/uniscenario/list/api";
-import type { UniScenarioMapOption } from "@/app/dashboard/uniscenario/list/document-map-groups";
+import { listMapOptions } from "@/app/dashboard/scenario/list/api";
+import type { ScenarioMapOption } from "@/app/dashboard/scenario/list/document-map-groups";
 import {
   cacheProfileMapPlan,
   createProfileMapPlan,
   type ProfileMapCacheResult,
   type ProfileMapCacheProgress,
   type ProfileMapPlan,
-} from "@/app/lib/uniscenario/editor/profile-map-cache";
+} from "@/app/lib/scenario/editor/profile-map-cache";
 
 type Phase = "planning" | "ready" | "downloading" | "complete" | "error";
 
@@ -88,7 +88,7 @@ export function ProfileMapPreparation({
 }) {
   const [phase, setPhase] = useState<Phase>("planning");
   const [plan, setPlan] = useState<ProfileMapPlan | null>(null);
-  const [availableMaps, setAvailableMaps] = useState<UniScenarioMapOption[]>([]);
+  const [availableMaps, setAvailableMaps] = useState<ScenarioMapOption[]>([]);
   const [selectedMapIds, setSelectedMapIds] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<ProfileMapCacheProgress | null>(
     null,

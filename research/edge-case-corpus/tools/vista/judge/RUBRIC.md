@@ -247,7 +247,7 @@ case.** If that is not what you want, R3 is the dial — not R2 and not the verd
 28 real cells (7 sites × 4 draws, 2 maps, the gold `expA-child-dartout-two-cars` template):
 
 ```bash
-node packages/cli/bin/uniscenarios.js batch \
+node packages/cli/bin/simforge.js batch \
   research/edge-case-corpus/templates/expA-child-dartout-two-cars.template.json \
   --all-maps --draws 4 --max-sites 6 --out /tmp/judge-a1 --concurrency 3
 

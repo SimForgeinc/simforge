@@ -5,7 +5,7 @@
   "description": "A roadside hedge-like occluder hides an inattentive pedestrian entering a crossing at an uncontrolled or minor-controlled junction. The pedestrian is timed to reach the ego path shortly before the ego, creating a late but survivable braking response without requiring a map-specific feature.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C7.occlusion",
   "tags": [
    "occlusion",

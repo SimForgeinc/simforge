@@ -1,5 +1,5 @@
 /**
- * `uniscenarios` — the agent CLI (layer 4 of `docs/agent-authoring-architecture.md`).
+ * `simforge` — the agent CLI (layer 4 of `docs/agent-authoring-architecture.md`).
  *
  * Contract, in three lines:
  *
@@ -86,9 +86,9 @@ function usage(pretty: boolean): number {
   } else {
     process.stdout.write(
       [
-        'uniscenarios — UniScenarios agent CLI (`scen` remains an alias)',
+        'simforge — SimForge agent CLI (`scen` remains an alias)',
         '',
-        ...COMMANDS.map((c) => `  uniscenarios ${c.name.padEnd(20)}${c.summary}`),
+        ...COMMANDS.map((c) => `  simforge ${c.name.padEnd(20)}${c.summary}`),
         '',
         '  --pretty   human-readable rendering of the same result',
         `  maps: ${availableMaps().join(', ')}`,
@@ -210,7 +210,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
     case 'maps': {
       const args = parseArgs(argv.slice(2), { booleans: GLOBAL_BOOLEANS });
       if (sub !== 'list') {
-        throw new CliError('unknown_command', `uniscenarios maps ${sub ?? ''}`.trim(), {
+        throw new CliError('unknown_command', `simforge maps ${sub ?? ''}`.trim(), {
           detail: { known: ['list'] },
         });
       }
@@ -272,7 +272,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           pretty: boolFlag(args, 'pretty'),
         });
       }
-      throw new CliError('unknown_command', `uniscenarios locations ${sub ?? ''}`.trim(), {
+      throw new CliError('unknown_command', `simforge locations ${sub ?? ''}`.trim(), {
         detail: { known: ['find', 'get', 'resolve'] },
       });
     }
@@ -291,7 +291,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
         });
       }
       if (sub !== 'validate') {
-        throw new CliError('unknown_command', `uniscenarios template ${sub ?? ''}`.trim(), {
+        throw new CliError('unknown_command', `simforge template ${sub ?? ''}`.trim(), {
           detail: { known: ['new', 'validate'] },
         });
       }
@@ -322,7 +322,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
 
     case 'sites': {
       if (sub !== 'match') {
-        throw new CliError('unknown_command', `uniscenarios sites ${sub ?? ''}`.trim(), {
+        throw new CliError('unknown_command', `simforge sites ${sub ?? ''}`.trim(), {
           detail: { known: ['match'] },
         });
       }
@@ -465,7 +465,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
 
     case 'evidence': {
       if (sub !== 'verify') {
-        throw new CliError('unknown_command', `uniscenarios evidence ${sub ?? ''}`.trim(), {
+        throw new CliError('unknown_command', `simforge evidence ${sub ?? ''}`.trim(), {
           detail: { known: ['verify'] },
         });
       }
@@ -523,7 +523,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           pretty: boolFlag(args, 'pretty'),
         });
       }
-      throw new CliError('unknown_command', `uniscenarios catalog ${sub ?? ''}`.trim(), {
+      throw new CliError('unknown_command', `simforge catalog ${sub ?? ''}`.trim(), {
         detail: { known: ['create', 'verify', 'batch'] },
       });
     }
@@ -594,7 +594,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           pretty: boolFlag(args, 'pretty'),
         });
       }
-      throw new CliError('unknown_command', `uniscenarios render ${sub ?? ''}`.trim(), {
+      throw new CliError('unknown_command', `simforge render ${sub ?? ''}`.trim(), {
         detail: { known: ['run', 'hash'] },
       });
     }
@@ -640,7 +640,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           pretty: boolFlag(args, 'pretty'),
         });
       }
-      throw new CliError('unknown_command', `uniscenarios corpus ${sub ?? ''}`.trim(), {
+      throw new CliError('unknown_command', `simforge corpus ${sub ?? ''}`.trim(), {
         detail: { known: ['build', 'prewarm'] },
       });
     }
@@ -678,8 +678,7 @@ const invokedDirectly =
   process.argv[1] !== undefined &&
   (process.argv[1].endsWith('main.ts') ||
     process.argv[1].endsWith('simforge.js') ||
-    process.argv[1].endsWith('sf.js') ||
-    process.argv[1].endsWith('uniscenarios.js'));
+    process.argv[1].endsWith('sf.js'));
 
 if (invokedDirectly) {
   process.exitCode = await run(process.argv.slice(2));

@@ -165,7 +165,7 @@ class World:
                         if t.startswith("class:")), "")
             is_ped = role.get("kind") == "pedestrian" or cls == "pedestrian"
             actor_cls = Walker if is_ped else Vehicle
-            type_id = f"walker.uniscenarios.pedestrian" if is_ped else "vehicle.uniscenarios.car"
+            type_id = "walker.simforge.pedestrian" if is_ped else "vehicle.simforge.car"
             actor = actor_cls(self, actor_id=self._next_free_actor_id(),
                               type_id=type_id, role_name=role_name)
             self._actors[actor.id] = actor

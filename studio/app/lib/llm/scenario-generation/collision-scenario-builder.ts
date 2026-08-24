@@ -44,7 +44,7 @@ import {
   normalizeScenarioDraft,
   toPersistedScenarioSetupDraft,
 } from "@/app/lib/scenario-editor/draft-normalization";
-import { buildDashboardScenarioEditorHref } from "@/app/lib/uniscenario/routes";
+import { buildDashboardScenarioEditorHref } from "@/app/lib/scenario/routes";
 import { ScenarioDraftBridgeError } from "@/app/lib/scenario-editor/draft-generator";
 import type { GeometryLaneSample, GeometryReport } from "@/app/lib/maps/search/server/inspect-location-geometry";
 import type { PlanCollisionRoutesResult } from "@/app/lib/llm/scenario-generation/collision-route-planner";

@@ -1,5 +1,5 @@
-/** Immutable map artifact closure consumed by UniScenario authoring. */
-export interface UniScenarioMapEntry {
+/** Immutable map artifact closure consumed by Scenario authoring. */
+export interface ScenarioMapEntry {
   /** Immutable published map-version identity used for editor selection. */
   readonly id: string;
   /** Immutable published map-version identity used by APIs and persistence. */
@@ -34,7 +34,7 @@ export interface UniScenarioMapEntry {
 
 /**
  * Lightweight local-studio descriptor supported by the framework-neutral
- * editor. Immutable product catalogs should use {@link UniScenarioMapEntry};
+ * editor. Immutable product catalogs should use {@link ScenarioMapEntry};
  * local assets derive both persisted identities from `id`.
  */
 export interface LocalEditorMapEntry {
@@ -51,7 +51,7 @@ export interface LocalEditorMapEntry {
   readonly sumoManifest: string;
 }
 
-export type MapEntry = UniScenarioMapEntry | LocalEditorMapEntry;
+export type MapEntry = ScenarioMapEntry | LocalEditorMapEntry;
 
 export function editorMapVersionId(map: MapEntry): string {
   return 'versionId' in map ? map.versionId : map.id;
@@ -61,7 +61,7 @@ export function editorSourceMapId(map: MapEntry): string {
   return 'sourceMapId' in map ? map.sourceMapId : map.id;
 }
 
-export const TEST_MAP: UniScenarioMapEntry = {
+export const TEST_MAP: ScenarioMapEntry = {
   id: "test-map-v1",
   versionId: "test-map-v1",
   mapVersionId: "test-map-v1",
@@ -84,4 +84,4 @@ export const TEST_MAP: UniScenarioMapEntry = {
   topologyUrl: "/fixtures/test-map/topology-index.json.gz",
 };
 
-export const MAPS: readonly UniScenarioMapEntry[] = [TEST_MAP];
+export const MAPS: readonly ScenarioMapEntry[] = [TEST_MAP];

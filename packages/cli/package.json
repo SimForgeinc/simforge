@@ -3,7 +3,7 @@
   "version": "0.1.0-rc.45",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/SimForge.git",
+    "url": "git+https://github.com/SimForgeinc/simforge.git",
     "directory": "packages/cli"
   },
   "publishConfig": {
@@ -16,8 +16,7 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "simforge": "./bin/simforge.js",
-    "sf": "./bin/sf.js",
-    "uniscenarios": "./bin/uniscenarios.js"
+    "sf": "./bin/sf.js"
   },
   "exports": {
     ".": {
@@ -36,7 +35,6 @@
     "test": "vitest run",
     "test:portable": "vitest run src/__tests__/asam-export.test.ts src/__tests__/esmini-bundle.test.ts src/__tests__/xml14-suite-audit.test.ts src/__tests__/evidence.test.ts src/__tests__/intent-evaluate.test.ts src/__tests__/invariants.test.ts src/__tests__/seeding.test.ts src/__tests__/prop-dims.test.ts",
     "audit:xml14-suite": "tsx src/tools/audit-xml14-suite.ts",
-    "uniscenarios": "tsx src/main.ts",
     "simforge": "tsx src/main.ts"
   },
   "dependencies": {

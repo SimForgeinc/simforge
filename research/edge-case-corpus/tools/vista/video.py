@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import gate, scene
 
-DEV = '/Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/dev-assets'
+DEV = '/Users/michaelvu-simforge/Documents/Programming/SimForge-vista/dev-assets'
 TRAIL_S = 2.0
 
 

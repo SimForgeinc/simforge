@@ -5,7 +5,7 @@
   "description": "An e-scooter initially travels beside the ego on the footway and commits to a same-direction entry into the ego lane shortly before the ego reaches the merge point. The moving challenger does not yield, creating a late but survivable braking conflict without relying on a fixed map location.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C6.cyclist-ptw",
   "tags": [
    "e-scooter",

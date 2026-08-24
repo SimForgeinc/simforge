@@ -1283,7 +1283,7 @@ def execute_lease(
             if frame.index % 50 == 0:
                 check_abort("schedule_annotations", frame.index, len(plan.frames))
             annotation_schedule[frame.index] = (frame.index, frame.t)
-    with tempfile.TemporaryDirectory(prefix="uniscenario-render-") as directory:
+    with tempfile.TemporaryDirectory(prefix="scenario-render-") as directory:
         output_dir = Path(directory) / "frames"
         runtime_evidence: Mapping[str, object] = {
             "schema": "uniscenario.carla-runtime-evidence/v1",

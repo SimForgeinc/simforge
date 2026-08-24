@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectUnauthorizedWorker } from "@/app/lib/uniscenario/worker-http";
-import { CpuJobEventSchema } from "@/app/lib/uniscenario/jobs/contracts";
-import { recordCpuJobEvent } from "@/app/lib/uniscenario/jobs/cpu-control-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectUnauthorizedWorker } from "@/app/lib/scenario/worker-http";
+import { CpuJobEventSchema } from "@/app/lib/scenario/jobs/contracts";
+import { recordCpuJobEvent } from "@/app/lib/scenario/jobs/cpu-control-store";
 
 type Context = { params: Promise<{ jobId: string }> };
 export async function POST(request: Request, route: Context) {

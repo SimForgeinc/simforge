@@ -5,7 +5,7 @@
     "description": "A cone taper directs ego left around a collidable channelizer and a static work vehicle occupying the original lane. The stopped queue is revealed beyond the work vehicle, requiring a prompt stop in the shifted alignment with a stable aftermath.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "workzone.lane-shift",
     "tags": ["work-zone", "lane-shift", "channelizer", "static-work-vehicle", "taper"],
     "author": "agent/school-workzone-mechanisms",

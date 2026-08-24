@@ -157,7 +157,7 @@ test('unchecked applicable criteria reject an otherwise accepted review', () => 
   });
 });
 
-test('requires a bound UniScenarios Studio browser inspection session', () => {
+test('requires a bound SimForge Studio browser inspection session', () => {
   const manifest = scenarioManifest();
   const context = reviewContext();
   const review = completeReview(createScenarioReviewTemplate(manifest, 'manifest.json', context));

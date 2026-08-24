@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ScenarioStatusBadge } from "@/app/components/ScenarioStatusBadge";
 import { formatRelativeTime } from "@/app/lib/media-utils";
 import { cn } from "@/app/lib/utils";
-import { buildDashboardScenarioEditorHref } from "@/app/lib/uniscenario/routes";
+import { buildDashboardScenarioEditorHref } from "@/app/lib/scenario/routes";
 import {
   Tooltip,
   TooltipContent,

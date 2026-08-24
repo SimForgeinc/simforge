@@ -1,5 +1,5 @@
 /**
- * Environment-level contracts for the UniScenarios RL core.
+ * Environment-level contracts for the SimForge RL core.
  *
  * Everything here is deterministic: no wall clock, no `Math.random`, no
  * iteration-order dependence. A policy that replays the same action sequence

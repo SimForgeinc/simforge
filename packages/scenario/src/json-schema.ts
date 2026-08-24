@@ -25,9 +25,9 @@ export function buildJsonSchema(): Record<string, unknown> {
   return {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     $id: JSON_SCHEMA_ID,
-    title: `UniScenarios scenario, schema v${SCENARIO_VERSION}`,
+    title: `SimForge scenario, schema v${SCENARIO_VERSION}`,
     description:
-      'Authoring format for UniScenarios (.scenario.json). Positions are metres in the y-up scene frame; headings are radians CCW about +Y from +X. Two constraints are not expressible here and are enforced by the reference implementation: entity ids must be unique within a document, and meta.modifiedAt must not precede meta.createdAt.',
+      'Authoring format for SimForge (.scenario.json). Positions are metres in the y-up scene frame; headings are radians CCW about +Y from +X. Two constraints are not expressible here and are enforced by the reference implementation: entity ids must be unique within a document, and meta.modifiedAt must not precede meta.createdAt.',
     ...base,
   };
 }

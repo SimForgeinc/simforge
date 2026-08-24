@@ -7,14 +7,14 @@ import { completeGalleryAssetVersion } from "@/app/lib/asset-gallery/store";
 import { requireRouteSession } from "@/app/lib/auth/route-session";
 import {
   readJson,
-  requireUniScenarioMutationOrigin,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioMutationOrigin,
+} from "@/app/lib/scenario/http";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ versionId: string }> },
 ) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
 
   const auth = await requireRouteSession(request);

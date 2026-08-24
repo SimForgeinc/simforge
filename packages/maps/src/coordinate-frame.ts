@@ -1,5 +1,5 @@
 /**
- * The three coordinate frames UniScenarios has to reconcile, and the
+ * The three coordinate frames SimForge has to reconcile, and the
  * transforms between them.
  *
  * ## The frames

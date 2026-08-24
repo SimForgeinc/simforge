@@ -5,7 +5,7 @@
     "description": "The focus vehicle holds at the crossing while a cyclist and mobility-scooter rider enter in sequence and an opposing vehicle traverses the distant approach. This curated 20-second scenario uses only currently supported behaviors; adaptations are declared in machine-readable metadata.",
     "createdAt": "2026-08-02T00:00:00.000Z",
     "modifiedAt": "2026-08-03T08:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "gallery.11-double-threat-crosswalk",
     "tags": [
       "curated-gallery-v2",

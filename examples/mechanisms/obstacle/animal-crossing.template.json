@@ -5,7 +5,7 @@
     "description": "A semantic animal actor runs from the roadside across ego's path at a solved arrival time, then remains at its terminal pose for the aftermath.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "obstacle.animal-crossing",
     "tags": ["obstacle", "animal", "crossing-path", "midblock", "stable-aftermath"],
     "author": "agent/obstacle-mechanisms",

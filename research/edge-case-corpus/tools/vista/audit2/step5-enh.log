@@ -1,4 +1,4 @@
-mode=enh reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-enh.json
+mode=enh reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-enh.json
   5/80 58s
   10/80 86s
   15/80 124s
@@ -16,4 +16,4 @@ mode=enh reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programm
   75/80 593s
   80/80 593s
 verdicts: {'rejected': 57, 'verified': 17, 'uncertain': 6}
-wrote /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-enh.json
+wrote /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-enh.json

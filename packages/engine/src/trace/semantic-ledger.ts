@@ -243,7 +243,7 @@ export function buildSemanticLedger(options: BuildSemanticLedgerOptions): Semant
       dt: trace.header.dt,
       clipSeconds: trace.header.clipSeconds,
       motionAuthority: trace.header.physics.mode === 'dynamic-v1'
-        ? 'uniscenarios-physics'
+        ? 'simforge-physics'
         : 'kinematic-replay',
       complete: options.complete,
     },

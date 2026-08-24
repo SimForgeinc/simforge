@@ -1,6 +1,6 @@
 /**
  * The legacy V2XCarla "flat-earth" frame (`digital_twin_bridge/geo_utils.py`,
- * CARLA 0.10 path) as a first-class UniScenarios frame.
+ * CARLA 0.10 path) as a first-class SimForge frame.
  *
  * ## Definition (pinned, not rederived)
  *

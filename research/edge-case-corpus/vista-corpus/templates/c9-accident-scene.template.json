@@ -5,7 +5,7 @@
   "description": "A disabled sedan and an edge-positioned box truck form a partially blocking accident scene. The box truck is encountered first and masks the disabled sedan until the ego is committed to the approach, requiring a firm but survivable response while leaving a narrow escape path.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C9.hazard",
   "tags": [
    "accident-scene",

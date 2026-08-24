@@ -24,7 +24,7 @@ function fixture() {
     writeFileSync(join(root, 'packages', name, 'package.json'), JSON.stringify({
       name: `@simforge/${name}`,
       version: '0.1.0-rc.45',
-      ...(name === 'cli' ? { bin: { simforge: './bin/simforge.js', sf: './bin/sf.js', uniscenarios: './bin/uniscenarios.js' } } : {}),
+      ...(name === 'cli' ? { bin: { simforge: './bin/simforge.js', sf: './bin/sf.js' } } : {}),
     }));
   }
   mkdirSync(join(root, 'studio'), { recursive: true });

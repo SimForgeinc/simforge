@@ -1,7 +1,7 @@
 /**
  * Campaign scratch: sweep one template's tier-1 axes by pinning them to
  * discrete values and reading the reveal-to-conflict / minTTC distributions
- * back out of `uniscenarios batch`. Not part of the shipped library — this is how the
+ * back out of `simforge batch`. Not part of the shipped library — this is how the
  * campaign found out which axis actually moves the occlusion metric.
  *
  * usage: node sweep.mjs <template.json> <maps> '<json patch fn body>' ...
@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
-const UNISCENARIOS = path.join(ROOT, 'packages/cli/bin/uniscenarios.js');
+const SIMFORGE = path.join(ROOT, 'packages/cli/bin/simforge.js');
 
 export function pinParam(doc, id, value) {
   const d = doc.params.declarations.find((x) => x.id === id);
@@ -25,13 +25,13 @@ export function pinParam(doc, id, value) {
 }
 
 export function runBatch(doc, { maps = '--all-maps', draws = 1, tag = 'sweep' } = {}) {
-  const file = `/tmp/uniscenarios-sweep-${tag}.json`;
-  const out = `/tmp/uniscenarios-sweep-out/${tag}`;
+  const file = `/tmp/simforge-sweep-${tag}.json`;
+  const out = `/tmp/simforge-sweep-out/${tag}`;
   fs.rmSync(out, { recursive: true, force: true });
   fs.writeFileSync(file, JSON.stringify(doc));
   const args = ['batch', file, ...(maps === '--all-maps' ? ['--all-maps'] : ['--maps', maps]),
     '--draws', String(draws), '--out', out, '--no-trace'];
-  const stdout = execFileSync('node', [UNISCENARIOS, ...args], { encoding: 'utf8', maxBuffer: 1 << 28 });
+  const stdout = execFileSync('node', [SIMFORGE, ...args], { encoding: 'utf8', maxBuffer: 1 << 28 });
   return JSON.parse(stdout);
 }
 

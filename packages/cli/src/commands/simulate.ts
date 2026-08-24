@@ -1,5 +1,5 @@
 /**
- * `uniscenarios simulate <instance> [--trace out.trace.json.gz]`.
+ * `simforge simulate <instance> [--trace out.trace.json.gz]`.
  *
  * One engine pass. `guards: 'collect'` rather than `'throw'`: a scenario that
  * fails a feasibility guard is still worth simulating — the resulting metrics

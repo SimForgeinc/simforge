@@ -1,4 +1,4 @@
-/** Canonical browser-safe OpenSCENARIO API for UniScenarios. */
+/** Canonical browser-safe OpenSCENARIO API for SimForge. */
 export * from './export/index.js';
 export {
   MAX_XOSC_BYTES,

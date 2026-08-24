@@ -1,5 +1,5 @@
 /**
- * `uniscenarios corpus` — the sensor-corpus pipeline (native renderer, WSB1).
+ * `simforge corpus` — the sensor-corpus pipeline (native renderer, WSB1).
  *
  * `corpus build --map <id>` decodes the dev-assets 3D tile set into a
  * deterministic, checksummed "sensor corpus" that the native (Bevy) engine

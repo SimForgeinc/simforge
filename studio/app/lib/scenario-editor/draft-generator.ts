@@ -17,7 +17,7 @@
 import type { AppContext } from "@/app/lib/db/app-context";
 import { ensureDefaultDatasetForWorkspace } from "@/app/lib/db/dataset-store";
 import { createDatasetScenario } from "@/app/lib/db/scenario-query-store";
-import { buildDashboardScenarioEditorHref } from "@/app/lib/uniscenario/routes";
+import { buildDashboardScenarioEditorHref } from "@/app/lib/scenario/routes";
 
 export interface ScenarioDraftMapAsset {
   map_asset_id: string;

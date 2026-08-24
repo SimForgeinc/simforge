@@ -16,7 +16,7 @@ axes it can never win: **byte-reproducibility** and **speed on authored
 long-tail content**.
 
 Architectural spine: the renderer is a **new engine behind the existing
-`packages/render-runtime` contract** (`uniscenarios render run --engine
+`packages/render-runtime` contract** (`simforge render run --engine
 native`), a peer of `browser`, subject to the same render-intent hashing,
 artifact contracts, scheduling, and worker control. No parallel universe.
 Qualification reuses `qualification/eight-camera-conformance.v1.json` and the
@@ -39,7 +39,7 @@ module API (separate decision — see WSB7).
 ### WSB1 — SensorCorpus: asset pipeline productized
 The spike's one-off preprocessing (meshopt decode, dequantize, WebP→PNG via
 gltf-transform) becomes a deterministic, checksummed build step.
-- `uniscenarios corpus build --map <id>`: dev-assets GLB tiles → decoded
+- `simforge corpus build --map <id>`: dev-assets GLB tiles → decoded
   "sensor corpus" with per-file sha256 manifest; cached, reproducible,
   CI-verifiable. Source root: `dev-assets/<map>/browser/3d/tiles`.
 - Vegetation: WebP textures + alpha-cutout materials + sidecar instancing
@@ -158,7 +158,7 @@ measurably closer to real-corpus detector statistics than the spike output.
 ### WSB7 — CarlaCompat (decision gate, not default)
 A thin Python `carla`-API facade (client/world/actor/sensor surface) over the
 env-server + native render service, so CARLA ecosystem tools (scenario_runner,
-existing perception stacks) run against UniScenarios unmodified. High
+existing perception stacks) run against SimForge unmodified. High
 adoption leverage, ~2–3 weeks, zero engine work — but only worth it if
 external/ecosystem use is a goal. Ship after WSB3+WSB5 if greenlit.
 
@@ -187,7 +187,7 @@ integrates; WSB6 hardens continuously. Spike estimate for the core
 
 ## Program-level acceptance
 
-1. `uniscenarios render run --engine native` produces the full sensor set for
+1. `simforge render run --engine native` produces the full sensor set for
    any catalog scenario on all 5 maps, hash-stable per GPU fingerprint.
 2. 18-sensor paired qualification passes with `native` as a first-class
    column.

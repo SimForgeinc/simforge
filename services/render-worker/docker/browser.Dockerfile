@@ -19,34 +19,34 @@ RUN test -n "$SOURCE_REVISION" && test -n "$IMAGE_VERSION" \
  && rm -rf /var/lib/apt/lists/* \
  && groupadd --system --gid 10001 renderer \
  && useradd --system --uid 10001 --gid renderer --home-dir /nonexistent --shell /usr/sbin/nologin renderer \
- && mkdir -p /opt/uniscenarios /scratch /cache /run/uniscenarios \
- && chown -R renderer:renderer /scratch /cache /run/uniscenarios
-COPY --from=build --chown=renderer:renderer /out/worker /opt/uniscenarios/worker
-COPY --from=build --chown=renderer:renderer /out/browser-renderer /opt/uniscenarios/browser-renderer
+ && mkdir -p /opt/simforge /scratch /cache /run/simforge \
+ && chown -R renderer:renderer /scratch /cache /run/simforge
+COPY --from=build --chown=renderer:renderer /out/worker /opt/simforge/worker
+COPY --from=build --chown=renderer:renderer /out/browser-renderer /opt/simforge/browser-renderer
 # Real-GPU rendering by default: ANGLE over EGL with the NVIDIA glvnd vendor.
 # Hosts may override, but launch-config drift can no longer silently fall
 # renders back to SwiftShader CPU rendering.
 ENV NODE_ENV=production \
     PORT=8080 \
-    UNISCENARIOS_BROWSER_ENGINE_MODULE=/opt/uniscenarios/browser-renderer/dist/index.js \
+    UNISCENARIOS_BROWSER_ENGINE_MODULE=/opt/simforge/browser-renderer/dist/index.js \
     UNISCENARIOS_SCRATCH_DIR=/scratch \
     UNISCENARIOS_CACHE_DIR=/cache \
-    UNISCENARIOS_GPU_LOCK=/run/uniscenarios/gpu.lock \
+    UNISCENARIOS_GPU_LOCK=/run/simforge/gpu.lock \
     CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium \
     UNISCENARIOS_CHROMIUM_EXTRA_ARGS="--use-gl=angle --use-angle=gl-egl" \
     __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
-LABEL org.opencontainers.image.title="UniScenarios browser render worker" \
+LABEL org.opencontainers.image.title="SimForge browser render worker" \
       org.opencontainers.image.version="$IMAGE_VERSION" \
       org.opencontainers.image.revision="$SOURCE_REVISION" \
-      org.opencontainers.image.source="https://github.com/SimForgeinc/UniScenarios" \
+      org.opencontainers.image.source="https://github.com/SimForgeinc/simforge" \
       io.uniscenarios.engine="browser" \
       io.uniscenarios.contract="uniscenario.render-worker-control/v2"
 USER 10001:10001
 WORKDIR /scratch
-VOLUME ["/scratch", "/cache", "/run/uniscenarios"]
+VOLUME ["/scratch", "/cache", "/run/simforge"]
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT||8080}/health`).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-ENTRYPOINT ["/usr/bin/tini", "--", "node", "/opt/uniscenarios/worker/dist/main.js"]
+ENTRYPOINT ["/usr/bin/tini", "--", "node", "/opt/simforge/worker/dist/main.js"]
 CMD ["--config", "/config/worker.json"]

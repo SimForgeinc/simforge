@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import {
   listRenderJobArtifacts,
   presignArtifactsForContext,
-} from "@/app/lib/uniscenario/render/artifact-store";
+} from "@/app/lib/scenario/render/artifact-store";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutableRenderJobContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRenderJobContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ jobId: string }> };
 
@@ -38,13 +38,13 @@ type Context = { params: Promise<{ jobId: string }> };
  * with `url: null` and should render as "not ready" rather than as an error.
  */
 export async function GET(_request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { jobId } = await route.params;
 
   // A render job's artifacts are readable by whoever may read its dataset, which is not the same as
   // "whoever shares its workspace" now that 20260805014000 added sharing.
-  const access = await requireUniScenarioMutableRenderJobContext(auth.context, jobId, "read");
+  const access = await requireScenarioMutableRenderJobContext(auth.context, jobId, "read");
   if (access.response) return access.response;
 
   const artifacts = await listRenderJobArtifacts(auth.context, jobId);
@@ -52,6 +52,6 @@ export async function GET(_request: Request, route: Context) {
 
   return NextResponse.json(
     { items, urlTtlSeconds: 3600 },
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }

@@ -5,7 +5,7 @@
     "description": "A disabled vehicle remains stationary with hazards on while a stranded occupant remains outside ego's nominal path; ego brakes to a stable stop with both hazards still present.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "obstacle.disabled-vehicle",
     "tags": ["obstacle", "disabled-vehicle", "stranded-occupant", "hazard-lights", "stable-aftermath"],
     "author": "agent/obstacle-mechanisms",

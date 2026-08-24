@@ -1,4 +1,4 @@
-mode=base reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-base.json
+mode=base reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-base.json
   5/80 51s
   10/80 87s
   15/80 142s
@@ -16,4 +16,4 @@ mode=base reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Program
   75/80 557s
   80/80 580s
 verdicts: {'rejected': 58, 'verified': 12, 'uncertain': 10}
-wrote /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-base.json
+wrote /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-base.json

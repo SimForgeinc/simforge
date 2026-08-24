@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import {
   ProvisionRenderWorkerCredentialSchema,
   RevokeRenderWorkerCredentialSchema,
-} from "@/app/lib/uniscenario/contracts";
+} from "@/app/lib/scenario/contracts";
 import {
   provisionRenderWorkerCredential,
   revokeRenderWorkerCredential,
-} from "@/app/lib/uniscenario/control-plane-store";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectUnauthorizedWorker } from "@/app/lib/uniscenario/worker-http";
+} from "@/app/lib/scenario/control-plane-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectUnauthorizedWorker } from "@/app/lib/scenario/worker-http";
 
 type Context = { params: Promise<{ workerNodeId: string }> };
 

@@ -1,8 +1,8 @@
-import type { OpenScenarioRendererRuntime as CarlaRuntime } from "@/app/lib/uniscenario/renderer/runtime-profile";
+import type { OpenScenarioRendererRuntime as CarlaRuntime } from "@/app/lib/scenario/renderer/runtime-profile";
 import {
   CARLA_RUNTIME_UE5,
   normalizeCarlaRuntime,
-} from "@/app/lib/uniscenario/renderer/runtime-profile";
+} from "@/app/lib/scenario/renderer/runtime-profile";
 import type { SensorOutputModality } from "@simcloud/shared";
 
 // The normals camera was verified working on the UE5 image (2026-06-12

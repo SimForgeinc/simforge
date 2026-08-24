@@ -1,5 +1,5 @@
 /**
- * `uniscenarios locations find | get | resolve` — the model's spatial awareness.
+ * `simforge locations find | get | resolve` — the model's spatial awareness.
  *
  * The contract these three share is that a model never sees a road id: it asks
  * in semantics (type, facts, affordances, proximity to a handle), and it gets

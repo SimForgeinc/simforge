@@ -5,7 +5,7 @@
   "description": "A large fallen cargo load appears unexpectedly in the ego lane after recording begins, occupying the left portion of a single through lane and forcing a hard but survivable response through the remaining usable lane width.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-03T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C9.hazard",
   "tags": [
    "fallen-cargo",

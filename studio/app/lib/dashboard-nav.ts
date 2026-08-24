@@ -32,11 +32,11 @@ export const DASHBOARD_APPS: NavItem[] = [
     match: (p) => p.startsWith("/dashboard/assets"),
   },
   {
-    href: "/dashboard/uniscenario",
+    href: "/dashboard/scenario",
     label: "Datasets",
     description: "Scenario datasets and authoring",
     icon: Database,
-    match: (p) => p.startsWith("/dashboard/uniscenario"),
+    match: (p) => p.startsWith("/dashboard/scenario"),
   },
   {
     href: "/dashboard/dataset-export",

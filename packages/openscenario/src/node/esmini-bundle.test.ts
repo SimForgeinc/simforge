@@ -59,7 +59,7 @@ let temp = '';
 let officialXsd = '';
 
 beforeAll(async () => {
-  temp = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-esmini-bundle-'));
+  temp = await mkdtemp(path.join(os.tmpdir(), 'simforge-esmini-bundle-'));
   const response = await fetch(OFFICIAL_OPENSCENARIO_131_XSD.url);
   expect(response.ok).toBe(true);
   const archiveBytes = new Uint8Array(await response.arrayBuffer());

@@ -3,7 +3,7 @@ import type { TopologyIndex } from './topology.js';
 const GZIP_MAGIC_0 = 0x1f;
 const GZIP_MAGIC_1 = 0x8b;
 
-/** The topology sidecar format consumed by the UniScenario editor and engine. */
+/** The topology sidecar format consumed by the Scenario editor and engine. */
 export type TopologyIndexFile = TopologyIndex;
 
 function isGzipped(bytes: Uint8Array): boolean {

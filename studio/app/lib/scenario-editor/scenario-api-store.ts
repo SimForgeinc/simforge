@@ -8,7 +8,7 @@ import {
 import {
   normalizeCarlaRuntime,
   type CarlaRuntime,
-} from "@/app/lib/uniscenario/renderer/runtime-profile";
+} from "@/app/lib/scenario/renderer/runtime-profile";
 import {
   normalizeScenarioDraft,
   toPersistedScenarioSetupDraft,

@@ -16,4 +16,4 @@ pairs 80 todo 80 mode enh
   75/80  430s
   80/80  491s
 verdicts: {'absent': 65, 'present': 8, 'unclear': 7}
-wrote /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/vision-gt.json
+wrote /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/vision-gt.json

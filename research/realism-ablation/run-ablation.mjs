@@ -174,7 +174,7 @@ async function main() {
   const args = argsOf(process.argv);
   const stageADir = args.has('stage-a') ? path.resolve(repoRoot, args.get('stage-a')) : null;
   if (!stageADir || !existsSync(stageADir)) throw new Error('--stage-a must name an existing three.js frame set directory');
-  const spikeOut = path.resolve(args.get('spike-out') ?? '/home/path/UniScenarios/scripts/renderer-spike/out');
+  const spikeOut = path.resolve(args.get('spike-out') ?? '/home/path/SimForge/scripts/renderer-spike/out');
   const pollSeconds = Number(args.get('poll-spike') ?? 0);
   const record = args.has('record');
   const outFile = path.resolve(repoRoot, args.get('out') ?? `artifacts/realism-ablation/ablation-${Date.now()}.json`);

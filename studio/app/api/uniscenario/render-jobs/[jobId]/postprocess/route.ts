@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { listPostprocessChildren } from "@/app/lib/uniscenario/render/gallery-store";
-import { createPostprocessJob } from "@/app/lib/uniscenario/render/postprocess-store";
+import { listPostprocessChildren } from "@/app/lib/scenario/render/gallery-store";
+import { createPostprocessJob } from "@/app/lib/scenario/render/postprocess-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableRenderJobContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRenderJobContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ jobId: string }> };
 
@@ -40,9 +40,9 @@ const CreatePostprocessSchema = z.object({
  * violation is not.
  */
 export async function POST(request: Request, route: Context) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { jobId } = await route.params;
 
@@ -56,7 +56,7 @@ export async function POST(request: Request, route: Context) {
 
   // Queuing a postprocess run spends this workspace's render capacity, so it is a content mutation
   // against the parent's dataset, not a read.
-  const access = await requireUniScenarioMutableRenderJobContext(
+  const access = await requireScenarioMutableRenderJobContext(
     auth.context,
     jobId,
     "mutateContent",
@@ -94,15 +94,15 @@ export async function POST(request: Request, route: Context) {
  * hidden derivative should not reappear merely because it has a parent.
  */
 export async function GET(_request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { jobId } = await route.params;
 
-  const access = await requireUniScenarioMutableRenderJobContext(auth.context, jobId, "read");
+  const access = await requireScenarioMutableRenderJobContext(auth.context, jobId, "read");
   if (access.response) return access.response;
 
   return NextResponse.json(
     { items: await listPostprocessChildren(auth.context, jobId) },
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }

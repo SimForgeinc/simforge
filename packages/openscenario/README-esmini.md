@@ -26,7 +26,7 @@ must remain untracked. See [NOTICE.md](./NOTICE.md) for licensing.
 For a real local interoperability smoke (not a mocked executor), run
 `scripts/run-pinned-trajectory-smoke.ts` with that binary and the
 `straight_500m.xodr` fixture from the exact pinned esmini source revision. The
-script verifies the binary digest, executes a UniScenarios-generated 20-second
+script verifies the binary digest, executes a SimForge-generated 20-second
 trajectory at 0.02 s, strictly parses the external CSV, and applies the normal
 trace-comparison release thresholds. Binaries, source clones, maps, and run
 outputs stay outside version control.

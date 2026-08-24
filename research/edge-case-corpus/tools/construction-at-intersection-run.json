@@ -6,7 +6,7 @@
    "description": "authored via the agent tool surface",
    "createdAt": "2026-08-06T00:00:00.000Z",
    "modifiedAt": "2026-08-06T00:00:00.000Z",
-   "appVersion": "uniscenarios/0.0.1",
+   "appVersion": "simforge/0.0.1",
    "archetype": "construction-at-intersection",
    "tags": [],
    "author": "agent/tool-surface",

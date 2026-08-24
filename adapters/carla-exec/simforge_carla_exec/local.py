@@ -976,7 +976,7 @@ def _preflight_intent(args: argparse.Namespace) -> dict[str, object]:
         lambda: RenderSpec.parse(intent.get("renderSpec")),
     )
     assert isinstance(parsed_spec, RenderSpec)
-    with tempfile.TemporaryDirectory(prefix="uniscenario-preflight-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="scenario-preflight-") as temporary:
         temporary_path = Path(temporary)
 
         def build_lease() -> tuple[Any, Mapping[str, Path]]:

@@ -5,7 +5,7 @@
   "description": "Scene-model-first rendition. Two distinct parked groups (PARK_A upstream, PARK_B downstream) leave a narrow gap at the kerb. A child stands on the pavement behind that gap, fully hidden by PARK_A's downstream corner, and runs across when the ego is ~2 s from the gap. The reveal is late by construction; avoidance is by clearance timing, not by stopping.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C5.cpnco-dartout",
   "tags": [
    "vru",

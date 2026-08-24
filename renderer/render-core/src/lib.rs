@@ -1,4 +1,4 @@
-//! render-core: headless Bevy scene renderer for UniScenarios.
+//! render-core: headless Bevy scene renderer for SimForge.
 //!
 //! Grows from scripts/renderer-spike/bevy-spike (GO verdict, see
 //! scripts/renderer-spike/FINDINGS.md). Owns: scene ingestion (corpus GLB

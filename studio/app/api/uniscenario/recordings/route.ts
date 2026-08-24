@@ -2,19 +2,19 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 import {
   CreateBrowserRecordingSchema,
   ReserveBrowserRecordingArtifactsSchema,
-} from "@/app/lib/uniscenario/recording-contracts";
+} from "@/app/lib/scenario/recording-contracts";
 import {
   createBrowserRecording,
   listBrowserRecordings,
   reserveBrowserRecordingArtifacts,
-} from "@/app/lib/uniscenario/recording-store";
+} from "@/app/lib/scenario/recording-store";
 
 const QuerySchema = z.strictObject({
   revisionId: z.string().trim().min(1).max(200).nullable(),
@@ -30,7 +30,7 @@ const CreateWithArtifactsSchema = z.strictObject({
 
 
 export async function GET(request: Request) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const query = new URL(request.url).searchParams;
   const parsed = QuerySchema.safeParse({
@@ -47,14 +47,14 @@ export async function GET(request: Request) {
   const recordings = await listBrowserRecordings(auth.context, parsed.data);
   return NextResponse.json(
     { recordings },
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }
 
 export async function POST(request: Request) {
-  const origin = requireUniScenarioMutationOrigin(request);
+  const origin = requireScenarioMutationOrigin(request);
   if (origin) return origin;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const parsed = CreateWithArtifactsSchema.safeParse(await readJson(request));
   if (!parsed.success) {

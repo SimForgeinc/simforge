@@ -66,7 +66,7 @@ export const AuthoredSensorHostSchema = z.strictObject({
 export const RenderSensorHostSchema = AuthoredSensorHostSchema;
 
 /**
- * Immutable, renderer-neutral input to every UniScenarios rendering backend.
+ * Immutable, renderer-neutral input to every SimForge rendering backend.
  * Transfer URLs and lease data deliberately live in the worker-control claim,
  * so refreshing credentials never changes this document's content hash.
  */

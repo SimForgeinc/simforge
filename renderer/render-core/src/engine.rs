@@ -1,4 +1,4 @@
-//! Reusable headless Bevy rendering engine for UniScenarios (`native` engine).
+//! Reusable headless Bevy rendering engine for SimForge (`native` engine).
 //!
 //! Grown from scripts/renderer-spike/bevy-spike (GO verdict, FINDINGS.md):
 //! DefaultPlugins minus Winit/Audio, no primary window, offscreen `Image`

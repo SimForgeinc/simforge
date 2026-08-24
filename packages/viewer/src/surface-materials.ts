@@ -48,9 +48,9 @@ export interface MaterialPack {
  */
 export const BUILTIN_SURFACE_MATERIAL_PACK: MaterialPack = {
   provenance: {
-    id: 'uniscenarios-procedural-surfaces',
+    id: 'simforge-procedural-surfaces',
     version: '1.0.0',
-    author: 'UniScenarios',
+    author: 'SimForge',
     license: 'Apache-2.0',
     source: 'packages/viewer/src/surface-materials.ts',
     externalAssets: [],

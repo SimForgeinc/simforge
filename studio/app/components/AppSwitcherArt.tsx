@@ -14,7 +14,7 @@ const APP_ART = {
     name: "assets",
     src: "/app-switcher/assets.png",
   },
-  "/dashboard/uniscenario": {
+  "/dashboard/scenario": {
     name: "datasets",
     src: "/app-switcher/datasets-art-v1.png",
   },

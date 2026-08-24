@@ -637,7 +637,7 @@ export function materializeRunBundle(requestSet, outputDirectory) {
         pairId: pair.pairId,
         engine,
         intentSha256: pair.browser.intentSha256,
-        argv: ['uniscenarios', 'render', 'run', intentPath, '--engine', engine, '--out', outputPath],
+        argv: ['simforge', 'render', 'run', intentPath, '--engine', engine, '--out', outputPath],
         resultManifestPath: resolve(outputPath, 'render-artifact-manifest.json'),
       });
     }
@@ -646,7 +646,7 @@ export function materializeRunBundle(requestSet, outputDirectory) {
     schema: 'uniscenario.render-qualification-local-run-plan/v1',
     requestSetSha256: requestSet.requestSetSha256,
     liveSubmissionPerformed: false,
-    executionPolicy: { order: 'manifest-order', gpuConcurrency: 1, requiredGpuLock: '/tmp/uniscenario-rtx5080-render.lock' },
+    executionPolicy: { order: 'manifest-order', gpuConcurrency: 1, requiredGpuLock: '/tmp/scenario-rtx5080-render.lock' },
     jobs,
   };
   const plan = { ...planBase, planSha256: sha256(planBase) };
@@ -671,10 +671,10 @@ export function createBenchmarkSpec(requestSet, { pairId, engine, imageDigest, s
     id: `${pairId}-${engine}`,
     sourceRevision,
     imageDigest,
-    command: ['uniscenarios', 'render', 'run', intentPath, '--engine', engine, '--out', resultDirectory],
+    command: ['simforge', 'render', 'run', intentPath, '--engine', engine, '--out', resultDirectory],
     outputDirectory: resultDirectory,
     scratchDirectory: resolve(root, 'scratch'),
-    lockPath: '/tmp/uniscenario-rtx5080-render.lock',
+    lockPath: '/tmp/scenario-rtx5080-render.lock',
     warmRuns: 3,
     sampleIntervalMs: 500,
   };
@@ -683,7 +683,7 @@ export function createBenchmarkSpec(requestSet, { pairId, engine, imageDigest, s
 }
 
 
-export function acquireGpuLock(path = '/tmp/uniscenario-rtx5080-render.lock') {
+export function acquireGpuLock(path = '/tmp/scenario-rtx5080-render.lock') {
   const owner = { schema: 'uniscenario.local-gpu-lock/v1', pid: process.pid, hostname: hostname(), acquiredAt: new Date().toISOString(), gpuClass: 'RTX 5080' };
   try {
     const fd = openSync(path, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600);
@@ -737,7 +737,7 @@ function parseProgress(text) {
     if (!line.trim().startsWith('{')) continue;
     try {
       const value = JSON.parse(line);
-      if (typeof value.schema === 'string' && /^uniscenario\.render(?:-worker)?-progress(?:-jsonl)?\/v\d+$/.test(value.schema)) events.push(value);
+      if (typeof value.schema === 'string' && /^scenario\.render(?:-worker)?-progress(?:-jsonl)?\/v\d+$/.test(value.schema)) events.push(value);
     } catch {}
   }
   return events;
@@ -839,7 +839,7 @@ export async function benchmark5080(spec, { output } = {}) {
       imageDigest: spec.imageDigest,
       driverIdentity: { gpuUuid: gpuIdentity.uuid, gpuName: gpuIdentity.name, driverVersion: gpuIdentity.driverVersion },
       commandSha256: sha256(spec.command),
-      exclusiveGpuLock: spec.lockPath ?? '/tmp/uniscenario-rtx5080-render.lock',
+      exclusiveGpuLock: spec.lockPath ?? '/tmp/scenario-rtx5080-render.lock',
       timingDefinitions: {
         cold: 'first fresh worker process before any runner-managed warm iteration',
         warm: 'subsequent fresh worker process with engine/image/host caches retained',

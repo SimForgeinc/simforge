@@ -3,7 +3,7 @@ import { GET, PUT } from "../app/api/local-objects/[bucket]/[...key]/route";
 import { LOCAL_ARTIFACT_BUCKET } from "../app/lib/db/config";
 import { getPresignedGetUrl, getPresignedPutUrl } from "../app/lib/s3/s3-presign";
 
-const bytes = Buffer.from("uniscenarios-local-object-roundtrip\n");
+const bytes = Buffer.from("simforge-local-object-roundtrip\n");
 const sha256 = createHash("sha256").update(bytes).digest("hex");
 const key = "smoke/roundtrip.txt";
 const context = {

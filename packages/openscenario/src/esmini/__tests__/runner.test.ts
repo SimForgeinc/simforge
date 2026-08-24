@@ -14,7 +14,7 @@ function fixture(xml = '<OpenSCENARIO><RoadNetwork><LogicFile filepath="maps/map
     { path: 'scenario.xosc', mediaType: 'application/xml', bytes: entries.get('scenario')!.byteLength, sha256: rawDigest(entries.get('scenario')!) },
     { path: 'maps/map.xodr', mediaType: 'application/xml', bytes: entries.get('road')!.byteLength, sha256: rawDigest(entries.get('road')!) },
   ] as const;
-  const manifest = { kind: 'uniscenarios-esmini-runnable-bundle', version: 1, scenarioEntry: 'scenario.xosc', roadEntry: 'maps/map.xodr', canonicalTraceEntry: 'trace/canonical.trace.json', capabilityEntry: 'reports/capability.json', provenanceEntry: 'reports/provenance.json', openScenarioVersion: '1.3.1', esminiVersion: 'runner-pinned', engineVersion: 'test', behaviorParityScope: 'motion-only', files } as const;
+  const manifest = { kind: 'simforge-esmini-runnable-bundle', version: 1, scenarioEntry: 'scenario.xosc', roadEntry: 'maps/map.xodr', canonicalTraceEntry: 'trace/canonical.trace.json', capabilityEntry: 'reports/capability.json', provenanceEntry: 'reports/provenance.json', openScenarioVersion: '1.3.1', esminiVersion: 'runner-pinned', engineVersion: 'test', behaviorParityScope: 'motion-only', files } as const;
   const job: EsminiExecutionJob = { schema: 'uniscenarios.esmini-job/v1', id: 'known-sample', bundle: { manifest, contentIds: { 'scenario.xosc': 'scenario', 'maps/map.xodr': 'road' } }, options: { fixedTimestepS: 0.02, durationS: 20, record: ['csv', 'dat', 'osi', 'log'] } };
   return { entries, job };
 }

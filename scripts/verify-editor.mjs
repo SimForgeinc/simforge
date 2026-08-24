@@ -251,7 +251,7 @@ const rendererInfo = async () => {
 const clearScenarios = () =>
   page.evaluate(() => {
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('uniscenarios:scenario:')) localStorage.removeItem(key);
+      if (key.startsWith('simforge:scenario:')) localStorage.removeItem(key);
     }
   });
 
@@ -494,7 +494,7 @@ await page.evaluate(() => window.__editor.doc.flush());
 gestures.props = await page.evaluate(() => {
   const doc = window.__editor.doc.data;
   const stored = JSON.parse(
-    localStorage.getItem(`uniscenarios:scenario:autosave-${window.__mapId}`) ?? '{}',
+    localStorage.getItem(`simforge:scenario:autosave-${window.__mapId}`) ?? '{}',
   );
   return {
     inDocument: (doc.extensions?.propsV0 ?? []).length,
@@ -1092,7 +1092,7 @@ const before = await page.evaluate(() =>
   ),
 );
 const storedBefore = await page.evaluate(() =>
-  localStorage.getItem(`uniscenarios:scenario:autosave-${window.__mapId}`),
+  localStorage.getItem(`simforge:scenario:autosave-${window.__mapId}`),
 );
 await page.reload({ waitUntil: 'load' });
 await editorReady();
@@ -1103,7 +1103,7 @@ const after = await page.evaluate(() =>
 );
 await page.evaluate(() => window.__editor.doc.flush());
 const storedAfter = await page.evaluate(() =>
-  localStorage.getItem(`uniscenarios:scenario:autosave-${window.__mapId}`),
+  localStorage.getItem(`simforge:scenario:autosave-${window.__mapId}`),
 );
 report.persistence = {
   actorsBefore: JSON.parse(before).length,

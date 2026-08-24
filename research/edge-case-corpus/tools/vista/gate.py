@@ -286,7 +286,7 @@ def gate_cell(trace_path, verdict=None, band=None, brief=None):
 
 
 def gate_batch(summary_path, brief=None):
-    """Gate a whole `uniscenarios batch` summary. Returns per-cell gates plus the cell-spread rule.
+    """Gate a whole `simforge batch` summary. Returns per-cell gates plus the cell-spread rule.
 
     `brief` arms C6. If it is not given, the template's own meta (name/description/tags) is used, so
     the clause is live for every call site rather than only the updated ones.

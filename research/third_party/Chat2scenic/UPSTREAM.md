@@ -18,12 +18,12 @@ git clone https://github.com/TUM-AVS/Chat2scenic.git
 git -C Chat2scenic checkout 54264e4e394ff7bd5a72913abe4e323fa06cd37e
 ```
 
-UniScenarios modifications are deliberately outside this directory under
+SimForge modifications are deliberately outside this directory under
 `research/chat2scenic_adapter/` and `apps/studio/server/copilot/`. The adapter:
 
 1. substitutes OpenAI for the upstream Gemini defaults while retaining the
    original prompt text and interpreter/component ordering;
-2. replaces CARLA Town selection with the current UniScenarios OpenDRIVE map;
+2. replaces CARLA Town selection with the current SimForge OpenDRIVE map;
 3. uses prompt-embedded examples because the upstream Milvus volume snapshot
    is not distributed in the Git repository;
 4. compiles and samples a strict trusted-slot Scenic program instead of

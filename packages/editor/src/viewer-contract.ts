@@ -24,7 +24,7 @@ import type { PerspectiveCamera, Scene, Vector3 } from 'three';
  * (`isLowFidelityHiddenHelper` in `../renderer/roads-only`); the core owns the
  * write side. Duplicating one string literal is cheaper than a module edge
  * between them. The two are pinned together by
- * `test/uniscenario/editor/core/viewer-contract.test.ts`, which fails if they
+ * `test/scenario/editor/core/viewer-contract.test.ts`, which fails if they
  * ever drift.
  */
 export const LOW_FIDELITY_HIDDEN_ROLE = 'low-fidelity-hidden';

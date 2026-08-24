@@ -23,7 +23,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 OUT = pathlib.Path(__file__).resolve().parent / "episodes"
 
 
-# siteId lists from `uniscenarios sites match` (verdict in parentheses).
+# siteId lists from `simforge sites match` (verdict in parentheses).
 DARTOUT_SITES = {
     "yale-street": [
         ("4783ce656e89ff59", "exact"),

@@ -1,4 +1,4 @@
-//! UniScenarios renderer bake-off: headless Bevy offscreen renderer.
+//! SimForge renderer bake-off: headless Bevy offscreen renderer.
 //!
 //! Renders corpus GLB tiles (meshopt-decoded) from a fixed camera pose,
 //! producing RGB, instance-ID and depth passes with GPU->CPU readback,
@@ -113,7 +113,7 @@ struct Args {
     #[arg(long, default_value = "clear")]
     weather: String,
     /// HDRI for the sky/IBL (equirectangular .hdr).
-    #[arg(long, default_value = "/home/path/local-uniscenarios/maps/yale-street/browser/3d/env/sky.hdr")]
+    #[arg(long, default_value = "/home/path/local-simforge/maps/yale-street/browser/3d/env/sky.hdr")]
     sky: String,
     /// Enable SSR (deferred path) — rain wet-road reflections experiment.
     #[arg(long, default_value_t = false)]

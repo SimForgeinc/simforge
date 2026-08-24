@@ -189,7 +189,7 @@ export class SkyDome {
   constructor() {
     this.mesh = new Sky();
     this.mesh.name = 'sky';
-    this.mesh.userData.uniscenariosRole = 'city-sky';
+    this.mesh.userData.simforgeRole = 'city-sky';
     this.mesh.scale.setScalar(this.radius);
     this.mesh.frustumCulled = false;
     // Drawn before the world so the depth-tested world overwrites it, and the

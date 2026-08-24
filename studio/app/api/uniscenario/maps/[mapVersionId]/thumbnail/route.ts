@@ -1,16 +1,16 @@
 import { getPresignedGetUrl } from "@/app/lib/s3/s3-presign";
 import { NextResponse } from "next/server";
-import { getUniScenarioMapThumbnail } from "@/app/lib/uniscenario/map-thumbnail-store";
-import { requireUniScenarioContext } from "@/app/lib/uniscenario/http";
+import { getScenarioMapThumbnail } from "@/app/lib/scenario/map-thumbnail-store";
+import { requireScenarioContext } from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ mapVersionId: string }> };
 
 async function redirectThumbnail(route: Context, headOnly: boolean) {
   try {
-    const auth = await requireUniScenarioContext();
+    const auth = await requireScenarioContext();
     if (auth.response) return auth.response;
     const { mapVersionId } = await route.params;
-    const thumbnail = await getUniScenarioMapThumbnail(auth.context, mapVersionId);
+    const thumbnail = await getScenarioMapThumbnail(auth.context, mapVersionId);
     if (!thumbnail) {
       return NextResponse.json({ error: "map_thumbnail_not_found" }, { status: 404 });
     }

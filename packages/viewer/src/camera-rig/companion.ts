@@ -1,7 +1,7 @@
 import type { CameraPresentation } from './model';
 
 export interface CameraCompanionMetadata {
-  schema: 'uniscenarios-camera-companion/1';
+  schema: 'simforge-camera-companion/1';
   scenarioInputHash?: string;
   presentation: CameraPresentation;
   notice: string;
@@ -13,7 +13,7 @@ export function createCameraCompanion(
   scenarioInputHash?: string,
 ): CameraCompanionMetadata {
   return {
-    schema: 'uniscenarios-camera-companion/1',
+    schema: 'simforge-camera-companion/1',
     ...(scenarioInputHash ? { scenarioInputHash } : {}),
     presentation,
     notice: 'Presentation metadata only; not a native ASAM OpenSCENARIO camera declaration.',

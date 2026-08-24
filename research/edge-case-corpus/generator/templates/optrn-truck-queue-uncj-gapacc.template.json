@@ -5,7 +5,7 @@
   "description": "Auto-synthesised archetype from the mechanism grammar. {'topology': 'opposing_turn', 'challenger': 'truck', 'occlusion': 'queue', 'control': 'uncontrolled_junction', 'fault': 'ego_gap_acceptance', 'id': 'optrn-truck-queue-uncj-gapacc'}",
   "createdAt": "2026-08-06T00:00:00.000Z",
   "modifiedAt": "2026-08-06T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "optrn-truck-queue-uncj-gapacc",
   "tags": [
    "opposing_turn",

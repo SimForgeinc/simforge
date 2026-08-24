@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       }),
     );
   } catch (error) {
-    console.error("uniscenario tool-execute error:", error);
+    console.error("scenario tool-execute error:", error);
     return auth.apply(
       NextResponse.json(
         {

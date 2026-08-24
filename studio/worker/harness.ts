@@ -22,8 +22,8 @@ async function main(argv: readonly string[]): Promise<void> {
   const args = argumentsOf(argv);
   const instancePath = resolve(args.instance ?? DEFAULT_FIXTURE);
   const tracePath = resolve(args.trace ?? join(dirname(instancePath), "trace.json.gz"));
-  const devAssets = resolve(args.devAssets ?? process.env.SCEN_DEV_ASSETS ?? "/home/path/UniScenarios/dev-assets");
-  const output = resolve(args.output ?? "/tmp/uniscenarios-cloud-worker-harness");
+  const devAssets = resolve(args.devAssets ?? process.env.SCEN_DEV_ASSETS ?? "/home/path/SimForge/dev-assets");
+  const output = resolve(args.output ?? "/tmp/simforge-cloud-worker-harness");
   process.env.UNISCENARIOS_BROWSER_ENGINE_MODULE ??= pathToFileURL(
     resolve(REPOSITORY_ROOT, "packages/render/dist/index.js"),
   ).href;
@@ -210,7 +210,7 @@ function prontoSources(actorId: string): Array<Record<string, unknown>> {
 }
 
 function minimalOpenScenario(actorId: string, mapId: string): string {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<OpenSCENARIO><FileHeader revMajor="1" revMinor="4" date="2026-08-22T00:00:00Z" description="UniScenarios cloud worker harness" author="UniScenarios"><Properties><Property name="uniscenarios.provenance.inputHash" value="${digestString(`${actorId}\0${mapId}`)}"/></Properties></FileHeader><Entities><ScenarioObject name="${actorId}"><Vehicle name="vehicle.kia.carnival" vehicleCategory="van"><BoundingBox><Center x="0" y="0" z="0.9"/><Dimensions width="2" length="5" height="1.8"/></BoundingBox><Performance maxSpeed="50" maxAcceleration="5" maxDeceleration="8"/><Axles><FrontAxle maxSteering="0.5" wheelDiameter="0.7" trackWidth="1.7" positionX="1.5" positionZ="0.35"/><RearAxle maxSteering="0" wheelDiameter="0.7" trackWidth="1.7" positionX="-1.5" positionZ="0.35"/></Axles><Properties/></Vehicle></ScenarioObject></Entities><Storyboard><Init><Actions/></Init><Story name="harness"/></Storyboard></OpenSCENARIO>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<OpenSCENARIO><FileHeader revMajor="1" revMinor="4" date="2026-08-22T00:00:00Z" description="SimForge cloud worker harness" author="SimForge"><Properties><Property name="uniscenarios.provenance.inputHash" value="${digestString(`${actorId}\0${mapId}`)}"/></Properties></FileHeader><Entities><ScenarioObject name="${actorId}"><Vehicle name="vehicle.kia.carnival" vehicleCategory="van"><BoundingBox><Center x="0" y="0" z="0.9"/><Dimensions width="2" length="5" height="1.8"/></BoundingBox><Performance maxSpeed="50" maxAcceleration="5" maxDeceleration="8"/><Axles><FrontAxle maxSteering="0.5" wheelDiameter="0.7" trackWidth="1.7" positionX="1.5" positionZ="0.35"/><RearAxle maxSteering="0" wheelDiameter="0.7" trackWidth="1.7" positionX="-1.5" positionZ="0.35"/></Axles><Properties/></Vehicle></ScenarioObject></Entities><Storyboard><Init><Actions/></Init><Story name="harness"/></Storyboard></OpenSCENARIO>\n`;
 }
 
 function digestString(value: string): string {

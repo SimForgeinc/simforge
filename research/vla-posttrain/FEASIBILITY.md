@@ -9,7 +9,7 @@ CUDA 13.0 / torch 2.13 / transformers 5.15 / TRL 1.10) · Recipe shape:
 RL program target?
 
 **Answer.** Yes. The full Poutine-shape GRPO loop ran end-to-end on real
-UniScenarios data and *learned* within 53 steps. All three candidate model
+SimForge data and *learned* within 53 steps. All three candidate model
 sizes (3B, 7B, ~10B-class GLM-4.1V-9B) fit group size N=32 comfortably on one
 shared A100-40GB; N=40 fits when the card is dedicated. Recommendation: **RL
 time at 3B (Qwen2.5-VL-class)** — proven competitive by Poutine, cheapest per

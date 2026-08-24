@@ -122,7 +122,7 @@ OpenAI-compatible endpoint; the bearer token is read at call time from the
 env var named by `--api-key-env` — no secrets in code, config, or logs.
 
 ```sh
-pnpm --filter @simforge/evaluation exec uniscenarios-extractor \
+pnpm --filter @simforge/evaluation exec simforge-extractor \
   --endpoint http://localhost:8000/v1 --model qwen2.5-7b-instruct \
   --api-key-env MY_LLM_KEY \
   --corpus fixtures/corpus.v1.json --scenario bus-stop-emergence__yale-street__fa9fa19457cf576f \

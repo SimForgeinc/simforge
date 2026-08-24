@@ -17,7 +17,7 @@ for (let i = 2; i < process.argv.length; i += 2) {
   args.set(process.argv[i]?.replace(/^--/, ''), process.argv[i + 1]);
 }
 const url = args.get('url') ?? 'http://localhost:5199/';
-const outDir = args.get('out') ?? '/tmp/uniscenarios-verify';
+const outDir = args.get('out') ?? '/tmp/simforge-verify';
 const settleMs = Number(args.get('settle') ?? 60000);
 const benchMs = Number(args.get('bench') ?? 15000);
 

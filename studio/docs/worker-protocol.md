@@ -1,6 +1,6 @@
 # Local worker HTTP protocol
 
-All internal worker endpoints require `Authorization: Bearer <token>`. The token is `UNISCENARIO_RENDER_WORKER_TOKEN`, defaulting locally to `uniscenarios-local-worker`. Native render requests also require `x-uniscenario-worker-node-id: <id>`. JSON errors use HTTP 400 for invalid bodies, 401 for invalid tokens, and 409 when a lease/fence is invalid or expired.
+All internal worker endpoints require `Authorization: Bearer <token>`. The token is `UNISCENARIO_RENDER_WORKER_TOKEN`, defaulting locally to `simforge-local-worker`. Native render requests also require `x-uniscenario-worker-node-id: <id>`. JSON errors use HTTP 400 for invalid bodies, 401 for invalid tokens, and 409 when a lease/fence is invalid or expired.
 
 ## Browser render and CPU jobs
 

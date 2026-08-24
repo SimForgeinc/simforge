@@ -1,6 +1,6 @@
 /**
  * Determinism spot-check: re-derive three library cells from their replay keys
- * with a *fresh* `uniscenarios instantiate` + `uniscenarios simulate` and compare against what
+ * with a *fresh* `simforge instantiate` + `simforge simulate` and compare against what
  * the batch wrote.
  *
  * Three comparisons, because they fail differently:
@@ -17,7 +17,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
-const UNISCENARIOS = path.join(ROOT, 'packages/cli/bin/uniscenarios.js');
+const SIMFORGE = path.join(ROOT, 'packages/cli/bin/simforge.js');
 const CAMPAIGN = path.join(ROOT, 'campaigns/occluded-pedestrian');
 const manifest = JSON.parse(fs.readFileSync(path.join(CAMPAIGN, 'manifest.json'), 'utf8'));
 
@@ -40,7 +40,7 @@ while (picks.length < 3) {
 }
 
 const sha = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
-const tmp = '/tmp/uniscenarios-determinism';
+const tmp = '/tmp/simforge-determinism';
 fs.rmSync(tmp, { recursive: true, force: true });
 fs.mkdirSync(tmp, { recursive: true });
 
@@ -51,9 +51,9 @@ for (const c of picks) {
   const instOut = path.join(tmp, `${c.template}-${c.siteId}-${c.drawIndex}.instance.json`);
   const traceOut = path.join(tmp, `${c.template}-${c.siteId}-${c.drawIndex}.trace.json.gz`);
 
-  execFileSync('node', [UNISCENARIOS, 'instantiate', tplFile, '--map', c.mapId, '--site', c.siteId,
+  execFileSync('node', [SIMFORGE, 'instantiate', tplFile, '--map', c.mapId, '--site', c.siteId,
     '--draw', String(c.drawIndex), '--out', instOut], { encoding: 'utf8', maxBuffer: 1 << 28 });
-  execFileSync('node', [UNISCENARIOS, 'simulate', instOut, '--trace', traceOut],
+  execFileSync('node', [SIMFORGE, 'simulate', instOut, '--trace', traceOut],
     { encoding: 'utf8', maxBuffer: 1 << 28 });
 
   const original = path.join(CAMPAIGN, 'batches', c.template, c.mapId, c.siteId,

@@ -5,7 +5,7 @@
   "description": "Auto-synthesised archetype from the mechanism grammar. {'topology': 'rear_end', 'challenger': 'motorcycle', 'occlusion': 'none', 'control': 'open_road', 'fault': 'challenger_sudden_decel', 'id': 'rear-moto-none-open-suddec'}",
   "createdAt": "2026-08-06T00:00:00.000Z",
   "modifiedAt": "2026-08-06T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "rear-moto-none-open-suddec",
   "tags": [
    "rear_end",

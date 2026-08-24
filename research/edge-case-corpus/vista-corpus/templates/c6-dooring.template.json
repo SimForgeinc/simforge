@@ -5,7 +5,7 @@
   "description": "A cyclist travels beside a kerbside parked car and reacts to an opening-door event by swerving laterally into the ego lane. The movement is timed so the cyclist and ego nearly converge at a junction-free roadside conflict point, producing a late but survivable same-direction hazard.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C6.cyclist-ptw",
   "tags": [
    "cyclist",

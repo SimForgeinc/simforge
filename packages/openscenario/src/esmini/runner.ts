@@ -107,7 +107,7 @@ export class EsminiRunner {
   }
 
   private async execute(job: EsminiExecutionJob, cacheKey: Sha256Digest, started: number, signal: AbortSignal): Promise<ExternalRunResult> {
-    const root = await import('node:fs/promises').then(({ mkdtemp }) => mkdtemp(join(tmpdir(), 'uniscenarios-esmini-')));
+    const root = await import('node:fs/promises').then(({ mkdtemp }) => mkdtemp(join(tmpdir(), 'simforge-esmini-')));
     const inputDir = join(root, 'input'), outputDir = join(root, 'output');
     await mkdir(inputDir); await mkdir(outputDir);
     const filePaths = new Set(job.bundle.manifest.files.map((file) => file.path));
@@ -139,7 +139,7 @@ export class EsminiRunner {
     } catch (error) {
       return this.failure(job.id, cacheKey, started, error instanceof BundleSecurityError ? 'rejected' : 'failed', error instanceof BundleSecurityError ? 'security-validation' : 'executing', error);
     } finally {
-      if (root.startsWith(`${tmpdir()}/uniscenarios-esmini-`)) await rm(root, { recursive: true, force: false }).catch(() => undefined);
+      if (root.startsWith(`${tmpdir()}/simforge-esmini-`)) await rm(root, { recursive: true, force: false }).catch(() => undefined);
     }
   }
 

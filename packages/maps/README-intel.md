@@ -1,9 +1,9 @@
 # `@simforge/maps`
 
-Layer 1 of the UniScenarios stack: **per-map location intelligence**.
+Layer 1 of the SimForge stack: **per-map location intelligence**.
 
 Turns the raw artifacts a map ships with into two derived files that everything
-above — the anchor matcher, the sim engine, the `uniscenarios` CLI, the editor's
+above — the anchor matcher, the sim engine, the `simforge` CLI, the editor's
 location browser — reads instead of touching source data:
 
 ```

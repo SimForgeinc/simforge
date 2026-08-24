@@ -2,7 +2,7 @@
  * Output discipline.
  *
  * **stdout is the result, stderr is everything else.** A caller may pipe stdout
- * straight into `jq` or into another `uniscenarios` command, so a warning, a progress
+ * straight into `jq` or into another `simforge` command, so a warning, a progress
  * line or a structured error never lands there.
  *
  * `--pretty` is for humans and is a *rendering* of the same object, never a

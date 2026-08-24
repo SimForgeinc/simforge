@@ -1,5 +1,5 @@
 /**
- * `uniscenarios template validate <file>` — schema + tier-1.
+ * `simforge template validate <file>` — schema + tier-1.
  *
  * With `--map` the map-dependent half of tier 1 runs too, against a **real**
  * `MapContext` built from the best matched site (or `--site`). Without a site
@@ -148,7 +148,7 @@ export interface TemplateNewOptions {
 }
 
 /**
- * `uniscenarios template new` — a minimal, schema-valid v2 skeleton.
+ * `simforge template new` — a minimal, schema-valid v2 skeleton.
  *
  * The shape mirrors `examples/mechanisms/`: one `on_reference` ego, an empty
  * corridor anchor with matcher policy, and a 20 s clip with no interactions.
@@ -167,10 +167,10 @@ export async function templateNew(options: TemplateNewOptions): Promise<number> 
     meta: {
       name: 'New template',
       description:
-        'Minimal v2 skeleton from `uniscenarios template new`. Constrain the anchor corridor, add roles and choreography interactions, then run `uniscenarios template validate`.',
+        'Minimal v2 skeleton from `simforge template new`. Constrain the anchor corridor, add roles and choreography interactions, then run `simforge template validate`.',
       createdAt: TEMPLATE_NEW_EPOCH,
       modifiedAt: TEMPLATE_NEW_EPOCH,
-      appVersion: 'uniscenarios/template-new/v1',
+      appVersion: 'simforge/template-new/v1',
       tags: ['skeleton'],
       author: 'cli/template-new',
       negativeControl: false,

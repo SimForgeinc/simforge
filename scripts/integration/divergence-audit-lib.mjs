@@ -79,8 +79,8 @@ function violation(code, message, details = {}) {
   return { code, message, ...details };
 }
 
-async function auditPackages({ uniscenariosRoot, simcloudRoot, config, sourceRevision, violations }) {
-  const stack = await readJson(path.join(uniscenariosRoot, config.sourceStackConfig));
+async function auditPackages({ simforgeRoot, simcloudRoot, config, sourceRevision, violations }) {
+  const stack = await readJson(path.join(simforgeRoot, config.sourceStackConfig));
   if (stack.schema !== 'uniscenarios.stack-config/v1') {
     throw new Error(`Unsupported stack config schema: ${String(stack.schema)}`);
   }
@@ -96,17 +96,17 @@ async function auditPackages({ uniscenariosRoot, simcloudRoot, config, sourceRev
   const packages = [];
 
   if (vendorLock.stackVersion !== stack.stackVersion) {
-    violations.push(violation('STACK_VERSION_MISMATCH', `SimCloud stack ${vendorLock.stackVersion} does not match UniScenarios ${stack.stackVersion}.`));
+    violations.push(violation('STACK_VERSION_MISMATCH', `SimCloud stack ${vendorLock.stackVersion} does not match SimForge ${stack.stackVersion}.`));
   }
   if (vendorLock.source?.repository !== stack.repository) {
-    violations.push(violation('SOURCE_REPOSITORY_MISMATCH', 'SimCloud vendor lock does not name the canonical UniScenarios repository.'));
+    violations.push(violation('SOURCE_REPOSITORY_MISMATCH', 'SimCloud vendor lock does not name the canonical SimForge repository.'));
   }
   if (config.requireExactSourceRevision && vendorLock.source?.revision !== sourceRevision) {
-    violations.push(violation('SOURCE_REVISION_MISMATCH', `SimCloud consumes ${vendorLock.source?.revision ?? 'no revision'}, not UniScenarios HEAD ${sourceRevision}.`));
+    violations.push(violation('SOURCE_REVISION_MISMATCH', `SimCloud consumes ${vendorLock.source?.revision ?? 'no revision'}, not SimForge HEAD ${sourceRevision}.`));
   }
 
   for (const packageEntry of stack.packages) {
-    const packageJson = await readJson(path.join(uniscenariosRoot, packageEntry.path, 'package.json'));
+    const packageJson = await readJson(path.join(simforgeRoot, packageEntry.path, 'package.json'));
     const name = packageJson.name;
     expectedNames.add(name);
     const locked = lockedByName.get(name);
@@ -258,17 +258,17 @@ async function auditImports({ simcloudRoot, config, violations }) {
   return findings;
 }
 
-export async function auditDivergence({ uniscenariosRoot, simcloudRoot, includeGitRevisions = true }) {
-  const config = await readJson(path.join(uniscenariosRoot, 'config/simcloud-integration.json'));
+export async function auditDivergence({ simforgeRoot, simcloudRoot, includeGitRevisions = true }) {
+  const config = await readJson(path.join(simforgeRoot, 'config/simcloud-integration.json'));
   if (config.schema !== 'uniscenarios.simcloud-integration/v2') {
     throw new Error(`Unsupported integration config schema: ${String(config.schema)}`);
   }
   if (!(await stat(simcloudRoot)).isDirectory()) throw new Error('simcloudRoot must be a directory');
 
-  const sourceRevision = includeGitRevisions ? revision(uniscenariosRoot) : undefined;
+  const sourceRevision = includeGitRevisions ? revision(simforgeRoot) : undefined;
   const violations = [];
   const { stack, vendorLock, packages, pythonPackages } = await auditPackages({
-    uniscenariosRoot,
+    simforgeRoot,
     simcloudRoot,
     config,
     sourceRevision,
@@ -281,7 +281,7 @@ export async function auditDivergence({ uniscenariosRoot, simcloudRoot, includeG
     schema: 'uniscenarios.simcloud-anti-drift/v2',
     status: violations.length === 0 ? 'pass' : 'fail',
     repositories: {
-      uniscenarios: {
+      simforge: {
         repository: stack.repository,
         stackVersion: stack.stackVersion,
         ...(includeGitRevisions ? { revision: sourceRevision } : {}),

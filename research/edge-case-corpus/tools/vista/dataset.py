@@ -69,7 +69,7 @@ def build(harvest_files, out, test_frac=0.25, seed=7, holdout_map=None, copy_tra
     test = emit(test_t, 'test')
     os.makedirs(out, exist_ok=True)
     manifest = {
-        'name': 'uniscenarios-vista edge-case corpus',
+        'name': 'simforge-vista edge-case corpus',
         'splitPolicy': 'BY ARCHETYPE (template). No archetype appears in both train and test, so a '
                        'model cannot see the same mechanism at a different site and score it as '
                        'generalisation. Stratified by taxonomy category.',

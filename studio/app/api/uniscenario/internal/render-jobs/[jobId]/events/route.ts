@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { AppendRenderProgressV2Schema } from "@/app/lib/uniscenario/render-wire-contracts";
-import { renderWorkerNodeId } from "@/app/lib/uniscenario/control-plane-store";
-import { appendRenderProgressV2 } from "@/app/lib/uniscenario/render-worker-control-store";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectedLeaseResponse, rejectUnauthorizedRenderWorker } from "@/app/lib/uniscenario/worker-http";
+import { AppendRenderProgressV2Schema } from "@/app/lib/scenario/render-wire-contracts";
+import { renderWorkerNodeId } from "@/app/lib/scenario/control-plane-store";
+import { appendRenderProgressV2 } from "@/app/lib/scenario/render-worker-control-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectedLeaseResponse, rejectUnauthorizedRenderWorker } from "@/app/lib/scenario/worker-http";
 
 type Context = { params: Promise<{ jobId: string }> };
 

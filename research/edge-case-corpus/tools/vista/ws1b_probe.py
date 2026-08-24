@@ -12,7 +12,7 @@ import author
 TPL = {
  "scenarioVersion": 2,
  "meta": {"name": "probe", "description": "probe", "createdAt": "2026-08-01T00:00:00.000Z",
-          "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "uniscenarios/0.0.1",
+          "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "simforge/0.0.1",
           "archetype": "C1.car-following", "tags": ["probe"], "author": "agent/ws1b",
           "negativeControl": False},
  "params": {"declarations": [], "constraints": []},

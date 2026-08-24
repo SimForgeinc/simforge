@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { setRenderJobHidden } from "@/app/lib/uniscenario/render/gallery-store";
+import { setRenderJobHidden } from "@/app/lib/scenario/render/gallery-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableRenderJobContext,
-  requireUniScenarioMutationOrigin,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRenderJobContext,
+  requireScenarioMutationOrigin,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ jobId: string }> };
 
@@ -34,9 +34,9 @@ const SetHiddenSchema = z.object({ hidden: z.boolean() });
  * it.
  */
 export async function PATCH(request: Request, route: Context) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { jobId } = await route.params;
 
@@ -48,7 +48,7 @@ export async function PATCH(request: Request, route: Context) {
     );
   }
 
-  const access = await requireUniScenarioMutableRenderJobContext(
+  const access = await requireScenarioMutableRenderJobContext(
     auth.context,
     jobId,
     "mutateContent",

@@ -5,7 +5,7 @@
     "description": "The focus vehicle remains stopped while a red-light runner traverses a protected intersection and nearby vulnerable road users clear the crossing. This curated 20-second scenario uses only currently supported behaviors; adaptations are declared in machine-readable metadata.",
     "createdAt": "2026-08-02T00:00:00.000Z",
     "modifiedAt": "2026-08-03T08:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "gallery.07-protected-left-red-runner",
     "tags": [
       "curated-gallery-v2",

@@ -1,6 +1,6 @@
 /**
  * @simforge/training-env — Gymnasium-semantics environment core over the
- * UniScenarios fixed-step engine, plus the versioned causal ground-truth
+ * SimForge fixed-step engine, plus the versioned causal ground-truth
  * channel used by the faithfulness-supervision program (rl-plan Phase 1).
  */
 

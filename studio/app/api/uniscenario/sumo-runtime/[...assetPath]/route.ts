@@ -1,8 +1,8 @@
 import { getPresignedGetUrl } from "@/app/lib/s3/s3-presign";
 import { type NextRequest, NextResponse } from "next/server";
 import { AssetUrlServiceError, normalizeAssetKey } from "@/app/lib/assets/asset-url-service";
-import { SUMO_RUNTIME_VERSION } from "@/app/lib/uniscenario/sumo-runtime";
-import { requireUniScenarioContext } from "@/app/lib/uniscenario/http";
+import { SUMO_RUNTIME_VERSION } from "@/app/lib/scenario/sumo-runtime";
+import { requireScenarioContext } from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ assetPath: string[] }> };
 
@@ -48,7 +48,7 @@ function resolveRuntimeAsset(assetPath: string[]) {
 
 async function redirectAsset(request: NextRequest, route: Context, headOnly: boolean) {
   try {
-    const auth = await requireUniScenarioContext();
+    const auth = await requireScenarioContext();
     if (auth.response) return auth.response;
 
     const { assetPath } = await route.params;

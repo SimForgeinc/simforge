@@ -5,7 +5,7 @@
     "description": "Crossing Pedestrian, Not at Crossing, Obscured. Ego drives a corridor with a parking lane beside it; a row of parked vehicles sits between ego and the kerb. A pedestrian walks along the pavement behind that row and steps into the carriageway. The pedestrian's start is back-solved so that it reaches ego's lane `arrivalTtc` seconds before ego does, and it does not stop for traffic \u2014 `rules.collisionAvoidance: false` is what makes a dart-out a dart-out instead of a pedestrian who politely waits. The metric that matters is reveal-to-conflict: how long ego has line of sight before the conflict.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "C5.cpnco-dartout",
     "tags": [
       "vru",

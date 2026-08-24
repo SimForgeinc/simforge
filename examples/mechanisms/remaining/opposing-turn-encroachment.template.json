@@ -1,6 +1,6 @@
 {
   "scenarioVersion": 2,
-  "meta": { "name": "Opposing turn cuts into ego lane", "description": "An opposing left-turn movement binds at a real junction conflict, cuts its apex laterally into ego's receiving path, and then recentres on its receiving lane for a stable aftermath.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "uniscenarios/0.0.1", "archetype": "intersection.opposing-turn-encroachment", "tags": ["intersection", "opposing", "turn", "encroachment", "stable-aftermath"], "author": "agent/remaining-mechanisms", "negativeControl": false },
+  "meta": { "name": "Opposing turn cuts into ego lane", "description": "An opposing left-turn movement binds at a real junction conflict, cuts its apex laterally into ego's receiving path, and then recentres on its receiving lane for a stable aftermath.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "simforge/0.0.1", "archetype": "intersection.opposing-turn-encroachment", "tags": ["intersection", "opposing", "turn", "encroachment", "stable-aftermath"], "author": "agent/remaining-mechanisms", "negativeControl": false },
   "params": { "declarations": [
     { "id": "arrivalDeltaS", "type": "continuous", "unit": "s", "tier": 1, "range": [0.5, 1.8], "default": 1.0, "distribution": "uniform" },
     { "id": "encroachmentFrac", "type": "continuous", "unit": "ratio", "tier": 1, "range": [0.35, 0.7], "default": 0.5, "distribution": "uniform" }

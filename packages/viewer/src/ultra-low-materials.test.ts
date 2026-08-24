@@ -38,7 +38,7 @@ describe('UltraLowMaterialCache', () => {
 
   it('trusts a baked representative color even when it is white', () => {
     const source = new MeshStandardMaterial({ color: 0xffffff });
-    source.userData.uniscenariosGeometryOnly = { version: 2 };
+    source.userData.simforgeGeometryOnly = { version: 2 };
     const material = new UltraLowMaterialCache().materialFor(new Mesh(new BoxGeometry(), source), source, 'city');
     expect(material.color.getHex()).toBe(0xffffff);
   });
@@ -46,7 +46,7 @@ describe('UltraLowMaterialCache', () => {
   it('never turns a tagged transparent contact-shadow quad into an opaque plate', () => {
     const source = new MeshStandardMaterial({ transparent: true, opacity: 0.55 });
     const shadow = new Mesh(new BoxGeometry(), source);
-    shadow.userData.uniscenariosRole = LOW_FIDELITY_HIDDEN_ROLE;
+    shadow.userData.simforgeRole = LOW_FIDELITY_HIDDEN_ROLE;
     const originals = new Map();
     new UltraLowMaterialCache().apply(shadow, 'actor', originals);
     expect(shadow.material).toBe(source);

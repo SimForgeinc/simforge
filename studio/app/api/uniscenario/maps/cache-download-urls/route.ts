@@ -1,12 +1,12 @@
 import { getPresignedGetUrl } from "@/app/lib/s3/s3-presign";
 import { NextResponse } from "next/server";
 import { normalizeAssetKey } from "@/app/lib/assets/asset-url-service";
-import { getUniScenarioMapBrowserAssets } from "@/app/lib/uniscenario/document-store";
+import { getScenarioMapBrowserAssets } from "@/app/lib/scenario/document-store";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 const MAX_REQUESTS = 128;
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
@@ -38,9 +38,9 @@ function parseRequests(value: unknown): DownloadRequest[] | null {
 }
 
 export async function POST(request: Request) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const body = await request.json().catch(() => null) as { assets?: unknown } | null;
   const requests = parseRequests(body?.assets);
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const assets = await getUniScenarioMapBrowserAssets(auth.context, requests);
+  const assets = await getScenarioMapBrowserAssets(auth.context, requests);
   const signed = await Promise.all(assets.map(async (asset) => {
     const url = await getPresignedGetUrl(
       asset.key,
@@ -65,6 +65,6 @@ export async function POST(request: Request) {
   }));
   return NextResponse.json(
     { assets: signed },
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }

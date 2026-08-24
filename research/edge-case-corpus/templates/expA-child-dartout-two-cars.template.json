@@ -5,7 +5,7 @@
     "description": "A child steps into the carriageway from the gap between two parked vehicles at the kerb. The parked pair blocks ego line of sight until shortly before the conflict.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "C5.cpnco-dartout",
     "tags": [
       "vru",

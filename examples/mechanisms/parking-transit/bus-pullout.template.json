@@ -5,7 +5,7 @@
     "description": "A full-size transit bus waits at a required mapped bus stop, signals, then accelerates and moves progressively from the kerb edge into the lane as ego reaches its rear quarter.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "transit.bus-pullout",
     "tags": ["transit", "bus", "bus-stop", "pullout", "rear-quarter"],
     "author": "agent/parking-transit-mechanisms",

@@ -3,7 +3,7 @@
 
 Lineage A ("deployed"): CARLA 0.10 cache export, sha256 0737f3d9…,
         Richmond_Field_Station_Richmond_CA.xodr (2026-06-11).
-Lineage B ("uni"):      UniScenarios bundle dev-assets/richmond-field-station,
+Lineage B ("uni"):      SimForge bundle dev-assets/richmond-field-station,
         sha256 80704cd1…, richmond-field-station_20260410-185647.xodr (2026-04-09).
 
 Stdlib-only. Reports header/georef/extents, network counts, id overlap, and

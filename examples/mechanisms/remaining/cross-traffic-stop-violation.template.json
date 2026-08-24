@@ -1,6 +1,6 @@
 {
   "scenarioVersion": 2,
-  "meta": { "name": "Cross traffic rolls a stop", "description": "At a stop-controlled junction, ego proceeds with priority while a cross-traffic car keeps nonzero speed through its control point and reaches the geometric conflict shortly after ego.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "uniscenarios/0.0.1", "archetype": "intersection.cross-traffic-stop-violation", "tags": ["intersection", "minor-stop", "stop-violation", "cross-traffic"], "author": "agent/remaining-mechanisms", "negativeControl": false },
+  "meta": { "name": "Cross traffic rolls a stop", "description": "At a stop-controlled junction, ego proceeds with priority while a cross-traffic car keeps nonzero speed through its control point and reaches the geometric conflict shortly after ego.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "simforge/0.0.1", "archetype": "intersection.cross-traffic-stop-violation", "tags": ["intersection", "minor-stop", "stop-violation", "cross-traffic"], "author": "agent/remaining-mechanisms", "negativeControl": false },
   "params": { "declarations": [
     { "id": "arrivalDeltaS", "type": "continuous", "unit": "s", "tier": 1, "range": [1.6, 2], "default": 1.8, "distribution": "uniform" },
     { "id": "rollSpeedKph", "type": "continuous", "unit": "kph", "tier": 1, "range": [12, 16], "default": 14, "distribution": "uniform" }

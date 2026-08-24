@@ -119,22 +119,22 @@ function base64Of(bytes: Uint8Array): string {
 }
 
 export function installHeadlessHarness(input: { canvas?: HTMLCanvasElement; bridge: HeadlessArtifactBridge }): void {
-  const canvas = input.canvas ?? document.querySelector<HTMLCanvasElement>('canvas#uniscenarios-render');
-  if (!canvas) throw new Error('Headless renderer requires canvas#uniscenarios-render.');
+  const canvas = input.canvas ?? document.querySelector<HTMLCanvasElement>('canvas#simforge-render');
+  if (!canvas) throw new Error('Headless renderer requires canvas#simforge-render.');
   const api = {
     engine: BROWSER_RENDER_ENGINE_ID,
     render: (intent: unknown) => browserEngineAdapter.render(intent, { canvas, artifactBridge: input.bridge }),
   };
-  Object.assign(globalThis, { __uniscenariosBrowserRender: api });
-  globalThis.dispatchEvent(new CustomEvent('uniscenarios-browser-render-ready', { detail: { engine: BROWSER_RENDER_ENGINE_ID } }));
+  Object.assign(globalThis, { __simforgeBrowserRender: api });
+  globalThis.dispatchEvent(new CustomEvent('simforge-browser-render-ready', { detail: { engine: BROWSER_RENDER_ENGINE_ID } }));
 }
 
 export function autoInstallHeadlessHarness(): void {
-  const bridge = (globalThis as typeof globalThis & { __uniscenariosArtifactBridge?: HeadlessArtifactBridge }).__uniscenariosArtifactBridge;
-  if (!bridge) throw new Error('Headless host did not install __uniscenariosArtifactBridge.');
+  const bridge = (globalThis as typeof globalThis & { __simforgeArtifactBridge?: HeadlessArtifactBridge }).__simforgeArtifactBridge;
+  if (!bridge) throw new Error('Headless host did not install __simforgeArtifactBridge.');
   installHeadlessHarness({ bridge });
 }
 
 declare global {
-  var __uniscenariosBrowserRender: Readonly<{ engine: 'browser'; render(intent: unknown): Promise<BrowserCaptureResult> }> | undefined;
+  var __simforgeBrowserRender: Readonly<{ engine: 'browser'; render(intent: unknown): Promise<BrowserCaptureResult> }> | undefined;
 }

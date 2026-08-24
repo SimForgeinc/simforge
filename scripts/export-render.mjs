@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Deterministic UniScenarios visual export.
+ * Deterministic SimForge visual export.
  *
  * Exports a still (`--frames 1`), a deterministic frame sequence
  * (`--frames N`), and, when `ffmpeg` is available and `--video` is passed, an
@@ -896,7 +896,7 @@ async function exportMap(page, map) {
   await waitForApp(page);
   await page.evaluate(() => {
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('uniscenarios:scenario:')) localStorage.removeItem(key);
+      if (key.startsWith('simforge:scenario:')) localStorage.removeItem(key);
     }
   });
   await page.reload({ waitUntil: 'load' });

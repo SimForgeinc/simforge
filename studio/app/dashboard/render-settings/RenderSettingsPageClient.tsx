@@ -13,9 +13,9 @@ import {
   saveRenderingPreference,
   type RenderingPreference,
 } from "@/app/components/city-viewer/rendering-preference";
-import { QualityChooser } from "@/app/dashboard/uniscenario/editor/states/EditorStatePanels";
-import { listMapOptions } from "@/app/dashboard/uniscenario/list/api";
-import type { UniScenarioMapOption } from "@/app/dashboard/uniscenario/list/document-map-groups";
+import { QualityChooser } from "@/app/dashboard/scenario/editor/states/EditorStatePanels";
+import { listMapOptions } from "@/app/dashboard/scenario/list/api";
+import type { ScenarioMapOption } from "@/app/dashboard/scenario/list/document-map-groups";
 import { clearMapAssetCache } from "@/app/lib/maps/frontend/map-asset-cache";
 
 type Preparation = {
@@ -32,7 +32,7 @@ const PROFILE_LABELS: Record<RenderingPreference, string> = {
 
 const RenderingBenchmarkCard = dynamic(
   () =>
-    import("@/app/dashboard/uniscenario/editor/regions/slots/RenderingBenchmark").then(
+    import("@/app/dashboard/scenario/editor/regions/slots/RenderingBenchmark").then(
       (module) => module.RenderingBenchmarkCard,
     ),
   { ssr: false },
@@ -49,7 +49,7 @@ export function RenderSettingsPageClient() {
   const [confirmRedownload, setConfirmRedownload] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [benchmarkTarget, setBenchmarkTarget] =
-    useState<UniScenarioMapOption | null>(null);
+    useState<ScenarioMapOption | null>(null);
   const [benchmarkCatalogReady, setBenchmarkCatalogReady] = useState(false);
 
   useEffect(() => setCurrentProfile(readRenderingPreference()), []);

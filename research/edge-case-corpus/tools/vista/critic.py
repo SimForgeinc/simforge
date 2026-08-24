@@ -29,7 +29,7 @@ except Exception:                                                 # noqa: BLE001
     except Exception:                                             # noqa: BLE001
         _render_enh = None
 
-REPO = '/Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista'
+REPO = '/Users/michaelvu-simforge/Documents/Programming/SimForge-vista'
 DEV_ASSETS = REPO + '/dev-assets'
 
 

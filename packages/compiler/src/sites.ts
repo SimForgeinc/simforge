@@ -3,7 +3,7 @@
  *
  * Thin on purpose — the matcher is a pure function and the only thing the CLI
  * adds is the vocabulary translation in `adapt.ts` and a memo, because
- * `uniscenarios batch` matches the same template against the same map once per run and
+ * `simforge batch` matches the same template against the same map once per run and
  * would otherwise redo a few thousand frame evaluations per cell.
  */
 

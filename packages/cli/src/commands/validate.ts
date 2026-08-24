@@ -1,7 +1,7 @@
 /**
- * `uniscenarios validate <instance|template> [--tier 2 --map --site]`.
+ * `simforge validate <instance|template> [--tier 2 --map --site]`.
  *
- * Tier 1 is the static pass (`uniscenarios template validate` in one word). **Tier 2 is
+ * Tier 1 is the static pass (`simforge template validate` in one word). **Tier 2 is
  * one engine pass**: the invariant residuals the template declared, the engine
  * issues, the never-fired triggers and the axis conflicts that only a run can
  * settle. It is the acceptance test for a *transfer* — "did the thing the
@@ -71,7 +71,7 @@ export async function validate(options: ValidateOptions): Promise<number> {
     const match = options.siteId
       ? await findSite(template, options.mapId, options.siteId)
       : await (async () => {
-          const { matchOnMap } = await import('@simforge/compiler');
+          const { matchOnMap } = await import('@simforge/compiler/node');
           const m = await matchOnMap(template!, options.mapId as string);
           const site = m.report.sites[0];
           if (!site) {

@@ -85,7 +85,7 @@ function templateWithPropAt(laneOffset: number): ScenarioTemplateV2 {
       name: 'lane-offset resolution fixture',
       createdAt: '2026-08-01T00:00:00.000Z',
       modifiedAt: '2026-08-01T00:00:00.000Z',
-      appVersion: 'uniscenarios/0.0.1',
+      appVersion: 'simforge/0.0.1',
       archetype: 'test.lane-offset-resolution',
       author: 'test',
     },

@@ -56,7 +56,7 @@ function usableColor(material: ColorMaterial, layer: UltraLowLayer): Color | nul
   // Actor paint can legitimately be white. Offline geometry-only materials
   // carry representative texture colors in `color`, so only replace default
   // white when it has no bake marker and is part of the static map.
-  const baked = Boolean(material.userData?.uniscenariosGeometryOnly);
+  const baked = Boolean(material.userData?.simforgeGeometryOnly);
   const almostWhite = material.color.r > 0.94 && material.color.g > 0.94 && material.color.b > 0.94;
   return layer !== 'actor' && almostWhite && !baked ? null : material.color;
 }

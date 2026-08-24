@@ -6,7 +6,7 @@ import { runRenderWorker } from './worker.js';
 function configPath(argv: readonly string[]): string {
   const index = argv.indexOf('--config');
   const path = index >= 0 ? argv[index + 1] : undefined;
-  if (!path || argv.length !== 2) throw new Error('usage: uniscenarios-render-worker --config <worker.json>');
+  if (!path || argv.length !== 2) throw new Error('usage: simforge-render-worker --config <worker.json>');
   return path;
 }
 

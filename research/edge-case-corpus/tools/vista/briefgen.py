@@ -130,7 +130,7 @@ if __name__ == '__main__':
     ap.add_argument('--n', type=int, default=4, help='briefs per category')
     ap.add_argument('--out', required=True)
     ap.add_argument('--existing', default=('/Users/michaelvu-simforge/Documents/Programming/'
-                                           'UniScenarios-vista/research/edge-case-corpus/'
+                                           'SimForge-vista/research/edge-case-corpus/'
                                            'agent-authoring/brief-corpus-full.json'))
     a = ap.parse_args()
     ex = json.load(open(a.existing))['briefs'] if os.path.exists(a.existing) else []

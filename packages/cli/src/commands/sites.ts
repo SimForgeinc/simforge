@@ -1,5 +1,5 @@
 /**
- * `uniscenarios sites match <template> --map <id> | --all-maps`.
+ * `simforge sites match <template> --map <id> | --all-maps`.
  *
  * The mechanical stage of the generation pipeline: no LLM, no randomness, and
  * the same site ids on every machine. Failure is as informative as success —

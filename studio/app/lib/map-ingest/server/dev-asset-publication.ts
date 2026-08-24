@@ -285,7 +285,7 @@ export async function publishDevAssetMap({
     created_at: new Date(0).toISOString(),
     tags: ["local", "seeded"],
     map_coordinate_ref: extractCoordinateRefFromXodr(xodrText),
-    map_source: { tool: "UniScenarios dev-assets publication" },
+    map_source: { tool: "SimForge dev-assets publication" },
     place_context: { city: locality, geocoder: "manual" },
     artifacts: [
       {

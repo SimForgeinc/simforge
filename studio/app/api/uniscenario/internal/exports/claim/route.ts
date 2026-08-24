@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { ClaimCompilerExportSchema } from "@/app/lib/uniscenario/compiler-contracts";
-import { claimCompilerExport } from "@/app/lib/uniscenario/compiler-control-store";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectUnauthorizedWorker } from "@/app/lib/uniscenario/worker-http";
+import { ClaimCompilerExportSchema } from "@/app/lib/scenario/compiler-contracts";
+import { claimCompilerExport } from "@/app/lib/scenario/compiler-control-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectUnauthorizedWorker } from "@/app/lib/scenario/worker-http";
 
 export async function POST(request: Request) {
   const unauthorized = rejectUnauthorizedWorker(request);

@@ -159,7 +159,7 @@ MANIFEST = execution_manifest()
 
 
 def trajectory_in_init(value: bytes = XOSC) -> bytes:
-    """Move the replay action to the canonical UniScenario OSC 1.4 location."""
+    """Move the replay action to the canonical Scenario OSC 1.4 location."""
     root = ET.fromstring(value)
     action = root.find("./Storyboard/Story//FollowTrajectoryAction")
     private = root.find("./Storyboard/Init/Actions/Private")
@@ -2574,13 +2574,13 @@ def test_writer_golden_appearance_sets_latch_onto_actor_frames():
         "light.highBeam": "off",
         "door.doorFrontLeft": "open",
         "door.doorFrontRight": "open",
-        "cue.uniscenarios:audio.horn:true": "requested",
-        "cue.uniscenarios:pose.stopArm:extended": "requested",
+        "cue.simforge:audio.horn:true": "requested",
+        "cue.simforge:pose.stopArm:extended": "requested",
     }
     assert plan.frames[-1].actors["walker"].appearance == {
-        "cue.uniscenarios:pose.gesture:halt": "requested",
-        "cue.uniscenarios:pose.headingLookDeg:-30": "requested",
-        "cue.uniscenarios:pose.paddle:stop": "requested",
+        "cue.simforge:pose.gesture:halt": "requested",
+        "cue.simforge:pose.headingLookDeg:-30": "requested",
+        "cue.simforge:pose.paddle:stop": "requested",
     }
     # Latching is monotonic in time: nothing is set before its trigger fires.
     assert plan.frames[0].actors["ego"].appearance == {}
@@ -2588,11 +2588,11 @@ def test_writer_golden_appearance_sets_latch_onto_actor_frames():
     capability = worker_runner._appearance_capability(plan)
     assert capability["rendered"] == sorted(key for key in ego if not key.startswith("cue."))
     assert capability["unrenderedCues"] == [
-        "cue.uniscenarios:audio.horn:true",
-        "cue.uniscenarios:pose.gesture:halt",
-        "cue.uniscenarios:pose.headingLookDeg:-30",
-        "cue.uniscenarios:pose.paddle:stop",
-        "cue.uniscenarios:pose.stopArm:extended",
+        "cue.simforge:audio.horn:true",
+        "cue.simforge:pose.gesture:halt",
+        "cue.simforge:pose.headingLookDeg:-30",
+        "cue.simforge:pose.paddle:stop",
+        "cue.simforge:pose.stopArm:extended",
     ]
     assert capability["despawnedActors"] == []
 
@@ -2709,7 +2709,7 @@ def test_appearance_fakes_are_not_more_capable_than_the_real_carla_bindings():
     which `carla.VehicleDoor` does not export, so `door.trunk` was "tested" even
     though it raised `RuntimeError` on every real render. These values were
     verified by introspecting the baked wheel
-    (`uniscenario-render-worker-dev:current`, CARLA 0.10.0).
+    (`scenario-render-worker-dev:current`, CARLA 0.10.0).
     """
     real_door_members = {"FL": 0, "FR": 1, "RL": 2, "RR": 3, "All": 6}
     real_light_members = {
@@ -3450,6 +3450,7 @@ def _stepping_backend(accepts_delta):
     backend.carla = type("Carla", (), {})
     backend.client = Client()
     backend.world = None
+    backend.map_load_timeout_s = 180.0
     return backend
 
 

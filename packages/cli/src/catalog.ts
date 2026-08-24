@@ -1,5 +1,5 @@
 /**
- * Deterministic, map-grounded authoring catalog for UniScenarios.
+ * Deterministic, map-grounded authoring catalog for SimForge.
  *
  * A slot is not a claim that a scenario has been simulated or visually
  * accepted. `authored` means that the incident mechanism, actors, event
@@ -268,7 +268,7 @@ export interface CatalogIssue {
 
 export interface CatalogValidationReport {
   readonly ok: boolean;
-  readonly kind: 'uniscenarios-catalog-validation';
+  readonly kind: 'simforge-catalog-validation';
   readonly version: 2;
   readonly catalogDigest: string | null;
   readonly slots: number;
@@ -1414,7 +1414,7 @@ export function validateScenarioCatalog(
 
   return {
     ok: issues.length === 0,
-    kind: 'uniscenarios-catalog-validation',
+    kind: 'simforge-catalog-validation',
     version: 2,
     catalogDigest: typeof value['catalogDigest'] === 'string' ? value['catalogDigest'] : null,
     slots: slots.length,
@@ -1431,7 +1431,7 @@ export function validateScenarioCatalog(
 function reportFor(catalogDigest: string | null, issues: CatalogIssue[], evidenceChecked: boolean): CatalogValidationReport {
   return {
     ok: false,
-    kind: 'uniscenarios-catalog-validation',
+    kind: 'simforge-catalog-validation',
     version: 2,
     catalogDigest,
     slots: 0,

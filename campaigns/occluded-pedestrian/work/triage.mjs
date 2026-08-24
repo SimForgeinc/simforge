@@ -4,7 +4,7 @@
  * Promotion rule for the library (stated here because it is the campaign's
  * editorial judgement, not the CLI's): an instance is promoted when
  *
- *   1. `uniscenarios evaluate`'s reject filters accepted it (`verdict === 'accept'`,
+ *   1. `simforge evaluate`'s reject filters accepted it (`verdict === 'accept'`,
  *      which for these templates means band `critical`), **and**
  *   2. the materializer reported no feasibility *error* (`feasible === true`) —
  *      a cell whose ego runs out of road at t = 13 s still produces a valid
@@ -65,7 +65,7 @@ const quantiles = (xs) => {
   };
 };
 
-const manifest = { kind: 'campaign-manifest', version: 1, campaign: 'occluded-pedestrian', generatedFrom: 'uniscenarios batch --all-maps --draws 8', templates: {}, cells: [] };
+const manifest = { kind: 'campaign-manifest', version: 1, campaign: 'occluded-pedestrian', generatedFrom: 'simforge batch --all-maps --draws 8', templates: {}, cells: [] };
 const ledger = {
   kind: 'coverage-ledger',
   version: 1,

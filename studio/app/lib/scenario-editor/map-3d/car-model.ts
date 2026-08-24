@@ -28,7 +28,7 @@ import {
   DEFAULT_VEHICLE_GEOMETRY,
   UE5_VEHICLE_GEOMETRY,
   type VehicleCategory,
-} from "@/app/lib/uniscenario/renderer/actor-geometry";
+} from "@/app/lib/scenario/renderer/actor-geometry";
 
 /**
  * The shapes the 3D mode draws. Deliberately two: every part below is a box or

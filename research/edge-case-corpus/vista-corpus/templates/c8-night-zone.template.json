@@ -5,7 +5,7 @@
   "description": "A portable night work-zone scenario in which a large stopped work vehicle reduces conspicuity of an opposing vehicle that commits to a left turn across the ego path near a junction. The challenger is arrival-synchronized to create a late, survivable conflict rather than a spawn-time coincidence.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C8.workzone",
   "tags": [
    "workzone",

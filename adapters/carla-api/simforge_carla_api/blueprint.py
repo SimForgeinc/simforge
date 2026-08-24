@@ -73,7 +73,7 @@ def default_blueprint_library(authored_roles: list[dict]) -> BlueprintLibrary:
         tags = role.get("tags", [])
         cls = next((t.split(":", 1)[1] for t in tags if t.startswith("class:")), None)
         if kind in ("vehicle", "car") or cls == "car":
-            prefix = "vehicle.uniscenarios"
+            prefix = "vehicle.simforge"
         elif kind == "pedestrian" or cls == "pedestrian":
             prefix = "walker.pedestrian"
         else:

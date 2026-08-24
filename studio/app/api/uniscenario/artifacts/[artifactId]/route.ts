@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getFinalizedArtifact } from "@/app/lib/uniscenario/control-plane-store";
-import { requireUniScenarioContext } from "@/app/lib/uniscenario/http";
+import { getFinalizedArtifact } from "@/app/lib/scenario/control-plane-store";
+import { requireScenarioContext } from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ artifactId: string }> };
 
 export async function GET(request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { artifactId } = await route.params;
   const disposition = new URL(request.url).searchParams.get("download") === "1"

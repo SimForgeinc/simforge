@@ -90,7 +90,7 @@ describe('catalog batch ledger', () => {
     ['driveway-emergence', 'examples/mechanisms/parking-transit/driveway-emergence.template.json', 'yale-street', '9d1fc997d6b5ab83'],
     ['animal-crossing', 'examples/mechanisms/obstacle/animal-crossing.template.json', 'yale-street', '337ecc44df9470ed'],
   ] as const)(`carries the catalog exact-site policy through the worker cell path for %s${catalogMapAssets.missingReason}`, async (_name, source, mapId, siteId) => {
-    const outDir = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-catalog-worker-'));
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'simforge-catalog-worker-'));
     temporary.push(outDir);
     const template = await readTemplate(path.join(REPO_ROOT, source));
     const result = await runCell(template, {
@@ -437,7 +437,7 @@ describe('catalog batch ledger', () => {
   });
 
   it.skipIf(!catalogMapAssets.available)(`cancels and resumes through the direct CLI without consuming the interrupted attempt${catalogMapAssets.missingReason}`, async () => {
-    const dir = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-catalog-cancel-resume-'));
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'simforge-catalog-cancel-resume-'));
     temporary.push(dir);
     const source = path.join(REPO_ROOT, 'catalog', 'uniscenarios-five-map-v2.catalog.json');
     const catalogFile = path.join(dir, 'catalog.json');
@@ -479,7 +479,7 @@ describe('catalog batch ledger', () => {
   }, 600_000);
 
   it('records hashes of the promoted target bytes in the result commit marker', async () => {
-    const dir = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-catalog-promote-'));
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'simforge-catalog-promote-'));
     temporary.push(dir);
     const source = {
       instance: path.join(dir, 'work', 'instance.json'),
@@ -516,7 +516,7 @@ describe('catalog batch ledger', () => {
   });
 
   it('removes stale promoted artifacts that the committed attempt did not produce', async () => {
-    const dir = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-catalog-promote-clean-'));
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'simforge-catalog-promote-clean-'));
     temporary.push(dir);
     const source = {
       instance: path.join(dir, 'work', 'instance.json'),

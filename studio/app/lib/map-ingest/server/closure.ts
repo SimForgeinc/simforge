@@ -153,7 +153,7 @@ function explicitManifestReferences(manifest: unknown) {
 
 /**
  * These identity formulas are kept byte-for-byte equivalent to
- * scripts/lib/uniscenario-browser-bundle.mjs, the operator publisher's original source.
+ * scripts/lib/scenario-browser-bundle.mjs, the operator publisher's original source.
  */
 export function planUploadedMapClosure(input: PlanUploadedMapClosureInput): UploadedMapClosurePlan {
   if (!input.workspaceId || !input.sourceMapId || !input.derivativeReleaseId) {

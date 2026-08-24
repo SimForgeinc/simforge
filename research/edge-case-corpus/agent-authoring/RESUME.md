@@ -20,7 +20,7 @@
 | W3 | Add `preview()` (top-down render pre-simulation); measure iterations-to-admission with/without on held-out | W1, W2 |
 | W4 | Requirement D: blind trace judge + judge review of corpus layout/taxonomy coverage | W1 |
 | W5 | Engine gaps: B1 `close_lane` cannot edit the drivable surface (`roadControlSchema` is `kind:'stop'` only); B2 multi-lane junction approaches rare (157/210 fail); B5 `tFrac` clamped to [-1,1] so the verge is unaddressable | — |
-| W6 | Wire `isKnownPropCatalogId` into `uniscenarios template validate` (predicate + 4 tests already landed) | — |
+| W6 | Wire `isKnownPropCatalogId` into `simforge template validate` (predicate + 4 tests already landed) | — |
 
 ## 3. Exact next steps
 1. Rehydrate the runner in a notebook from `tools/scenario_tools.py` + `brief-corpus.json`
@@ -33,9 +33,9 @@
 5. Only then build `preview()` and re-run a held-out subset for the iterations-to-admission delta.
 
 ## 4. Remote jobs
-**None.** Everything ran as local subprocesses (`node packages/cli/bin/uniscenarios.js`).
+**None.** Everything ran as local subprocesses (`node packages/cli/bin/simforge.js`).
 No background processes, no remote hosts, nothing to reattach or kill.
 
 ## Performance note
-12 briefs took 5115 s at 12 workers (~7 min/brief wall clock), dominated by `uniscenarios batch` —
+12 briefs took 5115 s at 12 workers (~7 min/brief wall clock), dominated by `simforge batch` —
 each brief runs three batches (2 solve rounds + 1 final at 10 draws over ~37 sites).

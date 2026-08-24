@@ -1,5 +1,5 @@
 import type { RenderOutputSpec } from "@simcloud/shared";
-import type { HistoricalGalleryPreview as ScenarioRuntimeGalleryPreview } from "@/app/lib/uniscenario/render/gallery-preview-compat";
+import type { HistoricalGalleryPreview as ScenarioRuntimeGalleryPreview } from "@/app/lib/scenario/render/gallery-preview-compat";
 
 /** Health-check response from the CARLA backend. */
 export type CarlaBackendHealth = {

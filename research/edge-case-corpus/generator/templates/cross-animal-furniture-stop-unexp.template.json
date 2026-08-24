@@ -5,7 +5,7 @@
   "description": "Auto-synthesised archetype from the mechanism grammar. {'topology': 'crossing_lateral', 'challenger': 'animal', 'occlusion': 'roadside_furniture', 'control': 'stop_controlled', 'fault': 'challenger_unexpected_entry', 'id': 'cross-animal-furniture-stop-unexp'}",
   "createdAt": "2026-08-06T00:00:00.000Z",
   "modifiedAt": "2026-08-06T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "cross-animal-furniture-stop-unexp",
   "tags": [
    "crossing_lateral",

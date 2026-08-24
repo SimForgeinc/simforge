@@ -2,7 +2,7 @@
 """Band every episode-bank entry by catalog criticality.
 
 For each (class, map, site, seed): `instantiate` → `simulate` (authored
-choreography trace) → `uniscenarios evaluate --filter all`; record the
+choreography trace) → `simforge evaluate --filter all`; record the
 criticality band (`critical` / `trivially-safe` / `no-interaction` / …), the
 scalar criticality (min TTC or PET inside the criticality window) and minTTC.
 
@@ -21,7 +21,7 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parents[1]
-CLI = REPO / "packages/cli/bin/uniscenarios.js"
+CLI = REPO / "packages/cli/bin/simforge.js"
 SCRATCH = pathlib.Path("/tmp/rl-banding")
 OUT = HERE / "bands.json"
 WORKERS = 16

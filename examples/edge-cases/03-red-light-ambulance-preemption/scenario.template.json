@@ -5,7 +5,7 @@
     "description": "Queued traffic creates a refuge path while an ambulance approaches a red-light intersection and preemption changes right-of-way. This curated 20-second scenario uses only currently supported behaviors; adaptations are declared in machine-readable metadata.",
     "createdAt": "2026-08-02T07:00:00.000Z",
     "modifiedAt": "2026-08-03T08:00:00.000Z",
-    "appVersion": "uniscenarios/0.1.0-editor",
+    "appVersion": "simforge/0.1.0-editor",
     "archetype": "gallery.03-red-light-ambulance-preemption",
     "tags": [
       "curated-gallery-v2",

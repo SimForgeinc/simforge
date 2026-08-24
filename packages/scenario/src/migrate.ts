@@ -98,7 +98,7 @@ export function runMigrations(json: unknown, options: RunMigrationsOptions = {})
   const fromVersion = readVersion(json);
   if (fromVersion > target) {
     throw new ScenarioMigrationError(
-      `scenario was written by a newer version of the app (file schema v${fromVersion}, this build reads v${target}). Upgrade UniScenarios to open it.`,
+      `scenario was written by a newer version of the app (file schema v${fromVersion}, this build reads v${target}). Upgrade SimForge to open it.`,
       fromVersion,
     );
   }

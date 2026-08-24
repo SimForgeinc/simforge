@@ -5,7 +5,7 @@
   "description": "A faster ego follows a lead vehicle that unexpectedly changes into the adjacent lane, revealing a stopped vehicle directly ahead. The late reveal forces hard but survivable braking during the recorded clip.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C2.cut-in-merge",
   "tags": [
    "cut-in",

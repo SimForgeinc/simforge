@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { RenderWorkerIdleHeartbeatSchema } from "@/app/lib/uniscenario/contracts";
-import { heartbeatIdleRenderWorker, renderWorkerNodeId } from "@/app/lib/uniscenario/control-plane-store";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectedLeaseResponse, rejectUnauthorizedRenderWorker } from "@/app/lib/uniscenario/worker-http";
+import { RenderWorkerIdleHeartbeatSchema } from "@/app/lib/scenario/contracts";
+import { heartbeatIdleRenderWorker, renderWorkerNodeId } from "@/app/lib/scenario/control-plane-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectedLeaseResponse, rejectUnauthorizedRenderWorker } from "@/app/lib/scenario/worker-http";
 
 export async function POST(request: Request) {
   const unauthorized = await rejectUnauthorizedRenderWorker(request);

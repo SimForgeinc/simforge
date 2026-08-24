@@ -5,7 +5,7 @@
   "description": "A roadside occluder hides a stopped work-zone truck positioned at the edge of the reference lane. The ego discovers the narrowed alignment late and steers toward the opposite lane edge to pass without contact.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C8.workzone",
   "tags": [
    "workzone",

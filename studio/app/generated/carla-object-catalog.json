@@ -3,7 +3,7 @@
   "carlaVersion": "0.10.0",
   "engine": "UE5.5",
   "generatedFrom": {
-    "inventory": "config/uniscenario/carla/carla-0.10.0-kia-blueprints.json",
+    "inventory": "config/scenario/carla/carla-0.10.0-kia-blueprints.json",
     "inventorySha256": "dd614ea8fdeec297f5e08cdab3d576465b437b50bc9df7f3f651c38327fb7e3c",
     "proceduralCatalogEntries": 90
   },

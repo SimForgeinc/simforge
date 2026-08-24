@@ -2,7 +2,7 @@ import {
   GALLERY_ACTOR_CLASSES,
   type GalleryAssetSummary,
 } from "@/app/lib/asset-gallery/contracts";
-import type { CarlaCompatibility } from "@/app/lib/uniscenario/carla-compatibility";
+import type { CarlaCompatibility } from "@/app/lib/scenario/carla-compatibility";
 
 /**
  * The gallery's control surface, split by who can actually answer each control.

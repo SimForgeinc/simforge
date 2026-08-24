@@ -1,5 +1,5 @@
 /**
- * `uniscenarios import` end to end, through the real binary.
+ * `simforge import` end to end, through the real binary.
  *
  * The fixtures are the OpenSCENARIO conformance goldens in
  * `packages/openscenario/conformance/` — real XML 1.4 files that ship with the
@@ -28,7 +28,7 @@ interface Run {
   stderr: string;
 }
 
-async function uniscenarios(...args: string[]): Promise<Run> {
+async function simforge(...args: string[]): Promise<Run> {
   try {
     const r = await execa('node', [BIN, ...args], { reject: false, timeout: 60_000 });
     return { code: r.exitCode ?? 0, stdout: r.stdout, stderr: r.stderr };
@@ -59,16 +59,16 @@ afterAll(async () => {
   await Promise.all(tmpFiles.map((f) => rm(f, { force: true })));
 });
 
-describe('uniscenarios import', () => {
+describe('simforge import', () => {
   it('appears in the machine-readable command surface', async () => {
-    const run = await uniscenarios();
+    const run = await simforge();
     expect(run.code).toBe(0);
     const payload = json<{ commands: Array<{ name: string }> }>(run);
     expect(payload.commands.map((c) => c.name)).toContain('import');
   });
 
   it('reports an unresolved map identity as findings with exit 2', async () => {
-    const run = await uniscenarios('import', FIXTURE);
+    const run = await simforge('import', FIXTURE);
     // The conformance golden references `conformance-map.xodr`, which is not a
     // dev-assets map — exactly the "ran and found something wrong" case.
     expect(run.code).toBe(2);
@@ -84,7 +84,7 @@ describe('uniscenarios import', () => {
   });
 
   it('rejects a missing input file as a structured command error', async () => {
-    const run = await uniscenarios('import', '/nonexistent/scene.xosc');
+    const run = await simforge('import', '/nonexistent/scene.xosc');
     expect(run.code).toBe(1);
     expect(run.stdout).toBe('');
     const error = JSON.parse(run.stderr) as { code: string; path: string };
@@ -93,10 +93,10 @@ describe('uniscenarios import', () => {
   });
 
   it('reports an unsupported major version as findings with exit 2', async () => {
-    const bad = path.join(os.tmpdir(), `uniscenarios-import-bad-${Date.now()}.xosc`);
+    const bad = path.join(os.tmpdir(), `simforge-import-bad-${Date.now()}.xosc`);
     tmpFiles.push(bad);
     await writeFile(bad, '<OpenSCENARIO><FileHeader revMajor="9"/></OpenSCENARIO>', 'utf8');
-    const run = await uniscenarios('import', bad);
+    const run = await simforge('import', bad);
     // A wrong version parses; it is a finding about the input, not a command
     // failure — the same exit-2 contract as every other import finding.
     expect(run.code).toBe(2);
@@ -105,19 +105,19 @@ describe('uniscenarios import', () => {
   });
 
   it('rejects input that is not XML at all as a command error', async () => {
-    const bad = path.join(os.tmpdir(), `uniscenarios-import-junk-${Date.now()}.xosc`);
+    const bad = path.join(os.tmpdir(), `simforge-import-junk-${Date.now()}.xosc`);
     tmpFiles.push(bad);
     await writeFile(bad, 'this is not xml', 'utf8');
-    const run = await uniscenarios('import', bad);
+    const run = await simforge('import', bad);
     expect(run.code).toBe(1);
     const error = JSON.parse(run.stderr) as { code: string };
     expect(error.code).toBe('malformed_xml');
   });
 
   it.skipIf(!haveArtifacts)('translates against --map, writes the draft, and reports what was lossy', async () => {
-    const out = path.join(os.tmpdir(), `uniscenarios-import-${Date.now()}.template.json`);
+    const out = path.join(os.tmpdir(), `simforge-import-${Date.now()}.template.json`);
     tmpFiles.push(out);
-    const run = await uniscenarios('import', FIXTURE, '--map', 'yale-street', '--out', out);
+    const run = await simforge('import', FIXTURE, '--map', 'yale-street', '--out', out);
     // Storyboard semantics are not translatable, so findings exist even on a
     // successful translation — exit 2 says "read me", not "failed".
     expect(run.code).toBe(2);
@@ -142,12 +142,12 @@ describe('uniscenarios import', () => {
     expect(document.extensions.openScenarioImport.source.sha256).toMatch(/^[0-9a-f]{64}$/);
 
     // The draft must be a first-class citizen of the pipeline it feeds.
-    const validated = await uniscenarios('template', 'validate', out);
+    const validated = await simforge('template', 'validate', out);
     expect(validated.code).toBe(0);
   });
 
   it.skipIf(!haveArtifacts)('renders the same result under --pretty without changing the verdict', async () => {
-    const run = await uniscenarios('import', FIXTURE, '--map', 'yale-street', '--pretty');
+    const run = await simforge('import', FIXTURE, '--map', 'yale-street', '--pretty');
     expect(run.code).toBe(2);
     expect(run.stdout).toContain('lossy:');
     expect(run.stdout).toContain('ASAM OpenSCENARIO 1.4');

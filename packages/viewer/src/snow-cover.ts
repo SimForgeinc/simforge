@@ -467,7 +467,7 @@ export class SnowCoverController {
     this.scene = scene;
     this.options = options;
     this.group.name = SNOW_COVER_OBJECT_NAME;
-    this.group.userData.uniscenariosRole = 'city-snow-cover';
+    this.group.userData.simforgeRole = 'city-snow-cover';
     this.group.renderOrder = 4;
     scene.add(this.group);
   }
@@ -601,7 +601,7 @@ export class SnowCoverController {
     if (record.shell) return;
     const shell = new Group();
     shell.name = `${record.source.name || 'receiver'}.snow`;
-    shell.userData.uniscenariosRole = 'city-snow-cover';
+    shell.userData.simforgeRole = 'city-snow-cover';
     shell.userData.sourceObject = record.source.name;
     record.shell = shell;
     this.group.add(shell);
@@ -697,7 +697,7 @@ export class SnowCoverController {
         mesh.name = `${record.source.name || 'receiver'}.snow-fallback`;
         mesh.frustumCulled = true;
         mesh.renderOrder = 4;
-        mesh.userData.uniscenariosRole = 'city-snow-cover';
+        mesh.userData.simforgeRole = 'city-snow-cover';
         mesh.raycast = () => undefined;
         record.shell.add(mesh);
         record.fallbackGeometry = fallback.geometry;
@@ -767,7 +767,7 @@ export class SnowCoverController {
       const derivativeRoot = new Group();
       derivativeRoot.name = `${record.source.name || 'receiver'}.snow-derivative`;
       derivativeRoot.position.y = -derivative.baseShellOffsetM;
-      derivativeRoot.userData.uniscenariosRole = 'city-snow-cover';
+      derivativeRoot.userData.simforgeRole = 'city-snow-cover';
       const derivativeMesh = new Mesh(closedGeometry, this.fallbackMaterial);
       derivativeMesh.name = `${derivativeRoot.name}.closed-shell`;
       derivativeMesh.raycast = () => undefined;

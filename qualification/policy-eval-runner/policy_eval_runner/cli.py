@@ -5,7 +5,7 @@ suite-hash-keyed report; with --baseline --gate it exits nonzero on
 regression (exit 3).
 
     python3 -m policy_eval_runner \
-      --repo-root /path/to/UniScenarios \
+      --repo-root /path/to/SimForge \
       [--checkpoint runs/ppo/policy.pt --rl-scripts-dir scripts/rl] \
       [--latency-ticks K --ego-noise-std S] \
       [--limit N] [--out report.json]

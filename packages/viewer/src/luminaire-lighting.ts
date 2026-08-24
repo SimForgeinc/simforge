@@ -65,7 +65,7 @@ export class LuminaireLightingController {
 
   constructor(private readonly activeLimit = DEFAULT_ACTIVE_LUMINAIRE_LIMIT) {
     this.group.name = 'city-luminaires';
-    this.group.userData.uniscenariosRole = 'city-luminaires';
+    this.group.userData.simforgeRole = 'city-luminaires';
 
     const geometry = new SphereGeometry(0.12, 8, 6);
     const material = new MeshBasicMaterial({ color: 0xffe2a8, toneMapped: false });

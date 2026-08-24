@@ -26,23 +26,23 @@ import {
 import { toast } from "sonner";
 import type { MapAsset } from "@simcloud/shared";
 import type {
-  UniScenarioDocumentDto,
-  UniScenarioMapDescriptorDto,
-} from "@/app/lib/uniscenario/contracts";
+  ScenarioDocumentDto,
+  ScenarioMapDescriptorDto,
+} from "@/app/lib/scenario/contracts";
 import { TopBarActionsPortal } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import { useExperimentalFeaturesEnabled } from "@/app/lib/experimental-features";
 import { cn } from "@/app/lib/utils";
-import type { UniScenarioMapOption } from "@/app/dashboard/uniscenario/list/document-map-groups";
-import { UniScenarioMapPickerDialog } from "@/app/dashboard/uniscenario/list/UniScenarioMapPickerDialog";
+import type { ScenarioMapOption } from "@/app/dashboard/scenario/list/document-map-groups";
+import { ScenarioMapPickerDialog } from "@/app/dashboard/scenario/list/ScenarioMapPickerDialog";
 import {
-  UniScenarioWorldHost,
-  type UniScenarioWorldState,
-  type UniScenarioWorldTarget,
-} from "@/app/dashboard/uniscenario/scene/UniScenarioWorldHost";
-import { useIdleStreetTour } from "@/app/dashboard/uniscenario/scene/useIdleStreetTour";
-import { localSceneMinutes } from "@/app/dashboard/uniscenario/editor/scene-time";
+  ScenarioWorldHost,
+  type ScenarioWorldState,
+  type ScenarioWorldTarget,
+} from "@/app/dashboard/scenario/scene/ScenarioWorldHost";
+import { useIdleStreetTour } from "@/app/dashboard/scenario/scene/useIdleStreetTour";
+import { localSceneMinutes } from "@/app/dashboard/scenario/editor/scene-time";
 import { getCardStats } from "./map-card-data";
 import { MapGallerySumoTraffic } from "./MapGallerySumoTraffic";
 
@@ -62,11 +62,11 @@ const Map2DOverlay = dynamic(
 );
 
 type GalleryEntry = {
-  map: UniScenarioMapDescriptorDto;
+  map: ScenarioMapDescriptorDto;
   asset: MapAsset | null;
 };
 
-const EMPTY_WORLD_STATE: UniScenarioWorldState = {
+const EMPTY_WORLD_STATE: ScenarioWorldState = {
   target: null,
   loadedMapVersionId: null,
   streaming: false,
@@ -79,20 +79,20 @@ function MapGalleryWorldPreview({
   sumoEnabled,
   onSumoStatusChange,
 }: {
-  map: UniScenarioMapDescriptorDto;
+  map: ScenarioMapDescriptorDto;
   sumoEnabled: boolean;
   onSumoStatusChange: (status: SumoTrafficStatus) => void;
 }) {
   const [viewer, setViewer] = useState<CityViewer | null>(null);
   const [actorRenderer, setActorRenderer] = useState<ActorRenderer | null>(null);
-  const [worldState, setWorldState] = useState<UniScenarioWorldState>(EMPTY_WORLD_STATE);
-  const target = useMemo<UniScenarioWorldTarget>(() => ({
+  const [worldState, setWorldState] = useState<ScenarioWorldState>(EMPTY_WORLD_STATE);
+  const target = useMemo<ScenarioWorldTarget>(() => ({
     mapVersionId: map.mapVersionId,
     manifestUrl: map.browserManifestUrl,
     label: map.label,
     locality: map.locality,
   }), [map.browserManifestUrl, map.label, map.locality, map.mapVersionId]);
-  const tourMap = useMemo<UniScenarioMapOption>(() => ({
+  const tourMap = useMemo<ScenarioMapOption>(() => ({
     mapVersionId: map.mapVersionId,
     sourceMapId: map.sourceMapId,
     label: map.label,
@@ -114,7 +114,7 @@ function MapGalleryWorldPreview({
 
   return (
     <>
-      <UniScenarioWorldHost
+      <ScenarioWorldHost
         className="absolute inset-0 isolate"
         interactive
         onActorRendererChange={setActorRenderer}
@@ -183,7 +183,7 @@ export function MapGalleryPageClient({
   maps,
 }: {
   assets: MapAsset[];
-  maps: UniScenarioMapDescriptorDto[];
+  maps: ScenarioMapDescriptorDto[];
 }) {
   const router = useRouter();
   const experimentalEnabled = useExperimentalFeaturesEnabled();
@@ -294,13 +294,13 @@ export function MapGalleryPageClient({
         },
       );
       const payload = (await response.json().catch(() => null)) as
-        | { document?: UniScenarioDocumentDto; error?: string }
+        | { document?: ScenarioDocumentDto; error?: string }
         | null;
       if (!response.ok || !payload?.document) {
         throw new Error(payload?.error || "The scenario could not be created.");
       }
       router.push(
-        `/dashboard/uniscenario?dataset=${encodeURIComponent(payload.document.datasetId)}&document=${encodeURIComponent(payload.document.id)}`,
+        `/dashboard/scenario?dataset=${encodeURIComponent(payload.document.datasetId)}&document=${encodeURIComponent(payload.document.id)}`,
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The scenario could not be created.");
@@ -476,7 +476,7 @@ export function MapGalleryPageClient({
           onSwitchMap={switchOverlayMap}
         />
       ) : null}
-      <UniScenarioMapPickerDialog
+      <ScenarioMapPickerDialog
         currentMapVersionId={entry.map.mapVersionId}
         maps={entries.map((candidate) => candidate.map)}
         onOpenChange={setMapPickerOpen}

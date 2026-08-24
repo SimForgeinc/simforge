@@ -3,7 +3,7 @@
 
 Runs inside the ws6-client sidecar container (network-shared with the CARLA
 server). Every maneuver is executed against live vehicle physics; nothing here
-is derived from the UniScenarios engine.
+is derived from the SimForge engine.
 
 Output: results/oracle-*.json — one block per maneuver, plus the CARLA
 server/client versions and the exact map/vehicle/dt the numbers were measured

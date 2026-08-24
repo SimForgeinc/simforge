@@ -1,10 +1,10 @@
 {
   "name": "@simforge/playback",
   "version": "0.1.0-rc.45",
-  "description": "Deterministic UniScenarios trace loading, sampling, playback control, map runtime, collider, and browser traffic runtime.",
+  "description": "Deterministic SimForge trace loading, sampling, playback control, map runtime, collider, and browser traffic runtime.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/SimForge.git",
+    "url": "git+https://github.com/SimForgeinc/simforge.git",
     "directory": "packages/playback"
   },
   "publishConfig": {

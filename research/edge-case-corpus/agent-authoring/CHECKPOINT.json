@@ -5,14 +5,14 @@
  "authoringModel": "PIVOTED (user-directed) from archetype-grammar compiler to agent-native tool authoring",
  "currentState": {
   "toolSurface": {
-   "file": "/Users/maikyon/Documents/Programming/UniScenarios/research/edge-case-corpus/tools/scenario_tools.py",
+   "file": "/Users/maikyon/Documents/Programming/SimForge/research/edge-case-corpus/tools/scenario_tools.py",
    "ops": 16,
    "FROZEN": true,
    "tooldocSha256": "acd3b247746af7ab767ace2d29ba3cb9bcb2b5ab8b732f9f10cc0507aeab8080",
    "policy": "no tool-surface or prompt change permitted until HELDOUT finishes"
   },
   "briefCorpus": {
-   "file": "/Users/maikyon/Documents/Programming/UniScenarios/research/edge-case-corpus/agent-authoring/brief-corpus.json",
+   "file": "/Users/maikyon/Documents/Programming/SimForge/research/edge-case-corpus/agent-authoring/brief-corpus.json",
    "briefs": 92,
    "categories": 15,
    "splitSha256": "dd4f360c16fd416f7f5c2bc7823029f2f53a325b27194629247a9d27d2f73d77",
@@ -20,14 +20,14 @@
    "HELDOUT": 60
   },
   "dev": {
-   "file": "/Users/maikyon/Documents/Programming/UniScenarios/research/edge-case-corpus/agent-authoring/dev-results.json",
+   "file": "/Users/maikyon/Documents/Programming/SimForge/research/edge-case-corpus/agent-authoring/dev-results.json",
    "admitted": 18,
    "n": 32,
    "rate": 0.563,
    "meanIterationsToAdmit": 1.11
   },
   "heldout": {
-   "file": "/Users/maikyon/Documents/Programming/UniScenarios/research/edge-case-corpus/agent-authoring/heldout-partial.json",
+   "file": "/Users/maikyon/Documents/Programming/SimForge/research/edge-case-corpus/agent-authoring/heldout-partial.json",
    "status": "PARTIAL",
    "done": 12,
    "of": 60,
@@ -35,7 +35,7 @@
    "note": "resumable \u2014 the runner skips ids already present in heldout-partial.json"
   },
   "goldToolAuthored": {
-   "dir": "/Users/maikyon/Documents/Programming/UniScenarios/research/edge-case-corpus/gold-toolauthored",
+   "dir": "/Users/maikyon/Documents/Programming/SimForge/research/edge-case-corpus/gold-toolauthored",
    "instances": 18,
    "archetype": "construction at an intersection",
    "maps": 2,
@@ -43,7 +43,7 @@
    "replay": "18/18 bit-identical"
   },
   "goldEarlier": {
-   "dir": "/Users/maikyon/Documents/Programming/UniScenarios/research/edge-case-corpus/gold",
+   "dir": "/Users/maikyon/Documents/Programming/SimForge/research/edge-case-corpus/gold",
    "instances": 20,
    "archetypes": 2,
    "maps": 5,
@@ -82,7 +82,7 @@
   {
    "id": "W6",
    "priority": 6,
-   "what": "wire isKnownPropCatalogId into `uniscenarios template validate` so the CLI is fail-loud (predicate + 4 tests already landed in scenario-materializer)"
+   "what": "wire isKnownPropCatalogId into `simforge template validate` so the CLI is fail-loud (predicate + 4 tests already landed in scenario-materializer)"
   }
  ],
  "exactNextSteps": [
@@ -92,6 +92,6 @@
   "4. When all 60 are done, compute DEV vs HELDOUT admission and write the gap to agent-authoring/GENERALIZATION.md.",
   "5. Only then implement preview() and re-run a held-out subset to measure iterations-to-admission delta."
  ],
- "perfNote": "12 briefs took 5115 s at 12 workers (~7 min/brief wall clock). Dominated by `uniscenarios batch` (each brief runs 3 batches: 2 solve rounds + 1 final at 10 draws over ~37 sites).",
- "remoteJobs": "NONE. All work was local subprocess calls to node packages/cli/bin/uniscenarios.js. Nothing is running now."
+ "perfNote": "12 briefs took 5115 s at 12 workers (~7 min/brief wall clock). Dominated by `simforge batch` (each brief runs 3 batches: 2 solve rounds + 1 final at 10 draws over ~37 sites).",
+ "remoteJobs": "NONE. All work was local subprocess calls to node packages/cli/bin/simforge.js. Nothing is running now."
 }

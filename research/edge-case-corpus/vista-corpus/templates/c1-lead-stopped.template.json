@@ -5,7 +5,7 @@
   "description": "The ego follows a moving road corridor toward a stopped lead vehicle that is concealed by a large roadside vehicle until the approach is already critical. The ego must detect the late-revealed lead and brake firmly while retaining enough distance to avoid contact.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C1.car-following",
   "tags": [
    "car-following",

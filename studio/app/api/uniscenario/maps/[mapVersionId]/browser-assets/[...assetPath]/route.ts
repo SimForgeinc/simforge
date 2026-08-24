@@ -5,10 +5,10 @@ import {
   normalizeAssetKey,
 } from "@/app/lib/assets/asset-url-service";
 import {
-  getUniScenarioMapBrowserAsset,
-  type UniScenarioMapBrowserAsset,
-} from "@/app/lib/uniscenario/document-store";
-import { requireUniScenarioContext } from "@/app/lib/uniscenario/http";
+  getScenarioMapBrowserAsset,
+  type ScenarioMapBrowserAsset,
+} from "@/app/lib/scenario/document-store";
+import { requireScenarioContext } from "@/app/lib/scenario/http";
 
 type Context = {
   params: Promise<{ mapVersionId: string; assetPath: string[] }>;
@@ -48,14 +48,14 @@ function upstreamStatus(error: unknown) {
 
 type ResolvedAsset =
   | { kind: "response"; response: NextResponse }
-  | { kind: "asset"; asset: UniScenarioMapBrowserAsset };
+  | { kind: "asset"; asset: ScenarioMapBrowserAsset };
 
 async function resolveAsset(route: Context): Promise<ResolvedAsset> {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return { kind: "response", response: auth.response };
   const { mapVersionId, assetPath } = await route.params;
   const relativePath = normalizeAssetKey(assetPath.join("/"));
-  const asset = await getUniScenarioMapBrowserAsset(auth.context, mapVersionId, relativePath);
+  const asset = await getScenarioMapBrowserAsset(auth.context, mapVersionId, relativePath);
   if (!asset) {
     return { kind: "response", response: NextResponse.json({ error: "map_browser_assets_not_found" }, { status: 404 }) };
   }

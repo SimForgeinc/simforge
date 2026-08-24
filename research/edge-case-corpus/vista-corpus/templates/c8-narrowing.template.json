@@ -5,7 +5,7 @@
   "description": "Temporary work vehicles form an edge barrier that narrows the ego approach beside a junction. An opposing left-turning van refuses to yield and follows a late, contact-free route across the narrowed ego path. Arrival timing is back-solved against the moving ego so the encounter occurs during the recorded clip rather than at spawn.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-03T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C8.workzone",
   "tags": [
    "workzone",

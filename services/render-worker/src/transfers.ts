@@ -99,7 +99,7 @@ export async function uploadFile(
     body: createReadStream(path),
     duplex: 'half',
     signal,
-  } as RequestInit & { duplex: 'half' });
+  } as unknown as RequestInit & { duplex: 'half' });
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`artifact upload returned ${response.status}: ${text.slice(0, 2048)}`);

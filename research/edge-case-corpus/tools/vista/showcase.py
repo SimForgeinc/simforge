@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import gate, motion, scene
 
-DEV = '/Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/dev-assets'
+DEV = '/Users/michaelvu-simforge/Documents/Programming/SimForge-vista/dev-assets'
 
 
 def _wrap(s, n=104):

@@ -9,13 +9,13 @@ import { requireRouteSession } from "@/app/lib/auth/route-session";
 import { getAppContext } from "@/app/lib/db/app-context";
 import {
   readJson,
-  requireUniScenarioMutationOrigin,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioMutationOrigin,
+} from "@/app/lib/scenario/http";
 
 const MAX_UPLOADS_PER_HOUR = 40;
 
 export async function POST(request: NextRequest) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
 
   const auth = await requireRouteSession(request);

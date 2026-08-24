@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="1" revMinor="4" date="1970-01-01T00:00:00.000Z" description="cross-language conformance golden: signal-indications" author="UniScenario conformance corpus">
+  <FileHeader revMajor="1" revMinor="4" date="1970-01-01T00:00:00.000Z" description="cross-language conformance golden: signal-indications" author="Scenario conformance corpus">
     <Properties>
       <Property name="uniscenarios.executionMode" value="trajectory-replay"/>
       <Property name="uniscenarios.export.profile" value="xml-1.4-trajectory-replay"/>

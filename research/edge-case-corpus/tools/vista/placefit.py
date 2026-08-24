@@ -60,7 +60,7 @@ Usage
 import os, sys, json, gzip, math, glob, argparse, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-REPO = '/Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista'
+REPO = '/Users/michaelvu-simforge/Documents/Programming/SimForge-vista'
 DEV = os.path.join(REPO, 'dev-assets')
 
 TARGET_RATE = 0.95

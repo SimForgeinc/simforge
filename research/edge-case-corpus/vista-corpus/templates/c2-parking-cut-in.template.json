@@ -5,7 +5,7 @@
   "description": "A parked vehicle hidden among roadside vehicles pulls forward from the kerb into the ego lane shortly before the ego reaches the conflict area, creating a late cut-in that requires a hard but survivable response.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C2.cut-in-merge",
   "tags": [
    "cut-in",

@@ -31,11 +31,11 @@ target "common" {
 target "browser-worker" {
   inherits = ["common"]
   dockerfile = "browser.Dockerfile"
-  tags = ["uniscenarios/browser-render-worker:${IMAGE_VERSION}"]
+  tags = ["simforge/browser-render-worker:${IMAGE_VERSION}"]
 }
 
 target "carla-worker" {
   inherits = ["common"]
   dockerfile = "carla.Dockerfile"
-  tags = ["uniscenarios/carla-render-worker:${IMAGE_VERSION}"]
+  tags = ["simforge/carla-render-worker:${IMAGE_VERSION}"]
 }

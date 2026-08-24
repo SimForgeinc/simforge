@@ -4100,7 +4100,7 @@ function parseInteraction(value: unknown): SimInteraction {
   // interaction inside a scenario that contains only that interaction, but
   // `simScenarioInputSchema` resolves `after()` references at *scenario* level.
   // So every `after()` trigger failed here with "after() references unknown
-  // interaction <id>" — the whole trigger kind was unreachable through `uniscenarios`,
+  // interaction <id>" — the whole trigger kind was unreachable through `simforge`,
   // even though the engine runs it correctly once the real scenario is
   // assembled. The probe now carries a stub for whatever the trigger names.
   const afterId =
@@ -4124,7 +4124,7 @@ function parseInteraction(value: unknown): SimInteraction {
   // `detected()` resolves its observer, its target and the observer's sensor at
   // *scenario* level, so inside a one-actor probe every perception trigger
   // would fail with "unknown actor" / "declares no sensors" and the whole
-  // condition kind would be unreachable through `uniscenarios`. The probe
+  // condition kind would be unreachable through `simforge`. The probe
   // carries a stub for whatever the condition names, including a sensor on any
   // actor used as an observer.
   const perceptionRefs = detectedReferences(record as { trigger?: unknown; until?: unknown });

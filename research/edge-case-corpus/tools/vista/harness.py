@@ -10,9 +10,9 @@ import copy, glob, json, math, os, shutil, subprocess, time, hashlib
 
 import render as R, route as RT, viz, gate as G
 
-REPO = "/Users/maikyon/Documents/Programming/UniScenarios"
+REPO = "/Users/maikyon/Documents/Programming/SimForge"
 DEV = f"{REPO}/dev-assets"
-CLI = [ "node", f"{REPO}/packages/cli/bin/uniscenarios.js" ]
+CLI = [ "node", f"{REPO}/packages/cli/bin/simforge.js" ]
 MAPS = ['yale-street','belmont-research-center','el-camino-road','easterbrook-discovery-school','richmond-field-station']
 
 S0 = 120.0           # the conflict station in the site frame; view is centred here
@@ -280,7 +280,7 @@ class VisualCanvas:
           'scenarioVersion':2,
           'meta':{'name':self.brief_id,'description':self.brief[:280],
                   'createdAt':'2026-08-01T00:00:00.000Z','modifiedAt':'2026-08-01T00:00:00.000Z',
-                  'appVersion':'uniscenarios/0.0.1','archetype':self.category,
+                  'appVersion':'simforge/0.0.1','archetype':self.category,
                   'tags':['lane2','vista-visual'],'author':'agent/lane2-visual','negativeControl':False},
           'params':{'declarations':[],'constraints':[]},
           'environment':{'weather':'clear','timeOfDay':'afternoon'},

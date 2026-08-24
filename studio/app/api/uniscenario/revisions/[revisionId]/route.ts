@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
-import { getUniScenarioRevision } from "@/app/lib/uniscenario/document-store";
+import { getScenarioRevision } from "@/app/lib/scenario/document-store";
 import {
-  requireUniScenarioContext,
-  uniScenarioJsonWithEtag,
-  UNISCENARIO_IMMUTABLE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  scenarioJsonWithEtag,
+  SCENARIO_IMMUTABLE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ revisionId: string }> };
 
 export async function GET(request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { revisionId } = await route.params;
-  const revision = await getUniScenarioRevision(auth.context, revisionId);
+  const revision = await getScenarioRevision(auth.context, revisionId);
   return revision
-    ? await uniScenarioJsonWithEtag(request, revision, UNISCENARIO_IMMUTABLE_CACHE_HEADERS)
+    ? await scenarioJsonWithEtag(request, revision, SCENARIO_IMMUTABLE_CACHE_HEADERS)
     : NextResponse.json({ error: "revision_not_found" }, { status: 404 });
 }
 

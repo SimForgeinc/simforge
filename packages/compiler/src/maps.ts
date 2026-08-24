@@ -9,7 +9,7 @@
  * | `derived/topology-derived.json.gz` | `map-intel` | the matcher's `DerivedMapIndex` |
  * | `derived/locations.json.gz` | `map-intel` | the location catalog + the matcher's crossing / parking point features |
  *
- * Everything is loaded lazily and memoised per process, because `uniscenarios batch`
+ * Everything is loaded lazily and memoised per process, because `simforge batch`
  * runs hundreds of cells against the same three files and the `LaneGraph` build
  * is the single most expensive thing in the CLI.
  */

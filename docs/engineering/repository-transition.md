@@ -14,8 +14,6 @@ It was extracted without modifying or deleting the source repository.
   and **SimForge Cloud**
 - Package scope: `@simforge/*`; exactly 13 public TypeScript packages
 - Primary CLI: `simforge`; short alias: `sf`
-- Compatibility CLI: `uniscenarios` is a deprecated one-release alias that
-  warns and delegates
 - Application workspace: `studio/` (`@simforge/studio`)
 - Native renderer workspace: `renderer/`
 
@@ -72,6 +70,6 @@ committed. Provide `dev-assets/` separately for local development.
 
 ## Compatibility
 
-New integrations use `simforge` or `sf`. The deprecated `uniscenarios` binary
-exists for one release only and emits a warning before delegating. Serialized
+New integrations use `simforge` or `sf`. The retired `uniscenarios` binary has
+been removed; only `simforge` and `sf` are installed. Serialized
 scenario and wire formats retain their frozen identifiers.

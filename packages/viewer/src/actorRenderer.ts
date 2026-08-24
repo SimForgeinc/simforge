@@ -948,7 +948,7 @@ export class ActorRenderer {
         this.shadowCapacity,
       );
       this.shadows.name = 'actor-contact-shadows';
-      this.shadows.userData.uniscenariosRole = LOW_FIDELITY_HIDDEN_ROLE;
+      this.shadows.userData.simforgeRole = LOW_FIDELITY_HIDDEN_ROLE;
       // After the lane overlay (10), so the shadow reads as contact with the
       // road rather than as something seen through 28% cyan.
       this.shadows.renderOrder = 12;

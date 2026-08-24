@@ -5,7 +5,7 @@
     "description": "A real signed school-zone dart-out: a ball rolls from behind the pickup row before a child follows, crosses the carriageway completely, and remains present at the far-side refuge. The ego keeps production collision avoidance enabled and brakes after the precursor cue; the scene therefore records a genuine, bounded near-conflict without contact. The school-zone and adjacent pedestrian infrastructure are hard map requirements, not cosmetic hints.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "C12.ball-then-child",
     "tags": [
       "vru",

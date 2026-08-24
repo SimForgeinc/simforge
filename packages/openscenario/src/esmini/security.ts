@@ -23,7 +23,7 @@ export function assertSafeRelativePath(value: string, label = 'path'): void {
 }
 
 export function validateJobShape(job: EsminiExecutionJob, limits: { maxBundleBytes: number; maxFileCount: number }): void {
-  if (!job || typeof job !== 'object' || job.schema !== 'uniscenarios.esmini-job/v1' || !job.bundle || !job.bundle.manifest || job.bundle.manifest.kind !== 'uniscenarios-esmini-runnable-bundle' || job.bundle.manifest.version !== 1) {
+  if (!job || typeof job !== 'object' || job.schema !== 'uniscenarios.esmini-job/v1' || !job.bundle || !job.bundle.manifest || job.bundle.manifest.kind !== 'simforge-esmini-runnable-bundle' || job.bundle.manifest.version !== 1) {
     throw new BundleSecurityError('bad_schema', 'unsupported external runner job schema');
   }
   if (job.options.fixedTimestepS !== 0.02) throw new BundleSecurityError('bad_timestep', 'esmini must run at fixed 0.02 s');

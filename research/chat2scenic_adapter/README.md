@@ -9,8 +9,8 @@ Chat2Scenic (Research)**. It is not imported into the Vite/browser bundle.
 Create a local Python environment outside the repository:
 
 ```sh
-python3 -m venv /private/tmp/uniscenarios-chat2scenic-venv
-/private/tmp/uniscenarios-chat2scenic-venv/bin/pip install -r research/chat2scenic_adapter/requirements.txt
+python3 -m venv /private/tmp/simforge-chat2scenic-venv
+/private/tmp/simforge-chat2scenic-venv/bin/pip install -r research/chat2scenic_adapter/requirements.txt
 ```
 
 Start the development server with the OpenAI credential injected by 1Password;
@@ -18,7 +18,7 @@ the value is never placed in source, arguments, logs, or browser storage:
 
 ```sh
 OPENAI_API_KEY='op://MichaelAgents/openai key/notesPlain' \
-UNISCENARIOS_SCENIC_PYTHON=/private/tmp/uniscenarios-chat2scenic-venv/bin/python \
+UNISCENARIOS_SCENIC_PYTHON=/private/tmp/simforge-chat2scenic-venv/bin/python \
 UNISCENARIOS_COPILOT_MODEL=gpt-5.6-luna \
 OPENAI_SCENARIO_MODEL=gpt-5.6-luna \
 $HOME/bin/op-michaelagents run -- pnpm dev
@@ -41,7 +41,7 @@ Instead, actors selected by the lowering stage are placed at trusted map slots
 in a restricted Scenic program. Scenic 3.1.0 loads the current raw OpenDRIVE,
 compiles the program, and samples the initial scene. Sampled positions are
 checked against the same slots before creating an editable native ScenarioDoc.
-The ordinary canonical 20-second UniScenarios simulation remains the final gate.
+The ordinary canonical 20-second SimForge simulation remains the final gate.
 
 Some trusted lane-center slots occupy lanes narrower than Scenic's default
 CARLA vehicle footprint. The adapter disables Scenic's footprint-containment

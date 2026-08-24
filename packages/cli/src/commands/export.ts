@@ -1,4 +1,4 @@
-/** `uniscenarios export <instance> --format xosc-1.4|xosc-1.3-esmini|osc-2.2 --out <file>`. */
+/** `simforge export <instance> --format xosc-1.4|xosc-1.3-esmini|osc-2.2 --out <file>`. */
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';

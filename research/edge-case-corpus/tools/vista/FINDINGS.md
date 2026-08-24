@@ -1,6 +1,6 @@
 # FINDINGS — a VISTA-style visual harness for driving-scenario authoring
 
-Lane 2 (visual). Worktree `UniScenarios-vista`, branch `vista-lane`.
+Lane 2 (visual). Worktree `SimForge-vista`, branch `vista-lane`.
 Model: `gpt-5.6-luna`, reasoning effort `medium`, for every authoring, repair and judging call.
 Frozen admission gate `1a08698e95fca4bc`, never relaxed. Independent evaluation lane ran in parallel
 and is credited inline.
@@ -1423,7 +1423,7 @@ Authored-only scenarios are unaffected. The physical-validity constraint holds.
 - The CLI runs from TypeScript source, not a build artifact, so an agent's edit takes effect on the
   next invocation with no build step. Convenient, and a hazard: a half-finished edit is live
   immediately, which is why equivalence has to be re-checked rather than assumed stable.
-- `uniscenarios simulate --trace out.json` writes **gzip** regardless of the `.json` suffix. Reading it
+- `simforge simulate --trace out.json` writes **gzip** regardless of the `.json` suffix. Reading it
   with a plain `json.load` fails with a UnicodeDecodeError on byte 0x8b. Use `gzip.open`.
 
 ---
@@ -1597,7 +1597,7 @@ would make the traffic scenery rather than traffic. I am not asking for that.
 
 ### WS-3: the 3D path is real, and I looked at it myself
 `/tmp/vista-3d/_try2/frame.png` — streamed city, buildings, lane markings, street furniture, ego sedan
-and lead_suv both clearly on the roadway. This is the UniScenarios 3D world, not my top-down proxy.
+and lead_suv both clearly on the roadway. This is the SimForge 3D world, not my top-down proxy.
 
 | measure | verified by me | |
 |---|---|---|

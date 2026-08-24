@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { FailCompilerExportSchema } from "@/app/lib/uniscenario/compiler-contracts";
-import { failCompilerExport } from "@/app/lib/uniscenario/compiler-control-store";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectUnauthorizedWorker } from "@/app/lib/uniscenario/worker-http";
+import { FailCompilerExportSchema } from "@/app/lib/scenario/compiler-contracts";
+import { failCompilerExport } from "@/app/lib/scenario/compiler-control-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectUnauthorizedWorker } from "@/app/lib/scenario/worker-http";
 
 type Context = { params: Promise<{ exportId: string }> };
 export async function POST(request: Request, context: Context) {

@@ -5,7 +5,7 @@
   "description": "A moving van enters from the adjacent lane late, taking the shrinking gap between the ego and a slower lead vehicle. The merge is timed to arrive just before the ego at the conflict point, forcing a firm but survivable response.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C2.cut-in-merge",
   "tags": [
    "cut-in",

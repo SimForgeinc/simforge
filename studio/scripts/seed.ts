@@ -14,7 +14,7 @@ import {
   type DevAssetMap,
 } from "../app/lib/map-ingest/server/dev-asset-publication";
 import { registerLocalFile, writeLocalObject } from "../app/lib/s3/s3-object";
-import { SUMO_RUNTIME_VERSION } from "../app/lib/uniscenario/sumo-runtime";
+import { SUMO_RUNTIME_VERSION } from "../app/lib/scenario/sumo-runtime";
 import { migrate } from "./migrate";
 
 const MAPS: readonly DevAssetMap[] = [
@@ -25,7 +25,7 @@ const MAPS: readonly DevAssetMap[] = [
   ["richmond-field-station", "Richmond Field Station", "Richmond, California"],
 ];
 const assetsRoot =
-  process.env.UNISCENARIOS_DEV_ASSETS?.trim() || "/home/path/UniScenarios/dev-assets";
+  process.env.UNISCENARIOS_DEV_ASSETS?.trim() || "/home/path/SimForge/dev-assets";
 const catalogArtifactId = "artifact_local_catalog_v2";
 const catalogVersionId = "catalog_local_v2";
 const editorReleaseId = "editor_release_local_dev_assets_v2";
@@ -38,7 +38,7 @@ async function seedIdentity(): Promise<void> {
     await tx.execute(
       `INSERT INTO public.ba_user (id, name, email, "emailVerified", role)
        VALUES (:id, :name, :email, TRUE, 'owner') ON CONFLICT (id) DO NOTHING`,
-      { id: LOCAL_USER_ID, name: "Local Owner", email: "owner@local.uniscenarios" },
+      { id: LOCAL_USER_ID, name: "Local Owner", email: "owner@local.simforge" },
     );
     await tx.execute(
       `INSERT INTO public.ba_organization (id, name, slug)

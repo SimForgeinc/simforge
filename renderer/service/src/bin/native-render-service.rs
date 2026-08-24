@@ -31,7 +31,7 @@ fn main() -> Result<()> {
         }
     }
     let socket = socket.context("missing --socket")?;
-    let shm_path = shm_path.unwrap_or_else(|| format!("/dev/shm/uniscenarios-native-render.{pid}", pid = std::process::id()));
+    let shm_path = shm_path.unwrap_or_else(|| format!("/dev/shm/simforge-native-render.{pid}", pid = std::process::id()));
     let scene_path = scene_path.context("missing --scene")?;
 
     let spec: service::server::SceneSpec = serde_json::from_str(

@@ -17,7 +17,7 @@ export type LocalWorkerHandle = {
 
 export function startLocalWorker(baseUrl: string | URL): LocalWorkerHandle {
   const controller = new AbortController();
-  const token = process.env.UNISCENARIO_RENDER_WORKER_TOKEN?.trim() || "uniscenarios-local-worker";
+  const token = process.env.UNISCENARIO_RENDER_WORKER_TOKEN?.trim() || "simforge-local-worker";
   const workerId = process.env.UNISCENARIO_RENDER_WORKER_ID?.trim()
     || `local-${hostname().replace(/[^A-Za-z0-9._:-]/g, "-")}-${process.pid}`;
   const client = new CpuJobsClient(new URL(baseUrl), token, workerId);
@@ -49,7 +49,7 @@ async function runClaimLoop(client: CpuJobsClient, signal: AbortSignal): Promise
     } catch (error) {
       if (signal.aborted) throw signal.reason;
       process.stderr.write(`${JSON.stringify({
-        component: "uniscenarios-local-render-worker",
+        component: "simforge-local-render-worker",
         event: "claim.retry",
         error: error instanceof Error ? error.message : String(error),
       })}\n`);
@@ -60,7 +60,7 @@ async function runClaimLoop(client: CpuJobsClient, signal: AbortSignal): Promise
 
 async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal: AbortSignal): Promise<void> {
   const root = process.env.UNISCENARIO_LOCAL_WORKER_ROOT?.trim()
-    || join(homedir(), ".uniscenarios", "cloud", "worker");
+    || join(homedir(), ".simforge", "cloud", "worker");
   const workspace = join(root, `${claim.jobId}-${claim.attemptId}`);
   await rm(workspace, { recursive: true, force: true });
   const job = new AbortController();
@@ -119,7 +119,7 @@ async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal:
     await heartbeat;
     await client.complete(claim, recording.recordingId, result.artifacts, recording.uploads, workerSignal);
     process.stdout.write(`${JSON.stringify({
-      component: "uniscenarios-local-render-worker",
+      component: "simforge-local-render-worker",
       event: "job.completed",
       jobId: claim.jobId,
       frameCount: result.frameCount,
@@ -132,7 +132,7 @@ async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal:
     const detail = error instanceof Error ? error.message : String(error);
     await client.fail(claim, failureCode(error), { message: detail.slice(0, 2_000) }, AbortSignal.timeout(30_000));
     process.stderr.write(`${JSON.stringify({
-      component: "uniscenarios-local-render-worker",
+      component: "simforge-local-render-worker",
       event: "job.failed",
       jobId: claim.jobId,
       error: detail,
@@ -195,7 +195,7 @@ function delay(milliseconds: number, signal: AbortSignal): Promise<void> {
 async function main(): Promise<void> {
   const baseUrl = process.env.UNISCENARIO_API_BASE_URL?.trim() || "http://127.0.0.1:5199";
   process.stdout.write(`${JSON.stringify({
-    component: "uniscenarios-local-render-worker",
+    component: "simforge-local-render-worker",
     event: "worker.started",
     baseUrl,
   })}\n`);
@@ -210,7 +210,7 @@ const entryHref = pathToFileURL(process.argv[1] ?? "").href;
 if (import.meta.url === entryHref || entryHref.endsWith("/worker/index.ts")) {
   main().catch((error: unknown) => {
     process.stderr.write(`${JSON.stringify({
-      component: "uniscenarios-local-render-worker",
+      component: "simforge-local-render-worker",
       event: "worker.failed",
       error: error instanceof Error ? error.message : String(error),
     })}\n`);

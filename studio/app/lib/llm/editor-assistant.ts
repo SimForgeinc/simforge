@@ -64,7 +64,7 @@ const SYSTEM_PROMPT =
   "source current_location refers to the editor-selected location or the most recent get_location result in this assistant run; prefer manualRoadIds when get_location returned explicit road_ids. " +
   "Use manage_actors to inspect, add, or remove scene actors. " +
   "Before any manage_actors add action, you must call inspect_selected_roads for the current selected road set and use its anchors and crossing_pairs to choose roadId and fraction. " +
-  "Use UniScenarios browser playback for deterministic interaction analysis and the OpenSCENARIO render job for managed rendering.";
+  "Use SimForge browser playback for deterministic interaction analysis and the OpenSCENARIO render job for managed rendering.";
 
 const EDITOR_ASSISTANT_RECURSION_LIMIT = 500;
 

@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest';
 import {
   validateGoldenManeuvers,
   type GoldenManeuverFixture,
+  type GoldenManeuverReference,
 } from '../validation/golden-maneuvers.js';
 
 const FIXTURE_PATH = fileURLToPath(
@@ -32,16 +33,18 @@ const FIXTURE_PATH = fileURLToPath(
 interface V2Case {
   readonly id: string;
   readonly family: string;
+  readonly assertions?: readonly string[];
+  readonly substepsS?: readonly number[];
   readonly provenance?: string;
-  readonly references?: readonly {
-    readonly metric: string;
+  readonly references?: readonly (GoldenManeuverReference & {
     readonly provenance?: string;
-  }[];
+  })[];
 }
 
 interface V2Fixture extends GoldenManeuverFixture {
   readonly provenanceEnum?: readonly string[];
   readonly documentedEngineDerivedIds?: readonly string[];
+  readonly oracle: { readonly carlaServerVersion: string };
   readonly cases: readonly V2Case[];
 }
 

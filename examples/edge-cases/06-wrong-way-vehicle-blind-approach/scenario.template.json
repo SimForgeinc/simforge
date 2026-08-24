@@ -5,7 +5,7 @@
     "description": "The focus vehicle encounters a wrong-way sedan beyond limited sight distance while escape space is constrained. This curated 20-second scenario uses only currently supported behaviors; adaptations are declared in machine-readable metadata.",
     "createdAt": "2026-08-02T00:00:00.000Z",
     "modifiedAt": "2026-08-03T08:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "gallery.06-wrong-way-vehicle-blind-approach",
     "tags": [
       "curated-gallery-v2",

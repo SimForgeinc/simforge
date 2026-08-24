@@ -146,6 +146,6 @@ export async function loadBuiltinRenderEngine(
   }
   const binary = typeof options.binary === 'string'
     ? options.binary
-    : process.env.UNISCENARIOS_CARLA_BINARY ?? 'uniscenarios-carla';
+    : process.env.UNISCENARIOS_CARLA_BINARY ?? 'simforge-carla-api';
   return new CarlaProcessEngine(binary);
 }

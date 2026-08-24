@@ -5,7 +5,7 @@
   "description": "A reversing van travels toward the approaching ego while a pedestrian emerges from behind the van and crosses into the ego path at a near-critical time. The van provides the moving occlusion and the pedestrian movement is arrival-synchronized to the ego so the encounter remains challenging across retargeted sites.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C5.pedestrian-reversing-vehicle",
   "tags": [
    "vru",

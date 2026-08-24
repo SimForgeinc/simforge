@@ -5,7 +5,7 @@
   "description": "At a portable ordinary junction, the ego turns left across an opposing straight movement. An oncoming motorcycle is bound to the conflicting junction movement and arrival-timed to enter the conflict shortly before the ego, while refusing collision avoidance so the late conflict remains genuine but survivable.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C3.intersection-left-turn-oncoming-motorcycle",
   "tags": [
    "intersection",

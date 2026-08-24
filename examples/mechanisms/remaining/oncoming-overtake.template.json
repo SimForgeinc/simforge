@@ -1,6 +1,6 @@
 {
   "scenarioVersion": 2,
-  "meta": { "name": "Oncoming vehicle overtakes into ego lane", "description": "A faster vehicle and its slow lead are both bound to the opposing carriageway. The overtaker crosses the centerline onto ego's actual lane path, then attempts to return to the slow vehicle's opposing path.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "uniscenarios/0.0.1", "archetype": "lane-change.oncoming-overtake", "tags": ["lane-change", "oncoming", "overtake", "centerline"], "author": "agent/remaining-mechanisms", "negativeControl": false },
+  "meta": { "name": "Oncoming vehicle overtakes into ego lane", "description": "A faster vehicle and its slow lead are both bound to the opposing carriageway. The overtaker crosses the centerline onto ego's actual lane path, then attempts to return to the slow vehicle's opposing path.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "simforge/0.0.1", "archetype": "lane-change.oncoming-overtake", "tags": ["lane-change", "oncoming", "overtake", "centerline"], "author": "agent/remaining-mechanisms", "negativeControl": false },
   "params": { "declarations": [
     { "id": "returnTtcS", "type": "continuous", "unit": "s", "tier": 1, "range": [1.8, 2.4], "default": 2.1, "distribution": "uniform" },
     { "id": "lateralRateMps", "type": "continuous", "unit": "m/s", "tier": 1, "range": [0.7, 1.4], "default": 1.0, "distribution": "uniform" }

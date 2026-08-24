@@ -5,7 +5,7 @@
   "description": "The ego follows a slow lead vehicle and commits to overtaking on a legal opposing lane. A large roadside vehicle hides an oncoming challenger until the pass is already underway; the challenger refuses to yield, forcing the ego to abandon the pass and return with a small but survivable margin.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C10.oncoming",
   "tags": [
    "oncoming",

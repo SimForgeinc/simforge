@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * V2X trajectory JSON → UniScenarios v2 template converter.
+ * V2X trajectory JSON → SimForge v2 template converter.
  *
  * Ports the authoring format of V2XCarla's `digital_twin_bridge/trajectory_player.py`
  * (READ-ONLY source): both accepted input shapes are handled identically —
@@ -192,7 +192,7 @@ const template = {
     description: `V2XCarla trajectory JSON converted to a timed-route actor on ${MAP_ID}. The vehicle walks the recorded WGS-84 samples as exact scene-space keyframes (customTimedRoute): time owns motion between samples, reproducing trajectory_player.py's timestamp-faithful playback without pure-pursuit drift.`,
     createdAt: now,
     modifiedAt: now,
-    appVersion: 'uniscenarios/0.0.1',
+    appVersion: 'simforge/0.0.1',
     tags: ['v2x-migration', 'trajectory-playback'],
     author: 'v2x-scenario-migration',
     negativeControl: false,

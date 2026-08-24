@@ -1,28 +1,28 @@
 import { NextResponse } from "next/server";
-import { CreateExportSchema } from "@/app/lib/uniscenario/contracts";
-import { createExport, listExports } from "@/app/lib/uniscenario/control-plane-store";
+import { CreateExportSchema } from "@/app/lib/scenario/contracts";
+import { createExport, listExports } from "@/app/lib/scenario/control-plane-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableRevisionContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRevisionContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 export async function GET(request: Request) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const revisionId = new URL(request.url).searchParams.get("revisionId");
   return NextResponse.json(
     { exports: await listExports(auth.context, revisionId) },
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }
 
 export async function POST(request: Request) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const parsed = CreateExportSchema.safeParse(await readJson(request));
   if (!parsed.success) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
   // Exporting is derived work over content the caller may already read, so `read` is the
   // required action -- it does not mutate the dataset (§6.5 action table).
-  const access = await requireUniScenarioMutableRevisionContext(
+  const access = await requireScenarioMutableRevisionContext(
     auth.context,
     parsed.data.revisionId,
     "read",

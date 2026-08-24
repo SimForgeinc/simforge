@@ -5,7 +5,7 @@
     "description": "V2XCarla trajectory JSON converted to a timed-route actor on richmond-field-station. The vehicle walks the recorded WGS-84 samples as exact scene-space keyframes (customTimedRoute): time owns motion between samples, reproducing trajectory_player.py's timestamp-faithful playback without pure-pursuit drift.",
     "createdAt": "2026-08-23T00:00:00.000Z",
     "modifiedAt": "2026-08-23T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "tags": [
       "v2x-migration",
       "trajectory-playback"

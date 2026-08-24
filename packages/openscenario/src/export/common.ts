@@ -36,7 +36,7 @@ function capabilityDecisions(profile: AsamExportProfile): Record<keyof SimScenar
   const replay = profile === 'xml-1.4-trajectory-replay' || profile === 'xml-1.3-esmini-trajectory-replay';
   const xmlActions = profile === 'xml-1.4-actions' || profile === 'xml-1.3-esmini-actions';
   return {
-    schemaVersion: decision('extension', 'metadata-only', 'recorded as UniScenarios provenance, not an ASAM schema version'),
+    schemaVersion: decision('extension', 'metadata-only', 'recorded as SimForge provenance, not an ASAM schema version'),
     mapId: decision('preserved', 'exact', 'represented by the referenced road-network file'),
     clipSeconds: decision('preserved', 'exact', 'represented by the storyboard/scenario duration'),
     warmupSeconds: decision('preserved', 'exact', 'represented by shifting the ASAM clock origin'),
@@ -46,7 +46,7 @@ function capabilityDecisions(profile: AsamExportProfile): Record<keyof SimScenar
     seed: replay
       ? decision('extension', 'metadata-only', 'recorded as replay provenance; stochastic outcomes are baked into the trace')
       : decision('omitted', 'none', 'engine random seed has no portable editable ASAM action equivalent'),
-    physics: decision('extension', 'metadata-only', 'motion/physics mode and solver provenance are retained in UniScenarios Properties; editable ASAM behavior is not claimed to preserve the selected solver'),
+    physics: decision('extension', 'metadata-only', 'motion/physics mode and solver provenance are retained in SimForge Properties; editable ASAM behavior is not claimed to preserve the selected solver'),
     operationalConditions: replay
       ? decision('derived', 'approximate', 'weather, time, visibility and scene friction use standard Environment fields plus exact extension metadata; traffic effects are baked into sampled motion')
       : decision('omitted', 'none', 'this profile does not emit environment/weather/traffic declarations'),
@@ -56,7 +56,7 @@ function capabilityDecisions(profile: AsamExportProfile): Record<keyof SimScenar
     surfacePatches: replay
       ? decision('derived', 'approximate', 'reduced-grip regions are baked into sampled motion and retained as exact extension metadata; localized grip is not a standard OpenSCENARIO road condition')
       : decision('omitted', 'none', 'ASAM road conditions are scene-wide; a bounded low-grip region has no portable equivalent and promoting it to the whole scene would alter the scenario'),
-    metricSubject: decision('omitted', 'none', 'UniScenarios metric evaluation is outside the exported execution model'),
+    metricSubject: decision('omitted', 'none', 'SimForge metric evaluation is outside the exported execution model'),
     actors: replay
       ? decision('derived', 'approximate', 'identity and geometry are preserved; motion is a sampled simulation trace')
       : decision('preserved', xmlActions ? 'approximate' : 'approximate', 'entities, initial state, route, and supported controller behavior are mapped to standard constructs'),
@@ -74,15 +74,15 @@ function capabilityDecisions(profile: AsamExportProfile): Record<keyof SimScenar
     props: decision('omitted', 'none', 'render-catalog props are not emitted by the current profiles'),
     occluders: decision('preserved', 'approximate', 'exported as stationary bounding-box objects without catalog appearance'),
     occlusionPairs: decision('omitted', 'none', 'line-of-sight evaluation pairs are not an ASAM execution concept'),
-    nearMissCriteria: decision('extension', 'metadata-only', 'executable triggers/trajectories are standard; exact OBB-clearance acceptance is retained in UniScenarios Properties'),
+    nearMissCriteria: decision('extension', 'metadata-only', 'executable triggers/trajectories are standard; exact OBB-clearance acceptance is retained in SimForge Properties'),
     // OpenSCENARIO can state fog visual range, precipitation and sun position,
     // but it has no portable notion of *whether a sensor reported an actor*.
     // Replaying a trace bakes the late reaction into the trajectory; the reason
     // for it does not survive, so the declaration is retained as provenance
     // rather than claimed as executable behaviour.
     perception: replay
-      ? decision('derived', 'approximate', 'sensor-driven reactions are baked into the sampled trajectories; the detection channel and its causes are retained only as UniScenarios provenance')
-      : decision('extension', 'metadata-only', 'sensor mounts, detection thresholds and declared map/percept divergence are retained in UniScenarios Properties; ASAM has no portable sensor-detection execution model'),
+      ? decision('derived', 'approximate', 'sensor-driven reactions are baked into the sampled trajectories; the detection channel and its causes are retained only as SimForge provenance')
+      : decision('extension', 'metadata-only', 'sensor mounts, detection thresholds and declared map/percept divergence are retained in SimForge Properties; ASAM has no portable sensor-detection execution model'),
   } satisfies Record<keyof SimScenarioInput, CapabilityDecision>;
 }
 
@@ -155,10 +155,10 @@ function constructCapabilities(
     kind: 'environment',
     disposition: replay && xml ? 'derived' : 'extension',
     fidelity: replay && xml ? 'approximate' : 'metadata-only',
-    representation: replay && xml ? 'standard-environment' : 'uniscenarios-property',
+    representation: replay && xml ? 'standard-environment' : 'simforge-property',
     reason: replay && xml
-      ? 'weather, time of day, visibility and scene friction are emitted as standard Environment fields and exact UniScenarios metadata; traffic density effects remain baked into motion'
-      : 'environment intent is retained only as UniScenarios metadata in this profile',
+      ? 'weather, time of day, visibility and scene friction are emitted as standard Environment fields and exact SimForge metadata; traffic density effects remain baked into motion'
+      : 'environment intent is retained only as SimForge metadata in this profile',
   });
   for (const [index, patch] of input.surfacePatches.entries()) {
     constructs.push({
@@ -167,7 +167,7 @@ function constructCapabilities(
       kind: 'surface-patch',
       disposition: replay ? 'derived' : 'extension',
       fidelity: replay ? 'approximate' : 'metadata-only',
-      representation: replay ? 'simulated-outcome' : 'uniscenarios-property',
+      representation: replay ? 'simulated-outcome' : 'simforge-property',
       reason: replay
         ? 'localized grip effects are baked into sampled motion and the exact authored patch is retained as metadata because OpenSCENARIO has only scene-wide road friction'
         : 'the exact authored patch is metadata-only because OpenSCENARIO has no localized road-friction field',
@@ -190,7 +190,7 @@ function constructCapabilities(
       kind: 'perception',
       disposition: replay ? 'derived' : 'extension',
       fidelity: replay ? 'approximate' : 'metadata-only',
-      representation: replay ? 'simulated-outcome' : 'uniscenarios-property',
+      representation: replay ? 'simulated-outcome' : 'simforge-property',
       reason: replay
         ? 'perception-driven reactions are baked into trajectories and the authored configuration is retained as exact metadata'
         : 'OpenSCENARIO has no portable sensor-detection execution model; the authored configuration is retained as metadata',
@@ -201,8 +201,8 @@ function constructCapabilities(
     kind: 'physics',
     disposition: 'extension',
     fidelity: 'metadata-only',
-    representation: 'uniscenarios-property',
-    reason: 'the selected UniScenarios solver and resolved backend provenance are retained without claiming equivalent external-simulator physics',
+    representation: 'simforge-property',
+    reason: 'the selected SimForge solver and resolved backend provenance are retained without claiming equivalent external-simulator physics',
   });
   return constructs;
 }
@@ -249,7 +249,7 @@ export function analyzeAsamCapabilities(
         warnings.push({
           code: 'actor_tags_omitted',
           path: `actors.${index}.tags`,
-          reason: 'free-form UniScenarios actor tags have no field in the concrete DSL entity declaration profile',
+          reason: 'free-form SimForge actor tags have no field in the concrete DSL entity declaration profile',
         });
       }
     }
@@ -473,7 +473,7 @@ export function resolveScenario(
 
   let staticTimes = new Map<string, number>();
   if (includeStaticTimes) {
-    // ASAM execution begins at UniScenarios' unrecorded warm-up origin. This
+    // ASAM execution begins at SimForge' unrecorded warm-up origin. This
     // preserves pre-roll actions and makes the recorded t=0 occur at
     // ASAM t=warmupSeconds instead of silently dropping the warm-up.
     const resolved = resolveStaticStartTimes(input.interactions, input.warmupSeconds);

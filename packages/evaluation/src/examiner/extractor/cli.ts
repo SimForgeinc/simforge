@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `uniscenarios-extractor` — parse a natural-language episode description
+ * `simforge-extractor` — parse a natural-language episode description
  * into claims.v1 via any OpenAI-compatible endpoint, then optionally grade it
  * against a corpus scenario's engine ground truth.
  *
@@ -8,10 +8,10 @@
  * environment variable named by `--api-key-env`.
  *
  * Examples:
- *   uniscenarios-extractor --endpoint http://localhost:8000/v1 --model qwen2.5-7b-instruct \
+ *   simforge-extractor --endpoint http://localhost:8000/v1 --model qwen2.5-7b-instruct \
  *     --corpus corpus.v1.json --scenario bus-stop-emergence__yale-street__fa9fa19457cf576f \
  *     --description-file desc.txt --grade
- *   echo "The child is occluded..." | uniscenarios-extractor --endpoint ... --model ...
+ *   echo "The child is occluded..." | simforge-extractor --endpoint ... --model ...
  */
 
 import { readFileSync } from 'node:fs';
@@ -36,7 +36,7 @@ interface Flags {
 
 function usage(): string {
   return [
-    'usage: uniscenarios-extractor --endpoint URL --model NAME [options]',
+    'usage: simforge-extractor --endpoint URL --model NAME [options]',
     '',
     '  --endpoint URL            OpenAI-compatible base URL (…/v1)',
     '  --model NAME              model id',

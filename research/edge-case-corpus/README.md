@@ -1,4 +1,4 @@
-# UniScenarios verified edge-case corpus
+# SimForge verified edge-case corpus
 
 **20 gold instances · 2 archetypes · all five maps · 16 distinct sites**
 

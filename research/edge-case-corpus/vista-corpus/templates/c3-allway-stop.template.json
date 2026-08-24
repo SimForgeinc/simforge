@@ -5,7 +5,7 @@
   "description": "The ego and a cross-traffic vehicle approach a junction and both proceed through the conflict. The cross-traffic vehicle ignores its stop or yield obligation and is back-solved to enter the ego path at near-critical timing, forcing a late, contact-free evasive response without contact.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C3.intersection-all-way-stop-violation",
   "tags": [
    "intersection",

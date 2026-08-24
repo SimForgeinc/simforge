@@ -195,7 +195,7 @@ function message(action: () => unknown): string {
   }
 }
 
-describe('UniScenarios concrete playback import', () => {
+describe('SimForge concrete playback import', () => {
   it('identifies an immutable full-duration preview and requires exact trace parity', () => {
     const fixture = pair();
     const bundle = parsePlaybackPair(fixture.instance, fixture.trace);

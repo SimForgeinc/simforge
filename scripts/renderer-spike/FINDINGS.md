@@ -23,7 +23,7 @@ rendered at the W0 `baseline-midblock` frame-0 POV pose (eye 580.45, 14.44, −1
   2. `dequantize` converts KHR-mesh-quantized int16 positions/normals to f32 (Bevy rejects quantized POSITION).
   - Result: clean float32 GLBs with PNG textures; originals untouched. Pipeline is ~6 s for all 5 files.
   - **Caveat discovered:** dev-assets symlink was retargeted mid-session; source tiles now live at
-    `/home/path/local-uniscenarios/maps/<map>/browser/3d/tiles`. Preprocess script should take that root.
+    `/home/path/local-simforge/maps/<map>/browser/3d/tiles`. Preprocess script should take that root.
 - Lighting to approximate the W0 clear-day look: DirectionalLight 12 000 lux (elev 60°, azim 190°) with 4-cascade
   2048px shadow maps, GlobalAmbientLight 1.2, AgX tonemapping (same family as three.js path's AgX), clear-blue sky.
 - Vegetation tiles (`veg_*.glb`) were excluded from the corpus run (WebP textures + alpha cutout untested in Bevy).
@@ -130,7 +130,7 @@ would need a golden-hash-per-GPU policy rather than a universal hash.
 
 ## 8. Recommendation
 
-**GO** for adopting Bevy headless as UniScenarios' deterministic sensor renderer.
+**GO** for adopting Bevy headless as SimForge' deterministic sensor renderer.
 
 - Bit-exact determinism achieved immediately (hash-verified RGB/ID/Depth), something the Chrome/screenshot path
   cannot promise.

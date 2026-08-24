@@ -5,7 +5,7 @@
   "description": "A stopped roadside bus hides a cyclist approaching its front. The cyclist then crosses into the ego lane at a back-solved near-conflict time, forcing a late but survivable response.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C7.occlusion",
   "tags": [
    "occlusion",

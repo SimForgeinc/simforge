@@ -1,4 +1,4 @@
-# UniScenarios — agent-authoring architecture
+# SimForge — agent-authoring architecture
 > **Historical architecture:** Pre-rebrand package, CLI, and application names
 > are retained verbatim below.
 
@@ -30,7 +30,7 @@ validator and reject filters do the quality control the model can't.
 │ 5. GENERATION  Claude workflows: archetype → template → sites  │
 │                → draws → simulate → filter → triage            │
 ├────────────────────────────────────────────────────────────────┤
-│ 4. AGENT CLI   `uniscenarios` — query/author/bind/sample/sim/validate/ │
+│ 4. AGENT CLI   `simforge` — query/author/bind/sample/sim/validate/ │
 │                evaluate/render; JSON I/O; structured errors    │
 ├────────────────────────────────────────────────────────────────┤
 │ 3. ENGINE      deterministic fixed-dt sim (headless == editor  │
@@ -126,32 +126,32 @@ matcher so the UI and the CLI emit one unified quality report.
   residuals, collision flags. The metrics block is what filters and evaluators
   consume; the pose block is what the editor scrubs and the renderer replays.
 
-## 5. Layer 4 — the agent CLI (`packages/cli`, new; bin: `uniscenarios`)
+## 5. Layer 4 — the agent CLI (`packages/cli`, new; bin: `simforge`)
 
 JSON-in/JSON-out subcommands, exit codes meaningful, all errors structured
 (`{code, path, reason}`) so unattended repair loops work:
 
 ```
-uniscenarios maps list
-uniscenarios locations find   --map <id> [--type --tags --near <handle> --within-m ...]
-uniscenarios locations get    <handle|id> [--describe]      # NL paragraph for grounding
-uniscenarios locations resolve "<free text>"                # fuzzy → ranked handles
-uniscenarios template new    [--out --map --site]          # deterministic v2 skeleton
-uniscenarios template validate <file>                       # schema + tier-1
-uniscenarios sites match      <template> --map <id> [--all-maps --min-score]
-uniscenarios instantiate      <template> --site <siteId> [--seed N | --draws K]
-uniscenarios simulate         <instance|template+site> [--trace out.trace.json]
-uniscenarios validate         <instance> [--tier 2]         # includes sim-backed checks
-uniscenarios evaluate         <trace>    [--filters critical|negative-control]
-uniscenarios evidence verify  <instance> <trace.json.gz>    # shared-input-hash proof
-uniscenarios import           <file.xosc> [--map --out]     # OpenSCENARIO 1.4 → v2 draft
-uniscenarios export           <instance> --format xosc-1.4|xosc-1.3-esmini|osc-2.2 --out f
-uniscenarios render run       <render-intent> --engine browser|carla --inputs m --out dir/
-uniscenarios render hash      <render-intent>               # canonical SHA-256 identity
-uniscenarios batch            <template> --maps ... --draws N --out dir/   # the matrix
+simforge maps list
+simforge locations find   --map <id> [--type --tags --near <handle> --within-m ...]
+simforge locations get    <handle|id> [--describe]      # NL paragraph for grounding
+simforge locations resolve "<free text>"                # fuzzy → ranked handles
+simforge template new    [--out --map --site]          # deterministic v2 skeleton
+simforge template validate <file>                       # schema + tier-1
+simforge sites match      <template> --map <id> [--all-maps --min-score]
+simforge instantiate      <template> --site <siteId> [--seed N | --draws K]
+simforge simulate         <instance|template+site> [--trace out.trace.json]
+simforge validate         <instance> [--tier 2]         # includes sim-backed checks
+simforge evaluate         <trace>    [--filters critical|negative-control]
+simforge evidence verify  <instance> <trace.json.gz>    # shared-input-hash proof
+simforge import           <file.xosc> [--map --out]     # OpenSCENARIO 1.4 → v2 draft
+simforge export           <instance> --format xosc-1.4|xosc-1.3-esmini|osc-2.2 --out f
+simforge render run       <render-intent> --engine browser|carla --inputs m --out dir/
+simforge render hash      <render-intent>               # canonical SHA-256 identity
+simforge batch            <template> --maps ... --draws N --out dir/   # the matrix
 ```
 
-`uniscenarios locations`/`sites`/`simulate` are the LLM's spatial awareness: the model
+`simforge locations`/`sites`/`simulate` are the LLM's spatial awareness: the model
 never sees raw road IDs — it queries by semantics, receives handles + poses +
 `matchedReasons`, and authors against handles and roles. Tool wrappers for MCP
 come later; the CLI contract is the stable surface. Per-call result caps and
@@ -169,12 +169,12 @@ replay key):
                       × site class × criticality band)
 2. TEMPLATE AUTHORING one agent per archetype family: emit LogicalAnchor +
                       choreography via constrained decoding against the
-                      published JSON Schemas; `uniscenarios template validate` in a
+                      published JSON Schemas; `simforge template validate` in a
                       repair loop (structured errors back to the model)
-3. SITE MATCHING      `uniscenarios sites match --all-maps` (mechanical, no LLM)
-4. SAMPLING           `uniscenarios batch` — per-cell seeds, Tier-1 axes from the
+3. SITE MATCHING      `simforge sites match --all-maps` (mechanical, no LLM)
+4. SAMPLING           `simforge batch` — per-cell seeds, Tier-1 axes from the
                       archetype's parameter table
-5. SIM + FILTER       `uniscenarios simulate` + `uniscenarios evaluate`: drop trivially-safe
+5. SIM + FILTER       `simforge simulate` + `simforge evaluate`: drop trivially-safe
                       (unless tagged negative-control), physically-unavoidable,
                       never-fired, clipped-criticality instances
 6. TRIAGE             agents review outliers + a sample per cell (traces, not
@@ -204,7 +204,7 @@ goal is a few dozen good templates, not a few thousand model calls.
 packages/map-intel        L1: catalog build + derived topology (+ conflictPairs)
 packages/scenario-model   L2: template v2 schema, matcher, solver, validator
 packages/sim-engine       L3: engine + trace + metrics
-packages/cli              L4: uniscenarios
+packages/cli              L4: simforge
 packages/prop-catalog     L3 props (in flight now)
 workflows/                L5: generation scripts + coverage ledger
 ```
@@ -218,7 +218,7 @@ Build order (each step usable on its own):
 | C | sim-engine v0: lane-follow + speed/gap/route verbs + time triggers + trace | preview, filters |
 | D | matcher v0 (junction-anchored) + arrival solver + tier-2 validator | retargeting |
 | E | CLI over A–D | agents |
-| F | remaining verbs/conditions, degradation repairs, `uniscenarios batch` | scale generation |
+| F | remaining verbs/conditions, degradation repairs, `simforge batch` | scale generation |
 | G | first workflow campaign (one archetype family, e.g. CPNCO dart-out) as the end-to-end proof | the 1000-scenario program |
 
 A note on sequencing vs the render chain: A–E are renderer-independent and can

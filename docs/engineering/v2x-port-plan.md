@@ -1,12 +1,12 @@
-# V2XCarla → UniScenarios Port Plan
-> **Historical plan:** Pre-rebrand UniScenarios package, CLI, and adapter names
+# V2XCarla → SimForge Port Plan
+> **Historical plan:** Pre-rebrand SimForge package, CLI, and adapter names
 > are retained verbatim below.
 
 
 Status: proposed 2026-08-22, grounded in read-only scout surveys of
-/home/path/V2XCarla (V2XScout) and the UniScenarios capability map
+/home/path/V2XCarla (V2XScout) and the SimForge capability map
 (V2XMapScout). Goal: the digital-twin product runs entirely on the
-UniScenarios backend — engine, native renderer, facade — with the CARLA
+SimForge backend — engine, native renderer, facade — with the CARLA
 container retired, while both existing frontends keep working unmodified.
 
 ## What V2XCarla actually is (evidence-based)
@@ -27,7 +27,7 @@ The active product is a **digital-twin bridge**, not a J2735 stack:
   moving geofences (CARLA debug-draw), EVA alerts, weather control, ego
   semantic-seg + depth rig at 10 Hz, 4 calibrated Richmond site cameras.
 - Frontends: legacy SvelteKit dashboard + new Three.js client that **already
-  consumes UniScenarios JS packages** for map assets — the port direction is
+  consumes SimForge JS packages** for map assets — the port direction is
   half-travelled.
 
 ## Port thesis
@@ -57,7 +57,7 @@ Engine/env-server work that everything else consumes:
 - Fixes WSB7's known gap (non-ego transforms were perception-derived).
 
 ### V2 — BridgePort (the product)
-Reimplement `digital_twin_bridge` on UniScenarios, preserving the WS
+Reimplement `digital_twin_bridge` on SimForge, preserving the WS
 protocol: drive sessions (spawn ego, VehicleControl passthrough, telemetry),
 `/world` 10 Hz snapshots from TruthStream, `/twin` replay clock, historical
 scene reconstruction and live detection mirroring (HTTP poller unchanged —
@@ -88,7 +88,7 @@ profile for perception.
 
 ### V5 — MapParity (highest-risk, start immediately)
 Production pins Richmond XODR sha256 `0737f3d9…` (208 roads/32 junctions);
-UniScenarios' bundle pins `80704cd1…` (April 2026 RoadRunner export) — same
+SimForge' bundle pins `80704cd1…` (April 2026 RoadRunner export) — same
 lineage, **different topology revision**, and the repo itself warns lineages
 are not interchangeable. The 4 site-camera calibrations and zone geometries
 depend on exact projection (legacy flat-earth actor transform vs proj4 map
@@ -99,7 +99,7 @@ Uni revision. Deliver a digest-pinned coordinate-contract doc + golden
 projection fixtures either way.
 
 ### V6 — ScenarioMigration
-Retire patched ScenarioRunner: import the `.xosc` scenarios (UniScenarios
+Retire patched ScenarioRunner: import the `.xosc` scenarios (SimForge
 `import` exists; firetruck N/S + samples are map-local and small), port
 trajectory JSON authoring, map the 5 traffic presets onto ambient-traffic
 configs, and re-express EVA firetruck choreography as a catalog template.

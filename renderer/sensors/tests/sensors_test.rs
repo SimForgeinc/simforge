@@ -128,7 +128,7 @@ fn tmerc_inverse_matches_reference() {
 #[test]
 fn rig_parses_pronto_program() {
     let path = concat!(
-        "/home/path/UniScenarios/qualification/",
+        "/home/path/SimForge/qualification/",
         "render-qualification-program.v1.json"
     );
     let Ok(text) = std::fs::read_to_string(path) else {

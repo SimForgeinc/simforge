@@ -1,6 +1,6 @@
 /**
  * `./opendrive.js` — OpenDRIVE georeferencing and map-overlay data
- * for UniScenarios.
+ * for SimForge.
  *
  * Three layers, all renderer-agnostic:
  *

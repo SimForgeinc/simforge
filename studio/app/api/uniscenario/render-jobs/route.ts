@@ -1,38 +1,38 @@
 import { NextResponse } from "next/server";
-import { SubmitUniScenarioRenderIntentSchema } from "@/app/lib/uniscenario/render-wire-contracts";
-import { listRenderJobs } from "@/app/lib/uniscenario/control-plane-store";
-import { createRenderIntentJob } from "@/app/lib/uniscenario/render-intent-store";
+import { SubmitScenarioRenderIntentSchema } from "@/app/lib/scenario/render-wire-contracts";
+import { listRenderJobs } from "@/app/lib/scenario/control-plane-store";
+import { createRenderIntentJob } from "@/app/lib/scenario/render-intent-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableRevisionContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRevisionContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 export async function GET() {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   return NextResponse.json(
     { renderJobs: await listRenderJobs(auth.context) },
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }
 
 export async function POST(request: Request) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const body = await readJson(request);
-  const parsed = SubmitUniScenarioRenderIntentSchema.safeParse(body);
+  const parsed = SubmitScenarioRenderIntentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid_render_job", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
-  const access = await requireUniScenarioMutableRevisionContext(
+  const access = await requireScenarioMutableRevisionContext(
     auth.context,
     parsed.data.revisionId,
     "read",

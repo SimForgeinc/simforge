@@ -5,7 +5,7 @@
     "description": "The focus vehicle passes a roadside police stop where a stopped vehicle, officer-side activity, and adjacent traffic constrain the available lane. This curated 20-second scenario uses only currently supported behaviors; adaptations are declared in machine-readable metadata.",
     "createdAt": "2026-08-02T06:30:00.000Z",
     "modifiedAt": "2026-08-03T08:00:00.000Z",
-    "appVersion": "uniscenarios/0.1.0-editor",
+    "appVersion": "simforge/0.1.0-editor",
     "archetype": "gallery.02-police-roadside-stop",
     "tags": [
       "curated-gallery-v2",

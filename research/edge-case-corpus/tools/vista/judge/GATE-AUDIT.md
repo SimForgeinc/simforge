@@ -3,7 +3,7 @@
 Independent evaluation lane. Everything below is reproduced by two scripts in this directory:
 
 ```bash
-cd /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista
+cd /Users/michaelvu-simforge/Documents/Programming/SimForge-vista
 MPLBACKEND= .venv/bin/python research/edge-case-corpus/tools/vista/judge/check_obb.py     # geometry cross-check
 MPLBACKEND= .venv/bin/python research/edge-case-corpus/tools/vista/judge/gate_probes.py   # 11 adversarial probes
 ```
@@ -354,7 +354,7 @@ I took your gold template, changed exactly one number — `props[0].pose.tFrac: 
 parked SUVs now sit in the **centre of the ego's own lane** — and ran it:
 
 ```bash
-node packages/cli/bin/uniscenarios.js batch /tmp/judge-propinlane.template.json \
+node packages/cli/bin/simforge.js batch /tmp/judge-propinlane.template.json \
   --all-maps --draws 1 --max-sites 3 --out /tmp/judge-a2 --concurrency 2
 ```
 
@@ -445,7 +445,7 @@ at the first tick. It is a one-line assertion that removes an entire class of si
 ## 9. Real-batch sanity run (28 cells)
 
 ```bash
-node packages/cli/bin/uniscenarios.js batch \
+node packages/cli/bin/simforge.js batch \
   research/edge-case-corpus/templates/expA-child-dartout-two-cars.template.json \
   --all-maps --draws 4 --max-sites 6 --out /tmp/judge-a1 --concurrency 3
 ```

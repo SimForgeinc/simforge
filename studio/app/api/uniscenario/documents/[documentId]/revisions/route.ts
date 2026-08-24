@@ -1,38 +1,38 @@
 import { NextResponse } from "next/server";
 import {
-  CreateUniScenarioRevisionSchema,
-  type CreateUniScenarioRevisionResultDto,
-  type UniScenarioConflictDto,
-} from "@/app/lib/uniscenario/contracts";
+  CreateScenarioRevisionSchema,
+  type CreateScenarioRevisionResultDto,
+  type ScenarioConflictDto,
+} from "@/app/lib/scenario/contracts";
 import {
-  createUniScenarioRevision,
-  listUniScenarioRevisions,
-} from "@/app/lib/uniscenario/document-store";
+  createScenarioRevision,
+  listScenarioRevisions,
+} from "@/app/lib/scenario/document-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableDocumentContext,
-  requireUniScenarioMutationOrigin,
-  uniScenarioJsonWithEtag,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableDocumentContext,
+  requireScenarioMutationOrigin,
+  scenarioJsonWithEtag,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ documentId: string }> };
 
 export async function GET(request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { documentId } = await route.params;
-  return await uniScenarioJsonWithEtag(request, {
-    revisions: await listUniScenarioRevisions(auth.context, documentId),
+  return await scenarioJsonWithEtag(request, {
+    revisions: await listScenarioRevisions(auth.context, documentId),
   });
 }
 
 export async function POST(request: Request, route: Context) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
-  const parsed = CreateUniScenarioRevisionSchema.safeParse(await readJson(request));
+  const parsed = CreateScenarioRevisionSchema.safeParse(await readJson(request));
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid_revision", details: parsed.error.flatten() },
@@ -41,18 +41,18 @@ export async function POST(request: Request, route: Context) {
   }
   const { documentId } = await route.params;
   // Cutting a revision advances documents.latest_revision_id, so this is a content mutation.
-  const access = await requireUniScenarioMutableDocumentContext(
+  const access = await requireScenarioMutableDocumentContext(
     auth.context,
     documentId,
     "mutateContent",
   );
   if (access.response) return access.response;
-  const result = await createUniScenarioRevision(auth.context, documentId, parsed.data);
+  const result = await createScenarioRevision(auth.context, documentId, parsed.data);
   if (result.kind === "not_found") {
     return NextResponse.json({ error: "document_not_found" }, { status: 404 });
   }
   if (result.kind === "conflict") {
-    const body: UniScenarioConflictDto = {
+    const body: ScenarioConflictDto = {
       error: "draft_version_conflict",
       refetch: true,
       currentDraftVersion: result.current.draftVersion,
@@ -60,7 +60,7 @@ export async function POST(request: Request, route: Context) {
     };
     return NextResponse.json(body, { status: 409 });
   }
-  const body: CreateUniScenarioRevisionResultDto = {
+  const body: CreateScenarioRevisionResultDto = {
     revisionId: result.revision.id,
     exportId: result.revision.export.id,
     exportStatus: result.revision.export.status,

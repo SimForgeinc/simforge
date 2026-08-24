@@ -14,7 +14,7 @@ Lineage evidence:
 | Frame | Units / axes | Defined by | Used by |
 |---|---|---|---|
 | **WGS-84** | degrees, `[lat, lon]` | EPSG:4326 | detection HTTP API, trajectories, cameras.json site, zones (as `[lon, lat]` pairs) |
-| **xodr-local** | metres, x-east / y-north / z-up | the XODR `<geoReference>` PROJ string | all UniScenarios map assets, topology index, engine, scene frame |
+| **xodr-local** | metres, x-east / y-north / z-up | the XODR `<geoReference>` PROJ string | all SimForge map assets, topology index, engine, scene frame |
 | **legacy flat-earth** ("CARLA world") | metres, x-east / **y = negated northing** (UE4 left-handed) | `geo_utils.py` CARLA 0.10 path — an equirectangular approximation around the map origin, *not* strict tmerc | every calibrated artifact of the deployed twin: camera poses, zone placement, trajectory playback, detection mirroring |
 
 Richmond georeference (identical in both lineages):

@@ -5,7 +5,7 @@
     "description": "A worker is initially stationary and partially screened by a collidable static work van at the road edge. The worker then commits without yielding, crosses into ego's lane on a bounded path, clears it, and stops in a stable refuge position instead of disappearing or reversing.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "workzone.worker-intrusion",
     "tags": ["work-zone", "worker", "intrusion", "occlusion", "static-work-vehicle"],
     "author": "agent/school-workzone-mechanisms",

@@ -1,6 +1,6 @@
-# `@simforge/cli` — `uniscenarios`
+# `@simforge/cli` — `simforge`
 
-`uniscenarios` is the canonical command. The shorter `scen` executable remains
+`simforge` is the canonical command. The shorter `scen` executable remains
 available as a compatibility alias for existing automation.
 
 Layer 4 of `docs/agent-authoring-architecture.md`: the surface an LLM agent
@@ -9,8 +9,8 @@ against the published JSON Schemas, match it onto concrete sites, sample it into
 thousands of instances, simulate, filter, triage.
 
 ```bash
-node packages/cli/bin/uniscenarios.js sites match examples/ltap-opposing.template.json --all-maps --pretty
-node packages/cli/bin/uniscenarios.js batch examples/ltap-opposing.template.json --all-maps --draws 5 --out out/
+node packages/cli/bin/simforge.js sites match examples/ltap-opposing.template.json --all-maps --pretty
+node packages/cli/bin/simforge.js batch examples/ltap-opposing.template.json --all-maps --draws 5 --out out/
 ```
 
 ## The contract
@@ -29,39 +29,39 @@ That 1-vs-2 split is the whole reason an unattended repair loop works: `1` means
 ## Commands
 
 ```
-uniscenarios maps list
-uniscenarios locations find    --map <id> [--type --subtype --tags --affordances
+simforge maps list
+simforge locations find    --map <id> [--type --subtype --tags --affordances
                                    --facts k=v,k2>=v2 --near <handle>
                                    --within-m N --limit N --diversity-m N]
-uniscenarios locations get     <handleOrId> --map <id> [--describe]
-uniscenarios locations resolve --map <id> "<free text>"
-uniscenarios template validate <file> [--map <id> [--site <siteId>]]
-uniscenarios sites match       <template.json> --map <id> | --maps a,b | --all-maps
+simforge locations get     <handleOrId> --map <id> [--describe]
+simforge locations resolve --map <id> "<free text>"
+simforge template validate <file> [--map <id> [--site <siteId>]]
+simforge sites match       <template.json> --map <id> | --maps a,b | --all-maps
                        [--min-score --max-sites --rejected]
-uniscenarios instantiate       <template.json> --map <id> --site <siteId>
+simforge instantiate       <template.json> --map <id> --site <siteId>
                        [--seed <hex> | --draw K] [--out file]
-uniscenarios simulate          <instance.json> [--trace out.trace.json.gz]
-uniscenarios debug             <template|instance.json>
+simforge simulate          <instance.json> [--trace out.trace.json.gz]
+simforge debug             <template|instance.json>
                        [--map ID --site ID --draw K --seed S]
                        [--provider native|sumo --ambient-count N]
                        [--duration S --sample S --out DIR]
                        [--compare prior-report.json]
                        [--fail-on-collision --fail-on-road-departure
                         --fail-on-fallback --fail-on-never-fired]
-uniscenarios validate          <instance|template> [--tier 1|2 --map --site --draw]
-uniscenarios evaluate          <trace> [--filter critical|negative-control|all]
+simforge validate          <instance|template> [--tier 1|2 --map --site --draw]
+simforge evaluate          <trace> [--filter critical|negative-control|all]
                        [--trivial-ttc S --reject-collisions]
-uniscenarios evidence verify   <instance.json> <trace.json.gz>
-uniscenarios export            <instance.json> --format xosc-1.4|xosc-1.3-esmini|osc-2.2 --out <file>
+simforge evidence verify   <instance.json> <trace.json.gz>
+simforge export            <instance.json> --format xosc-1.4|xosc-1.3-esmini|osc-2.2 --out <file>
                        [--road-file map.xodr --route-sample-m 20]
-uniscenarios catalog create    --out <catalog.json> [--namespace ID --evidence-root DIR]
-uniscenarios catalog verify    <catalog.json> [--evidence-root DIR --require-evidence]
-uniscenarios catalog batch     <catalog.json> [--ledger FILE --slots a,b --map ID]
+simforge catalog create    --out <catalog.json> [--namespace ID --evidence-root DIR]
+simforge catalog verify    <catalog.json> [--evidence-root DIR --require-evidence]
+simforge catalog batch     <catalog.json> [--ledger FILE --slots a,b --map ID]
                                [--allow-collisions]
                        [--mechanisms a,b --attempts N --concurrency N --force]
-uniscenarios batch             <template.json> --maps a,b,c --draws N --out dir/
+simforge batch             <template.json> --maps a,b,c --draws N --out dir/
                        [--concurrency N --min-score --max-sites --force --no-trace]
-uniscenarios schemas           [--name template|anchor|interactions] [--content]
+simforge schemas           [--name template|anchor|interactions] [--content]
 ```
 
 ## Headless scenario debugging
@@ -75,21 +75,21 @@ shared `@simforge/engine` used by Studio playback.
 
 ```bash
 # Full JSON report on stdout (every native tick by default).
-node packages/cli/bin/uniscenarios.js debug \
+node packages/cli/bin/simforge.js debug \
   examples/edge-cases/05-ambulance-gridlocked-intersection/instance.baseline.json
 
 # Agent-friendly artifact directory, sampled at 10 Hz, with strict gates.
-node packages/cli/bin/uniscenarios.js debug scenario.json \
+node packages/cli/bin/simforge.js debug scenario.json \
   --sample 0.1 --out /tmp/scenario-debug \
   --fail-on-road-departure --fail-on-fallback --fail-on-never-fired
 
 # Run packaged SUMO-Wasm ambient traffic alongside the canonical authored run.
 SCEN_DEV_ASSETS=/absolute/path/to/dev-assets \
-node packages/cli/bin/uniscenarios.js debug scenario.json \
+node packages/cli/bin/simforge.js debug scenario.json \
   --provider sumo --ambient-count 32 --sample 0.05 --out /tmp/sumo-debug
 
 # Deterministic regression comparison. Exit 2 if path deltas exceed tolerance.
-node packages/cli/bin/uniscenarios.js debug scenario.json \
+node packages/cli/bin/simforge.js debug scenario.json \
   --sample 0.1 --compare /tmp/scenario-debug/report.json \
   --position-tolerance-m 0.001 --speed-tolerance-mps 0.001
 ```
@@ -122,12 +122,12 @@ its internal traffic-light phase; those limitations are explicit in the report.
 
 ## ASAM interchange
 
-`uniscenarios export` targets the current official releases: ASAM OpenSCENARIO XML
+`simforge export` targets the current official releases: ASAM OpenSCENARIO XML
 1.4.0 (`.xosc`) and ASAM OpenSCENARIO DSL 2.2.0 (`.osc`). It exports the
 **concrete instance**, after matching, parameter sampling and arrival solving.
 Every lane/follow/polyline route is resolved through the instance map graph and
 sampled into world-coordinate waypoints, so an exported file never mistakes
-UniScenarios' lane-local `rsl:s` for OpenDRIVE road `s`.
+SimForge' lane-local `rsl:s` for OpenDRIVE road `s`.
 
 `xosc-1.3-esmini` is a separate compatibility target for a pinned external
 esmini runner. It is authored as OpenSCENARIO XML 1.3.1 and never relabels the
@@ -163,14 +163,14 @@ phase conditions reference the first ordered physical controller in the bound
 program. The complete controller/head closure is retained in header
 properties. Controller offsets are represented by rotating (and, when
 necessary, splitting) the phase cycle. A
-persistent UniScenarios signal override is rejected in the action profile
+persistent SimForge signal override is rejected in the action profile
 because an XML phase action does not have the same semantics. DSL 2.2 supports statically resolvable `at`/`after`
 schedules, linear speed transitions, time-constrained lane changes, gaps and
 metre lane offsets.
 
 The ASAM timeline starts at the beginning of the instance warm-up. Therefore an
 engine trigger at `t` is exported at `t + warmupSeconds`, and the ASAM stop time
-is `warmupSeconds + clipSeconds`. The recorded UniScenarios `t=0` remains the
+is `warmupSeconds + clipSeconds`. The recorded SimForge `t=0` remains the
 same physical instant instead of silently dropping pre-roll behavior.
 
 When the input is a materialized instance file, replay-key fields and its input
@@ -182,7 +182,7 @@ The command never silently substitutes a different behavior. Unsupported
 controller rules, dynamics, conditions, deadlines, entity lifecycle, signal
 bindings, fixed props, static road controls, or action forms produce exit 2 with
 `{code:"asam_export_unsupported", detail:{issues:[{code,path,reason}]}}`.
-UniScenarios-only metric subjects and occlusion-evaluation pairs are reported as
+SimForge-only metric subjects and occlusion-evaluation pairs are reported as
 warnings; their physical actors and occluders are still exported.
 
 The default referenced road file is `<mapId>.xodr`. Use `--road-file` to write
@@ -217,7 +217,7 @@ that need it.
 
 ## The materializer
 
-`uniscenarios instantiate` is the only genuinely new code in this package — everything
+`simforge instantiate` is the only genuinely new code in this package — everything
 else composes the four packages below it. The four layers are each deliberately
 incomplete: the matcher does the *structural* pass and stops, the engine takes a
 *fully resolved* document and refuses anything less. `src/materialize.ts` is the
@@ -267,7 +267,7 @@ bookkeeping.
 
 ### Traffic-light materialization
 
-On signalized sites with OpenDRIVE controller data, UniScenarios binds the
+On signalized sites with OpenDRIVE controller data, SimForge binds the
 physical map head ids, junction controller sequences and concrete gate
 movements into engine `signalPrograms`. Stop lines retain their junction
 connecting-lane filter, so a protected turn head cannot govern an unrelated
@@ -291,20 +291,20 @@ Every instance carries the key that reproduces it:
   "matcherVersion": "…", "solverVersion": "…", "paramSeed": "…", "drawIndex": 0 }
 ```
 
-`uniscenarios batch` resumes on all of it, not just the seed: a cached verdict from an
+`simforge batch` resumes on all of it, not just the seed: a cached verdict from an
 older matcher or an older engine is exactly the stale answer a resumable batch
 exists to prevent.
 
 ## Deterministic five-map catalog
 
-`uniscenarios catalog create` reserves exactly **100 identities on each of the five
+`simforge catalog create` reserves exactly **100 identities on each of the five
 supported maps** (500 total) before expensive generation begins. Every slot
 carries the map catalog revision and topology digest, template source/digest and
 archetype category, a coordinate-derived SHA-256 seed, status, and reserved
 instance/trace/result/frame/video/inspection paths. The output has no clock
 field: identical templates and map provenance produce byte-identical JSON.
 
-`uniscenarios catalog verify` rejects changed seeds or identities, duplicate identities
+`simforge catalog verify` rejects changed seeds or identities, duplicate identities
 or seeds, missing/duplicate ordinals, anything other than the canonical 5 × 100
 shape, provenance drift, unsafe evidence paths, and a stale catalog digest.
 `reserved` slots do not pretend evidence exists. Advancing status makes evidence
@@ -344,7 +344,7 @@ For a cancellable campaign, invoke the CLI process directly so `SIGINT` and
 wrapper first:
 
 ```bash
-node packages/cli/bin/uniscenarios.js catalog batch \
+node packages/cli/bin/simforge.js catalog batch \
   catalog/uniscenarios-five-map-v2.catalog.json \
   --ledger catalog/catalog-execution-ledger.json \
   --attempts 3 --concurrency 4 --filter all --pretty
@@ -359,7 +359,7 @@ number and deterministic seed are retried rather than consumed.
 
 ## Current execution boundaries
 
-Stated plainly, because they bound what a number from `uniscenarios` means:
+Stated plainly, because they bound what a number from `simforge` means:
 
 - **Physical signal timing is explicit about provenance.** OpenDRIVE controller,
   stage, and head membership are map-bound. Where the map has no authoritative

@@ -29,7 +29,7 @@ export type DatasetSplit = z.infer<typeof DatasetSplitSchema>;
 export const DatasetSnapshotItemSchema = z.object({
   datasetSnapshotId: z.string().min(1),
   artifactId: z.string().min(1),
-  artifactCatalog: z.enum(["legacy", "uniscenario"]).optional(),
+  artifactCatalog: z.enum(["legacy", "scenario"]).optional(),
   sampleKey: z.string().nullable().optional(),
   sequenceId: z.string().nullable().optional(),
   split: DatasetSplitSchema.default("unsplit"),

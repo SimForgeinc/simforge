@@ -5,7 +5,7 @@
     "description": "A static high-roof delivery van blocks the kerbside travel lane and occludes a delivery worker who walks around its front as ego moves left to pass.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "parking.delivery-double-park",
     "tags": ["parking", "delivery", "double-parked", "static-obstruction", "worker", "occlusion"],
     "author": "agent/parking-transit-mechanisms",

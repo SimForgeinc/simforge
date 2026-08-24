@@ -113,7 +113,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       });
       try {
         const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-        await page.exposeFunction('__uniscenariosArtifactOpen', async (identity: ArtifactIdentity, mediaType: string) => {
+        await page.exposeFunction('__simforgeArtifactOpen', async (identity: ArtifactIdentity, mediaType: string) => {
           const handle = `artifact-${outputs.size}`;
           const relativePath = artifactRelativePath(identity, mediaType);
           const absolutePath = path.join(context.workspace, relativePath);
@@ -121,25 +121,25 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
           outputs.set(handle, { identity, mediaType, relativePath, stream: createWriteStream(absolutePath, { flags: 'wx' }), closed: false });
           return handle;
         });
-        await page.exposeFunction('__uniscenariosArtifactWrite', async (handle: string, base64: string) => {
+        await page.exposeFunction('__simforgeArtifactWrite', async (handle: string, base64: string) => {
           const output = requiredOutput(outputs, handle);
           const bytes = Buffer.from(base64, 'base64');
           if (!output.stream.write(bytes)) await new Promise<void>((resolve, reject) => { output.stream.once('drain', resolve); output.stream.once('error', reject); });
         });
-        await page.exposeFunction('__uniscenariosArtifactClose', async (handle: string) => {
+        await page.exposeFunction('__simforgeArtifactClose', async (handle: string) => {
           const output = requiredOutput(outputs, handle);
           if (output.closed) throw new Error(`Artifact ${handle} was closed more than once.`);
           output.closed = true;
           await new Promise<void>((resolve, reject) => { output.stream.end(resolve); output.stream.once('error', reject); });
         });
-        await page.exposeFunction('__uniscenariosArtifactAbort', async (handle: string) => {
+        await page.exposeFunction('__simforgeArtifactAbort', async (handle: string) => {
           const output = outputs.get(handle);
           if (!output || output.closed) return;
           output.closed = true;
           output.stream.destroy();
           await fs.rm(path.join(context.workspace, output.relativePath), { force: true });
         });
-        await page.exposeFunction('__uniscenariosProgress', async (line: string) => {
+        await page.exposeFunction('__simforgeProgress', async (line: string) => {
           const progress = JSON.parse(line) as { event?: string; completedFrames?: number; totalFrames?: number };
           if (progress.event !== 'frame') return;
           await context.reportProgress({
@@ -151,12 +151,12 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         await page.addInitScript(() => {
           const root = globalThis as typeof globalThis & Record<string, (...args: unknown[]) => Promise<unknown>>;
           Object.assign(globalThis, {
-            __uniscenariosArtifactBridge: {
-              open: (identity: unknown, mediaType: string) => root.__uniscenariosArtifactOpen!(identity, mediaType),
-              write: (handle: string, base64: string) => root.__uniscenariosArtifactWrite!(handle, base64),
-              close: (handle: string) => root.__uniscenariosArtifactClose!(handle),
-              abort: (handle: string, message: string) => root.__uniscenariosArtifactAbort!(handle, message),
-              progress: (line: string) => root.__uniscenariosProgress!(line),
+            __simforgeArtifactBridge: {
+              open: (identity: unknown, mediaType: string) => root.__simforgeArtifactOpen!(identity, mediaType),
+              write: (handle: string, base64: string) => root.__simforgeArtifactWrite!(handle, base64),
+              close: (handle: string) => root.__simforgeArtifactClose!(handle),
+              abort: (handle: string, message: string) => root.__simforgeArtifactAbort!(handle, message),
+              progress: (line: string) => root.__simforgeProgress!(line),
             },
           });
         });
@@ -164,10 +164,10 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         context.signal.addEventListener('abort', abort, { once: true });
         try {
           await page.goto(harnessUrl, { waitUntil: 'networkidle' });
-          await page.waitForFunction(() => globalThis.__uniscenariosBrowserRender?.engine === 'browser');
+          await page.waitForFunction(() => globalThis.__simforgeBrowserRender?.engine === 'browser');
           const result = await page.evaluate(async (intent) => {
-            if (!globalThis.__uniscenariosBrowserRender) throw new Error('Browser render harness did not install its adapter.');
-            return globalThis.__uniscenariosBrowserRender.render(intent);
+            if (!globalThis.__simforgeBrowserRender) throw new Error('Browser render harness did not install its adapter.');
+            return globalThis.__simforgeBrowserRender.render(intent);
           }, request) as BrowserCaptureResult;
           const artifacts = result.artifacts.map((artifact) => {
             const output = [...outputs.values()].find((candidate) => sameIdentity(candidate.identity, artifact) && candidate.mediaType === artifact.mediaType);

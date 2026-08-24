@@ -1,5 +1,5 @@
 /**
- * `uniscenarios debug <scenario.json>` — one agent-facing compile/run/inspect command.
+ * `simforge debug <scenario.json>` — one agent-facing compile/run/inspect command.
  *
  * This is deliberately a reporting adapter around the canonical materializer
  * and sim-engine. It owns no scenario semantics and no vehicle motion logic.

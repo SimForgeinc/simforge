@@ -59,7 +59,7 @@ export interface AsamConstructCapabilityEntry {
     | 'profile-action'
     | 'profile-signal-controller'
     | 'simulated-outcome'
-    | 'uniscenarios-property';
+    | 'simforge-property';
   readonly reason: string;
 }
 
@@ -123,7 +123,7 @@ export interface AsamExportOptions {
   /** Maximum distance between exported route waypoints. */
   readonly routeSampleM?: number | undefined;
   /**
-   * UniScenarios near-miss acceptance intent. OSC 1.4 preserves the executable
+   * SimForge near-miss acceptance intent. OSC 1.4 preserves the executable
    * trigger/trajectory natively; these criteria are carried as FileHeader
    * properties because OSC has no standard OBB-clearance success criterion.
    */

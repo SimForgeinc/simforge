@@ -1,7 +1,7 @@
 import catalogFile from "@/app/generated/carla-object-catalog.json";
 import { connection } from "next/server";
 import { requireAppContext } from "@/app/lib/db/app-context";
-import type { CarlaCompatibility } from "@/app/lib/uniscenario/carla-compatibility";
+import type { CarlaCompatibility } from "@/app/lib/scenario/carla-compatibility";
 import { AssetsTabs } from "../AssetsTabs";
 import {
   CarlaCompatibilityTable,

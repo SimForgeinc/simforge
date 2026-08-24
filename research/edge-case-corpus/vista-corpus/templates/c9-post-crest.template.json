@@ -5,7 +5,7 @@
   "description": "An opposing vehicle emerges from a curve or crest and crosses the ego path during an aggressive left turn at a junction. A roadside box truck reinforces the late sightline reveal while remaining outside the ego driving line.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C9.hazard",
   "tags": [
    "blind-curve",

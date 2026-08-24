@@ -7,7 +7,7 @@ import test from 'node:test';
 import { verifyPackageArtifacts } from './package-artifact-lib.mjs';
 
 async function fixture({ includeSchema = true } = {}) {
-  const root = await mkdtemp(path.join(tmpdir(), 'uniscenarios-artifacts-'));
+  const root = await mkdtemp(path.join(tmpdir(), 'simforge-artifacts-'));
   await mkdir(path.join(root, 'config'), { recursive: true });
   await mkdir(path.join(root, 'packages/openscenario/dist'), { recursive: true });
   await mkdir(path.join(root, 'packages/openscenario/schema'), { recursive: true });

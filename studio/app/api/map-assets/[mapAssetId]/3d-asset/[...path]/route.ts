@@ -46,7 +46,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     }
     const url = await getBrowserAssetUrl({ key, allowedPrefix });
     const response = NextResponse.redirect(url, 302);
-    // Same policy as the uniscenario browser-assets route: development reuses
+    // Same policy as the scenario browser-assets route: development reuses
     // the redirect for most of the presign TTL so cold loads skip the
     // per-asset presign hop; shared environments keep the authenticated
     // no-store boundary (the map-asset-cache gateway is the caching layer).

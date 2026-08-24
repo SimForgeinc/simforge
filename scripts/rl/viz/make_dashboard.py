@@ -233,9 +233,9 @@ W0_POV_ROWS = [
 
 MILESTONES = [
     ("2026-07-31", "Foundation scaffold", "P0 monorepo: studio app, city-renderer, xodr-tools, Yale St fixtures."),
-    ("2026-08-08", "Execution baseline audit", "Repository state audited and recorded (docs/uniscenarios-execution-baseline.md)."),
+    ("2026-08-08", "Execution baseline audit", "Repository state audited and recorded (docs/simforge-execution-baseline.md)."),
     ("2026-08-21", "Foundation complete — rc.45", "Authoring CLI commands, shared editor components language, render runtime integration; release 0.1.0-rc.45."),
-    ("2026-08-22 am", "Episode banks + criticality banding", "65 train + 39 held-out eval episodes; authored-choreography traces banded via uniscenarios evaluate (bands.json)."),
+    ("2026-08-22 am", "Episode banks + criticality banding", "65 train + 39 held-out eval episodes; authored-choreography traces banded via simforge evaluate (bands.json)."),
     ("2026-08-22 10:43", "First policy trained (r1)", "320k decisions from scratch, curriculum mix 25/30/45, lr 3e-4."),
     ("2026-08-22 11:21", "Warm-start policy (r2)", "+240k decisions, mix 10/30/60, reward retune; held-out eval beats baseline on critical band."),
     ("2026-08-22 pm", "Progress visualizations", "This dashboard: deterministic BEV rollouts of baseline/mid/end on identical held-out episodes."),
@@ -316,7 +316,7 @@ def main() -> None:
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>UniScenarios RL Progress — Phase 3 mid-level PPO</title>
+<title>SimForge RL Progress — Phase 3 mid-level PPO</title>
 <style>
   :root {{ --ink:{INK}; --paper:#fbfaf7; --line:#e3e1da; }}
   * {{ box-sizing:border-box; }}
@@ -353,7 +353,7 @@ def main() -> None:
 </style>
 </head>
 <body>
-<h1>UniScenarios — RL training progress</h1>
+<h1>SimForge — RL training progress</h1>
 <p class="lede">Phase 3 mid-level PPO (setpoints: target speed / target accel) · reactive ambient traffic · decisionHz 5 ·
 {total_decisions:,} decisions total ({320000:,} r1 from scratch + {240000:,} r2 warm start) ·
 held-out eval on 39 disjoint-seed episodes.</p>

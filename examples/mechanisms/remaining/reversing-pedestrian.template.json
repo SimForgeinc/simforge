@@ -1,6 +1,6 @@
 {
   "scenarioVersion": 2,
-  "meta": { "name": "Reversing vehicle crosses a pedestrian path", "description": "The metric vehicle is parked perpendicular to the aisle, faces into its bay, illuminates reverse lamps, and travels rear-first along an explicit backing path while an adult walks steadily behind it.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "uniscenarios/0.0.1", "archetype": "vru.reversing-pedestrian", "tags": ["vru", "pedestrian", "parking", "reverse-motion", "rear-blind-zone"], "author": "agent/remaining-mechanisms", "negativeControl": false },
+  "meta": { "name": "Reversing vehicle crosses a pedestrian path", "description": "The metric vehicle is parked perpendicular to the aisle, faces into its bay, illuminates reverse lamps, and travels rear-first along an explicit backing path while an adult walks steadily behind it.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "simforge/0.0.1", "archetype": "vru.reversing-pedestrian", "tags": ["vru", "pedestrian", "parking", "reverse-motion", "rear-blind-zone"], "author": "agent/remaining-mechanisms", "negativeControl": false },
   "params": { "declarations": [
     { "id": "reverseSpeedKph", "type": "continuous", "unit": "kph", "tier": 1, "range": [3, 3.5], "default": 3.5, "distribution": "uniform" },
     { "id": "pedestrianSpeedKph", "type": "continuous", "unit": "kph", "tier": 1, "range": [4, 5.5], "default": 5, "distribution": "uniform" },

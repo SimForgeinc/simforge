@@ -21,7 +21,7 @@
         "--rig-program",
         "qualification/render-qualification-program.v1.json",
         "--glbs",
-        "/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_4.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_5.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_6.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_3_5.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/road.glb",
+        "/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_4.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_5.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_6.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_3_5.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/road.glb",
         "--scene-state",
         "run/evidence/scene-state.v1.json",
         "--xodr",
@@ -33,7 +33,7 @@
         "--warmup",
         "20",
         "--out",
-        "/home/path/UniScenarios-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-pronto/runA/yale-pronto"
+        "/home/path/SimForge-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-pronto/runA/yale-pronto"
       ],
       "passesRenderedSequentially": false
     },
@@ -151,7 +151,7 @@
             "--rig-program",
             "qualification/render-qualification-program.v1.json",
             "--glbs",
-            "/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_4.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_5.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_6.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_3_5.lod0.glb,/home/path/UniScenarios-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/road.glb",
+            "/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_4.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_5.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_2_6.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/tile_3_5.lod0.glb,/home/path/SimForge-ws/wsb1-sensor-corpus/.corpus/yale-street/tiles/road.glb",
             "--scene-state",
             "run/evidence/scene-state.v1.json",
             "--xodr",
@@ -163,7 +163,7 @@
             "--warmup",
             "20",
             "--out",
-            "/home/path/UniScenarios-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-pronto/runA/yale-pronto"
+            "/home/path/SimForge-ws/wsb6-determinism-ci/artifacts/golden-harness/record/yale-pronto/runA/yale-pronto"
           ],
           "passesRenderedSequentially": false
         },

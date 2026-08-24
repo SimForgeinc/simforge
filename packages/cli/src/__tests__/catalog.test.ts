@@ -29,7 +29,7 @@ let catalog: ScenarioCatalogManifest;
 const catalogMapAssets = localMapAssetRequirement(KNOWN_MAPS);
 
 beforeAll(async () => {
-  tmp = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-catalog-'));
+  tmp = await mkdtemp(path.join(os.tmpdir(), 'simforge-catalog-'));
   manifestFile = path.join(tmp, 'catalog.json');
   // Catalog creation itself is exercised by the checked regeneration command;
   // focused structural tests consume the exact artifact it committed.
@@ -54,7 +54,7 @@ function refreshSlotDigest(slot: Record<string, unknown>): void {
   delete slot['designDigest'];
 }
 
-describe('UniScenarios authored scenario catalog', () => {
+describe('SimForge authored scenario catalog', () => {
   it.skipIf(!catalogMapAssets.available)(`contains exactly 100 deterministic, map-grounded occurrences per supported map${catalogMapAssets.missingReason}`, async () => {
     expect(catalog.slots).toHaveLength(KNOWN_MAPS.length * CATALOG_SLOTS_PER_MAP);
     expect(new Set(catalog.slots.map((slot) => slot.identity)).size).toBe(catalog.slots.length);

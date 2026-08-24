@@ -1,7 +1,7 @@
 /**
  * `@simforge/cli` — layer 4 of `docs/agent-authoring-architecture.md`.
  *
- * The `uniscenarios` binary is the product; this module is its library face, so the
+ * The `simforge` binary is the product; this module is its library face, so the
  * editor, the workflows in layer 5 and the tests can call the same code paths
  * without shelling out.
  *

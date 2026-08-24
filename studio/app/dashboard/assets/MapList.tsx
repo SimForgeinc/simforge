@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Map as MapIcon, MapPin, SquarePen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import type { UniScenarioMapDescriptorDto } from "@/app/lib/uniscenario/contracts";
+import type { ScenarioMapDescriptorDto } from "@/app/lib/scenario/contracts";
 
 /**
  * Published map versions, for the Maps section of the asset library.
@@ -23,7 +23,7 @@ export function MapList({
   reloadToken: number;
   onUpload: () => void;
 }) {
-  const [maps, setMaps] = useState<UniScenarioMapDescriptorDto[] | null>(null);
+  const [maps, setMaps] = useState<ScenarioMapDescriptorDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export function MapList({
         if (!response.ok) {
           throw new Error(`The published map catalog could not be loaded (${response.status}).`);
         }
-        const body = (await response.json()) as { maps: UniScenarioMapDescriptorDto[] };
+        const body = (await response.json()) as { maps: ScenarioMapDescriptorDto[] };
         setMaps(body.maps);
       } catch (reason) {
         if (abort.signal.aborted) return;
@@ -123,7 +123,7 @@ export function MapList({
               variant="outline"
               className="mt-3 w-full border-white/10 bg-transparent"
             >
-              <Link href="/dashboard/uniscenario" aria-label={`Author a scenario on ${map.label}`}>
+              <Link href="/dashboard/scenario" aria-label={`Author a scenario on ${map.label}`}>
                 <SquarePen aria-hidden="true" />
                 Author a scenario
               </Link>

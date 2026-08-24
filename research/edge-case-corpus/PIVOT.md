@@ -226,7 +226,7 @@ agent authoring never reaches a renderer, so the fallback is silent.
 Added `isKnownPropCatalogId()` and `knownPropCatalogIds()` with 4 tests (all pass, `tsc --noEmit`
 clean). The test pins the exact defect: `propDims('vehicle.boxTruck')` equals `propDims('vehicle.sedan')`.
 The tool surface now refuses the id with `{code: unknown_catalog_id, did_you_mean: ['vehicle.box_truck']}`.
-Still to do: wire the same check into `uniscenarios template validate` so the CLI is fail-loud too.
+Still to do: wire the same check into `simforge template validate` so the CLI is fail-loud too.
 
 ## Status against the goal
 Requirements A/B/C/D/E are **not met** under the new authoring model — nothing has been admitted

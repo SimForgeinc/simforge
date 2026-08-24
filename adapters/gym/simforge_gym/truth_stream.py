@@ -135,7 +135,7 @@ class TruthStreamClient:
     def _socket_path_for(cls, episodes_spec: str) -> str:
         cls._socket_counter += 1
         digest = abs(hash(episodes_spec)) % 99991
-        return f"/tmp/uniscenarios-truth-{digest}-{os.getpid()}-{cls._socket_counter}.sock"
+        return f"/tmp/simforge-truth-{digest}-{os.getpid()}-{cls._socket_counter}.sock"
 
     @staticmethod
     def _connect_socket(path: Path, timeout_s: float = 30.0) -> socket.socket:

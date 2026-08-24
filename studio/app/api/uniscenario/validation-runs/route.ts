@@ -1,31 +1,31 @@
 import { NextResponse } from "next/server";
-import { CreateValidationRunSchema } from "@/app/lib/uniscenario/contracts";
+import { CreateValidationRunSchema } from "@/app/lib/scenario/contracts";
 import {
   createValidationRun,
   listValidationRuns,
-} from "@/app/lib/uniscenario/control-plane-store";
+} from "@/app/lib/scenario/control-plane-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableRevisionContext,
-  requireUniScenarioMutationOrigin,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRevisionContext,
+  requireScenarioMutationOrigin,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 export async function GET(request: Request) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const revisionId = new URL(request.url).searchParams.get("revisionId");
   return NextResponse.json(
     { validationRuns: await listValidationRuns(auth.context, revisionId) },
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }
 
 export async function POST(request: Request) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const parsed = CreateValidationRunSchema.safeParse(await readJson(request));
   if (!parsed.success) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
   // Validation is derived work over readable content, not a dataset mutation.
-  const access = await requireUniScenarioMutableRevisionContext(
+  const access = await requireScenarioMutableRevisionContext(
     auth.context,
     parsed.data.revisionId,
     "read",

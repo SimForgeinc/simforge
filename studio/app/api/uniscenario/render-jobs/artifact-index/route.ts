@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { listWorkspaceRenderArtifacts } from "@/app/lib/uniscenario/render/artifact-store";
+import { listWorkspaceRenderArtifacts } from "@/app/lib/scenario/render/artifact-store";
 import {
-  requireUniScenarioContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 /**
  * Every artifact in the workspace reachable from a render job (manifest #146, the artifacts workspace).
@@ -33,7 +33,7 @@ import {
  * this workspace are not included, because the join requires `artifact_links.workspace_id` to match.
  */
 export async function GET(request: Request) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
 
   const url = new URL(request.url);
@@ -45,5 +45,5 @@ export async function GET(request: Request) {
     artifactKind: artifactKind && artifactKind.trim() ? artifactKind.trim() : null,
   });
 
-  return NextResponse.json({ items }, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS });
+  return NextResponse.json({ items }, { headers: SCENARIO_PRIVATE_CACHE_HEADERS });
 }

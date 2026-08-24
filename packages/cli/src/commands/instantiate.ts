@@ -1,5 +1,5 @@
 /**
- * `uniscenarios instantiate <template> --map --site [--seed | --draw K]`.
+ * `simforge instantiate <template> --map --site [--seed | --draw K]`.
  *
  * The materializer's command surface. One cell in, one instance file out; the
  * instance carries its own replay key, so nothing downstream ever has to be

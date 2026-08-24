@@ -5,7 +5,7 @@
   "description": "At a portable junction conflict, an opposing vehicle commits to a left turn and loses control while crossing the ego route, rotating through the ego lane at close range. The challenger is timed to reach the conflict shortly before the ego, creating a late, non-trivial emergency encounter without relying on fixed map coordinates.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C14.loss-of-control",
   "tags": [
    "loss-of-control",

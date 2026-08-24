@@ -1,10 +1,10 @@
 {
   "name": "@simforge/editor",
   "version": "0.1.0-rc.45",
-  "description": "Framework-neutral UniScenarios v2 authoring document, interaction controller, route overlays, and editor contracts.",
+  "description": "Framework-neutral SimForge v2 authoring document, interaction controller, route overlays, and editor contracts.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/SimForge.git",
+    "url": "git+https://github.com/SimForgeinc/simforge.git",
     "directory": "packages/editor"
   },
   "publishConfig": {

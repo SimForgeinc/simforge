@@ -5,7 +5,7 @@
   "description": "Auto-synthesised archetype from the mechanism grammar. {'topology': 'encroach_lateral', 'challenger': 'cyclist', 'occlusion': 'queue', 'control': 'work_zone', 'fault': 'late_reveal', 'id': 'encr-cyclist-queue-wz-reveal'}",
   "createdAt": "2026-08-06T00:00:00.000Z",
   "modifiedAt": "2026-08-06T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "encr-cyclist-queue-wz-reveal",
   "tags": [
    "encroach_lateral",

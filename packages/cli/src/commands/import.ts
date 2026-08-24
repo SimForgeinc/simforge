@@ -1,5 +1,5 @@
 /**
- * `uniscenarios import <file.xosc>` — OpenSCENARIO XML 1.4 → v2 scenario template.
+ * `simforge import <file.xosc>` — OpenSCENARIO XML 1.4 → v2 scenario template.
  *
  * The heavy lifting lives in `@simforge/openscenario/import` (`analyze` →
  * `resolveOpenScenarioMap` → `translate`); this command is the agent-facing

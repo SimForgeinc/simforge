@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { SetUniScenarioDocumentTagsSchema } from "@/app/lib/uniscenario/contracts";
-import { setUniScenarioDocumentTags } from "@/app/lib/uniscenario/tag-store";
+import { SetScenarioDocumentTagsSchema } from "@/app/lib/scenario/contracts";
+import { setScenarioDocumentTags } from "@/app/lib/scenario/tag-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableDocumentContext,
-  requireUniScenarioMutationOrigin,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableDocumentContext,
+  requireScenarioMutationOrigin,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ documentId: string }> };
 
@@ -18,25 +18,25 @@ type Context = { params: Promise<{ documentId: string }> };
  * read-only or shared dataset must not be re-labelled from outside.
  */
 export async function PUT(request: Request, route: Context) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { documentId } = await route.params;
-  const access = await requireUniScenarioMutableDocumentContext(
+  const access = await requireScenarioMutableDocumentContext(
     auth.context,
     documentId,
     "mutateContent",
   );
   if (access.response) return access.response;
-  const parsed = SetUniScenarioDocumentTagsSchema.safeParse(await readJson(request));
+  const parsed = SetScenarioDocumentTagsSchema.safeParse(await readJson(request));
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid_document_tags", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
-  const result = await setUniScenarioDocumentTags(auth.context, documentId, parsed.data.tagIds);
+  const result = await setScenarioDocumentTags(auth.context, documentId, parsed.data.tagIds);
   return result.kind === "ok"
     ? NextResponse.json({ tags: result.tags })
     : NextResponse.json({ error: "document_not_found" }, { status: 404 });

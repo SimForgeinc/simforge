@@ -212,7 +212,7 @@ function header(context: OffscreenCanvasRenderingContext2D | CanvasRenderingCont
 
 function webmHeader(config: BrowserVideoConfig, schedule: Readonly<ResolvedFrameSchedule>): Uint8Array {
   const ebml = element(0x1a45dfa3, concat(element(0x4286, uint(1)), element(0x42f7, uint(1)), element(0x42f2, uint(4)), element(0x42f3, uint(8)), element(0x4282, text('webm')), element(0x4287, uint(4)), element(0x4285, uint(2))));
-  const info = element(0x1549a966, concat(element(0x2ad7b1, uint(1_000)), element(0x4489, float64(schedule.endTimestampUs)), element(0x4d80, text('UniScenarios browser renderer')), element(0x5741, text('UniScenarios browser renderer'))));
+  const info = element(0x1549a966, concat(element(0x2ad7b1, uint(1_000)), element(0x4489, float64(schedule.endTimestampUs)), element(0x4d80, text('SimForge browser renderer')), element(0x5741, text('SimForge browser renderer'))));
   const video = element(0xe0, concat(element(0xb0, uint(config.width)), element(0xba, uint(config.height))));
   const track = element(0xae, concat(element(0xd7, uint(1)), element(0x73c5, uint(1)), element(0x83, uint(1)), element(0x86, text('V_VP9')), element(0x23e383, uint(Math.round(1_000_000_000 / config.fps))), video));
   return concat(ebml, idBytes(0x18538067), new Uint8Array([0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), info, element(0x1654ae6b, track));

@@ -5,7 +5,7 @@
   "description": "The ego approaches a stopped vehicle hidden beyond a crest. The vehicle is absent from the observable scene until the crest is reached, creating a late but survivable braking demand rather than an early comfortable stop.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C7.occlusion",
   "tags": [
    "occlusion",

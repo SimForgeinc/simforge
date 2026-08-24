@@ -93,7 +93,7 @@ export async function runCompilerLoop(baseUrl: string | URL, token: string, sign
   const workerId = process.env.UNISCENARIO_COMPILER_WORKER_ID?.trim() || `local-compiler-${hostname().replace(/[^A-Za-z0-9._:-]/g, "-")}-${process.pid}`;
   const client = new CompilerClient(new URL(baseUrl), token, workerId);
   const xsdPath = createRequire(import.meta.url).resolve("@simforge/openscenario/schema/OpenSCENARIO.xsd");
-  process.stdout.write(`${JSON.stringify({ component: "uniscenarios-local-compiler", event: "worker.started", workerId, compilerVersion: COMPILER_VERSION })}\n`);
+  process.stdout.write(`${JSON.stringify({ component: "simforge-local-compiler", event: "worker.started", workerId, compilerVersion: COMPILER_VERSION })}\n`);
   while (!signal.aborted) {
     try {
       const claim = await client.claim(signal);
@@ -102,7 +102,7 @@ export async function runCompilerLoop(baseUrl: string | URL, token: string, sign
     } catch (error) {
       if (signal.aborted) throw signal.reason;
       process.stderr.write(`${JSON.stringify({
-        component: "uniscenarios-local-compiler",
+        component: "simforge-local-compiler",
         event: "claim.retry",
         error: error instanceof Error ? error.message : String(error),
       })}\n`);
@@ -124,12 +124,12 @@ async function runClaim(client: CompilerClient, claim: CompilerClaim, xsdPath: s
     }
     job.abort(new Error("compile complete")); await heartbeat;
     await client.complete(claim, result, reservations, workerSignal);
-    process.stdout.write(`${JSON.stringify({ component: "uniscenarios-local-compiler", event: "job.completed", exportId: claim.exportId, sourceInputDigest: result.sourceInputDigest })}\n`);
+    process.stdout.write(`${JSON.stringify({ component: "simforge-local-compiler", event: "job.completed", exportId: claim.exportId, sourceInputDigest: result.sourceInputDigest })}\n`);
   } catch (error) {
     job.abort(error); await heartbeat.catch(() => undefined);
     if (workerSignal.aborted) throw workerSignal.reason;
-    await client.fail(claim, error).catch((failure) => process.stderr.write(`${JSON.stringify({ component: "uniscenarios-local-compiler", event: "failure_callback.failed", exportId: claim.exportId, error: failure instanceof Error ? failure.message : String(failure) })}\n`));
-    process.stderr.write(`${JSON.stringify({ component: "uniscenarios-local-compiler", event: "job.failed", exportId: claim.exportId, error: error instanceof Error ? error.message : String(error) })}\n`);
+    await client.fail(claim, error).catch((failure) => process.stderr.write(`${JSON.stringify({ component: "simforge-local-compiler", event: "failure_callback.failed", exportId: claim.exportId, error: failure instanceof Error ? failure.message : String(failure) })}\n`));
+    process.stderr.write(`${JSON.stringify({ component: "simforge-local-compiler", event: "job.failed", exportId: claim.exportId, error: error instanceof Error ? error.message : String(error) })}\n`);
   }
 }
 

@@ -5,7 +5,7 @@
     "description": "On a sustained bend with reduced tyre-road friction, ego drifts laterally toward a collidable road-edge barrier before braking to a stable stop.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "road-departure.curve-loss-control",
     "tags": ["road-departure", "curve", "loss-of-control", "road-edge", "low-friction"],
     "author": "agent/obstacle-mechanisms",

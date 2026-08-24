@@ -5,7 +5,7 @@
     "description": "Ego follows a map-derived right-turn movement while an adult pedestrian walks completely across a marked receiving-leg crossing and remains at the terminal pose for the aftermath. Pedestrian arrival is solved against the mapped crossing centre so the conflict survives retargeting.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "intersection.right-turn-crosswalk",
     "tags": ["junction", "vru", "right-turn", "crosswalk", "stable-aftermath"],
     "author": "agent/junction-vru",

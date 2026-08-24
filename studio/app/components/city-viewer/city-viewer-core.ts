@@ -264,7 +264,7 @@ export class CityViewerCore {
         // what lets the map-asset-cache gateway serve tiles from Cache
         // Storage without ever serving a stale build: rebuild → new manifest
         // bytes → new token → every asset URL misses and refetches.
-        // Uniscenario browser-assets bases are content-versioned by
+        // Scenario browser-assets bases are content-versioned by
         // mapVersionId and MUST stay token-less: the "Cache all maps"
         // prepare flow warms the gateway under the bare URLs, and adding a
         // token here would turn every prepared asset into a URL-index miss

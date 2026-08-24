@@ -46,7 +46,7 @@ m = world.get_map()
 settings = world.get_settings(); settings.synchronous_mode = True
 world.apply_settings(settings)
 
-bp = world.get_blueprint_library().find("vehicle.uniscenarios.car")
+bp = world.get_blueprint_library().find("vehicle.simforge.car")
 ego = world.spawn_actor(bp, m.get_spawn_points()[0])
 cam_bp = world.get_blueprint_library().find("sensor.camera.rgb")
 cam = world.spawn_actor(cam_bp, carla.Transform(), attach_to=ego)

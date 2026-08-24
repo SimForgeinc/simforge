@@ -30,6 +30,7 @@ function fixture() {
   runGit(root, ['commit', '-m', 'fixture']);
 
   writeFileSync(join(root, 'tracked.txt'), 'dirty contents\n');
+  chmodSync(join(root, 'tracked.txt'), 0o644);
   writeFileSync(join(root, 'tool.sh'), '#!/bin/sh\nexit 0\n');
   chmodSync(join(root, 'tool.sh'), 0o755);
   symlinkSync('tracked.txt', join(root, 'tracked-link'));
@@ -87,6 +88,7 @@ function fixture() {
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   // The fixture manifest is audit input, not part of the candidate material set.
   writeFileSync(join(root, '.gitignore'), 'manifest.json\n');
+  chmodSync(join(root, '.gitignore'), 0o644);
   // Add the ignore rule to the commit so it does not alter the captured status.
   runGit(root, ['add', '.gitignore']);
   runGit(root, ['commit', '--amend', '--no-edit']);
@@ -209,7 +211,7 @@ test('rejects contradictory standalone naming metadata and verifier claims', (t)
   writeFileSync(item.manifestPath, JSON.stringify(malformed));
   assert.throws(
     () => verifyMigrationSource({ source: item.root, manifestPath: item.manifestPath }),
-    /manifest\.packageScope must be @simforge/,
+    /manifest\.packageScope must be @uniscenarios/,
   );
 });
 

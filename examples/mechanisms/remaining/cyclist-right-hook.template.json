@@ -1,6 +1,6 @@
 {
   "scenarioVersion": 2,
-  "meta": { "name": "Right hook across a parallel cyclist", "description": "A bicycle-class actor rides straight in the kerb-side lane while the metric vehicle turns right across that lane at a junction; the cyclist is never substituted with a pedestrian.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "uniscenarios/0.0.1", "archetype": "vru.cyclist-right-hook", "tags": ["vru", "bicycle", "right-hook", "parallel"], "author": "agent/remaining-mechanisms", "negativeControl": false },
+  "meta": { "name": "Right hook across a parallel cyclist", "description": "A bicycle-class actor rides straight in the kerb-side lane while the metric vehicle turns right across that lane at a junction; the cyclist is never substituted with a pedestrian.", "createdAt": "2026-08-01T00:00:00.000Z", "modifiedAt": "2026-08-01T00:00:00.000Z", "appVersion": "simforge/0.0.1", "archetype": "vru.cyclist-right-hook", "tags": ["vru", "bicycle", "right-hook", "parallel"], "author": "agent/remaining-mechanisms", "negativeControl": false },
   "params": { "declarations": [
     { "id": "cyclistSpeedKph", "type": "continuous", "unit": "kph", "tier": 1, "range": [16.4, 16.6], "default": 16.5, "distribution": "uniform" },
     { "id": "overlapM", "type": "continuous", "unit": "m", "tier": 1, "range": [6.8, 7.2], "default": 7, "distribution": "uniform" }

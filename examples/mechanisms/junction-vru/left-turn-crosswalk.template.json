@@ -5,7 +5,7 @@
     "description": "Ego follows a map-derived left-turn movement into a marked receiving-leg crossing while an adult pedestrian walks completely across and remains at the terminal pose for the aftermath. The crossing and turn are required map features rather than assumed semantics.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "intersection.left-turn-crosswalk",
     "tags": ["junction", "vru", "left-turn", "far-side-crosswalk", "stable-aftermath"],
     "author": "agent/junction-vru",

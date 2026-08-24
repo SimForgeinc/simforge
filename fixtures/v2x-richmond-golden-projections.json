@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "v2x-richmond-golden-projections",
-  "description": "Golden projection fixtures for the V2XCarla -> UniScenarios coordinate contract on Richmond Field Station. Each point carries its WGS-84 value, the strict xodr-local tmerc projection, and the legacy V2XCarla flat-earth (CARLA-world) projection. Consumers MUST refuse artifacts whose {mapId, xodrSha256} do not match their map.",
+  "description": "Golden projection fixtures for the V2XCarla -> SimForge coordinate contract on Richmond Field Station. Each point carries its WGS-84 value, the strict xodr-local tmerc projection, and the legacy V2XCarla flat-earth (CARLA-world) projection. Consumers MUST refuse artifacts whose {mapId, xodrSha256} do not match their map.",
   "mapId": "richmond-field-station",
   "lineages": {
     "deployed": {
@@ -13,7 +13,7 @@
       "junctions": 32
     },
     "uni": {
-      "label": "UniScenarios bundle dev-assets/richmond-field-station (April RoadRunner export)",
+      "label": "SimForge bundle dev-assets/richmond-field-station (April RoadRunner export)",
       "sourcePath": "dev-assets/richmond-field-station/xodr.xodr",
       "xodrSha256": "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643",
       "exportDate": "2026-04-09T08:54:50",

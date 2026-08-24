@@ -5,7 +5,7 @@
   "description": "A lead sedan travelling at the prevailing speed abruptly brakes to a standstill without an apparent external trigger. The ego follows at a normal time headway but has a deliberately human reaction delay, producing a survivable near-critical braking event.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C1.car-following",
   "tags": [
    "car-following",

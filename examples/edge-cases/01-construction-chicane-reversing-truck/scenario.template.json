@@ -5,7 +5,7 @@
     "description": "The focus vehicle negotiates an alternating-flow construction chicane while a work vehicle reverses and a worker enters the constrained corridor. This curated 20-second scenario uses only currently supported behaviors; adaptations are declared in machine-readable metadata.",
     "createdAt": "2026-08-02T07:00:00.000Z",
     "modifiedAt": "2026-08-03T08:00:00.000Z",
-    "appVersion": "uniscenarios/0.1.0-editor",
+    "appVersion": "simforge/0.1.0-editor",
     "archetype": "gallery.01-construction-chicane-reversing-truck",
     "tags": [
       "curated-gallery-v2",

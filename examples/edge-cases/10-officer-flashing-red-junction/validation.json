@@ -2,13 +2,13 @@
   "schema": "uniscenarios.gallery-validation.v1",
   "validatedAt": "2026-08-03T08:00:00.000Z",
   "provider": "native",
-  "command": "uniscenarios debug 10-officer-flashing-red-junction/scenario.instance.json --sample 0.5 --fail-on-fallback --fail-on-never-fired --fail-on-collision",
+  "command": "simforge debug 10-officer-flashing-red-junction/scenario.instance.json --sample 0.5 --fail-on-fallback --fail-on-never-fired --fail-on-collision",
   "acceptance": {
     "ok": true,
     "failures": []
   },
   "input": {
-    "source": "/private/tmp/uniscenarios-new-gallery/examples/edge-cases/10-officer-flashing-red-junction/scenario.instance.json",
+    "source": "/private/tmp/simforge-new-gallery/examples/edge-cases/10-officer-flashing-red-junction/scenario.instance.json",
     "kind": "instance",
     "mapId": "yale-street",
     "provider": "native",

@@ -6,17 +6,17 @@ import {
   resolveOpenScenarioMap,
   translateOpenScenarioImport,
 } from "@simforge/openscenario/import";
-import { UNISCENARIO_SCHEMA_VERSION } from "@/app/lib/uniscenario/contracts";
+import { SCENARIO_SCHEMA_VERSION } from "@/app/lib/scenario/contracts";
 import {
-  createUniScenarioDocument,
-  listUniScenarioMapDescriptors,
-} from "@/app/lib/uniscenario/document-store";
-import { storeOpenScenarioSourceArtifact } from "@/app/lib/uniscenario/open-scenario-import-store.server";
+  createScenarioDocument,
+  listScenarioMapDescriptors,
+} from "@/app/lib/scenario/document-store";
+import { storeOpenScenarioSourceArtifact } from "@/app/lib/scenario/open-scenario-import-store.server";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutableContext,
-  requireUniScenarioMutationOrigin,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableContext,
+  requireScenarioMutationOrigin,
+} from "@/app/lib/scenario/http";
 
 const MAX_MULTIPART_BYTES = MAX_XOSC_BYTES + 64 * 1024;
 
@@ -67,9 +67,9 @@ function analysisWithResolutionDiagnostic<T extends ReturnType<typeof analyzeOpe
 }
 
 export async function POST(request: Request) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
 
   const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const analysis = analyzeOpenScenarioImport(bytes, file.name);
-    const maps = (await listUniScenarioMapDescriptors(auth.context)).map((map) => ({
+    const maps = (await listScenarioMapDescriptors(auth.context)).map((map) => ({
       mapVersionId: map.mapVersionId,
       sourceMapId: map.sourceMapId,
       label: map.label,
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ analysis: reportedAnalysis, resolution });
     }
     if (!datasetId) return NextResponse.json({ error: "dataset_required" }, { status: 400 });
-    const access = await requireUniScenarioMutableContext(auth.context, datasetId, "mutateContent");
+    const access = await requireScenarioMutableContext(auth.context, datasetId, "mutateContent");
     if (access.response) return access.response;
     if (resolution.status !== "resolved" || !resolution.selectedMapVersionId) {
       return NextResponse.json({
@@ -125,10 +125,10 @@ export async function POST(request: Request) {
       mediaType: analysis.source.mediaType,
     });
     const content = translateOpenScenarioImport(analysis, sourceArtifact, selectedMap);
-    const document = await createUniScenarioDocument(auth.context, {
+    const document = await createScenarioDocument(auth.context, {
       title: analysis.title,
       description: analysis.description,
-      schemaVersion: UNISCENARIO_SCHEMA_VERSION,
+      schemaVersion: SCENARIO_SCHEMA_VERSION,
       content,
       mapVersionId: selectedMap.mapVersionId,
       datasetId,

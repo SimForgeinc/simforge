@@ -2,35 +2,35 @@ import { NextResponse } from "next/server";
 import {
   FinalizeBrowserRecordingSchema,
   UpdateBrowserRecordingProgressSchema,
-} from "@/app/lib/uniscenario/recording-contracts";
+} from "@/app/lib/scenario/recording-contracts";
 import {
   readJson,
-  requireUniScenarioContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 import {
   finalizeBrowserRecording,
   getBrowserRecording,
   updateBrowserRecordingProgress,
-} from "@/app/lib/uniscenario/recording-store";
-import { rejectUnauthorizedWorker } from "@/app/lib/uniscenario/worker-http";
+} from "@/app/lib/scenario/recording-store";
+import { rejectUnauthorizedWorker } from "@/app/lib/scenario/worker-http";
 
 type Context = { params: Promise<{ recordingId: string }> };
 
 export async function GET(_request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { recordingId } = await route.params;
   const recording = await getBrowserRecording(auth.context, recordingId);
   return recording
-    ? NextResponse.json(recording, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS })
+    ? NextResponse.json(recording, { headers: SCENARIO_PRIVATE_CACHE_HEADERS })
     : NextResponse.json({ error: "browser_recording_not_found" }, { status: 404 });
 }
 
 export async function PUT(request: Request, route: Context) {
   const unauthorized = rejectUnauthorizedWorker(request);
   if (unauthorized) return unauthorized;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const parsed = UpdateBrowserRecordingProgressSchema.safeParse(await readJson(request));
   if (!parsed.success) {
@@ -49,7 +49,7 @@ export async function PUT(request: Request, route: Context) {
 export async function PATCH(request: Request, route: Context) {
   const unauthorized = rejectUnauthorizedWorker(request);
   if (unauthorized) return unauthorized;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const parsed = FinalizeBrowserRecordingSchema.safeParse(await readJson(request));
   if (!parsed.success) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 3 — first mid-level PPO policy over the UniScenarios reactive env.
+"""Phase 3 — first mid-level PPO policy over the SimForge reactive env.
 
 CleanRL-style single-file PPO (continuous actions) over a batched unix-socket
 environment served by `reactive-env-server.mjs`:

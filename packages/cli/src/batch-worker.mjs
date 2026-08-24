@@ -6,7 +6,7 @@
  * it can resolve `./batch-cell.js` onto `batch-cell.ts`. Doing that with
  * `execArgv: ['--import', 'tsx']` registers hooks for the worker's *entry* but
  * not for the `.js`-specifier rewrite its imports rely on; registering inside
- * the thread — exactly as `bin/uniscenarios.js` does for the main thread — does.
+ * the thread — exactly as `bin/simforge.js` does for the main thread — does.
  */
 import { register } from 'tsx/esm/api';
 

@@ -5,7 +5,7 @@
     "description": "Ego and a vehicle in the adjacent entry lane accelerate toward a merge. The merging vehicle closes from behind and enters ego's lane at low headway.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "lane-change.merge-gap-collapse",
     "tags": ["corridor", "merge", "lane-change", "acceleration", "gap-collapse"],
     "author": "agent/corridor-mechanisms",

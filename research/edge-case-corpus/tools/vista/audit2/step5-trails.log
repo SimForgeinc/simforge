@@ -1,4 +1,4 @@
-mode=trails reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-trails.json
+mode=trails reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-trails.json
   5/80 67s
   10/80 98s
   15/80 148s
@@ -16,4 +16,4 @@ mode=trails reps=6 pairs=80 todo=80 -> /Users/michaelvu-simforge/Documents/Progr
   75/80 556s
   80/80 569s
 verdicts: {'uncertain': 12, 'rejected': 55, 'verified': 13}
-wrote /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista/audit2/critic-trails.json
+wrote /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista/audit2/critic-trails.json

@@ -3,7 +3,7 @@
   "version": "0.1.0-rc.45",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "url": "git+https://github.com/SimForgeinc/simforge.git",
     "directory": "services/render-worker"
   },
   "publishConfig": {
@@ -15,7 +15,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "uniscenarios-render-worker": "./bin/uniscenarios-render-worker.js"
+    "simforge-render-worker": "./bin/simforge-render-worker.js"
   },
   "exports": {
     ".": {

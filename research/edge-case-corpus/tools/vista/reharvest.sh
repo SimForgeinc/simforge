@@ -2,8 +2,8 @@
 # Central re-harvest: run the FULL pipeline over the re-anchored templates and re-measure everything.
 # Fire this only after ws1a (loud predicates) and ws1b (place fit) have both landed.
 set -euo pipefail
-cd /Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/research/edge-case-corpus/tools/vista
-PY=/Users/michaelvu-simforge/Documents/Programming/UniScenarios-vista/.venv/bin/python
+cd /Users/michaelvu-simforge/Documents/Programming/SimForge-vista/research/edge-case-corpus/tools/vista
+PY=/Users/michaelvu-simforge/Documents/Programming/SimForge-vista/.venv/bin/python
 OUT=/tmp/vista-harv-final
 # Only wipe with --fresh. `batch` resumes from existing cells unless --force, and a blind `rm -rf`
 # here already destroyed 1065 computed traces once, costing ~70 minutes.

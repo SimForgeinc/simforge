@@ -5,7 +5,7 @@
   "description": "A third-party oncoming vehicle begins an ill-judged overtake of a slower oncoming vehicle and enters the ego lane late, creating a close but contact-free encounter near the re-solved conflict point.",
   "createdAt": "2026-08-02T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C10.oncoming",
   "tags": [
    "oncoming",

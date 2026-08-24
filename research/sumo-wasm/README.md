@@ -1,7 +1,7 @@
 # SUMO WebAssembly feasibility spike
 
 This directory is an opt-in experiment. It does **not** replace the native
-UniScenarios traffic controller or add SUMO to the initial Studio download.
+SimForge traffic controller or add SUMO to the initial Studio download.
 
 ## Decision boundary
 
@@ -104,10 +104,10 @@ native SUMO package and run the Node harness:
 ```sh
 netgenerate --grid --grid.number 5 --grid.length 1000 \
   --grid.attach-length 100 --default.lanenumber 4 --tls.guess true \
-  -o /tmp/uniscenarios-sumo-grid.net.xml
+  -o /tmp/simforge-sumo-grid.net.xml
 node research/sumo-wasm/benchmark.mjs \
   research/sumo-wasm/dist/sumo.mjs \
-  /tmp/uniscenarios-sumo-grid.net.xml
+  /tmp/simforge-sumo-grid.net.xml
 ```
 
 Generate the same grid without `--default.lanenumber 4` and use it to verify
@@ -116,7 +116,7 @@ that a stopped externally owned obstacle creates a real following queue:
 ```sh
 node research/sumo-wasm/proxy-smoke.mjs \
   research/sumo-wasm/dist/sumo.mjs \
-  /tmp/uniscenarios-sumo-single-lane-grid.net.xml
+  /tmp/simforge-sumo-single-lane-grid.net.xml
 ```
 
 Copy that network plus the browser benchmark files into `dist/`, serve the
@@ -226,7 +226,7 @@ the EPL Program. A production release must therefore:
 
 The TypeScript provider and narrow C ABI are separate project files, but the
 WebAssembly binary statically contains SUMO. EPL does not require unrelated
-UniScenarios source files to be relicensed. This is an engineering assessment,
+SimForge source files to be relicensed. This is an engineering assessment,
 not legal advice; counsel should approve the production notice/source-offer
 flow.
 

@@ -106,7 +106,7 @@ export function buildTemplateJsonSchema(): Record<string, unknown> {
   return build(
     ScenarioTemplateV2ObjectSchema,
     'scenario-template.v2.schema.json',
-    `UniScenarios scenario template, schema v${SCENARIO_TEMPLATE_VERSION}`,
+    `SimForge scenario template, schema v${SCENARIO_TEMPLATE_VERSION}`,
     `A portable scenario template: a logical anchor (a predicate over road structure, with no coordinates and no road ids), roles bound to the matched structure, a frame-relative timeline of interactions, parameters, and the invariants that must survive retargeting. Numbers written as strings are parsed as expressions over lane.speedLimitKph, lane.widthM, junction.sizeM, clip.seconds and param.<name>, with + - * / and clamp/min/max/abs. ${STRUCTURAL_RULES}`,
   );
 }
@@ -116,7 +116,7 @@ export function buildAnchorJsonSchema(): Record<string, unknown> {
   return build(
     LogicalAnchorSchema,
     'logical-anchor.v2.schema.json',
-    'UniScenarios logical anchor, schema v2',
+    'SimForge logical anchor, schema v2',
     'A predicate over road structure that a scenario can be matched onto. Contains no coordinates, no road ids and no map names: only lane counts, speed limits, junction classes, turn relations and distances along a corridor. Every clause is {value, essentiality: required|preferred|cosmetic, weight?}; ranges are [min, max] with null for an open end. `required` clauses are pass/fail for the matcher; `preferred` and `cosmetic` are scored and may be substituted or dropped. Features are ordered along the corridor by `atM`, measured from the frame origin, negative upstream.',
   );
 }
@@ -126,7 +126,7 @@ export function buildInteractionsJsonSchema(): Record<string, unknown> {
   return build(
     z.array(InteractionSchema).max(256),
     'interactions.v2.schema.json',
-    'UniScenarios interaction list, schema v2',
+    'SimForge interaction list, schema v2',
     `A timeline of interactions: {id, actor, trigger, verb, target, dynamics?, until?}. Seven verbs over five axes — speed and gap (longitudinal), changeLane and laneOffset (lateral), route (topology), exist (existence), set (discrete state). One axis has one owner and later preempts earlier; there are no priorities and no nesting. Triggers are at(t), after(id, delay), when(condition, byLatest, ifNever) or arrival(of, at, syncWith, ttc|deltaT) — the last back-solves a start so the actor reaches a conflict point at a declared criticality, and is what makes a generated scenario non-trivial. ${STRUCTURAL_RULES}`,
   );
 }

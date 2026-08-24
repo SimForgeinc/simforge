@@ -5,7 +5,7 @@
   "description": "A traffic marshal emerges from behind a stopped work vehicle at the road edge and walks into the ego's lane late enough to create a demanding but survivable braking conflict.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-02T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C8.workzone",
   "tags": [
    "workzone",

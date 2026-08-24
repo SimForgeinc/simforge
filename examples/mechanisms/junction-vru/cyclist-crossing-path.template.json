@@ -5,7 +5,7 @@
     "description": "A bicycle-class actor rides along a side path, turns across ego's corridor, passes through the declared lane-centre conflict point, and finishes beyond the far edge for a stable aftermath. Bicycle identity, compact footprint, and cycling speed are preserved explicitly; no pedestrian substitution is used.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "vru.cyclist-crossing-path",
     "tags": ["vru", "bicycle", "crossing-path", "midblock", "stable-aftermath"],
     "author": "agent/junction-vru",

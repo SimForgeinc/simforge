@@ -20,7 +20,7 @@ if (!platformArg) {
 }
 
 const report = await auditDivergence({
-  uniscenariosRoot: repoRoot,
+  simforgeRoot: repoRoot,
   simcloudRoot: path.resolve(platformArg),
 });
 const serialized = `${JSON.stringify(report, null, 2)}\n`;

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.uniscenarios.dev/interactions.v2.schema.json",
-  "title": "UniScenarios interaction list, schema v2",
+  "title": "SimForge interaction list, schema v2",
   "description": "A timeline of interactions: {id, actor, trigger, verb, target, dynamics?, until?}. Seven verbs over five axes — speed and gap (longitudinal), changeLane and laneOffset (lateral), route (topology), exist (existence), set (discrete state). One axis has one owner and later preempts earlier; there are no priorities and no nesting. Triggers are at(t), after(id, delay), when(condition, byLatest, ifNever) or arrival(of, at, syncWith, ttc|deltaT) — the last back-solves a start so the actor reaches a conflict point at a declared criticality, and is what makes a generated scenario non-trivial. Rules enforced by the reference validator that JSON Schema cannot express: (1) ids must be unique within each list; (2) every role/feature/interaction reference must resolve; (3) `dynamics` is REQUIRED on the continuous verbs (speed, gap, changeLane, laneOffset); (4) `byLatest` is REQUIRED on every `when` trigger; (5) one axis has one owner: two interactions on the same actor and axis may not start at the same time; (6) `set` keys must exist in the typed key registry (rules.*, lights.*, doors.*, pose.*, signal:*, env.*); (7) `env.*` and `signal:*` sets must be performed by the reserved actor \"@world\"; (8) `targetRevealToConflictS` requires `occludes`; (9) meta.modifiedAt must not precede meta.createdAt.",
   "maxItems": 256,
   "type": "array",

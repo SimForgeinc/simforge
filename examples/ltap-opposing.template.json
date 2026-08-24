@@ -5,7 +5,7 @@
     "description": "The worked example. Ego approaches a signalised four-way on a multi-lane arterial and turns left across an oncoming through vehicle. The oncoming car is bound to a conflicting junction gate, never to a position, and its start is back-solved so that it is `arrivalTtc` seconds from the crossing point at the moment ego reaches it. Both speeds are expressions over the posted limit, so the scenario means the same thing on a 40 kph street and a 65 kph arterial.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "C3.ltap-od",
     "tags": [
       "junction",

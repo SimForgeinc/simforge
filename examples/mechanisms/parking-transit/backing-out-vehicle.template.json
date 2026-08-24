@@ -5,7 +5,7 @@
     "description": "A perpendicular parking-zone occupant illuminates its reverse lamps and follows a low-speed backing path from the bay across ego's travel aisle.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "parking.backing-out-vehicle",
     "tags": ["parking", "backing", "reversing", "parking-zone", "reverse-lamps"],
     "author": "agent/parking-transit-mechanisms",

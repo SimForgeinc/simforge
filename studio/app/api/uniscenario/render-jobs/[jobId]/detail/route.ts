@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getRenderJobDetail } from "@/app/lib/uniscenario/render/detail-store";
+import { getRenderJobDetail } from "@/app/lib/scenario/render/detail-store";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutableRenderJobContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableRenderJobContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ jobId: string }> };
 
@@ -29,23 +29,23 @@ type Context = { params: Promise<{ jobId: string }> };
  * show that state and offer to unhide. 404ing would make a hidden render unrecoverable through the UI.
  */
 export async function GET(_request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { jobId } = await route.params;
 
-  const access = await requireUniScenarioMutableRenderJobContext(auth.context, jobId, "read");
+  const access = await requireScenarioMutableRenderJobContext(auth.context, jobId, "read");
   if (access.response) return access.response;
 
   try {
     const detail = await getRenderJobDetail(auth.context, jobId);
     return detail
-      ? NextResponse.json(detail, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS })
+      ? NextResponse.json(detail, { headers: SCENARIO_PRIVATE_CACHE_HEADERS })
       : NextResponse.json({ error: "render_job_not_found" }, { status: 404 });
   } catch (error) {
     if (error instanceof Error && error.message === "uniscenario_render_lineage_invalid") {
       return NextResponse.json(
         { error: "render_job_lineage_unavailable" },
-        { status: 409, headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+        { status: 409, headers: SCENARIO_PRIVATE_CACHE_HEADERS },
       );
     }
     throw error;

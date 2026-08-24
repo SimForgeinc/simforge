@@ -20,7 +20,7 @@ const expectedXodrSha256 = 'af763016da63ab2f072e8a6d340bd0136b77c34eb9d6ea7b62db
 // Hash verification is a mandatory precondition even though this compact smoke
 // invokes the process directly to retain its exact stdout/stderr and CSV path.
 await createVerifiedMacOsLocalExecutor(binary);
-const root = await mkdtemp(path.join(os.tmpdir(), 'uniscenarios-real-esmini-'));
+const root = await mkdtemp(path.join(os.tmpdir(), 'simforge-real-esmini-'));
 const xodr = path.join(root, 'straight_500m.xodr');
 const sourceXodrBytes = await readFile(sourceXodr);
 const sourceXodrSha256 = createHash('sha256').update(sourceXodrBytes).digest('hex');

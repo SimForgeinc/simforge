@@ -149,7 +149,7 @@ export async function compileClaim(claim: CompilerClaim, xsdPath: string, signal
   const xodrArtifact = claim.map.artifacts.find((item) => item.kind === "map-xodr")!;
   const exported = exportOpenScenarioXml14(resolved, {
     graph: loaded.bundle.graph, worldElevation: buildXodrElevationResolver(loaded.xodr, loaded.bundle.graph), roadFile: `${loaded.bundle.mapId}.xodr`, executionMode: "trajectory-replay",
-    trustedAmbientActorIds: concrete.ambientTraffic.actors.map((item) => item.id), author: template.meta.author ?? "UniScenario", description: template.meta.description || template.meta.name,
+    trustedAmbientActorIds: concrete.ambientTraffic.actors.map((item) => item.id), author: template.meta.author ?? "Scenario", description: template.meta.description || template.meta.name,
     provenance: { revisionId: claim.revision.id, revisionContentSha256: claim.revision.contentSha256, mapVersionId: claim.revision.mapVersionId, mapXodrSha256: xodrArtifact.sha256, concreteInputSha256: sourceInputDigest, inputHash: sourceInputDigest, compilerVersion: COMPILER_VERSION },
   });
   const xoscBytes = new TextEncoder().encode(exported.content); if (xoscBytes.byteLength > MAX_XML_BYTES) throw new Error("compiled_xosc_too_large");

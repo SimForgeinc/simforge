@@ -5,7 +5,7 @@
     "description": "The US 'multiple threat' geometry: traffic in the kerb lane has stopped, a pedestrian crosses in front of the stopped lead vehicle, and the ego — in the lane beside it, with a clear road ahead of *itself* — has no line of sight until the pedestrian steps past the queue. The reference lane is the kerb lane, so the ego binds one lane to its left (`lane_offset k = +1`), which is also what selects the sites: a corridor whose reference lane has no left neighbour is infeasible, and that is exactly the corridor this scenario does not mean. The queue is the occluder, and it is modelled as L3 props rather than as actors on purpose — see the campaign report: the engine's pairwise TTC is lane-agnostic and circumscribes both footprints, so any *actor* standing 3.5 m to the ego's side drives the episode's min-TTC to zero and steals the metric from the pedestrian.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "C5.multiple-threat",
     "tags": [
       "vru",

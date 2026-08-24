@@ -25,7 +25,7 @@ describe('camera presentation metadata', () => {
   it('labels camera export as companion metadata rather than ASAM support', () => {
     const presentation = parseCameraPresentation({ cameras: [], policy: 'free' });
     const companion = createCameraCompanion(presentation, 'input-hash');
-    expect(companion.schema).toBe('uniscenarios-camera-companion/1');
+    expect(companion.schema).toBe('simforge-camera-companion/1');
     expect(companion.notice).toContain('not a native ASAM');
   });
 

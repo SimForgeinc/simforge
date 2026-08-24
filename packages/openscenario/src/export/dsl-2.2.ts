@@ -291,7 +291,7 @@ export function exportOpenScenarioDsl22(
   const inputActorBackends = actorPhysicsBackends(input.actors, physics);
   const content = [
     '# ASAM OpenSCENARIO DSL 2.2.0',
-    '# Generated from a concrete UniScenarios scenario instance.',
+    '# Generated from a concrete SimForge scenario instance.',
     '# uniscenarios.export.profile=dsl-2.2-actions',
     '# uniscenarios.export.intent=editable-semantic',
     `# uniscenarios.input.schemaVersion=${input.schemaVersion}`,

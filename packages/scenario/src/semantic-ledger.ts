@@ -28,7 +28,7 @@ export const SemanticLedgerSourceSchema = z.strictObject({
   clipSeconds: finite.nonnegative(),
   motionAuthority: z.enum([
     'kinematic-replay',
-    'uniscenarios-physics',
+    'simforge-physics',
     'carla-physics',
     'external-physics',
   ]),

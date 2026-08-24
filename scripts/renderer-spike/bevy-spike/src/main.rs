@@ -1,4 +1,4 @@
-//! UniScenarios renderer bake-off: headless Bevy offscreen renderer.
+//! SimForge renderer bake-off: headless Bevy offscreen renderer.
 //!
 //! Renders corpus GLB tiles (meshopt-decoded) from a fixed camera pose,
 //! producing RGB, instance-ID and depth passes with GPU->CPU readback,

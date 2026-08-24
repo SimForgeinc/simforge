@@ -1,17 +1,17 @@
 # V2X Scenario Migration (V6)
-> **Historical completion record:** Pre-rebrand UniScenarios package, CLI,
+> **Historical completion record:** Pre-rebrand SimForge package, CLI,
 > application, and evidence paths are retained verbatim below.
 
 
 Status: complete 2026-08-22, branch `v2x-scenario-migration`.
 Retires the patched external ScenarioRunner: OpenSCENARIO authoring, GPS
 trajectory authoring and traffic presets are re-expressed as native
-UniScenarios artifacts on `richmond-field-station`. Everything here was
+SimForge artifacts on `richmond-field-station`. Everything here was
 executed; evidence lives under `apps/v2x-migration/`.
 
 ## Per-scenario status matrix
 
-| Source (.xosc, READ-ONLY at `/home/path/V2XCarla/v2x-backend/apps/bridge/scenarios/`) | Import (`uniscenarios import --map richmond-field-station`) | Status | Working artifact |
+| Source (.xosc, READ-ONLY at `/home/path/V2XCarla/v2x-backend/apps/bridge/scenarios/`) | Import (`simforge import --map richmond-field-station`) | Status | Working artifact |
 |---|---|---|---|
 | `firetruck_from_north.xosc` | exit 2 — 2 actors preserved exactly (world positions + initial speed); storyboard semantics unsupported | **re-expressed** | `apps/v2x-migration/scenarios/firetruck-from-north.template.json` |
 | `firetruck_from_south.xosc` | exit 2 — same profile | **re-expressed** | `apps/v2x-migration/scenarios/firetruck-from-south.template.json` |
@@ -125,7 +125,7 @@ Fidelity gaps (documented per config):
 
 | Authoring type | Pipeline | BridgePort integration |
 |---|---|---|
-| Migrated .xosc scenario | template → `uniscenarios debug/instantiate` (map-bound materialization) or studio playback | load template; drive-session ego attaches to the `ego_vehicle` role (its stop command releases on first external control); EVA pull-over toast stays bridge-side logic keyed on the firetruck role |
-| Fresh OpenSCENARIO | `uniscenarios import <file.xosc> --map …` → draft → hand-finish storyboard semantics per table above | same as migrated scenarios |
+| Migrated .xosc scenario | template → `simforge debug/instantiate` (map-bound materialization) or studio playback | load template; drive-session ego attaches to the `ego_vehicle` role (its stop command releases on first external control); EVA pull-over toast stays bridge-side logic keyed on the firetruck role |
+| Fresh OpenSCENARIO | `simforge import <file.xosc> --map …` → draft → hand-finish storyboard semantics per table above | same as migrated scenarios |
 | GPS trajectory JSON | converter tool → timed-route template → simulate | treat like any scenario; for live uploads, convert then hot-load; timestamps survive conversion so replay pacing matches the source feed |
 | Traffic presets | read `<name>.ambient.json` → pass equivalent `--ambient*` flags (or call `applyAmbientTraffic` programmatically) | expose preset names unchanged (`none/light/medium/heavy/chaos`) over the WS protocol; document the fidelity table above to clients |

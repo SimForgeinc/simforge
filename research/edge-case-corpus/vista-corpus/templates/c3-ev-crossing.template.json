@@ -5,7 +5,7 @@
   "description": "An emergency vehicle approaches from a side road and turns across the ego's path without yielding, arriving at the junction shortly before the ego.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C3.intersection-emergency-crossing",
   "tags": [
    "intersection",

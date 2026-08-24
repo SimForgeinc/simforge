@@ -1,16 +1,16 @@
 import { connection, NextResponse } from "next/server";
-import { listUniScenarioBrowserCacheInventory } from "@/app/lib/uniscenario/document-store";
+import { listScenarioBrowserCacheInventory } from "@/app/lib/scenario/document-store";
 import {
-  requireUniScenarioContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 export async function GET() {
   await connection();
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   return NextResponse.json(
-    await listUniScenarioBrowserCacheInventory(auth.context),
-    { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS },
+    await listScenarioBrowserCacheInventory(auth.context),
+    { headers: SCENARIO_PRIVATE_CACHE_HEADERS },
   );
 }

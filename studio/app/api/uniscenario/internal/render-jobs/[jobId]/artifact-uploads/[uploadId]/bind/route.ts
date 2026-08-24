@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { BindArtifactUploadSchema } from "@/app/lib/uniscenario/contracts";
-import { bindArtifactUpload, renderWorkerNodeId } from "@/app/lib/uniscenario/control-plane-store";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectedLeaseResponse, rejectUnauthorizedRenderWorker } from "@/app/lib/uniscenario/worker-http";
+import { BindArtifactUploadSchema } from "@/app/lib/scenario/contracts";
+import { bindArtifactUpload, renderWorkerNodeId } from "@/app/lib/scenario/control-plane-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectedLeaseResponse, rejectUnauthorizedRenderWorker } from "@/app/lib/scenario/worker-http";
 
 type Context = { params: Promise<{ jobId: string; uploadId: string }> };
 

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getUniScenarioDatasetReadiness } from "@/app/lib/uniscenario/dataset-store";
+import { getScenarioDatasetReadiness } from "@/app/lib/scenario/dataset-store";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutableContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ datasetId: string }> };
 
@@ -13,13 +13,13 @@ type Context = { params: Promise<{ datasetId: string }> };
  * `useDatasetCrudController.applyDatasetReadiness`.
  */
 export async function GET(_request: Request, route: Context) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { datasetId } = await route.params;
-  const access = await requireUniScenarioMutableContext(auth.context, datasetId, "read");
+  const access = await requireScenarioMutableContext(auth.context, datasetId, "read");
   if (access.response) return access.response;
-  const readiness = await getUniScenarioDatasetReadiness(auth.context, datasetId);
+  const readiness = await getScenarioDatasetReadiness(auth.context, datasetId);
   return readiness
-    ? NextResponse.json(readiness, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS })
+    ? NextResponse.json(readiness, { headers: SCENARIO_PRIVATE_CACHE_HEADERS })
     : NextResponse.json({ error: "dataset_not_found" }, { status: 404 });
 }

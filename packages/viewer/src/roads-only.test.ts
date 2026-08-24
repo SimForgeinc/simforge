@@ -21,7 +21,7 @@ describe('Roads Only classification', () => {
 
   it('recognizes only explicitly tagged editor helpers', () => {
     const helper = new Object3D();
-    helper.userData.uniscenariosRole = LOW_FIDELITY_HIDDEN_ROLE;
+    helper.userData.simforgeRole = LOW_FIDELITY_HIDDEN_ROLE;
     expect(isLowFidelityHiddenHelper(helper)).toBe(true);
     expect(isLowFidelityHiddenHelper(new Object3D())).toBe(false);
   });

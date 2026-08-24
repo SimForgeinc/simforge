@@ -5,7 +5,7 @@
     "description": "A required real bus_stop feature anchors the scenario. A static dwelling bus actor sits at the stop with doors open, remains immobile, and is the declared line-of-sight occluder between ego and the alighting pedestrian. The pedestrian route is folded into the initial route so the lane-semantic arrival solver can place the actor at a real trace-critical conflict with the ego vehicle.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T16:02:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "C5.bus-stop-emergence",
     "tags": [
       "vru",

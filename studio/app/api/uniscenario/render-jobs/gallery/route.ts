@@ -5,13 +5,13 @@ import {
   listDocumentRenderGallery,
   listRenderGallery,
   listRevisionRenderGallery,
-} from "@/app/lib/uniscenario/render/gallery-store";
+} from "@/app/lib/scenario/render/gallery-store";
 import {
-  requireUniScenarioContext,
-  requireUniScenarioMutableDocumentContext,
-  requireUniScenarioMutableRevisionContext,
-  UNISCENARIO_PRIVATE_CACHE_HEADERS,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableDocumentContext,
+  requireScenarioMutableRevisionContext,
+  SCENARIO_PRIVATE_CACHE_HEADERS,
+} from "@/app/lib/scenario/http";
 
 /**
  * The render gallery (manifest #147, and the tile strip of #134).
@@ -20,7 +20,7 @@ import {
  * `failureCode`, `artifactCount` — is advanced by the worker control plane while the user watches, so
  * per plan §2.5 this read's freshness requirement is set by a background writer. `use cache` would
  * freeze render progress with nothing able to clear it. The route carries
- * `UNISCENARIO_PRIVATE_CACHE_HEADERS` (`private, no-store`) because the payload is workspace-scoped.
+ * `SCENARIO_PRIVATE_CACHE_HEADERS` (`private, no-store`) because the payload is workspace-scoped.
  *
  * `?revisionId=` narrows to one revision; it also switches the query onto
  * `uniscenario_render_jobs_revision_gallery_idx`.
@@ -36,7 +36,7 @@ import {
  * individually through `[jobId]/detail`.
  */
 export async function GET(request: Request) {
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
 
   const url = new URL(request.url);
@@ -50,25 +50,25 @@ export async function GET(request: Request) {
   if (revisionId) {
     // §5.7 FINDING A: a revision can live in a dataset shared into this workspace, so reading its
     // renders is a dataset-authorized action rather than a workspace-predicate one.
-    const access = await requireUniScenarioMutableRevisionContext(auth.context, revisionId, "read");
+    const access = await requireScenarioMutableRevisionContext(auth.context, revisionId, "read");
     if (access.response) return access.response;
     const [items, hiddenCount] = await Promise.all([
       listRevisionRenderGallery(auth.context, revisionId, { limit }),
       countHiddenRenderJobs(auth.context, revisionId),
     ]);
-    return NextResponse.json({ items, hiddenCount }, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS });
+    return NextResponse.json({ items, hiddenCount }, { headers: SCENARIO_PRIVATE_CACHE_HEADERS });
   }
 
   if (documentId) {
     // Same reasoning as the revision branch: a document can live in a dataset shared into this
     // workspace, so reading its renders is a dataset-authorized action.
-    const access = await requireUniScenarioMutableDocumentContext(auth.context, documentId, "read");
+    const access = await requireScenarioMutableDocumentContext(auth.context, documentId, "read");
     if (access.response) return access.response;
     const [items, hiddenCount] = await Promise.all([
       listDocumentRenderGallery(auth.context, documentId, { limit }),
       countHiddenRenderJobsForDocument(auth.context, documentId),
     ]);
-    return NextResponse.json({ items, hiddenCount }, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS });
+    return NextResponse.json({ items, hiddenCount }, { headers: SCENARIO_PRIVATE_CACHE_HEADERS });
   }
 
   const [items, hiddenCount] = await Promise.all([
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     }),
     countHiddenRenderJobs(auth.context),
   ]);
-  return NextResponse.json({ items, hiddenCount }, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS });
+  return NextResponse.json({ items, hiddenCount }, { headers: SCENARIO_PRIVATE_CACHE_HEADERS });
 }
 
 const JOB_MODES = ["interaction_2d", "full_render", "cosmos_augment", "vlm_annotate"] as const;

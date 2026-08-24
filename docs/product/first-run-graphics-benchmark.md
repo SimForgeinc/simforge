@@ -12,7 +12,7 @@ The reproducible runner is `scripts/benchmark-first-run-graphics.mjs`:
 ```sh
 node scripts/benchmark-first-run-graphics.mjs \
   --url http://127.0.0.1:5299 \
-  --out /tmp/uniscenarios-first-run-graphics.json
+  --out /tmp/simforge-first-run-graphics.json
 ```
 
 - Machine: Apple M5 Pro, 15 logical CPUs, 24 GB unified memory, macOS/Darwin 25.3.0.

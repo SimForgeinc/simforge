@@ -106,8 +106,8 @@ export function verifyRepositoryNaming(root) {
   if (!existsSync(join(root, 'renderer', 'Cargo.toml'))) errors.push('renderer/Cargo.toml must exist');
 
   const cli = readJson(join(root, 'packages/cli/package.json'));
-  const expectedBins = { simforge: './bin/simforge.js', sf: './bin/sf.js', uniscenarios: './bin/uniscenarios.js' };
-  if (JSON.stringify(cli.bin) !== JSON.stringify(expectedBins)) errors.push('CLI bins must be simforge, sf, and deprecated uniscenarios');
+  const expectedBins = { simforge: './bin/simforge.js', sf: './bin/sf.js' };
+  if (JSON.stringify(cli.bin) !== JSON.stringify(expectedBins)) errors.push('CLI bins must be exactly simforge and sf; the uniscenarios bin is retired');
 
   if (stack.packages?.length !== 13) errors.push('config/simforge-stack.json must contain 13 packages');
   const stackNames = (stack.packages ?? []).map((item) => item.name).sort();

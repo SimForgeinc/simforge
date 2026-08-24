@@ -190,7 +190,7 @@ def build_episode_spec(map_id: str, *, weather_patch: dict | None = None,
     if topology is None:
         raise FileNotFoundError(f"no topology-index.json.gz for {info.map_id!r} under {info.path}")
 
-    out_dir = Path(workdir or tempfile.mkdtemp(prefix="uniscenarios-load-"))
+    out_dir = Path(workdir or tempfile.mkdtemp(prefix="simforge-load-"))
     out_dir.mkdir(parents=True, exist_ok=True)
 
     doc = json.loads(instance.read_text())

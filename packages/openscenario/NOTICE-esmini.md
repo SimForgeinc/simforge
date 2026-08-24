@@ -8,5 +8,5 @@ Mozilla Public License 2.0. Its source, license, and notices are available at
 The fetch helper installs into a project-local ignored tools directory. Any
 models, maps, catalogs, or other third-party assets placed into runnable bundles
 retain their own licenses and must include their corresponding notices. The
-runner never assumes those assets are covered by UniScenarios' Apache-2.0
+runner never assumes those assets are covered by SimForge' Apache-2.0
 license.

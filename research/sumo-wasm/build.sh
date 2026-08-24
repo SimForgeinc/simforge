@@ -81,7 +81,7 @@ emcmake cmake -S "$CACHE_DIR/sumo" -B "$CACHE_DIR/sumo-build" -G Ninja \
   -DENABLE_GL2PS=OFF \
   -DENABLE_JUPEDSIM=OFF \
   -DENABLE_BOOST=OFF
-cmake --build "$CACHE_DIR/sumo-build" --target uniscenarios-sumo-wasm --parallel
+cmake --build "$CACHE_DIR/sumo-build" --target simforge-sumo-wasm --parallel
 
 cp "$CACHE_DIR/sumo-build/wasm/sumo.mjs" "$OUTPUT_DIR/sumo.mjs"
 cp "$CACHE_DIR/sumo-build/wasm/sumo.wasm" "$OUTPUT_DIR/sumo.wasm"

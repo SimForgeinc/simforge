@@ -5,7 +5,7 @@
   "description": "A faster vehicle from a right-side approach delays its merge, then cuts across into the ego lane immediately ahead while refusing to yield. The ego must brake decisively to avoid a close rear-end conflict.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C2.cut-in-merge",
   "tags": [
    "cut-in",

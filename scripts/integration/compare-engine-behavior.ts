@@ -38,7 +38,7 @@ if (!platformArg) throw new Error('Usage: compare-engine-behavior.ts --platform-
 const platformRoot = path.resolve(platformArg);
 
 const upstream = await import(pathToFileURL(path.join(repoRoot, 'packages/engine/src/index.ts')).href);
-const product = await import(pathToFileURL(path.join(platformRoot, 'packages/uniscenario-sim-engine/src/index.ts')).href);
+const product = await import(pathToFileURL(path.join(platformRoot, 'packages/scenario-sim-engine/src/index.ts')).href);
 const topologyFixture = await import(pathToFileURL(path.join(repoRoot, 'packages/engine/src/__tests__/fixtures/synthetic-map.ts')).href);
 const topology = topologyFixture.syntheticTopology();
 
@@ -94,14 +94,14 @@ const results = fixtures.map((fixture) => {
     id: fixture.id,
     parity: upstreamTraceSha256 === productTraceSha256 && upstreamIssuesSha256 === productIssuesSha256,
     trace: {
-      uniscenariosSha256: upstreamTraceSha256,
+      simforgeSha256: upstreamTraceSha256,
       simcloudSha256: productTraceSha256,
       firstDifference: firstDifference(upstreamResult.trace, productResult.trace),
     },
     issues: {
-      uniscenariosSha256: upstreamIssuesSha256,
+      simforgeSha256: upstreamIssuesSha256,
       simcloudSha256: productIssuesSha256,
-      uniscenariosCodes: upstreamResult.issues.map((issue: { code: string }) => issue.code),
+      simforgeCodes: upstreamResult.issues.map((issue: { code: string }) => issue.code),
       simcloudCodes: productResult.issues.map((issue: { code: string }) => issue.code),
       firstDifference: firstDifference(upstreamResult.issues, productResult.issues),
     },
@@ -111,7 +111,7 @@ const results = fixtures.map((fixture) => {
 const report = {
   schema: 'uniscenarios.engine-parity/v1',
   revisions: {
-    uniscenarios: (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
+    simforge: (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
     simcloud: (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], { cwd: platformRoot, encoding: 'utf8' }).trim(),
   },
   parity: results.every((result) => result.parity),

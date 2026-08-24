@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { RegisterRenderWorkerV2Schema } from "@/app/lib/uniscenario/render-wire-contracts";
-import { renderWorkerNodeId } from "@/app/lib/uniscenario/control-plane-store";
-import { registerRenderWorkerV2 } from "@/app/lib/uniscenario/render-worker-control-store";
-import { readJson } from "@/app/lib/uniscenario/http";
-import { rejectUnauthorizedRenderWorker } from "@/app/lib/uniscenario/worker-http";
+import { RegisterRenderWorkerV2Schema } from "@/app/lib/scenario/render-wire-contracts";
+import { renderWorkerNodeId } from "@/app/lib/scenario/control-plane-store";
+import { registerRenderWorkerV2 } from "@/app/lib/scenario/render-worker-control-store";
+import { readJson } from "@/app/lib/scenario/http";
+import { rejectUnauthorizedRenderWorker } from "@/app/lib/scenario/worker-http";
 
 export async function POST(request: Request) {
   const unauthorized = await rejectUnauthorizedRenderWorker(request);

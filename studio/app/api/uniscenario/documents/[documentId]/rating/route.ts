@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { UpsertUniScenarioDocumentRatingSchema } from "@/app/lib/uniscenario/contracts";
+import { UpsertScenarioDocumentRatingSchema } from "@/app/lib/scenario/contracts";
 import {
-  deleteUniScenarioDocumentRating,
-  getUniScenarioRatingAggregate,
-  upsertUniScenarioDocumentRating,
-} from "@/app/lib/uniscenario/rating-store";
+  deleteScenarioDocumentRating,
+  getScenarioRatingAggregate,
+  upsertScenarioDocumentRating,
+} from "@/app/lib/scenario/rating-store";
 import {
   readJson,
-  requireUniScenarioContext,
-  requireUniScenarioMutableDocumentContext,
-  requireUniScenarioMutationOrigin,
-} from "@/app/lib/uniscenario/http";
+  requireScenarioContext,
+  requireScenarioMutableDocumentContext,
+  requireScenarioMutationOrigin,
+} from "@/app/lib/scenario/http";
 
 type Context = { params: Promise<{ documentId: string }> };
 
@@ -21,43 +21,43 @@ type Context = { params: Promise<{ documentId: string }> };
  * a cookie-authenticated state change.
  */
 export async function PUT(request: Request, route: Context) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { documentId } = await route.params;
-  const access = await requireUniScenarioMutableDocumentContext(auth.context, documentId, "read");
+  const access = await requireScenarioMutableDocumentContext(auth.context, documentId, "read");
   if (access.response) return access.response;
-  const parsed = UpsertUniScenarioDocumentRatingSchema.safeParse(await readJson(request));
+  const parsed = UpsertScenarioDocumentRatingSchema.safeParse(await readJson(request));
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid_document_rating", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
-  const rating = await upsertUniScenarioDocumentRating(auth.context, documentId, parsed.data);
+  const rating = await upsertScenarioDocumentRating(auth.context, documentId, parsed.data);
   if (!rating) {
     return NextResponse.json({ error: "document_revision_or_job_not_found" }, { status: 404 });
   }
   return NextResponse.json({
     rating,
-    aggregate: await getUniScenarioRatingAggregate(auth.context, documentId),
+    aggregate: await getScenarioRatingAggregate(auth.context, documentId),
   });
 }
 
 export async function DELETE(request: Request, route: Context) {
-  const originError = requireUniScenarioMutationOrigin(request);
+  const originError = requireScenarioMutationOrigin(request);
   if (originError) return originError;
-  const auth = await requireUniScenarioContext();
+  const auth = await requireScenarioContext();
   if (auth.response) return auth.response;
   const { documentId } = await route.params;
-  const access = await requireUniScenarioMutableDocumentContext(auth.context, documentId, "read");
+  const access = await requireScenarioMutableDocumentContext(auth.context, documentId, "read");
   if (access.response) return access.response;
-  const deleted = await deleteUniScenarioDocumentRating(auth.context, documentId);
+  const deleted = await deleteScenarioDocumentRating(auth.context, documentId);
   return deleted
     ? NextResponse.json({
         ok: true,
-        aggregate: await getUniScenarioRatingAggregate(auth.context, documentId),
+        aggregate: await getScenarioRatingAggregate(auth.context, documentId),
       })
     : NextResponse.json({ error: "document_rating_not_found" }, { status: 404 });
 }

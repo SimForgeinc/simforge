@@ -220,12 +220,12 @@ function isMapAssetRequest(input: RequestInfo | URL, init?: RequestInit) {
   const raw = input instanceof Request ? input.url : String(input);
   const url = new URL(raw, window.location.origin);
   if (url.origin !== window.location.origin) return false;
-  if (/^\/api\/uniscenario\/maps\/[^/]+\/browser-assets\//.test(url.pathname)
+  if (/^\/api\/scenario\/maps\/[^/]+\/browser-assets\//.test(url.pathname)
     || url.pathname.startsWith("/api/uniscenario/sumo-runtime/")) {
     return true;
   }
   // Digital-twin panel assets (map-assets detail page). Unlike the
-  // uniscenario routes above, these URLs are NOT content-versioned — a map
+  // scenario routes above, these URLs are NOT content-versioned — a map
   // rebuild overwrites `maps/<id>/3d/…` in place — so only fetches carrying
   // the explicit `?v=<manifest-hash>` token (appended by the city-viewer,
   // see `CityViewerCore.start`) are cacheable: rebuild → new manifest bytes

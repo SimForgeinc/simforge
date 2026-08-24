@@ -1173,7 +1173,7 @@ export function buildScenarioManifest({
     coverageEligibility: machineAssessment.verdict === 'pass' ? 'pending-human-review' : 'rejected',
     countsTowardScenarioCoverage: false,
     renderer: {
-      path: 'UniScenarios CityViewer + EditorController.ActorRenderer',
+      path: 'SimForge CityViewer + EditorController.ActorRenderer',
       realMapGeometry: true,
       realCatalogModels: true,
       frame: 'scene-y-up',

@@ -5,7 +5,7 @@
   "description": "A stationary debris object is absent during the initial approach and appears in the ego lane only after the ego has committed to the road. A roadside box truck near the approach provides a plausible late visual reveal without being declared as a guaranteed occlusion. The debris is placed on the same reference lane with enough longitudinal room for a firm but survivable response.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C9.hazard",
   "tags": [
    "debris",

@@ -9,7 +9,7 @@
  *
  * esmini emits positions in OpenDRIVE world coordinates (meters). The writer
  * authors WorldPosition straight from the draft's runtime-frame x/y with no
- * transform (see the UniScenarios OpenSCENARIO compiler), so the esmini output frame is
+ * transform (see the SimForge OpenSCENARIO compiler), so the esmini output frame is
  * the runtime frame — the same `runtimePointToLngLat` projection the planned
  * overlay uses. That equivalence is what makes the two overlays line up.
  */

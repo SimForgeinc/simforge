@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("uniscenario assistant stream error:", error);
+    console.error("scenario assistant stream error:", error);
     return errorStreamResponse(
       error instanceof Error ? error.message : "Assistant failed",
     );
@@ -91,7 +91,7 @@ function assistantStreamResponse(
           },
         });
       } catch (error) {
-        console.error("uniscenario assistant stream error:", error);
+        console.error("scenario assistant stream error:", error);
         enqueue("delta", {
           text:
             error instanceof Error

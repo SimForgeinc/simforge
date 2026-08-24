@@ -231,7 +231,7 @@ export async function runHeadlessSumo(options: {
     paths: Object.fromEntries(Object.entries(paths).filter(([, samples]) => samples.length > 0)),
     limitations: [
       'The lean SUMO bridge exposes lane position but not the current lane/road identifier.',
-      'SUMO internal traffic-light phases are not exposed by the current bridge; report signal tracks come from the canonical UniScenarios simulation.',
+      'SUMO internal traffic-light phases are not exposed by the current bridge; report signal tracks come from the canonical SimForge simulation.',
     ],
   };
 }

@@ -294,7 +294,7 @@ export function normalizeCanonicalTrace(trace: SimTrace): NormalizedTrace {
   });
   return finishTrace({
     side: 'canonical',
-    source: `uniscenarios@${trace.header.engineVersion}`,
+    source: `simforge@${trace.header.engineVersion}`,
     sampleHz: COMMON_SAMPLE_HZ,
     durationS: COMMON_DURATION_S,
     t: commonTimeline(),

@@ -10,7 +10,7 @@ They are only worth running in parallel if they are **comparable**. So the follo
 SHARED. Neither lane may modify them.
 
 ## 1. The briefs and the split (frozen)
-`/Users/maikyon/Documents/Programming/UniScenarios/research/edge-case-corpus/agent-authoring/brief-corpus.json` — 92 briefs, all 15 taxonomy categories.
+`/Users/maikyon/Documents/Programming/SimForge/research/edge-case-corpus/agent-authoring/brief-corpus.json` — 92 briefs, all 15 taxonomy categories.
 Split sha256 `dd4f360c16fd416f` — **DEV 32 / HELDOUT 60**.
 A lane may develop against DEV. HELDOUT is authored once, through a hash-frozen surface.
 
@@ -39,8 +39,8 @@ Same 92 briefs, same gate, same held-out split. Report:
 Lane 1 baseline to beat: **29-31 admitted, DEV 0.312 / HELD 0.317, gap ~0.00, judge 0.83, ~35 s/brief.**
 
 ## 5. Resource budget (10 CPU cores total)
-Lane 1: <= 8 parallel `uniscenarios batch` workers. Lane 2: <= 4 while its loop is being built.
-`uniscenarios batch` is CPU-bound node; oversubscribing makes BOTH lanes slower.
+Lane 1: <= 8 parallel `simforge batch` workers. Lane 2: <= 4 while its loop is being built.
+`simforge batch` is CPU-bound node; oversubscribing makes BOTH lanes slower.
 
 ## 6. Evidence hygiene (learned the hard way)
 Write every run to a UNIQUE output dir (`/tmp/<lane>-<attempt>-<briefId>`). An earlier K-restart run

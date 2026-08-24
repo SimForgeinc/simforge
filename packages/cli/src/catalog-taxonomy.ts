@@ -1,5 +1,5 @@
 /**
- * Authored incident taxonomy used by the UniScenarios five-map catalog.
+ * Authored incident taxonomy used by the SimForge five-map catalog.
  *
  * These are functional incident descriptions, not concrete-test parameter
  * samples. A catalog slot binds one incident to a real, digest-pinned map

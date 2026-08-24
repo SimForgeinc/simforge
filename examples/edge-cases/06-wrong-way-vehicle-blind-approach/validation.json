@@ -2,13 +2,13 @@
   "schema": "uniscenarios.gallery-validation.v1",
   "validatedAt": "2026-08-03T08:00:00.000Z",
   "provider": "native",
-  "command": "uniscenarios debug 06-wrong-way-vehicle-blind-approach/scenario.instance.json --sample 0.5 --fail-on-fallback --fail-on-never-fired --fail-on-collision",
+  "command": "simforge debug 06-wrong-way-vehicle-blind-approach/scenario.instance.json --sample 0.5 --fail-on-fallback --fail-on-never-fired --fail-on-collision",
   "acceptance": {
     "ok": true,
     "failures": []
   },
   "input": {
-    "source": "/private/tmp/uniscenarios-new-gallery/examples/edge-cases/06-wrong-way-vehicle-blind-approach/scenario.instance.json",
+    "source": "/private/tmp/simforge-new-gallery/examples/edge-cases/06-wrong-way-vehicle-blind-approach/scenario.instance.json",
     "kind": "instance",
     "mapId": "easterbrook-discovery-school",
     "provider": "native",

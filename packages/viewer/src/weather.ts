@@ -273,7 +273,7 @@ function createHaze(
   mesh.name = WEATHER_HAZE_OBJECT_NAME;
   mesh.frustumCulled = false;
   mesh.renderOrder = 10_000;
-  mesh.userData.uniscenariosRole = WEATHER_ROLE;
+  mesh.userData.simforgeRole = WEATHER_ROLE;
   mesh.userData.cityWeatherEffect = 'haze';
   mesh.userData.fogSpace = 'world-anchored-local-banks';
   mesh.userData.haze = clamp(haze, 0, 1);
@@ -390,7 +390,7 @@ function createCloudDome(
   mesh.name = WEATHER_CLOUDS_OBJECT_NAME;
   mesh.frustumCulled = false;
   mesh.renderOrder = -100;
-  mesh.userData.uniscenariosRole = WEATHER_ROLE;
+  mesh.userData.simforgeRole = WEATHER_ROLE;
   mesh.userData.cityWeatherEffect = 'clouds';
   mesh.userData.cloudCoverage = coverage;
   mesh.userData.cloudQuality = budget;
@@ -583,7 +583,7 @@ function createGroundImpacts(
   mesh.name = WEATHER_GROUND_IMPACTS_OBJECT_NAME;
   mesh.frustumCulled = false;
   mesh.renderOrder = 8_900;
-  mesh.userData.uniscenariosRole = WEATHER_ROLE;
+  mesh.userData.simforgeRole = WEATHER_ROLE;
   mesh.userData.cityWeatherEffect = 'ground-impacts';
   mesh.userData.precipitationKind = appearance.kind;
   mesh.userData.particleBudget = appearance.budget;
@@ -803,7 +803,7 @@ function createPrecipitation(
   mesh.name = WEATHER_PRECIPITATION_OBJECT_NAME;
   mesh.frustumCulled = false;
   mesh.renderOrder = 9_000;
-  mesh.userData.uniscenariosRole = WEATHER_ROLE;
+  mesh.userData.simforgeRole = WEATHER_ROLE;
   mesh.userData.cityWeatherEffect = 'precipitation';
   mesh.userData.precipitationKind = appearance.kind;
   mesh.userData.particleBudget = appearance.budget;

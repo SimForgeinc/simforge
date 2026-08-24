@@ -5,7 +5,7 @@
     "description": "A crossing guard holds a child group at a marked school crossing, checks the approach, then gives an explicit wave-through cue. The children remain a separate actor, enter only after the release, cross as a compact group, and stop on the far side while the guard returns to a stable halt gesture.",
     "createdAt": "2026-08-01T00:00:00.000Z",
     "modifiedAt": "2026-08-01T00:00:00.000Z",
-    "appVersion": "uniscenarios/0.0.1",
+    "appVersion": "simforge/0.0.1",
     "archetype": "school.crossing-guard-release",
     "tags": ["school", "crossing", "crossing-guard", "children", "release-cue"],
     "author": "agent/school-workzone-mechanisms",

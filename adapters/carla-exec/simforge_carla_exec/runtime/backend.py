@@ -31,7 +31,7 @@ FLASH_PERIOD_S = 1.0
 #: This is not a lossy shortcut: a head's arrow/X glyph is hardware derived from
 #: the plan's protected turns (`signal-head-model.ts`), never from the phase
 #: word, so `green_arrow` genuinely *is* a green lamp on an arrow head. The
-#: browser signal overlay (`uniscenario-xodr-tools/src/overlays/signals.ts`)
+#: browser signal overlay (`scenario-xodr-tools/src/overlays/signals.ts`)
 #: resolves the same eleven words onto the same colours, and renders the two
 #: flashing indications by alternating against `off` — which is what the second
 #: tuple element asks for here.
@@ -493,7 +493,7 @@ class RenderBackend(Protocol):
 
 
 class CarlaBackend:
-    """Small native CARLA adapter owned by the UniScenario worker."""
+    """Small native CARLA adapter owned by the Scenario worker."""
 
     def __init__(self, host: str = "127.0.0.1", port: int = 2000, timeout: float = 60.0):
         try:

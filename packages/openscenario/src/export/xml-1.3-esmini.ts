@@ -49,7 +49,7 @@ export function analyzeEsminiCompatibility(
 ): EsminiCompatibilityReport {
   const replay = mode === 'deterministic-trajectory';
   const entries: EsminiCompatibilityEntry[] = [
-    finding('schemaVersion', 'lowered', 'UniScenarios schema identity is retained in Properties; the XML document is authored directly as 1.3.1.'),
+    finding('schemaVersion', 'lowered', 'SimForge schema identity is retained in Properties; the XML document is authored directly as 1.3.1.'),
     finding('mapId', 'semantic-portable', 'Resolved to a hash-verified complete OpenDRIVE LogicFile in the runnable bundle.'),
     finding('clipSeconds', 'semantic-portable', 'Mapped to the storyboard StopTrigger.'),
     finding('warmupSeconds', 'lowered', 'Folded into absolute storyboard and trajectory time.'),
@@ -85,7 +85,7 @@ export function analyzeEsminiCompatibility(
     entries.push(finding(
       `actors.${actor.id}.kind`,
       'lowered',
-      `${actor.kind} uses the closest OpenSCENARIO 1.3.1 vehicle category while its exact UniScenarios kind remains in Properties.`,
+      `${actor.kind} uses the closest OpenSCENARIO 1.3.1 vehicle category while its exact SimForge kind remains in Properties.`,
       false,
     ));
   }

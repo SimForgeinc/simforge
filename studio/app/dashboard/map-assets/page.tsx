@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { requireAppContext } from "@/app/lib/db/app-context";
 import { getMapAssets } from "@/app/lib/map-assets";
-import { listUniScenarioMapDescriptors } from "@/app/lib/uniscenario/document-store";
+import { listScenarioMapDescriptors } from "@/app/lib/scenario/document-store";
 import { MapGalleryPageClient } from "@/app/dashboard/map-assets/catalog/MapGalleryPageClient";
 import MapAssetsLoading from "./loading";
 
@@ -14,7 +14,7 @@ export async function MapAssetsContent() {
   const context = await requireAppContext("/dashboard/map-assets");
   const [assets, maps] = await Promise.all([
     getMapAssets(),
-    listUniScenarioMapDescriptors(context),
+    listScenarioMapDescriptors(context),
   ]);
 
   return (

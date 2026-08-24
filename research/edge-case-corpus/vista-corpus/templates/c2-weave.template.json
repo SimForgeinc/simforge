@@ -5,7 +5,7 @@
   "description": "A slower lead vehicle vacates the ego lane while a faster vehicle from the adjacent lane cuts into it shortly afterward, forcing the ego to respond to two opposing lane movements around its path without relying on a fixed map location.",
   "createdAt": "2026-08-01T00:00:00.000Z",
   "modifiedAt": "2026-08-01T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "C2.cut-in-merge",
   "tags": [
    "cut-in",

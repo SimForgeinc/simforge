@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import {
-  getUniScenarioControlPlaneHealth,
+  getScenarioControlPlaneHealth,
   renderWorkerNodeId,
-} from "@/app/lib/uniscenario/control-plane-store";
+} from "@/app/lib/scenario/control-plane-store";
 import {
   rejectUnauthorizedRenderWorker,
   rejectUnauthorizedWorker,
-} from "@/app/lib/uniscenario/worker-http";
+} from "@/app/lib/scenario/worker-http";
 
 export async function GET(request: Request) {
   const operatorUnauthorized = rejectUnauthorizedWorker(request);
@@ -21,6 +21,6 @@ export async function GET(request: Request) {
   if (operatorUnauthorized && (!workerNodeId || renderWorkerNodeId(request) !== workerNodeId)) {
     return NextResponse.json({ error: "worker_node_identity_mismatch" }, { status: 409 });
   }
-  const health = await getUniScenarioControlPlaneHealth(workerNodeId);
+  const health = await getScenarioControlPlaneHealth(workerNodeId);
   return NextResponse.json(health, { status: health.status === "ready" ? 200 : 503 });
 }

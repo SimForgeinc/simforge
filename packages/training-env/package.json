@@ -1,10 +1,10 @@
 {
   "name": "@simforge/training-env",
   "version": "0.1.0-rc.45",
-  "description": "Gymnasium-semantics environment core over the UniScenarios fixed-step engine: EnvSession (reset/step), observations (state vector, perception-gated object list, BEV raster), reward assembly, and the versioned causal ground-truth channel.",
+  "description": "Gymnasium-semantics environment core over the SimForge fixed-step engine: EnvSession (reset/step), observations (state vector, perception-gated object list, BEV raster), reward assembly, and the versioned causal ground-truth channel.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/SimForge.git",
+    "url": "git+https://github.com/SimForgeinc/simforge.git",
     "directory": "packages/training-env"
   },
   "publishConfig": {

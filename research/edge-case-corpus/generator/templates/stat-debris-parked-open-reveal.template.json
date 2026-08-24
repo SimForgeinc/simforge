@@ -5,7 +5,7 @@
   "description": "Auto-synthesised archetype from the mechanism grammar. {'topology': 'static_obstacle', 'challenger': 'debris', 'occlusion': 'parked_row', 'control': 'open_road', 'fault': 'late_reveal', 'id': 'stat-debris-parked-open-reveal'}",
   "createdAt": "2026-08-06T00:00:00.000Z",
   "modifiedAt": "2026-08-06T00:00:00.000Z",
-  "appVersion": "uniscenarios/0.0.1",
+  "appVersion": "simforge/0.0.1",
   "archetype": "stat-debris-parked-open-reveal",
   "tags": [
    "static_obstacle",
