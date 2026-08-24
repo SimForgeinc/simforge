@@ -435,8 +435,14 @@ const VEG_SIDECAR = /^veg_\d+_\d+\.instances\.json$/;
 function sha256(data: Uint8Array): string {
   return createHash('sha256').update(data).digest('hex');
 }
-/** Decode meshopt + dequantize + WebP→PNG for one GLB. Returns #converted textures. */
-async function decodeGlb(input: Buffer, io: NodeIO): Promise<{ doc: Document; converted: number }> {
+/**
+ * Decode meshopt + dequantize + WebP→PNG for one GLB. Returns #converted
+ * textures. Material texture slots — baseColor, normal, occlusion,
+ * metallicRoughness (packed ORM: R=AO, G=roughness, B=metallic) — pass
+ * through untouched; only image payloads and geometry encodings change.
+ * Exported for the ORM-preservation contract test.
+ */
+export async function decodeGlb(input: Buffer, io: NodeIO): Promise<{ doc: Document; converted: number }> {
   const doc = await io.readBinary(input);
   await doc.transform(dequantize());
   // Buffers are decoded; drop the compression extension so the writer emits
