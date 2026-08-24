@@ -267,3 +267,23 @@ export function artifactDeletionJobId(): string {
 export function artifactLifecycleEventId(): string {
   return `alev_${randomId().slice(0, 24)}`;
 }
+
+export function modelVersionId(): string {
+  return `mv_${randomId().slice(0, 24)}`;
+}
+
+export function modelEndpointId(): string {
+  return `mep_${randomId().slice(0, 24)}`;
+}
+
+export function modelRunId(): string {
+  return `mrun_${randomId().slice(0, 24)}`;
+}
+
+export function modelRunAttemptId(runId: string, attemptNumber: number): string {
+  return `mra_${digest(`${runId}:${attemptNumber}`)}`;
+}
+
+export function modelRunEventId(runId: string, ordinal: number): string {
+  return `mrev_${digest(`${runId}:${ordinal}`)}`;
+}
