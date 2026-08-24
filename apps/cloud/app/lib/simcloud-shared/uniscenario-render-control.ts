@@ -85,6 +85,11 @@ export const UniScenarioParityEvidenceV1Schema = z
       acceptanceGate: z.enum(["full-trajectory", "through-first-contact"]).optional(),
       evaluatedActorCount: z.number().int().nonnegative(),
       failedActorIds: z.array(z.string().trim().min(1)).max(10_000),
+      // Grounded-spawn placement evidence from the CARLA worker: actors the
+      // runtime dropped (unplaceable) or nudged onto valid ground before
+      // execution. Diagnostic identity data; absent from browser evidence.
+      droppedActorIds: z.array(z.string().trim().min(1)).max(10_000).optional(),
+      nudgedActorIds: z.array(z.string().trim().min(1)).max(10_000).optional(),
       postContactFailedActorIds: z.array(z.string().trim().min(1)).max(10_000).optional(),
       postContactClassification: z.enum(["blocking", "expected-carla-physics"]).optional(),
       metrics: z.record(z.string(), z.number().finite().nonnegative()),
