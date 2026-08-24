@@ -67,6 +67,26 @@ class ParityAccumulator:
         }
         self.previous_expected_speed: dict[str, float] = {}
         self.failed_actor_ids: set[str] = set()
+        self.dropped_actor_ids: set[str] = set()
+        self.static_planar_offsets: dict[str, tuple[float, float]] = {}
+
+    def configure_spawn_placement(
+        self,
+        dropped_actor_ids: Iterable[str] = (),
+        static_planar_offsets: Mapping[str, tuple[float, float]] | None = None,
+    ) -> None:
+        """Register spawn-placement decisions made before frame zero.
+
+        A dropped actor has no CARLA body: it is excluded from the readback
+        closure and never evaluated. A nudged STATIC actor is measured against
+        its recorded collision-free placement; the nudge itself is reported
+        separately as a spawn-placement divergence, not hidden.
+        """
+        self.dropped_actor_ids = set(dropped_actor_ids)
+        self.static_planar_offsets = {
+            actor_id: (float(offset[0]), float(offset[1]))
+            for actor_id, offset in (static_planar_offsets or {}).items()
+        }
 
     def observe(
         self,
@@ -89,7 +109,7 @@ class ParityAccumulator:
 
         expected_present = {
             actor_id for actor_id, target in expected.actors.items()
-            if target.lifecycle != LIFECYCLE_ABSENT
+            if target.lifecycle != LIFECYCLE_ABSENT and actor_id not in self.dropped_actor_ids
         }
         actual_present = {
             actor_id for actor_id, value in actual.items()
@@ -102,6 +122,8 @@ class ParityAccumulator:
         if actual_signals is not None and dict(actual_signals) != dict(expected.signals):
             self.signal_mismatches += 1
         for actor_id, target in expected.actors.items():
+            if actor_id in self.dropped_actor_ids:
+                continue
             if target.lifecycle == LIFECYCLE_ABSENT:
                 value = actual.get(actor_id)
                 if value is not None and bool(value.get("present", False)):
@@ -116,8 +138,13 @@ class ParityAccumulator:
             if actual_appearance is not None and dict(actual_appearance) != dict(target.appearance):
                 self.discrete_mismatches += 1
                 self.failed_actor_ids.add(actor_id)
+            offset = self.static_planar_offsets.get(actor_id, (0.0, 0.0))
             errors = {
-                "positionM": math.sqrt((target.x - value["x"]) ** 2 + (target.y - value["y"]) ** 2 + (target.z - value["z"]) ** 2),
+                "positionM": math.sqrt(
+                    (target.x + offset[0] - value["x"]) ** 2
+                    + (target.y + offset[1] - value["y"]) ** 2
+                    + (target.z - value["z"]) ** 2
+                ),
                 "headingDeg": abs((target.heading_deg - value["headingDeg"] + 180) % 360 - 180),
                 "speedMps": abs(target.speed_mps - value["speedMps"]),
             }

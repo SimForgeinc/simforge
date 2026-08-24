@@ -2710,3 +2710,397 @@ def test_plans_without_a_knockdown_keep_their_digest():
 def test_rejects_an_unparseable_knockdown_time():
     with pytest.raises(ContractError):
         compile_xosc14(_walker_xosc("not-a-time"))
+
+
+def _placement_carla():
+    class Location:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class Rotation:
+        def __init__(self, yaw=0): self.yaw = yaw
+    class Transform:
+        def __init__(self, location, rotation): self.location, self.rotation = location, rotation
+    class Vector3D:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class WalkerControl:
+        def __init__(self, direction=None, speed=0, jump=False):
+            self.direction, self.speed, self.jump = direction, speed, jump
+    class Carla: pass
+    Carla.Location, Carla.Rotation, Carla.Transform = Location, Rotation, Transform
+    Carla.Vector3D, Carla.WalkerControl = Vector3D, WalkerControl
+    return Carla
+
+
+class _PlacementActor:
+    def __init__(self, type_id="vehicle.lincoln.mkz", actor_id=1):
+        self.type_id, self.id = type_id, actor_id
+    def destroy(self): return True
+
+
+class _PlacementWorld:
+    def __init__(self, ground_z=None, waypoint_z=None, refuse_spawn=False):
+        self.ground_z, self.waypoint_z, self.refuse_spawn = ground_z, waypoint_z, refuse_spawn
+        self.transforms, self.probes = [], []
+        self.next_actor_id = 1
+    def get_blueprint_library(self):
+        class Library:
+            def find(self, blueprint_id): return blueprint_id
+        return Library()
+    def try_spawn_actor(self, blueprint_id, transform):
+        if self.refuse_spawn:
+            return None
+        self.transforms.append(transform)
+        actor = _PlacementActor(blueprint_id, self.next_actor_id)
+        self.next_actor_id += 1
+        return actor
+
+
+class _RaycastWorld(_PlacementWorld):
+    def ground_projection(self, location, search_distance):
+        self.probes.append((location.x, location.y, location.z, search_distance))
+        if self.ground_z is None:
+            return None
+        return type("Hit", (), {"location": type("L", (), {"z": self.ground_z})()})()
+
+
+class _WaypointWorld(_PlacementWorld):
+    def get_map(self):
+        world = self
+        class Map:
+            def get_waypoint(self, location, project_to_road=True):
+                if world.waypoint_z is None:
+                    return None
+                transform = type("T", (), {"location": type("L", (), {"z": world.waypoint_z})()})()
+                return type("Waypoint", (), {"transform": transform})()
+        return Map()
+
+
+def _placement_backend(world):
+    backend = object.__new__(CarlaBackend)
+    backend.carla = _placement_carla()
+    backend.world = world
+    backend.actors = {}
+    return backend
+
+
+def _vehicle_binding(actor_id):
+    return ActorBinding(actor_id, f"actor_{actor_id}", "car", "vehicle.sedan")
+
+
+_PLACEMENT_CATALOG = {"vehicle.sedan": {"blueprintId": "vehicle.lincoln.mkz"}}
+
+
+def test_spawn_projects_each_actor_to_the_rendered_ground_surface():
+    backend = _placement_backend(_RaycastWorld(ground_z=58.4))
+    frame = PlanFrame(0, 0, {"ego": ActorFrame("spawn", 143.269, -338.977, 61.796, -5.782, 0)}, {})
+    backend.spawn({"ego": _vehicle_binding("ego")}, frame, _PLACEMENT_CATALOG)
+    spawned = backend.world.transforms[0]
+    assert spawned.location.z == pytest.approx(58.4 + 0.25)
+    assert spawned.location.y == pytest.approx(338.977)
+    # The probe starts above the authored elevation, in the CARLA frame.
+    assert backend.world.probes[0][2] == pytest.approx(61.796 + 2.0)
+    report = backend.spawn_placement_report()
+    assert report["actors"]["ego"]["outcome"] == "placed"
+    assert report["actors"]["ego"]["groundSource"] == "ground-projection"
+    assert report["droppedActorIds"] == [] and report["nudgedActorIds"] == []
+    assert backend.spawn_planar_targets["ego"] == (pytest.approx(143.269), pytest.approx(-338.977))
+
+
+def test_spawn_falls_back_to_waypoint_elevation_and_rejects_far_surfaces():
+    backend = _placement_backend(_WaypointWorld(waypoint_z=60.1))
+    frame = PlanFrame(0, 0, {"ego": ActorFrame("spawn", 10.0, 4.0, 61.0, 0.0, 0)}, {})
+    backend.spawn({"ego": _vehicle_binding("ego")}, frame, _PLACEMENT_CATALOG)
+    assert backend.world.transforms[0].location.z == pytest.approx(60.1 + 0.25)
+    assert backend.spawn_placement_report()["actors"]["ego"]["groundSource"] == "road-waypoint"
+
+    # A surface farther than the acceptance delta is the wrong one
+    # (overpass, tunnel roof): the authored elevation stays authoritative.
+    far = _placement_backend(_WaypointWorld(waypoint_z=61.0 - 40.0))
+    far.spawn({"ego": _vehicle_binding("ego")}, frame, _PLACEMENT_CATALOG)
+    assert far.world.transforms[0].location.z == pytest.approx(61.0 + 0.25)
+    assert far.spawn_placement_report()["actors"]["ego"]["groundSource"] == "authored-z"
+
+
+def test_spawn_overlap_nudges_along_the_lane_and_records_the_placement():
+    backend = _placement_backend(_PlacementWorld())
+    frame = PlanFrame(0, 0, {
+        "a": ActorFrame("spawn", 0.0, 0.0, 0.0, 0.0, 0),
+        "b": ActorFrame("spawn", 4.0, 0.0, 0.0, 0.0, 0),
+    }, {})
+    backend.spawn({"a": _vehicle_binding("a"), "b": _vehicle_binding("b")}, frame, _PLACEMENT_CATALOG)
+    report = backend.spawn_placement_report()
+    assert report["actors"]["a"]["outcome"] == "placed"
+    assert report["actors"]["b"]["outcome"] == "nudged"
+    assert report["actors"]["b"]["nudgeAlongHeadingM"] == pytest.approx(1.5)
+    assert report["nudgedActorIds"] == ["b"]
+    assert backend.world.transforms[1].location.x == pytest.approx(5.5)
+    assert backend.spawn_planar_targets["b"] == (pytest.approx(5.5), pytest.approx(0.0))
+
+
+def test_spawn_drops_an_unplaceable_actor_instead_of_stacking():
+    backend = _placement_backend(_PlacementWorld())
+    frame = PlanFrame(0, 0, {
+        "a": ActorFrame("spawn", 0.0, 0.0, 0.0, 0.0, 0),
+        "b": ActorFrame("spawn", 0.0, 0.0, 0.0, 0.0, 0),
+    }, {})
+    backend.spawn({"a": _vehicle_binding("a"), "b": _vehicle_binding("b")}, frame, _PLACEMENT_CATALOG)
+    assert set(backend.actors) == {"a"}
+    assert backend.dropped_actor_ids == {"b"}
+    # The overlapping body was never handed to CARLA at all: no stacking.
+    assert len(backend.world.transforms) == 1
+    report = backend.spawn_placement_report()
+    assert report["droppedActorIds"] == ["b"]
+    assert report["actors"]["b"]["outcome"] == "dropped"
+    assert "no collision-free spawn" in report["actors"]["b"]["reason"]
+
+
+def test_spawn_fails_closed_when_every_actor_is_unplaceable():
+    backend = _placement_backend(_PlacementWorld(refuse_spawn=True))
+    frame = PlanFrame(0, 0, {"ego": ActorFrame("spawn", 0.0, 0.0, 0.0, 0.0, 0)}, {})
+    with pytest.raises(RuntimeError, match="dropped every scenario actor"):
+        backend.spawn({"ego": _vehicle_binding("ego")}, frame, _PLACEMENT_CATALOG)
+
+
+def test_prepare_scenario_resets_a_nudged_actor_to_its_placed_position():
+    class Vector3D:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class Location:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class Rotation:
+        def __init__(self, yaw=0): self.yaw = yaw
+    class Transform:
+        def __init__(self, location, rotation): self.location, self.rotation = location, rotation
+    class VehicleControl:
+        def __init__(self, throttle=0, brake=0, steer=0):
+            self.throttle, self.brake, self.steer = throttle, brake, steer
+    class Carla: pass
+    Carla.Vector3D, Carla.Location, Carla.Rotation, Carla.Transform = Vector3D, Location, Rotation, Transform
+    Carla.VehicleControl = VehicleControl
+    class Actor:
+        type_id = "vehicle.lincoln.mkz"
+        def __init__(self): self.transform = Transform(Location(z=7), Rotation())
+        def apply_control(self, control): pass
+        def get_transform(self): return self.transform
+        def get_velocity(self): return Vector3D()
+        def get_angular_velocity(self): return Vector3D()
+        def set_transform(self, value): self.transform = value
+        def set_target_velocity(self, value): pass
+        def set_target_angular_velocity(self, value): pass
+    class World:
+        def tick(self): pass
+    backend = object.__new__(CarlaBackend)
+    backend.carla = Carla
+    backend.world = World()
+    backend.execution_mode = "native-physics"
+    backend.fixed_timestep_s = 0.02
+    backend.speed_integrals = {}
+    backend.actors = {"ego": Actor()}
+    backend.spawn_planar_targets = {"ego": (5.5, 0.0)}
+    frame = PlanFrame(0, 0, {"ego": ActorFrame("spawn", 4.0, 0.0, 0.0, 0.0, 0)}, {})
+    backend.prepare_scenario(frame)
+    # The collision-free placement wins over the authored overlap position, so
+    # the pre-t0 reset can never re-create the spawn overlap.
+    assert backend.actors["ego"].transform.location.x == pytest.approx(5.5)
+    assert backend.actors["ego"].transform.location.z == pytest.approx(7)
+
+
+def test_apply_drives_walker_natively_and_never_teleports():
+    Carla = _placement_carla()
+    class Walker:
+        type_id = "walker.pedestrian.0001"
+        def __init__(self):
+            self.controls, self.teleports = [], 0
+            self.transform = Carla.Transform(Carla.Location(), Carla.Rotation())
+        def get_transform(self): return self.transform
+        def get_velocity(self): return Carla.Vector3D()
+        def apply_control(self, control): self.controls.append(control)
+        def set_transform(self, _value): self.teleports += 1
+    walker = Walker()
+    backend = object.__new__(CarlaBackend)
+    backend.carla = Carla
+    backend.execution_mode = "native-physics"
+    backend.fixed_timestep_s = 0.02
+    backend.actors = {"ped": walker}
+    backend.signals = {}
+    backend.apply(PlanFrame(0, 0, {"ped": ActorFrame("active", 2.0, 0.0, 0.0, 0.0, 1.4)}, {}))
+    assert walker.teleports == 0
+    control = walker.controls[-1]
+    # Along-track catch-up: 2.0 m error * 0.45 = +0.9 m/s over the authored
+    # speed, always clamped to at most +1.0 m/s.
+    assert control.speed == pytest.approx(1.4 + 0.9)
+    assert control.direction.x == pytest.approx(1.0)
+    assert control.direction.y == pytest.approx(0.0)
+    assert control.direction.z == 0.0
+    assert control.jump is False
+
+    # A stationary walker within tolerance holds still natively.
+    backend.apply(PlanFrame(1, 0.02, {"ped": ActorFrame("active", 0.0, 0.0, 0.0, 0.0, 0.0)}, {}))
+    assert walker.controls[-1].speed == 0.0
+    assert walker.teleports == 0
+
+
+def test_apply_skips_actors_dropped_at_spawn():
+    Carla = _placement_carla()
+    backend = object.__new__(CarlaBackend)
+    backend.carla = Carla
+    backend.execution_mode = "native-physics"
+    backend.fixed_timestep_s = 0.02
+    backend.actors = {}
+    backend.signals = {}
+    backend.dropped_actor_ids = {"ghost"}
+    # An active plan state for a dropped actor is not "missing from CARLA".
+    backend.apply(PlanFrame(0, 0, {"ghost": ActorFrame("active", 1.0, 2.0, 0.0, 0.0, 3.0)}, {}))
+
+
+def test_parity_excludes_dropped_actors_and_measures_nudged_static_placement():
+    frame = PlanFrame(0, 0, {
+        "gone": ActorFrame("active", 0.0, 0.0, 0.0, 0.0, 0.0),
+        "parked": ActorFrame("active", 4.0, 0.0, 0.0, 0.0, 0.0),
+    }, {})
+    readback = {"parked": {"x": 5.5, "y": 0.0, "z": 0.0, "headingDeg": 0.0, "speedMps": 0.0}}
+
+    strict = ParityAccumulator({})
+    with pytest.raises(RuntimeError, match="closure differs"):
+        strict.observe(frame, readback)
+
+    accumulator = ParityAccumulator({})
+    accumulator.configure_spawn_placement({"gone"}, {"parked": (1.5, 0.0)})
+    accumulator.observe(frame, readback)
+    report = accumulator.report()
+    assert report.samples == 1
+    assert report.max_error["positionM"] == pytest.approx(0.0)
+    assert report.failed_actor_ids == ()
+
+
+def _two_vehicle_xosc() -> bytes:
+    start = XOSC.index(b'<ManeuverGroup name="group"')
+    end = XOSC.index(b'</ManeuverGroup>', start) + len(b'</ManeuverGroup>')
+    buddy_group = XOSC[start:end].replace(b'group', b'buddy_group').replace(b'actor_ego', b'actor_buddy').replace(b'trajectory_ego', b'trajectory_buddy')
+    buddy_entity = (
+        b'<ScenarioObject name="actor_buddy"><Vehicle name="uniscenarios_car" vehicleCategory="car">'
+        b'<Properties><Property name="uniscenario.actorId" value="buddy"/>'
+        b'<Property name="uniscenario.actorKind" value="car"/>'
+        b'<Property name="uniscenarios.tag" value="catalog:vehicle.sedan"/></Properties></Vehicle></ScenarioObject>'
+    )
+    return XOSC.replace(b'</Entities>', buddy_entity + b'</Entities>').replace(b'</Act>', buddy_group + b'</Act>')
+
+
+class _PlacementFakeBackend(FakeBackend):
+    def __init__(self, report):
+        super().__init__()
+        self.placement = report
+        self.dropped = set(report.get("droppedActorIds", ()))
+    def spawn_placement_report(self, abort=None):
+        (abort or (lambda: None))()
+        return self.placement
+    def tick(self, capture=None, abort=None):
+        result = super().tick(capture, abort)
+        return {actor_id: value for actor_id, value in result.items() if actor_id not in self.dropped}
+
+
+def _two_vehicle_lease():
+    xosc = _two_vehicle_xosc()
+    manifest = execution_manifest(xosc)
+    value = lease_value(outputs=["trace", "manifest"])
+    value["job"]["executionPackage"]["xosc"].update({"sha256": digest(xosc), "sizeBytes": len(xosc)})
+    return parse_lease(seal_lease(value, manifest)), xosc, manifest
+
+
+def test_executor_records_spawn_drop_diagnostics_and_stays_frame_closed():
+    lease, xosc, manifest = _two_vehicle_lease()
+    assets = {"memory:manifest": manifest, "memory:xosc": xosc, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
+    report = {
+        "schema": "uniscenario.spawn-placement/v1",
+        "actors": {
+            "ego": {"outcome": "placed"},
+            "buddy": {
+                "outcome": "dropped",
+                "reason": "no collision-free spawn within the bounded lane nudge window",
+                "authored": {"x": 0.0, "y": 0.0, "z": 0.0},
+            },
+        },
+        "droppedActorIds": ["buddy"],
+        "nudgedActorIds": [],
+    }
+    backend = _PlacementFakeBackend(report)
+    uploaded = {}
+    result = execute_lease(
+        lease, backend,
+        lambda body: {"valid": True, "xmlSha256": digest(body), "xsdSha256": OFFICIAL_XSD_SHA256},
+        downloader=lambda url, _limit: assets[url],
+        uploader=lambda url, body, media_type, headers: uploaded.update({url: artifact_bytes(body)}),
+    )
+    assert result["status"] == "succeeded"
+    assert result["attestation"]["spawnPlacement"] == report
+    trajectory = result["parityEvidence"]["trajectory"]
+    assert trajectory["droppedActorIds"] == ["buddy"]
+    assert trajectory["evaluatedActorCount"] == 1
+    codes = [item["code"] for item in result["parityEvidence"]["divergences"]]
+    assert "spawn-placement:dropped-unplaceable:buddy" in codes
+    manifest_body = json.loads(uploaded["memory:upload:manifest"])
+    assert manifest_body["workerAttestation"]["spawnPlacement"]["droppedActorIds"] == ["buddy"]
+
+
+def test_executor_rejects_a_dropped_sensor_host_actor():
+    lease, xosc, manifest = _two_vehicle_lease()
+    assets = {"memory:manifest": manifest, "memory:xosc": xosc, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
+    report = {
+        "schema": "uniscenario.spawn-placement/v1",
+        "actors": {"ego": {"outcome": "dropped"}, "buddy": {"outcome": "placed"}},
+        "droppedActorIds": ["ego"],
+        "nudgedActorIds": [],
+    }
+    with pytest.raises(ContractError, match="dropped sensor host actors: ego"):
+        execute_lease(
+            lease, _PlacementFakeBackend(report),
+            lambda body: {"valid": True, "xmlSha256": digest(body), "xsdSha256": OFFICIAL_XSD_SHA256},
+            downloader=lambda url, _limit: assets[url],
+            uploader=lambda *_args: None,
+        )
+
+
+def test_static_actor_is_frozen_only_after_its_own_settle_never_mid_fall():
+    class Vector3D:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class Location(Vector3D): pass
+    class Rotation:
+        def __init__(self, yaw=0): self.yaw = yaw
+    class Transform:
+        def __init__(self, z=0): self.location, self.rotation = Location(z=z), Rotation()
+    class Carla: pass
+    Carla.Vector3D = Vector3D
+    class World:
+        def __init__(self): self.ticks = 0
+        def tick(self): self.ticks += 1
+    class FallingParkedCar:
+        """Falls for 30 ticks (past the old blind freeze at tick 20), then rests."""
+        def __init__(self, world):
+            self.world, self.physics, self.frozen_at_tick = world, True, None
+            self.z = 3.0
+        def _falling(self): return self.physics and self.world.ticks <= 30
+        def get_transform(self):
+            if self._falling():
+                self.z -= 0.1
+            return Transform(z=self.z)
+        def get_velocity(self): return Vector3D(z=-5.0 if self._falling() else 0.0)
+        def get_angular_velocity(self): return Vector3D()
+        def set_simulate_physics(self, value):
+            self.physics = value
+            if value is False:
+                self.frozen_at_tick = self.world.ticks
+        def set_target_velocity(self, value): pass
+        def set_target_angular_velocity(self, value): pass
+    world = World()
+    parked = FallingParkedCar(world)
+    backend = object.__new__(CarlaBackend)
+    backend.carla = Carla
+    backend.world = world
+    backend.actors = {"parked": parked}
+    backend.static_actor_ids = {"parked"}
+    backend.frozen_static_actor_ids = set()
+    report = backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=100)
+    # The body kept falling through the old blind freeze point and was only
+    # held kinematically once its own motion residuals settled.
+    assert parked.frozen_at_tick is not None and parked.frozen_at_tick > 30
+    assert parked.physics is False
+    assert report["ticks"] >= parked.frozen_at_tick
+    assert report["residuals"]["parked"]["verticalMps"] == 0.0
