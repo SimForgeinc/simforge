@@ -6,7 +6,7 @@ import { gunzipSync } from 'node:zlib';
 import { buildLaneGraph, parseSimScenarioInput, type LaneGraph, type TopologyIndex } from '@simforge/engine';
 import { AsamExportError, exportOpenScenarioXml14 } from '@simforge/openscenario/export';
 import { validateOpenScenarioXml14 } from '@simforge/openscenario/node';
-import { DEV_ASSETS } from '@simforge/compiler';
+import { DEV_ASSETS } from '@simforge/compiler/node';
 
 export type AuditVerdict = 'xsd-validated' | 'unsupported-fail-closed' | 'asset-blocked' | 'unexpected-failure';
 

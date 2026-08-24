@@ -10,7 +10,7 @@
 
 import { contentHash, resolvePhysicsConfig, type MotionPhysicsMode, type SimTrace } from '@simforge/engine';
 
-import type { InstanceFile } from '@simforge/compiler';
+import type { InstanceFile } from '@simforge/compiler/node';
 
 export interface EvidenceHashIssue {
   readonly code:

@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest';
 
 import { runSimulation } from '@simforge/engine';
 
-import { REPO_ROOT, artifactPresence } from '@simforge/compiler';
+import { REPO_ROOT, artifactPresence } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 const MAP = 'easterbrook-discovery-school';
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'remaining');

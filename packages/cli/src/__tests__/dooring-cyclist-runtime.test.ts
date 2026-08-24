@@ -4,14 +4,14 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { resolveExactCorridorSite } from '@simforge/compiler';
+import { resolveExactCorridorSite } from '@simforge/compiler/node';
 import { runSimulation } from '@simforge/engine';
 
 import { adaptTemplate } from '../adapt.js';
 import { checkInvariants } from '../invariants.js';
-import { REPO_ROOT, artifactPresence, loadMap } from '@simforge/compiler';
+import { REPO_ROOT, artifactPresence, loadMap } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
-import { readTemplate } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler/node';
 
 const MAP = 'yale-street';
 const SITE_ID = '2d295212b00a36ba';

@@ -10,8 +10,8 @@
 
 import { EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { matchOnMaps, siteSummary, round3 } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { matchOnMaps, siteSummary, round3 } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 export interface SitesMatchOptions {
   readonly file: string;

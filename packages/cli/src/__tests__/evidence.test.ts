@@ -9,7 +9,7 @@ import {
 } from '@simforge/engine';
 
 import { verifyEvidenceHashes } from '../evidence.js';
-import type { InstanceFile } from '@simforge/compiler';
+import type { InstanceFile } from '@simforge/compiler/node';
 const LANE = '1:0:-1';
 const topology: TopologyIndex = {
   schemaVersion: 1,

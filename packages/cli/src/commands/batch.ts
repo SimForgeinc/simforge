@@ -26,7 +26,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import { MATCH_SEMANTICS_VERSION } from '@simforge/compiler';
+import { MATCH_SEMANTICS_VERSION } from '@simforge/compiler/node';
 import {
   ENGINE_VERSION,
   contentHash,
@@ -38,8 +38,8 @@ import { cellPaths, runCell, type CellOptions, type CellResult } from '../batch-
 import { EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
 import { cellSeed, paramsVersion, templateId } from '../params.js';
-import { matchOnMaps } from '@simforge/compiler';
-import { readTemplate, writeJsonFile } from '@simforge/compiler';
+import { matchOnMaps } from '@simforge/compiler/node';
+import { readTemplate, writeJsonFile } from '@simforge/compiler/node';
 import type { EvaluateFilterMode } from './evaluate.js';
 
 export interface BatchOptions {

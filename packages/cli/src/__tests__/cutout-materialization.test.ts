@@ -9,10 +9,10 @@ import { evaluateTrace, runSimulation } from '@simforge/engine';
 
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
-import { findSite, matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { findSite, matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 const MAP = 'yale-street';
 const TEMPLATE = path.join(

@@ -5,9 +5,9 @@ import path from 'node:path';
 
 import { exportAsamScenario, AsamExportError, type AsamFormat } from '@simforge/openscenario/export';
 import { CliError, EXIT } from '../errors.js';
-import { loadMap } from '@simforge/compiler';
+import { loadMap } from '@simforge/compiler/node';
 import { emit, emitLines } from '../output.js';
-import { readInstance } from '@simforge/compiler';
+import { readInstance } from '@simforge/compiler/node';
 
 export interface ExportOptions {
   readonly file: string;

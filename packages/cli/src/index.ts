@@ -39,7 +39,7 @@ export {
   resolveMapSelection,
   type MapArtifactPresence,
   type MapBundle,
-} from '@simforge/compiler';
+} from '@simforge/compiler/node';
 
 export {
   buildSiteSignalPlan,
@@ -52,7 +52,7 @@ export {
   type MapSignalJunction,
   type SiteSignalPlan,
 } from './map-signals.js';
-export { loadMapSignalCatalog } from '@simforge/compiler';
+export { loadMapSignalCatalog } from '@simforge/compiler/node';
 
 export {
   CLAUSE_UNMATCHABLE,
@@ -88,7 +88,7 @@ export {
   type ReplayKey,
 } from './materialize.js';
 
-export { createMapContext } from '@simforge/compiler';
+export { createMapContext } from '@simforge/compiler/node';
 
 export {
   assertMatchableAnchor,
@@ -97,7 +97,7 @@ export {
   matchOnMaps,
   siteSummary,
   type SiteMatch,
-} from '@simforge/compiler';
+} from '@simforge/compiler/node';
 
 export {
   checkInvariants,
@@ -121,7 +121,7 @@ export {
   writeJsonFile,
   writeTraceFile,
   type InstanceFile,
-} from '@simforge/compiler';
+} from '@simforge/compiler/node';
 
 export { PROP_DIMS, propDims, type PropDims } from './prop-dims.js';
 

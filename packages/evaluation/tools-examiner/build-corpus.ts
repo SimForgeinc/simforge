@@ -33,8 +33,8 @@ import {
   readTemplate,
   writeJsonFile,
   type MapBundle,
-} from '@simforge/compiler';
-import type { MatchedSite } from '@simforge/compiler';
+} from '@simforge/compiler/node';
+import type { MatchedSite } from '@simforge/compiler/node';
 import { EnvSession, type CausalChannel } from '@simforge/training-env';
 import {
   runSimulation,

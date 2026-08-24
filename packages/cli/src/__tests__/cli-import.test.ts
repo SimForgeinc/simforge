@@ -16,7 +16,7 @@ import path from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
 const FIXTURE = path.join(REPO_ROOT, 'packages', 'openscenario', 'conformance', 'actor-despawn.xosc');

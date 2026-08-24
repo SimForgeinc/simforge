@@ -4,10 +4,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ScenarioTemplateV2Schema } from '@simforge/scenario';
 
-import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
-import { findSite } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { findSite } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 const TEMPLATE = path.join(REPO_ROOT, 'examples', 'edge-cases', 'wrong-way-sedan-blind-crest', 'scenario.template.json');
 const MAP = 'yale-street';

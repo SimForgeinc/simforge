@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseTemplate, TemplateDocument } from '@simforge/scenario';
-import { materializeMapBound } from '@simforge/compiler';
+import { materializeMapBound } from '@simforge/compiler/node';
 import { buildSeededPlacementRoute, createFixedStepSimulation, runSimulation } from '@simforge/engine';
-import { loadMap } from '@simforge/compiler';
+import { loadMap } from '@simforge/compiler/node';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
 const studioMapAssets = localMapAssetRequirement(['yale-street', 'belmont-research-center']);

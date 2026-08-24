@@ -29,10 +29,10 @@ import {
 } from '@simforge/openscenario/import';
 import { parseAndValidateTemplate, type ClauseResult } from '@simforge/scenario';
 
-import { assertKnownMap, availableMaps, mapDir } from '@simforge/compiler';
+import { assertKnownMap, availableMaps, mapDir } from '@simforge/compiler/node';
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
-import { writeJsonFile } from '@simforge/compiler';
+import { writeJsonFile } from '@simforge/compiler/node';
 
 export interface ImportOptions {
   readonly file: string;

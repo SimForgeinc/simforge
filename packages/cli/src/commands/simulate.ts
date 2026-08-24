@@ -11,9 +11,9 @@ import path from 'node:path';
 import { runSimulation, traceDigest, type SimTrace } from '@simforge/engine';
 
 import { EXIT } from '../errors.js';
-import { loadMap } from '@simforge/compiler';
+import { loadMap } from '@simforge/compiler/node';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readInstance, writeTraceFile } from '@simforge/compiler';
+import { readInstance, writeTraceFile } from '@simforge/compiler/node';
 
 export interface SimulateOptions {
   readonly file: string;

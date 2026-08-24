@@ -10,11 +10,11 @@ import {
   type ScenarioCatalogManifest,
 } from '../catalog.js';
 import { CliError, EXIT } from '../errors.js';
-import { REPO_ROOT } from '@simforge/compiler';
+import { REPO_ROOT } from '@simforge/compiler/node';
 import { emit, emitLines } from '../output.js';
-import { CATALOG_EXACT_SITE_OPTIONS, clearSiteMatchCache, matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
-import { writeJsonFile } from '@simforge/compiler';
+import { CATALOG_EXACT_SITE_OPTIONS, clearSiteMatchCache, matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
+import { writeJsonFile } from '@simforge/compiler/node';
 
 export interface CatalogCreateOptions {
   readonly out: string;

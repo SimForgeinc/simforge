@@ -14,10 +14,10 @@ import { describe, expect, it } from 'vitest';
 import { ScenarioTemplateV2Schema } from '@simforge/scenario';
 import { runSimulation, traceDigest } from '@simforge/engine';
 
-import { DEV_ASSETS, REPO_ROOT, loadMap } from '@simforge/compiler';
+import { DEV_ASSETS, REPO_ROOT, loadMap } from '@simforge/compiler/node';
 import { actorKindForClass, applyCatalogVariant, materializationSemanticLosses, materialize } from '../materialize.js';
-import { findSite, matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { findSite, matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 import { cellSeed, paramsVersion, templateId } from '../params.js';
 
 const MAP = 'yale-street';

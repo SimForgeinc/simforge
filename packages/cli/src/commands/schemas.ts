@@ -23,7 +23,7 @@ import {
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
-import { REPO_ROOT } from '@simforge/compiler';
+import { REPO_ROOT } from '@simforge/compiler/node';
 
 const MODEL_PKG = path.join(REPO_ROOT, 'packages', 'scenario');
 

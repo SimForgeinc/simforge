@@ -24,7 +24,7 @@ import {
   KNOWN_MAPS,
   type DerivedTopology,
   type LocationCatalog,
-} from '@simforge/maps';
+} from '@simforge/maps/node';
 import {
   normalizeDerivedMapIndex,
   type DerivedMapIndex,

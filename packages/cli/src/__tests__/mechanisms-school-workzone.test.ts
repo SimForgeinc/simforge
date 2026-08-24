@@ -25,11 +25,11 @@ import { adaptTemplate } from '../adapt.js';
 import { matcherSiteClosesLocation } from '../catalog.js';
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '@simforge/compiler';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '@simforge/compiler/node';
 import { mapSetKey, materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { findSite, matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { findSite, matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'school-workzone');
 

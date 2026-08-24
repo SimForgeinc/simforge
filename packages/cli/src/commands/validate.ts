@@ -12,11 +12,11 @@ import { runSimulation } from '@simforge/engine';
 
 import { CliError, EXIT } from '../errors.js';
 import { checkInvariants, type InvariantResidualReport } from '../invariants.js';
-import { loadMap } from '@simforge/compiler';
+import { loadMap } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { findSite } from '@simforge/compiler';
-import { detectKind, readInstance, readTemplate } from '@simforge/compiler';
+import { findSite } from '@simforge/compiler/node';
+import { detectKind, readInstance, readTemplate } from '@simforge/compiler/node';
 import { metricsSummary } from './simulate.js';
 import { templateValidate } from './template.js';
 

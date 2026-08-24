@@ -27,7 +27,7 @@ import {
 } from '@simforge/engine';
 
 import { CliError } from './errors.js';
-import { DEV_ASSETS } from '@simforge/compiler';
+import { DEV_ASSETS } from '@simforge/compiler/node';
 
 interface SumoModule {
   readonly HEAPU8: Uint8Array;

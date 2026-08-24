@@ -19,9 +19,9 @@ import {
 
 import { adaptTemplate } from '../adapt.js';
 import { INCIDENT_TAXONOMY } from '../catalog-taxonomy.js';
-import { REPO_ROOT } from '@simforge/compiler';
+import { REPO_ROOT } from '@simforge/compiler/node';
 import { resolveParams } from '../params.js';
-import { readTemplate } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler/node';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'remaining');
 const CASES = [

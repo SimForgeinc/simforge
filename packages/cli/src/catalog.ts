@@ -18,7 +18,7 @@ import {
   normalizeDerivedMapIndex,
   type DerivedMapIndex,
   type MatchedSite,
-} from '@simforge/compiler';
+} from '@simforge/compiler/node';
 import type { ScenarioTemplateV2 } from '@simforge/scenario';
 
 import {
@@ -29,11 +29,11 @@ import {
   type IncidentDefinition,
 } from './catalog-taxonomy.js';
 import { CliError, EXIT } from './errors.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge/compiler';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge/compiler/node';
 import { adaptTemplate } from './adapt.js';
 import { materialize, templateId as canonicalTemplateId } from './materialize.js';
-import { assertMatchableAnchor, catalogExactMatcherPolicy } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { assertMatchableAnchor, catalogExactMatcherPolicy } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 export const CATALOG_KIND = 'uniscenarios-scenario-catalog' as const;
 export const CATALOG_VERSION = 2 as const;

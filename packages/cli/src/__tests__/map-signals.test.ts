@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
-import type { MatchedSite } from '@simforge/compiler';
+import type { MatchedSite } from '@simforge/compiler/node';
 import { ScenarioTemplateV2Schema } from '@simforge/scenario';
 import { buildRoute, createAmbientCandidatePool, runSimulation } from '@simforge/engine';
 
@@ -15,10 +15,10 @@ import {
   parseMapSignalCatalog,
   resolveSiteSignalProgram,
 } from '../map-signals.js';
-import { createMapContext } from '@simforge/compiler';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge/compiler';
-import { matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { createMapContext } from '@simforge/compiler/node';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge/compiler/node';
+import { matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 import {
   assertMaterializableMapControls,
   mapSetKey,

@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
-import { materializeMapBound, type InstanceManifest } from '@simforge/compiler';
+import { materializeMapBound, type InstanceManifest } from '@simforge/compiler/node';
 import type { ScenarioTemplateV2 } from '@simforge/scenario';
 import {
   buildLaneGraph,
@@ -27,11 +27,11 @@ import {
 
 import { CliError, EXIT } from '../errors.js';
 import { checkInvariants, type InvariantResidualReport } from '../invariants.js';
-import { loadMap, type MapBundle } from '@simforge/compiler';
+import { loadMap, type MapBundle } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
 import { emit } from '../output.js';
-import { findSite, matchOnMap } from '@simforge/compiler';
-import { detectKind, readInstance, readTemplate, writeJsonFile, writeTraceFile, type InstanceFile } from '@simforge/compiler';
+import { findSite, matchOnMap } from '@simforge/compiler/node';
+import { detectKind, readInstance, readTemplate, writeJsonFile, writeTraceFile, type InstanceFile } from '@simforge/compiler/node';
 import { runHeadlessSumo, type HeadlessSumoResult } from '../sumo-headless.js';
 import { instanceFile } from './instantiate.js';
 import { metricsSummary } from './simulate.js';

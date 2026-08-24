@@ -12,7 +12,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { parsePoses, selectRouteTiles } from '../commands/corpus.js';
-import { REPO_ROOT } from '@simforge/compiler';
+import { REPO_ROOT } from '@simforge/compiler/node';
 
 const FIXTURE = path.join(REPO_ROOT, 'fixtures', 'yale-3d-manifest.json');
 

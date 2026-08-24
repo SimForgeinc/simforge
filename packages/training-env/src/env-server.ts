@@ -62,7 +62,7 @@ import {
   type TopologyIndex,
 } from '@simforge/engine';
 
-import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@simforge/compiler';
+import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@simforge/compiler/node';
 
 import { EnvSession } from './session.js';
 import {

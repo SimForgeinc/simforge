@@ -10,21 +10,21 @@ import path from 'node:path';
 
 import { runSimulation, traceDigest, type AmbientTrafficProfile, type SimTrace } from '@simforge/engine';
 import type { ScenarioTemplateV2 } from '@simforge/scenario';
-import type { InstanceManifest } from '@simforge/compiler';
+import type { InstanceManifest } from '@simforge/compiler/node';
 
 import { criticalityBand, filtersFor, type EvaluateFilterMode } from './commands/evaluate.js';
 import { metricsSummary } from './commands/simulate.js';
 import { evaluateTrace } from '@simforge/engine';
-import { loadMap } from '@simforge/compiler';
+import { loadMap } from '@simforge/compiler/node';
 import { verifyEvidenceHashes, type EvidenceHashReport } from './evidence.js';
 import { checkInvariants, type InvariantResidualReport } from './invariants.js';
 import { materialize } from './materialize.js';
-import { findSite } from '@simforge/compiler';
-import { writeJsonFile, writeTraceFile } from '@simforge/compiler';
+import { findSite } from '@simforge/compiler/node';
+import { writeJsonFile, writeTraceFile } from '@simforge/compiler/node';
 import { toStructuredError } from './errors.js';
 
-export type { CatalogArtifactProvenance } from '@simforge/compiler';
-import type { CatalogArtifactProvenance } from '@simforge/compiler';
+export type { CatalogArtifactProvenance } from '@simforge/compiler/node';
+import type { CatalogArtifactProvenance } from '@simforge/compiler/node';
 
 export interface CellCoords {
   readonly mapId: string;

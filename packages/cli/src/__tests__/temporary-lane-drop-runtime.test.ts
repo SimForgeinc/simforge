@@ -7,10 +7,10 @@ import { evaluateTrace, runSimulation } from '@simforge/engine';
 
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { artifactPresence, REPO_ROOT } from '@simforge/compiler';
+import { artifactPresence, REPO_ROOT } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 const MAP = 'el-camino-road';
 const SITE = '0a8fc7e0ff2a6cad';

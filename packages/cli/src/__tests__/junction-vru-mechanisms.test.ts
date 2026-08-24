@@ -19,11 +19,11 @@ import {
 import { criticalityWindow, evaluateTrace, runSimulation } from '@simforge/engine';
 
 import { adaptTemplate } from '../adapt.js';
-import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { findSite, matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { findSite, matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 const MAP = 'yale-street';
 const BELMONT_MAP = 'belmont-research-center';

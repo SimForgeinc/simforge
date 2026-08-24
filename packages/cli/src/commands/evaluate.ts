@@ -20,7 +20,7 @@ import {
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readTraceFile, writeJsonFile } from '@simforge/compiler';
+import { readTraceFile, writeJsonFile } from '@simforge/compiler/node';
 import { metricsSummary } from './simulate.js';
 
 export type EvaluateFilterMode = 'critical' | 'negative-control' | 'all';

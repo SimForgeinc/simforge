@@ -7,10 +7,10 @@ import { describe, expect, it } from 'vitest';
 import { evaluateTrace, runSimulation } from '@simforge/engine';
 
 import { checkInvariants } from '../invariants.js';
-import { REPO_ROOT, artifactPresence } from '@simforge/compiler';
+import { REPO_ROOT, artifactPresence } from '@simforge/compiler/node';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { matchOnMap } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 
 const YALE_MAP = 'yale-street';
 const YALE_SITE_ID = '810c8b2fbab4be67';

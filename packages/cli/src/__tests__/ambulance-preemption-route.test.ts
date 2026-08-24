@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 
 import { buildLanePathRoute, runSimulation } from '@simforge/engine';
 
-import { DEV_ASSETS, REPO_ROOT, loadMap } from '@simforge/compiler';
-import { readInstance } from '@simforge/compiler';
+import { DEV_ASSETS, REPO_ROOT, loadMap } from '@simforge/compiler/node';
+import { readInstance } from '@simforge/compiler/node';
 
 const MAP = 'yale-street';
 const INSTANCE = path.join(

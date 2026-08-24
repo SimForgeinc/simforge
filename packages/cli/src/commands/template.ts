@@ -20,11 +20,11 @@ import { resolve } from 'node:path';
 
 import { adaptTemplate } from '../adapt.js';
 import { CliError, EXIT } from '../errors.js';
-import { assertKnownMap } from '@simforge/compiler';
-import { createMapContext } from '@simforge/compiler';
+import { assertKnownMap } from '@simforge/compiler/node';
+import { createMapContext } from '@simforge/compiler/node';
 import { emit, emitLines, pad } from '../output.js';
-import { matchOnMap } from '@simforge/compiler';
-import { writeJsonFile } from '@simforge/compiler';
+import { matchOnMap } from '@simforge/compiler/node';
+import { writeJsonFile } from '@simforge/compiler/node';
 
 export interface TemplateValidateOptions {
   readonly file: string;

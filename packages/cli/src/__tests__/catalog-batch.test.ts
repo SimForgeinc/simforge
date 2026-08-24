@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
-import type { DerivedMapIndex, MatchedSite } from '@simforge/compiler';
+import type { DerivedMapIndex, MatchedSite } from '@simforge/compiler/node';
 
 import { hardEligibilityFailureCodes, hardInvariantFailures, runCell, type CellResult } from '../batch-cell.js';
 import type { CatalogExecutionSlot } from '../commands/catalog-batch.js';
@@ -26,8 +26,8 @@ import {
   validateScenarioCatalog,
   type ScenarioCatalogManifest,
 } from '../catalog.js';
-import { REPO_ROOT } from '@simforge/compiler';
-import { readTemplate } from '@simforge/compiler';
+import { REPO_ROOT } from '@simforge/compiler/node';
+import { readTemplate } from '@simforge/compiler/node';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
 const temporary: string[] = [];

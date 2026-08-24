@@ -134,7 +134,6 @@ export {
   DERIVED_VERSION,
   type MapIntelBuild,
 } from './build/build.js';
-export { loadMapSources, type MapSources } from './build/sources.js';
 export { createBuildContext, roadNameFor, type BuildContext } from './build/context.js';
 export {
   anchorOnLane,
@@ -199,4 +198,3 @@ export {
 } from './query/types.js';
 
 // --- cli helpers -----------------------------------------------------------
-export { KNOWN_MAPS, emitBuild, readEmitted } from './cli/build-map.js';
