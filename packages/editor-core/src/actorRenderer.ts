@@ -48,6 +48,7 @@ import {
   PlaneGeometry,
   Quaternion,
   SphereGeometry,
+  SpotLight,
   Vector3,
   type AnimationClip,
   type Intersection,
@@ -99,6 +100,8 @@ export interface ActorView {
   readonly hornActive?: boolean;
   /** Turn-signal state sampled from timeline state_set events. */
   readonly indicator?: 'off' | 'left' | 'right' | 'hazard';
+  /** Explicit or environment-derived low-beam state. */
+  readonly headlights?: boolean;
   /** Optional per-instance studio body tint. */
   readonly bodyColor?: string;
   /** Scenario clock and sampled speed drive procedural motion until a rigged GLB is installed. */
@@ -442,6 +445,8 @@ const instanceTintCache = new Map<string, Color>();
  * the material covers the co-planar remainder.
  */
 const SHADOW_LIFT = 0.06;
+/** Real spotlights are the expensive part; emissive lenses remain unbounded. */
+export const MAX_PROJECTED_HEADLIGHTS = 8;
 
 /** Selection colour — amber, the one hue the city never produces. */
 export const SELECTION_COLOR = 0xffb020;
@@ -489,6 +494,16 @@ export class ActorRenderer {
     roughness: 0.28
   });
   private reverseLightBatch: Batch | null = null;
+  private readonly headlightGeometry = new BoxGeometry(1, 1, 1);
+  private readonly headlightMaterial = new MeshStandardMaterial({
+    color: 0xfff4d6,
+    emissive: 0xffd89a,
+    emissiveIntensity: 4,
+    roughness: 0.18
+  });
+  private headlightBatch: Batch | null = null;
+  private readonly headlightBeams: Array<{ light: SpotLight; target: Object3D }> = [];
+  private headlightsEnabled = false;
   private readonly emergencyGeometry = new BoxGeometry(1, 1, 1);
   private readonly emergencyRedMaterial = new MeshBasicMaterial({ color: 0xff2f38, toneMapped: false });
   private readonly emergencyBlueMaterial = new MeshBasicMaterial({ color: 0x2786ff, toneMapped: false });
@@ -607,6 +622,19 @@ export class ActorRenderer {
     this.syncLayers();
   }
 
+  /**
+   * Applies the scene's automatic low-beam policy.
+   *
+   * Per-actor `headlights` remains authoritative when present. The pool is
+   * bounded: every active vehicle gets emissive lenses, while only eight
+   * deterministic vehicles project real light into the city.
+   */
+  setHeadlightsEnabled(enabled: boolean): void {
+    if (this.headlightsEnabled === enabled) return;
+    this.headlightsEnabled = enabled;
+    this.syncLayers();
+  }
+
   private syncLayers(): void {
     const actors = [...this.layers]
       .filter(([name]) => !this.hiddenLayers.has(name))
@@ -689,6 +717,7 @@ export class ActorRenderer {
     draws += this.syncReverseLights(actors);
     draws += this.syncEmergencyLights(actors);
     draws += this.syncIndicators(actors);
+    draws += this.syncHeadlights(actors);
     this.sensorOverlay.sync(actors);
     this.drawCalls = draws + (actors.length > 0 ? 1 : 0);
   }
@@ -766,6 +795,19 @@ export class ActorRenderer {
     }
     this.reverseLightGeometry.dispose();
     this.reverseLightMaterial.dispose();
+    if (this.headlightBatch) {
+      this.headlightBatch.mesh.dispose();
+      this.group.remove(this.headlightBatch.mesh);
+      this.headlightBatch = null;
+    }
+    this.headlightGeometry.dispose();
+    this.headlightMaterial.dispose();
+    for (const beam of this.headlightBeams) {
+      beam.light.removeFromParent();
+      beam.target.removeFromParent();
+      beam.light.dispose();
+    }
+    this.headlightBeams.length = 0;
     for (const batch of [this.emergencyRedBatch, this.emergencyBlueBatch]) {
       if (batch) {
         batch.mesh.dispose();
@@ -1011,6 +1053,60 @@ export class ActorRenderer {
     return 1;
   }
 
+  private syncHeadlights(actors: readonly ActorView[]): number {
+    const active = actors
+      .filter((actor) => isVehicleActor(actor) && (actor.headlights ?? this.headlightsEnabled))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    if (active.length === 0) {
+      if (this.headlightBatch) {
+        this.headlightBatch.mesh.count = 0;
+        this.headlightBatch.mesh.visible = false;
+      }
+      for (const beam of this.headlightBeams) beam.light.visible = false;
+      return 0;
+    }
+
+    const lensCount = active.length * 2;
+    if (!this.headlightBatch || this.headlightBatch.capacity < lensCount) {
+      if (this.headlightBatch) {
+        this.group.remove(this.headlightBatch.mesh);
+        this.headlightBatch.mesh.dispose();
+      }
+      const capacity = Math.max(8, 1 << Math.ceil(Math.log2(lensCount)));
+      const mesh = new InstancedMesh(this.headlightGeometry, this.headlightMaterial, capacity);
+      mesh.name = 'actor-headlights';
+      mesh.userData.state = 'lights.lowBeam';
+      this.headlightBatch = { mesh, capacity };
+      this.group.add(mesh);
+    }
+    this.headlightBatch.mesh.count = lensCount;
+    this.headlightBatch.mesh.visible = true;
+    this.headlightBatch.mesh.userData.actorIds = active.flatMap((actor) => [actor.id, actor.id]);
+    active.forEach((actor, index) => {
+      this.headlightBatch?.mesh.setMatrixAt(index * 2, headlightMatrix(actor, -1));
+      this.headlightBatch?.mesh.setMatrixAt(index * 2 + 1, headlightMatrix(actor, 1));
+    });
+    this.headlightBatch.mesh.instanceMatrix.needsUpdate = true;
+    this.headlightBatch.mesh.computeBoundingSphere();
+
+    const projected = active.slice(0, MAX_PROJECTED_HEADLIGHTS);
+    while (this.headlightBeams.length < projected.length) {
+      const target = new Group();
+      const light = new SpotLight(0xffe0ad, 70, 42, 0.38, 0.62, 2);
+      light.castShadow = false;
+      light.target = target;
+      this.group.add(light, target);
+      this.headlightBeams.push({ light, target });
+    }
+    this.headlightBeams.forEach((beam, index) => {
+      const actor = projected[index];
+      beam.light.visible = actor !== undefined;
+      if (!actor) return;
+      placeHeadlightBeam(beam.light, beam.target, actor);
+    });
+    return 1 + projected.length;
+  }
+
   private syncEmergencyLights(actors: readonly ActorView[]): number {
     const active = actors
       .filter((actor) => actor.emergency === 'flashing' || actor.emergency === 'flashing_siren')
@@ -1092,6 +1188,41 @@ function instanceBodyTint(actor: ActorView): Color {
   );
   instanceTintCache.set(cacheKey, tint);
   return tint;
+}
+
+function isVehicleActor(actor: ActorView): boolean {
+  try {
+    return getEntry(actor.catalogId).class === 'vehicle';
+  } catch {
+    return ['car', 'truck', 'bus'].includes(String(actor.kind ?? ''));
+  }
+}
+
+export function headlightMatrix(actor: ActorView, side: -1 | 1): Matrix4 {
+  const local = new Vector3(
+    actor.dims.l * 0.495,
+    actor.dims.h * 0.42,
+    side * actor.dims.w * 0.33,
+  );
+  local.applyAxisAngle(_up, actor.headingRad).add(new Vector3(actor.x, actor.y, actor.z));
+  return new Matrix4().compose(
+    local,
+    new Quaternion().setFromAxisAngle(_up, actor.headingRad),
+    new Vector3(0.08, 0.12, Math.max(0.12, actor.dims.w * 0.16)),
+  );
+}
+
+function placeHeadlightBeam(light: SpotLight, target: Object3D, actor: ActorView): void {
+  const source = new Vector3(actor.dims.l * 0.5, actor.dims.h * 0.43, 0)
+    .applyAxisAngle(_up, actor.headingRad)
+    .add(new Vector3(actor.x, actor.y, actor.z));
+  const aim = new Vector3(actor.dims.l * 0.5 + 18, 0.15, 0)
+    .applyAxisAngle(_up, actor.headingRad)
+    .add(new Vector3(actor.x, actor.y, actor.z));
+  light.position.copy(source);
+  target.position.copy(aim);
+  light.updateMatrixWorld();
+  target.updateMatrixWorld();
 }
 
 function indicatorMatrix(actor: ActorView, side: 'left' | 'right', front: boolean): Matrix4 {
