@@ -2,6 +2,7 @@ export {
   CATALOG,
   CATALOG_ALIASES,
   CATALOG_IDS,
+  EXTERNAL_CATALOG_PREFIXES,
   actorClassForCatalogEntry,
   actorClassesForCatalogEntry,
   getEntry,
