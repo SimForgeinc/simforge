@@ -705,7 +705,7 @@ export function RenderConfigPanel({
                 ? `${selectedSensors.length}/${sensorOptions.length} selected`
                 : "None configured"}
               hint={backend === "carla"
-                ? "All 18 Pronto sources can run simultaneously. Modalities apply to all selected sensors that support them."
+                ? "Up to 18 authored sources can run simultaneously. Select sensors from one vehicle; supported modalities follow each sensor."
                 : "Choose the authored sensors and modalities this browser render should capture."}
               title={`Which sensors should ${engineOption.label} capture?`}
             />
