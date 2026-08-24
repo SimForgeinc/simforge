@@ -81,6 +81,99 @@
       "sha256": null,
       "bytes": null,
       "note": "CARLA reference shots for renderer look-parity work (in production by the ref-bake lane). Directory placeholder: entries gain per-file sha256 as shots land; status reports it as pending until then."
+    },
+    {
+      "id": "dev-map-yale-street",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/yale-street/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": ["topology-index.json.gz", "derived/topology-derived.json.gz", "derived/locations.json.gz", "search-index.json.gz", "browser/topology-index.json.gz", "3d/"],
+      "note": "Training/dev map artifacts (former dev-assets/<mapId>). Recovery: (a) rebuild via `pnpm maps:derivatives -- --map yale-street` from source map data, (b) published bundles in the platform S3 uniscenario artifact buckets. Engine convention: SCEN_DEV_ASSETS=~/simforge-assets/map-bundles."
+    },
+    {
+      "id": "dev-map-belmont-research-center",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/belmont-research-center/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": ["topology-index.json.gz", "derived/topology-derived.json.gz", "derived/locations.json.gz", "search-index.json.gz", "browser/topology-index.json.gz", "3d/"],
+      "note": "Needed by committed gold-01-belmont episodes; repo tests describe.skipIf on absence. Recovery as for yale-street."
+    },
+    {
+      "id": "dev-map-el-camino-road",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/el-camino-road/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": ["topology-index.json.gz", "derived/topology-derived.json.gz", "derived/locations.json.gz", "search-index.json.gz", "browser/topology-index.json.gz", "3d/"],
+      "note": "Recovery as for yale-street."
+    },
+    {
+      "id": "dev-map-easterbrook-discovery-school",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook-discovery-school/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": ["topology-index.json.gz", "derived/topology-derived.json.gz", "derived/locations.json.gz", "search-index.json.gz", "browser/topology-index.json.gz", "3d/"],
+      "note": "Recovery as for yale-street. GLB tile digests for this map are tracked separately as map-easterbrook-* entries."
+    },
+    {
+      "id": "dev-map-richmond-field-station",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": ["topology-index.json.gz", "derived/topology-derived.json.gz", "derived/locations.json.gz", "search-index.json.gz", "browser/topology-index.json.gz", "3d/"],
+      "note": "Recovery as for yale-street. Already recovered on this machine; the three core artifacts carry recorded digests below."
+    },
+    {
+      "id": "dev-map-richmond-topology-index",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/topology-index.json.gz",
+      "sha256": "feb1e9ac00de961ede8fac419a650efa89747b4b6272d2c676870f1dc0f73105",
+      "bytes": 314851
+    },
+    {
+      "id": "dev-map-richmond-topology-derived",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/derived/topology-derived.json.gz",
+      "sha256": "445df1ecc729a40135ac0b2e545fa349013a550aa108a3e5a00f74470e115192",
+      "bytes": 37240
+    },
+    {
+      "id": "dev-map-richmond-locations",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/derived/locations.json.gz",
+      "sha256": "827dc13a1d08ea0fdd31f921bbbbe63f3cdee142bf0e44fa738ee6c168f1a4a6",
+      "bytes": 47305
+    },
+    {
+      "id": "sumo-runtime",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/sumo-runtime/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": ["sumo.mjs", "sumo.wasm", "runtime-manifest.json"],
+      "note": "Headless SUMO wasm runtime (schema uniscenarios.sumo-runtime.v1, SUMO 1.27.1) formerly at dev-assets/sumo-runtime; the old symlink target is deleted. Recovery: platform S3 uniscenario artifact buckets or rebuild per packages/cli README. Per-file sha256 from runtime-manifest.json once re-fetched."
     }
   ]
 }

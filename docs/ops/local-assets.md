@@ -12,7 +12,7 @@ All large local assets live under one directory, outside every repo and image:
 ~/simforge-assets/          # override with SIMFORGE_ASSETS
   hf-cache/                 # HuggingFace hub cache (HF_HOME layout) — e.g. nvidia/Alpamayo-1.5-10B weights
   models/                   # non-HF model artifacts
-  map-bundles/              # GLB map tiles / static layers (per-map subdirs)
+  map-bundles/              # GLB map tiles / static layers AND training/dev map artifacts (per-map subdirs)
   refs/                     # reference shots (renderer look-parity baselines)
 ```
 
@@ -28,6 +28,29 @@ node scripts/assets/fetch.mjs verify     # full digest re-verification (exit 1 o
 
 `SIMFORGE_ASSETS=/elsewhere node scripts/assets/fetch.mjs status` relocates the
 root; nothing in the repo hardcodes the home-directory path.
+
+### Training/dev map artifacts (`map-bundles/<mapId>/`)
+
+The former `dev-assets/` worktree symlink is dead (its target checkout was
+pruned). Its content — per-map `topology-index.json.gz`,
+`derived/topology-derived.json.gz`, `derived/locations.json.gz`,
+`search-index.json.gz`, `browser/topology-index.json.gz`, `3d/`, plus the
+headless `sumo-runtime/` (sumo.mjs/sumo.wasm/runtime-manifest.json) — now
+lives at `~/simforge-assets/map-bundles/<mapId>/`. Engine code resolves it via
+the existing env override:
+
+```
+export SCEN_DEV_ASSETS=~/simforge-assets/map-bundles   # packages/compiler maps.ts
+export UNISCENARIOS_DEV_ASSETS=~/simforge-assets/map-bundles  # studio seed
+```
+
+(making that the *default* resolution is a pending patch to
+`packages/compiler/src/maps.ts` and `studio/scripts/seed.ts`; until it lands,
+set the env vars). Recovery sources when a map dir is absent:
+(a) `pnpm maps:derivatives -- --map <mapId>` rebuilds derivatives from source
+map data, (b) published bundles in the platform S3 uniscenario artifact
+buckets. Repo tests `describe.skipIf` on artifact absence, so `status` output
+tells you exactly which map suites will run.
 
 Rules:
 
