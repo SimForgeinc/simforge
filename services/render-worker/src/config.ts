@@ -69,6 +69,8 @@ export const RenderWorkerConfigSchema = z.strictObject({
     host: z.string().min(1).default('0.0.0.0'),
     port: z.number().int().min(1).max(65535).default(8080),
   }).prefault({}),
+  /** Extra host binaries to verify at startup, beyond the audited per-engine defaults (see preflight.ts). */
+  requiredBinaries: z.array(z.string().min(1).max(4096)).max(32).optional(),
   validationLane: ValidationLaneConfigSchema.optional(),
 }).check((ctx) => {
   if (!ctx.value.validationLane) return;

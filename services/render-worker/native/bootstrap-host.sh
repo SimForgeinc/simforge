@@ -45,9 +45,15 @@ if [ ! -x "$NATIVE/uv/uv" ]; then
     | tar -xzf - -C "$NATIVE/uv" --strip-components=1
 fi
 
-# --- ffmpeg + xml tooling (host packages) -----------------------------------
-command -v ffmpeg >/dev/null && command -v xmllint >/dev/null \
-  || { apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg libxml2-utils; }
+# --- host binary dep manifest (audited closure of worker/bridge shell-outs) --
+# carla lane:   ffmpeg (bridge camera/sensor encoders), ffprobe (frame-closed
+#               video verification), xmllint (OpenSCENARIO XSD validation)
+# browser lane: chromium (installed below via playwright)
+# The worker re-verifies this list at every start and refuses to run with any
+# binary missing (services/render-worker/src/preflight.ts).
+CARLA_HOST_BINARIES=(ffmpeg ffprobe xmllint)
+apt-get update >/dev/null || true
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg libxml2-utils
 
 if [ "$role" = "carla" ] || [ "$role" = "both" ]; then
   # --- engine container seed + CARLA PythonAPI wheel ------------------------
@@ -72,6 +78,24 @@ if [ "$role" = "browser" ] || [ "$role" = "both" ]; then
   chromium_bin="$(find "$NATIVE/browsers" -maxdepth 3 -type f -name chrome -path '*chromium*' | sort | tail -1)"
   [ -n "$chromium_bin" ] || { echo "chromium install failed" >&2; exit 1; }
   echo "$chromium_bin" > "$NATIVE/chromium-path"
+fi
+
+# --- fail-closed manifest verification ----------------------------------------
+missing=()
+if [ "$role" = "carla" ] || [ "$role" = "both" ]; then
+  for binary in "${CARLA_HOST_BINARIES[@]}"; do
+    command -v "$binary" >/dev/null || missing+=("$binary")
+  done
+  [ -x "$NATIVE/venv/bin/uniscenarios-carla" ] || [ -x "$NATIVE/venv/bin/python" ] || missing+=("venv")
+fi
+if [ "$role" = "browser" ] || [ "$role" = "both" ]; then
+  [ -x "$(cat "$NATIVE/chromium-path" 2>/dev/null)" ] || missing+=("chromium")
+fi
+[ -x "$NATIVE/node/bin/node" ] || missing+=("node")
+[ -x "$NATIVE/uv/uv" ] || missing+=("uv")
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo "bootstrap FAILED: missing host binaries: ${missing[*]}" >&2
+  exit 1
 fi
 
 # --- systemd unit ------------------------------------------------------------

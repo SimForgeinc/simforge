@@ -1001,7 +1001,6 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
 
 def main() -> None:
-    import sys; print("uniscenarios-carla-bridge: host-native deploy marker imagecycle-timing-2", file=sys.stderr)
     parser = argparse.ArgumentParser(prog="uniscenarios-carla")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=2000)

@@ -126,3 +126,16 @@ then `default`). Bake FROM a fleet-proven revision only (packaging-last).
 Deprioritized: base digests in `docker-bake.hcl` are placeholders until a
 base bake pins them. The staged-code override kit for baked images lives in
 `services/render-worker/staged/`.
+
+## Measured timings (2026-08-24, real trivial bridge change, real infrastructure)
+
+| Cycle | Container era (baseline) | Host-native (measured) |
+|---|---|---|
+| (a) code-change → running+registered on pilot | 30–40 min (bake+push+pull+roll) | **40 s** |
+| (b) code-change → validated by real probe render | 35–50 min | **9 m 07 s** (deploy 40 s + probe render; attempt 1 hit the known sensor-backpressure flake, retry succeeded — clean attempt was 2 m 51 s) |
+| (c) fleet-wide code roll (5 hosts, commit → all registered) | 90–180+ min (ghcr pull tax per host) | **2 m 29 s** |
+
+Evidence: pilot row `uniscenario-carla-simforge1-native-0-staged`; probe jobs
+usrj_1845187fa300494b9453b5e7 (shakedown, succeeded) and
+usrj_5040b2a01f874c29b29ca8d5 (timed, succeeded, attempt runtime_version =
+the just-committed revision; renderer stderr carried the deploy marker).
