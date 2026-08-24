@@ -757,7 +757,20 @@ export async function reserveBrowserRecordingArtifacts(
         job_id: recordingId,
         provenance,
       };
-      const inserted = await tx.queryOne<ArtifactRow>(
+      const existingDigest = await tx.queryOne<ArtifactRow & { deleted_at: string | null }>(
+        `SELECT id, :artifact_role AS artifact_role,
+                :sensor_actor_id AS artifact_sensor_actor_id,
+                :sensor_id AS artifact_sensor_id,
+                :sensor_modality AS artifact_sensor_modality,
+                artifact_kind, media_type, sha256, byte_length, artifact_state,
+                storage_bucket, storage_key, producer_job_id, deleted_at::text,
+                producer_job_id <> :job_id AS reused
+           FROM uniscenario.artifacts
+          WHERE workspace_id = :workspace_id AND sha256 = :sha256
+            AND artifact_kind = :artifact_kind LIMIT 1`,
+        reservationParams,
+      );
+      const inserted = existingDigest ? null : await tx.queryOne<ArtifactRow>(
         `INSERT INTO uniscenario.artifacts (
            id, workspace_id, revision_id, artifact_kind, media_type,
            storage_bucket, storage_key, sha256, byte_length, artifact_state,
@@ -767,7 +780,7 @@ export async function reserveBrowserRecordingArtifacts(
            :storage_bucket, :storage_key, :sha256, :byte_length, 'pending',
            CAST(:metadata AS jsonb), :user_id, 'artifact_postprocess', :job_id,
            CAST(:provenance AS jsonb)
-         ) ON CONFLICT (workspace_id, sha256, artifact_kind) DO NOTHING
+         )
          RETURNING id, :artifact_role AS artifact_role,
            :sensor_actor_id AS artifact_sensor_actor_id,
            :sensor_id AS artifact_sensor_id,
@@ -776,56 +789,44 @@ export async function reserveBrowserRecordingArtifacts(
            storage_bucket, storage_key, producer_job_id, false AS reused`,
         reservationParams,
       );
-      // A failed/expired recording quarantines its immutable outputs. The global
-      // digest+kind uniqueness key would otherwise make every exact retry fail
-      // forever. Reclaim only an exact-byte quarantined row while holding this
-      // recording transaction; available artifacts retain normal dedup reuse.
-      const reclaimed = inserted ? null : await tx.queryOne<ArtifactRow>(
-        `UPDATE uniscenario.artifacts
-            SET revision_id = :revision_id, media_type = :media_type,
-                storage_bucket = :storage_bucket, storage_key = :storage_key,
-                byte_length = :byte_length, artifact_state = 'pending',
-                metadata = CAST(:metadata AS jsonb), deleted_at = NULL,
-                producer_job_family = 'artifact_postprocess',
-                producer_job_id = :job_id, provenance = CAST(:provenance AS jsonb)
-          WHERE workspace_id = :workspace_id AND sha256 = :sha256
-            AND artifact_kind = :artifact_kind AND artifact_state = 'quarantined'
-            AND media_type = :media_type AND byte_length = :byte_length
-          RETURNING id, :artifact_role AS artifact_role,
-            :sensor_actor_id AS artifact_sensor_actor_id,
-            :sensor_id AS artifact_sensor_id,
-            :sensor_modality AS artifact_sensor_modality,
-            artifact_kind, media_type, sha256, byte_length, artifact_state,
-            storage_bucket, storage_key, producer_job_id, false AS reused`,
-        reservationParams,
-      );
-      const artifact = inserted ?? reclaimed ?? await tx.queryOne<ArtifactRow>(
-        `SELECT id, :artifact_role AS artifact_role,
-                :sensor_actor_id AS artifact_sensor_actor_id,
-                :sensor_id AS artifact_sensor_id,
-                :sensor_modality AS artifact_sensor_modality,
-                artifact_kind, media_type, sha256, byte_length, artifact_state,
-                storage_bucket, storage_key, producer_job_id,
-                producer_job_id <> :job_id AS reused
-           FROM uniscenario.artifacts
-          WHERE workspace_id = :workspace_id AND sha256 = :sha256
-            AND artifact_kind = :artifact_kind
-            AND (
-              artifact_state = 'available'
-              OR (artifact_state = 'pending' AND producer_job_id = :job_id)
-            )
-            AND deleted_at IS NULL LIMIT 1`,
-        {
-          artifact_role: declaration.role,
-          sensor_actor_id: sensor?.actorId ?? null,
-          sensor_id: sensor?.sensorId ?? null,
-          sensor_modality: sensor?.modality ?? null,
-          job_id: recordingId,
-          workspace_id: context.workspaceId,
-          sha256: declaration.sha256,
-          artifact_kind: artifactKind,
-        },
-      );
+      // A failed/expired recording quarantines its immutable outputs. Reclaim
+      // only an exact-byte quarantined row while holding this serialized local
+      // transaction; available artifacts retain normal digest reuse.
+      const reclaimed = existingDigest?.artifact_state === "quarantined"
+        && existingDigest.media_type === declaration.mediaType
+        && Number(existingDigest.byte_length) === declaration.sizeBytes
+        ? await tx.queryOne<ArtifactRow>(
+          `UPDATE uniscenario.artifacts
+              SET revision_id = :revision_id, media_type = :media_type,
+                  storage_bucket = :storage_bucket, storage_key = :storage_key,
+                  byte_length = :byte_length, artifact_state = 'pending',
+                  metadata = CAST(:metadata AS jsonb), deleted_at = NULL,
+                  producer_job_family = 'artifact_postprocess',
+                  producer_job_id = :job_id, provenance = CAST(:provenance AS jsonb)
+            WHERE workspace_id = :workspace_id AND sha256 = :sha256
+              AND artifact_kind = :artifact_kind AND artifact_state = 'quarantined'
+            RETURNING id, :artifact_role AS artifact_role,
+              :sensor_actor_id AS artifact_sensor_actor_id,
+              :sensor_id AS artifact_sensor_id,
+              :sensor_modality AS artifact_sensor_modality,
+              artifact_kind, media_type, sha256, byte_length, artifact_state,
+              storage_bucket, storage_key, producer_job_id, false AS reused`,
+          reservationParams,
+        )
+        : null;
+      const reusable = existingDigest
+        && existingDigest.deleted_at === null
+        && (
+          existingDigest.artifact_state === "available"
+          || (
+            existingDigest.artifact_state === "pending"
+            && existingDigest.producer_job_id === recordingId
+          )
+        )
+        ? existingDigest
+        : null;
+      const artifact = reclaimed ?? inserted ?? reusable;
+      const conflicting = artifact ? null : existingDigest;
       if (
         !artifact
         || artifact.sha256 !== declaration.sha256
@@ -833,7 +834,13 @@ export async function reserveBrowserRecordingArtifacts(
         || Number(artifact.byte_length) !== declaration.sizeBytes
         || !["pending", "available"].includes(artifact.artifact_state)
       ) {
-        throw new Error("browser_recording_artifact_reservation_conflict");
+        throw new Error(
+          `browser_recording_artifact_reservation_conflict:${declaration.role}:`
+          + `${sensor?.sensorId ?? "global"}:${declaration.sha256.slice(0, 12)}:`
+          + `${artifact?.artifact_state ?? conflicting?.artifact_state ?? "missing"}:`
+          + `${conflicting?.producer_job_id ?? "no-producer"}:`
+          + `${conflicting?.deleted_at ? "deleted" : "live"}`,
+        );
       }
       await tx.execute(
         `INSERT INTO uniscenario.operational_job_artifact_links (
