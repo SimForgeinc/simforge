@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "episode": { "decisionHz": 10 },
+  "instances": ["../../../../research/edge-case-corpus/gold/gold-01/scenario.instance.json"]
+}
