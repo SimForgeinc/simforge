@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { FinalizeBrowserRecordingSchema } from "@/app/lib/uniscenario/recording-contracts";
+import {
+  FinalizeBrowserRecordingSchema,
+  UpdateBrowserRecordingProgressSchema,
+} from "@/app/lib/uniscenario/recording-contracts";
 import {
   readJson,
   requireUniScenarioContext,
@@ -8,6 +11,7 @@ import {
 import {
   finalizeBrowserRecording,
   getBrowserRecording,
+  updateBrowserRecordingProgress,
 } from "@/app/lib/uniscenario/recording-store";
 import { rejectUnauthorizedWorker } from "@/app/lib/uniscenario/worker-http";
 
@@ -21,6 +25,25 @@ export async function GET(_request: Request, route: Context) {
   return recording
     ? NextResponse.json(recording, { headers: UNISCENARIO_PRIVATE_CACHE_HEADERS })
     : NextResponse.json({ error: "browser_recording_not_found" }, { status: 404 });
+}
+
+export async function PUT(request: Request, route: Context) {
+  const unauthorized = rejectUnauthorizedWorker(request);
+  if (unauthorized) return unauthorized;
+  const auth = await requireUniScenarioContext();
+  if (auth.response) return auth.response;
+  const parsed = UpdateBrowserRecordingProgressSchema.safeParse(await readJson(request));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "invalid_browser_recording_progress", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const { recordingId } = await route.params;
+  const updated = await updateBrowserRecordingProgress(auth.context, recordingId, parsed.data);
+  return updated
+    ? NextResponse.json({ updated: true })
+    : NextResponse.json({ error: "browser_recording_not_active" }, { status: 409 });
 }
 
 export async function PATCH(request: Request, route: Context) {

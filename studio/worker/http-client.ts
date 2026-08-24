@@ -134,6 +134,26 @@ export class CpuJobsClient {
     }
   }
 
+  async recordingProgress(
+    recordingId: string,
+    uploadedArtifacts: number,
+    totalArtifacts: number,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const progress = 0.95 + (0.04 * uploadedArtifacts / Math.max(1, totalArtifacts));
+    await this.request(
+      `/api/uniscenario/recordings/${encodeURIComponent(recordingId)}`,
+      {
+        phase: "uploading",
+        progress,
+        detail: { uploadedArtifacts, totalArtifacts },
+      },
+      signal,
+      false,
+      "PUT",
+    );
+  }
+
   async complete(
     claim: CpuJobClaim,
     recordingId: string,

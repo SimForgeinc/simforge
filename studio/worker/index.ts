@@ -93,6 +93,13 @@ async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal:
     });
     progress = 0.95;
     const recording = await client.reserve(claim, result.artifacts, signal);
+    let uploadedArtifacts = 0;
+    await client.recordingProgress(
+      recording.recordingId,
+      uploadedArtifacts,
+      result.artifacts.length,
+      signal,
+    );
     for (const artifact of result.artifacts) {
       const key = artifact.sensor
         ? `${artifact.kind}\0${artifact.sensor.actorId}\0${artifact.sensor.sensorId}\0${artifact.sensor.modality}`
@@ -100,6 +107,13 @@ async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal:
       const reservation = recording.uploads.find((item) => item.key === key);
       if (!reservation) throw new Error(`missing upload reservation for ${key}`);
       await client.upload(reservation, artifact, signal);
+      uploadedArtifacts += 1;
+      await client.recordingProgress(
+        recording.recordingId,
+        uploadedArtifacts,
+        result.artifacts.length,
+        signal,
+      );
     }
     job.abort(new Error("render complete"));
     await heartbeat;
