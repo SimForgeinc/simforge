@@ -13,7 +13,7 @@ import { captureInstanceIdCube, captureRadarFrame, type TraceVelocity } from './
 import { RenderResourcePool, renderOffscreenRgba } from './sensors/render-targets.js';
 import { encodeRadarCsv, type RadarDetection } from './sensors/csv.js';
 import { encodeLidarPly, type LidarPoint } from './sensors/ply.js';
-import { StreamingSensorVideoEncoder } from './video.js';
+import { StreamingSensorVideoEncoder, type ActiveSensorPass } from './video.js';
 
 export const BROWSER_RENDER_ENGINE_ID = 'browser' as const;
 export type RenderStage = 'worldUpdate' | 'scenePass' | 'readback' | 'encoding' | 'artifactWrite' | 'visualization';
@@ -79,7 +79,11 @@ export async function captureBrowserArtifacts(input: {
         const archive = new StreamingZipWriter(sink);
         archives.set(passKey(pass), archive); openAbortables.push(archive);
       }
-      if (input.renderSpec.video && (pass.modality === 'lidar' || pass.modality === 'radar')) {
+      if (
+        input.renderSpec.video
+        && input.renderSpec.artifacts.includes('sensorArchive')
+        && isSensorVideoPass(pass)
+      ) {
         const videoSink = await hashedSink(input.createArtifactSink, { role: 'sensor-video', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality }, 'video/webm');
         const quality = input.renderSpec.video.quality === 'lossless' ? 'high' : input.renderSpec.video.quality;
         const video = await StreamingSensorVideoEncoder.create({ pass, schedule: input.schedule, config: { width: input.renderSpec.video.width, height: input.renderSpec.video.height, fps: input.renderSpec.video.fps, quality }, sink: videoSink, signal: input.signal });
@@ -119,9 +123,9 @@ export async function captureBrowserArtifacts(input: {
             addTiming(timings, 'artifactWrite', performance.now() - writeStarted);
           }
           const video = videos.get(passKey(pass));
-          if (video && captured.structured) {
+          if (video) {
             const visualizationStarted = performance.now();
-            await video.encode(frame, captured.structured, input.signal);
+            await video.encode(frame, captured, input.signal);
             addTiming(timings, 'visualization', performance.now() - visualizationStarted);
           }
         }));
@@ -206,6 +210,9 @@ function serializeCapture(pass: BrowserRenderPass, capture: CapturedPass): { byt
 
 async function hashedSink(factory: ArtifactSinkFactory, identity: Parameters<ArtifactSinkFactory>[0], mediaType: string): Promise<HashedArtifactSink> { return new HashedArtifactSink(identity, mediaType, await factory(identity, mediaType)); }
 function passKey(pass: BrowserRenderPass): string { return `${pass.actorId}\u0000${pass.sensorId}\u0000${pass.modality}`; }
+function isSensorVideoPass(pass: BrowserRenderPass): pass is ActiveSensorPass {
+  return pass.modality === 'rgb' || pass.modality === 'lidar' || pass.modality === 'radar';
+}
 
 const scratchActorRotation = new Quaternion(); const scratchYaw = new Quaternion(); const scratchPitch = new Quaternion(); const scratchRoll = new Quaternion(); const scratchRelative = new Matrix4(); const scratchActorWorld = new Matrix4(); const scratchPosition = new Vector3(); const scratchScale = new Vector3(1, 1, 1); const scratchRotation = new Quaternion(); const scratchTarget = new Vector3(); const scratchUp = new Vector3();
 function sensorWorldMatrix(target: Matrix4, pass: BrowserRenderPass, x: number, z: number, heading: number): void {

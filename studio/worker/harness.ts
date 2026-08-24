@@ -116,9 +116,9 @@ async function main(argv: readonly string[]): Promise<void> {
       sources: prontoSources(hostActorId),
       clip: { startSeconds: 0, endSeconds: Math.min(clipSeconds, 1 / 24) },
       video: { width: 320, height: 180, fps: 24, container: "mp4", codec: "h264", quality: "draft" },
-      artifacts: ["manifest", "video"],
+      artifacts: ["manifest", "video", "sensorArchive"],
       capabilityIntent: {
-        required: ["sensor.rgb", "sensor.lidar", "sensor.radar", "artifact.video", "artifact.manifest"],
+        required: ["sensor.rgb", "sensor.lidar", "sensor.radar", "artifact.video", "artifact.manifest", "artifact.sensor_archive", "artifact.sensor_video"],
         preferred: [],
         fidelity: "review",
       },
@@ -146,12 +146,17 @@ async function main(argv: readonly string[]): Promise<void> {
     workspace: output,
     signal: new AbortController().signal,
   });
+  const sensorVideos = result.artifacts.filter((artifact) => artifact.kind === "sensor_video");
+  if (sensorVideos.length !== 18) {
+    throw new Error(`worker harness expected 18 per-sensor videos, received ${sensorVideos.length}`);
+  }
   process.stdout.write(`${JSON.stringify({
     output,
     manifest: result.artifacts.find((artifact) => artifact.kind === "manifest")?.path,
     mp4: result.artifacts.find((artifact) => artifact.kind === "video")?.path,
     durationSeconds: result.durationSeconds,
     frameCount: result.frameCount,
+    sensorVideos: sensorVideos.length,
     sourceFixture: instancePath,
     mapManifest: mapManifestPath,
   })}\n`);

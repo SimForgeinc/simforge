@@ -1,10 +1,18 @@
 import type { FixedStepCaptureFrame } from '@simforge/playback';
-import type { BrowserRenderPass, ResolvedFrameSchedule } from '@simforge/scenario';
+import type {
+  BrowserCameraRenderPass,
+  BrowserLidarRenderPass,
+  BrowserRadarRenderPass,
+  ResolvedFrameSchedule,
+} from '@simforge/scenario';
 import { throwIfAborted, type HashedArtifactSink } from './artifacts.js';
 import type { RadarDetection } from './sensors/csv.js';
 import type { LidarPoint } from './sensors/ply.js';
 
-export type ActiveSensorPass = Extract<BrowserRenderPass, { modality: 'lidar' | 'radar' }>;
+export type ActiveSensorPass =
+  | (BrowserCameraRenderPass & { readonly modality: 'rgb' })
+  | BrowserLidarRenderPass
+  | BrowserRadarRenderPass;
 export type BrowserVideoConfig = Readonly<{ width: number; height: number; fps: number; quality: 'draft' | 'standard' | 'high' }>;
 const BITRATE = { draft: 3_000_000, standard: 7_000_000, high: 14_000_000 } as const;
 
@@ -50,11 +58,19 @@ export class StreamingSensorVideoEncoder {
     return instance;
   }
 
-  async encode(timing: FixedStepCaptureFrame, structured: readonly LidarPoint[] | readonly RadarDetection[], signal?: AbortSignal): Promise<void> {
+  async encode(
+    timing: FixedStepCaptureFrame,
+    captured: {
+      pixels?: Uint8Array;
+      structured?: readonly LidarPoint[] | readonly RadarDetection[];
+    },
+    signal?: AbortSignal,
+  ): Promise<void> {
     throwIfAborted(signal);
     if (this.closed || timing.index !== this.frames) throw new Error(`Sensor video expected frame ${this.frames}, received ${timing.index}.`);
-    if (this.pass.modality === 'lidar') drawLidar(this.context, this.pass, structured as readonly LidarPoint[], timing);
-    else drawRadar(this.context, this.pass, structured as readonly RadarDetection[], timing);
+    if (this.pass.modality === 'rgb') drawRgb(this.context, this.pass, captured.pixels);
+    else if (this.pass.modality === 'lidar') drawLidar(this.context, this.pass, captured.structured as readonly LidarPoint[], timing);
+    else drawRadar(this.context, this.pass, captured.structured as readonly RadarDetection[], timing);
     const frame = new VideoFrame(this.canvas, { timestamp: timing.timestampUs, duration: timing.durationUs });
     try { this.encoder.encode(frame, { keyFrame: timing.index % Math.max(1, this.config.fps * 2) === 0 }); } finally { frame.close(); }
     this.frames += 1;
@@ -87,6 +103,24 @@ export class StreamingSensorVideoEncoder {
     const bytes = element(0x1f43b675, concat(element(0xe7, uint(chunk.timestamp)), element(0xa3, concat(new Uint8Array([0x81, 0, 0, chunk.type === 'key' ? 0x80 : 0]), data))));
     this.writes = this.writes.then(() => this.sink.write(bytes)).catch((reason) => { this.failure = reason instanceof Error ? reason : new Error(String(reason)); });
   }
+}
+
+function drawRgb(
+  context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
+  pass: Extract<ActiveSensorPass, { modality: 'rgb' }>,
+  pixels: Uint8Array | undefined,
+): void {
+  if (!pixels || pixels.byteLength !== pass.width * pass.height * 4) {
+    throw new Error(`RGB sensor video received invalid pixels for ${pass.sensorId}.`);
+  }
+  if (context.canvas.width !== pass.width || context.canvas.height !== pass.height) {
+    throw new Error(`RGB sensor video dimensions must match ${pass.sensorId}.`);
+  }
+  if (!(pixels.buffer instanceof ArrayBuffer)) {
+    throw new Error(`RGB sensor video requires an ArrayBuffer for ${pass.sensorId}.`);
+  }
+  const rgba = new Uint8ClampedArray(pixels.buffer, pixels.byteOffset, pixels.byteLength);
+  context.putImageData(new ImageData(rgba, pass.width, pass.height), 0, 0);
 }
 
 function drawLidar(context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, pass: Extract<ActiveSensorPass, { modality: 'lidar' }>, points: readonly LidarPoint[], timing: FixedStepCaptureFrame): void {

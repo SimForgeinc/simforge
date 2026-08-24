@@ -160,7 +160,7 @@ export function buildCanonicalRenderSpec(input: CanonicalRenderSpecInput): Rende
     ...(input.video
       && input.video.container === "webm"
       && artifacts.includes("sensorArchive")
-      && sources.some((source) => source.modality === "lidar" || source.modality === "radar")
+      && sources.some((source) => source.modality === "rgb" || source.modality === "lidar" || source.modality === "radar")
       ? ["artifact.sensor_video"]
       : []),
     ...(input.staticSemantics && sources.some((source) => source.modality === "semantic")
@@ -209,7 +209,7 @@ export function browserRendererCapabilities(
   if (
     spec.video
     && spec.artifacts.includes("sensorArchive")
-    && spec.sources.some((source) => source.modality === "lidar" || source.modality === "radar")
+    && spec.sources.some((source) => source.modality === "rgb" || source.modality === "lidar" || source.modality === "radar")
   ) {
     capabilities.add("artifact.sensor_video");
   }

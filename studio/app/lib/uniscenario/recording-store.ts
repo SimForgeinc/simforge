@@ -140,7 +140,7 @@ function declaredRecordingArtifacts(
       }
       if (
         renderSpec.video
-        && (source.modality === "lidar" || source.modality === "radar")
+        && (source.modality === "rgb" || source.modality === "lidar" || source.modality === "radar")
       ) {
         declared.push({
           role: "sensor_video",
