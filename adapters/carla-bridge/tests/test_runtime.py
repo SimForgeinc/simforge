@@ -1747,8 +1747,8 @@ def test_control_digest_matches_cross_language_ecmascript_golden_vector():
         "\ue000": "bmp-private",
         "nested": [-0.0, 1e-7, 0.000001, 1e20, 1e21, {"z": "é", "a": "雪"}],
     }
-    assert canonical_json(value) == '{"nested":[0,0,0.000001,100000000000000000000,1e+21,{"a":"雪","z":"é"}],"😀":"astral","":"bmp-private"}'
-    assert canonical_sha256(value) == "2b0bc794f457fdc537567b6bf25c93ed34e1c444495a44f77407be6293e60420"
+    assert canonical_json(value) == '{"nested":[0,1e-7,0.000001,100000000000000000000,1e+21,{"a":"雪","z":"é"}],"😀":"astral","":"bmp-private"}'
+    assert canonical_sha256(value) == "e20e546bc8e08a393e67da60d1146768fd39836d0a6e625085ce8a8909ac1302"
     assert canonical_sha256(json.loads(canonical_json(value))) == canonical_sha256(value)
 
 

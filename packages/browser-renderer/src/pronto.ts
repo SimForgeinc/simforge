@@ -3,6 +3,7 @@ import {
   PRONTO_CARLA_IMAGE_AMD64_SHA256,
   PRONTO_CARLA_IMAGE_REPOSITORY,
   PRONTO_CARLA_IMAGE_INDEX_SHA256,
+  PRONTO_CHASE_CAMERA_SENSOR_ID,
   PRONTO_KIA_CARLA_BLUEPRINT_ID,
   PRONTO_KIA_CARLA_CLASS_PATH,
   PRONTO_KIA_CATALOG_ASSET_ID,
@@ -32,7 +33,8 @@ export function assertBrowserSensorHost(renderSpec: RenderSpecV3, bundle: Playba
     throw new Error(`Browser sensor host ${sensorHost.actorId} expected ${sensorHost.vehicleAsset.catalogAssetId}; received ${actor.catalogId}.`);
   }
   const cameraIds = new Set(renderSpec.sources
-    .filter((source) => source.modality !== 'lidar' && source.modality !== 'radar')
+    .filter((source) => source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID
+      && source.modality !== 'lidar' && source.modality !== 'radar')
     .map((source) => source.sensorId));
   const lidarIds = new Set(renderSpec.sources
     .filter((source) => source.modality === 'lidar')
@@ -67,7 +69,7 @@ export function assertProntoKiaSensorHost(renderSpec: RenderSpecV3, bundle: Play
     || sensorHost.sensorRig.radars !== PRONTO_SENSOR_COUNTS.radar) {
     throw new Error(`Pronto sensor host must use rig ${PRONTO_SENSOR_RIG_ID} with exact 8/6/4 counts.`);
   }
-  const cameraIds = new Set(renderSpec.sources.filter((source) => source.modality !== 'lidar' && source.modality !== 'radar').map((source) => source.sensorId));
+  const cameraIds = new Set(renderSpec.sources.filter((source) => source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID && source.modality !== 'lidar' && source.modality !== 'radar').map((source) => source.sensorId));
   const lidarIds = new Set(renderSpec.sources.filter((source) => source.modality === 'lidar').map((source) => source.sensorId));
   const radarIds = new Set(renderSpec.sources.filter((source) => source.modality === 'radar').map((source) => source.sensorId));
   if (cameraIds.size !== PRONTO_SENSOR_COUNTS.camera || lidarIds.size !== PRONTO_SENSOR_COUNTS.lidar || radarIds.size !== PRONTO_SENSOR_COUNTS.radar) {

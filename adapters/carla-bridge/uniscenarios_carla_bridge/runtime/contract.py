@@ -5,7 +5,7 @@ import json
 import math
 import re
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 from typing import Any, Mapping
 
 SCHEMA = "uniscenario.execution-package/v1"
@@ -81,11 +81,6 @@ def _ecmascript_number(value: int | float) -> str:
         raise ContractError("canonical JSON numbers must be finite")
     if value == 0:
         return "0"
-    if not value.is_integer() and abs(value) < 1e15:
-        rounded = Decimal.from_float(value).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-        value = float(rounded)
-        if value == 0:
-            return "0"
     absolute = abs(value)
     shortest = repr(value).lower()
     if 1e-6 <= absolute < 1e21:
