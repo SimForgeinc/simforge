@@ -304,15 +304,17 @@ VISUAL_MAX_NEAR_WHITE_FRACTION = 0.98
 #: not an instant failure line.
 CAMERA_ENCODER_QUEUE_FRAMES = 8
 
-#: How long a full encoder queue may stall the capture path before the render
-#: fails closed. rc.63 fleet evidence showed overflow failures with ffmpeg at
-#: 6-10% CPU on an unsaturated host (load 14/128): drain outruns capture on
-#: average and overflows are transient bursts (capture running faster than
-#: real time, x264 lookahead flushes). Capture is already synchronous with the
-#: tick loop's writer futures, so a brief bounded wait simply throttles the
-#: tick loop to encode speed; a genuinely overrun encoder keeps its queue full
-#: past this deadline and still fails the render closed.
-CAMERA_ENCODER_STALL_DEADLINE_S = 5.0
+#: How long a camera encoder may make ZERO drain progress while its queue is
+#: full before the render fails closed. The gate is progress-aware: any frame
+#: consumed by the writer restarts the window, so a slow-but-alive encoder
+#: merely throttles the (synchronous, deterministic) capture loop to encode
+#: speed and only costs wall time; a wedged writer/ffmpeg still fails the
+#: render within this window. rc.63/rc.64 fleet evidence showed the failures
+#: were never encode throughput (ffmpeg at 1-10% CPU, idle NVMe, capture at
+#: ~2 fps per camera): they were scheduler convoys from thread
+#: oversubscription, which the previous instant/fixed-deadline gates misread
+#: as sustained overrun.
+CAMERA_ENCODER_STALL_DEADLINE_S = 30.0
 
 
 #: Per-actor residual budgets an actor must stay inside for
@@ -338,13 +340,20 @@ STABILITY_CONSECUTIVE_TICKS = 5
 
 
 def _presentation_video_codec_args() -> list[str]:
-    """Encoder selection shared by every per-camera stream (h264 mp4 output)."""
+    """Encoder selection shared by every per-camera stream (h264 mp4 output).
+
+    Software x264 is pinned to 2 threads: auto-threading allocates ~1.5x the
+    128 host cores PER encoder, and a multi-camera render fleet was observed
+    running thousands of mostly-idle x264 threads, causing multi-second
+    scheduler convoys that starved encoder writer threads into backpressure
+    failures. Real demand is ~2 fps per 720p camera; two threads are ample.
+    """
     encoder = os.environ.get("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
     if encoder not in {"software", "nvidia"}:
         raise RuntimeError("UNISCENARIO_PRESENTATION_VIDEO_ENCODER must be software or nvidia")
     if encoder == "nvidia":
         return ["-c:v", "h264_nvenc", "-preset", "p5", "-cq", "17", "-profile:v", "high"]
-    return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-profile:v", "high", "-level:v", "4.2"]
+    return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-profile:v", "high", "-level:v", "4.2", "-threads", "2"]
 
 
 class _CameraStreamEncoder:
@@ -365,6 +374,7 @@ class _CameraStreamEncoder:
         self.converter = converter
         self.error: BaseException | None = None
         self.stall_deadline_s = CAMERA_ENCODER_STALL_DEADLINE_S
+        self.consumed = 0
         self.queue: queue.Queue[Any] = queue.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
         self.process = subprocess.Popen([
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -383,6 +393,7 @@ class _CameraStreamEncoder:
         try:
             while True:
                 item = self.queue.get()
+                self.consumed += 1
                 if item is self._CLOSE:
                     return
                 if self.converter is not None:
@@ -394,25 +405,32 @@ class _CameraStreamEncoder:
     def submit(self, data: Any) -> None:
         if self.error is not None:
             raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
-        try:
-            self.queue.put_nowait(data)
-            return
-        except queue.Full:
-            pass
-        try:
-            # Transient burst: block the capture path (bounded) until the
-            # writer thread drains a slot instead of failing the render.
-            self.queue.put(data, timeout=self.stall_deadline_s)
-        except queue.Full as exc:
-            if self.error is not None:
-                # A dead writer never drains; surface its failure, not the
-                # backpressure symptom it caused.
-                raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
-            raise ContractError(
-                f"camera stream encoder {self.sensor_key} exceeded its "
-                f"{CAMERA_ENCODER_QUEUE_FRAMES}-frame backpressure budget "
-                f"for longer than {self.stall_deadline_s:g}s"
-            ) from exc
+        # Full queue: block the capture path until the writer frees a slot.
+        # The stall window restarts on any drain progress, so a slow encoder
+        # throttles capture instead of failing the render; only a writer that
+        # consumes NOTHING for the whole window (wedged ffmpeg, dead thread)
+        # fails closed.
+        window_started = monotonic()
+        consumed_at_window_start = self.consumed
+        while True:
+            try:
+                self.queue.put(data, timeout=min(1.0, self.stall_deadline_s))
+                return
+            except queue.Full as exc:
+                if self.error is not None:
+                    # A dead writer never drains; surface its failure, not
+                    # the backpressure symptom it caused.
+                    raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
+                if self.consumed != consumed_at_window_start:
+                    window_started = monotonic()
+                    consumed_at_window_start = self.consumed
+                    continue
+                if monotonic() - window_started >= self.stall_deadline_s:
+                    raise ContractError(
+                        f"camera stream encoder {self.sensor_key} exceeded its "
+                        f"{CAMERA_ENCODER_QUEUE_FRAMES}-frame backpressure budget "
+                        f"with no drain progress for {self.stall_deadline_s:g}s"
+                    ) from exc
 
     def close(self, timeout_s: float = 300.0) -> None:
         try:

@@ -1714,7 +1714,7 @@ def test_video_lease_requires_a_reservation_for_every_non_primary_sensor():
         parse_lease(incomplete_data)
 
 
-def test_camera_stream_encoder_fails_closed_on_sustained_overrun():
+def test_camera_stream_encoder_fails_closed_on_zero_progress_wedge():
     from uniscenarios_carla_bridge.runtime.backend import (
         CAMERA_ENCODER_QUEUE_FRAMES,
         _CameraStreamEncoder,
@@ -1722,18 +1722,55 @@ def test_camera_stream_encoder_fails_closed_on_sustained_overrun():
     encoder = object.__new__(_CameraStreamEncoder)
     encoder.sensor_key = "hero"
     encoder.error = None
+    encoder.consumed = 0
     encoder.stall_deadline_s = 0.05
     encoder.queue = __import__("queue").Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
     for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
         encoder.submit(f"frame-{index}")
-    # A queue that stays full past the stall deadline is a genuine sustained
-    # overrun: the render still fails closed instead of buffering unbounded.
-    with pytest.raises(ContractError, match="backpressure budget"):
+    # A full queue whose writer consumes NOTHING for the whole stall window is
+    # a wedged encoder: the render still fails closed instead of hanging or
+    # buffering unbounded.
+    with pytest.raises(ContractError, match="backpressure budget.*no drain progress"):
         encoder.submit("frame-overflow")
     # A failed writer thread surfaces on the next capture instead of hanging.
     encoder.error = RuntimeError("ffmpeg died")
     with pytest.raises(RuntimeError, match="camera stream encoder hero failed"):
         encoder.submit("frame-after-error")
+
+
+def test_camera_stream_encoder_slow_drain_extends_stall_window():
+    # rc.64 field failure: a scheduler convoy stalled one writer >5s while
+    # ffmpeg sat idle, so a fixed put-deadline failed a healthy render. Any
+    # drain progress must restart the window: a writer slower than the stall
+    # deadline per frame still lets capture proceed (throttled), because the
+    # window measures zero-progress wedges, not encode speed.
+    import queue as queue_module
+    import threading as threading_module
+    from time import sleep as time_sleep
+    from uniscenarios_carla_bridge.runtime.backend import _CameraStreamEncoder
+    encoder = object.__new__(_CameraStreamEncoder)
+    encoder.sensor_key = "hero"
+    encoder.error = None
+    encoder.consumed = 0
+    encoder.stall_deadline_s = 0.4
+    encoder.queue = queue_module.Queue(maxsize=2)
+    encoder.submit("frame-0")
+    encoder.submit("frame-1")
+    def slow_writer():
+        # Consumes one frame every 0.3s: slower than capture, faster than the
+        # 0.4s zero-progress window. Three frames guarantee > one window.
+        for _ in range(3):
+            time_sleep(0.3)
+            encoder.queue.get()
+            encoder.consumed += 1
+    writer = threading_module.Thread(target=slow_writer)
+    writer.start()
+    try:
+        encoder.submit("frame-2")  # waits ~0.3s for the first drain
+        encoder.submit("frame-3")  # waits again; progress keeps resetting the window
+    finally:
+        writer.join()
+    assert encoder.consumed == 3
 
 
 def test_camera_stream_encoder_absorbs_transient_burst_within_deadline():
@@ -1749,6 +1786,7 @@ def test_camera_stream_encoder_absorbs_transient_burst_within_deadline():
     encoder = object.__new__(_CameraStreamEncoder)
     encoder.sensor_key = "hero"
     encoder.error = None
+    encoder.consumed = 0
     encoder.stall_deadline_s = 5.0
     encoder.queue = queue_module.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
     for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
@@ -1770,6 +1808,7 @@ def test_camera_stream_encoder_surfaces_writer_death_instead_of_backpressure():
     encoder = object.__new__(_CameraStreamEncoder)
     encoder.sensor_key = "hero"
     encoder.error = None
+    encoder.consumed = 0
     encoder.stall_deadline_s = 0.05
     encoder.queue = queue_module.Queue(maxsize=1)
     encoder.submit("frame-0")
@@ -1781,11 +1820,16 @@ def test_camera_stream_encoder_surfaces_writer_death_instead_of_backpressure():
 def test_presentation_video_encoder_selection(monkeypatch):
     from uniscenarios_carla_bridge.runtime.backend import _presentation_video_codec_args
     monkeypatch.delenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", raising=False)
-    assert "libx264" in _presentation_video_codec_args()
+    default_args = _presentation_video_codec_args()
+    assert "libx264" in default_args
+    # x264 auto-threading spawns ~1.5x host cores of threads PER encoder;
+    # multi-camera fleets ran thousands of idle threads and starved writers.
+    assert default_args[default_args.index("-threads") + 1] == "2"
     monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
     assert "libx264" in _presentation_video_codec_args()
     monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "nvidia")
-    assert "h264_nvenc" in _presentation_video_codec_args()
+    nvidia_args = _presentation_video_codec_args()
+    assert "h264_nvenc" in nvidia_args and "-threads" not in nvidia_args
     monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "vhs")
     with pytest.raises(RuntimeError, match="must be software or nvidia"):
         _presentation_video_codec_args()
