@@ -2,7 +2,7 @@ import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { EngineCapabilityDeclarationSchema } from '@uniscenarios/render-runtime';
 
-import { createRenderEngine, decodePlaybackArchive, resolveBrowserRenderIntent } from './engine.js';
+import { createRenderEngine, decodePlaybackArchive, normalizeSavedPlaybackTrace, resolveBrowserRenderIntent } from './engine.js';
 
 describe('browser render engine registration', () => {
   it('publishes the canonical worker capability declaration', () => {
@@ -102,5 +102,15 @@ describe('browser playback materialization', () => {
   it('decodes the persisted gzip playback bundle before rendering', async () => {
     const bundle = { schema: 'uniscenario.simulation-preview/v1', draftVersion: 5 };
     await expect(decodePlaybackArchive(gzipSync(JSON.stringify(bundle)))).resolves.toEqual(bundle);
+  });
+
+  it('converts persisted scene coordinates back through strict playback validation', () => {
+    expect(normalizeSavedPlaybackTrace({
+      header: { frame: 'scene' },
+      ticks: { t: [0, 1], actors: { ego: { x: [1, 2], z: [3, -4] } } },
+    })).toMatchObject({
+      header: { frame: 'xodr-local' },
+      ticks: { actors: { ego: { x: [1, 2], y: [-3, 4], z: [3, -4] } } },
+    });
   });
 });

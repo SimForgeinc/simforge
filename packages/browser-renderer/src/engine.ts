@@ -215,13 +215,41 @@ export async function materializePlaybackBundle(bytes: Uint8Array): Promise<Play
     openScenario?: PlaybackBundle['openScenario'];
   };
   return {
-    ...parsePlaybackPair(envelope.instance, envelope.trace, {
+    ...parsePlaybackPair(envelope.instance, normalizeSavedPlaybackTrace(envelope.trace), {
       instanceName: 'saved scenario',
       traceName: 'saved simulation',
     }),
     ...(envelope.ambientTraffic ? { ambientTraffic: envelope.ambientTraffic } : {}),
     ...(envelope.mapCollisions ? { mapCollisions: envelope.mapCollisions } : {}),
     ...(envelope.openScenario ? { openScenario: envelope.openScenario } : {}),
+  };
+}
+
+export function normalizeSavedPlaybackTrace(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const trace = value as Record<string, unknown>;
+  const header = trace['header'];
+  const ticks = trace['ticks'];
+  if (!header || typeof header !== 'object' || (header as Record<string, unknown>)['frame'] !== 'scene'
+    || !ticks || typeof ticks !== 'object') {
+    return value;
+  }
+  const actors = (ticks as Record<string, unknown>)['actors'];
+  if (!actors || typeof actors !== 'object') return value;
+  return {
+    ...trace,
+    header: { ...(header as Record<string, unknown>), frame: 'xodr-local' },
+    ticks: {
+      ...(ticks as Record<string, unknown>),
+      actors: Object.fromEntries(Object.entries(actors).map(([id, value]) => {
+        const track = value as Record<string, unknown>;
+        const z = track['z'];
+        return [id, {
+          ...track,
+          ...(Array.isArray(z) ? { y: z.map((coordinate) => -Number(coordinate)) } : {}),
+        }];
+      })),
+    },
   };
 }
 
