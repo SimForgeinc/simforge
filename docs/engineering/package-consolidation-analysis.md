@@ -1,4 +1,8 @@
 # UniScenarios → SimForge: Consolidation Analysis
+> **Status (2026-08-23):** The 13-package / 8-system proposal is executed by
+> this branch program. Pre-consolidation names and paths below are retained as
+> the evidence and merge map for the cutover.
+
 
 **Verdict up front:** the workspace has 24 TS packages but only about 8 real systems. Roughly half the packages are arbitrary splits of a system that is only ever consumed whole. The rebrand plan (docs/simforge-rebrand-plan.md) renames 24 packages to 24 packages — it spends the one cheap breaking-change window (the §6 major stack release SimCloud must absorb anyway) on names alone and enshrines every wrong boundary under a prettier name. Merge to **13 packages / 8 systems** in the same window. Two structural facts make consolidation nearly free: (1) **every package versions in lockstep** (`0.1.0-rc.45` across the stack, one `stackVersion` in config/uniscenarios-stack.json) — there is no per-package release cadence to preserve; (2) SimCloud consumes the stack as one atomic vendored set (21 npm entries + 2 PyPI in stack-lock), and §6 already plans a rename manifest — a merge manifest is the same mechanical change.
 

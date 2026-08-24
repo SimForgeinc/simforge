@@ -1,4 +1,7 @@
 # Bridge corpus scale-out memo — H3-only research path
+> **Historical research memo:** Pre-rebrand tool paths are retained verbatim
+> below.
+
 
 WS3, updated 2026-08-23 by user directive. H3 (MiniMax) is the only video
 model for research tasks, and the user explicitly waived the documented H3

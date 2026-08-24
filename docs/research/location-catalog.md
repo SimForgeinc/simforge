@@ -1,4 +1,7 @@
 # Research: location intelligence → the Studio location catalog
+> **Historical research record:** Pre-consolidation package names are retained
+> verbatim below.
+
 
 Condensed from the 2026-07-31 SimCloud location-intelligence investigation.
 Scope note: SimCloud's lane/location intelligence was cleared for reuse as

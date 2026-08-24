@@ -27,7 +27,7 @@ qualification run; the latter remains an explicit acceptance gate.
   opened 2026-05-28 for CARLA 0.10.0/UE5 compatibility. An open compatibility
   PR is evidence of active work, not released support.
 
-Therefore stock ScenarioRunner must not receive native UniScenarios XML 1.4 or
+Therefore stock ScenarioRunner must not receive native SimForge XML 1.4 or
 be treated as the authoritative runtime. A CARLA/UE plugin is also not the
 starting point. The public Python API is sufficient to test the thin bridge;
 consider a plugin only if exact custom-map signal or required asset bindings
@@ -36,10 +36,10 @@ cannot be exposed through that API.
 ## Architecture
 
 The authoritative pipeline, implemented in
-`adapters/carla-bridge/uniscenarios_carla_bridge/runtime`, is:
+`adapters/carla-exec/simforge_carla_exec/runtime`, is:
 
 1. Validate the authored scenario and exact OpenDRIVE/controller/head bindings.
-2. Compile once with the UniScenarios evaluator into an immutable 50 Hz trace
+2. Compile once with the SimForge evaluator into an immutable 50 Hz trace
    plus actor lifecycle, event, signal, weather, light/siren, collision
    expectation, and provenance streams.
 3. Hash the trace, complete XODR, catalogs/assets, bridge protocol, CARLA build,
@@ -70,7 +70,7 @@ The bridge owns that responsibility.
 physics produced the motion. `Approximate` is always visible in evidence and is
 blocking for the native ScenarioRunner gate.
 
-| UniScenarios semantic | ScenarioRunner 1.0 | Trace-authority bridge | Notes / gate |
+| SimForge semantic | ScenarioRunner 1.0 | Trace-authority bridge | Notes / gate |
 | --- | --- | --- | --- |
 | Initial/final actor lifecycle | Approximate | Exact | Spawn/destroy on frame edge; catalog/blueprint binding must be unique. |
 | World trajectory and heading | Approximate | Exact | Pose/velocity applied every fixed step; compare before accepting. |
@@ -78,7 +78,7 @@ blocking for the native ScenarioRunner gate.
 | Routes | Approximate | Exact result | Bridge replays compiled result; route identity remains provenance. |
 | Lane changes / pull-over | Approximate | Exact result | Native dynamics cannot inherit trace-parity status. |
 | Traffic head states | Unsupported for required fidelity | Exact | Freeze and address by OpenDRIVE ID; position is a cross-check, never ownership. |
-| Controller programs / preemption | Unsupported | Exact result | UniScenarios evaluator owns stage/conflict semantics. |
+| Controller programs / preemption | Unsupported | Exact result | SimForge evaluator owns stage/conflict semantics. |
 | Flashing signal phases | Unsupported | Approximate | Schedule `Yellow/Red` and `Off` edges; CARLA has no flashing enum. |
 | Vehicle indicators/headlights | Approximate | Exact where blueprint supports bits | Probe blueprint, record applied/read-back state. |
 | Siren | Unsupported | Approximate | Require an allowlisted blueprint/component; never infer from emergency category. |
@@ -90,7 +90,7 @@ blocking for the native ScenarioRunner gate.
 | RGB/depth/segmentation/lidar/radar | Unsupported | Exact sensor invocation | Calibration and sensor tick are immutable inputs. |
 | OpenDRIVE standalone geometry | Approximate | Exact XODR input | Runtime generation is possible; production visuals may require a packaged map. |
 | Full custom visual map/assets | Unsupported | Exact if prepackaged | Package for the target CARLA build; XODR digest still must match. |
-| Occlusion and rubric metrics | Unsupported | UniScenarios exact | CARLA sensors are supporting evidence, not a replacement evaluator. |
+| Occlusion and rubric metrics | Unsupported | SimForge exact | CARLA sensors are supporting evidence, not a replacement evaluator. |
 
 CARLA exposes manual signal state, global freezing, signal groups, stop/affected
 lane waypoints, pole index, and `get_opendrive_id()` in its
@@ -139,7 +139,7 @@ requested and read-back state on every edge.
 Flashing yellow/red is represented as scheduled state/off edges at a declared
 frequency, marked approximate because CARLA has no flashing state and public
 traffic behavior may interpret `Off` differently. Four-way-stop arbitration is
-unsupported until explicitly implemented in UniScenarios; flashing red retains
+unsupported until explicitly implemented in SimForge; flashing red retains
 the fail-safe label.
 
 ### Motion, collisions, and determinism
@@ -163,7 +163,7 @@ event and signal gates remain primary.
 
 The down-converter targets real OpenSCENARIO 1.0 and emits a per-feature report.
 Before writing XML, derive required semantic identifiers and run the versioned
-gate in `adapters/carla-bridge/uniscenarios_carla_bridge/capabilities.py`.
+gate in `adapters/carla-exec/simforge_carla_exec/capabilities.py`.
 Unknown, unsupported, or approximate identifiers block execution. The initial
 exact allowlist is intentionally tiny (for example, supported absolute speed).
 Expand it only with an upstream parser mapping, an XSD-valid fixture, a real
@@ -197,7 +197,7 @@ approximations. Missing output is failure, not zero error.
 
 The ScenarioRunner 1.0 path additionally requires its feature gate to be all
 exact and compares against the same thresholds. A green native run is
-compatibility evidence only; UniScenarios remains the semantic authority.
+compatibility evidence only; SimForge remains the semantic authority.
 
 ## Deployment and hardware
 

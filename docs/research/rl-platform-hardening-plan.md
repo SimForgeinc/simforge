@@ -1,4 +1,7 @@
 # RL Platform Hardening Plan — parallel workstreams
+> **Historical plan:** Pre-rebrand package and tool paths are retained
+> verbatim below.
+
 
 Status: proposed 2026-08-22. Addresses the eight gaps from the platform critique:
 no real-world anchor, unspecified faithfulness critic, H3 semantic-binding risk,

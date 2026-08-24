@@ -1,4 +1,7 @@
 # V2X Scenario Migration (V6)
+> **Historical completion record:** Pre-rebrand UniScenarios package, CLI,
+> application, and evidence paths are retained verbatim below.
+
 
 Status: complete 2026-08-22, branch `v2x-scenario-migration`.
 Retires the patched external ScenarioRunner: OpenSCENARIO authoring, GPS

@@ -1,9 +1,13 @@
 # V2X Coordinate Contract — Richmond Field Station
 
 Status: **V5 MapParity deliverable**, 2026-08-22. Branch `v2x-map-parity`.
-Golden fixtures: [`fixtures/v2x-richmond-golden-projections.json`](../fixtures/v2x-richmond-golden-projections.json).
-Executable round-trip tests: `packages/xodr-tools/src/__tests__/v2x-golden-projections.test.ts`.
-Lineage evidence: [`research/v2x/map-lineage-diff.py`](../research/v2x/map-lineage-diff.py) + `research/v2x/map-lineage-diff-report.json`.
+Golden fixtures:
+[`fixtures/v2x-richmond-golden-projections.json`](../../fixtures/v2x-richmond-golden-projections.json).
+Executable round-trip tests:
+`packages/maps/src/__tests__/v2x-golden-projections.test.ts`.
+Lineage evidence:
+[`research/v2x/map-lineage-diff.py`](../../research/v2x/map-lineage-diff.py) +
+`research/v2x/map-lineage-diff-report.json`.
 
 ## 1. The three frames
 
@@ -29,7 +33,7 @@ CARLA world origin: the two metric frames share `(0, 0)` exactly.
 
 proj4/EPSG:4326 forward/inverse with the PROJ string above.
 Implementation: `CoordinateFrame.wgs84ToLocal` / `localToWgs84`
-(`@uniscenarios/xodr-tools`). Round-trip error is at machine precision.
+(`@simforge/maps/opendrive`). Round-trip error is at machine precision.
 
 ### WGS-84 ↔ legacy flat-earth
 
@@ -43,8 +47,8 @@ inverse: lat = lat0 − y / 111320 ; lon = lon0 + x / (111320·cos(lat0))
 ```
 
 with `lat0 = 37.9150891287087`, `lon0 = −122.333308830857`.
-Implementation: `LegacyFlatEarthFrame` (`@uniscenarios/xodr-tools`,
-`src/legacy-flat-earth.ts`). Round-trip is algebraically exact.
+Implementation: `LegacyFlatEarthFrame` (`@simforge/maps/opendrive`,
+`src/opendrive/legacy-flat-earth.ts`). Round-trip is algebraically exact.
 
 ### legacy flat-earth ↔ xodr-local
 
@@ -114,12 +118,12 @@ Rationale:
 Executed first step (this branch):
 - `dev-assets/richmond-field-station-carla0737/` created with the deployed
   XODR (`map.xodr`) and `lineage.json` pinning digest, source and status.
-- The map-intel pipeline was run against it to its precise blocker:
+- The map pipeline was run against it to its precise blocker:
   `loadMapSources` requires `topology-index.json.gz`
-  (`packages/map-intel/src/build/sources.ts`), which **no committed tooling
+  (`packages/maps/src/build/sources.ts`), which **no committed tooling
   regenerates** — it is an upstream authoring export (lane graph with ~1 m
   polylines, gates, turn relations; schema in
-  `packages/sim-engine/src/map/topology.ts`). Browser GLB tiles likewise come
+  `packages/engine/src/map/topology.ts`). Browser GLB tiles likewise come
   from RoadRunner/FBX sources that do not exist for the June revision.
 
 Remaining prerequisites for full ingestion, in order:
@@ -148,5 +152,5 @@ exact inverse round-trip, per-point cross-frame divergence reproduction, and
 the deployed twin's pole placement. Run:
 
 ```
-pnpm --filter @uniscenarios/xodr-tools test
+pnpm --filter @simforge/maps test
 ```

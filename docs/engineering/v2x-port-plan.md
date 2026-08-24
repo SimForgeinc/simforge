@@ -1,4 +1,7 @@
 # V2XCarla → UniScenarios Port Plan
+> **Historical plan:** Pre-rebrand UniScenarios package, CLI, and adapter names
+> are retained verbatim below.
+
 
 Status: proposed 2026-08-22, grounded in read-only scout surveys of
 /home/path/V2XCarla (V2XScout) and the UniScenarios capability map

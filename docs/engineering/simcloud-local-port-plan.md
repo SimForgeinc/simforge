@@ -1,4 +1,7 @@
 # SimCloud Local Port Plan
+> **Historical plan:** Pre-rebrand UniScenarios package and `apps/cloud` paths
+> are retained verbatim; the resulting product now lives at `studio/`.
+
 
 Goal: the app you get when you run UniScenarios locally IS the SimCloud product —
 1:1 UI (dashboard, app switcher, scenario editor) — with every cloud dependency

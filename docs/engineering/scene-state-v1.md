@@ -6,10 +6,10 @@ generation) and **live** (msgpack scene-diff stream from the env-server,
 closed loop). Wire formats: JSON (files, hashing) and msgpack (streams); the
 field names are identical in both.
 
-- Schema (zod, executable): `packages/scene-state/src/schema.ts`
-- Emitter trace → document: `packages/scene-state/src/emit.ts`
-  (`tsx packages/scene-state/src/cli.ts <trace.json.gz> <out.json>`)
-- Rust consumer types: `native/render-core/src/scene_state.rs`
+- Public entry point: `@simforge/engine/scene-state`
+- Schema: `packages/engine/src/scene-state/schema.ts`
+- Emitter trace → document: `packages/engine/src/scene-state/emit.ts`
+- Rust consumer types: `renderer/render-core/src/scene_state.rs`
 
 ## Document
 
@@ -64,7 +64,7 @@ compute it include it on every record.
 
 ### Frame conventions
 
-Frame conventions (from `packages/sim-engine/src/frames.ts`):
+Frame conventions (from `packages/engine/src/frames.ts`):
 `scene = (x_local, height, −y_local)`; headings are numerically identical.
 Velocity is the engine's integrated forward-speed × heading vector, **not** a
 finite difference, so motion-vector ground truth matches solver state.

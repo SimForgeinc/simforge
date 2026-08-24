@@ -1,4 +1,7 @@
 # UniScenarios repository extraction
+> **Historical record:** The UniScenarios repository name and extraction
+> commands are retained verbatim because they identify the source snapshot.
+
 
 This document records the one-time historical extraction procedure. The source
 Scenario Studio working tree contained active, uncommitted work from multiple
