@@ -94,6 +94,79 @@ def test_probe_cleans_up_when_server_version_probe_fails(monkeypatch: pytest.Mon
     assert cleaned == [True]
 
 
+def _tick_probe_world(leak_every: int):
+    """A fake CARLA world whose engine sneaks in an extra tick every N commanded ones."""
+    class Timestamp:
+        def __init__(self, elapsed): self.elapsed_seconds = elapsed
+    class Snapshot:
+        def __init__(self, elapsed): self.timestamp = Timestamp(elapsed)
+    class Blueprint:
+        id = "vehicle.kia.carnival"
+    class Library:
+        def find(self, blueprint_id): return Blueprint()
+        def filter(self, pattern): return [Blueprint()]
+    class Location:
+        z = 0.0
+    class SpawnPoint:
+        location = Location()
+    class Map:
+        def get_spawn_points(self): return [SpawnPoint()]
+    class Vehicle:
+        def destroy(self): return True
+    class Settings:
+        synchronous_mode = False
+        fixed_delta_seconds = None
+    class World:
+        def __init__(self):
+            self.frame = 1000
+            self.commanded = 0
+            self.settings_history = []
+        def get_settings(self): return Settings()
+        def apply_settings(self, settings): self.settings_history.append(settings)
+        def get_blueprint_library(self): return Library()
+        def get_map(self): return Map()
+        def try_spawn_actor(self, blueprint, transform): return Vehicle()
+        def get_snapshot(self): return Snapshot(self.frame * 0.02)
+        def tick(self):
+            self.commanded += 1
+            self.frame += 1
+            if leak_every and self.commanded % leak_every == 0:
+                self.frame += 1  # the engine ticked itself
+            return self.frame
+    return World()
+
+
+@pytest.mark.parametrize("leak_every, verdict", [(0, "pass"), (2, "fail")])
+def test_tick_barrier_probe_detects_un_commanded_engine_ticks(
+    monkeypatch: pytest.MonkeyPatch, leak_every: int, verdict: str,
+) -> None:
+    world = _tick_probe_world(leak_every)
+
+    class Backend:
+        carla = object()
+        client = type("Client", (), {
+            "get_world": lambda _self: world,
+            "get_server_version": lambda _self: "0.10.0-test",
+        })()
+        def __init__(self, _host: str, _port: int) -> None:
+            pass
+        def cleanup(self) -> None:
+            pass
+
+    monkeypatch.setattr(local, "CarlaBackend", Backend)
+    result = local._probe_tick_barrier("carla.test", 2000, 0.02, 40)
+    assert result["schema"] == "uniscenarios.carla-tick-barrier-probe/v1"
+    assert result["verdict"] == verdict
+    if verdict == "fail":
+        assert result["populatedWorld"]["unCommandedTicks"] > 0
+        assert result["populatedWorld"]["simTimeRatio"] > 1.2
+    else:
+        assert result["populatedWorld"]["unCommandedTicks"] == 0
+        assert result["emptyWorld"]["unCommandedTicks"] == 0
+    # The probe restores the server's prior settings after itself.
+    assert world.settings_history[-1].synchronous_mode is False
+
+
 def test_review_sensor_selection_is_explicit_and_minimal() -> None:
     sensors = [
         SimpleNamespace(sensor_id="camera-front", modality="rgb", actor_id="ego"),
