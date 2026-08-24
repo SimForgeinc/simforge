@@ -332,6 +332,19 @@ export function RenderConfigPanel({
   const selectedKinds = [...new Set(selectedModalities.flatMap((selection) => selection.modalities))];
   const selectedHostActorCount = new Set(selectedSensors.map((option) => option.actorId)).size;
   const sensorCount = selectedModalities.reduce((total, selection) => total + selection.modalities.length, 0);
+  const selectedPhysicalCounts = selectedSensors.reduce(
+    (counts, option) => {
+      if (option.sensor.type === "dash_camera") counts.cameras += 1;
+      else if (option.sensor.type === "lidar") counts.lidars += 1;
+      else if (option.sensor.type === "radar") counts.radars += 1;
+      return counts;
+    },
+    { cameras: 0, lidars: 0, radars: 0 },
+  );
+  const isManagedProntoSelection = sensorHostAssets[0] === "vehicle.kia.carnival"
+    && selectedPhysicalCounts.cameras === 8
+    && selectedPhysicalCounts.lidars === 6
+    && selectedPhysicalCounts.radars === 4;
   const estimatedGpuBytes = selectedSensors.reduce((total, option) => {
     const selection = selectedModalities.find(
       (candidate) => candidate.actorId === option.actorId && candidate.sensorId === option.sensor.id,
@@ -342,7 +355,7 @@ export function RenderConfigPanel({
   const issues = useMemo(() => {
     const list: string[] = [];
     if (sensorOptions.length === 0) {
-      list.push(backend === "carla" ? "Add the Pronto sensor rig before rendering." : "Add a camera or sensor before rendering.");
+      list.push("Add a camera or sensor rig before rendering.");
     } else if (selectedSensors.length === 0) {
       list.push("Select at least one sensor.");
     } else if (selectedModalities.length !== selectedSensors.length) {
@@ -353,15 +366,8 @@ export function RenderConfigPanel({
         `The RTX 5080 worker accepts at most ${MANAGED_MAX_SENSORS} simultaneous physical sensors; this request has ${selectedSensors.length}.`,
       );
     }
-    if (
-      backend === "carla"
-      && (
-        selectedHostActorCount !== 1
-        || sensorHostAssets.length !== 1
-        || sensorHostAssets[0] !== "vehicle.kia.carnival"
-      )
-    ) {
-      list.push("The Pronto sensor rig must attach to the Kia Carnival asset (vehicle.kia.carnival).");
+    if (backend === "carla" && selectedHostActorCount !== 1) {
+      list.push("CARLA renders capture sensors from one vehicle at a time.");
     }
     if (backend === "browser" && selectedHostActorCount !== 1) {
       list.push("Browser renders capture sensors from one vehicle at a time.");
@@ -506,8 +512,8 @@ export function RenderConfigPanel({
           width: resolution.width,
           height: resolution.height,
           fps,
-          container: "webm",
-          codec: "vp9",
+          container: backend === "carla" ? "mp4" : "webm",
+          codec: backend === "carla" ? "h264" : "vp9",
           quality: quality === "preview" ? "draft" : quality === "cinematic" ? "high" : quality,
         } : null,
         artifacts: [...new Set([
@@ -912,10 +918,17 @@ export function RenderConfigPanel({
                   : sensorHostAssets.length > 0 ? sensorHostAssets.join(", ") : "No bound host asset"}
               />
               {backend === "carla" ? (
-                <>
-                  <ReviewRow label="Rig capacity" value="8 cameras · 6 LiDAR · 4 radar" />
-                  <ReviewRow label="CARLA source" value="carla-rfs-munich-belmont · f17c639e5f86" />
-                </>
+                isManagedProntoSelection ? (
+                  <>
+                    <ReviewRow label="Rig capacity" value="8 cameras · 6 LiDAR · 4 radar" />
+                    <ReviewRow label="CARLA source" value="carla-rfs-munich-belmont · f17c639e5f86" />
+                  </>
+                ) : (
+                  <ReviewRow
+                    label="Rig capacity"
+                    value={`${selectedPhysicalCounts.cameras} cameras · ${selectedPhysicalCounts.lidars} LiDAR · ${selectedPhysicalCounts.radars} radar`}
+                  />
+                )
               ) : null}
             </dl>
             {issues.length > 0 ? (

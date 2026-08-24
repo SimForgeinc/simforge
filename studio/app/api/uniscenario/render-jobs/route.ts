@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     if (error instanceof Error && (
       error.name === "ZodError"
       || error.message.startsWith("pronto_")
+      || error.message.startsWith("carla_")
       || error.message.startsWith("render_sensor_")
     )) {
       return NextResponse.json({ error: "render_intent_invalid" }, { status: 422 });

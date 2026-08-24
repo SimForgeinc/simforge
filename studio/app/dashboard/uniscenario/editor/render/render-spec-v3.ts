@@ -26,7 +26,7 @@ export type CanonicalRenderSpecInput = {
     width: number;
     height: number;
     fps: number;
-    container: "webm";
+    container: "webm" | "mp4";
     codec: string;
     quality: "draft" | "standard" | "high";
   } | null;
@@ -158,6 +158,7 @@ export function buildCanonicalRenderSpec(input: CanonicalRenderSpecInput): Rende
     "environment.authored",
     "timing.fixed_step",
     ...(input.video
+      && input.video.container === "webm"
       && artifacts.includes("sensorArchive")
       && sources.some((source) => source.modality === "lidar" || source.modality === "radar")
       ? ["artifact.sensor_video"]

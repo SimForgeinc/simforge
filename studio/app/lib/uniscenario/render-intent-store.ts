@@ -180,9 +180,6 @@ function selectedSensorHost(input: SubmitUniScenarioRenderIntent, lineage: Immut
   }
   const actorId = [...foundActorIds][0]!;
   const catalogAssetId = [...catalogIds][0]!;
-  if (input.engine === "carla" && catalogAssetId !== PRONTO_SENSOR_HOST_ASSET_ID) {
-    throw new Error("pronto_sensor_host_must_be_kia_carnival");
-  }
   return {
     actorId,
     catalogAssetId,
@@ -205,6 +202,20 @@ function buildIntent(input: SubmitUniScenarioRenderIntent, lineage: ImmutableLin
     throw new Error("pronto_render_must_cover_full_clip");
   }
   const sensorHost = selectedSensorHost(input, lineage);
+  const isManagedPronto = sensorHost.catalogAssetId === PRONTO_SENSOR_HOST_ASSET_ID
+    && sensorHost.cameras === 8
+    && sensorHost.lidars === 6
+    && sensorHost.radars === 4;
+  if (
+    input.engine === "carla"
+    && input.renderSpec.video
+    && (
+      input.renderSpec.video.container !== "mp4"
+      || input.renderSpec.video.codec !== "h264"
+    )
+  ) {
+    throw new Error("carla_render_video_format_invalid");
+  }
   const intentId = uniscenarioId("usri");
   return UniScenarioRenderIntentSchema.parse({
     schema: RENDER_INTENT_CONTRACT,
@@ -223,7 +234,7 @@ function buildIntent(input: SubmitUniScenarioRenderIntent, lineage: ImmutableLin
         sha256: lineage.map_sha256,
       },
     },
-    sensorHost: input.engine === "carla"
+    sensorHost: isManagedPronto
       ? {
         actorId: sensorHost.actorId,
         vehicleAsset: {

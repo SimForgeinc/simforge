@@ -770,25 +770,34 @@ export async function reserveBrowserRecordingArtifacts(
             AND artifact_kind = :artifact_kind LIMIT 1`,
         reservationParams,
       );
-      const inserted = existingDigest ? null : await tx.queryOne<ArtifactRow>(
-        `INSERT INTO uniscenario.artifacts (
-           id, workspace_id, revision_id, artifact_kind, media_type,
-           storage_bucket, storage_key, sha256, byte_length, artifact_state,
-           metadata, created_by_user_id, producer_job_family, producer_job_id, provenance
-         ) VALUES (
-           :id, :workspace_id, :revision_id, :artifact_kind, :media_type,
-           :storage_bucket, :storage_key, :sha256, :byte_length, 'pending',
-           CAST(:metadata AS jsonb), :user_id, 'artifact_postprocess', :job_id,
-           CAST(:provenance AS jsonb)
-         )
-         RETURNING id, :artifact_role AS artifact_role,
-           :sensor_actor_id AS artifact_sensor_actor_id,
-           :sensor_id AS artifact_sensor_id,
-           :sensor_modality AS artifact_sensor_modality,
-           artifact_kind, media_type, sha256, byte_length, artifact_state,
-           storage_bucket, storage_key, producer_job_id, false AS reused`,
-        reservationParams,
-      );
+      let inserted: ArtifactRow | null = null;
+      try {
+        inserted = existingDigest ? null : await tx.queryOne<ArtifactRow>(
+          `INSERT INTO uniscenario.artifacts (
+             id, workspace_id, revision_id, artifact_kind, media_type,
+             storage_bucket, storage_key, sha256, byte_length, artifact_state,
+             metadata, created_by_user_id, producer_job_family, producer_job_id, provenance
+           ) VALUES (
+             :id, :workspace_id, :revision_id, :artifact_kind, :media_type,
+             :storage_bucket, :storage_key, :sha256, :byte_length, 'pending',
+             CAST(:metadata AS jsonb), :user_id, 'artifact_postprocess', :job_id,
+             CAST(:provenance AS jsonb)
+           )
+           RETURNING id, :artifact_role AS artifact_role,
+             :sensor_actor_id AS artifact_sensor_actor_id,
+             :sensor_id AS artifact_sensor_id,
+             :sensor_modality AS artifact_sensor_modality,
+             artifact_kind, media_type, sha256, byte_length, artifact_state,
+             storage_bucket, storage_key, producer_job_id, false AS reused`,
+          reservationParams,
+        );
+      } catch (error) {
+        throw new Error(
+          `browser_recording_artifact_insert_conflict:${declaration.role}:`
+          + `${sensor?.sensorId ?? "global"}:${declaration.sha256.slice(0, 12)}`,
+          { cause: error },
+        );
+      }
       // A failed/expired recording quarantines its immutable outputs. Reclaim
       // only an exact-byte quarantined row while holding this serialized local
       // transaction; available artifacts retain normal digest reuse.
