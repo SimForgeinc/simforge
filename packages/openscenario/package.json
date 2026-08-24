@@ -51,7 +51,8 @@
     "./trace-diff": {
       "types": "./dist/trace-diff/index.d.ts",
       "default": "./dist/trace-diff/index.js"
-    }
+    },
+    "./schema/*": "./schema/*"
   },
   "files": [
     "dist"
