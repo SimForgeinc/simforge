@@ -21,7 +21,7 @@ ARG IMAGE_VERSION
 USER root
 RUN test -n "$SOURCE_REVISION" && test -n "$IMAGE_VERSION" \
  && apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python3-pip tini ca-certificates libxml2-utils \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python3-pip tini ca-certificates libxml2-utils ffmpeg \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /opt/uniscenarios /scratch /cache /run/uniscenarios \
  && chown -R carla:carla /scratch /cache /run/uniscenarios
