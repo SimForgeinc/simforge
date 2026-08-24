@@ -444,6 +444,40 @@ def _validate_pronto_sensor_selection(
         raise ContractError("a render carries at most one RGB trailing chase camera")
 
 
+def _validate_authored_sensor_host(
+    sensors: Sequence[Any],
+    host_actor_id: str,
+    vehicle_asset: Mapping[str, Any],
+    sensor_rig: Mapping[str, Any],
+) -> None:
+    if set(vehicle_asset) != {"catalogAssetId"} or not isinstance(
+        vehicle_asset.get("catalogAssetId"), str
+    ) or not vehicle_asset["catalogAssetId"]:
+        raise ContractError("authored render intent sensorHost requires one catalogAssetId")
+    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
+    actual_rig = {
+        "rigId": "authored",
+        "cameras": len({
+            sensor.sensor_id for sensor in sensors
+            if sensor.modality in camera_modalities
+        }),
+        "lidars": len({
+            sensor.sensor_id for sensor in sensors
+            if sensor.modality in {"lidar", "semantic-lidar"}
+        }),
+        "radars": len({
+            sensor.sensor_id for sensor in sensors
+            if sensor.modality == "radar"
+        }),
+    }
+    if dict(sensor_rig) != actual_rig or {
+        sensor.actor_id for sensor in sensors
+    } != {host_actor_id}:
+        raise ContractError(
+            "authored sensorHost counts and actor must match the immutable render sources"
+        )
+
+
 def _intent_lease(
     intent: Mapping[str, Any],
     intent_sha: str,
@@ -471,39 +505,49 @@ def _intent_lease(
         raise ContractError("render intent sensorHost has invalid fields")
     host_actor_id = sensor_host.get("actorId")
     vehicle_asset = sensor_host.get("vehicleAsset")
-    source_image = vehicle_asset.get("sourceImage") if isinstance(vehicle_asset, Mapping) else None
     sensor_rig = sensor_host.get("sensorRig")
     if not isinstance(host_actor_id, str) or not host_actor_id:
         raise ContractError("render intent sensorHost.actorId must be non-empty")
-    if not isinstance(vehicle_asset, Mapping) or {
-        key: value for key, value in vehicle_asset.items() if key != "sourceImage"
-    } != {
-        "catalogAssetId": KIA_CARNIVAL_CATALOG_ID,
-        "carlaBlueprintId": KIA_CARNIVAL_BLUEPRINT_ID,
-        "carlaClassPath": KIA_CARNIVAL_CLASS_PATH,
-        "make": KIA_CARNIVAL_MAKE,
-        "model": KIA_CARNIVAL_MODEL,
-        "baseType": KIA_CARNIVAL_BASE_TYPE,
-    }:
-        raise ContractError("render intent sensorHost.vehicleAsset must be the exact Kia Carnival identity")
-    if source_image != {
-        "repository": "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
-        "indexSha256": CARLA_IMAGE_INDEX_DIGEST.removeprefix("sha256:"),
-        "linuxAmd64ManifestSha256": CARLA_IMAGE_AMD64_MANIFEST_DIGEST.removeprefix("sha256:"),
-    }:
-        raise ContractError("render intent sensorHost.vehicleAsset.sourceImage must identify the pinned Kia image")
-    if sensor_rig != {
-        "rigId": "pronto.8-camera-6-lidar-4-radar",
-        "cameras": 8,
-        "lidars": 6,
-        "radars": 4,
-    }:
-        raise ContractError("render intent sensorHost.sensorRig must identify the exact Pronto 8/6/4 rig")
-    _validate_pronto_sensor_selection(
-        parsed_spec.sensors,
-        host_actor_id,
-        representative=fidelity == "review" or os.environ.get("UNISCENARIO_RENDER_SMOKE") == "1",
-    )
+    if not isinstance(vehicle_asset, Mapping) or not isinstance(sensor_rig, Mapping):
+        raise ContractError("render intent sensorHost asset or rig is invalid")
+    if sensor_rig.get("rigId") == "authored":
+        _validate_authored_sensor_host(
+            parsed_spec.sensors,
+            host_actor_id,
+            vehicle_asset,
+            sensor_rig,
+        )
+    else:
+        source_image = vehicle_asset.get("sourceImage")
+        if {
+            key: value for key, value in vehicle_asset.items() if key != "sourceImage"
+        } != {
+            "catalogAssetId": KIA_CARNIVAL_CATALOG_ID,
+            "carlaBlueprintId": KIA_CARNIVAL_BLUEPRINT_ID,
+            "carlaClassPath": KIA_CARNIVAL_CLASS_PATH,
+            "make": KIA_CARNIVAL_MAKE,
+            "model": KIA_CARNIVAL_MODEL,
+            "baseType": KIA_CARNIVAL_BASE_TYPE,
+        }:
+            raise ContractError("render intent sensorHost.vehicleAsset must be the exact Kia Carnival identity")
+        if source_image != {
+            "repository": "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
+            "indexSha256": CARLA_IMAGE_INDEX_DIGEST.removeprefix("sha256:"),
+            "linuxAmd64ManifestSha256": CARLA_IMAGE_AMD64_MANIFEST_DIGEST.removeprefix("sha256:"),
+        }:
+            raise ContractError("render intent sensorHost.vehicleAsset.sourceImage must identify the pinned Kia image")
+        if sensor_rig != {
+            "rigId": "pronto.8-camera-6-lidar-4-radar",
+            "cameras": 8,
+            "lidars": 6,
+            "radars": 4,
+        }:
+            raise ContractError("render intent sensorHost.sensorRig must identify the exact Pronto 8/6/4 rig")
+        _validate_pronto_sensor_selection(
+            parsed_spec.sensors,
+            host_actor_id,
+            representative=os.environ.get("UNISCENARIO_RENDER_SMOKE") == "1",
+        )
     xosc_path = inputs.get("scenario.xosc")
     if xosc_path is None:
         raise ContractError("input package is missing scenario.xosc")

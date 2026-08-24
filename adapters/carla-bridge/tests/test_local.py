@@ -106,6 +106,40 @@ def test_review_sensor_selection_is_explicit_and_minimal() -> None:
         local._validate_pronto_sensor_selection(sensors, "ego", representative=False)
 
 
+def test_authored_sensor_host_accepts_exact_selected_rig() -> None:
+    sensors = [
+        *[
+            SimpleNamespace(sensor_id=f"camera-{index}", modality="rgb", actor_id="ego")
+            for index in range(8)
+        ],
+        SimpleNamespace(sensor_id="lidar-roof", modality="lidar", actor_id="ego"),
+    ]
+
+    local._validate_authored_sensor_host(
+        sensors,
+        "ego",
+        {"catalogAssetId": "vehicle.generic.sedan"},
+        {"rigId": "authored", "cameras": 8, "lidars": 1, "radars": 0},
+    )
+
+
+def test_authored_sensor_host_rejects_cross_actor_sources() -> None:
+    sensors = [
+        SimpleNamespace(sensor_id="camera-front", modality="rgb", actor_id="ego"),
+        SimpleNamespace(sensor_id="camera-rear", modality="rgb", actor_id="other"),
+    ]
+
+    with pytest.raises(local.ContractError, match="counts and actor"):
+        local._validate_authored_sensor_host(
+            sensors,
+            "ego",
+            {"catalogAssetId": "vehicle.generic.sedan"},
+            {"rigId": "authored", "cameras": 2, "lidars": 0, "radars": 0},
+        )
+
+
+
+
 def test_artifact_manifest_accepts_sensor_data() -> None:
     entries = local._artifact_manifest_entries([{
         "kind": "sensorData:ego:lidar-front:lidar",
