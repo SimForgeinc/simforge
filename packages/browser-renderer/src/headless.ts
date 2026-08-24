@@ -3,7 +3,7 @@ import { PlaybackController } from '@uniscenarios/playback';
 import { captureBrowserArtifacts, BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import { parseResolvedBrowserRenderRequest, type ResolvedBrowserRenderRequest } from './intent.js';
 import type { ArtifactByteSink, ArtifactIdentity } from './artifacts.js';
-import { assertBrowserSensorHost } from './pronto.js';
+import { assertBrowserSensorHost } from './sensor-host.js';
 
 export interface HeadlessArtifactBridge {
   open(identity: ArtifactIdentity, mediaType: string): Promise<string>;
