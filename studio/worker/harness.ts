@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { gunzipSync } from "node:zlib";
 
 import { parsePlaybackPair } from "@simforge/playback";
@@ -11,7 +11,10 @@ import { contentHash, parseSimScenarioInput } from "@simforge/engine";
 
 import { executeRender } from "./executor.js";
 
+const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+
 const DEFAULT_FIXTURE = resolve(
+  REPOSITORY_ROOT,
   "catalog/evidence/yale-street/yale-street-007-multiple-threat-crosswalk-585ad30557a6/instance.json",
 );
 
@@ -22,7 +25,7 @@ async function main(argv: readonly string[]): Promise<void> {
   const devAssets = resolve(args.devAssets ?? process.env.SCEN_DEV_ASSETS ?? "/home/path/UniScenarios/dev-assets");
   const output = resolve(args.output ?? "/tmp/uniscenarios-cloud-worker-harness");
   process.env.UNISCENARIOS_BROWSER_ENGINE_MODULE ??= pathToFileURL(
-    resolve("packages/render/dist/index.js"),
+    resolve(REPOSITORY_ROOT, "packages/render/dist/index.js"),
   ).href;
   await rm(output, { recursive: true, force: true });
 
