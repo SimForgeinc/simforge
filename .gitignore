@@ -49,4 +49,5 @@ scripts/rl/*.log
 tools/bridge-fidelity/.corpus/
 
 # Next build output
-apps/cloud/.next/
+studio/.next/
+renderer/target/
