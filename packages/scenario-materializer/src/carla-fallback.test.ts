@@ -139,7 +139,7 @@ describe('planCarlaVehicleFallbacks', () => {
       actorId: 'bus',
       catalogId: 'gallery.bus.v1',
       reason: 'no_carla_counterpart_class',
-      detail: 'the CARLA 0.10.0 container ships no bus blueprint',
+      detail: 'no bundled catalog id natively binds a bus in the CARLA 0.10.0 container catalog',
     }]);
   });
 });

@@ -65,7 +65,7 @@ export const CARLA_VEHICLE_FALLBACK_INVENTORY: readonly CarlaVehicleFallbackCand
   { catalogId: 'vehicle.suv', blueprintId: 'vehicle.nissan.patrol', vehicleClass: 'car', dims: { l: 5.591, w: 2.147, h: 2.059 } },
   { catalogId: 'vehicle.ford_mustang', blueprintId: 'vehicle.dodge.charger', vehicleClass: 'car', dims: { l: 5.006, w: 1.881, h: 1.54 } },
   { catalogId: 'vehicle.van', blueprintId: 'vehicle.sprinter.mercedes', vehicleClass: 'van', dims: { l: 5.915, w: 1.988, h: 2.726 } },
-  { catalogId: 'vehicle.kia.carnival', blueprintId: 'vehicle.kia.carnival', vehicleClass: 'van', dims: { l: 5.15, w: 2.0, h: 1.78 } },
+  { catalogId: 'vehicle.kia.carnival', blueprintId: 'vehicle.kia.carnival', vehicleClass: 'van', dims: { l: 5.162, w: 2.351, h: 1.803 } },
   { catalogId: 'vehicle.box_truck', blueprintId: 'vehicle.carlacola.actors', vehicleClass: 'truck', dims: { l: 8.004, w: 2.912, h: 4.055 } },
 ];
 
@@ -78,7 +78,7 @@ function maxWidthDeltaM(sourceWidthM: number): number {
 }
 
 const NO_COUNTERPART_CLASSES: Readonly<Record<string, string>> = {
-  bus: 'the CARLA 0.10.0 container ships no bus blueprint',
+  bus: 'no bundled catalog id natively binds a bus in the CARLA 0.10.0 container catalog',
   motorcycle: 'the CARLA 0.10.0 container ships no motorcycle blueprint',
   bicycle: 'the CARLA 0.10.0 container ships no bicycle blueprint',
   scooter: 'the CARLA 0.10.0 container ships no scooter blueprint',
