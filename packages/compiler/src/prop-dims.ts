@@ -1,7 +1,7 @@
 import {
   actorClassesForCatalogEntry,
   getEntry,
-  parseCatalog,
+  parseExternalCatalogEntries,
   resolveCatalogId,
   type CatalogEntry,
 } from '@simforge/asset-catalog/metadata';
@@ -245,12 +245,12 @@ export const builtInActorCatalogResolver: ActorCatalogResolver = (catalogId) => 
  * built-in id. A custom vehicle therefore needs metadata, not a code release.
  */
 export function createActorCatalogResolver(entries: readonly CatalogEntry[] = []): ActorCatalogResolver {
-  // Custom assets are optional. `parseCatalog` validates a complete catalog
-  // and deliberately rejects an empty array, so do not send the ordinary
-  // "no custom assets" case through that stronger boundary.
+  // Custom assets are optional, and the external parser deliberately rejects
+  // an empty array. Bundled catalog validation remains a separate boundary:
+  // external ids use gallery/CARLA namespaces rather than class prefixes.
   if (entries.length === 0) return builtInActorCatalogResolver;
   const custom = new Map<string, CatalogEntry>();
-  for (const entry of parseCatalog(entries)) {
+  for (const entry of parseExternalCatalogEntries(entries)) {
     if (builtInActorCatalogResolver(entry.id) !== null) {
       throw new Error(`custom catalog entry "${entry.id}" shadows a built-in catalog id`);
     }

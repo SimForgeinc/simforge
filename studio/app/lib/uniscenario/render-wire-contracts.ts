@@ -157,6 +157,7 @@ const UniqueCapabilitiesSchema = z.array(z.enum([
   "artifact.video",
   "artifact.frames",
   "artifact.sensor_archive",
+  "artifact.sensor_video",
   "artifact.manifest",
   "artifact.trace",
   "artifact.annotations",

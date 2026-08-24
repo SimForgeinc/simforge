@@ -8,6 +8,7 @@ import json
 import os
 import xml.etree.ElementTree as ET
 import tempfile
+from dataclasses import replace
 from time import monotonic
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,6 +26,7 @@ from .runtime.backend import (
     KIA_CARNIVAL_MODEL,
     PRONTO_CHASE_CAMERA_SENSOR_ID,
     CarlaBackend,
+    cooked_map_name_for_xodr,
 )
 from .runtime.compiler import compile_xosc14
 from .runtime.contract import (
@@ -71,6 +73,92 @@ def _probe(host: str, port: int) -> dict[str, object]:
                 "model": KIA_CARNIVAL_MODEL,
                 "baseType": KIA_CARNIVAL_BASE_TYPE,
             },
+        }
+    finally:
+        backend.cleanup()
+
+
+def _probe_tick_barrier(
+    host: str,
+    port: int,
+    fixed_delta_s: float = 0.02,
+    ticks: int = 120,
+) -> dict[str, object]:
+    """Verify the server honors the synchronous tick barrier under load.
+
+    The CARLA 0.10 UE5 runtime can keep ticking a POPULATED world by itself
+    while synchronous mode is on, silently inflating simulated time (measured
+    2x on an affected server) — every trajectory then runs faster than its
+    plan and impacts carry multiplied energy. The render worker fails closed
+    on this at execution time; this probe is the cheap pre-rollout gate.
+
+    Spawns one probe vehicle into the CURRENT world (the leak only manifests
+    with actors present), counts un-commanded engine ticks via world.tick()
+    frame ids (integer-exact, immune to snapshot-cache lag), destroys the
+    vehicle, and restores the prior world settings. Never loads a map.
+    """
+    backend = CarlaBackend(host, port)
+    try:
+        world = backend.client.get_world()
+        original = world.get_settings()
+        probe_settings = world.get_settings()
+        probe_settings.synchronous_mode = True
+        probe_settings.fixed_delta_seconds = fixed_delta_s
+        world.apply_settings(probe_settings)
+        vehicle = None
+        try:
+            def measure(count: int) -> tuple[int, float]:
+                extra = 0
+                previous = int(world.tick())
+                start = float(world.get_snapshot().timestamp.elapsed_seconds)
+                for _ in range(count):
+                    current = int(world.tick())
+                    extra += current - previous - 1
+                    previous = current
+                elapsed = float(world.get_snapshot().timestamp.elapsed_seconds) - start
+                return extra, elapsed / (count * fixed_delta_s)
+
+            empty_extra, empty_ratio = measure(60)
+            library = world.get_blueprint_library()
+            try:
+                blueprint = library.find(KIA_CARNIVAL_BLUEPRINT_ID)
+            except RuntimeError:
+                candidates = sorted(library.filter("vehicle.*"), key=lambda item: item.id)
+                if not candidates:
+                    raise RuntimeError("current world offers no vehicle blueprint for the probe")
+                blueprint = candidates[0]
+            spawn_points = world.get_map().get_spawn_points()
+            if not spawn_points:
+                raise RuntimeError("current world offers no spawn points for the probe vehicle")
+            transform = spawn_points[0]
+            transform.location.z += 0.3
+            vehicle = world.try_spawn_actor(blueprint, transform)
+            if vehicle is None:
+                raise RuntimeError("could not spawn the tick-barrier probe vehicle")
+            for _ in range(30):
+                world.tick()  # let the spawn drop settle out of the measurement
+            populated_extra, populated_ratio = measure(ticks)
+        finally:
+            if vehicle is not None:
+                vehicle.destroy()
+            world.apply_settings(original)
+        passed = empty_extra == 0 and populated_extra == 0 and abs(populated_ratio - 1.0) <= 0.1
+        return {
+            "schema": "uniscenarios.carla-tick-barrier-probe/v1",
+            "serverVersion": str(backend.client.get_server_version()),
+            "fixedDeltaS": fixed_delta_s,
+            "emptyWorld": {
+                "commandedTicks": 60,
+                "unCommandedTicks": empty_extra,
+                "simTimeRatio": round(empty_ratio, 4),
+            },
+            "populatedWorld": {
+                "commandedTicks": ticks,
+                "unCommandedTicks": populated_extra,
+                "simTimeRatio": round(populated_ratio, 4),
+                "probeBlueprint": str(getattr(blueprint, "id", blueprint)),
+            },
+            "verdict": "pass" if passed else "fail",
         }
     finally:
         backend.cleanup()
@@ -195,8 +283,18 @@ def _strip_control(value: Any) -> Any:
         return [_strip_control(item) for item in value]
     return value
 
+def _render_control_lineage_sha256(intent: Mapping[str, Any], intent_sha256: str) -> str:
+    execution_package = intent["executionPackage"]
+    return canonical_sha256({
+        "schema": "uniscenario.render-control-lineage/v1",
+        "intentSha256": intent_sha256,
+        "executionPackageId": execution_package["id"],
+        "sourceInputDigest": execution_package["sourceInputDigest"],
+    })
 
-def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec]:
+
+
+def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec, str]:
     if not isinstance(value, Mapping) or set(value) not in (
         {"schema", "sources", "clip", "artifacts", "capabilityIntent", "authoredEnvironment"},
         {"schema", "sources", "clip", "video", "artifacts", "capabilityIntent", "authoredEnvironment"},
@@ -368,10 +466,9 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec]:
             "config": config,
         })
     outputs = [
-        output for output in artifacts if output not in {"sensorArchive", "diagnostics"}
+        output for output in artifacts
+        if output in {"video", "trace", "manifest", "annotations"}
     ]
-    if "sensorArchive" in artifacts and "frames" not in outputs:
-        outputs.append("frames")
     quality = "standard" if video is None else {
         "draft": "preview", "standard": "standard", "high": "high", "lossless": "cinematic",
     }[video["quality"]]
@@ -381,7 +478,93 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec]:
         "quality": quality, "environment": native_environment,
         "formats": ["png", "ply", "csv", "mp4-h264", "json", "jsonl"],
     }
-    return native_value, RenderSpec.parse(native_value)
+    return native_value, RenderSpec.parse(native_value), str(capability_intent["fidelity"])
+
+
+def _validate_pronto_sensor_selection(
+    sensors: list[Any],
+    host_actor_id: str,
+    *,
+    representative: bool,
+) -> None:
+    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
+    chase_sensors = [
+        sensor for sensor in sensors
+        if sensor.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID
+    ]
+    rig_sensors = [
+        sensor for sensor in sensors
+        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
+    ]
+    actual_rig = (
+        len({sensor.sensor_id for sensor in rig_sensors if sensor.modality in camera_modalities}),
+        len({
+            sensor.sensor_id for sensor in rig_sensors
+            if sensor.modality in {"lidar", "semantic-lidar"}
+        }),
+        len({sensor.sensor_id for sensor in rig_sensors if sensor.modality == "radar"}),
+    )
+    actor_ids = {sensor.actor_id for sensor in sensors}
+    if representative:
+        if actual_rig != (1, 1, 1) or actor_ids != {host_actor_id}:
+            raise ContractError(
+                "CARLA review mode requires exactly one camera, one LiDAR, and one radar on sensorHost.actorId"
+            )
+    elif os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
+        rgb_ids = {sensor.sensor_id for sensor in sensors if sensor.modality == "rgb"}
+        derived = {
+            name: tuple(name.split("__"))
+            for name in (str(sensor.sensor_id) for sensor in rig_sensors)
+            if "__" in name
+        }
+        unknown_bases = sorted({name.split("__")[0] for name in derived} - rgb_ids)
+        bad_modality = sorted(
+            name for name, (_, modality) in derived.items()
+            if modality not in camera_modalities - {"rgb"}
+        )
+        if unknown_bases or bad_modality or len(rgb_ids) < 8 or actual_rig[1] < 6 or actual_rig[2] < 4:
+            raise ContractError(
+                "SDG expansion sensors must derive from real rgb rig cameras via id__modality"
+            )
+    elif actual_rig != (8, 6, 4) or actor_ids != {host_actor_id}:
+        raise ContractError("all exact Pronto sensors must attach to render intent sensorHost.actorId")
+    if len(chase_sensors) > 1 or any(sensor.modality != "rgb" for sensor in chase_sensors):
+        raise ContractError("a render carries at most one RGB trailing chase camera")
+
+
+def _validate_authored_sensor_host(
+    sensors: Sequence[Any],
+    host_actor_id: str,
+    vehicle_asset: Mapping[str, Any],
+    sensor_rig: Mapping[str, Any],
+) -> None:
+    if set(vehicle_asset) != {"catalogAssetId"} or not isinstance(
+        vehicle_asset.get("catalogAssetId"), str
+    ) or not vehicle_asset["catalogAssetId"]:
+        raise ContractError("authored render intent sensorHost requires one catalogAssetId")
+    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
+    actual_rig = {
+        "rigId": "authored",
+        "cameras": len({
+            sensor.sensor_id for sensor in sensors
+            if sensor.modality in camera_modalities
+            and sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
+        }),
+        "lidars": len({
+            sensor.sensor_id for sensor in sensors
+            if sensor.modality in {"lidar", "semantic-lidar"}
+        }),
+        "radars": len({
+            sensor.sensor_id for sensor in sensors
+            if sensor.modality == "radar"
+        }),
+    }
+    if dict(sensor_rig) != actual_rig or {
+        sensor.actor_id for sensor in sensors
+    } != {host_actor_id}:
+        raise ContractError(
+            "authored sensorHost counts and actor must match the immutable render sources"
+        )
 
 
 def _intent_lease(
@@ -403,7 +586,7 @@ def _intent_lease(
         raise ContractError("render intent scenarioRevision has invalid fields")
     if not isinstance(assets, list):
         raise ContractError("render intent assets must be an array")
-    native_render_spec, parsed_spec = _render_spec_v3_to_native(intent.get("renderSpec"))
+    native_render_spec, parsed_spec, fidelity = _render_spec_v3_to_native(intent.get("renderSpec"))
     sensor_host = intent.get("sensorHost")
     if not isinstance(sensor_host, Mapping) or set(sensor_host) != {
         "actorId", "vehicleAsset", "sensorRig",
@@ -411,25 +594,20 @@ def _intent_lease(
         raise ContractError("render intent sensorHost has invalid fields")
     host_actor_id = sensor_host.get("actorId")
     vehicle_asset = sensor_host.get("vehicleAsset")
-    source_image = vehicle_asset.get("sourceImage") if isinstance(vehicle_asset, Mapping) else None
     sensor_rig = sensor_host.get("sensorRig")
     if not isinstance(host_actor_id, str) or not host_actor_id:
         raise ContractError("render intent sensorHost.actorId must be non-empty")
-    if not isinstance(sensor_rig, Mapping) or set(sensor_rig) != {
-        "rigId", "cameras", "lidars", "radars",
-    }:
-        raise ContractError("render intent sensorHost.sensorRig has invalid fields")
-    declared_rig = (
-        sensor_rig.get("cameras"),
-        sensor_rig.get("lidars"),
-        sensor_rig.get("radars"),
-    )
-    if any(not isinstance(count, int) or isinstance(count, bool) or count < 0 for count in declared_rig):
-        raise ContractError("render intent sensorHost.sensorRig counts must be non-negative integers")
-    managed_pronto = sensor_rig.get("rigId") == "pronto.8-camera-6-lidar-4-radar"
-    if not isinstance(vehicle_asset, Mapping):
-        raise ContractError("render intent sensorHost.vehicleAsset must be an object")
-    if managed_pronto:
+    if not isinstance(vehicle_asset, Mapping) or not isinstance(sensor_rig, Mapping):
+        raise ContractError("render intent sensorHost asset or rig is invalid")
+    if sensor_rig.get("rigId") == "authored":
+        _validate_authored_sensor_host(
+            parsed_spec.sensors,
+            host_actor_id,
+            vehicle_asset,
+            sensor_rig,
+        )
+    else:
+        source_image = vehicle_asset.get("sourceImage")
         if {
             key: value for key, value in vehicle_asset.items() if key != "sourceImage"
         } != {
@@ -440,66 +618,25 @@ def _intent_lease(
             "model": KIA_CARNIVAL_MODEL,
             "baseType": KIA_CARNIVAL_BASE_TYPE,
         }:
-            raise ContractError("managed Pronto sensorHost.vehicleAsset must be the exact Kia Carnival identity")
+            raise ContractError("render intent sensorHost.vehicleAsset must be the exact Kia Carnival identity")
         if source_image != {
             "repository": "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
             "indexSha256": CARLA_IMAGE_INDEX_DIGEST.removeprefix("sha256:"),
             "linuxAmd64ManifestSha256": CARLA_IMAGE_AMD64_MANIFEST_DIGEST.removeprefix("sha256:"),
         }:
-            raise ContractError("managed Pronto sensorHost.vehicleAsset.sourceImage must identify the pinned Kia image")
-        if declared_rig != (8, 6, 4):
-            raise ContractError("managed Pronto sensorHost.sensorRig must identify the exact 8/6/4 rig")
-    else:
-        if sensor_rig.get("rigId") != "authored":
-            raise ContractError("non-Pronto CARLA sensorHost.sensorRig must use rigId authored")
-        if (
-            not isinstance(vehicle_asset, Mapping)
-            or set(vehicle_asset) != {"catalogAssetId"}
-            or not isinstance(vehicle_asset.get("catalogAssetId"), str)
-            or not vehicle_asset["catalogAssetId"].strip()
-        ):
-            raise ContractError("authored CARLA sensorHost.vehicleAsset must identify one catalog asset")
-    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
-    # The trailing chase camera is an authored presentation view outside the measurement rig.
-    chase_sensors = [
-        sensor for sensor in parsed_spec.sensors
-        if sensor.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID
-    ]
-    rig_sensors = [
-        sensor for sensor in parsed_spec.sensors
-        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
-    ]
-    camera_sensor_ids = {
-        sensor.sensor_id for sensor in rig_sensors if sensor.modality in camera_modalities
-    }
-    lidar_sensor_ids = {
-        sensor.sensor_id for sensor in rig_sensors
-        if sensor.modality in {"lidar", "semantic-lidar"}
-    }
-    radar_sensor_ids = {
-        sensor.sensor_id for sensor in rig_sensors if sensor.modality == "radar"
-    }
-    actual_rig = (len(camera_sensor_ids), len(lidar_sensor_ids), len(radar_sensor_ids))
-    if os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
-        rgb_ids = {sensor.sensor_id for sensor in parsed_spec.sensors if sensor.modality == "rgb"}
-        derived = {
-            name: tuple(name.split("__"))
-            for name in (str(sensor.sensor_id) for sensor in rig_sensors)
-            if "__" in name
-        }
-        unknown_bases = sorted({name.split("__")[0] for name in derived} - rgb_ids)
-        bad_modality = sorted(name for name, (_, mod) in derived.items() if mod not in camera_modalities - {"rgb"})
-        if unknown_bases or bad_modality or len(rgb_ids) < 8 or actual_rig[1] < 6 or actual_rig[2] < 4:
-            raise ContractError(
-                "SDG expansion sensors must derive from real rgb rig cameras via id__modality"
-            )
-    elif (
-        actual_rig != declared_rig
-        or {sensor.actor_id for sensor in parsed_spec.sensors} != {host_actor_id}
-    ):
-        raise ContractError("selected sensors must match the declared rig and use one host actor")
-    if len(chase_sensors) > 1 or any(sensor.modality != "rgb" for sensor in chase_sensors):
-        raise ContractError("a render carries at most one RGB trailing chase camera")
+            raise ContractError("render intent sensorHost.vehicleAsset.sourceImage must identify the pinned Kia image")
+        if sensor_rig != {
+            "rigId": "pronto.8-camera-6-lidar-4-radar",
+            "cameras": 8,
+            "lidars": 6,
+            "radars": 4,
+        }:
+            raise ContractError("render intent sensorHost.sensorRig must identify the exact Pronto 8/6/4 rig")
+        _validate_pronto_sensor_selection(
+            parsed_spec.sensors,
+            host_actor_id,
+            representative=os.environ.get("UNISCENARIO_RENDER_SMOKE") == "1",
+        )
     xosc_path = inputs.get("scenario.xosc")
     if xosc_path is None:
         raise ContractError("input package is missing scenario.xosc")
@@ -671,9 +808,16 @@ def _intent_lease(
     manifest_path = output_dir / ".execution-manifest.json"
     manifest_path.write_bytes(manifest_body)
     uploads: dict[str, dict[str, Any]] = {}
-    kinds = {"trace", "parity-report", *(output for output in parsed_spec.outputs if output != "frames")}
-    if "frames" in parsed_spec.outputs:
-        kinds.update(f"framesArchive:{sensor.artifact_name}" for sensor in parsed_spec.sensors)
+    kinds = {"trace", "parity-report", *parsed_spec.outputs}
+    if "video" in parsed_spec.outputs:
+        primary_rgb = next(
+            (sensor for sensor in parsed_spec.sensors if sensor.modality == "rgb"), None,
+        )
+        kinds.update(
+            f"sensorVideo:{sensor.artifact_name}"
+            for sensor in parsed_spec.sensors
+            if sensor is not primary_rgb
+        )
     kinds.update(
         f"sensorData:{sensor.artifact_name}"
         for sensor in parsed_spec.sensors
@@ -712,7 +856,11 @@ def _intent_lease(
         "mapVersionId": map_identity["revisionId"],
         "manifest": {"url": "local:manifest", "sha256": hashlib.sha256(manifest_body).hexdigest(), "sizeBytes": len(manifest_body)},
         "xosc": {"url": "local:xosc", "sha256": open_scenario["sha256"], "sizeBytes": open_scenario["sizeBytes"], "xsdSha256": OFFICIAL_XSD_SHA256},
-        "xodr": {"url": "local:xodr", "sha256": map_asset["sha256"], "sizeBytes": map_asset["sizeBytes"], "mapName": map_identity["mapId"]},
+        # A map whose XODR is cooked into the engine image must be requested by
+        # its cooked runtime world name so CARLA loads the real meshes and the
+        # approved signal identity remaps engage; uncooked maps keep their
+        # control-plane identity and render via the generated-OpenDRIVE world.
+        "xodr": {"url": "local:xodr", "sha256": map_asset["sha256"], "sizeBytes": map_asset["sizeBytes"], "mapName": cooked_map_name_for_xodr(str(map_asset["sha256"])) or map_identity["mapId"]},
         "assetCatalog": {"url": "local:catalog", "sha256": catalog_asset["sha256"], "sizeBytes": catalog_asset["sizeBytes"], "contractVersion": ASSET_CATALOG_SCHEMA, "catalogVersionId": catalog_version},
         "ambient": ambient, "runtimeRequirements": runtime_requirements,
     }
@@ -728,6 +876,15 @@ def _intent_lease(
         },
     }
     lease = parse_lease(lease_value)
+    # The local package digest authenticates the derived runtime package during parsing. Artifacts
+    # must carry the control-plane lineage digest that identifies the immutable claimed attempt.
+    lease = replace(
+        lease,
+        execution_package=replace(
+            lease.execution_package,
+            control_sha256=_render_control_lineage_sha256(intent, intent_sha),
+        ),
+    )
     return lease, {
         "local:manifest": manifest_path, "local:xosc": xosc_path,
         "local:xodr": xodr_path, "local:catalog": catalog_path, "local:traffic": traffic_path,
@@ -745,17 +902,17 @@ def _artifact_manifest_entries(items: Any) -> list[dict[str, Any]]:
         kind = item.get("kind")
         metadata = item.get("metadata")
         metadata = metadata if isinstance(metadata, Mapping) else {}
-        if isinstance(kind, str) and kind.startswith("framesArchive:"):
-            role = "sensorArchive"
+        if isinstance(kind, str) and kind.startswith("sensorVideo:"):
+            role = "video"
         elif isinstance(kind, str) and kind.startswith("sensorData:"):
-            role = "sensorData"
+            role = "sensorArchive"
         elif kind == "parity-report":
             role = "diagnostics"
-        elif kind in {"video", "frames", "manifest", "trace", "annotations"}:
+        elif kind in {"video", "manifest", "trace", "annotations"}:
             role = kind
         else:
             raise RuntimeError(f"native executor returned unsupported artifact kind {kind!r}")
-        if role in {"video", "frames", "sensorArchive", "sensorData"}:
+        if role in {"video", "sensorArchive"}:
             actor_id = metadata.get("actorId")
             sensor_id = metadata.get("sensorId")
             modality = metadata.get("modality")
@@ -768,15 +925,17 @@ def _artifact_manifest_entries(items: Any) -> list[dict[str, Any]]:
             raise RuntimeError(f"native artifact identity is duplicated: {identity}")
         identities.add(identity)
         entries.append({
-            "role": role,
-            "actorId": actor_id,
-            "sensorId": sensor_id,
-            "modality": modality,
-            "artifactUrl": item["artifactUrl"],
+            "identity": {
+                "role": role,
+                "actorId": actor_id,
+                "sensorId": sensor_id,
+                "modality": modality,
+            },
+            "relativePath": item["artifactUrl"],
             "sha256": item["sha256"],
             "sizeBytes": item["sizeBytes"],
             "mediaType": item["mediaType"],
-            **({"metadata": dict(metadata)} if metadata else {}),
+            "frameCount": metadata.get("frameCount") if isinstance(metadata.get("frameCount"), int) else None,
         })
     return entries
 
@@ -916,21 +1075,23 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
     progress_path.write_text("", "utf-8")
     emit("job.started", {})
+    started_at = datetime.now(timezone.utc).isoformat()
     result = _execute_local_lease(
         lease, asset_paths, output_dir, DEFAULT_XSD, args.host, args.port, progress=emit,
     )
     manifest_entries = _artifact_manifest_entries(result["artifacts"])
-    runtime_evidence = result["attestation"]["runtimeEvidence"]
     artifact_manifest = {
         "schema": "uniscenario.render-artifact-manifest/v1",
-        "intentId": intent["intentId"], "intentSha256": intent_sha, "engine": "carla",
-        "artifacts": manifest_entries, "attestation": result["attestation"],
-        "carlaEvidence": {
-            "sensorHost": dict(intent["sensorHost"]),
-            "sensorHostReadback": runtime_evidence["prontoSensorHost"],
-            "runtimeImage": runtime_evidence["runtimeImage"],
+        "intentSha256": intent_sha,
+        "engine": {
+            "engineId": "uniscenarios-carla",
+            "engineVersion": "native-v1",
+            "backend": "carla",
         },
-        "parityEvidence": result["parityEvidence"], "planSha256": result["planSha256"],
+        "startedAt": started_at,
+        "completedAt": datetime.now(timezone.utc).isoformat(),
+        "artifacts": manifest_entries,
+        "warnings": [],
     }
     manifest_path = Path(args.manifest)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -946,6 +1107,12 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=2000)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("probe", help="connect without loading or mutating a CARLA world")
+    ticks = commands.add_parser(
+        "probe-ticks",
+        help="verify the server honors the synchronous tick barrier with a populated world",
+    )
+    ticks.add_argument("--fixed-delta", type=float, default=0.02)
+    ticks.add_argument("--ticks", type=int, default=120)
     intent = commands.add_parser("run-intent", help="execute a local uniscenario.render-intent/v1")
     intent.add_argument("--intent", required=True)
     intent.add_argument("--package", required=True)
@@ -991,9 +1158,13 @@ def main() -> None:
                 "error": str(exc.cause),
             }, sort_keys=True))
             raise SystemExit(2) from exc
+    elif args.command == "probe-ticks":
+        result = _probe_tick_barrier(args.host, args.port, args.fixed_delta, args.ticks)
     else:
         result = _run_intent(args)
     print(json.dumps(result, sort_keys=True))
+    if args.command == "probe-ticks" and result.get("verdict") != "pass":
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

@@ -101,17 +101,17 @@ const SENSOR_KINDS: {
   label: string;
   hint: string;
 }[] = [
-  { id: "rgb", label: "RGB", hint: "Color video and image frames" },
-  { id: "depth", label: "Depth", hint: "Metric depth image frames" },
+  { id: "rgb", label: "RGB", hint: "Color video stream" },
+  { id: "depth", label: "Depth", hint: "Metric depth video stream" },
   { id: "semantic", label: "Semantic", hint: "Semantic segmentation" },
   { id: "instance", label: "Instance", hint: "Instance segmentation" },
   { id: "lidar", label: "LiDAR", hint: "Point-cloud captures" },
   { id: "radar", label: "Radar", hint: "Range, angle and radial-velocity captures" },
 ];
 
-const OUTPUT_OPTIONS: { id: "video" | "frames" | "annotations"; label: string; hint: string }[] = [
-  { id: "video", label: "Videos", hint: "MP4 from the first RGB sensor" },
-  { id: "frames", label: "Sensor data", hint: "Archive per requested sensor" },
+const OUTPUT_OPTIONS: { id: "video" | "sensorArchive" | "annotations"; label: string; hint: string }[] = [
+  { id: "video", label: "Videos", hint: "One encoded video per camera, plus lidar/radar visualizations" },
+  { id: "sensorArchive", label: "Sensor data archives", hint: "Lidar point clouds and radar CSV per sensor" },
   { id: "annotations", label: "Annotations", hint: "Frame-aligned NDJSON" },
 ];
 
@@ -255,7 +255,7 @@ export function RenderConfigPanel({
   const [resolutionIndex, setResolutionIndex] = useState(0);
   const [fps, setFps] = useState<(typeof CARLA_FPS_OPTIONS)[number]>(24);
   const [quality, setQuality] = useState<(typeof CARLA_QUALITIES)[number]>("standard");
-  const [outputs, setOutputs] = useState<("video" | "frames" | "annotations")[]>(["video", "annotations"]);
+  const [outputs, setOutputs] = useState<("video" | "sensorArchive" | "annotations")[]>(["video", "annotations"]);
   const [stage, setStage] = useState<null | "package" | "submit">(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   /** What the export queue is doing while `stage === "package"`. Null when nothing is waiting. */
@@ -439,7 +439,7 @@ export function RenderConfigPanel({
     });
   }
 
-  function toggleOutput(id: "video" | "frames" | "annotations") {
+  function toggleOutput(id: "video" | "sensorArchive" | "annotations") {
     setOutputs((current) =>
       current.includes(id) ? current.filter((candidate) => candidate !== id) : [...current, id],
     );

@@ -165,38 +165,52 @@ async function executeClaim(
     }));
     if (manifest.intentSha256 !== job.intentSha256) throw new Error('engine manifest intentSha256 does not match claimed intent');
 
-    const completed: CompletedArtifact[] = [];
-    for (const artifact of manifest.artifacts) {
-      const absolutePath = resolve(workspace, artifact.relativePath);
-      if (absolutePath !== workspace && !absolutePath.startsWith(`${workspace}/`)) throw new Error(`artifact escapes workspace: ${artifact.relativePath}`);
-      const digest = await hashFile(absolutePath);
-      if (digest.sha256 !== artifact.sha256 || digest.sizeBytes !== artifact.sizeBytes) {
-        throw new Error(`artifact integrity mismatch for ${artifact.relativePath}`);
+    // Hash + reserve + upload artifacts through a small worker pool: large
+    // sensor archives and videos otherwise serialize behind one another. The
+    // completion manifest preserves engine artifact order by index.
+    const completed: CompletedArtifact[] = new Array<CompletedArtifact>(manifest.artifacts.length);
+    let nextArtifactIndex = 0;
+    const uploadOne = async (): Promise<void> => {
+      while (true) {
+        const index = nextArtifactIndex;
+        nextArtifactIndex += 1;
+        if (index >= manifest.artifacts.length) return;
+        const artifact = manifest.artifacts[index]!;
+        const absolutePath = resolve(workspace, artifact.relativePath);
+        if (absolutePath !== workspace && !absolutePath.startsWith(`${workspace}/`)) throw new Error(`artifact escapes workspace: ${artifact.relativePath}`);
+        const digest = await hashFile(absolutePath);
+        if (digest.sha256 !== artifact.sha256 || digest.sizeBytes !== artifact.sizeBytes) {
+          throw new Error(`artifact integrity mismatch for ${artifact.relativePath}`);
+        }
+        const reservation = await withBoundedRetry('artifact reservation', config.retries, state.controller.signal, () => transport.reserveArtifact({
+          schema: RENDER_WORKER_CONTROL_V2_SCHEMA,
+          type: 'artifact.reserve',
+          leaseId: job.lease.leaseId,
+          fenceToken: job.lease.fenceToken,
+          identity: ArtifactIdentitySchema.parse(artifact.identity),
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
+          mediaType: artifact.mediaType,
+        }, state.controller.signal));
+        await withBoundedRetry('artifact upload', config.retries, state.controller.signal, () => uploadFile(
+          reservation.upload.url,
+          reservation.upload.headers,
+          absolutePath,
+          state.controller.signal,
+        ));
+        completed[index] = {
+          artifactId: reservation.artifactId,
+          identity: artifact.identity,
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
+          mediaType: artifact.mediaType,
+        };
       }
-      const reservation = await withBoundedRetry('artifact reservation', config.retries, state.controller.signal, () => transport.reserveArtifact({
-        schema: RENDER_WORKER_CONTROL_V2_SCHEMA,
-        type: 'artifact.reserve',
-        leaseId: job.lease.leaseId,
-        fenceToken: job.lease.fenceToken,
-        identity: ArtifactIdentitySchema.parse(artifact.identity),
-        sha256: artifact.sha256,
-        sizeBytes: artifact.sizeBytes,
-        mediaType: artifact.mediaType,
-      }, state.controller.signal));
-      await withBoundedRetry('artifact upload', config.retries, state.controller.signal, () => uploadFile(
-        reservation.upload.url,
-        reservation.upload.headers,
-        absolutePath,
-        state.controller.signal,
-      ));
-      completed.push({
-        artifactId: reservation.artifactId,
-        identity: artifact.identity,
-        sha256: artifact.sha256,
-        sizeBytes: artifact.sizeBytes,
-        mediaType: artifact.mediaType,
-      });
-    }
+    };
+    await Promise.all(Array.from(
+      { length: Math.max(1, Math.min(config.uploadConcurrency, manifest.artifacts.length)) },
+      uploadOne,
+    ));
     if (completed.length === 0) throw new Error('engine produced no artifacts');
     state.heartbeatController.abort(new Error('render complete; stop heartbeats before fencing completion'));
     await heartbeat;

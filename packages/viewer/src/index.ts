@@ -1,5 +1,7 @@
 export { CityViewer } from './viewer';
 export type { CityViewerLayers } from './viewer';
+export { DEFAULT_ACTIVE_LUMINAIRE_LIMIT, isLuminaireObjectName, LuminaireLightingController } from './luminaire-lighting';
+export type { LuminaireLightingStats } from './luminaire-lighting';
 export { CameraRig } from './camera-controls';
 export { CAMERA_ORBIT_EVENT } from './camera-events';
 export type { CameraMode, CameraView, CameraPoseConstraint } from './camera-controls';

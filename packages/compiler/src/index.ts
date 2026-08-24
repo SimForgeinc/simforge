@@ -1,5 +1,6 @@
 export * from './errors.js';
 export * from './adapt.js';
+export * from './carla-fallback.js';
 export * from './map-signals.js';
 export * from './signal-control.js';
 export * from './map-signal-plan-compiler.js';

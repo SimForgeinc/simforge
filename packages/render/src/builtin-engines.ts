@@ -28,7 +28,7 @@ const CARLA_CAPABILITIES: EngineCapabilityDeclaration = {
     'sensor.lidar',
     'sensor.radar',
     'artifact.video',
-    'artifact.frames',
+    'artifact.sensor_video',
     'artifact.sensor_archive',
     'artifact.manifest',
     'artifact.trace',

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { CATALOG_ACTOR_CLASSES, PROP_CLASSES, PROP_TAGS } from './types';
+import type { ExternalCatalogEntry } from './catalog.js';
 import type { CatalogEntry } from './types';
 
 /**
@@ -30,6 +31,25 @@ const animationProfileSchema = z.strictObject({
   hoverHeightM: z.number().nonnegative().optional(),
 });
 
+const externalModelSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('glb'),
+    url: z.string().min(1),
+    contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+    scale: z.number().positive().optional(),
+    yawRad: z.number().finite().optional(),
+    animated: z.boolean().optional(),
+    clips: z.strictObject({
+      idle: z.string().min(1).optional(),
+      locomotion: z.string().min(1).optional(),
+    }).optional(),
+  }),
+  z.strictObject({
+    kind: z.literal('proxy'),
+    tint: z.string().optional(),
+  }),
+]);
+
 const catalogEntrySchema = z.object({
   id: z
     .string()
@@ -45,6 +65,48 @@ const catalogEntrySchema = z.object({
   legacyAliasOf: z.string().regex(/^[a-z_]+(?:\.[a-z0-9_]+)+$/).optional(),
   animation: animationProfileSchema.optional(),
 });
+
+const externalCatalogEntrySchema = z.strictObject({
+  id: z
+    .string()
+    .regex(/^(?:gallery|carla)\.[a-z0-9_-]+(?:\.[a-z0-9_-]+)*$/, 'invalid external catalog id'),
+  label: z.string().min(1),
+  class: z.enum(PROP_CLASSES as unknown as [string, ...string[]]),
+  actorClass: z.enum(CATALOG_ACTOR_CLASSES as unknown as [string, ...string[]]).optional(),
+  compatibleActorClasses: z.array(z.enum(CATALOG_ACTOR_CLASSES as unknown as [string, ...string[]])).optional(),
+  description: z.string().min(1),
+  dims: dimsSchema,
+  tags: z.array(z.enum(PROP_TAGS as unknown as [string, ...string[]])),
+  defaultParams: z.record(z.string(), paramValueSchema),
+  animation: animationProfileSchema.optional(),
+  model: externalModelSchema,
+});
+
+const externalCatalogSchema = z
+  .array(externalCatalogEntrySchema)
+  .min(1)
+  .superRefine((entries, ctx) => {
+    const seen = new Set<string>();
+    for (const entry of entries) {
+      if (seen.has(entry.id)) {
+        ctx.addIssue({ code: 'custom', message: `duplicate external catalog id: ${entry.id}` });
+      }
+      seen.add(entry.id);
+      if (entry.class === 'vehicle' && entry.actorClass === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${entry.id} must declare actorClass so its driving physics do not depend on its id`,
+        });
+      }
+      if (entry.actorClass !== undefined
+        && entry.compatibleActorClasses?.some((candidate) => candidate === entry.actorClass)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${entry.id} repeats actorClass in compatibleActorClasses`,
+        });
+      }
+    }
+  });
 
 export const catalogSchema = z
   .array(catalogEntrySchema)
@@ -105,4 +167,9 @@ export const catalogSchema = z
 /** Validate an arbitrary catalog payload (e.g. a loaded `catalog.json`). */
 export function parseCatalog(data: unknown): CatalogEntry[] {
   return catalogSchema.parse(data) as unknown as CatalogEntry[];
+}
+
+/** Validate runtime-backed entries without applying bundled id/class-prefix rules. */
+export function parseExternalCatalogEntries(data: unknown): ExternalCatalogEntry[] {
+  return externalCatalogSchema.parse(data) as unknown as ExternalCatalogEntry[];
 }

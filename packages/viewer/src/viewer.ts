@@ -28,6 +28,7 @@ import {
   getGLTFLoader,
 } from './gltf';
 import { createSun } from './environment';
+import { LuminaireLightingController, type LuminaireLightingStats } from './luminaire-lighting';
 import { GroundIndex, type GroundIndexOptions } from './ground-index';
 import { isLowFidelityHiddenHelper, keepInRoadsOnly } from './roads-only';
 import { boundsToBox3, normalizeLods, resolveUrl } from './manifest';
@@ -163,7 +164,10 @@ const SUN_SYNC_TOLERANCE_RAD = MathUtils.degToRad(0.25);
 
 export function isRendererOwnedVisualRoot(object: Object3D): boolean {
   const role = object.userData.uniscenariosRole;
-  return role === 'city-weather' || role === 'city-snow-cover' || role === 'city-sky';
+  return role === 'city-weather'
+    || role === 'city-snow-cover'
+    || role === 'city-sky'
+    || role === 'city-luminaires';
 }
 
 export function snowStreamingContribution(stats: import('./snow-cover').SnowCoverStats): {
@@ -280,6 +284,7 @@ export class CityViewer {
   private roadLayer: TileStreamLayer | null = null;
   private sun: DirectionalLight | null = null;
   private readonly sky = new SkyDome();
+  private readonly luminaires = new LuminaireLightingController();
   private realtimeShadows = false;
   /**
    * Whether the generated sky, its image-based light and the sun's shadow map
@@ -391,7 +396,7 @@ export class CityViewer {
     this.cityGroup.name = 'city-tiles';
     this.vegetationGroup.name = 'vegetation';
     this.roadGroup.name = 'road';
-    this.scene.add(this.roadGroup, this.cityGroup, this.vegetationGroup);
+    this.scene.add(this.roadGroup, this.cityGroup, this.vegetationGroup, this.luminaires.group);
 
     this.camera = new PerspectiveCamera(55, this.aspect(), 0.5, 6000);
     this.camera.position.set(0, 200, 400);
@@ -980,6 +985,9 @@ export class CityViewer {
         // the electric towers reaching above ~20 m fade out of it.
         if (this.visualResourcesStarted && !this.ultraLowFidelity) patchTree(root, this.shadowOptions(box, 20, 40));
         this.surfaceMaterials.registerTree(root, 'road');
+        // Street-light props ship in the road static layer on Datasmith-derived
+        // maps, so practical-light discovery must see these trees too.
+        this.luminaires.registerTree(root);
         const resources = collectResources(root);
         if (this.ultraLowFidelity) this.simplifyTree(root, 'road');
         if (this.roadsOnlyFidelity) this.applyRoadsOnlyVisibility(root);
@@ -997,6 +1005,7 @@ export class CityViewer {
           dispose: () => {
             this.snowCover.unregisterTree(root);
             this.surfaceMaterials.unregisterTree(root);
+            this.luminaires.unregisterTree(root);
             this.releaseSimplifiedTree(root);
           },
         } satisfies PreparedAsset;
@@ -1029,6 +1038,7 @@ export class CityViewer {
         const box = new Box3().setFromObject(root);
         if (this.visualResourcesStarted && !this.ultraLowFidelity) patchTree(root, this.shadowOptions(box, 20, 40));
         this.surfaceMaterials.registerTree(root, 'city');
+        this.luminaires.registerTree(root);
         const resources = collectResources(root);
         if (this.ultraLowFidelity) this.simplifyTree(root, 'city');
         this.snowCover.registerTree(
@@ -1045,6 +1055,7 @@ export class CityViewer {
           dispose: () => {
             this.snowCover.unregisterTree(root);
             this.surfaceMaterials.unregisterTree(root);
+            this.luminaires.unregisterTree(root);
             this.releaseSimplifiedTree(root);
           },
         } satisfies PreparedAsset;
@@ -1182,6 +1193,7 @@ export class CityViewer {
       // and the sun now", and a re-bake is far too expensive per frame.
       this.syncSunFromLight();
       this.updateSunShadowFocus();
+      this.luminaires.update(this.camera);
       this.phaseStats.streaming.push(performance.now() - phaseStart);
     } else {
       this.phaseStats.streaming.push(0);
@@ -1628,6 +1640,16 @@ export class CityViewer {
     return this.surfaceMaterials.report();
   }
 
+  /** Enable practical street lighting discovered from semantic map-furniture nodes. */
+  setStreetLightsEnabled(enabled: boolean): void {
+    this.luminaires.setEnabled(enabled && !this.ultraLowFidelity && !this.roadsOnlyFidelity);
+    this.luminaires.update(this.camera);
+  }
+
+  getStreetLightingStats(): LuminaireLightingStats {
+    return this.luminaires.stats();
+  }
+
   /**
    * Apply one visual weather appearance to the complete streamed world.
    *
@@ -2008,6 +2030,7 @@ export class CityViewer {
     this.weather.dispose();
     this.snowCover.dispose();
     this.sky.dispose();
+    this.luminaires.dispose();
     this.vegetationData.clear();
     this.surfaceMaterials.dispose();
     if (this.sun) this.scene.remove(this.sun, this.sun.target);
@@ -2053,6 +2076,7 @@ export class CityViewer {
     this.variantManifest = null;
     this.staticSemantics = null;
     this.capabilities = [];
+    this.luminaires.clear();
     this.cameraGroundIndex = null;
     this.localEnvelopeBounds = null;
     this.lastStreamUpdate = 0;

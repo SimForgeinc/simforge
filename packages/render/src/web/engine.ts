@@ -1,18 +1,31 @@
 import { createWriteStream, promises as fs, type WriteStream } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { gunzip } from 'node:zlib';
+import { promisify } from 'node:util';
 import { chromium } from 'playwright-core';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration, type RenderArtifactManifest, type RenderEngineAdapter, type RenderExecutionContext } from '../index.js';
+import { fixedStepFrameCount, parseRenderIntent } from '@simforge/scenario';
+import { parsePlaybackPair, type PlaybackBundle } from '@simforge/playback';
 import { BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import type { ArtifactIdentity } from './artifacts.js';
-import { BROWSER_RENDER_REQUEST_V1_SCHEMA, parseBrowserRenderIntent, type ResolvedBrowserRenderRequest } from './intent.js';
+import { BROWSER_RENDER_REQUEST_V1_SCHEMA, RENDER_INTENT_V1_SCHEMA, parseBrowserRenderIntent, type BrowserRenderIntentV1, type ResolvedBrowserRenderRequest } from './intent.js';
 
 export interface BrowserRenderEngineOptions {
   readonly harnessUrl?: string;
   readonly chromiumExecutablePath?: string;
+  /**
+   * Extra Chromium switches appended after the safe defaults, e.g.
+   * `--use-gl=angle --use-angle=gl-egl` to render on a real GPU instead of
+   * SwiftShader. Defaults to `UNISCENARIOS_CHROMIUM_EXTRA_ARGS` (whitespace
+   * separated) so hosts opt in without code changes.
+   */
+  readonly chromiumExtraArgs?: readonly string[];
   readonly headless?: boolean;
   readonly engineVersion?: string;
 }
+
+const gunzipAsync = promisify(gunzip);
 
 const CAPABILITIES: EngineCapabilityDeclaration = {
   schema: ENGINE_CAPABILITIES_V1_SCHEMA,
@@ -31,6 +44,7 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
     'sensor.lidar',
     'sensor.radar',
     'artifact.video',
+    'artifact.sensor_video',
     'artifact.frames',
     'artifact.sensor_archive',
     'artifact.sensor_video',
@@ -58,7 +72,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       const startedAt = new Date().toISOString();
       const harnessUrl = options.harnessUrl ?? process.env.UNISCENARIOS_BROWSER_HARNESS_URL ?? new URL('../harness.html', import.meta.url).href;
       await fs.mkdir(context.workspace, { recursive: true });
-      const intent = parseBrowserRenderIntent(context.intent);
+      const intent = resolveBrowserRenderIntent(context.intent);
       const scenarioInput = context.inputs.get('scenario.xosc');
       if (!scenarioInput) throw new Error('Browser render requires mandatory input scenario.xosc.');
       for (const asset of intent.assets) {
@@ -77,15 +91,25 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         intentSha256: context.intentSha256,
         intent,
         mapManifestUrl: pathToFileURL(mapInput.path).href,
-        playbackBundle: JSON.parse(await fs.readFile(playbackInput.path, 'utf8')),
+        playbackBundle: await materializePlaybackBundle(await fs.readFile(playbackInput.path)),
       };
       const outputs = new Map<string, OutputFile>();
+      const chromiumExtraArgs = options.chromiumExtraArgs
+        ?? process.env.UNISCENARIOS_CHROMIUM_EXTRA_ARGS?.split(/\s+/).filter(Boolean)
+        ?? [];
       const browser = await chromium.launch({
         headless: options.headless ?? true,
         ...(options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH
           ? { executablePath: options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH }
           : {}),
-        args: ['--enable-webgl', '--ignore-gpu-blocklist', '--enable-features=Vulkan', '--allow-file-access-from-files'],
+        args: [
+          '--enable-webgl', '--ignore-gpu-blocklist', '--allow-file-access-from-files',
+          // SwiftShader's Vulkan backend is the safe default; a host overriding
+          // GL selection owns the whole GPU configuration (the feature flag
+          // conflicts with --use-angle overrides).
+          ...(chromiumExtraArgs.length === 0 ? ['--enable-features=Vulkan'] : []),
+          ...chromiumExtraArgs,
+        ],
       });
       try {
         const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -174,7 +198,10 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
             startedAt,
             completedAt: new Date().toISOString(),
             artifacts,
-            warnings: [],
+            warnings: result.omittedArtifacts.map((omitted) => ({
+              code: omitted.role === 'sensor-video' ? 'sensor_video_omitted' : 'sensor_archive_omitted',
+              message: `${omitted.role} omitted (${omitted.reason}): ${omitted.actorId}/${omitted.sensorId}/${omitted.modality}`,
+            })),
           } as RenderArtifactManifest;
         } finally {
           context.signal.removeEventListener('abort', abort);
@@ -190,6 +217,95 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
     },
   };
 }
+export async function decodePlaybackArchive(bytes: Uint8Array): Promise<unknown> {
+  const decoded = bytes[0] === 0x1f && bytes[1] === 0x8b
+    ? await gunzipAsync(bytes)
+    : bytes;
+  return JSON.parse(Buffer.from(decoded).toString('utf8')) as unknown;
+}
+
+export async function materializePlaybackBundle(bytes: Uint8Array): Promise<PlaybackBundle> {
+  const stored = await decodePlaybackArchive(bytes);
+  if (!stored || typeof stored !== 'object' || !('instance' in stored) || !('trace' in stored)) {
+    throw new Error('Persisted playback bundle is missing instance or trace evidence.');
+  }
+  const envelope = stored as {
+    instance: unknown;
+    trace: unknown;
+    ambientTraffic?: PlaybackBundle['ambientTraffic'];
+    mapCollisions?: PlaybackBundle['mapCollisions'];
+    openScenario?: PlaybackBundle['openScenario'];
+  };
+  return {
+    ...parsePlaybackPair(envelope.instance, normalizeSavedPlaybackTrace(envelope.trace), {
+      instanceName: 'saved scenario',
+      traceName: 'saved simulation',
+    }),
+    ...(envelope.ambientTraffic ? { ambientTraffic: envelope.ambientTraffic } : {}),
+    ...(envelope.mapCollisions ? { mapCollisions: envelope.mapCollisions } : {}),
+    ...(envelope.openScenario ? { openScenario: envelope.openScenario } : {}),
+  };
+}
+
+export function normalizeSavedPlaybackTrace(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const trace = value as Record<string, unknown>;
+  const header = trace['header'];
+  const ticks = trace['ticks'];
+  if (!header || typeof header !== 'object' || (header as Record<string, unknown>)['frame'] !== 'scene'
+    || !ticks || typeof ticks !== 'object') {
+    return value;
+  }
+  const actors = (ticks as Record<string, unknown>)['actors'];
+  if (!actors || typeof actors !== 'object') return value;
+  return {
+    ...trace,
+    header: { ...(header as Record<string, unknown>), frame: 'xodr-local' },
+    ticks: {
+      ...(ticks as Record<string, unknown>),
+      actors: Object.fromEntries(Object.entries(actors).map(([id, value]) => {
+        const track = value as Record<string, unknown>;
+        const z = track['z'];
+        return [id, {
+          ...track,
+          ...(Array.isArray(z) ? { y: z.map((coordinate) => -Number(coordinate)) } : {}),
+        }];
+      })),
+    },
+  };
+}
+
+export function resolveBrowserRenderIntent(value: unknown): BrowserRenderIntentV1 {
+  const portable = parseRenderIntent(value);
+  const fps = portable.renderSpec.video?.fps ?? Math.max(
+    1,
+    ...portable.renderSpec.sources.flatMap((source) =>
+      'fps' in source.attributes ? [source.attributes.fps] : []
+    ),
+  );
+  const frameCount = fixedStepFrameCount(
+    portable.renderSpec.clip.startSeconds,
+    portable.renderSpec.clip.endSeconds,
+    fps,
+  );
+  return parseBrowserRenderIntent({
+    schema: RENDER_INTENT_V1_SCHEMA,
+    engine: 'browser',
+    sensorHost: portable.sensorHost,
+    assets: portable.assets,
+    renderSpec: portable.renderSpec,
+    schedule: {
+      startSeconds: portable.renderSpec.clip.startSeconds,
+      endSeconds: portable.renderSpec.clip.endSeconds,
+      fps,
+      frameCount,
+      timestampUnit: 'microseconds',
+      firstTimestampUs: 0,
+      endTimestampUs: Math.round(frameCount * 1_000_000 / fps),
+    },
+  });
+}
+
 
 type OutputFile = { identity: ArtifactIdentity; mediaType: string; relativePath: string; stream: WriteStream; closed: boolean };
 function requiredOutput(outputs: ReadonlyMap<string, OutputFile>, handle: string): OutputFile { const output = outputs.get(handle); if (!output || output.closed) throw new Error(`Unknown or closed artifact handle: ${handle}`); return output; }

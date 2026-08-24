@@ -3,9 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 from typing import Any, Mapping
 
 SCHEMA = "uniscenario.execution-package/v1"
@@ -20,7 +21,6 @@ MAX_SENSOR_COUNT = 64
 MAX_ACTOR_COUNT = 256
 MAX_DURATION_SECONDS = 300.0
 MAX_CAPTURE_FRAMES = 18_000
-MAX_SENSOR_PIXELS = 2_000_000_000
 MAX_ACTOR_FRAME_STATES = 2_000_000
 MAX_ARTIFACT_BYTES = 4 * 1024 * 1024 * 1024
 MAX_OUTPUT_BYTES = 8 * 1024 * 1024 * 1024
@@ -34,6 +34,23 @@ EMPTY_AMBIENT_RESULT_SHA256 = "1925590408012373ea3cc6b9d02703527531492efb52aa396
 
 class ContractError(ValueError):
     """An immutable execution package or lease violated its contract."""
+
+
+def _configured_max_sensor_pixels() -> int:
+    """Aggregate sensor-sample guard. 6e9 covers a 20 s, 9-camera 1280x720@24
+    Pronto intent (~3.98e9). It bounds compute and temporary-disk pressure, not
+    memory: camera frames stream straight into their per-camera ffmpeg encoder
+    and never land on disk; lidar/radar data lands per frame.
+    Fail-closed above the bound; override via UNISCENARIO_MAX_SENSOR_PIXELS."""
+    raw = os.environ.get("UNISCENARIO_MAX_SENSOR_PIXELS", "").strip()
+    if not raw:
+        return 6_000_000_000
+    if not raw.isdigit() or int(raw) <= 0:
+        raise ContractError("UNISCENARIO_MAX_SENSOR_PIXELS must be a positive integer")
+    return int(raw)
+
+
+MAX_SENSOR_PIXELS = _configured_max_sensor_pixels()
 
 
 def reject_unsafe_xml_envelope(xml_bytes: bytes) -> None:
@@ -81,11 +98,6 @@ def _ecmascript_number(value: int | float) -> str:
         raise ContractError("canonical JSON numbers must be finite")
     if value == 0:
         return "0"
-    if not value.is_integer() and abs(value) < 1e15:
-        rounded = Decimal.from_float(value).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-        value = float(rounded)
-        if value == 0:
-            return "0"
     absolute = abs(value)
     shortest = repr(value).lower()
     if 1e-6 <= absolute < 1e21:
@@ -346,7 +358,7 @@ class RuntimeRequirements:
         ):
             raise ContractError("runtimeRequirements.sensorModalities must be sorted, unique supported values")
         if not isinstance(outputs, list) or outputs != sorted(set(outputs)) or any(
-            item not in {"frames", "video", "trace", "manifest", "annotations"} for item in outputs
+            item not in {"video", "trace", "manifest", "annotations"} for item in outputs
         ):
             raise ContractError("runtimeRequirements.outputs must be sorted, unique supported values")
         return cls(
@@ -537,7 +549,7 @@ class RenderSpec:
             identities.add(sensor.artifact_key)
             sensors.append(sensor)
         outputs = value.get("outputs")
-        allowed_outputs = {"frames", "video", "trace", "manifest", "annotations"}
+        allowed_outputs = {"video", "trace", "manifest", "annotations"}
         if not isinstance(outputs, list) or not outputs or outputs != list(dict.fromkeys(outputs)) or any(
             item not in allowed_outputs for item in outputs
         ):
@@ -580,7 +592,12 @@ class RenderSpec:
         ):
             raise ContractError("renderSpec.formats contains an unsupported or duplicate format")
         required_formats = {
-            *(SENSOR_FORMATS[sensor.modality] for sensor in sensors if "frames" in outputs),
+            # Lidar/radar measurement data always uploads; camera frames exist
+            # only as encoded video, so no image format is ever required.
+            *(
+                SENSOR_FORMATS[sensor.modality] for sensor in sensors
+                if sensor.modality not in CAMERA_MODALITIES
+            ),
             *({"mp4-h264"} if "video" in outputs else set()),
             *({"json"} if any(output in outputs for output in ("trace", "manifest")) else set()),
             *({"jsonl"} if "annotations" in outputs else set()),
@@ -747,9 +764,26 @@ def parse_lease(value: Any) -> Lease:
     if job_mode == "interaction_2d" and render_spec.sensors:
         raise ContractError("interaction_2d jobs must not include sensors")
     expected_uploads = {"trace"}
-    expected_uploads.update(output for output in render_spec.outputs if output != "frames")
-    if "frames" in render_spec.outputs:
-        expected_uploads.update(f"framesArchive:{sensor.artifact_name}" for sensor in render_spec.sensors)
+    expected_uploads.update(render_spec.outputs)
+    if "video" in render_spec.outputs:
+        # The primary RGB camera's encoded stream uploads as the review
+        # "video"; every other sensor gets its own sensorVideo upload
+        # (camera streams plus lidar/radar visualizations).
+        primary_rgb = next(
+            (sensor for sensor in render_spec.sensors if sensor.modality == "rgb"), None,
+        )
+        expected_uploads.update(
+            f"sensorVideo:{sensor.artifact_name}"
+            for sensor in render_spec.sensors
+            if sensor is not primary_rgb
+        )
+    # Lidar/radar measurement data always uploads; camera frame archives were
+    # removed with individual frame persistence.
+    expected_uploads.update(
+        f"sensorData:{sensor.artifact_name}"
+        for sensor in render_spec.sensors
+        if sensor.modality in LIDAR_MODALITIES or sensor.modality in RADAR_MODALITIES
+    )
     missing_uploads = sorted(expected_uploads - set(uploads))
     if missing_uploads:
         raise ContractError(f"artifactUploads is missing reservations: {', '.join(missing_uploads)}")

@@ -65,7 +65,7 @@ export {
   type WorkZoneParams,
 } from './composites';
 
-export { parseCatalog } from './schema';
+export { parseCatalog, parseExternalCatalogEntries } from './schema';
 
 export {
   disposeMaterials,

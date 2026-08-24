@@ -120,37 +120,30 @@ function declaredRecordingArtifacts(
   if (renderSpec.artifacts.includes("video")) declared.push({ role: "video", sensor: null });
   declared.push({ role: "manifest", sensor: null });
   if (renderSpec.artifacts.includes("frames")) declared.push({ role: "frames", sensor: null });
-  if (renderSpec.artifacts.includes("sensorArchive")) {
-    for (const source of renderSpec.sources) {
-      // Archive-light review contract: LiDAR/radar remain raw data products by
-      // default. Image frame archives are opt-in via the explicit frames artifact.
-      if (
-        renderSpec.artifacts.includes("frames")
-        || source.modality === "lidar"
-        || source.modality === "radar"
-      ) {
-        declared.push({
-          role: "sensor_archive",
-          sensor: {
-            actorId: source.actorId,
-            sensorId: source.sensorId,
-            modality: source.modality,
-          },
-        });
-      }
-      if (
-        renderSpec.video
-        && (source.modality === "rgb" || source.modality === "lidar" || source.modality === "radar")
-      ) {
-        declared.push({
-          role: "sensor_video",
-          sensor: {
-            actorId: source.actorId,
-            sensorId: source.sensorId,
-            modality: source.modality,
-          },
-        });
-      }
+  for (const source of renderSpec.sources) {
+    const isCamera = source.modality !== "lidar" && source.modality !== "radar";
+    // Every camera's sole pixel output is its own encoded video stream;
+    // individual camera frames are never persisted. Lidar/radar keep their
+    // measurement archives and add a visualization video alongside them.
+    if (isCamera || renderSpec.video) {
+      declared.push({
+        role: "sensor_video",
+        sensor: {
+          actorId: source.actorId,
+          sensorId: source.sensorId,
+          modality: source.modality,
+        },
+      });
+    }
+    if (!isCamera && renderSpec.artifacts.includes("sensorArchive")) {
+      declared.push({
+        role: "sensor_archive",
+        sensor: {
+          actorId: source.actorId,
+          sensorId: source.sensorId,
+          modality: source.modality,
+        },
+      });
     }
   }
   return declared;

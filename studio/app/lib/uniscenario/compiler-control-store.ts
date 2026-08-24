@@ -1,4 +1,9 @@
 import { randomBytes } from "node:crypto";
+import {
+  collectGalleryCatalogIds,
+  galleryCatalogEntry,
+} from "@/app/lib/asset-gallery/catalog-entry";
+import { resolveGalleryCatalogIds } from "@/app/lib/asset-gallery/store";
 import { queryRows } from "@/app/lib/db/data-api";
 import { parseJsonObject } from "@/app/lib/db/json-helpers";
 import { getPresignedGetUrl, getPresignedPutUrl, headS3Object } from "@/app/lib/s3/s3-presign";
@@ -378,6 +383,8 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
     throw new Error("UniScenario map compiler closure is incomplete.");
   }
   const kinds = ["map-xodr", "map-topology", "map-derived-topology", "map-locations", "map-signals", "asset-catalog"] as const;
+  const canonicalContent = parseJsonObject(claimed.canonical_content);
+  const gallery = await resolveGalleryCatalogIds(collectGalleryCatalogIds(canonicalContent));
   return {
     contract: "uniscenario.compiler-claim/v1" as const,
     exportId: claimed.export_id,
@@ -388,9 +395,10 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
     revision: {
       id: claimed.revision_id,
       contentSha256: claimed.content_sha256,
-      canonicalContent: parseJsonObject(claimed.canonical_content),
+      canonicalContent,
       mapVersionId: claimed.map_version_id,
     },
+    catalogEntries: gallery.entries.map(galleryCatalogEntry),
     map: {
       id: claimed.map_version_id,
       sourceMapId: claimed.map_id,

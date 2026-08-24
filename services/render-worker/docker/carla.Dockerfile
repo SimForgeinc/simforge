@@ -21,14 +21,14 @@ ARG IMAGE_VERSION
 USER root
 RUN test -n "$SOURCE_REVISION" && test -n "$IMAGE_VERSION" \
  && apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python3-pip tini ca-certificates \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python3-pip tini ca-certificates libxml2-utils ffmpeg \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /opt/uniscenarios /scratch /cache /run/uniscenarios \
  && chown -R carla:carla /scratch /cache /run/uniscenarios
 COPY --from=node-build /usr/local /usr/local
 COPY --from=node-build --chown=carla:carla /out/worker /opt/uniscenarios/worker
 COPY --from=python-build /wheels /tmp/wheels
-RUN python3 -m pip install --no-cache-dir /tmp/wheels/*.whl && rm -rf /tmp/wheels
+RUN python3 -m pip install --no-cache-dir /home/carla/PythonAPI/carla/dist/carla-*.whl /tmp/wheels/*.whl && rm -rf /tmp/wheels
 ENV NODE_ENV=production \
     PORT=8080 \
     UNISCENARIOS_CARLA_BINARY=/usr/local/bin/uniscenarios-carla \
@@ -55,6 +55,6 @@ USER carla
 WORKDIR /scratch
 VOLUME ["/scratch", "/cache", "/run/uniscenarios"]
 EXPOSE 8080
-HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 CMD ["node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT||8080}/health`).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
 ENTRYPOINT ["/usr/bin/tini", "--", "node", "/opt/uniscenarios/worker/dist/main.js"]
 CMD ["--config", "/config/worker.json"]
