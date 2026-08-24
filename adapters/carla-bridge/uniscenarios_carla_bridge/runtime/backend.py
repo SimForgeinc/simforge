@@ -566,10 +566,24 @@ class CarlaBackend:
                 setattr(settings, field, target)
                 streaming[field] = target
         self.world.apply_settings(settings)
+        # Verify the runtime accepted the deterministic stepping contract.
+        # Wall-clock probes right after load_world are unreliable (the client
+        # snapshot cache lags and post-load streaming can tick the engine), so
+        # the readback check lives here and the per-tick frame-continuity
+        # guard in tick() catches any engine that keeps ticking itself.
+        applied = self.world.get_settings()
+        applied_mode = bool(getattr(applied, "synchronous_mode", False))
+        applied_delta = getattr(applied, "fixed_delta_seconds", None)
+        if not applied_mode or applied_delta is None or abs(float(applied_delta) - fixed_timestep_s) > 1e-9:
+            raise RuntimeError(
+                f"CARLA runtime did not accept synchronous {fixed_timestep_s:g}s stepping: "
+                f"synchronous_mode={applied_mode} fixed_delta_seconds={applied_delta}"
+            )
         self.streaming_evidence = {
             "available": True,
             "settings": streaming,
             "spectatorFollow": "pending",
+            "appliedFixedDeltaS": float(applied_delta),
         }
 
     def _ground_elevation(self, x: float, y_carla: float, authored_z: float) -> tuple[float, str]:
@@ -1883,8 +1897,22 @@ class CarlaBackend:
             except Exception:
                 if streaming_evidence is not None:
                     streaming_evidence["spectatorFollow"] = "unavailable"
+        previous_frame = getattr(self, "last_carla_frame", None)
         carla_frame = int(self.world.tick())
         self.last_carla_frame = carla_frame
+        if previous_frame is not None and carla_frame != previous_frame + 1:
+            # The CARLA 0.10 UE5 runtime can keep ticking itself while a
+            # populated world sits in synchronous mode, silently inflating
+            # simulated time (measured 2x on a leaky server). Every
+            # un-commanded engine tick advances physics the plan never
+            # scheduled — vehicles overshoot their trajectories and impacts
+            # carry multiplied energy — so a broken tick barrier is fatal
+            # instead of rendering wrong physics.
+            raise RuntimeError(
+                "CARLA synchronous tick barrier is broken: commanded tick advanced "
+                f"the engine from frame {previous_frame} to {carla_frame} "
+                f"({carla_frame - previous_frame - 1} un-commanded engine tick(s))"
+            )
         if self.current_plan_frame is not None:
             self.carla_to_plan_frame[carla_frame] = self.current_plan_frame
         check()

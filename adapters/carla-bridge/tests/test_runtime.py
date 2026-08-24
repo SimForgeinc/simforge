@@ -3104,3 +3104,63 @@ def test_static_actor_is_frozen_only_after_its_own_settle_never_mid_fall():
     assert parked.physics is False
     assert report["ticks"] >= parked.frozen_at_tick
     assert report["residuals"]["parked"]["verticalMps"] == 0.0
+
+
+def _stepping_backend(accepts_delta):
+    class Settings:
+        synchronous_mode = False
+        fixed_delta_seconds = None
+        no_rendering_mode = True
+    class Map:
+        name = "fixture"
+        def to_opendrive(self): return "<OpenDRIVE/>"
+    class World:
+        def __init__(self):
+            self.settings = Settings()
+        def get_map(self): return Map()
+        def get_settings(self): return self.settings
+        def apply_settings(self, settings):
+            if not accepts_delta:
+                # A runtime that silently refuses the deterministic step.
+                settings.fixed_delta_seconds = None
+            self.settings = settings
+    class Client:
+        def __init__(self): self.world = World()
+        def set_timeout(self, value): pass
+        def get_available_maps(self): return ["/Game/Carla/Maps/fixture"]
+        def load_world(self, name): return self.world
+    backend = object.__new__(CarlaBackend)
+    backend.carla = type("Carla", (), {})
+    backend.client = Client()
+    backend.world = None
+    return backend
+
+
+def test_load_opendrive_verifies_the_stepping_contract_readback():
+    honored = _stepping_backend(accepts_delta=True)
+    honored.load_opendrive("fixture", b"<OpenDRIVE/>", 0.02)
+    assert honored.streaming_evidence["appliedFixedDeltaS"] == pytest.approx(0.02)
+
+    refused = _stepping_backend(accepts_delta=False)
+    with pytest.raises(RuntimeError, match="did not accept synchronous 0.02s stepping"):
+        refused.load_opendrive("fixture", b"<OpenDRIVE/>", 0.02)
+
+
+def test_tick_fails_closed_when_the_engine_ticks_itself():
+    class World:
+        def __init__(self): self.frames = iter((100, 101, 105))
+        def tick(self): return next(self.frames)
+    backend = object.__new__(CarlaBackend)
+    backend.world = World()
+    backend.actors = {}
+    backend.sensor_condition = Condition(Lock())
+    backend.sensor_error = None
+    backend.sensor_pending = {}
+    backend.last_carla_frame = None
+    backend.current_plan_frame = None
+    backend.carla_to_plan_frame = {}
+    backend.streaming_primary_actor_id = None
+    assert backend.tick() == {}
+    assert backend.tick() == {}
+    with pytest.raises(RuntimeError, match="3 un-commanded engine tick"):
+        backend.tick()
