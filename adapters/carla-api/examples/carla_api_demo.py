@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""CARLA-API-only demo against UniScenarios.
+"""CARLA-API-only demo against SimForge.
 
-Uses ONLY the ``carla`` API surface (via the uniscenarios-carla facade):
+Uses ONLY the ``carla`` API surface (via the simforge-carla-api facade):
 spawn the ego by role name, set autopilot off, attach an RGB camera, tick 200
 synchronous steps, save 10 camera frames, and read waypoints along the route.
 
 Prerequisites (environment, not code — like a CARLA host/port):
     export UNISCENARIO_EPISODES=examples/episodes-baseline-midblock.json
     export SCEN_DEV_ASSETS=.dev-assets            # flat map-artifact layout
-    # frames need a running UniScenarios Studio viewer (default :5199)
+    # frames need a running SimForge Studio viewer (default :5199)
 
 Run:
     .venv/bin/python examples/carla_api_demo.py

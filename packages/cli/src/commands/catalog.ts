@@ -32,7 +32,7 @@ export async function catalogCreate(options: CatalogCreateOptions): Promise<numb
   const payload = catalogSummary(catalog, path.resolve(options.out));
   if (options.pretty) {
     emitLines([
-      `UniScenarios catalog ${catalog.catalogDigest}`,
+      `SimForge catalog ${catalog.catalogDigest}`,
       `${catalog.slots.length} deterministic authored designs: ${catalog.contract.slotsPerMap} × ${catalog.contract.supportedMaps.length} maps`,
       `progress: authored=${catalog.progress.authored}, generated=${catalog.progress.generated}, simulated=${catalog.progress.simulated}, rendered=${catalog.progress.rendered}, visually-accepted=${catalog.progress.visuallyAccepted}`,
       `manifest: ${path.resolve(options.out)}`,

@@ -1,11 +1,11 @@
-"""UniScenariosVector: batch API semantics and cross-run determinism."""
+"""SimForgeVector: batch API semantics and cross-run determinism."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from uniscenarios_gym import UniScenariosVector
+from simforge_gym import SimForgeVector
 
 from conftest import server_cmd  # noqa: F401 - re-exported fixture
 
@@ -13,13 +13,13 @@ N_ENVS = 4
 
 
 @pytest.fixture()
-def vec(spec: str, server_cmd: tuple[str, ...]) -> UniScenariosVector:
-    vector = UniScenariosVector(spec, N_ENVS, server_command=server_cmd)
+def vec(spec: str, server_cmd: tuple[str, ...]) -> SimForgeVector:
+    vector = SimForgeVector(spec, N_ENVS, server_command=server_cmd)
     yield vector
     vector.close()
 
 
-def _rollout(vector: UniScenariosVector) -> tuple[np.ndarray, np.ndarray]:
+def _rollout(vector: SimForgeVector) -> tuple[np.ndarray, np.ndarray]:
     """One deterministic scripted rollout; returns (rewards, final states)."""
     obs, infos = vector.reset(seeds=[f"seed-{i}" for i in range(N_ENVS)])
     assert [info["t_s"] for info in infos] == [0.0] * N_ENVS
@@ -35,7 +35,7 @@ def _rollout(vector: UniScenariosVector) -> tuple[np.ndarray, np.ndarray]:
     return rewards, states
 
 
-def test_vector_shapes_and_batch_round_trip(vec: UniScenariosVector) -> None:
+def test_vector_shapes_and_batch_round_trip(vec: SimForgeVector) -> None:
     obs, _ = vec.reset(seeds=["a", "b", "c", "d"])
     assert obs["state_vector"].shape == (N_ENVS, 10)
     assert obs["objects"].shape == (N_ENVS, 64, 5)
@@ -49,14 +49,14 @@ def test_vector_shapes_and_batch_round_trip(vec: UniScenariosVector) -> None:
 
 def test_batched_steps_are_deterministic_across_runs(spec: str, server_cmd: tuple[str, ...]) -> None:
     """Same seeds + action stream on two fresh servers → identical episodes."""
-    with UniScenariosVector(spec, N_ENVS, server_command=server_cmd) as first:
+    with SimForgeVector(spec, N_ENVS, server_command=server_cmd) as first:
         rewards_a, states_a = _rollout(first)
-    with UniScenariosVector(spec, N_ENVS, server_command=server_cmd) as second:
+    with SimForgeVector(spec, N_ENVS, server_command=server_cmd) as second:
         rewards_b, states_b = _rollout(second)
     np.testing.assert_array_equal(rewards_a, rewards_b)
     np.testing.assert_array_equal(states_a, states_b)
 
 
-def test_rejects_wrong_action_count(vec: UniScenariosVector) -> None:
+def test_rejects_wrong_action_count(vec: SimForgeVector) -> None:
     with pytest.raises(ValueError):
         vec.step([{"target_speed_mps": 9.0}] * (N_ENVS - 1))

@@ -15,7 +15,7 @@ import type { MapSources } from "@simforge/maps";
 import type { MapTopologyIndex } from "@simcloud/shared/map-topology/types";
 import type { CityManifestDocument } from "./city-manifest";
 
-import mapIntelPackageJson from "../../../../../../packages/maps/package.json";
+import mapIntelPackageJson from "../../../../../packages/maps/package.json";
 
 /**
  * Build receipts record the exact version of the workspace package that the

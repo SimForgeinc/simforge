@@ -1,8 +1,8 @@
-# uniscenarios-carla — CARLA-compatible API facade
+# simforge-carla-api — CARLA-compatible API facade
 
 A thin Python `carla`-API facade so CARLA-ecosystem tools run against
-UniScenarios **unmodified at the call sites** (`import carla` resolves to the
-shim package installed next to `uniscenarios_carla`). There is no CARLA server
+SimForge **unmodified at the call sites** (`import carla` resolves to the
+shim package installed next to `simforge_carla_api`). There is no CARLA server
 and no real carla package underneath; everything maps onto:
 
 - **the env-server** (`packages/training-env`, framed msgpack wire protocol) for
@@ -30,7 +30,7 @@ uv venv && uv pip install -e '.[dev]' pillow   # pillow only to decode frames
 | `UNISCENARIO_DEV_ASSETS` | dev-assets root holding `<map>/browser/topology-index.json.gz` |
 | `UNISCENARIO_STUDIO_URL` | Studio viewer URL for frame rendering (default `http://localhost:5199/`) |
 | `UNISCENARIO_FRAMES` | `off` disables camera frames (sensors attach but never fire) |
-| `UNISCENARIO_FRAME_CACHE` | cache dir for rendered clips (default `/tmp/uniscenarios-carla-frames`) |
+| `UNISCENARIO_FRAME_CACHE` | cache dir for rendered clips (default `/tmp/simforge-carla-api-frames`) |
 | `UNISCENARIO_ENV_SERVER` | override the env-server launch command |
 
 ## Example
@@ -78,7 +78,7 @@ divergence/approximation · **stub** = accepted but inert · **no** = raises
 | `client.get_available_maps()` | yes | dev-assets map inventory (`<map>/bundle.json`) |
 | `client.load_world` / `reload_world` | yes | NEW env-server session on that map: spec materialized from the instance catalog (+ explicit topology); optional `weather=` / `traffic=` baked into operationalConditions |
 | `client.apply_batch_sync`, `start_recorder`, `stop_recorder` | no | no batch/recorder surface on this engine |
-| `client.get_trafficmanager(port)` | partial | TrafficManager-shaped handle over ambient-traffic config: speed/distance globals (recorded), per-vehicle registration (stub), sync mode no-op; everything else raises `NotImplementedError`. See `uniscenarios_carla/trafficmanager.py` |
+| `client.get_trafficmanager(port)` | partial | TrafficManager-shaped handle over ambient-traffic config: speed/distance globals (recorded), per-vehicle registration (stub), sync mode no-op; everything else raises `NotImplementedError`. See `simforge_carla_api/trafficmanager.py` |
 | `world.get_settings` / `apply_settings` | partial | synchronous mode only (determinism contract); `fixed_delta_seconds` must equal `1/decision_hz` |
 | `world.tick()` / `wait_for_tick` | yes | one decision step; returns `WorldSnapshot(id, timestamp)`; async mode does not exist |
 | `world.get_snapshot()` | partial | id + engine time only; no platform clock/gameplay clock split |
@@ -106,7 +106,7 @@ so. `spawn_actor` therefore *binds* a handle to an authored actor by
 | `world.get_blueprint_library().filter/find` | yes | catalog derived from authored roles + sensor entries |
 | `world.spawn_actor(bp, tf)` vehicle/walker | partial | binds to authored actor via `role_name`; `transform` ignored (engine pose wins); unknown roles raise |
 | `world.try_spawn_actor` | yes | same semantics |
-| `vehicle.get_physics_control()` | yes | `VehiclePhysicsControl` from sim-engine class profiles (`dynamic-v1.ts`) + per-actor `input.physics.vehicleProfiles` overrides; wheel positions in UE cm with exact longitudinal offsets (wheelbase) — see `uniscenarios_carla/physics.py` |
+| `vehicle.get_physics_control()` | yes | `VehiclePhysicsControl` from sim-engine class profiles (`dynamic-v1.ts`) + per-actor `input.physics.vehicleProfiles` overrides; wheel positions in UE cm with exact longitudinal offsets (wheelbase) — see `simforge_carla_api/physics.py` |
 | `vehicle.set_target_velocity(v)` | yes | env-server speed intent (`targetSpeedMps`): world-frame velocity projected onto the forward axis; engine speed controller drives toward it; a queued `VehicleControl` takes precedence |
 | `vehicle.set_autopilot(on, port)` | stub | recorded on the handle + TrafficManager registry; ambient road users are engine-generated, authored choreography persists |
 | `walker.apply_control` | no | pedestrian motion is authored choreography |

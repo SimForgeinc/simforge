@@ -1,8 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -16,14 +20,42 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["./*"],
-      "@simcloud/shared": ["./app/lib/simcloud-shared/index.ts"],
-      "@simcloud/shared/uniscenario-render-control": ["./app/lib/simcloud-shared/uniscenario-render-control.ts"],
-      "@simcloud/shared/*": ["./app/lib/simcloud-shared/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@simcloud/shared": [
+        "./app/lib/simcloud-shared/index.ts"
+      ],
+      "@simcloud/shared/uniscenario-render-control": [
+        "./app/lib/simcloud-shared/uniscenario-render-control.ts"
+      ],
+      "@simcloud/shared/*": [
+        "./app/lib/simcloud-shared/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  "exclude": ["node_modules", "worker", "test-only", "**/*.test.ts", "**/*.test.tsx", "**/__tests__/**", "**/*.cli.ts", "app/lib/simcloud-shared/auth", "app/lib/simcloud-shared/bin"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "worker",
+    "test-only",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**",
+    "**/*.cli.ts",
+    "app/lib/simcloud-shared/auth",
+    "app/lib/simcloud-shared/bin"
+  ]
 }

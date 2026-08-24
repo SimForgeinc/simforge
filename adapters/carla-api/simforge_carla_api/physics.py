@@ -7,7 +7,7 @@ two things from ``get_physics_control()``:
   divided by 100 → metres;
 - **max_steer_angle** — max over the two front wheels, degrees.
 
-Mapping onto UniScenarios (documented for the consumer):
+Mapping onto SimForge (documented for the consumer):
 
 - The engine's per-class dynamics presets live in
   ``packages/engine/src/sim/dynamic-v1.ts`` (ACTOR_PHYSICS_PROFILES);

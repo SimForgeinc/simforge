@@ -1,5 +1,5 @@
 /**
- * `uniscenarios schemas [--name <id>] [--content]` — the LLM emission contract.
+ * `simforge schemas [--name <id>] [--content]` — the LLM emission contract.
  *
  * The three v2 JSON Schemas plus the engine's `SimScenarioInput` are the whole
  * interface a generating model has to hit. Printing their *paths* by default
@@ -25,7 +25,7 @@ import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
 import { REPO_ROOT } from '@simforge/compiler';
 
-const MODEL_PKG = path.join(REPO_ROOT, 'packages', 'scenario-model');
+const MODEL_PKG = path.join(REPO_ROOT, 'packages', 'scenario');
 
 export interface SchemaEntry {
   readonly name: string;

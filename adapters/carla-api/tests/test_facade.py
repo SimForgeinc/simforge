@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from uniscenarios_carla import Location, Transform, VehicleControl
-from uniscenarios_carla._lanegraph import LaneGraphLite, load_topology_index
-from uniscenarios_carla.blueprint import default_blueprint_library
+from simforge_carla_api import Location, Transform, VehicleControl
+from simforge_carla_api._lanegraph import LaneGraphLite, load_topology_index
+from simforge_carla_api.blueprint import default_blueprint_library
 
 
 @pytest.fixture(scope="module")

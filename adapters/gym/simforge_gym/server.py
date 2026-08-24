@@ -1,11 +1,11 @@
-"""Server lifecycle and framed transports for the UniScenarios env-server.
+"""Server lifecycle and framed transports for the SimForge env-server.
 
 Two transports, matching the server's own:
 
 - ``SocketTransport`` — connect to a unix socket started with ``--socket``.
 - ``StdioTransport`` — spawn the server as a subprocess and speak the same
   framed protocol over its stdin/stdout (the default for
-  :class:`~uniscenarios_gym.env.UniScenariosEnv`).
+  :class:`~simforge_gym.env.SimForgeEnv`).
 """
 
 from __future__ import annotations
@@ -28,17 +28,17 @@ def resolve_server_command(server_command: Sequence[str] | None = None) -> tuple
     """Resolve the server launch command.
 
     Preference order: an explicit command; the installed
-    ``uniscenarios-env-server`` bin; the repo workspace build output.
+    ``simforge-env-server`` bin; the repo workspace build output.
     """
     if server_command is not None:
         return tuple(server_command)
-    installed = shutil.which("uniscenarios-env-server")
+    installed = shutil.which("simforge-env-server")
     if installed:
         return (installed,)
     if _REPO_SERVER_DIST.exists():
         return ("node", str(_REPO_SERVER_DIST))
     raise RuntimeError(
-        "no uniscenarios-env-server found: install @simforge/training-env "
+        "no simforge-env-server found: install @simforge/training-env "
         "(pnpm --filter @simforge/training-env build) or pass server_command"
     )
 

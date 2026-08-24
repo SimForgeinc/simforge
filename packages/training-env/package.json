@@ -16,7 +16,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "uniscenarios-env-server": "./dist/env-server.js"
+    "simforge-env-server": "./dist/env-server.js"
   },
   "exports": {
     ".": {

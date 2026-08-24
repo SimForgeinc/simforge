@@ -241,7 +241,7 @@ def find_dev_assets(explicit: str | None = None) -> Path:
         candidates.append(Path(explicit or os.environ["SCEN_DEV_ASSETS"]))
     repo_root = Path(__file__).resolve().parents[3]
     candidates.append(repo_root / "dev-assets")
-    candidates.append(Path("/home/path/UniScenarios/dev-assets"))
+    candidates.append(Path("/home/path/SimForge/dev-assets"))
     for candidate in candidates:
         if candidate.is_dir() and any(candidate.glob("*/browser/topology-index.json.gz")):
             return candidate.resolve()

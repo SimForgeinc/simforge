@@ -31,7 +31,7 @@ class WalkerControl:
 class Actor:
     """Base handle for an actor bound to an authored scenario role.
 
-    The UniScenarios engine is authoritative: actors exist because the
+    The SimForge engine is authoritative: actors exist because the
     scenario says so. "Spawning" binds a facade handle to an authored actor;
     transforms come from engine state each tick.
     """
@@ -166,7 +166,7 @@ class Vehicle(Actor):
         """VehiclePhysicsControl from the engine's dynamics profile.
 
         Pure-pursuit consumers read ``wheelbase_m`` and front-wheel
-        ``max_steer_angle``; see uniscenarios_carla/physics.py for the exact
+        ``max_steer_angle``; see simforge_carla_api/physics.py for the exact
         mapping from sim-engine's ACTOR_PHYSICS_PROFILES and any per-actor
         ``input.physics.vehicleProfiles`` overrides.
         """

@@ -17,7 +17,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
 
-const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'uniscenarios.js');
+const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
 const haveArtifacts = existsSync(path.join(DEV_ASSETS, 'yale-street'));
 
 interface Run {

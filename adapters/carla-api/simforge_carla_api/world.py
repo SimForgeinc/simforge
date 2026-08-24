@@ -337,7 +337,7 @@ class World:
         Returns an object with ``.location`` (snapped x/y + surface Z) and a
         planar ``.normal``, or None when no lane lies within
         ``search_distance``. Z comes from the source XODR elevation profile
-        of the hit lane's road (see uniscenarios_carla/xodr_surface.py).
+        of the hit lane's road (see simforge_carla_api/xodr_surface.py).
         """
         hit = self._map._graph.nearest_lane((location.x, location.y), max_distance_m=float(search_distance))
         if hit is None:

@@ -1,4 +1,4 @@
-"""TruthStream live subscription client for the UniScenarios env-server.
+"""TruthStream live subscription client for the SimForge env-server.
 
 Consumes the per-engine-tick ground-truth side channel (`subscribe` op): one
 framed-msgpack document per tick carrying a scene-state.v1 actor record set
@@ -42,13 +42,13 @@ def resolve_server_command(server_command: Sequence[str] | None = None) -> tuple
     """Explicit command > installed bin > repo workspace build output."""
     if server_command is not None:
         return tuple(server_command)
-    installed = shutil.which("uniscenarios-env-server")
+    installed = shutil.which("simforge-env-server")
     if installed:
         return (installed,)
     if _REPO_SERVER_DIST.exists():
         return ("node", str(_REPO_SERVER_DIST))
     raise RuntimeError(
-        "no uniscenarios-env-server found: build @simforge/training-env "
+        "no simforge-env-server found: build @simforge/training-env "
         "(pnpm --filter @simforge/training-env build) or pass server_command"
     )
 

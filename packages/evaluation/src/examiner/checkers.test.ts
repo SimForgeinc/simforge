@@ -20,7 +20,7 @@ import { deriveTrueClaims } from './ground-truth.js';
 import { grade } from './grader.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CORPUS_FILE = path.join(HERE, '..', 'fixtures', 'corpus.v1.json');
+const CORPUS_FILE = path.join(HERE, '..', '..', 'fixtures-examiner', 'corpus.v1.json');
 const corpus = JSON.parse(readFileSync(CORPUS_FILE, 'utf8')) as Corpus;
 
 function scenario(idPrefix: string): CorpusScenario {

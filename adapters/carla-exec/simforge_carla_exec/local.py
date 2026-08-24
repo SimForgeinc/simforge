@@ -1,4 +1,4 @@
-"""Local process entry point for the UniScenarios-owned CARLA renderer."""
+"""Local process entry point for the SimForge-owned CARLA renderer."""
 
 from __future__ import annotations
 
@@ -820,7 +820,7 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="uniscenarios-carla")
+    parser = argparse.ArgumentParser(prog="simforge-carla-api")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=2000)
     commands = parser.add_subparsers(dest="command", required=True)

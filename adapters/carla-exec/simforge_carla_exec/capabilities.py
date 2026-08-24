@@ -33,7 +33,7 @@ BRIDGE_CAPABILITIES: dict[str, Capability] = {
     "static.object": Capability("exact", "approximate", "Requires an exact allowlisted blueprint or asset binding."),
     "traffic_signal.state": Capability("exact", "unsupported", "Freeze and control actors resolved by exact OpenDRIVE signal ID."),
     "traffic_signal.flashing": Capability("approximate", "unsupported", "CARLA has no flashing enum; bridge schedules on/off edges."),
-    "traffic_signal.controller_logic": Capability("exact", "unsupported", "UniScenarios evaluates logic; bridge applies resulting head states."),
+    "traffic_signal.controller_logic": Capability("exact", "unsupported", "SimForge evaluates logic; bridge applies resulting head states."),
     "weather": Capability("exact", "approximate", "Public weather parameters are supported after explicit field mapping."),
     "collision.observe": Capability("exact", "approximate", "Passive collision sensors record first-contact frame/time/pair/impulse and segment parity at the contact boundary."),
     **{
@@ -53,7 +53,7 @@ BRIDGE_CAPABILITIES: dict[str, Capability] = {
     ),
     "custom.map.opendrive": Capability("exact", "approximate", "Load identical XODR; visual assets need a packaged custom map."),
     "custom.prop.procedural": Capability("unsupported", "unsupported", "Reject until a catalog asset is explicitly bound."),
-    "occlusion.metric": Capability("exact", "unsupported", "UniScenarios evaluates the metric; CARLA sensor evidence is supplementary."),
+    "occlusion.metric": Capability("exact", "unsupported", "SimForge evaluates the metric; CARLA sensor evidence is supplementary."),
 }
 
 if set(NATIVE_SENSOR_BLUEPRINTS) != set(SENSOR_MODALITIES) or set(SENSOR_FORMATS) != set(SENSOR_MODALITIES):

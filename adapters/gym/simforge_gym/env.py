@@ -1,6 +1,6 @@
 """Gymnasium ``Env`` over one env-server session.
 
-The default transport spawns ``uniscenarios-env-server`` as a subprocess and
+The default transport spawns ``simforge-env-server`` as a subprocess and
 speaks the framed msgpack protocol over stdio; pass ``socket_path`` to attach
 to an already-running server instead. ``backend="ts"`` names the TypeScript
 sim-engine server and is currently the only backend (the enum value is
@@ -32,8 +32,8 @@ MAX_OBJECTS = 64
 OBJECT_FEATURES = 5
 
 
-class UniScenariosEnv(gym.Env):
-    """One UniScenarios episode stream served by ``uniscenarios-env-server``.
+class SimForgeEnv(gym.Env):
+    """One SimForge episode stream served by ``simforge-env-server``.
 
     Observations are a dict:
 

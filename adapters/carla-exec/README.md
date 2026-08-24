@@ -1,7 +1,7 @@
-# UniScenarios CARLA bridge
+# SimForge CARLA bridge
 
-`uniscenarios-carla-bridge` is the public CARLA renderer and sensor adapter
-owned by UniScenarios. It consumes `uniscenario.render-intent/v1` plus a
+`simforge-carla-exec` is the public CARLA renderer and sensor adapter
+owned by SimForge. It consumes `uniscenario.render-intent/v1` plus a
 hash-closed local input package; the managed worker retains only leases,
 fencing, authorization, and transfer. The package owns OpenSCENARIO 1.4
 compilation, deterministic native execution, RGB/depth/semantic/instance/
@@ -35,14 +35,14 @@ Start CARLA, then verify the client/server connection without mutating its
 world:
 
 ```sh
-uniscenarios-carla --host 127.0.0.1 --port 2000 probe
+simforge-carla-api --host 127.0.0.1 --port 2000 probe
 ```
 
 The unified Node CLI dispatches `--engine carla` to this installed process
 adapter:
 
 ```sh
-uniscenarios-carla --host 127.0.0.1 --port 2000 run-intent \
+simforge-carla-api --host 127.0.0.1 --port 2000 run-intent \
   --intent render-intent.json \
   --package input-package.json \
   --output output/carla \

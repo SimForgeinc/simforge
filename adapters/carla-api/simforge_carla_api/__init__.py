@@ -1,7 +1,7 @@
-"""uniscenarios_carla — a CARLA-compatible Python API facade.
+"""simforge_carla_api — a CARLA-compatible Python API facade.
 
 Maps the subset of the ``carla`` client API that CARLA-ecosystem tools
-actually use (see README coverage matrix) onto the UniScenarios env-server
+actually use (see README coverage matrix) onto the SimForge env-server
 and its render path. Import this package directly, or use the drop-in
 ``carla`` shim package installed alongside it.
 """

@@ -166,7 +166,7 @@ export async function locationsGet(options: LocationsGetOptions): Promise<number
     throw new CliError('unknown_reference', `no location "${options.ref}" on ${options.mapId}`, {
       path: 'ref',
       detail: {
-        hint: 'use `uniscenarios locations resolve` for free text, or `uniscenarios locations find` to browse',
+        hint: 'use `simforge locations resolve` for free text, or `simforge locations find` to browse',
       },
     });
   }

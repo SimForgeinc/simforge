@@ -19,7 +19,7 @@ import { EXTRACTION_SYSTEM_PROMPT, scenarioContextLine } from './extractor/promp
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const corpus = JSON.parse(
-  readFileSync(path.join(HERE, '..', 'fixtures', 'corpus.v1.json'), 'utf8'),
+  readFileSync(path.join(HERE, '..', '..', 'fixtures-examiner', 'corpus.v1.json'), 'utf8'),
 ) as Corpus;
 
 function scripted(responses: string[]): CompletionFn {
@@ -117,7 +117,7 @@ describe('grader benchmark on known-ground-truth perturbations', () => {
 
   it('the persisted report matches a fresh run', () => {
     const persisted = JSON.parse(
-      readFileSync(path.join(HERE, '..', 'benchmark', 'report.v1.json'), 'utf8'),
+      readFileSync(path.join(HERE, '..', '..', 'benchmark-examiner', 'report.v1.json'), 'utf8'),
     ) as ReturnType<typeof runBenchmark>;
     expect(persisted.totals.recall).toBe(report.totals.recall);
     expect(persisted.gate.passed).toBe(true);

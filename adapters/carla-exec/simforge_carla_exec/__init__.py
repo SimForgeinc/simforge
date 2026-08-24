@@ -1,4 +1,4 @@
-"""Optional public CARLA execution adapter for UniScenarios."""
+"""Optional public CARLA execution adapter for SimForge."""
 
 from .capabilities import BRIDGE_CAPABILITIES, Capability, assess_scenario_runner_1_0, native_sensor_capabilities
 from .runtime import (

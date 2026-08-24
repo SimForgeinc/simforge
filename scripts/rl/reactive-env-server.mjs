@@ -2,7 +2,7 @@
 /**
  * reactive-env-server — Phase 3 training shim over @simforge/training-env.
  *
- * The stock `uniscenarios-env-server` does not expose RunOptions, so reactive
+ * The stock `simforge-env-server` does not expose RunOptions, so reactive
  * ambient traffic (RunOptions.ambientReactivity = 'reactive') and BEV
  * observation geometry cannot be enabled through it. This shim imports the
  * published dist surface (loadEpisodeSpec, EnvSession, wire codecs, socket

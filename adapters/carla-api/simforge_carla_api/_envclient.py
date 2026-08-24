@@ -1,4 +1,4 @@
-"""Framed msgpack client for the UniScenarios env-server.
+"""Framed msgpack client for the SimForge env-server.
 
 Mirrors the wire protocol of ``adapters/gym``: 4-byte
 little-endian length prefix + msgpack document. The facade spawns the server
@@ -25,7 +25,7 @@ _HEADER = struct.Struct("<I")
 _REPO_SERVER_DIST = Path(__file__).resolve().parents[3] / "packages" / "rl-env" / "dist" / "env-server.js"
 
 #: A sibling pristine checkout (this worktree may not have a build).
-_MAIN_SERVER_DIST = Path("/home/path/UniScenarios/packages/training-env/dist/env-server.js")
+_MAIN_SERVER_DIST = Path("/home/path/SimForge/packages/training-env/dist/env-server.js")
 
 
 class ProtocolError(RuntimeError):
@@ -42,7 +42,7 @@ def resolve_server_command(server_command=None) -> tuple[str, ...]:
     override = os.environ.get("UNISCENARIO_ENV_SERVER")
     if override:
         return tuple(override.split(" "))
-    installed = shutil.which("uniscenarios-env-server")
+    installed = shutil.which("simforge-env-server")
     if installed:
         return (installed,)
     if _REPO_SERVER_DIST.exists():
@@ -50,7 +50,7 @@ def resolve_server_command(server_command=None) -> tuple[str, ...]:
     if _MAIN_SERVER_DIST.exists():
         return ("node", str(_MAIN_SERVER_DIST))
     raise RuntimeError(
-        "no uniscenarios-env-server found: install @simforge/training-env "
+        "no simforge-env-server found: install @simforge/training-env "
         "(pnpm --filter @simforge/training-env build), set UNISCENARIO_ENV_SERVER, "
         "or pass server_command"
     )

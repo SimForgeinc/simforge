@@ -1,4 +1,4 @@
-"""Wire protocol for the UniScenarios env-server.
+"""Wire protocol for the SimForge env-server.
 
 Framing: every message is a 4-byte little-endian unsigned length prefix
 followed by one msgpack document. Observation payloads ride as packed

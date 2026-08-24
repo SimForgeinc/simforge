@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { PROP_ALIAS_TARGETS, PROP_DIMS, isKnownPropCatalogId, propBehavior, propDims } from '../prop-dims.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const catalogJsonPath = resolve(here, '..', '..', '..', 'prop-catalog', 'catalog.json');
+const catalogJsonPath = resolve(here, '..', '..', '..', 'asset-catalog', 'catalog.json');
 
 interface CatalogEntryJson {
   id: string;

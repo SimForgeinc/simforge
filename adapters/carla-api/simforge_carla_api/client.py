@@ -1,4 +1,4 @@
-"""``carla.Client`` facade: connects to one UniScenarios env-server."""
+"""``carla.Client`` facade: connects to one SimForge env-server."""
 
 from __future__ import annotations
 
@@ -128,10 +128,10 @@ class Client:
         """Accepted for API compatibility; requests are synchronous."""
 
     def get_server_version(self) -> str:
-        return f"uniscenarios-env-server proto {ENV_SERVER_PROTOCOL_VERSION}"
+        return f"simforge-env-server proto {ENV_SERVER_PROTOCOL_VERSION}"
 
     def get_client_version(self) -> str:
-        return "uniscenarios-carla-compat 0.1.0"
+        return "simforge-carla-api-compat 0.1.0"
 
     def get_world(self):
         from .world import World
@@ -141,7 +141,7 @@ class Client:
         return self._world
 
     def get_available_maps(self) -> list[str]:
-        """Dev-assets map inventory (see uniscenarios_carla/maps.py)."""
+        """Dev-assets map inventory (see simforge_carla_api/maps.py)."""
         from .maps import available_maps
 
         return [m.map_id for m in available_maps(self._dev_assets_root)]
@@ -233,7 +233,7 @@ class Client:
         mode = os.environ.get("UNISCENARIO_FRAMES", "browser").lower()
         if mode == "off" or scenario.trace_path is None:
             return NullFrameSource()
-        cache = os.environ.get("UNISCENARIO_FRAME_CACHE") or "/tmp/uniscenarios-carla-frames"
+        cache = os.environ.get("UNISCENARIO_FRAME_CACHE") or "/tmp/simforge-carla-api-frames"
         workdir = Path(cache) / Path(scenario.instance_path).stem
         return BrowserClipFrameSource(
             scenario.instance_path, scenario.trace_path, str(workdir),

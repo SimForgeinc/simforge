@@ -1,6 +1,6 @@
 """Synchronous vectorized client driving one server's batch API.
 
-``UniScenariosVector`` owns one env-server process with N sessions and maps
+``SimForgeVector`` owns one env-server process with N sessions and maps
 every ``step()`` onto a single ``batch_step`` round trip — K actions in, K
 results back, one transport cost per batch.
 """
@@ -24,8 +24,8 @@ from .server import EnvConnection, StdioTransport, resolve_server_command
 Action = Mapping[str, Any] | None
 
 
-class UniScenariosVector:
-    """Synchronous vector of N UniScenarios episodes on one server process."""
+class SimForgeVector:
+    """Synchronous vector of N SimForge episodes on one server process."""
 
     def __init__(
         self,
@@ -84,7 +84,7 @@ class UniScenariosVector:
     def close(self) -> None:
         self.connection.close()
 
-    def __enter__(self) -> "UniScenariosVector":
+    def __enter__(self) -> "SimForgeVector":
         return self
 
     def __exit__(self, *exc: object) -> None:

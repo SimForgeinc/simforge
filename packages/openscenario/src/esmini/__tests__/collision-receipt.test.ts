@@ -5,7 +5,7 @@ import { ESMINI_PIN } from '../pin.js';
 describe('pinned real collision receipt', () => {
   it('is digest-closed, within one fixed step, and honest about unobservable signal semantics', async () => {
     const receipt = JSON.parse(await readFile(
-      new URL('../../evidence/esmini-3.6.0-collision-receipt.json', import.meta.url),
+      new URL('../../../evidence-esmini/esmini-3.6.0-collision-receipt.json', import.meta.url),
       'utf8',
     )) as Record<string, any>;
     expect(receipt.schema).toBe('uniscenarios.esmini-collision-receipt/v1');

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * uniscenarios-env-server — deterministic env-server for Gymnasium clients.
+ * simforge-env-server — deterministic env-server for Gymnasium clients.
  *
  * Spins N in-process {@link EnvSession}s loaded from an episode spec and
  * serves reset/step traffic over length-prefixed msgpack frames (4-byte
@@ -711,10 +711,10 @@ function parseArgs(argv: readonly string[]): CliFlags {
 }
 
 function printUsage(): void {
-  process.stdout.write(`uniscenarios-env-server — framed msgpack env-server
+  process.stdout.write(`simforge-env-server — framed msgpack env-server
 
 Usage:
-  uniscenarios-env-server --episodes <spec.json> [--socket <path>] [--decision-hz N]
+  simforge-env-server --episodes <spec.json> [--socket <path>] [--decision-hz N]
                           [--obs state-vector,objects,bev] [--clip-seconds S]
                           [--max-decisions K]
 
@@ -754,7 +754,7 @@ export async function main(argv: readonly string[]): Promise<void> {
       listener.once('error', reject);
     });
     // Readiness line for supervisors that launch us as a subprocess.
-    process.stdout.write(`uniscenarios-env-server listening on ${flags.socket}\n`);
+    process.stdout.write(`simforge-env-server listening on ${flags.socket}\n`);
   } else {
     serveStdio(server);
   }

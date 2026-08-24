@@ -22,14 +22,14 @@ def server_command() -> tuple[str, ...]:
         return ("node", str(SERVER_DIST))
     if TSX.exists() and SERVER_SRC.exists():
         return (str(TSX), str(SERVER_SRC))
-    installed = shutil.which("uniscenarios-env-server")
+    installed = shutil.which("simforge-env-server")
     if installed:
         return (installed,)
-    raise RuntimeError("no uniscenarios-env-server available: build @simforge/training-env first")
+    raise RuntimeError("no simforge-env-server available: build @simforge/training-env first")
 
 
 def _server_available() -> bool:
-    return SERVER_DIST.exists() or (TSX.exists() and SERVER_SRC.exists()) or shutil.which("uniscenarios-env-server") is not None
+    return SERVER_DIST.exists() or (TSX.exists() and SERVER_SRC.exists()) or shutil.which("simforge-env-server") is not None
 
 
 if not _server_available():  # pragma: no cover - environment guard

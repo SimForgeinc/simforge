@@ -76,7 +76,7 @@ const GLOBAL_BOOLEANS = ['pretty', 'help'];
 
 function usage(pretty: boolean): number {
   const payload = {
-    bin: 'uniscenarios',
+    bin: 'simforge',
     exitCodes: { 0: 'ok', 1: 'command error', 2: 'validation findings' },
     commands: COMMANDS,
     maps: availableMaps(),
@@ -677,7 +677,8 @@ export async function run(argv: readonly string[]): Promise<number> {
 const invokedDirectly =
   process.argv[1] !== undefined &&
   (process.argv[1].endsWith('main.ts') ||
-    process.argv[1].endsWith('scen.js') ||
+    process.argv[1].endsWith('simforge.js') ||
+    process.argv[1].endsWith('sf.js') ||
     process.argv[1].endsWith('uniscenarios.js'));
 
 if (invokedDirectly) {

@@ -17,11 +17,11 @@ import xml.etree.ElementTree as ET
 import pytest
 import urllib.error
 
-from uniscenarios_carla_bridge.runtime import transport as artifact_transport
-from uniscenarios_carla_bridge.runtime import compiler as worker_compiler
-from uniscenarios_carla_bridge.runtime import executor as worker_runner
-from uniscenarios_carla_bridge.runtime import validation as worker_validation
-from uniscenarios_carla_bridge.runtime.backend import (
+from simforge_carla_exec.runtime import transport as artifact_transport
+from simforge_carla_exec.runtime import compiler as worker_compiler
+from simforge_carla_exec.runtime import executor as worker_runner
+from simforge_carla_exec.runtime import validation as worker_validation
+from simforge_carla_exec.runtime.backend import (
     SIGNAL_LAMP_BY_INDICATION,
     VEHICLE_DOOR_MEMBERS,
     VEHICLE_LIGHT_BITS,
@@ -29,7 +29,7 @@ from uniscenarios_carla_bridge.runtime.backend import (
     resolve_signal_lamp,
     runtime_asset_bindings,
 )
-from uniscenarios_carla_bridge.runtime.compiler import (
+from simforge_carla_exec.runtime.compiler import (
     SIGNAL_INDICATIONS,
     VEHICLE_COMPONENT_TYPES,
     VEHICLE_LIGHT_TYPES,
@@ -39,11 +39,11 @@ from uniscenarios_carla_bridge.runtime.compiler import (
     PlanFrame,
     compile_xosc14,
 )
-from uniscenarios_carla_bridge.runtime.contract import ContractError, OFFICIAL_XSD_SHA256, canonical_json, canonical_sha256, parse_lease
-from uniscenarios_carla_bridge.runtime.parity import ParityAccumulator
-from uniscenarios_carla_bridge.runtime.materialized_traffic import merge_materialized_traffic, parse_materialized_traffic
-from uniscenarios_carla_bridge.runtime.executor import CancellationRequested, LeaseDeadlineExceeded, execute_lease
-from uniscenarios_carla_bridge.runtime.validation import validate_xosc14
+from simforge_carla_exec.runtime.contract import ContractError, OFFICIAL_XSD_SHA256, canonical_json, canonical_sha256, parse_lease
+from simforge_carla_exec.runtime.parity import ParityAccumulator
+from simforge_carla_exec.runtime.materialized_traffic import merge_materialized_traffic, parse_materialized_traffic
+from simforge_carla_exec.runtime.executor import CancellationRequested, LeaseDeadlineExceeded, execute_lease
+from simforge_carla_exec.runtime.validation import validate_xosc14
 
 
 def artifact_bytes(body: bytes | Path) -> bytes:
@@ -2195,14 +2195,14 @@ def test_duration_and_output_budgets_fail_before_expensive_allocation(monkeypatc
 
 
 def test_worker_validator_pins_official_schema_and_rejects_invalid_xml():
-    xsd = Path(__file__).parents[1] / "uniscenarios_carla_bridge" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     assert digest(xsd.read_bytes()) == OFFICIAL_XSD_SHA256
     with pytest.raises(ContractError, match="XSD validation failed"):
         validate_xosc14(b"<OpenSCENARIO/>", xsd)
 
 
 def test_validator_rejects_entity_expansion_without_starting_xmllint(monkeypatch):
-    xsd = Path(__file__).parents[1] / "uniscenarios_carla_bridge" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     monkeypatch.setattr(worker_validation.subprocess, "run", lambda *_args, **_kwargs: pytest.fail("xmllint must not start"))
     payload = b'<!DOCTYPE x [<!ENTITY boom "boom">]><OpenSCENARIO>&boom;</OpenSCENARIO>'
     with pytest.raises(ContractError, match="DTD and entity declarations"):
@@ -2211,7 +2211,7 @@ def test_validator_rejects_entity_expansion_without_starting_xmllint(monkeypatch
 
 @pytest.mark.parametrize("encoding", ["utf-16", "utf-16-le", "utf-16-be", "utf-32"])
 def test_validator_rejects_non_utf8_dtd_before_any_parser(monkeypatch, encoding):
-    xsd = Path(__file__).parents[1] / "uniscenarios_carla_bridge" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     monkeypatch.setattr(worker_validation.subprocess, "run", lambda *_args, **_kwargs: pytest.fail("xmllint must not start"))
     payload = '<!DoCtYpE x [<!EnTiTy boom "boom">]><OpenSCENARIO>&boom;</OpenSCENARIO>'.encode(encoding)
     with pytest.raises(ContractError, match="must be UTF-8"):
@@ -2221,7 +2221,7 @@ def test_validator_rejects_non_utf8_dtd_before_any_parser(monkeypatch, encoding)
 
 
 def test_validator_has_a_bounded_timeout(monkeypatch):
-    xsd = Path(__file__).parents[1] / "uniscenarios_carla_bridge" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     def timeout(*_args, **_kwargs):
         raise subprocess.TimeoutExpired("xmllint", 1)
     monkeypatch.setattr(worker_validation.subprocess, "run", timeout)
@@ -2250,7 +2250,7 @@ def test_asset_allowlist_rejects_ssrf_and_redirect_destinations(monkeypatch):
 
 
 def test_independent_worker_has_no_legacy_runtime_dependency():
-    package = Path(__file__).parents[1] / "uniscenarios_carla_bridge"
+    package = Path(__file__).parents[1] / "simforge_carla_exec"
     forbidden = (
         "WorkerApi",
         "/api/uniscenario/internal",
@@ -2280,7 +2280,7 @@ GOLDEN_DIR = Path(__file__).resolve().parents[3] / "packages/openscenario/confor
 
 def golden(name: str) -> bytes:
     path = GOLDEN_DIR / f"{name}.xosc"
-    assert path.is_file(), f"missing published UniScenarios conformance fixture {path}"
+    assert path.is_file(), f"missing published SimForge conformance fixture {path}"
     return path.read_bytes()
 
 

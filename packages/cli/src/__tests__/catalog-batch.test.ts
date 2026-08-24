@@ -447,7 +447,7 @@ describe('catalog batch ledger', () => {
     await writeFile(catalogFile, `${JSON.stringify(catalog, null, 2)}\n`);
 
     const args = [
-      path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'uniscenarios.js'),
+      path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js'),
       'catalog', 'batch', catalogFile,
       '--ledger', ledgerFile,
       '--slots', slot.identity,

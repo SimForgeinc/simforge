@@ -4,8 +4,8 @@ import hashlib
 
 import pytest
 
-from uniscenarios_carla_bridge import local
-from uniscenarios_carla_bridge.runtime.contract import OFFICIAL_XSD_SHA256
+from simforge_carla_exec import local
+from simforge_carla_exec.runtime.contract import OFFICIAL_XSD_SHA256
 
 
 def test_default_schema_is_bundled_and_digest_pinned() -> None:

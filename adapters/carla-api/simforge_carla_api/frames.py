@@ -76,7 +76,7 @@ class BrowserClipFrameSource:
         if self._started:
             return
         frames_dir = self.workdir / "frames"
-        sidecar = self.workdir / ".uniscenarios-carla-cache.json"
+        sidecar = self.workdir / ".simforge-carla-api-cache.json"
         if sidecar.exists() and frames_dir.is_dir():
             cache = json.loads(sidecar.read_text())
             expected = self._cache_key()
@@ -112,7 +112,7 @@ class BrowserClipFrameSource:
             "--fps", str(self.fps),
             "--size", f"{self.width}x{self.height}",
         ]
-        print(f"[uniscenarios_carla] rendering {self.seconds}s @ {self.fps} fps via browser engine …",
+        print(f"[simforge_carla_api] rendering {self.seconds}s @ {self.fps} fps via browser engine …",
               file=sys.stderr)
         result = subprocess.run(command, cwd=str(self.RENDER_SCRIPT.parents[2]),
                                 capture_output=True, text=True)  # noqa: S603
@@ -120,7 +120,7 @@ class BrowserClipFrameSource:
             tail = "\n".join((result.stdout + result.stderr).splitlines()[-15:])
             raise RuntimeError(f"browser-engine render failed:\n{tail}")
         manifest = json.loads((self.workdir / "manifest.json").read_text())
-        (self.workdir / ".uniscenarios-carla-cache.json").write_text(json.dumps(self._cache_key()))
+        (self.workdir / ".simforge-carla-api-cache.json").write_text(json.dumps(self._cache_key()))
         self._load_cached(frames_dir)
 
     def _load_cached(self, frames_dir: Path) -> None:
