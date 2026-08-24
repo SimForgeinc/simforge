@@ -4,6 +4,33 @@ import path from 'node:path';
 
 const REVISION_PATTERN = /^[0-9a-f]{40}$/u;
 
+const RETIRED_PACKAGE_NAMES = [
+  '@uniscenarios/ambient-traffic',
+  '@uniscenarios/anchor-matcher',
+  '@uniscenarios/browser-renderer',
+  '@uniscenarios/camera-rig',
+  '@uniscenarios/city-renderer',
+  '@uniscenarios/cli',
+  '@uniscenarios/editor-core',
+  '@uniscenarios/editor-ui',
+  '@uniscenarios/esmini-runner',
+  '@uniscenarios/examiner',
+  '@uniscenarios/map-intel',
+  '@uniscenarios/native-renderer',
+  '@uniscenarios/openscenario',
+  '@uniscenarios/playback',
+  '@uniscenarios/policy-eval',
+  '@uniscenarios/prop-catalog',
+  '@uniscenarios/render-runtime',
+  '@uniscenarios/rl-env',
+  '@uniscenarios/scenario-materializer',
+  '@uniscenarios/scenario-model',
+  '@uniscenarios/scene-state',
+  '@uniscenarios/sim-engine',
+  '@uniscenarios/trace-comparator',
+  '@uniscenarios/xodr-tools',
+];
+
 async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));
 }
@@ -73,11 +100,28 @@ function assertCompiledPackage(packageJson) {
   }
 }
 
+function assertRenameManifest(config, packageNames) {
+  const entries = Object.entries(config.renameManifest ?? {});
+  const sources = entries.map(([source]) => source).sort();
+  if (JSON.stringify(sources) !== JSON.stringify(RETIRED_PACKAGE_NAMES)) {
+    throw new Error('renameManifest must map exactly the 24 retired @uniscenarios package names');
+  }
+  for (const [source, target] of entries) {
+    if (typeof target !== 'string') {
+      throw new Error(`renameManifest target for ${source} must be a package or package subpath`);
+    }
+    const targetPackage = target.split('/').slice(0, 2).join('/');
+    if (!packageNames.has(targetPackage)) {
+      throw new Error(`renameManifest target ${target} is outside the 13-package stack`);
+    }
+  }
+}
+
 export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   if (!repoRoot) throw new Error('repoRoot is required');
 
   const config = await readJson(path.join(repoRoot, 'config/simforge-stack.json'));
-  if (config.schema !== 'uniscenarios.stack-config/v1') {
+  if (config.schema !== 'simforge.stack-config/v1') {
     throw new Error(`Unsupported stack config schema: ${String(config.schema)}`);
   }
 
@@ -86,15 +130,27 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
     throw new Error(`source revision must be a full lowercase git SHA: ${revision}`);
   }
 
+  if (!Array.isArray(config.packages) || config.packages.length !== 13) {
+    throw new Error('stack config must contain exactly 13 npm packages');
+  }
+  const configuredNames = new Set(config.packages.map((entry) => entry.name));
+  if (configuredNames.size !== 13) {
+    throw new Error('stack config package names must be unique');
+  }
+  assertRenameManifest(config, configuredNames);
+
   const packages = [];
   const versions = new Map();
   for (const entry of config.packages) {
     const packageJson = await readJson(path.join(repoRoot, entry.path, 'package.json'));
     if (typeof packageJson.name !== 'string' || !packageJson.name.startsWith('@simforge/')) {
-      throw new Error(`${entry.path} must declare an @uniscenarios package name`);
+      throw new Error(`${entry.path} must declare an @simforge package name`);
     }
-    if (typeof packageJson.version !== 'string' || packageJson.version.length === 0) {
-      throw new Error(`${packageJson.name} must declare a version`);
+    if (packageJson.name !== entry.name || packageJson.version !== entry.version) {
+      throw new Error(`${entry.path} identity must equal ${entry.name} ${entry.version}`);
+    }
+    if (packageJson.version !== config.stackVersion) {
+      throw new Error(`${packageJson.name} must use stack version ${config.stackVersion}`);
     }
     if (packageJson.private === true) {
       throw new Error(`${packageJson.name} is private and cannot be part of the public stack`);
@@ -129,7 +185,7 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   }
 
   return {
-    schema: 'uniscenarios.stack/v1',
+    schema: 'simforge.stack/v1',
     stackVersion: config.stackVersion,
     source: {
       repository: config.repository,
@@ -138,6 +194,7 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
     contracts: config.contracts,
     packages,
     pythonPackages: await pythonPackages(repoRoot, config),
+    renameManifest: config.renameManifest,
   };
 }
 

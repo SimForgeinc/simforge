@@ -20,6 +20,15 @@ export const PACKAGE_NAMES = [
   'cli',
 ];
 
+const RETIRED_PACKAGE_NAMES = [
+  'ambient-traffic', 'anchor-matcher', 'browser-renderer', 'camera-rig',
+  'city-renderer', 'cli', 'editor-core', 'editor-ui', 'esmini-runner',
+  'examiner', 'map-intel', 'native-renderer', 'openscenario', 'playback',
+  'policy-eval', 'prop-catalog', 'render-runtime', 'rl-env',
+  'scenario-materializer', 'scenario-model', 'scene-state', 'sim-engine',
+  'trace-comparator', 'xodr-tools',
+].map((name) => `@uniscenarios/${name}`).sort();
+
 const REMOVED_PATHS = [
   'apps/studio',
   'apps/cloud',
@@ -71,6 +80,7 @@ export function verifyRepositoryNaming(root) {
   const errors = [];
   const rootManifest = readJson(join(root, 'package.json'));
   if (rootManifest.name !== 'simforge') errors.push('package.json name must be "simforge"');
+  const stack = readJson(join(root, 'config/simforge-stack.json'));
 
   const actualPackages = readdirSync(join(root, 'packages'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(root, 'packages', entry.name, 'package.json')))
@@ -85,7 +95,7 @@ export function verifyRepositoryNaming(root) {
     if (!existsSync(path)) continue;
     const manifest = readJson(path);
     if (manifest.name !== `@simforge/${name}`) errors.push(`packages/${name}/package.json must be named @simforge/${name}`);
-    if (manifest.version !== '0.1.0-rc.45') errors.push(`packages/${name}/package.json must remain at 0.1.0-rc.45`);
+    if (manifest.version !== stack.stackVersion) errors.push(`packages/${name}/package.json must match stack version ${stack.stackVersion}`);
   }
 
   const studio = readJson(join(root, 'studio', 'package.json'));
@@ -99,12 +109,17 @@ export function verifyRepositoryNaming(root) {
   const expectedBins = { simforge: './bin/simforge.js', sf: './bin/sf.js', uniscenarios: './bin/uniscenarios.js' };
   if (JSON.stringify(cli.bin) !== JSON.stringify(expectedBins)) errors.push('CLI bins must be simforge, sf, and deprecated uniscenarios');
 
-  const stack = readJson(join(root, 'config/simforge-stack.json'));
   if (stack.packages?.length !== 13) errors.push('config/simforge-stack.json must contain 13 packages');
   const stackNames = (stack.packages ?? []).map((item) => item.name).sort();
   const packageNames = PACKAGE_NAMES.map((name) => `@simforge/${name}`).sort();
   if (JSON.stringify(stackNames) !== JSON.stringify(packageNames)) errors.push('stack package names must match the 13-package workspace');
-  if (!stack.renameManifest || Object.keys(stack.renameManifest).length < 23) errors.push('stack renameManifest must cover every former package');
+  for (const item of stack.packages ?? []) {
+    if (item.version !== stack.stackVersion) errors.push(`${item.name} manifest version must match ${stack.stackVersion}`);
+  }
+  const retiredNames = Object.keys(stack.renameManifest ?? {}).sort();
+  if (JSON.stringify(retiredNames) !== JSON.stringify(RETIRED_PACKAGE_NAMES)) {
+    errors.push('stack renameManifest must cover exactly the 24 former packages');
+  }
 
   const legacyImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@uniscenarios\//u;
   for (const path of sourceFiles(root)) {

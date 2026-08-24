@@ -4,7 +4,7 @@
   "description": "Deterministic UniScenarios trace loading, sampling, playback control, map runtime, collider, and browser traffic runtime.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "url": "git+https://github.com/SimForgeinc/SimForge.git",
     "directory": "packages/playback"
   },
   "publishConfig": {

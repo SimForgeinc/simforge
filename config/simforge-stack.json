@@ -10,24 +10,24 @@
     "carlaExecution": "uniscenarios.carla-execution/v1"
   },
   "packages": [
-    { "name": "@simforge/scenario", "path": "packages/scenario", "role": "scenario-format" },
-    { "name": "@simforge/engine", "path": "packages/engine", "role": "simulation-engine" },
-    { "name": "@simforge/maps", "path": "packages/maps", "role": "map-pipeline" },
-    { "name": "@simforge/compiler", "path": "packages/compiler", "role": "scenario-compiler" },
-    { "name": "@simforge/viewer", "path": "packages/viewer", "role": "interactive-viewer" },
-    { "name": "@simforge/editor", "path": "packages/editor", "role": "authoring-core" },
-    { "name": "@simforge/playback", "path": "packages/playback", "role": "playback-runtime" },
-    { "name": "@simforge/asset-catalog", "path": "packages/asset-catalog", "role": "asset-catalog" },
-    { "name": "@simforge/render", "path": "packages/render", "role": "render-runtime" },
-    { "name": "@simforge/openscenario", "path": "packages/openscenario", "role": "openscenario-interop" },
-    { "name": "@simforge/training-env", "path": "packages/training-env", "role": "training-environment" },
-    { "name": "@simforge/evaluation", "path": "packages/evaluation", "role": "evaluation-harness" },
-    { "name": "@simforge/cli", "path": "packages/cli", "role": "command-line-interface" }
+    { "name": "@simforge/scenario", "version": "0.1.0-rc.45", "path": "packages/scenario", "role": "scenario-format" },
+    { "name": "@simforge/engine", "version": "0.1.0-rc.45", "path": "packages/engine", "role": "simulation-engine" },
+    { "name": "@simforge/maps", "version": "0.1.0-rc.45", "path": "packages/maps", "role": "map-pipeline" },
+    { "name": "@simforge/compiler", "version": "0.1.0-rc.45", "path": "packages/compiler", "role": "scenario-compiler" },
+    { "name": "@simforge/viewer", "version": "0.1.0-rc.45", "path": "packages/viewer", "role": "interactive-viewer" },
+    { "name": "@simforge/editor", "version": "0.1.0-rc.45", "path": "packages/editor", "role": "authoring-core" },
+    { "name": "@simforge/playback", "version": "0.1.0-rc.45", "path": "packages/playback", "role": "playback-runtime" },
+    { "name": "@simforge/asset-catalog", "version": "0.1.0-rc.45", "path": "packages/asset-catalog", "role": "asset-catalog" },
+    { "name": "@simforge/render", "version": "0.1.0-rc.45", "path": "packages/render", "role": "render-runtime" },
+    { "name": "@simforge/openscenario", "version": "0.1.0-rc.45", "path": "packages/openscenario", "role": "openscenario-interop" },
+    { "name": "@simforge/training-env", "version": "0.1.0-rc.45", "path": "packages/training-env", "role": "training-environment" },
+    { "name": "@simforge/evaluation", "version": "0.1.0-rc.45", "path": "packages/evaluation", "role": "evaluation-harness" },
+    { "name": "@simforge/cli", "version": "0.1.0-rc.45", "path": "packages/cli", "role": "command-line-interface" }
   ],
   "pythonPackages": [
-    { "name": "simforge-gym", "path": "adapters/gym", "role": "gym-adapter" },
-    { "name": "simforge-carla-exec", "path": "adapters/carla-exec", "role": "carla-execution-adapter" },
-    { "name": "simforge-carla-api", "path": "adapters/carla-api", "role": "carla-api-compatibility" }
+    { "name": "simforge-gym", "version": "0.1.0rc45", "path": "adapters/gym", "role": "gym-adapter", "registry": "pypi" },
+    { "name": "simforge-carla-exec", "version": "0.1.0rc45", "path": "adapters/carla-exec", "role": "carla-execution-adapter", "registry": "pypi" },
+    { "name": "simforge-carla-api", "version": "0.1.0rc45", "path": "adapters/carla-api", "role": "carla-api-compatibility", "registry": "pypi" }
   ],
   "renameManifest": {
     "@uniscenarios/scenario-model": "@simforge/scenario",
@@ -40,6 +40,7 @@
     "@uniscenarios/city-renderer": "@simforge/viewer",
     "@uniscenarios/camera-rig": "@simforge/viewer",
     "@uniscenarios/editor-core": "@simforge/editor",
+    "@uniscenarios/editor-ui": "@simforge/editor",
     "@uniscenarios/playback": "@simforge/playback",
     "@uniscenarios/ambient-traffic": "@simforge/playback/traffic",
     "@uniscenarios/prop-catalog": "@simforge/asset-catalog",
