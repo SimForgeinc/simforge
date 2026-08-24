@@ -11,7 +11,7 @@ import {
 } from "@simcloud/shared/map-ingest/roadway-consistency-report";
 import { validateRoadwayConsistency } from "@simcloud/shared/map-topology/roadway-consistency-core.mjs";
 
-import type { MapSources } from "@simforge/maps";
+import type { MapSources } from "@simforge/maps/node";
 import type { MapTopologyIndex } from "@simcloud/shared/map-topology/types";
 import type { CityManifestDocument } from "./city-manifest";
 
