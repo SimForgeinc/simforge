@@ -1,9 +1,12 @@
 import { createWriteStream, promises as fs, type WriteStream } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { gunzip } from 'node:zlib';
+import { promisify } from 'node:util';
 import { chromium } from 'playwright-core';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration, type RenderArtifactManifest, type RenderEngineAdapter, type RenderExecutionContext } from '@uniscenarios/render-runtime';
 import { fixedStepFrameCount, parseRenderIntent } from '@uniscenarios/scenario-model';
+import type { PlaybackBundle } from '@uniscenarios/playback';
 import { BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import type { ArtifactIdentity } from './artifacts.js';
 import { BROWSER_RENDER_REQUEST_V1_SCHEMA, RENDER_INTENT_V1_SCHEMA, parseBrowserRenderIntent, type BrowserRenderIntentV1, type ResolvedBrowserRenderRequest } from './intent.js';
@@ -14,6 +17,8 @@ export interface BrowserRenderEngineOptions {
   readonly headless?: boolean;
   readonly engineVersion?: string;
 }
+
+const gunzipAsync = promisify(gunzip);
 
 const CAPABILITIES: EngineCapabilityDeclaration = {
   schema: ENGINE_CAPABILITIES_V1_SCHEMA,
@@ -77,7 +82,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         intentSha256: context.intentSha256,
         intent,
         mapManifestUrl: pathToFileURL(mapInput.path).href,
-        playbackBundle: JSON.parse(await fs.readFile(playbackInput.path, 'utf8')),
+        playbackBundle: await decodePlaybackBundle(await fs.readFile(playbackInput.path)),
       };
       const outputs = new Map<string, OutputFile>();
       const browser = await chromium.launch({
@@ -190,6 +195,13 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
     },
   };
 }
+export async function decodePlaybackBundle(bytes: Uint8Array): Promise<PlaybackBundle> {
+  const decoded = bytes[0] === 0x1f && bytes[1] === 0x8b
+    ? await gunzipAsync(bytes)
+    : bytes;
+  return JSON.parse(Buffer.from(decoded).toString('utf8')) as PlaybackBundle;
+}
+
 export function resolveBrowserRenderIntent(value: unknown): BrowserRenderIntentV1 {
   const portable = parseRenderIntent(value);
   const fps = portable.renderSpec.video?.fps ?? Math.max(
