@@ -692,6 +692,7 @@ def _parity_evidence(
     runtime_evidence: Mapping[str, object],
     artifacts: list[Mapping[str, object]],
     expected_capture_count: int,
+    spawn_placement: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     metadata = plan.semantic_metadata
     semantic_failures: list[str] = []
@@ -869,6 +870,24 @@ def _parity_evidence(
     verified_kinds = sorted(produced_kinds | predicted_kinds)
     missing_kinds = sorted(expected_kinds - set(verified_kinds))
 
+    placement_actors = (
+        spawn_placement.get("actors")
+        if isinstance(spawn_placement, Mapping) else None
+    )
+    placement_actors = placement_actors if isinstance(placement_actors, Mapping) else {}
+    dropped_actor_ids = sorted(
+        str(item) for item in (
+            spawn_placement.get("droppedActorIds", ())
+            if isinstance(spawn_placement, Mapping) else ()
+        )
+    )
+    nudged_actor_ids = sorted(
+        str(item) for item in (
+            spawn_placement.get("nudgedActorIds", ())
+            if isinstance(spawn_placement, Mapping) else ()
+        )
+    )
+
     divergences: list[dict[str, object]] = []
     if matched_authored_contact:
         for key, value in sorted(post_max_error.items()):
@@ -902,6 +921,20 @@ def _parity_evidence(
             "code": "diagnostic-replay-not-acceptance-eligible",
             "classification": "unclassified",
         })
+    for actor_id in dropped_actor_ids:
+        details = placement_actors.get(actor_id)
+        divergences.append({
+            "code": f"spawn-placement:dropped-unplaceable:{actor_id}",
+            "classification": "spawn-placement-drop",
+            "details": dict(details) if isinstance(details, Mapping) else {},
+        })
+    for actor_id in nudged_actor_ids:
+        details = placement_actors.get(actor_id)
+        divergences.append({
+            "code": f"spawn-placement:nudged:{actor_id}",
+            "classification": "spawn-placement-nudge",
+            "details": dict(details) if isinstance(details, Mapping) else {},
+        })
 
     semantics_passed = not semantic_failures
     artifacts_passed = not missing_kinds
@@ -934,7 +967,9 @@ def _parity_evidence(
         "trajectory": {
             "verdict": "pass" if trajectory_passed else "fail",
             "acceptanceGate": acceptance_gate,
-            "evaluatedActorCount": len(plan.actors),
+            "evaluatedActorCount": len(plan.actors) - len(dropped_actor_ids),
+            "droppedActorIds": dropped_actor_ids,
+            "nudgedActorIds": nudged_actor_ids,
             "failedActorIds": sorted(failed_actor_ids),
             "postContactFailedActorIds": sorted(post_contact_failed_actor_ids),
             "postContactClassification": "expected-carla-physics" if matched_authored_contact else "blocking",
@@ -1341,6 +1376,46 @@ def execute_lease(
             check_abort("configure_environment")
             backend.spawn(plan.actors, plan.frames[0], catalog, abort=lambda: backend_fence("spawn_actors"))
             check_abort("spawn_actors")
+            spawn_placement = _optional_backend_call(
+                backend,
+                "spawn_placement_report",
+                abort=lambda: check_abort("spawn_actors"),
+            )
+            if isinstance(spawn_placement, Mapping):
+                dropped_actor_ids = {
+                    str(item) for item in spawn_placement.get("droppedActorIds", ())
+                }
+                dropped_mounts = sorted({
+                    sensor.actor_id for sensor in lease.render_spec.sensors
+                    if sensor.actor_id in dropped_actor_ids
+                })
+                if dropped_mounts:
+                    raise ContractError(
+                        "spawn placement dropped sensor host actors: "
+                        + ", ".join(dropped_mounts)
+                    )
+                static_planar_offsets: dict[str, tuple[float, float]] = {}
+                placement_actors = spawn_placement.get("actors")
+                if isinstance(placement_actors, Mapping):
+                    for actor_id, item in placement_actors.items():
+                        binding = plan.actors.get(actor_id)
+                        if (
+                            binding is None
+                            or not binding.static
+                            or not isinstance(item, Mapping)
+                            or item.get("outcome") != "nudged"
+                        ):
+                            continue
+                        authored = item.get("authored")
+                        placed = item.get("placed")
+                        if isinstance(authored, Mapping) and isinstance(placed, Mapping):
+                            static_planar_offsets[str(actor_id)] = (
+                                float(placed["x"]) - float(authored["x"]),
+                                float(placed["y"]) - float(authored["y"]),
+                            )
+                accumulator.configure_spawn_placement(dropped_actor_ids, static_planar_offsets)
+            else:
+                spawn_placement = None
             if lease.job_mode == "full_render":
                 backend.configure_sensors(lease.render_spec, output_dir, MAX_OUTPUT_BYTES, abort=lambda: backend_fence("configure_sensors"))
                 check_abort("configure_sensors")
@@ -1538,6 +1613,8 @@ def execute_lease(
         attestation = _attestation(validation, lease.render_spec.execution_mode, runtime_evidence)
         if stability:
             attestation["nativeStability"] = stability
+        if spawn_placement:
+            attestation["spawnPlacement"] = dict(spawn_placement)
         parity_evidence = _parity_evidence(
             lease,
             plan,
@@ -1545,6 +1622,7 @@ def execute_lease(
             runtime_evidence,
             artifacts,
             expected_capture_count,
+            spawn_placement,
         )
         accepted = acceptance_eligible and parity_evidence["verdict"] == "pass"
         parity_value = {

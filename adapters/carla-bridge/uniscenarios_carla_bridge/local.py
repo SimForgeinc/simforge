@@ -75,6 +75,92 @@ def _probe(host: str, port: int) -> dict[str, object]:
         backend.cleanup()
 
 
+def _probe_tick_barrier(
+    host: str,
+    port: int,
+    fixed_delta_s: float = 0.02,
+    ticks: int = 120,
+) -> dict[str, object]:
+    """Verify the server honors the synchronous tick barrier under load.
+
+    The CARLA 0.10 UE5 runtime can keep ticking a POPULATED world by itself
+    while synchronous mode is on, silently inflating simulated time (measured
+    2x on an affected server) — every trajectory then runs faster than its
+    plan and impacts carry multiplied energy. The render worker fails closed
+    on this at execution time; this probe is the cheap pre-rollout gate.
+
+    Spawns one probe vehicle into the CURRENT world (the leak only manifests
+    with actors present), counts un-commanded engine ticks via world.tick()
+    frame ids (integer-exact, immune to snapshot-cache lag), destroys the
+    vehicle, and restores the prior world settings. Never loads a map.
+    """
+    backend = CarlaBackend(host, port)
+    try:
+        world = backend.client.get_world()
+        original = world.get_settings()
+        probe_settings = world.get_settings()
+        probe_settings.synchronous_mode = True
+        probe_settings.fixed_delta_seconds = fixed_delta_s
+        world.apply_settings(probe_settings)
+        vehicle = None
+        try:
+            def measure(count: int) -> tuple[int, float]:
+                extra = 0
+                previous = int(world.tick())
+                start = float(world.get_snapshot().timestamp.elapsed_seconds)
+                for _ in range(count):
+                    current = int(world.tick())
+                    extra += current - previous - 1
+                    previous = current
+                elapsed = float(world.get_snapshot().timestamp.elapsed_seconds) - start
+                return extra, elapsed / (count * fixed_delta_s)
+
+            empty_extra, empty_ratio = measure(60)
+            library = world.get_blueprint_library()
+            try:
+                blueprint = library.find(KIA_CARNIVAL_BLUEPRINT_ID)
+            except RuntimeError:
+                candidates = sorted(library.filter("vehicle.*"), key=lambda item: item.id)
+                if not candidates:
+                    raise RuntimeError("current world offers no vehicle blueprint for the probe")
+                blueprint = candidates[0]
+            spawn_points = world.get_map().get_spawn_points()
+            if not spawn_points:
+                raise RuntimeError("current world offers no spawn points for the probe vehicle")
+            transform = spawn_points[0]
+            transform.location.z += 0.3
+            vehicle = world.try_spawn_actor(blueprint, transform)
+            if vehicle is None:
+                raise RuntimeError("could not spawn the tick-barrier probe vehicle")
+            for _ in range(30):
+                world.tick()  # let the spawn drop settle out of the measurement
+            populated_extra, populated_ratio = measure(ticks)
+        finally:
+            if vehicle is not None:
+                vehicle.destroy()
+            world.apply_settings(original)
+        passed = empty_extra == 0 and populated_extra == 0 and abs(populated_ratio - 1.0) <= 0.1
+        return {
+            "schema": "uniscenarios.carla-tick-barrier-probe/v1",
+            "serverVersion": str(backend.client.get_server_version()),
+            "fixedDeltaS": fixed_delta_s,
+            "emptyWorld": {
+                "commandedTicks": 60,
+                "unCommandedTicks": empty_extra,
+                "simTimeRatio": round(empty_ratio, 4),
+            },
+            "populatedWorld": {
+                "commandedTicks": ticks,
+                "unCommandedTicks": populated_extra,
+                "simTimeRatio": round(populated_ratio, 4),
+                "probeBlueprint": str(getattr(blueprint, "id", blueprint)),
+            },
+            "verdict": "pass" if passed else "fail",
+        }
+    finally:
+        backend.cleanup()
+
+
 def _execute_local_lease(
     lease: Any,
     asset_paths: Mapping[str, Path],
@@ -909,6 +995,12 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=2000)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("probe", help="connect without loading or mutating a CARLA world")
+    ticks = commands.add_parser(
+        "probe-ticks",
+        help="verify the server honors the synchronous tick barrier with a populated world",
+    )
+    ticks.add_argument("--fixed-delta", type=float, default=0.02)
+    ticks.add_argument("--ticks", type=int, default=120)
     intent = commands.add_parser("run-intent", help="execute a local uniscenario.render-intent/v1")
     intent.add_argument("--intent", required=True)
     intent.add_argument("--package", required=True)
@@ -935,9 +1027,13 @@ def main() -> None:
         result = run_local_command(args)
     elif args.command == "probe":
         result = _probe(args.host, args.port)
+    elif args.command == "probe-ticks":
+        result = _probe_tick_barrier(args.host, args.port, args.fixed_delta, args.ticks)
     else:
         result = _run_intent(args)
     print(json.dumps(result, sort_keys=True))
+    if args.command == "probe-ticks" and result.get("verdict") != "pass":
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

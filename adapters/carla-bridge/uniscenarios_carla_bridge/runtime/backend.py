@@ -131,6 +131,82 @@ MAP_RGB_EXPOSURE: tuple[tuple[str, str], ...] = (
     ("Di_Rosa", "-0.2"),
 )
 
+#: Conservative planar half-extents (half-length, half-width) used for spawn
+#: overlap checks when the asset catalog carries no dimensions for an entry.
+SPAWN_FOOTPRINT_HALF_EXTENTS_BY_KIND: Mapping[str, tuple[float, float]] = {
+    "car": (2.45, 1.05),
+    "vehicle": (2.45, 1.05),
+    "van": (2.75, 1.10),
+    "truck": (4.25, 1.30),
+    "bus": (6.00, 1.30),
+    "motorcycle": (1.15, 0.50),
+    "bicycle": (0.95, 0.40),
+    "scooter": (0.95, 0.40),
+    "pedestrian": (0.35, 0.35),
+    "animal": (0.60, 0.35),
+    "static_object": (0.50, 0.50),
+}
+DEFAULT_SPAWN_FOOTPRINT_HALF_EXTENTS = (2.45, 1.05)
+
+#: Bounded nudge offsets (meters along the actor's authored heading, i.e.
+#: along the lane) tried in order when the authored spawn footprint overlaps
+#: an already-placed actor or CARLA refuses the spawn. The authored position
+#: always goes first; an actor that fits nowhere in this window is DROPPED and
+#: reported, never stacked on top of another actor.
+SPAWN_NUDGE_OFFSETS_M: tuple[float, ...] = (0.0, 1.5, -1.5, 3.0, -3.0, 4.5, -4.5)
+
+#: Clearance kept between spawn footprints so settled bodies never touch.
+SPAWN_FOOTPRINT_CLEARANCE_M = 0.15
+
+#: Ground probes start this far above the authored elevation and search this
+#: far down. A hit farther than the acceptance delta from the authored z is
+#: treated as the wrong surface (overpass, tunnel roof) and ignored.
+SPAWN_GROUND_PROBE_UP_M = 2.0
+SPAWN_GROUND_PROBE_DEPTH_M = 12.0
+SPAWN_GROUND_MAX_DELTA_M = 12.0
+
+
+def _spawn_footprint_half_extents(entry: object, kind: str) -> tuple[float, float]:
+    dims = entry.get("dims") if isinstance(entry, Mapping) else None
+    length = (dims.get("l") or dims.get("length")) if isinstance(dims, Mapping) else None
+    width = (dims.get("w") or dims.get("width")) if isinstance(dims, Mapping) else None
+    if (
+        isinstance(length, (int, float)) and length > 0
+        and isinstance(width, (int, float)) and width > 0
+    ):
+        return float(length) / 2.0, float(width) / 2.0
+    return SPAWN_FOOTPRINT_HALF_EXTENTS_BY_KIND.get(kind, DEFAULT_SPAWN_FOOTPRINT_HALF_EXTENTS)
+
+
+def _planar_footprints_overlap(
+    a: tuple[float, float, float, float, float, float],
+    b: tuple[float, float, float, float, float, float],
+    clearance: float,
+) -> bool:
+    """Oriented 2D rectangle overlap via the separating-axis theorem.
+
+    Each footprint is (x, y, cos_heading, sin_heading, half_length,
+    half_width) in the authored OSC plan frame. `clearance` widens every
+    projection so near-touching bodies count as overlapping.
+    """
+    delta_x, delta_y = b[0] - a[0], b[1] - a[1]
+    for rect, other in ((a, b), (b, a)):
+        other_long = (other[2], other[3])
+        other_lat = (-other[3], other[2])
+        for axis_x, axis_y, half in (
+            (rect[2], rect[3], rect[4]),
+            (-rect[3], rect[2], rect[5]),
+        ):
+            center_distance = abs(delta_x * axis_x + delta_y * axis_y)
+            other_radius = (
+                other[4] * abs(axis_x * other_long[0] + axis_y * other_long[1])
+                + other[5] * abs(axis_x * other_lat[0] + axis_y * other_lat[1])
+            )
+            if center_distance > half + other_radius + clearance:
+                return False
+    return True
+
+
 
 def apply_supported_blueprint_attributes(
     blueprint: Any,
@@ -490,11 +566,56 @@ class CarlaBackend:
                 setattr(settings, field, target)
                 streaming[field] = target
         self.world.apply_settings(settings)
+        # Verify the runtime accepted the deterministic stepping contract.
+        # Wall-clock probes right after load_world are unreliable (the client
+        # snapshot cache lags and post-load streaming can tick the engine), so
+        # the readback check lives here and the per-tick frame-continuity
+        # guard in tick() catches any engine that keeps ticking itself.
+        applied = self.world.get_settings()
+        applied_mode = bool(getattr(applied, "synchronous_mode", False))
+        applied_delta = getattr(applied, "fixed_delta_seconds", None)
+        if not applied_mode or applied_delta is None or abs(float(applied_delta) - fixed_timestep_s) > 1e-9:
+            raise RuntimeError(
+                f"CARLA runtime did not accept synchronous {fixed_timestep_s:g}s stepping: "
+                f"synchronous_mode={applied_mode} fixed_delta_seconds={applied_delta}"
+            )
         self.streaming_evidence = {
             "available": True,
             "settings": streaming,
             "spectatorFollow": "pending",
+            "appliedFixedDeltaS": float(applied_delta),
         }
+
+    def _ground_elevation(self, x: float, y_carla: float, authored_z: float) -> tuple[float, str]:
+        """Project one spawn to the rendered ground surface (CARLA frame).
+
+        Authored elevations come from the source XODR, but the cooked map mesh
+        is the surface CARLA actually simulates against; spawning on the
+        authored z leaves a mis-cooked actor floating (a static actor is frozen
+        mid-air by the settle phase before it finishes falling). Prefer a real
+        mesh raycast, then the OpenDRIVE waypoint elevation, then the authored
+        value when the runtime offers neither API (unit fakes, older builds).
+        """
+        project = getattr(self.world, "ground_projection", None)
+        if callable(project):
+            probe = self.carla.Location(x=x, y=y_carla, z=authored_z + SPAWN_GROUND_PROBE_UP_M)
+            hit = project(probe, SPAWN_GROUND_PROBE_DEPTH_M)
+            if hit is not None:
+                ground = float(hit.location.z)
+                if abs(ground - authored_z) <= SPAWN_GROUND_MAX_DELTA_M:
+                    return ground, "ground-projection"
+        map_getter = getattr(self.world, "get_map", None)
+        runtime_map = map_getter() if callable(map_getter) else None
+        waypoint_getter = getattr(runtime_map, "get_waypoint", None)
+        if callable(waypoint_getter):
+            waypoint = waypoint_getter(
+                self.carla.Location(x=x, y=y_carla, z=authored_z), project_to_road=True,
+            )
+            if waypoint is not None:
+                ground = float(waypoint.transform.location.z)
+                if abs(ground - authored_z) <= SPAWN_GROUND_MAX_DELTA_M:
+                    return ground, "road-waypoint"
+        return authored_z, "authored-z"
 
     def spawn(self, actors: Mapping[str, ActorBinding], first_frame: PlanFrame, catalog: Mapping[str, Any], abort: Callable[[], None] | None = None) -> None:
         assert self.world is not None
@@ -509,6 +630,10 @@ class CarlaBackend:
         self.actor_asset_evidence = getattr(self, "actor_asset_evidence", {})
         self.static_actor_ids = {actor_id for actor_id, binding in actors.items() if binding.static}
         self.frozen_static_actor_ids = set()
+        self.dropped_actor_ids: set[str] = set()
+        self.spawn_planar_targets: dict[str, tuple[float, float]] = {}
+        placements: dict[str, dict[str, Any]] = {}
+        placed_footprints: list[tuple[float, float, float, float, float, float]] = []
         library = self.world.get_blueprint_library()
         for actor_id, binding in actors.items():
             check()
@@ -533,14 +658,54 @@ class CarlaBackend:
                 if isinstance(entry_height, (int, float)) else 0.0
             )
             spawn_lift = max(0.25, half_height + 0.15)
-            transform = self.carla.Transform(
-                self.carla.Location(x=state.x, y=-state.y, z=state.z + spawn_lift),
-                self.carla.Rotation(yaw=-state.heading_deg),
-            )
-            actor = self.world.try_spawn_actor(blueprint, transform)
-            check()
-            if actor is None:
-                raise RuntimeError(f"CARLA failed to spawn {actor_id} as {blueprint_id}")
+            half_length, half_width = _spawn_footprint_half_extents(entry, binding.kind)
+            heading_rad = radians(state.heading_deg)
+            cos_h, sin_h = cos(heading_rad), sin(heading_rad)
+            actor = None
+            placement: dict[str, Any] | None = None
+            footprint: tuple[float, float, float, float, float, float] | None = None
+            for nudge in SPAWN_NUDGE_OFFSETS_M:
+                check()
+                x = state.x + cos_h * nudge
+                y = state.y + sin_h * nudge
+                candidate_footprint = (x, y, cos_h, sin_h, half_length, half_width)
+                if any(
+                    _planar_footprints_overlap(candidate_footprint, other, SPAWN_FOOTPRINT_CLEARANCE_M)
+                    for other in placed_footprints
+                ):
+                    continue
+                ground_z, ground_source = self._ground_elevation(x, -y, state.z)
+                transform = self.carla.Transform(
+                    self.carla.Location(x=x, y=-y, z=ground_z + spawn_lift),
+                    self.carla.Rotation(yaw=-state.heading_deg),
+                )
+                candidate = self.world.try_spawn_actor(blueprint, transform)
+                check()
+                if candidate is None:
+                    continue
+                actor = candidate
+                footprint = candidate_footprint
+                placement = {
+                    "outcome": "nudged" if nudge else "placed",
+                    "authored": {"x": state.x, "y": state.y, "z": state.z},
+                    "placed": {"x": x, "y": y, "z": ground_z + spawn_lift},
+                    "nudgeAlongHeadingM": nudge,
+                    "groundZ": ground_z,
+                    "groundSource": ground_source,
+                    "spawnLiftM": spawn_lift,
+                }
+                break
+            if actor is None or placement is None or footprint is None:
+                # An unplaceable actor is dropped and reported in the manifest;
+                # stacking it on top of an already-placed body is never allowed.
+                self.dropped_actor_ids.add(actor_id)
+                placements[actor_id] = {
+                    "outcome": "dropped",
+                    "reason": "no collision-free spawn within the bounded lane nudge window",
+                    "authored": {"x": state.x, "y": state.y, "z": state.z},
+                    "nudgeCandidatesM": list(SPAWN_NUDGE_OFFSETS_M),
+                }
+                continue
             observed_type_id = str(getattr(actor, "type_id", ""))
             if observed_type_id != blueprint_id:
                 try:
@@ -557,12 +722,34 @@ class CarlaBackend:
                 "verification": "runtime-type-id-readback",
             }
             self.actors[actor_id] = actor
+            placed_footprints.append(footprint)
+            placed = placement["placed"]
+            self.spawn_planar_targets[actor_id] = (float(placed["x"]), float(placed["y"]))
+            placements[actor_id] = placement
             runtime_id = getattr(actor, "id", None)
             if isinstance(runtime_id, int):
                 self.actor_id_by_runtime_id[runtime_id] = actor_id
             self.actor_lifecycle[actor_id] = state.lifecycle
+        if actors and not self.actors:
+            raise RuntimeError("spawn placement dropped every scenario actor")
+        self.static_actor_ids -= self.dropped_actor_ids
+        self.spawn_placement = {
+            "schema": "uniscenario.spawn-placement/v1",
+            "actors": placements,
+            "droppedActorIds": sorted(self.dropped_actor_ids),
+            "nudgedActorIds": sorted(
+                actor_id for actor_id, item in placements.items()
+                if item.get("outcome") == "nudged"
+            ),
+        }
         self.streaming_primary_actor_id = next(iter(self.actors), None)
         self._configure_collision_sensors(library, check)
+
+    def spawn_placement_report(self, abort: Callable[[], None] | None = None) -> Mapping[str, Any] | None:
+        check = abort or (lambda: None)
+        check()
+        report = getattr(self, "spawn_placement", None)
+        return dict(report) if isinstance(report, Mapping) else None
 
     def _configure_collision_sensors(self, library: Any, abort: Callable[[], None]) -> None:
         """Attach passive collision observation without affecting vehicle motion."""
@@ -815,12 +1002,14 @@ class CarlaBackend:
                 actor.apply_control(self.carla.WalkerControl(speed=0.0, jump=False))
         reports = [self._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=100, abort=abort)]
         zero = self.carla.Vector3D(x=0.0, y=0.0, z=0.0)
+        planar_targets = getattr(self, "spawn_planar_targets", {})
         for actor_id, actor in self.actors.items():
             check()
             state = first_frame.actors[actor_id]
+            target_x, target_y = planar_targets.get(actor_id, (state.x, state.y))
             settled = actor.get_transform()
             actor.set_transform(self.carla.Transform(
-                self.carla.Location(x=state.x, y=-state.y, z=settled.location.z),
+                self.carla.Location(x=target_x, y=-target_y, z=settled.location.z),
                 self.carla.Rotation(yaw=-state.heading_deg),
             ))
             actor.set_target_velocity(zero)
@@ -828,14 +1017,17 @@ class CarlaBackend:
             self.speed_integrals[actor_id] = 0.0
         reports.append(self._wait_for_native_stability("post-reset", minimum_ticks=5, maximum_ticks=100, abort=abort))
         # The stability window can introduce tiny horizontal suspension drift.
-        # Restore the authored planar pose once more without changing settled z;
-        # no world tick occurs between this reset and scenario frame zero.
+        # Restore the placed planar pose once more without changing settled z;
+        # a nudged actor keeps its recorded collision-free placement, so the
+        # reset can never re-create the spawn overlap. No world tick occurs
+        # between this reset and scenario frame zero.
         for actor_id, actor in self.actors.items():
             check()
             state = first_frame.actors[actor_id]
+            target_x, target_y = planar_targets.get(actor_id, (state.x, state.y))
             settled = actor.get_transform()
             initial = self.carla.Transform(
-                self.carla.Location(x=state.x, y=-state.y, z=settled.location.z),
+                self.carla.Location(x=target_x, y=-target_y, z=settled.location.z),
                 self.carla.Rotation(yaw=-state.heading_deg),
             )
             actor.set_transform(initial)
@@ -900,25 +1092,8 @@ class CarlaBackend:
                     if self.sensor_error:
                         raise self.sensor_error
                     self.sensor_pending.clear()
-            if tick == minimum_ticks:
-                static_actor_ids = getattr(self, "static_actor_ids", set())
-                frozen_static_actor_ids = getattr(self, "frozen_static_actor_ids", set())
-                if static_actor_ids - frozen_static_actor_ids:
-                    zero = self.carla.Vector3D(x=0.0, y=0.0, z=0.0)
-                for actor_id in sorted(static_actor_ids - frozen_static_actor_ids):
-                    actor = self.actors.get(actor_id)
-                    if actor is None:
-                        continue
-                    freeze = getattr(actor, "set_simulate_physics", None)
-                    if not callable(freeze):
-                        raise RuntimeError(
-                            f"CARLA actor {actor_id} cannot be held as an authored static actor"
-                        )
-                    freeze(False)
-                    actor.set_target_velocity(zero)
-                    actor.set_target_angular_velocity(zero)
-                    frozen_static_actor_ids.add(actor_id)
-                self.frozen_static_actor_ids = frozen_static_actor_ids
+            static_actor_ids = getattr(self, "static_actor_ids", set())
+            self.frozen_static_actor_ids = getattr(self, "frozen_static_actor_ids", set())
             residuals = {}
             stable = True
             current = {}
@@ -944,18 +1119,41 @@ class CarlaBackend:
                     "verticalDriftM": vertical_drift,
                     "yawDriftDeg": yaw_drift,
                 }
-                if (
+                actor_stable = not (
                     linear_speed > 0.02
                     or abs(velocity.z) > 0.01
                     or angular_speed > 0.02
                     or horizontal_drift > 0.001
                     or vertical_drift > 0.001
                     or yaw_drift > 0.02
-                ):
+                )
+                if not actor_stable:
                     stable = False
+                if (
+                    actor_stable
+                    and tick >= minimum_ticks
+                    and actor_id in static_actor_ids
+                    and actor_id not in self.frozen_static_actor_ids
+                ):
+                    # An authored static actor is held kinematically only after
+                    # ITS OWN settle is proven. Freezing on a fixed tick count
+                    # used to catch a still-falling body and leave it hanging
+                    # mid-air for the whole render.
+                    freeze = getattr(actor, "set_simulate_physics", None)
+                    if not callable(freeze):
+                        raise RuntimeError(
+                            f"CARLA actor {actor_id} cannot be held as an authored static actor"
+                        )
+                    zero = self.carla.Vector3D(x=0.0, y=0.0, z=0.0)
+                    freeze(False)
+                    actor.set_target_velocity(zero)
+                    actor.set_target_angular_velocity(zero)
+                    self.frozen_static_actor_ids.add(actor_id)
                 current[actor_id] = transform
             previous = current
-            consecutive = consecutive + 1 if stable and tick >= minimum_ticks else 0
+            unfrozen_statics = (static_actor_ids & set(self.actors)) - self.frozen_static_actor_ids
+            converged = stable and not unfrozen_statics and tick >= minimum_ticks
+            consecutive = consecutive + 1 if converged else 0
             if consecutive >= 5:
                 return {"phase": phase, "ticks": tick, "residuals": residuals}
         raise RuntimeError(
@@ -1440,8 +1638,13 @@ class CarlaBackend:
                 self.signals[signal_id].set_state(lamp)
                 self.executed_signals[signal_id] = indication
                 self.executed_signal_lamps[signal_id] = lamp
+        dropped_actor_ids = getattr(self, "dropped_actor_ids", set())
         for actor_id, state in frame.actors.items():
             check()
+            if actor_id in dropped_actor_ids:
+                # Spawn placement dropped this actor and recorded the
+                # diagnostic; there is no CARLA body to drive or destroy.
+                continue
             if state.lifecycle == LIFECYCLE_ABSENT:
                 self._destroy_absent_actor(actor_id)
                 continue
@@ -1468,15 +1671,42 @@ class CarlaBackend:
                         f"native physics cannot execute a downed pedestrian {actor_id} "
                         "without forbidden post-spawn teleport repair"
                     )
-                direction = target.get_forward_vector()
+                # Walkers are driven exclusively through CARLA's native
+                # WalkerControl so vehicle-walker contact resolves with the
+                # real momenta of both bodies. The previous per-tick
+                # set_transform kinematically re-embedded the walker into any
+                # colliding vehicle, which the physics engine resolved as an
+                # unbounded depenetration impulse — the "pedestrian launched
+                # into the sky" failure.
+                forward = self._forward_vector(target)
+                current_transform = actor.get_transform()
+                delta_x = state.x - current_transform.location.x
+                delta_y = -state.y - current_transform.location.y
+                along_error = delta_x * forward[0] + delta_y * forward[1]
+                # Pure pursuit: aim at the plan point plus a short lookahead
+                # along the authored heading, closing along-track error with a
+                # bounded native speed command instead of imposed positions.
+                lookahead = max(0.5, state.speed_mps * 0.5)
+                aim_x = delta_x + forward[0] * lookahead
+                aim_y = delta_y + forward[1] * lookahead
+                aim_norm = sqrt(aim_x ** 2 + aim_y ** 2)
+                if aim_norm > 1e-6:
+                    direction = self.carla.Vector3D(x=aim_x / aim_norm, y=aim_y / aim_norm, z=0.0)
+                else:
+                    direction = self.carla.Vector3D(x=forward[0], y=forward[1], z=0.0)
+                command_speed = max(0.0, state.speed_mps + max(-1.0, min(1.0, along_error * 0.45)))
+                if state.speed_mps <= 1e-6 and sqrt(delta_x ** 2 + delta_y ** 2) <= 0.25:
+                    # A stationary walker within tolerance holds still instead
+                    # of oscillating around the authored point.
+                    command_speed = 0.0
                 actor.apply_control(
-                    self.carla.WalkerControl(direction=direction, speed=state.speed_mps, jump=False)
+                    self.carla.WalkerControl(direction=direction, speed=command_speed, jump=False)
                 )
-                walker_z = actor.get_transform().location.z
-                actor.set_transform(self.carla.Transform(
-                    self.carla.Location(x=state.x, y=-state.y, z=walker_z),
-                    self.carla.Rotation(yaw=-state.heading_deg),
-                ))
+                self.last_controls[actor_id] = {
+                    "targetSpeedMps": state.speed_mps,
+                    "commandSpeedMps": command_speed,
+                    "alongTrackErrorM": along_error,
+                }
                 continue
             if actor.type_id.startswith(("vehicle.", "bike.")):
                 current_transform = actor.get_transform()
@@ -1667,8 +1897,22 @@ class CarlaBackend:
             except Exception:
                 if streaming_evidence is not None:
                     streaming_evidence["spectatorFollow"] = "unavailable"
+        previous_frame = getattr(self, "last_carla_frame", None)
         carla_frame = int(self.world.tick())
         self.last_carla_frame = carla_frame
+        if previous_frame is not None and carla_frame != previous_frame + 1:
+            # The CARLA 0.10 UE5 runtime can keep ticking itself while a
+            # populated world sits in synchronous mode, silently inflating
+            # simulated time (measured 2x on a leaky server). Every
+            # un-commanded engine tick advances physics the plan never
+            # scheduled — vehicles overshoot their trajectories and impacts
+            # carry multiplied energy — so a broken tick barrier is fatal
+            # instead of rendering wrong physics.
+            raise RuntimeError(
+                "CARLA synchronous tick barrier is broken: commanded tick advanced "
+                f"the engine from frame {previous_frame} to {carla_frame} "
+                f"({carla_frame - previous_frame - 1} un-commanded engine tick(s))"
+            )
         if self.current_plan_frame is not None:
             self.carla_to_plan_frame[carla_frame] = self.current_plan_frame
         check()
