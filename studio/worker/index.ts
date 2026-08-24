@@ -138,9 +138,14 @@ async function runHeartbeat(
   while (!job.signal.aborted && !workerSignal.aborted) {
     await delay(10_000, AbortSignal.any([job.signal, workerSignal])).catch(() => undefined);
     if (job.signal.aborted || workerSignal.aborted) return;
-    const result = await client.heartbeat(claim, progress(), workerSignal);
-    if (result.cancelRequested) {
-      job.abort(new Error("render cancellation requested by control plane"));
+    try {
+      const result = await client.heartbeat(claim, progress(), workerSignal);
+      if (result.cancelRequested) {
+        job.abort(new Error("render cancellation requested by control plane"));
+        return;
+      }
+    } catch (error) {
+      job.abort(error);
       return;
     }
   }
