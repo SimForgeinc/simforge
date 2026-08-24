@@ -36,6 +36,8 @@ export const RenderWorkerConfigSchema = z.strictObject({
   scratchDir: z.string().min(1),
   cacheDir: z.string().min(1),
   gpuLockPath: z.string().min(1),
+  /** Parallel artifact hash+reserve+upload lanes per completed job. */
+  uploadConcurrency: z.number().int().min(1).max(8).default(3),
   pollIntervalMs: z.number().int().min(100).max(300_000).default(5_000),
   retries: z.strictObject({
     maxAttempts: z.number().int().min(1).max(20).default(4),

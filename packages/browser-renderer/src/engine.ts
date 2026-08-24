@@ -14,6 +14,13 @@ import { BROWSER_RENDER_REQUEST_V1_SCHEMA, RENDER_INTENT_V1_SCHEMA, parseBrowser
 export interface BrowserRenderEngineOptions {
   readonly harnessUrl?: string;
   readonly chromiumExecutablePath?: string;
+  /**
+   * Extra Chromium switches appended after the safe defaults, e.g.
+   * `--use-gl=angle --use-angle=gl-egl` to render on a real GPU instead of
+   * SwiftShader. Defaults to `UNISCENARIOS_CHROMIUM_EXTRA_ARGS` (whitespace
+   * separated) so hosts opt in without code changes.
+   */
+  readonly chromiumExtraArgs?: readonly string[];
   readonly headless?: boolean;
   readonly engineVersion?: string;
 }
@@ -85,12 +92,22 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         playbackBundle: await materializePlaybackBundle(await fs.readFile(playbackInput.path)),
       };
       const outputs = new Map<string, OutputFile>();
+      const chromiumExtraArgs = options.chromiumExtraArgs
+        ?? process.env.UNISCENARIOS_CHROMIUM_EXTRA_ARGS?.split(/\s+/).filter(Boolean)
+        ?? [];
       const browser = await chromium.launch({
         headless: options.headless ?? true,
         ...(options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH
           ? { executablePath: options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH }
           : {}),
-        args: ['--enable-webgl', '--ignore-gpu-blocklist', '--enable-features=Vulkan', '--allow-file-access-from-files'],
+        args: [
+          '--enable-webgl', '--ignore-gpu-blocklist', '--allow-file-access-from-files',
+          // SwiftShader's Vulkan backend is the safe default; a host overriding
+          // GL selection owns the whole GPU configuration (the feature flag
+          // conflicts with --use-angle overrides).
+          ...(chromiumExtraArgs.length === 0 ? ['--enable-features=Vulkan'] : []),
+          ...chromiumExtraArgs,
+        ],
       });
       try {
         const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -179,7 +196,15 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
             startedAt,
             completedAt: new Date().toISOString(),
             artifacts,
-            warnings: [],
+            warnings: [
+              ...(result.rgbFrameFormat === 'jpg'
+                ? [{ code: 'rgb_frames_jpeg', message: 'rgb sensor archives carry review-fidelity JPEG frames instead of lossless PNG' }]
+                : []),
+              ...result.omittedArtifacts.map((omitted) => ({
+                code: 'sensor_archive_omitted',
+                message: `sensor archive omitted (${omitted.reason}): ${omitted.actorId}/${omitted.sensorId}/${omitted.modality}`,
+              })),
+            ],
           } as RenderArtifactManifest;
         } finally {
           context.signal.removeEventListener('abort', abort);

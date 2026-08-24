@@ -34,10 +34,17 @@ export class StreamingSensorVideoEncoder {
       bitrate: Math.round(BITRATE[input.config.quality] * Math.max(0.45, Math.min(2.4, pixels / (1280 * 720)))), latencyMode: 'quality',
     };
     if (!(await VideoEncoder.isConfigSupported(encoderConfig)).supported) throw new Error('Headless Chromium cannot encode the required VP9 WebM profile.');
-    const canvas = typeof OffscreenCanvas !== 'undefined'
-      ? new OffscreenCanvas(input.config.width, input.config.height)
-      : Object.assign(document.createElement('canvas'), { width: input.config.width, height: input.config.height });
-    const context = canvas.getContext('2d', { alpha: false });
+    let canvas: OffscreenCanvas | HTMLCanvasElement;
+    let context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null;
+    if (typeof OffscreenCanvas !== 'undefined') {
+      const offscreen = new OffscreenCanvas(input.config.width, input.config.height);
+      canvas = offscreen;
+      context = offscreen.getContext('2d', { alpha: false });
+    } else {
+      const element = Object.assign(document.createElement('canvas'), { width: input.config.width, height: input.config.height });
+      canvas = element;
+      context = element.getContext('2d', { alpha: false });
+    }
     if (!context) throw new Error('A 2D canvas is required for active-sensor video.');
     let instance: StreamingSensorVideoEncoder;
     const encoder = new VideoEncoder({

@@ -103,7 +103,7 @@ export class StreamingZipWriter {
   }
 }
 
-export function sensorFramePath(sensorId: string, outputFrameIndex: number, extension: 'png' | 'ply' | 'csv'): string {
+export function sensorFramePath(sensorId: string, outputFrameIndex: number, extension: 'png' | 'jpg' | 'ply' | 'csv'): string {
   if (!sensorId || sensorId.includes('/') || sensorId.includes('\\') || sensorId === '.' || sensorId === '..') throw new Error('Sensor id cannot contain a path separator.');
   if (!Number.isSafeInteger(outputFrameIndex) || outputFrameIndex < 0 || outputFrameIndex > 99_999_999) throw new Error('Output frame index must fit the eight-digit artifact layout.');
   return `${sensorId}/${outputFrameIndex.toString().padStart(8, '0')}.${extension}`;

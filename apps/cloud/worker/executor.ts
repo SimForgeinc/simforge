@@ -116,6 +116,12 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       if (!actorId || !sensorId || !modality || artifact.mediaType !== "application/zip") {
         throw new Error(`browser sensor archive has invalid identity: ${artifact.relativePath}`);
       }
+      if (!intent.renderSpec.artifacts.includes("sensorArchive")) {
+        // Produced transiently (RGB archives feed the review MP4) but not part of
+        // the declared artifact closure; recorded here so the omission is auditable.
+        omittedArtifacts.push({ role: "sensorArchive", sensorId, modality, reason: "not_requested_by_render_spec" });
+        continue;
+      }
       artifacts.push({
         kind: "sensor_archive",
         sensor: { actorId, sensorId, modality },
@@ -253,7 +259,7 @@ async function encodeBrowserMp4(
  * high/lossless tiers keep the slower preset for archival-grade output.
  */
 function qualityPreset(quality: "draft" | "standard" | "high" | "lossless" | undefined): string {
-  return "medium";
+  return quality === "high" || quality === "lossless" ? "medium" : "veryfast";
 }
 
 async function probeDuration(path: string, signal: AbortSignal): Promise<number> {
