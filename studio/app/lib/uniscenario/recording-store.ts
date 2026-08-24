@@ -722,6 +722,41 @@ export async function reserveBrowserRecordingArtifacts(
       const artifactKind = ARTIFACT_KINDS[declaration.role];
       const identitySuffix = sensor ? `/${canonicalJsonSha256(sensor)}` : "";
       const storageKey = `${context.workspaceId}/recordings/${recordingId}/sha256/${declaration.sha256}/${declaration.role}${identitySuffix}`;
+      const metadata = {
+        recordingId,
+        role: declaration.role,
+        sensor,
+        requestPayloadSha256: owner.request_payload_sha256,
+      };
+      const provenance = {
+        contract: "uniscenario.artifact-provenance/v1",
+        producerJobFamily: "artifact_postprocess",
+        producerJobId: recordingId,
+        revisionId: owner.revision_id,
+        operation: BROWSER_RECORDING_KIND,
+        artifactRole: declaration.role,
+        sensor,
+        requestPayloadSha256: owner.request_payload_sha256,
+      };
+      const reservationParams = {
+        id: uniscenarioId("usart"),
+        workspace_id: context.workspaceId,
+        revision_id: owner.revision_id,
+        artifact_kind: artifactKind,
+        artifact_role: declaration.role,
+        sensor_actor_id: sensor?.actorId ?? null,
+        sensor_id: sensor?.sensorId ?? null,
+        sensor_modality: sensor?.modality ?? null,
+        media_type: declaration.mediaType,
+        storage_bucket: bucket,
+        storage_key: storageKey,
+        sha256: declaration.sha256,
+        byte_length: declaration.sizeBytes,
+        metadata,
+        user_id: context.userId,
+        job_id: recordingId,
+        provenance,
+      };
       const inserted = await tx.queryOne<ArtifactRow>(
         `INSERT INTO uniscenario.artifacts (
            id, workspace_id, revision_id, artifact_kind, media_type,
@@ -739,41 +774,32 @@ export async function reserveBrowserRecordingArtifacts(
            :sensor_modality AS artifact_sensor_modality,
            artifact_kind, media_type, sha256, byte_length, artifact_state,
            storage_bucket, storage_key, producer_job_id, false AS reused`,
-        {
-          id: uniscenarioId("usart"),
-          workspace_id: context.workspaceId,
-          revision_id: owner.revision_id,
-          artifact_kind: artifactKind,
-          artifact_role: declaration.role,
-          sensor_actor_id: sensor?.actorId ?? null,
-          sensor_id: sensor?.sensorId ?? null,
-          sensor_modality: sensor?.modality ?? null,
-          media_type: declaration.mediaType,
-          storage_bucket: bucket,
-          storage_key: storageKey,
-          sha256: declaration.sha256,
-          byte_length: declaration.sizeBytes,
-          metadata: {
-            recordingId,
-            role: declaration.role,
-            sensor,
-            requestPayloadSha256: owner.request_payload_sha256,
-          },
-          user_id: context.userId,
-          job_id: recordingId,
-          provenance: {
-            contract: "uniscenario.artifact-provenance/v1",
-            producerJobFamily: "artifact_postprocess",
-            producerJobId: recordingId,
-            revisionId: owner.revision_id,
-            operation: BROWSER_RECORDING_KIND,
-            artifactRole: declaration.role,
-            sensor,
-            requestPayloadSha256: owner.request_payload_sha256,
-          },
-        },
+        reservationParams,
       );
-      const artifact = inserted ?? await tx.queryOne<ArtifactRow>(
+      // A failed/expired recording quarantines its immutable outputs. The global
+      // digest+kind uniqueness key would otherwise make every exact retry fail
+      // forever. Reclaim only an exact-byte quarantined row while holding this
+      // recording transaction; available artifacts retain normal dedup reuse.
+      const reclaimed = inserted ? null : await tx.queryOne<ArtifactRow>(
+        `UPDATE uniscenario.artifacts
+            SET revision_id = :revision_id, media_type = :media_type,
+                storage_bucket = :storage_bucket, storage_key = :storage_key,
+                byte_length = :byte_length, artifact_state = 'pending',
+                metadata = CAST(:metadata AS jsonb), deleted_at = NULL,
+                producer_job_family = 'artifact_postprocess',
+                producer_job_id = :job_id, provenance = CAST(:provenance AS jsonb)
+          WHERE workspace_id = :workspace_id AND sha256 = :sha256
+            AND artifact_kind = :artifact_kind AND artifact_state = 'quarantined'
+            AND media_type = :media_type AND byte_length = :byte_length
+          RETURNING id, :artifact_role AS artifact_role,
+            :sensor_actor_id AS artifact_sensor_actor_id,
+            :sensor_id AS artifact_sensor_id,
+            :sensor_modality AS artifact_sensor_modality,
+            artifact_kind, media_type, sha256, byte_length, artifact_state,
+            storage_bucket, storage_key, producer_job_id, false AS reused`,
+        reservationParams,
+      );
+      const artifact = inserted ?? reclaimed ?? await tx.queryOne<ArtifactRow>(
         `SELECT id, :artifact_role AS artifact_role,
                 :sensor_actor_id AS artifact_sensor_actor_id,
                 :sensor_id AS artifact_sensor_id,
