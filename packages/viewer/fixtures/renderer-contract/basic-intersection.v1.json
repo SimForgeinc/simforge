@@ -1,0 +1,667 @@
+{
+  "fixtureVersion": "simforge.renderer-parity-fixture/v1",
+  "contractVersion": "simforge.renderer-contract/v1",
+  "tolerances": {
+    "matrixAbs": 0.000001,
+    "pointAbs": 0.0001
+  },
+  "sceneState": {
+    "version": "scene-state.v1",
+    "mapId": "yale-street",
+    "frame": "scene-yup",
+    "dt": 0.02,
+    "tickHz": 50,
+    "tickCount": 3,
+    "weather": {
+      "preset": "clear",
+      "fogDensity": 0,
+      "rainIntensity": 0,
+      "wetness": 0
+    },
+    "timeOfDay": 21.5,
+    "profile": "sensor",
+    "groundY": 0,
+    "actors": [
+      {
+        "id": "ego",
+        "catalogId": "vehicle.sedan",
+        "actorClass": "car",
+        "dims": {
+          "l": 4.7,
+          "w": 1.82,
+          "h": 1.45
+        }
+      },
+      {
+        "id": "ped-1",
+        "catalogId": "pedestrian.adult",
+        "actorClass": "pedestrian",
+        "dims": {
+          "l": 0.32,
+          "w": 0.5,
+          "h": 1.75
+        }
+      },
+      {
+        "id": "pol-1",
+        "catalogId": "vehicle.police_cruiser",
+        "actorClass": "car",
+        "dims": {
+          "l": 5.1,
+          "w": 2,
+          "h": 1.55
+        }
+      },
+      {
+        "id": "van-1",
+        "catalogId": "vehicle.van",
+        "actorClass": "car",
+        "dims": {
+          "l": 5.3,
+          "w": 2,
+          "h": 2.4
+        },
+        "color": "#e8e9ea"
+      }
+    ],
+    "frames": [
+      {
+        "tick": 0,
+        "t": 0,
+        "actors": [
+          {
+            "id": "ego",
+            "kind": "spawn",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "yawRad": 0,
+            "velocity": [
+              12.5,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "ped-1",
+            "kind": "spawn",
+            "position": [
+              3,
+              0,
+              -5
+            ],
+            "rotation": [
+              0,
+              -0.7071067811865475,
+              0,
+              0.7071067811865476
+            ],
+            "yawRad": -1.5707963267948966,
+            "velocity": [
+              0,
+              0,
+              1.5
+            ]
+          },
+          {
+            "id": "pol-1",
+            "kind": "spawn",
+            "position": [
+              -6,
+              0,
+              4
+            ],
+            "rotation": [
+              0,
+              0.7071067811865475,
+              0,
+              0.7071067811865476
+            ],
+            "yawRad": 1.5707963267948966,
+            "velocity": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "van-1",
+            "kind": "spawn",
+            "position": [
+              8,
+              0,
+              6
+            ],
+            "rotation": [
+              0,
+              1,
+              0,
+              6.123233995736766e-17
+            ],
+            "yawRad": 3.141592653589793,
+            "velocity": [
+              -0.8,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "tick": 1,
+        "t": 0.02,
+        "actors": [
+          {
+            "id": "ego",
+            "kind": "update",
+            "position": [
+              0.25,
+              0,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "yawRad": 0,
+            "velocity": [
+              12.5,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "ped-1",
+            "kind": "update",
+            "position": [
+              3,
+              0,
+              -4.97
+            ],
+            "rotation": [
+              0,
+              -0.7071067811865475,
+              0,
+              0.7071067811865476
+            ],
+            "yawRad": -1.5707963267948966,
+            "velocity": [
+              0,
+              0,
+              1.5
+            ]
+          },
+          {
+            "id": "pol-1",
+            "kind": "update",
+            "position": [
+              -6,
+              0,
+              4
+            ],
+            "rotation": [
+              0,
+              0.7071067811865475,
+              0,
+              0.7071067811865476
+            ],
+            "yawRad": 1.5707963267948966,
+            "velocity": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "van-1",
+            "kind": "update",
+            "position": [
+              8,
+              0,
+              6
+            ],
+            "rotation": [
+              0,
+              1,
+              0,
+              6.123233995736766e-17
+            ],
+            "yawRad": 3.141592653589793,
+            "velocity": [
+              -0.8,
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "tick": 2,
+        "t": 0.04,
+        "actors": [
+          {
+            "id": "ego",
+            "kind": "update",
+            "position": [
+              0.5,
+              0,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "yawRad": 0,
+            "velocity": [
+              12.5,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "ped-1",
+            "kind": "update",
+            "position": [
+              3,
+              0,
+              -4.94
+            ],
+            "rotation": [
+              0,
+              -0.7071067811865475,
+              0,
+              0.7071067811865476
+            ],
+            "yawRad": -1.5707963267948966,
+            "velocity": [
+              0,
+              0,
+              1.5
+            ]
+          },
+          {
+            "id": "pol-1",
+            "kind": "update",
+            "position": [
+              -6,
+              0,
+              4
+            ],
+            "rotation": [
+              0,
+              0.7071067811865475,
+              0,
+              0.7071067811865476
+            ],
+            "yawRad": 1.5707963267948966,
+            "velocity": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "van-1",
+            "kind": "update",
+            "position": [
+              8,
+              0,
+              6
+            ],
+            "rotation": [
+              0,
+              1,
+              0,
+              6.123233995736766e-17
+            ],
+            "yawRad": 3.141592653589793,
+            "velocity": [
+              -0.8,
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "tick": 2,
+  "renderCues": {
+    "pol-1": {
+      "emergency": "flashing"
+    },
+    "van-1": {
+      "reversing": true,
+      "indicator": "left"
+    }
+  },
+  "globalLowBeams": true,
+  "schedule": {
+    "tickHz": 50,
+    "startTick": 0,
+    "frameCount": 3,
+    "width": 1280,
+    "height": 720
+  },
+  "cameras": [
+    {
+      "id": "editor-orbit",
+      "command": {
+        "kind": "set-pose",
+        "pose": {
+          "position": [
+            18,
+            12,
+            18
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "intrinsics": {
+        "fovYDeg": 60,
+        "aspect": 1.7777777777777777,
+        "near": 0.1,
+        "far": 4000
+      },
+      "expected": {
+        "viewMatrix": [
+          0.7071067811865477,
+          -0.3015113445777637,
+          0.6396021490668313,
+          0,
+          2.775557561562892e-17,
+          0.904534033733291,
+          0.426401432711221,
+          0,
+          -0.7071067811865477,
+          -0.3015113445777637,
+          0.6396021490668313,
+          0,
+          0,
+          0,
+          -28.14249455894058,
+          1
+        ],
+        "projectionMatrix": [
+          0.9742785792574936,
+          0,
+          0,
+          0,
+          0,
+          1.7320508075688774,
+          0,
+          0,
+          0,
+          0,
+          -1.0000500012500313,
+          -1,
+          0,
+          0,
+          -0.2000050001250031,
+          0
+        ]
+      }
+    },
+    {
+      "id": "frame-all",
+      "command": {
+        "kind": "frame",
+        "bounds": {
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "radius": 30
+        }
+      },
+      "intrinsics": {
+        "fovYDeg": 60,
+        "aspect": 1.7777777777777777,
+        "near": 0.1,
+        "far": 4000
+      },
+      "expected": {
+        "viewMatrix": [
+          0.7071067811865475,
+          -0.41562693777745346,
+          0.5720614028176844,
+          0,
+          -2.7755575615628914e-17,
+          0.8090169943749475,
+          0.5877852522924731,
+          0,
+          -0.7071067811865476,
+          -0.4156269377774534,
+          0.5720614028176843,
+          0,
+          0,
+          0,
+          -69,
+          1
+        ],
+        "projectionMatrix": [
+          0.9742785792574936,
+          0,
+          0,
+          0,
+          0,
+          1.7320508075688774,
+          0,
+          0,
+          0,
+          0,
+          -1.0000500012500313,
+          -1,
+          0,
+          0,
+          -0.2000050001250031,
+          0
+        ]
+      }
+    }
+  ],
+  "expectedActorMatrices": {
+    "ego": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0.5,
+      0,
+      0,
+      1
+    ],
+    "ped-1": [
+      2.220446049250313e-16,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      0,
+      2.220446049250313e-16,
+      0,
+      3,
+      0,
+      -4.940000057220459,
+      1
+    ],
+    "pol-1": [
+      2.220446049250313e-16,
+      0,
+      -1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      2.220446049250313e-16,
+      0,
+      -6,
+      0,
+      4,
+      1
+    ],
+    "van-1": [
+      -1,
+      0,
+      -1.2246468525851679e-16,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1.2246468525851679e-16,
+      0,
+      -1,
+      0,
+      8,
+      0,
+      6,
+      1
+    ]
+  },
+  "expectedLights": {
+    "streetLighting": {
+      "enabled": true,
+      "activeLimit": 12
+    },
+    "vehicles": [
+      {
+        "actorId": "ego",
+        "lowBeams": true,
+        "projectedBeam": true,
+        "emergency": "off",
+        "indicator": "off",
+        "reverseLight": false
+      },
+      {
+        "actorId": "pol-1",
+        "lowBeams": true,
+        "projectedBeam": true,
+        "emergency": "flashing",
+        "indicator": "off",
+        "reverseLight": false
+      },
+      {
+        "actorId": "van-1",
+        "lowBeams": true,
+        "projectedBeam": true,
+        "emergency": "off",
+        "indicator": "left",
+        "reverseLight": true
+      }
+    ]
+  },
+  "expectedSemantics": {
+    "legend": {
+      "contractVersion": "simforge.renderer-contract/v1",
+      "staticSchema": "uniscenario.static-semantics/v1",
+      "staticClasses": [
+        "road",
+        "sidewalk",
+        "building",
+        "vegetation",
+        "pole",
+        "traffic_light",
+        "traffic_sign",
+        "furniture",
+        "terrain",
+        "other"
+      ],
+      "actorClasses": [
+        "car",
+        "truck",
+        "bus",
+        "motorcycle",
+        "bicycle",
+        "pedestrian",
+        "prop"
+      ],
+      "actorInstanceIds": {
+        "ego": 1,
+        "ped-1": 2,
+        "pol-1": 3,
+        "van-1": 4
+      }
+    }
+  },
+  "picks": [
+    {
+      "cameraId": "editor-orbit",
+      "request": {
+        "ndc": {
+          "x": 0.012519629944508493,
+          "y": 0.031793067176767324
+        },
+        "maxHits": 4
+      },
+      "expected": {
+        "actorId": "ego",
+        "distanceM": 26.248867134240058
+      }
+    },
+    {
+      "cameraId": "editor-orbit",
+      "request": {
+        "ndc": {
+          "x": 0.18855480943705796,
+          "y": 0.08217770761964585
+        },
+        "maxHits": 4
+      },
+      "expected": {
+        "actorId": "ped-1",
+        "distanceM": 29.46299353504728
+      }
+    },
+    {
+      "cameraId": "editor-orbit",
+      "request": {
+        "ndc": {
+          "x": 0.95,
+          "y": 0.95
+        },
+        "maxHits": 4
+      },
+      "expected": {
+        "actorId": null
+      }
+    }
+  ],
+  "expectedScheduleTimestampsMicros": [
+    0,
+    20000,
+    40000
+  ]
+}
