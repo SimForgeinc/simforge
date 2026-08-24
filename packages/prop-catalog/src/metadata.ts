@@ -8,5 +8,5 @@ export {
   isCatalogId,
   resolveCatalogId,
 } from './catalog.js';
-export { parseCatalog } from './schema.js';
+export { parseCatalog, parseExternalCatalogEntries } from './schema.js';
 export type { CatalogEntry } from './types.js';
