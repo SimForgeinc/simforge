@@ -59,12 +59,18 @@ for template in "$NATIVE"/config-templates/*.json; do
     "$template" > "$NATIVE/config/$(basename "$template")"
 done
 
+# --- control adapter follows the deployed revision -----------------------------
+cp "$NATIVE/src/services/render-worker/native/simcloud-control-adapter.mjs" "$NATIVE/config/simcloud-control-adapter.mjs"
+
 # --- restart ------------------------------------------------------------------
 SYSTEMCTL=(systemctl)
 [ "$(id -u)" = 0 ] || SYSTEMCTL=(sudo -n systemctl)
 units=("$@")
 if [ "${#units[@]}" = 0 ]; then
-  mapfile -t units < <("${SYSTEMCTL[@]}" list-unit-files 'uniscenarios-native-worker@*' --state=enabled --no-legend 2>/dev/null | awk '{print $1}')
+  # Template instances don't appear in list-unit-files; enumerate the
+  # multi-user.target.wants symlinks that `systemctl enable` created.
+  mapfile -t units < <(ls /etc/systemd/system/multi-user.target.wants/ 2>/dev/null \
+    | grep '^uniscenarios-native-worker@' || true)
 fi
 for unit in "${units[@]}"; do
   "${SYSTEMCTL[@]}" restart "$unit"
