@@ -67,12 +67,18 @@ export async function captureBrowserArtifacts(input: {
   openAbortables.push(framesSink);
   const encoder = new TextEncoder();
 
+  const videoSource = input.renderSpec.video
+    ? plan.passes.find((pass) => pass.modality === 'rgb')
+    : undefined;
+
   try {
     for (const pass of plan.passes) {
-      const identity = { role: 'sensor-archive', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality } as const;
-      const sink = await hashedSink(input.createArtifactSink, identity, 'application/zip');
-      const archive = new StreamingZipWriter(sink);
-      archives.set(passKey(pass), archive); openAbortables.push(archive);
+      if (shouldArchivePass(pass.modality, input.renderSpec.artifacts, pass === videoSource)) {
+        const identity = { role: 'sensor-archive', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality } as const;
+        const sink = await hashedSink(input.createArtifactSink, identity, 'application/zip');
+        const archive = new StreamingZipWriter(sink);
+        archives.set(passKey(pass), archive); openAbortables.push(archive);
+      }
       if (input.renderSpec.video && (pass.modality === 'lidar' || pass.modality === 'radar')) {
         const videoSink = await hashedSink(input.createArtifactSink, { role: 'sensor-video', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality }, 'video/webm');
         const quality = input.renderSpec.video.quality === 'lossless' ? 'high' : input.renderSpec.video.quality;
@@ -107,10 +113,11 @@ export async function captureBrowserArtifacts(input: {
         work.push(pipeline.run(() => serializeCapture(pass, captured), input.signal).then(async ({ value, timings: pipelineTiming }) => {
           addTiming(timings, 'encoding', pipelineTiming.executionMs);
           const archive = archives.get(passKey(pass));
-          if (!archive) throw new Error(`Sensor archive was not initialized: ${pass.sensorId}`);
-          const writeStarted = performance.now();
-          await archive.add(sensorFramePath(pass.sensorId, frame.index, value.extension), value.bytes, input.signal);
-          addTiming(timings, 'artifactWrite', performance.now() - writeStarted);
+          if (archive) {
+            const writeStarted = performance.now();
+            await archive.add(sensorFramePath(pass.sensorId, frame.index, value.extension), value.bytes, input.signal);
+            addTiming(timings, 'artifactWrite', performance.now() - writeStarted);
+          }
           const video = videos.get(passKey(pass));
           if (video && captured.structured) {
             const visualizationStarted = performance.now();
@@ -145,6 +152,16 @@ export async function captureBrowserArtifacts(input: {
     resources.dispose();
   }
 }
+function shouldArchivePass(
+  modality: BrowserRenderPass['modality'],
+  artifacts: RenderSpecV3['artifacts'],
+  videoSource: boolean,
+): boolean {
+  if (videoSource) return true;
+  if (!artifacts.includes('sensorArchive')) return false;
+  return modality === 'lidar' || modality === 'radar' || artifacts.includes('frames');
+}
+
 
 type StructuredCapture = readonly LidarPoint[] | readonly RadarDetection[];
 type CapturedPass = { pixels?: Uint8Array; depth?: Float32Array; structured?: StructuredCapture };

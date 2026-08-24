@@ -105,6 +105,9 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       if (!actorId || !sensorId || !modality || artifact.mediaType !== "application/zip") {
         throw new Error(`browser sensor archive has invalid identity: ${artifact.relativePath}`);
       }
+      // The first RGB archive is an internal MP4 encoding input. Review renders publish it only
+      // when the caller explicitly requests frame archives.
+      if (modality === "rgb" && !intent.renderSpec.artifacts.includes("frames")) continue;
       artifacts.push({
         kind: "sensor_archive",
         sensor: { actorId, sensorId, modality },
