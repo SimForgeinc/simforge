@@ -142,7 +142,7 @@ wheels = [
 
 [[package]]
 name = "uniscenarios-carla-bridge"
-version = "0.1.0rc50"
+version = "0.1.0rc51"
 source = { editable = "." }
 
 [package.optional-dependencies]
