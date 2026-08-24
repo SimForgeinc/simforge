@@ -122,7 +122,7 @@ export class CpuJobsClient {
   ): Promise<void> {
     if (reservation.reused) return;
     if (!reservation.uploadUrl) throw new Error(`new ${reservation.key} reservation is missing an upload URL`);
-    const response = await fetch(reservation.uploadUrl, {
+    const response = await fetch(workerObjectUrl(reservation.uploadUrl), {
       method: "PUT",
       headers: reservation.headers,
       body: createReadStream(artifact.path),
@@ -231,7 +231,7 @@ export async function downloadInputs(
     }
     paths.add(path);
     await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-    const response = await fetch(input.download.url, {
+    const response = await fetch(workerObjectUrl(input.download.url), {
       headers: input.download.headers,
       signal,
     });
@@ -390,4 +390,21 @@ function stringRecord(value: unknown): Readonly<Record<string, string>> {
     if (typeof item !== "string") throw new Error("worker API returned a non-string transfer header");
   }
   return row as Record<string, string>;
+}
+
+/**
+ * Browser-facing presigned URLs retain the HTTPS tailnet origin. A colocated
+ * worker may explicitly route only the local object-store endpoint over
+ * loopback; all non-local-object URLs remain byte-for-byte unchanged.
+ */
+function workerObjectUrl(value: string): string {
+  const override = process.env.UNISCENARIO_WORKER_OBJECT_BASE_URL?.trim();
+  if (!override) return value;
+  const source = new URL(value);
+  if (!source.pathname.startsWith("/api/local-objects/")) return value;
+  const local = new URL(override);
+  local.pathname = source.pathname;
+  local.search = source.search;
+  local.hash = source.hash;
+  return local.toString();
 }
