@@ -28,7 +28,7 @@ RUN test -n "$SOURCE_REVISION" && test -n "$IMAGE_VERSION" \
 COPY --from=node-build /usr/local /usr/local
 COPY --from=node-build --chown=carla:carla /out/worker /opt/uniscenarios/worker
 COPY --from=python-build /wheels /tmp/wheels
-RUN python3 -m pip install --no-cache-dir /tmp/wheels/*.whl && rm -rf /tmp/wheels
+RUN python3 -m pip install --no-cache-dir /home/carla/PythonAPI/carla/dist/carla-*.whl /tmp/wheels/*.whl && rm -rf /tmp/wheels
 ENV NODE_ENV=production \
     PORT=8080 \
     UNISCENARIOS_CARLA_BINARY=/usr/local/bin/uniscenarios-carla \
