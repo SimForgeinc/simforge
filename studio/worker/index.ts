@@ -39,12 +39,22 @@ export function localWorkerEnabled(argv: readonly string[] = process.argv.slice(
 
 async function runClaimLoop(client: CpuJobsClient, signal: AbortSignal): Promise<void> {
   while (!signal.aborted) {
-    const claim = await client.claim(signal);
-    if (!claim) {
+    try {
+      const claim = await client.claim(signal);
+      if (!claim) {
+        await delay(1_000, signal);
+        continue;
+      }
+      await runClaim(client, claim, signal);
+    } catch (error) {
+      if (signal.aborted) throw signal.reason;
+      process.stderr.write(`${JSON.stringify({
+        component: "uniscenarios-local-render-worker",
+        event: "claim.retry",
+        error: error instanceof Error ? error.message : String(error),
+      })}\n`);
       await delay(1_000, signal);
-      continue;
     }
-    await runClaim(client, claim, signal);
   }
 }
 
