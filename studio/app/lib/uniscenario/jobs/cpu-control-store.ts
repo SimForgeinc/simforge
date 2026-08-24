@@ -257,6 +257,7 @@ async function browserClaimPayload(source: BrowserRenderSource) {
         "artifact.manifest",
         "artifact.frames",
         "artifact.sensor_archive",
+        "artifact.sensor_video",
         // The browser recording adapter derives these from the immutable
         // playback evidence carried by the claim. They are not frame-capture
         // products of the Three.js renderer itself.
