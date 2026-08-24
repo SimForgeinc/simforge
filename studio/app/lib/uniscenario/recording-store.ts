@@ -122,14 +122,22 @@ function declaredRecordingArtifacts(
   if (renderSpec.artifacts.includes("frames")) declared.push({ role: "frames", sensor: null });
   if (renderSpec.artifacts.includes("sensorArchive")) {
     for (const source of renderSpec.sources) {
-      declared.push({
-        role: "sensor_archive",
-        sensor: {
-          actorId: source.actorId,
-          sensorId: source.sensorId,
-          modality: source.modality,
-        },
-      });
+      // Archive-light review contract: LiDAR/radar remain raw data products by
+      // default. Image frame archives are opt-in via the explicit frames artifact.
+      if (
+        renderSpec.artifacts.includes("frames")
+        || source.modality === "lidar"
+        || source.modality === "radar"
+      ) {
+        declared.push({
+          role: "sensor_archive",
+          sensor: {
+            actorId: source.actorId,
+            sensorId: source.sensorId,
+            modality: source.modality,
+          },
+        });
+      }
       if (
         renderSpec.video
         && (source.modality === "lidar" || source.modality === "radar")

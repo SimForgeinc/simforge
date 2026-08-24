@@ -62,6 +62,14 @@ export type RecordingArtifact =
     readonly sizeBytes: number;
   }
   | {
+    readonly kind: "sensor_video";
+    readonly sensor: RecordingSensorIdentity;
+    readonly path: string;
+    readonly mediaType: "video/webm";
+    readonly sha256: string;
+    readonly sizeBytes: number;
+  }
+  | {
     readonly kind: "sensor_archive";
     readonly sensor: RecordingSensorIdentity;
     readonly path: string;

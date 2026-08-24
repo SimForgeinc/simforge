@@ -103,6 +103,21 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
         });
         continue;
       }
+      if (artifact.identity.role === "video") {
+        const { actorId, sensorId, modality } = artifact.identity;
+        if (!actorId || !sensorId || !modality || artifact.mediaType !== "video/webm") {
+          throw new Error(`browser sensor video has invalid identity: ${artifact.relativePath}`);
+        }
+        artifacts.push({
+          kind: "sensor_video",
+          sensor: { actorId, sensorId, modality },
+          path: safeArtifactPath(request.workspace, artifact.relativePath),
+          mediaType: "video/webm",
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
+        });
+        continue;
+      }
       if (artifact.identity.role !== "sensorArchive") continue;
       const { actorId, sensorId, modality } = artifact.identity;
       if (!actorId || !sensorId || !modality || artifact.mediaType !== "application/zip") {
