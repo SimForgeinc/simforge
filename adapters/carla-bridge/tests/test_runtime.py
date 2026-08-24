@@ -640,6 +640,115 @@ def test_native_stability_rejects_periodic_motion_without_five_consecutive_ticks
         backend._wait_for_native_stability("post-reset", minimum_ticks=5, maximum_ticks=30)
 
 
+def _stability_fakes():
+    class Vector3D:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class Transform:
+        def __init__(self):
+            self.location = Vector3D()
+            self.rotation = type("Rotation", (), {"yaw": 0})()
+    class World:
+        def __init__(self): self.ticks = 0
+        def tick(self): self.ticks += 1
+    return Vector3D, Transform, World
+
+
+def test_native_stability_zero_drift_actors_converge_trivially():
+    # rc.63 regression: campaign settle phases timed out at 100 ticks while
+    # reporting literally all-zero residuals. Actors with zero drift MUST
+    # converge at minimum_ticks + 4, statics frozen along the way.
+    Vector3D, Transform, World = _stability_fakes()
+    class Actor:
+        def get_transform(self): return Transform()
+        def get_velocity(self): return Vector3D()
+        def get_angular_velocity(self): return Vector3D()
+    class StaticActor(Actor):
+        def __init__(self): self.physics = None
+        def set_simulate_physics(self, value): self.physics = value
+        def set_target_velocity(self, value): pass
+        def set_target_angular_velocity(self, value): pass
+    backend = object.__new__(CarlaBackend)
+    backend.carla = type("carla", (), {"Vector3D": Vector3D})
+    backend.world = World()
+    static = StaticActor()
+    backend.actors = {"ego": Actor(), "prop": static}
+    backend.static_actor_ids = {"prop"}
+    backend.frozen_static_actor_ids = set()
+    report = backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=100)
+    assert report["ticks"] == 24
+    assert report["blockedTicks"] == {}
+    assert static.physics is False
+    assert backend.frozen_static_actor_ids == {"prop"}
+
+
+def test_native_stability_converts_carla_angular_readback_from_degrees():
+    # carla.Actor.get_angular_velocity() reports deg/s; the angularRadps gate
+    # is 0.02 rad/s (~1.146 deg/s). 1 deg/s (0.0175 rad/s) must pass and
+    # 2 deg/s (0.0349 rad/s) must fail — pinning the deg->rad conversion.
+    Vector3D, Transform, World = _stability_fakes()
+    def build(deg_per_s):
+        class Actor:
+            def get_transform(self): return Transform()
+            def get_velocity(self): return Vector3D()
+            def get_angular_velocity(self): return Vector3D(z=deg_per_s)
+        backend = object.__new__(CarlaBackend)
+        backend.world = World()
+        backend.actors = {"ego": Actor()}
+        return backend
+    report = build(1.0)._wait_for_native_stability("post-reset", minimum_ticks=5, maximum_ticks=30)
+    assert report["ticks"] == 9
+    assert report["residuals"]["ego"]["angularRadps"] == pytest.approx(0.0174533, rel=1e-4)
+    with pytest.raises(RuntimeError, match="post-reset"):
+        build(2.0)._wait_for_native_stability("post-reset", minimum_ticks=5, maximum_ticks=30)
+
+
+def test_native_stability_converges_through_measured_parked_vehicle_jitter():
+    # The rc.63 fleet measured parked-vehicle angular jitter of 0.0066-0.0299
+    # deg/s oscillating tick to tick. Treated as rad/s it straddled the 0.02
+    # gate and reset the 5-consecutive counter for 100 ticks; converted to
+    # rad/s it is 40x inside the budget and must converge immediately.
+    Vector3D, Transform, World = _stability_fakes()
+    class ParkedVehicle:
+        def __init__(self, world): self.world = world
+        def get_transform(self): return Transform()
+        def get_velocity(self): return Vector3D()
+        def get_angular_velocity(self):
+            return Vector3D(z=0.0299 if self.world.ticks % 2 else 0.0066)
+    backend = object.__new__(CarlaBackend)
+    backend.world = World()
+    backend.actors = {"ego": ParkedVehicle(backend.world)}
+    report = backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=100)
+    assert report["ticks"] == 24
+    assert report["blockedTicks"] == {}
+
+
+def test_native_stability_failure_names_blocking_actor_and_metric():
+    # The genuine rc.63 instability read 14.8 deg/s (0.258 rad/s) with 1.7mm
+    # per-tick horizontal drift: it must still fail closed, and the error must
+    # name the blocking actor/metric with over-threshold tick counts instead
+    # of only the (possibly settled-looking) final tick residuals.
+    Vector3D, Transform, World = _stability_fakes()
+    class SpinningVehicle:
+        def get_transform(self): return Transform()
+        def get_velocity(self): return Vector3D(x=0.0155)
+        def get_angular_velocity(self): return Vector3D(z=14.8)
+    class ParkedVehicle:
+        def get_transform(self): return Transform()
+        def get_velocity(self): return Vector3D()
+        def get_angular_velocity(self): return Vector3D()
+    backend = object.__new__(CarlaBackend)
+    backend.world = World()
+    backend.actors = {"spinner": SpinningVehicle(), "parked": ParkedVehicle()}
+    with pytest.raises(RuntimeError) as excinfo:
+        backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=25)
+    message = str(excinfo.value)
+    assert "did not converge during spawn settle after 25 ticks" in message
+    assert "blocking residuals" in message
+    assert "'spinner'" in message and "'angularRadps'" in message
+    assert "'ticksOverThreshold': 25" in message
+    assert "statics never frozen: []" in message
+
+
 def test_native_low_speed_controller_has_feed_forward_braking_and_anti_windup():
     backend = object.__new__(CarlaBackend)
     backend.fixed_timestep_s = 0.02
@@ -1605,7 +1714,7 @@ def test_video_lease_requires_a_reservation_for_every_non_primary_sensor():
         parse_lease(incomplete_data)
 
 
-def test_camera_stream_encoder_backpressure_fails_closed():
+def test_camera_stream_encoder_fails_closed_on_sustained_overrun():
     from uniscenarios_carla_bridge.runtime.backend import (
         CAMERA_ENCODER_QUEUE_FRAMES,
         _CameraStreamEncoder,
@@ -1613,17 +1722,60 @@ def test_camera_stream_encoder_backpressure_fails_closed():
     encoder = object.__new__(_CameraStreamEncoder)
     encoder.sensor_key = "hero"
     encoder.error = None
+    encoder.stall_deadline_s = 0.05
     encoder.queue = __import__("queue").Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
     for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
         encoder.submit(f"frame-{index}")
-    # The queue is bounded and non-blocking: overflow must raise instead of
-    # stalling the CARLA tick loop.
+    # A queue that stays full past the stall deadline is a genuine sustained
+    # overrun: the render still fails closed instead of buffering unbounded.
     with pytest.raises(ContractError, match="backpressure budget"):
         encoder.submit("frame-overflow")
     # A failed writer thread surfaces on the next capture instead of hanging.
     encoder.error = RuntimeError("ffmpeg died")
     with pytest.raises(RuntimeError, match="camera stream encoder hero failed"):
         encoder.submit("frame-after-error")
+
+
+def test_camera_stream_encoder_absorbs_transient_burst_within_deadline():
+    # rc.63 regression: campaign renders failed instantly on a 4-frame burst
+    # while ffmpeg sat at 6-10% CPU on an unsaturated host. A transient burst
+    # must block the capture path briefly and succeed once the writer drains.
+    import queue as queue_module
+    import threading as threading_module
+    from uniscenarios_carla_bridge.runtime.backend import (
+        CAMERA_ENCODER_QUEUE_FRAMES,
+        _CameraStreamEncoder,
+    )
+    encoder = object.__new__(_CameraStreamEncoder)
+    encoder.sensor_key = "hero"
+    encoder.error = None
+    encoder.stall_deadline_s = 5.0
+    encoder.queue = queue_module.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
+    for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
+        encoder.submit(f"frame-{index}")
+    drained = threading_module.Timer(0.05, encoder.queue.get)
+    drained.start()
+    try:
+        encoder.submit("frame-burst")  # must not raise: the burst drains
+    finally:
+        drained.join()
+    assert encoder.queue.full()
+
+
+def test_camera_stream_encoder_surfaces_writer_death_instead_of_backpressure():
+    # A writer that dies while capture waits on a full queue must surface the
+    # writer's failure, not a misleading backpressure error.
+    import queue as queue_module
+    from uniscenarios_carla_bridge.runtime.backend import _CameraStreamEncoder
+    encoder = object.__new__(_CameraStreamEncoder)
+    encoder.sensor_key = "hero"
+    encoder.error = None
+    encoder.stall_deadline_s = 0.05
+    encoder.queue = queue_module.Queue(maxsize=1)
+    encoder.submit("frame-0")
+    encoder.error = RuntimeError("ffmpeg died mid-wait")
+    with pytest.raises(RuntimeError, match="camera stream encoder hero failed: ffmpeg died mid-wait"):
+        encoder.submit("frame-1")
 
 
 def test_presentation_video_encoder_selection(monkeypatch):
