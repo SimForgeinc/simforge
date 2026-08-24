@@ -309,12 +309,20 @@ CAMERA_ENCODER_QUEUE_FRAMES = 8
 #: consumed by the writer restarts the window, so a slow-but-alive encoder
 #: merely throttles the (synchronous, deterministic) capture loop to encode
 #: speed and only costs wall time; a wedged writer/ffmpeg still fails the
-#: render within this window. rc.63/rc.64 fleet evidence showed the failures
-#: were never encode throughput (ffmpeg at 1-10% CPU, idle NVMe, capture at
-#: ~2 fps per camera): they were scheduler convoys from thread
-#: oversubscription, which the previous instant/fixed-deadline gates misread
-#: as sustained overrun.
-CAMERA_ENCODER_STALL_DEADLINE_S = 30.0
+#: render within this window.
+#:
+#: Sizing is empirical (simforge1, 12x720p streams inside the runtime image):
+#: - healthy loaded host: 179 fps/stream drain, max submit stall 19 ms;
+#: - concurrent direct-IO write storm on the filesystem holding /scratch
+#:   (docker bakes, sibling renders): ffmpeg's mp4 output write blocks under
+#:   writeback throttling, it stops reading stdin, and zero-drain stalls of
+#:   13 s to >30 s were measured. The encoder is starved, not broken: the
+#:   stall clears when the storm passes. 180 s rides out storms with >6x
+#:   headroom while a genuinely wedged encoder still fails the attempt well
+#:   inside its lease budget. Encode throughput itself is never the gate
+#:   (~90x margin over capture demand with 2-thread x264), so a healthy
+#:   render pays nothing for the larger window.
+CAMERA_ENCODER_STALL_DEADLINE_S = 180.0
 
 
 #: Per-actor residual budgets an actor must stay inside for
