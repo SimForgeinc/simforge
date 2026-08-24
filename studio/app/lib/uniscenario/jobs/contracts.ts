@@ -30,6 +30,7 @@ export const UNISCENARIO_DEFAULT_CPU_CLAIM_FAMILIES = [
   "openscenario_render",
   "artifact_postprocess",
 ] as const;
+const MAX_CPU_JOB_ARTIFACTS = 64;
 
 export const ClaimCpuJobSchema = z.strictObject({
   workerId: z.string().trim().min(1).max(200),
@@ -59,7 +60,7 @@ export const ReserveCpuJobOutputSchema = CpuJobFenceSchema.extend({
     mediaType: z.string().trim().min(1).max(200),
     sha256: CompilerDigestSchema,
     sizeBytes: z.number().int().positive().max(512 * 1024 * 1024),
-  })).min(1).max(4),
+  })).min(1).max(MAX_CPU_JOB_ARTIFACTS),
 });
 
 export const CompleteCpuJobSchema = CpuJobFenceSchema.extend({
@@ -68,7 +69,7 @@ export const CompleteCpuJobSchema = CpuJobFenceSchema.extend({
     kind: z.string().trim().min(1).max(100),
     sha256: CompilerDigestSchema,
     sizeBytes: z.number().int().positive().max(512 * 1024 * 1024),
-  })).min(1).max(4),
+  })).min(1).max(MAX_CPU_JOB_ARTIFACTS),
   compile: z.strictObject({
     manifestSha256: CompilerDigestSchema,
     xsdSha256: CompilerDigestSchema,
