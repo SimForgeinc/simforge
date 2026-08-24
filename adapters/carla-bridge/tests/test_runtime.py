@@ -3164,3 +3164,37 @@ def test_tick_fails_closed_when_the_engine_ticks_itself():
     assert backend.tick() == {}
     with pytest.raises(RuntimeError, match="3 un-commanded engine tick"):
         backend.tick()
+
+
+def test_sensor_sample_cap_covers_pronto_20s_and_stays_fail_closed(monkeypatch):
+    from uniscenarios_carla_bridge.runtime import contract
+
+    base = {
+        "schema": "uniscenario.render-resource-request/v1",
+        "durationS": 20.0,
+        "sensors": 9,
+        "captureFrames": 480,
+        "actors": 4,
+        "actorFrameStates": 4_000,
+        "outputBytes": 2_147_483_648,
+        "maxFrameWidth": 1280,
+        "maxFrameHeight": 720,
+        "samplesPerFrame": 8_294_400,
+    }
+    # The default 6e9 cap admits exactly the boundary and the 20 s Pronto shape.
+    assert contract.MAX_SENSOR_PIXELS == 6_000_000_000
+    at_bound = contract.RenderResourceRequest.parse({**base, "sensorSamples": 6_000_000_000})
+    assert at_bound.sensor_samples == 6_000_000_000
+    pronto = contract.RenderResourceRequest.parse({**base, "sensorSamples": 3_981_312_000})
+    assert pronto.sensor_samples == 3_981_312_000
+    with pytest.raises(contract.ContractError):
+        contract.RenderResourceRequest.parse({**base, "sensorSamples": 6_000_000_001})
+    # Env override is validated and fail-closed.
+    monkeypatch.setenv("UNISCENARIO_MAX_SENSOR_PIXELS", "123")
+    assert contract._configured_max_sensor_pixels() == 123
+    monkeypatch.setenv("UNISCENARIO_MAX_SENSOR_PIXELS", "-1")
+    with pytest.raises(contract.ContractError):
+        contract._configured_max_sensor_pixels()
+    monkeypatch.setenv("UNISCENARIO_MAX_SENSOR_PIXELS", "not-a-number")
+    with pytest.raises(contract.ContractError):
+        contract._configured_max_sensor_pixels()

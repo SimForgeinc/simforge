@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
 from dataclasses import dataclass
 from decimal import Decimal
@@ -20,7 +21,6 @@ MAX_SENSOR_COUNT = 64
 MAX_ACTOR_COUNT = 256
 MAX_DURATION_SECONDS = 300.0
 MAX_CAPTURE_FRAMES = 18_000
-MAX_SENSOR_PIXELS = 2_000_000_000
 MAX_ACTOR_FRAME_STATES = 2_000_000
 MAX_ARTIFACT_BYTES = 4 * 1024 * 1024 * 1024
 MAX_OUTPUT_BYTES = 8 * 1024 * 1024 * 1024
@@ -34,6 +34,23 @@ EMPTY_AMBIENT_RESULT_SHA256 = "1925590408012373ea3cc6b9d02703527531492efb52aa396
 
 class ContractError(ValueError):
     """An immutable execution package or lease violated its contract."""
+
+
+def _configured_max_sensor_pixels() -> int:
+    """Aggregate sensor-sample guard. 6e9 covers a 20 s, 9-camera 1280x720@24
+    Pronto intent (~3.98e9). It bounds compute and temporary-disk pressure, not
+    memory: raster frames either land on disk per frame or stream straight into
+    ffmpeg stdin (UNISCENARIO_RGB_STDOUT_VIDEO=1); nothing accumulates in RAM.
+    Fail-closed above the bound; override via UNISCENARIO_MAX_SENSOR_PIXELS."""
+    raw = os.environ.get("UNISCENARIO_MAX_SENSOR_PIXELS", "").strip()
+    if not raw:
+        return 6_000_000_000
+    if not raw.isdigit() or int(raw) <= 0:
+        raise ContractError("UNISCENARIO_MAX_SENSOR_PIXELS must be a positive integer")
+    return int(raw)
+
+
+MAX_SENSOR_PIXELS = _configured_max_sensor_pixels()
 
 
 def reject_unsafe_xml_envelope(xml_bytes: bytes) -> None:
