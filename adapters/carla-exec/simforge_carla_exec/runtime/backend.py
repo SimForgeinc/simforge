@@ -287,6 +287,7 @@ class CarlaBackend:
         self.sensor_closed = False
         self.capture_disk_bytes = 0
         self.max_capture_disk_bytes = 0
+        self.map_load_timeout_s = 180.0
         self.sensor_timeout_s = float(os.environ.get("UNISCENARIO_SENSOR_FRAME_TIMEOUT_S", "10"))
         self.sensor_writer_workers = max(
             1, min(32, int(os.environ.get("UNISCENARIO_SENSOR_WRITER_WORKERS", "8"))),
@@ -334,6 +335,11 @@ class CarlaBackend:
         if not isfinite(timeout_s) or timeout_s <= 0:
             raise RuntimeError("CARLA RPC timeout must be finite and positive")
         self.client.set_timeout(min(60.0, timeout_s))
+
+    def set_map_load_timeout(self, timeout_s: float) -> None:
+        if not isfinite(timeout_s) or not 1.0 <= timeout_s <= 180.0:
+            raise RuntimeError("CARLA map load timeout must be in [1, 180] seconds")
+        self.map_load_timeout_s = timeout_s
 
     def configure_environment(self, environment: Environment) -> None:
         assert self.world is not None
@@ -426,7 +432,7 @@ class CarlaBackend:
                 "exact": True,
             }
         else:
-            self.client.set_timeout(180.0)
+            self.client.set_timeout(self.map_load_timeout_s)
             loaded = self.client.load_world(requested_name)
             self.world = loaded if loaded is not None else self.client.get_world()
             runtime_map = self.world.get_map()

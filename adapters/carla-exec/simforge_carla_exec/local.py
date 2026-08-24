@@ -7,6 +7,8 @@ import hashlib
 import json
 import os
 import xml.etree.ElementTree as ET
+import tempfile
+from time import monotonic
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -424,9 +426,9 @@ def _intent_lease(
     )
     if any(not isinstance(count, int) or isinstance(count, bool) or count < 0 for count in declared_rig):
         raise ContractError("render intent sensorHost.sensorRig counts must be non-negative integers")
+    managed_pronto = sensor_rig.get("rigId") == "pronto.8-camera-6-lidar-4-radar"
     if not isinstance(vehicle_asset, Mapping):
         raise ContractError("render intent sensorHost.vehicleAsset must be an object")
-    managed_pronto = sensor_rig.get("rigId") == "pronto.8-camera-6-lidar-4-radar"
     if managed_pronto:
         if {
             key: value for key, value in vehicle_asset.items() if key != "sourceImage"
@@ -451,7 +453,8 @@ def _intent_lease(
         if sensor_rig.get("rigId") != "authored":
             raise ContractError("non-Pronto CARLA sensorHost.sensorRig must use rigId authored")
         if (
-            set(vehicle_asset) != {"catalogAssetId"}
+            not isinstance(vehicle_asset, Mapping)
+            or set(vehicle_asset) != {"catalogAssetId"}
             or not isinstance(vehicle_asset.get("catalogAssetId"), str)
             or not vehicle_asset["catalogAssetId"].strip()
         ):
@@ -779,6 +782,105 @@ def _artifact_manifest_entries(items: Any) -> list[dict[str, Any]]:
 
 
 
+class PreflightError(RuntimeError):
+    """A phase-specific render preflight failure."""
+
+    def __init__(self, layer: str, cause: Exception) -> None:
+        super().__init__(f"{layer}: {cause}")
+        self.layer = layer
+        self.cause = cause
+
+
+def _preflight_intent(args: argparse.Namespace) -> dict[str, object]:
+    checks: list[dict[str, object]] = []
+
+    def check(layer: str, operation: Callable[[], object]) -> object:
+        started = monotonic()
+        try:
+            detail = operation()
+        except Exception as exc:
+            raise PreflightError(layer, exc) from exc
+        checks.append({
+            "layer": layer,
+            "status": "pass",
+            "durationMs": round((monotonic() - started) * 1000),
+            **({"detail": detail} if detail is not None else {}),
+        })
+        return detail
+
+    intent_path, package_path = Path(args.intent), Path(args.package)
+    intent = check("intent.schema", lambda: json.loads(intent_path.read_text("utf-8")))
+    if not isinstance(intent, Mapping):
+        raise PreflightError("intent.schema", ContractError("render intent must be an object"))
+    parsed_spec = check(
+        "intent.capabilities",
+        lambda: RenderSpec.parse(intent.get("renderSpec")),
+    )
+    assert isinstance(parsed_spec, RenderSpec)
+    with tempfile.TemporaryDirectory(prefix="uniscenario-preflight-") as temporary:
+        temporary_path = Path(temporary)
+
+        def build_lease() -> tuple[Any, Mapping[str, Path]]:
+            intent_sha, inputs = _read_input_package(package_path, intent)
+            return _intent_lease(intent, intent_sha, inputs, temporary_path)
+
+        lease, asset_paths = check("intent.lease-eligibility", build_lease)
+        backend: CarlaBackend | None = None
+        try:
+            def connect() -> dict[str, str]:
+                nonlocal backend
+                backend = CarlaBackend(args.host, args.port)
+                backend.set_rpc_timeout(args.rpc_timeout)
+                backend.client.get_world()
+                return {
+                    "clientVersion": str(getattr(backend.carla, "__version__", "unknown")),
+                    "serverVersion": str(backend.client.get_server_version()),
+                }
+
+            rpc = check("carla.rpc", connect)
+            assert backend is not None
+            package = lease.job.execution_package
+            xodr = asset_paths[package.xodr.url].read_bytes()
+
+            def load_map() -> Mapping[str, object]:
+                assert backend is not None
+                backend.set_map_load_timeout(args.map_timeout)
+                backend.load_opendrive(package.xodr.map_name, xodr, package.runtime_requirements.fixed_timestep_s)
+                return dict(backend.map_evidence)
+
+            map_evidence = check("carla.map", load_map)
+
+            def find_blueprint() -> Mapping[str, str]:
+                assert backend is not None and backend.world is not None
+                blueprint = backend.world.get_blueprint_library().find(KIA_CARNIVAL_BLUEPRINT_ID)
+                if blueprint is None or str(getattr(blueprint, "id", "")) != KIA_CARNIVAL_BLUEPRINT_ID:
+                    raise RuntimeError(f"required blueprint {KIA_CARNIVAL_BLUEPRINT_ID} is unavailable")
+                return {"blueprintId": KIA_CARNIVAL_BLUEPRINT_ID}
+
+            blueprint = check("carla.vehicle-blueprint", find_blueprint)
+        finally:
+            if backend is not None:
+                backend.cleanup()
+
+    return {
+        "schema": "uniscenario.render-preflight/v1",
+        "status": "pass",
+        "intentId": intent["intentId"],
+        "checks": checks,
+        "requested": {
+            "sensors": len(parsed_spec.sensors),
+            "modalities": sorted({sensor.modality for sensor in parsed_spec.sensors}),
+            "outputs": sorted(parsed_spec.outputs),
+        },
+        "runtime": {
+            **rpc,
+            "map": map_evidence,
+            "vehicle": blueprint,
+            "imageDigest": CARLA_IMAGE_AMD64_MANIFEST_DIGEST,
+        },
+    }
+
+
 def _run_intent(args: argparse.Namespace) -> dict[str, object]:
     intent_path, package_path = Path(args.intent), Path(args.package)
     intent = json.loads(intent_path.read_text("utf-8"))
@@ -850,6 +952,14 @@ def main() -> None:
     intent.add_argument("--output", required=True)
     intent.add_argument("--progress", required=True)
     intent.add_argument("--manifest", required=True)
+    preflight = commands.add_parser(
+        "preflight-intent",
+        help="validate a render intent, CARLA runtime, exact map, and vehicle without rendering",
+    )
+    preflight.add_argument("--intent", required=True)
+    preflight.add_argument("--package", required=True)
+    preflight.add_argument("--rpc-timeout", type=float, default=5.0)
+    preflight.add_argument("--map-timeout", type=float, default=25.0)
     local = commands.add_parser("run-local", help="render an OpenSCENARIO offline from files")
     local.add_argument("--scenario", required=True)
     local.add_argument("--xodr", required=True)
@@ -870,6 +980,17 @@ def main() -> None:
         result = run_local_command(args)
     elif args.command == "probe":
         result = _probe(args.host, args.port)
+    elif args.command == "preflight-intent":
+        try:
+            result = _preflight_intent(args)
+        except PreflightError as exc:
+            print(json.dumps({
+                "schema": "uniscenario.render-preflight/v1",
+                "status": "fail",
+                "blockingLayer": exc.layer,
+                "error": str(exc.cause),
+            }, sort_keys=True))
+            raise SystemExit(2) from exc
     else:
         result = _run_intent(args)
     print(json.dumps(result, sort_keys=True))
