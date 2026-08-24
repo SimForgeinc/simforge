@@ -2,7 +2,7 @@ import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { EngineCapabilityDeclarationSchema } from '@uniscenarios/render-runtime';
 
-import { createRenderEngine, decodePlaybackBundle, resolveBrowserRenderIntent } from './engine.js';
+import { createRenderEngine, decodePlaybackArchive, resolveBrowserRenderIntent } from './engine.js';
 
 describe('browser render engine registration', () => {
   it('publishes the canonical worker capability declaration', () => {
@@ -101,6 +101,6 @@ describe('browser render intent adapter', () => {
 describe('browser playback materialization', () => {
   it('decodes the persisted gzip playback bundle before rendering', async () => {
     const bundle = { schema: 'uniscenario.simulation-preview/v1', draftVersion: 5 };
-    await expect(decodePlaybackBundle(gzipSync(JSON.stringify(bundle)))).resolves.toEqual(bundle);
+    await expect(decodePlaybackArchive(gzipSync(JSON.stringify(bundle)))).resolves.toEqual(bundle);
   });
 });
