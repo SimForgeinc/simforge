@@ -1019,6 +1019,16 @@ class CarlaBackend:
         )
         expected_runtime_ids = set(runtime_id_by_authored.values())
         extra = sorted(runtime_ids - expected_runtime_ids)
+        # An approved cooked-map identity may ship additional dynamic heads the
+        # authored map never declares (kia-image Richmond cooks three low-mounted
+        # pedestrian signals, OpenDRIVE ids 444-446, beside the eight remapped
+        # vehicular heads). Under that approved identity they are forced Red and
+        # frozen for the whole render — deterministic and inert — and recorded in
+        # the map evidence. Worlds without a cooked remap stay strictly fail-closed.
+        unowned_cooked_extras: list[str] = []
+        if extra and getattr(self, "signal_id_map", {}):
+            unowned_cooked_extras = extra
+            extra = []
         if missing or extra or unbound or duplicate_ids:
             details = []
             if missing:
@@ -1087,6 +1097,10 @@ class CarlaBackend:
                 light, state, frozen, green_time, yellow_time, red_time,
             )
 
+        unowned_keys = {
+            self._signal_identity(resolved[signal_id]) for signal_id in unowned_cooked_extras
+        }
+
         self.signals = {
             authored_id: resolved[runtime_id]
             for authored_id, runtime_id in runtime_id_by_authored.items()
@@ -1095,12 +1109,18 @@ class CarlaBackend:
         self.executed_signals = {}
         self.executed_signal_lamps = {}
         try:
-            for snapshot in snapshots.values():
+            for key, snapshot in snapshots.items():
                 check()
+                if key in unowned_keys:
+                    snapshot.light.set_state(self.carla.TrafficLightState.Red)
                 snapshot.light.freeze(True)
             check()
             self.world.tick()
             check()
+            if unowned_cooked_extras:
+                evidence = dict(getattr(self, "map_evidence", {}) or {})
+                evidence["unownedFrozenSignalIds"] = list(unowned_cooked_extras)
+                self.map_evidence = evidence
         except Exception as original_error:
             try:
                 self._restore_owned_signals()

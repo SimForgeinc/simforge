@@ -3515,3 +3515,68 @@ def test_sensor_sample_cap_covers_pronto_20s_and_stays_fail_closed(monkeypatch):
     monkeypatch.setenv("UNISCENARIO_MAX_SENSOR_PIXELS", "not-a-number")
     with pytest.raises(contract.ContractError):
         contract._configured_max_sensor_pixels()
+
+
+def test_cooked_map_remap_freezes_unauthored_extra_heads_red_and_records_evidence():
+    """kia-image Richmond ships 3 pedestrian heads (444-446) beside the 8 remapped
+    vehicular heads; under the approved cooked identity they are forced Red and
+    frozen instead of failing the ownership gate, and land in map evidence."""
+    class TrafficLightState:
+        Red, Yellow, Green, Off = "red", "yellow", "green", "off"
+    class Carla:
+        pass
+    Carla.TrafficLightState = TrafficLightState
+    class Light:
+        type_id = "traffic.traffic_light"
+        def __init__(self, actor_id, signal_id, state):
+            self.id, self.signal_id, self.state, self.frozen = actor_id, signal_id, state, False
+            self.green_time = self.yellow_time = self.red_time = 5.0
+            self.mutations = []
+        def get_opendrive_id(self): return self.signal_id
+        def get_state(self): return self.state
+        def is_frozen(self): return self.frozen
+        def get_green_time(self): return self.green_time
+        def get_yellow_time(self): return self.yellow_time
+        def get_red_time(self): return self.red_time
+        def set_state(self, state): self.state = state; self.mutations.append(("state", state))
+        def freeze(self, frozen): self.frozen = frozen; self.mutations.append(("freeze", frozen))
+        def set_green_time(self, value): self.green_time = value
+        def set_yellow_time(self, value): self.yellow_time = value
+        def set_red_time(self, value): self.red_time = value
+    class Actors(list):
+        def filter(self, pattern): assert pattern == "traffic.traffic_light*"; return self
+    class Settings:
+        synchronous_mode, fixed_delta_seconds = True, 0.02
+    class World:
+        def __init__(self, lights): self.lights, self.ticks = Actors(lights), 0
+        def get_actors(self): return self.lights
+        def tick(self): self.ticks += 1; return self.ticks
+        def get_settings(self): return Settings()
+        def apply_settings(self, _settings): pass
+
+    owned = Light(103, "421", "green")
+    pedestrian = Light(101, "444", "green")
+    backend = object.__new__(CarlaBackend)
+    backend.carla = Carla
+    backend.world = World([owned, pedestrian])
+    backend.signals, backend.signal_snapshots = {}, {}
+    backend.sensors, backend.actors = [], {}
+    backend.signal_id_map = {"367": "421"}
+    backend.map_evidence = {"schema": "uniscenario.carla-map-evidence/v1"}
+
+    backend.bind_signals(("367",))
+    assert backend.signals == {"367": owned}
+    assert owned.mutations == [("freeze", True)]
+    assert pedestrian.mutations == [("state", "red"), ("freeze", True)]
+    assert backend.map_evidence["unownedFrozenSignalIds"] == ["444"]
+
+    backend.cleanup()
+    assert (pedestrian.state, pedestrian.frozen) == ("green", False)
+
+    # Without a cooked identity the extra head still fails closed.
+    strict = object.__new__(CarlaBackend)
+    strict.carla = Carla
+    strict.world = World([Light(103, "421", "green"), Light(101, "444", "green")])
+    strict.signals, strict.signal_snapshots = {}, {}
+    with pytest.raises(RuntimeError, match="extra: 444"):
+        strict.bind_signals(("421",))
