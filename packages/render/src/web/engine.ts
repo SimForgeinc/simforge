@@ -33,6 +33,7 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
     'artifact.video',
     'artifact.frames',
     'artifact.sensor_archive',
+    'artifact.sensor_video',
     'artifact.manifest',
     'map.static_semantics',
   ],
