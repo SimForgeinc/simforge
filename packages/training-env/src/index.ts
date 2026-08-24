@@ -46,3 +46,21 @@ export type {
   PerceivedObject,
   RewardConfig,
 } from './types.js';
+
+export { WorldSession, replayWorldSessionLog, WORLD_SESSION_LOG_VERSION } from './world-session.js';
+export type {
+  AdvanceResult,
+  BatchOp,
+  CommandOutcome,
+  ReplayResult,
+  SpawnRequest,
+  WorldActorState,
+  WorldCommand,
+  WorldLogEntry,
+  WorldSessionLog,
+  WorldSessionOptions,
+  WorldSnapshot,
+} from './world-session.js';
+
+export { WorldRegistry, registerWorldOps } from './session-registry.js';
+export type { QueuedCommandResult, SessionRole, WorldAdvanceResult, WorldEpisode } from './session-registry.js';
