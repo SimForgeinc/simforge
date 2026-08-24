@@ -2,21 +2,11 @@ import { z } from 'zod';
 
 import { RenderSpecV3Schema } from './render-spec.js';
 import { EntityIdSchema } from './schema/v1.js';
+import { Sha256 } from './sha256.js';
 
 export const RENDER_INTENT_V1_SCHEMA = 'uniscenario.render-intent/v1' as const;
-export const PRONTO_KIA_CATALOG_ASSET_ID = 'vehicle.kia.carnival' as const;
-export const PRONTO_KIA_CARLA_BLUEPRINT_ID = 'vehicle.kia.carnival' as const;
-export const PRONTO_KIA_CARLA_CLASS_PATH =
-  '/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C' as const;
-export const PRONTO_CARLA_IMAGE_REPOSITORY =
-  'ghcr.io/simforgeinc/carla-rfs-munich-belmont' as const;
-export const PRONTO_CARLA_IMAGE_INDEX_SHA256 =
-  'f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5' as const;
-export const PRONTO_CARLA_IMAGE_AMD64_SHA256 =
-  'baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64' as const;
-export const PRONTO_SENSOR_RIG_ID = 'pronto.8-camera-6-lidar-4-radar' as const;
 /**
- * A trailing presentation camera authored on the sensor host. It rides outside the 8/6/4
+ * A trailing presentation camera authored on the sensor host. It rides outside the
  * measurement rig so a render can ship a drive-along view without restating the rig counts.
  */
 export const PRONTO_CHASE_CAMERA_SENSOR_ID = 'chase-cam-trailing' as const;
@@ -51,53 +41,29 @@ export const RenderIntentScenarioRevisionSchema = z.strictObject({
     sha256: RenderSha256Schema,
   }),
 });
-export const ProntoSensorHostSchema = z.strictObject({
-  actorId: EntityIdSchema,
-  vehicleAsset: z.strictObject({
-    catalogAssetId: z.literal(PRONTO_KIA_CATALOG_ASSET_ID),
-    carlaBlueprintId: z.literal(PRONTO_KIA_CARLA_BLUEPRINT_ID),
-    carlaClassPath: z.literal(PRONTO_KIA_CARLA_CLASS_PATH),
-    make: z.literal('Kia'),
-    model: z.literal('Carnival'),
-    baseType: z.literal('van'),
-    sourceImage: z.strictObject({
-      repository: z.literal(PRONTO_CARLA_IMAGE_REPOSITORY),
-      indexSha256: z.literal(PRONTO_CARLA_IMAGE_INDEX_SHA256),
-      linuxAmd64ManifestSha256: z.literal(PRONTO_CARLA_IMAGE_AMD64_SHA256),
-    }),
-  }),
-  sensorRig: z.strictObject({
-    rigId: z.literal(PRONTO_SENSOR_RIG_ID),
-    cameras: z.literal(8),
-    lidars: z.literal(6),
-    radars: z.literal(4),
-  }),
-});
 
 /**
- * A browser-renderable sensor host authored directly on a catalog vehicle.
+ * A sensor host authored on a catalog vehicle. Any authored vehicle renders; the
+ * vehicle→blueprint binding is catalog data, never wire-schema literals.
  *
- * CARLA's Pronto lane retains its pinned vehicle and image provenance above. The browser lane only
- * needs the immutable actor/catalog identity and selected physical-sensor counts because it renders
- * the authored meshes and sensors from the execution package.
+ * `vehicleAsset` tolerates unknown keys because queued v1 intents are immutable:
+ * rows written by the retired Pronto lane carry pinned blueprint/image provenance
+ * that must keep parsing (and hashing) byte-for-byte forever.
  */
 export const AuthoredSensorHostSchema = z.strictObject({
   actorId: EntityIdSchema,
-  vehicleAsset: z.strictObject({
+  vehicleAsset: z.looseObject({
     catalogAssetId: z.string().trim().min(1).max(200),
   }),
   sensorRig: z.strictObject({
-    rigId: z.literal('authored'),
+    rigId: z.string().min(1).max(200),
     cameras: z.number().int().nonnegative().max(1024),
     lidars: z.number().int().nonnegative().max(1024),
     radars: z.number().int().nonnegative().max(1024),
   }),
 });
 
-export const RenderSensorHostSchema = z.union([
-  ProntoSensorHostSchema,
-  AuthoredSensorHostSchema,
-]);
+export const RenderSensorHostSchema = AuthoredSensorHostSchema;
 
 /**
  * Immutable, renderer-neutral input to every UniScenarios rendering backend.
@@ -140,64 +106,48 @@ export const RenderIntentV1Schema = z.strictObject({
       input: ctx.value.renderSpec.sources,
     });
   }
-  const cameraIds = new Set(hostSources
-    .filter((source) => source.modality !== 'lidar'
-      && source.modality !== 'radar'
-      && source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID)
-    .map((source) => source.sensorId));
-  const lidarIds = new Set(hostSources
-    .filter((source) => source.modality === 'lidar')
-    .map((source) => source.sensorId));
-  const radarIds = new Set(hostSources
-    .filter((source) => source.modality === 'radar')
-    .map((source) => source.sensorId));
-  if (ctx.value.sensorHost.sensorRig.rigId === 'authored') {
-    const counts = ctx.value.sensorHost.sensorRig;
-    if (cameraIds.size !== counts.cameras
-      || lidarIds.size !== counts.lidars
-      || radarIds.size !== counts.radars) {
-      ctx.issues.push({
-        code: 'custom',
-        path: ['sensorHost', 'sensorRig'],
-        message: `authored sensor counts do not match render sources; expected ${counts.cameras}/${counts.lidars}/${counts.radars}, got ${cameraIds.size}/${lidarIds.size}/${radarIds.size}`,
-        input: ctx.value.renderSpec.sources,
-      });
-    }
-    return;
-  }
-  const chaseCameras = hostSources.filter(
-    (source) => source.sensorId === PRONTO_CHASE_CAMERA_SENSOR_ID,
-  );
-  const measurementCameraIds = new Set(hostSources
-    .filter((source) => source.modality !== 'lidar'
-      && source.modality !== 'radar'
-      && source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID)
-    .map((source) => source.sensorId));
-  if (measurementCameraIds.size !== 8 || lidarIds.size !== 6 || radarIds.size !== 4) {
-    ctx.issues.push({
-      code: 'custom',
-      path: ['renderSpec', 'sources'],
-      message: `Pronto rig requires 8 cameras, 6 LiDARs, and 4 radars; got ${measurementCameraIds.size}/${lidarIds.size}/${radarIds.size}`,
-      input: ctx.value.renderSpec.sources,
-    });
-  }
-  if (chaseCameras.length > 1 || chaseCameras.some((source) => source.modality !== 'rgb')) {
-    ctx.issues.push({
-      code: 'custom',
-      path: ['renderSpec', 'sources'],
-      message: 'a render carries at most one RGB trailing chase camera',
-      input: ctx.value.renderSpec.sources,
-    });
-  }
 });
 
 export type RenderIntentAsset = z.infer<typeof RenderIntentAssetSchema>;
 export type RenderIntentScenarioRevision = z.infer<typeof RenderIntentScenarioRevisionSchema>;
-export type ProntoSensorHost = z.infer<typeof ProntoSensorHostSchema>;
 export type AuthoredSensorHost = z.infer<typeof AuthoredSensorHostSchema>;
 export type RenderSensorHost = z.infer<typeof RenderSensorHostSchema>;
 export type RenderIntentV1 = z.infer<typeof RenderIntentV1Schema>;
 
 export function parseRenderIntent(value: unknown): RenderIntentV1 {
   return RenderIntentV1Schema.parse(value);
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') return JSON.stringify(value);
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new TypeError('canonical JSON cannot contain non-finite numbers');
+    return JSON.stringify(Object.is(value, -0) ? 0 : value);
+  }
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .filter((key) => record[key] !== undefined)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+      .join(',')}}`;
+  }
+  throw new TypeError(`canonical JSON cannot contain ${typeof value}`);
+}
+
+export function canonicalizeRenderIntent(intent: RenderIntentV1): string {
+  return canonicalJson(RenderIntentV1Schema.parse(intent));
+}
+
+/**
+ * THE render-intent content hash. Every layer — submit, claim fencing, worker
+ * verification, CLI — must call this one implementation; a second copy is how
+ * `render_intent_digest_mismatch` incidents happen. Pure (no platform crypto)
+ * so browser and server bundles hash identically.
+ */
+export function hashRenderIntent(intent: RenderIntentV1): string {
+  return new Sha256()
+    .update(new TextEncoder().encode(canonicalizeRenderIntent(intent)))
+    .digestHex();
 }

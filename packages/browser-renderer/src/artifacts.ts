@@ -1,5 +1,6 @@
+import { Sha256 } from '@uniscenarios/scenario-model';
+
 import { crc32 } from './sensors/png.js';
-import { Sha256 } from './sha256.js';
 
 export type ArtifactModality = 'rgb' | 'depth' | 'semantic' | 'instance' | 'lidar' | 'radar' | 'manifest' | 'frames' | 'sensor-video';
 export type ArtifactIdentity = Readonly<{

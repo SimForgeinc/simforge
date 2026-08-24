@@ -196,6 +196,7 @@ export * from './expr/index.js';
 export * from './semantic-ledger.js';
 export * from './render-spec.js';
 export * from './render-intent.js';
+export { Sha256 } from './sha256.js';
 
 export {
   CURRENT_TEMPLATE_VERSION,
