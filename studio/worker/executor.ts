@@ -4,7 +4,7 @@ import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { createRenderEngine as createBrowserRenderEngine } from "@simforge/render/web";
-import type { RenderIntentV1 } from "@simforge/scenario";
+import { canonicalize, type RenderIntentV1 } from "@simforge/scenario";
 import {
   RenderArtifactManifestSchema,
   assertEngineSupportsIntent,
@@ -23,7 +23,10 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
   const wireIntent = request.intent as unknown as RenderIntentV1 & { engine?: unknown; schedule?: unknown };
   const { engine: _engine, schedule: _schedule, ...portableIntent } = wireIntent;
   const intent = portableIntent as RenderIntentV1;
-  const intentSha256 = createHash("sha256").update(canonicalJson(wireIntent)).digest("hex");
+  // Hash exactly as the control plane does: canonicalize (from @simforge/scenario)
+  // sorts keys, drops undefined, and ROUNDS floats. A local canonicalizer without
+  // float rounding diverges on irrational sensor mount angles (e.g. the Pronto rig).
+  const intentSha256 = createHash("sha256").update(JSON.stringify(canonicalize(wireIntent))).digest("hex");
   if (request.intentSha256 && request.intentSha256 !== intentSha256) {
     throw new Error(`render intent digest mismatch: claim=${request.intentSha256} computed=${intentSha256}`);
   }
@@ -286,19 +289,6 @@ function qualityCrf(quality: "draft" | "standard" | "high" | "lossless" | undefi
   return "28";
 }
 
-function canonicalJson(value: unknown): string {
-  if (value === null || typeof value === "boolean" || typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) throw new TypeError("canonical JSON cannot contain non-finite numbers");
-    return JSON.stringify(Object.is(value, -0) ? 0 : value);
-  }
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(",")}}`;
-  }
-  throw new TypeError(`canonical JSON cannot contain ${typeof value}`);
-}
 
 function runProcess(command: string, args: readonly string[], signal: AbortSignal): Promise<string> {
   return new Promise((resolvePromise, rejectPromise) => {
