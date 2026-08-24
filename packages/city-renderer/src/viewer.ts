@@ -985,6 +985,9 @@ export class CityViewer {
         // the electric towers reaching above ~20 m fade out of it.
         if (this.visualResourcesStarted && !this.ultraLowFidelity) patchTree(root, this.shadowOptions(box, 20, 40));
         this.surfaceMaterials.registerTree(root, 'road');
+        // Street-light props ship in the road static layer on Datasmith-derived
+        // maps, so practical-light discovery must see these trees too.
+        this.luminaires.registerTree(root);
         const resources = collectResources(root);
         if (this.ultraLowFidelity) this.simplifyTree(root, 'road');
         if (this.roadsOnlyFidelity) this.applyRoadsOnlyVisibility(root);
@@ -1002,6 +1005,7 @@ export class CityViewer {
           dispose: () => {
             this.snowCover.unregisterTree(root);
             this.surfaceMaterials.unregisterTree(root);
+            this.luminaires.unregisterTree(root);
             this.releaseSimplifiedTree(root);
           },
         } satisfies PreparedAsset;
