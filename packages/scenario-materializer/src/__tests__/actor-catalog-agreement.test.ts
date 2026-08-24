@@ -36,7 +36,11 @@ import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@uniscenarios
 import { buildLaneGraph, type TopologyIndex } from '@uniscenarios/sim-engine';
 
 import { adaptTemplate } from '../adapt.js';
-import { materialize } from '../materialize.js';
+import {
+  materialize,
+  type MaterializeOptions,
+  type MaterializeResult,
+} from '../materialize.js';
 import { topologyWithMapSpeedLimits } from '../map-signals.js';
 import type { MapBundle } from '../types.js';
 
@@ -134,16 +138,19 @@ function templateWith(subject: ActorSpecInput, props: unknown[] = [], bodyColor?
   });
 }
 
-function run(template: ScenarioTemplateV2): ReturnType<typeof materialize> {
+function run(
+  template: ScenarioTemplateV2,
+  catalogEntries?: MaterializeOptions['catalogEntries'],
+): MaterializeResult {
   const bundle = loadBundle();
   const { anchor, roles } = adaptTemplate(template);
   const report = matchAnchorReport(anchor, bundle.index, { roles });
   const site: MatchedSite | undefined = report.sites[0];
   expect(site, `${MAP_ID} should offer a corridor site`).toBeDefined();
-  return materialize(template, bundle, site!, { drawIndex: 0 });
+  return materialize(template, bundle, site!, { drawIndex: 0, catalogEntries });
 }
 
-function actor(result: ReturnType<typeof materialize>, id: string) {
+function actor(result: MaterializeResult, id: string) {
   const found = result.input.actors.find((candidate) => candidate.id === id);
   expect(found, `actor ${id}`).toBeDefined();
   return found!;
@@ -165,6 +172,40 @@ describe.skipIf(!HAVE_MAP)('actor class / catalog id agreement', () => {
     // real one is `vehicle.box_truck` — and it used to materialise as a sedan.
     expect(() => run(templateWith({ class: 'truck', catalogId: 'vehicle.boxTruck' })))
       .toThrow(/does not exist/);
+  });
+
+  it('materializes a persisted gallery vehicle with its authored class and dimensions', () => {
+    const catalogId = 'gallery.90dc9cf7-5c32-4a97-b43b-768f2749a221.v1';
+    const result = run(
+      templateWith({ class: 'car', catalogId }),
+      [{
+        id: catalogId,
+        label: 'Kia Carnival',
+        class: 'vehicle',
+        actorClass: 'car',
+        description: 'Kia Carnival',
+        dims: { l: 5.155, w: 1.995, h: 1.775 },
+        tags: ['passenger'],
+        defaultParams: {},
+        model: {
+          kind: 'glb',
+          url: 'https://example.invalid/kia-carnival.glb',
+          contentHash: 'a'.repeat(64),
+        },
+      }],
+    );
+    expect(actor(result, 'subject')).toMatchObject({
+      kind: 'car',
+      dims: { l: 5.155, w: 1.995, h: 1.775 },
+      tags: expect.arrayContaining([`catalog:${catalogId}`]),
+    });
+  });
+
+  it('still refuses an unknown gallery id when no persisted metadata is supplied', () => {
+    expect(() => run(templateWith({
+      class: 'car',
+      catalogId: 'gallery.00000000-0000-0000-0000-000000000000.v1',
+    }))).toThrow(/does not exist/);
   });
 
   it('accepts agreeing pairs, including a prop id placed as inert scenery', () => {
