@@ -92,9 +92,10 @@ export async function uploadFile(
   path: string,
   signal: AbortSignal,
 ): Promise<void> {
+  const size = (await stat(path)).size;
   const response = await fetch(url, {
     method: 'PUT',
-    headers,
+    headers: { ...headers, 'content-length': String(size) },
     body: createReadStream(path),
     duplex: 'half',
     signal,
