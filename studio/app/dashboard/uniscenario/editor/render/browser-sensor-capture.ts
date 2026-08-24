@@ -79,7 +79,10 @@ export async function captureBrowserSensorArtifacts(input: {
       const actors = samplePlaybackActors(input.bundle, frame.sourceTimeSeconds);
       const actor = actors.find((candidate) => candidate.id === pass.actorId && candidate.present);
       if (!actor) throw new Error(`Sensor actor ${pass.actorId} is absent at ${frame.sourceTimeSeconds}.`);
-      const matrices = sensorMatrices(pass, actor.x, actor.z, actor.headingRad);
+      const groundY = input.viewer.getGroundIndex()?.sample(actor.x, actor.z)
+        ?? input.viewer.sampleGroundHeight(actor.x, actor.z)
+        ?? 0;
+      const matrices = sensorMatrices(pass, actor.x, groundY, actor.z, actor.headingRad);
       const camera = input.viewer.camera;
       applySensorCamera(camera, matrices.world, pass);
       let bytes: Uint8Array;
@@ -220,7 +223,7 @@ export async function captureBrowserSensorArtifacts(input: {
   return { archives, videos, frames, frameRecords };
 }
 
-function sensorMatrices(pass: BrowserRenderPass, actorX: number, actorZ: number, headingRad: number) {
+function sensorMatrices(pass: BrowserRenderPass, actorX: number, actorY: number, actorZ: number, headingRad: number) {
   const actorRotation = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), headingRad);
   const yaw = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), pass.transform.rotation.yawRad);
   const pitch = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), pass.transform.rotation.pitchRad);
@@ -232,7 +235,7 @@ function sensorMatrices(pass: BrowserRenderPass, actorX: number, actorZ: number,
     new Vector3(1, 1, 1),
   );
   const actorWorld = new Matrix4().compose(
-    new Vector3(actorX, 0, actorZ),
+    new Vector3(actorX, actorY, actorZ),
     actorRotation,
     new Vector3(1, 1, 1),
   );

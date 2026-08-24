@@ -75,6 +75,22 @@ function createTarget(width: number, height: number): WebGLRenderTarget {
   return target;
 }
 
+let rowScratch = new Uint8Array(0);
+
+/** WebGL readback starts at the lower-left; image/video consumers require top-left rows. */
+function flipRgbaRowsInPlace(pixels: Uint8Array, width: number, height: number): void {
+  const rowBytes = width * 4;
+  if (rowScratch.byteLength < rowBytes) rowScratch = new Uint8Array(rowBytes);
+  const scratch = rowScratch.subarray(0, rowBytes);
+  for (let topRow = 0; topRow < Math.floor(height / 2); topRow += 1) {
+    const top = topRow * rowBytes;
+    const bottom = (height - topRow - 1) * rowBytes;
+    scratch.set(pixels.subarray(top, top + rowBytes));
+    pixels.copyWithin(top, bottom, bottom + rowBytes);
+    pixels.set(scratch, bottom);
+  }
+}
+
 /** Render byte-exact RGBA and restore every renderer/scene mutation. */
 export function renderOffscreenRgba(input: OffscreenRenderInput): Uint8Array {
   if (!Number.isSafeInteger(input.width) || input.width <= 0 || !Number.isSafeInteger(input.height) || input.height <= 0) throw new Error('Offscreen dimensions must be positive safe integers.');
@@ -113,6 +129,7 @@ export function renderOffscreenRgba(input: OffscreenRenderInput): Uint8Array {
     input.onTiming?.('scenePass', performance.now() - started);
     started = performance.now();
     renderer.readRenderTargetPixels(resources.target, 0, 0, input.width, input.height, resources.readback);
+    flipRgbaRowsInPlace(resources.readback, input.width, input.height);
     input.onTiming?.('readback', performance.now() - started);
     return resources.readback;
   } finally {

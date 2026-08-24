@@ -1,5 +1,5 @@
 import { fixedStepCaptureFrames, samplePlaybackActors, type PlaybackBundle, type PlaybackController, type SampledActor } from '@simforge/playback';
-import { lowerRenderSpecToBrowser, type BrowserRenderPass, type RenderSpecV3, type ResolvedFrameSchedule } from '@simforge/scenario';
+import { lowerRenderSpecToBrowser, type BrowserCameraRenderPass, type BrowserRenderPass, type RenderSpecV3, type ResolvedFrameSchedule } from '@simforge/scenario';
 import type { CityViewer } from '@simforge/viewer';
 import { Matrix4, PerspectiveCamera, Quaternion, Vector3, type Object3D } from 'three';
 import { HashedArtifactSink, StreamingZipWriter, sensorFramePath, throwIfAborted, type ArtifactReceipt, type ArtifactSinkFactory } from './artifacts.js';
@@ -38,7 +38,7 @@ export type BrowserCaptureResult = Readonly<{
   frameCount: number;
 }>;
 
-export async function captureBrowserArtifacts(input: {
+export type BrowserCaptureInput = Readonly<{
   intentSha256: string;
   viewer: CityViewer;
   controller: PlaybackController;
@@ -49,7 +49,9 @@ export async function captureBrowserArtifacts(input: {
   signal?: AbortSignal;
   cpuConcurrency?: number;
   onProgress?: (line: string, event: BrowserRenderProgress) => void;
-}): Promise<BrowserCaptureResult> {
+}>;
+
+export async function captureBrowserArtifacts(input: BrowserCaptureInput): Promise<BrowserCaptureResult> {
   if (!/^[0-9a-f]{64}$/.test(input.intentSha256)) throw new Error('intentSha256 must be lowercase SHA-256 hex.');
   const plan = lowerRenderSpecToBrowser(input.renderSpec);
   if (plan.passes.length === 0) throw new Error('Browser render intent contains no sensor passes.');
@@ -68,7 +70,7 @@ export async function captureBrowserArtifacts(input: {
   const encoder = new TextEncoder();
 
   const videoSource = input.renderSpec.video
-    ? plan.passes.find((pass) => pass.modality === 'rgb')
+    ? plan.passes.find(isRgbPass)
     : undefined;
 
   try {
@@ -91,6 +93,8 @@ export async function captureBrowserArtifacts(input: {
       }
     }
 
+    await prepareSceneForCapture(input, plan.passes, videoSource);
+
     emitProgress(input, timings, { event: 'started', completedFrames: 0 });
     // Frame-major invariant: the authoritative playback world is sampled and updated
     // exactly once, then every active sensor observes that same immutable frame state.
@@ -108,7 +112,9 @@ export async function captureBrowserArtifacts(input: {
         const key = passKey(pass);
         const world = worldMatrices.get(key) ?? new Matrix4();
         worldMatrices.set(key, world);
-        sensorWorldMatrix(world, pass, actor.x, actor.z, actor.headingRad);
+        const groundY = sampleGroundHeight(input.viewer, actor.x, actor.z);
+        sensorWorldMatrix(world, pass, actor.x, groundY, actor.z, actor.headingRad);
+        if (pass === videoSource) applySensorCamera(input.viewer.camera, world, pass);
         const record = buildSensorFrameRecord({ pass, outputFrameIndex: frame.index, scheduledTimeS: frame.sourceTimeSeconds, canonicalWorldMatrix: world });
         started = performance.now();
         await framesSink.write(encoder.encode(`${JSON.stringify(record)}\n`), input.signal);
@@ -210,14 +216,17 @@ function serializeCapture(pass: BrowserRenderPass, capture: CapturedPass): { byt
 
 async function hashedSink(factory: ArtifactSinkFactory, identity: Parameters<ArtifactSinkFactory>[0], mediaType: string): Promise<HashedArtifactSink> { return new HashedArtifactSink(identity, mediaType, await factory(identity, mediaType)); }
 function passKey(pass: BrowserRenderPass): string { return `${pass.actorId}\u0000${pass.sensorId}\u0000${pass.modality}`; }
+function isRgbPass(pass: BrowserRenderPass): pass is BrowserCameraRenderPass & { readonly modality: 'rgb' } {
+  return pass.modality === 'rgb';
+}
 function isSensorVideoPass(pass: BrowserRenderPass): pass is ActiveSensorPass {
   return pass.modality === 'rgb' || pass.modality === 'lidar' || pass.modality === 'radar';
 }
 
 const scratchActorRotation = new Quaternion(); const scratchYaw = new Quaternion(); const scratchPitch = new Quaternion(); const scratchRoll = new Quaternion(); const scratchRelative = new Matrix4(); const scratchActorWorld = new Matrix4(); const scratchPosition = new Vector3(); const scratchScale = new Vector3(1, 1, 1); const scratchRotation = new Quaternion(); const scratchTarget = new Vector3(); const scratchUp = new Vector3();
-function sensorWorldMatrix(target: Matrix4, pass: BrowserRenderPass, x: number, z: number, heading: number): void {
+function sensorWorldMatrix(target: Matrix4, pass: BrowserRenderPass, x: number, y: number, z: number, heading: number): void {
   const values = [
-    x, z, heading,
+    x, y, z, heading,
     pass.transform.position.x, pass.transform.position.y, pass.transform.position.z,
     pass.transform.rotation.yawRad, pass.transform.rotation.pitchRad, pass.transform.rotation.rollRad,
   ];
@@ -233,11 +242,58 @@ function sensorWorldMatrix(target: Matrix4, pass: BrowserRenderPass, x: number, 
   scratchRoll.setFromAxisAngle(scratchUp.set(1, 0, 0), pass.transform.rotation.rollRad);
   scratchRotation.copy(scratchYaw).multiply(scratchPitch).multiply(scratchRoll);
   scratchRelative.compose(scratchPosition.set(pass.transform.position.x, pass.transform.position.y, pass.transform.position.z), scratchRotation, scratchScale);
-  scratchActorWorld.compose(scratchPosition.set(x, 0, z), scratchActorRotation, scratchScale);
+  scratchActorWorld.compose(scratchPosition.set(x, y, z), scratchActorRotation, scratchScale);
   target.multiplyMatrices(scratchActorWorld, scratchRelative);
 }
-function applySensorCamera(camera: PerspectiveCamera, world: Matrix4, pass: Exclude<BrowserRenderPass, { modality: 'lidar' | 'radar' }>): void {
+function applySensorCamera(camera: PerspectiveCamera, world: Matrix4, pass: BrowserCameraRenderPass): void {
   world.decompose(scratchPosition, scratchRotation, scratchScale); camera.position.copy(scratchPosition); camera.up.copy(scratchUp.set(0, 1, 0)).applyQuaternion(scratchRotation); camera.lookAt(scratchTarget.set(1, 0, 0).applyQuaternion(scratchRotation).add(scratchPosition)); camera.aspect = pass.width / pass.height; camera.fov = 2 * Math.atan(Math.tan(pass.horizontalFovDeg * Math.PI / 360) / camera.aspect) * 180 / Math.PI; camera.near = pass.nearM; camera.far = pass.farM; camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
+}
+
+async function prepareSceneForCapture(
+  input: BrowserCaptureInput,
+  passes: readonly BrowserRenderPass[],
+  videoSource: (BrowserCameraRenderPass & { readonly modality: 'rgb' }) | undefined,
+): Promise<void> {
+  const pass = videoSource ?? passes.find(isRgbPass);
+  const firstFrame = fixedStepCaptureFrames(input.schedule).next().value;
+  if (!pass || !firstFrame) throw new Error('Browser capture requires one scheduled RGB sensor frame.');
+  input.controller.renderAt(firstFrame.sourceTimeSeconds);
+  const actor = samplePlaybackActors(input.bundle, firstFrame.sourceTimeSeconds)
+    .find((candidate) => candidate.id === pass.actorId && candidate.present);
+  if (!actor) throw new Error(`Sensor actor ${pass.actorId} is absent at ${firstFrame.sourceTimeSeconds}.`);
+  const world = new Matrix4();
+  sensorWorldMatrix(
+    world,
+    pass,
+    actor.x,
+    sampleGroundHeight(input.viewer, actor.x, actor.z),
+    actor.z,
+    actor.headingRad,
+  );
+  let detailReadySince: number | null = null;
+  applySensorCamera(input.viewer.camera, world, pass);
+
+  const deadline = performance.now() + 30_000;
+  do {
+    throwIfAborted(input.signal);
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
+    const stats = input.viewer.getStats();
+    if (stats.residentAssets >= 8) {
+      detailReadySince ??= performance.now();
+      if (performance.now() - detailReadySince >= 1_000) return;
+    } else {
+      detailReadySince = null;
+    }
+  } while (performance.now() < deadline);
+  const stats = input.viewer.getStats();
+  throw new Error(
+    `Browser capture map detail did not become ready: ${stats.residentAssets} resident, `
+    + `${stats.loading} loading, ${stats.uploading} uploading.`,
+  );
+}
+
+function sampleGroundHeight(viewer: CityViewer, x: number, z: number): number {
+  return viewer.getGroundIndex()?.sample(x, z) ?? viewer.sampleGroundHeight(x, z) ?? 0;
 }
 function hideSensorHost(scene: Object3D, actorId: string): () => void {
   const hidden: Object3D[] = [];
