@@ -26,7 +26,7 @@ PLAYWRIGHT_VERSION=1.62.1
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-mkdir -p "$NATIVE"/{config,env,state/scratch,state/cache,state/run,src}
+mkdir -p "$NATIVE"/{config,config-templates,env,builds,state/scratch,state/cache,state/run,src}
 [ -d "$NATIVE/repo.git" ] || git init --bare --initial-branch=deploy "$NATIVE/repo.git"
 
 # --- pinned node ------------------------------------------------------------
