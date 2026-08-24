@@ -59,25 +59,43 @@ export async function renderHeadlessIntent(request: ResolvedBrowserRenderRequest
   }
 }
 
-class BridgeArtifactSink implements ArtifactByteSink {
+/**
+ * Bound and batch CDP messages: exposeFunction round trips dominate per-frame
+ * artifact writes, so bytes coalesce into 1 MiB bridge messages while keeping
+ * streaming backpressure (one in-flight message per sink).
+ */
+const BRIDGE_MESSAGE_BYTES = 1024 * 1024;
+
+export class BridgeArtifactSink implements ArtifactByteSink {
   private closed = false;
+  private readonly buffer = new Uint8Array(BRIDGE_MESSAGE_BYTES);
+  private bufferedBytes = 0;
   constructor(private readonly bridge: HeadlessArtifactBridge, private readonly handle: string) {}
 
   async write(chunk: Uint8Array, signal?: AbortSignal): Promise<void> {
     if (this.closed) throw new Error('Headless artifact bridge is closed.');
     if (signal?.aborted) throw signal.reason;
-    // Bound CDP messages while preserving streaming backpressure.
-    for (let offset = 0; offset < chunk.byteLength; offset += 192 * 1024) {
-      const part = chunk.subarray(offset, Math.min(chunk.byteLength, offset + 192 * 1024));
-      let binary = '';
-      for (let index = 0; index < part.byteLength; index += 1) binary += String.fromCharCode(part[index]!);
-      await this.bridge.write(this.handle, btoa(binary));
-      if (signal?.aborted) throw signal.reason;
+    let offset = 0;
+    while (offset < chunk.byteLength) {
+      const take = Math.min(chunk.byteLength - offset, BRIDGE_MESSAGE_BYTES - this.bufferedBytes);
+      this.buffer.set(chunk.subarray(offset, offset + take), this.bufferedBytes);
+      this.bufferedBytes += take;
+      offset += take;
+      if (this.bufferedBytes === BRIDGE_MESSAGE_BYTES) await this.flush(signal);
     }
+  }
+
+  private async flush(signal?: AbortSignal): Promise<void> {
+    if (this.bufferedBytes === 0) return;
+    const pending = this.buffer.subarray(0, this.bufferedBytes);
+    this.bufferedBytes = 0;
+    await this.bridge.write(this.handle, base64Of(pending));
+    if (signal?.aborted) throw signal.reason;
   }
 
   async close(): Promise<void> {
     if (this.closed) throw new Error('Headless artifact bridge was closed more than once.');
+    await this.flush();
     this.closed = true;
     await this.bridge.close(this.handle);
   }
@@ -85,8 +103,19 @@ class BridgeArtifactSink implements ArtifactByteSink {
   async abort(reason: unknown): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+    this.bufferedBytes = 0;
     await this.bridge.abort(this.handle, reason instanceof Error ? reason.message : String(reason));
   }
+}
+
+function base64Of(bytes: Uint8Array): string {
+  // String.fromCharCode over bounded slabs is native-speed; per-byte string
+  // concatenation was the previous hot spot at multi-megabyte artifact rates.
+  const parts: string[] = [];
+  for (let offset = 0; offset < bytes.byteLength; offset += 0x8000) {
+    parts.push(String.fromCharCode(...bytes.subarray(offset, Math.min(bytes.byteLength, offset + 0x8000))));
+  }
+  return btoa(parts.join(''));
 }
 
 export function installHeadlessHarness(input: { canvas?: HTMLCanvasElement; bridge: HeadlessArtifactBridge }): void {

@@ -57,6 +57,8 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
         : intent,
     );
     const schedules = createFixedSchedules(intent);
+    const stageTimingsMs: Record<string, number> = {};
+    const engineStarted = performance.now();
     const runtimeManifest = RenderArtifactManifestSchema.parse(await engine.execute({
       jobId: request.jobId,
       attempt: request.attempt,
@@ -68,9 +70,11 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       signal: request.signal,
       reportProgress: request.reportProgress ?? (async () => undefined),
     }));
+    stageTimingsMs.engineExecute = performance.now() - engineStarted;
     if (runtimeManifest.intentSha256 !== intentSha256) {
       throw new Error("render engine returned a manifest for a different intent");
     }
+    const verifyStarted = performance.now();
     for (const artifact of runtimeManifest.artifacts) {
       const path = safeArtifactPath(request.workspace, artifact.relativePath);
       const actual = await hashFile(path);
@@ -78,6 +82,7 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
         throw new Error(`render artifact integrity mismatch: ${artifact.relativePath}`);
       }
     }
+    stageTimingsMs.artifactVerify = performance.now() - verifyStarted;
     if (runtimeManifest.artifacts.length === 0) throw new Error("render engine produced no artifacts");
 
     const frameCount = runtimeManifest.artifacts.reduce(
@@ -85,6 +90,12 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       schedules[0]?.frameCount ?? 0,
     );
     const artifacts: RecordingArtifact[] = [];
+    const omittedArtifacts: Array<{
+      role: string;
+      sensorId: string | null;
+      modality: string | null;
+      reason: string;
+    }> = [];
     for (const artifact of runtimeManifest.artifacts) {
       if (
         artifact.identity.role === "diagnostics"
@@ -105,6 +116,12 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       if (!actorId || !sensorId || !modality || artifact.mediaType !== "application/zip") {
         throw new Error(`browser sensor archive has invalid identity: ${artifact.relativePath}`);
       }
+      if (!intent.renderSpec.artifacts.includes("sensorArchive")) {
+        // Produced transiently (RGB archives feed the review MP4) but not part of
+        // the declared artifact closure; recorded here so the omission is auditable.
+        omittedArtifacts.push({ role: "sensorArchive", sensorId, modality, reason: "not_requested_by_render_spec" });
+        continue;
+      }
       artifacts.push({
         kind: "sensor_archive",
         sensor: { actorId, sensorId, modality },
@@ -116,12 +133,20 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
     }
     let durationSeconds = Number(intent.renderSpec.clip.endSeconds) - Number(intent.renderSpec.clip.startSeconds);
     let video: RecordingArtifact | null = null;
+    let videoEncoding: BrowserVideoEncoding | null = null;
     if (request.engine === "browser" && intent.renderSpec.artifacts.includes("video")) {
-      video = await encodeBrowserMp4(request.workspace, runtimeManifest, intent, request.signal);
+      const encodeStarted = performance.now();
+      const encoded = await encodeBrowserMp4(request.workspace, runtimeManifest, intent, request.signal);
+      stageTimingsMs.videoEncode = performance.now() - encodeStarted;
+      video = encoded.artifact;
+      videoEncoding = encoded.encoding;
+      const probeStarted = performance.now();
       durationSeconds = await probeDuration(video.path, request.signal);
+      stageTimingsMs.probeDuration = performance.now() - probeStarted;
       artifacts.push(video);
     }
 
+    const manifestStarted = performance.now();
     const recordingManifestPath = join(request.workspace, "recording-manifest.json");
     await writeFile(recordingManifestPath, `${JSON.stringify({
       schema: "uniscenario.browser-threejs-recording-result/v1",
@@ -130,8 +155,15 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       frameCount,
       durationSeconds,
       runtimeManifest,
+      omittedArtifacts,
       outputs: video
-        ? [{ role: "video", mediaType: video.mediaType, sha256: video.sha256, sizeBytes: video.sizeBytes }]
+        ? [{
+          role: "video",
+          mediaType: video.mediaType,
+          sha256: video.sha256,
+          sizeBytes: video.sizeBytes,
+          ...(videoEncoding ? { encoding: videoEncoding } : {}),
+        }]
         : [],
     }, null, 2)}\n`, { mode: 0o600 });
     const manifestDigest = await hashFile(recordingManifestPath);
@@ -141,19 +173,28 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
       mediaType: "application/json",
       ...manifestDigest,
     });
+    stageTimingsMs.manifestWrite = performance.now() - manifestStarted;
 
-    return { intentSha256, frameCount, durationSeconds, runtimeManifest, artifacts };
+    return { intentSha256, frameCount, durationSeconds, runtimeManifest, artifacts, stageTimingsMs };
   } finally {
     await engine.close?.();
   }
 }
+
+export type BrowserVideoEncoding = {
+  readonly codec: "h264";
+  readonly preset: string;
+  readonly crf: number;
+  readonly frameFormat: "png" | "jpg";
+  readonly fps: number;
+};
 
 async function encodeBrowserMp4(
   workspace: string,
   manifest: RenderExecutionResult["runtimeManifest"],
   intent: RenderIntentV1,
   signal: AbortSignal,
-): Promise<RecordingArtifact> {
+): Promise<{ artifact: RecordingArtifact; encoding: BrowserVideoEncoding }> {
   const rgbArchives = manifest.artifacts
     .filter((artifact) => artifact.identity.role === "sensorArchive" && artifact.identity.modality === "rgb")
     .sort((left, right) => {
@@ -174,24 +215,30 @@ async function encodeBrowserMp4(
   );
   const sensorDirectory = join(framesDirectory, requiredSafeSegment(source.identity.sensorId));
   const frames = (await readdir(sensorDirectory))
-    .filter((name) => /^\d{8}\.png$/.test(name))
+    .filter((name) => /^\d{8}\.(png|jpg)$/.test(name))
     .sort();
-  if (frames.length === 0) throw new Error("RGB frame archive contains no PNG frames");
+  if (frames.length === 0) throw new Error("RGB frame archive contains no PNG or JPEG frames");
+  const frameFormat = frames[0]!.endsWith(".jpg") ? "jpg" as const : "png" as const;
+  if (!frames.every((name) => name.endsWith(`.${frameFormat}`))) {
+    throw new Error("RGB frame archive mixes PNG and JPEG frames");
+  }
 
   const outputPath = join(workspace, "recording.mp4");
   await rm(outputPath, { force: true });
   const fps = intent.renderSpec.video?.fps ?? rgbFrameRate(intent);
   if (!fps || !Number.isFinite(fps)) throw new Error("browser render has no finite RGB frame rate");
+  const preset = qualityPreset(intent.renderSpec.video?.quality);
+  const crf = Number(qualityCrf(intent.renderSpec.video?.quality));
   await runProcess(
     "ffmpeg",
     [
       "-hide_banner",
       "-loglevel", "error",
       "-framerate", String(fps),
-      "-i", join(sensorDirectory, "%08d.png"),
+      "-i", join(sensorDirectory, `%08d.${frameFormat}`),
       "-c:v", "libx264",
-      "-preset", "medium",
-      "-crf", qualityCrf(intent.renderSpec.video?.quality),
+      "-preset", preset,
+      "-crf", String(crf),
       "-pix_fmt", "yuv420p",
       "-movflags", "+faststart",
       outputPath,
@@ -200,7 +247,19 @@ async function encodeBrowserMp4(
   );
   const digest = await hashFile(outputPath);
   if (digest.sizeBytes === 0) throw new Error("ffmpeg produced an empty MP4");
-  return { kind: "video", path: outputPath, mediaType: "video/mp4", ...digest };
+  return {
+    artifact: { kind: "video", path: outputPath, mediaType: "video/mp4", ...digest },
+    encoding: { codec: "h264", preset, crf, frameFormat, fps },
+  };
+}
+
+/**
+ * Review renders tolerate JPEG-level compromises; `veryfast` cuts x264 wall
+ * time several-fold at visually equivalent quality for these bitrates. The
+ * high/lossless tiers keep the slower preset for archival-grade output.
+ */
+function qualityPreset(quality: "draft" | "standard" | "high" | "lossless" | undefined): string {
+  return quality === "high" || quality === "lossless" ? "medium" : "veryfast";
 }
 
 async function probeDuration(path: string, signal: AbortSignal): Promise<number> {
@@ -216,9 +275,6 @@ async function probeDuration(path: string, signal: AbortSignal): Promise<number>
 function browserExecutionIntent(intent: RenderIntentV1): RenderIntentV1 {
   const fps = intent.renderSpec.video?.fps ?? rgbFrameRate(intent);
   if (!fps) throw new Error("browser render requires a fixed RGB frame rate");
-  const { startSeconds, endSeconds } = intent.renderSpec.clip;
-  const exactFrames = (endSeconds - startSeconds) * fps;
-  const frameCount = Math.ceil(exactFrames - Number.EPSILON * Math.max(1, exactFrames) * 8);
   return {
     ...intent,
     renderSpec: {
@@ -234,16 +290,6 @@ function browserExecutionIntent(intent: RenderIntentV1): RenderIntentV1 {
           capability !== "artifact.trace" && capability !== "artifact.annotations"
         ),
       },
-    },
-    engine: "browser",
-    schedule: {
-      startSeconds,
-      endSeconds,
-      fps,
-      frameCount,
-      timestampUnit: "microseconds",
-      firstTimestampUs: 0,
-      endTimestampUs: Math.round((endSeconds - startSeconds) * 1_000_000),
     },
   } as RenderIntentV1;
 }

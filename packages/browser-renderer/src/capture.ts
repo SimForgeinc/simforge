@@ -9,6 +9,7 @@ import { buildSensorFrameRecord } from './sensors/frame-records.js';
 import { captureIdPass } from './sensors/id-pass.js';
 import { captureDepthCube, captureLidarFrame, cubeFacesForAperture, CubeCameraPool } from './sensors/lidar-pass.js';
 import { encodePng8Rgba } from './sensors/png.js';
+import { encodeJpegRgba } from './sensors/jpeg.js';
 import { captureInstanceIdCube, captureRadarFrame, type TraceVelocity } from './sensors/radar-pass.js';
 import { RenderResourcePool, renderOffscreenRgba } from './sensors/render-targets.js';
 import { encodeRadarCsv, type RadarDetection } from './sensors/csv.js';
@@ -30,12 +31,22 @@ export type BrowserRenderProgress = Readonly<{
   timings: Readonly<Record<RenderStage, StageTiming>>;
 }>;
 
+export type OmittedArtifact = Readonly<{
+  role: 'sensor-archive';
+  actorId: string;
+  sensorId: string;
+  modality: string;
+  reason: string;
+}>;
+
 export type BrowserCaptureResult = Readonly<{
   engine: typeof BROWSER_RENDER_ENGINE_ID;
   intentSha256: string;
   artifacts: readonly ArtifactReceipt[];
   timings: Readonly<Record<RenderStage, StageTiming>>;
   frameCount: number;
+  rgbFrameFormat: 'png' | 'jpg';
+  omittedArtifacts: readonly OmittedArtifact[];
 }>;
 
 export async function captureBrowserArtifacts(input: {
@@ -53,6 +64,9 @@ export async function captureBrowserArtifacts(input: {
   if (!/^[0-9a-f]{64}$/.test(input.intentSha256)) throw new Error('intentSha256 must be lowercase SHA-256 hex.');
   const plan = lowerRenderSpecToBrowser(input.renderSpec);
   if (plan.passes.length === 0) throw new Error('Browser render intent contains no sensor passes.');
+  const wantsSensorArchives = input.renderSpec.artifacts.includes('sensorArchive');
+  const rgbFrameFormat = resolveRgbFrameFormat(input.renderSpec);
+  const omittedArtifacts: OmittedArtifact[] = [];
   const timings = createTimings();
   const resources = new RenderResourcePool();
   const cubeCameras = new CubeCameraPool();
@@ -69,10 +83,19 @@ export async function captureBrowserArtifacts(input: {
 
   try {
     for (const pass of plan.passes) {
-      const identity = { role: 'sensor-archive', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality } as const;
-      const sink = await hashedSink(input.createArtifactSink, identity, 'application/zip');
-      const archive = new StreamingZipWriter(sink);
-      archives.set(passKey(pass), archive); openAbortables.push(archive);
+      // RGB archives also feed the host-side review MP4 encode, so a video
+      // intent retains them even when sensorArchive was not requested.
+      const needsArchive = pass.modality === 'rgb'
+        ? wantsSensorArchives || Boolean(input.renderSpec.video)
+        : wantsSensorArchives;
+      if (needsArchive) {
+        const identity = { role: 'sensor-archive', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality } as const;
+        const sink = await hashedSink(input.createArtifactSink, identity, 'application/zip');
+        const archive = new StreamingZipWriter(sink);
+        archives.set(passKey(pass), archive); openAbortables.push(archive);
+      } else {
+        omittedArtifacts.push({ role: 'sensor-archive', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality, reason: 'not_requested_by_render_spec' });
+      }
       if (input.renderSpec.video && (pass.modality === 'lidar' || pass.modality === 'radar')) {
         const videoSink = await hashedSink(input.createArtifactSink, { role: 'sensor-video', actorId: pass.actorId, sensorId: pass.sensorId, modality: pass.modality }, 'video/webm');
         const quality = input.renderSpec.video.quality === 'lossless' ? 'high' : input.renderSpec.video.quality;
@@ -103,21 +126,26 @@ export async function captureBrowserArtifacts(input: {
         started = performance.now();
         await framesSink.write(encoder.encode(`${JSON.stringify(record)}\n`), input.signal);
         addTiming(timings, 'artifactWrite', performance.now() - started);
+        const archive = archives.get(key);
+        const video = videos.get(key);
+        // Neither an archive nor a visualization consumes this pass's pixels;
+        // the pose record above is its only output for this frame.
+        if (!archive && !video) continue;
         const captured = capturePass({ pass, frameIndex: frame.index, fps: input.renderSpec.video?.fps ?? 24, viewer: input.viewer, world, actors, actor, resources, cubeCameras, cameras, timings });
-        work.push(pipeline.run(() => serializeCapture(pass, captured), input.signal).then(async ({ value, timings: pipelineTiming }) => {
-          addTiming(timings, 'encoding', pipelineTiming.executionMs);
-          const archive = archives.get(passKey(pass));
-          if (!archive) throw new Error(`Sensor archive was not initialized: ${pass.sensorId}`);
-          const writeStarted = performance.now();
-          await archive.add(sensorFramePath(pass.sensorId, frame.index, value.extension), value.bytes, input.signal);
-          addTiming(timings, 'artifactWrite', performance.now() - writeStarted);
-          const video = videos.get(passKey(pass));
+        work.push((async () => {
+          if (archive) {
+            const { value, timings: pipelineTiming } = await pipeline.run(() => serializeCapture(pass, captured, rgbFrameFormat), input.signal);
+            addTiming(timings, 'encoding', pipelineTiming.executionMs);
+            const writeStarted = performance.now();
+            await archive.add(sensorFramePath(pass.sensorId, frame.index, value.extension), value.bytes, input.signal);
+            addTiming(timings, 'artifactWrite', performance.now() - writeStarted);
+          }
           if (video && captured.structured) {
             const visualizationStarted = performance.now();
             await video.encode(frame, captured.structured, input.signal);
             addTiming(timings, 'visualization', performance.now() - visualizationStarted);
           }
-        }));
+        })());
       }
       await Promise.all(work);
       emitProgress(input, timings, { event: 'frame', completedFrames: frame.index + 1, outputFrameIndex: frame.index });
@@ -132,11 +160,11 @@ export async function captureBrowserArtifacts(input: {
       if (video) { const receipt = await video.close(input.signal); receipts.push(receipt); emitProgress(input, timings, { event: 'artifact', completedFrames: input.schedule.frameCount, artifact: receipt }); }
     }
     const manifestSink = await hashedSink(input.createArtifactSink, { role: 'render-manifest', actorId: null, sensorId: null, modality: 'manifest' }, 'application/json');
-    const manifest = { schema: 'uniscenario.browser-render-manifest/v1', engine: BROWSER_RENDER_ENGINE_ID, intentSha256: input.intentSha256, frameMajor: true, schedule: input.schedule, artifacts: receipts, timings };
+    const manifest = { schema: 'uniscenario.browser-render-manifest/v1', engine: BROWSER_RENDER_ENGINE_ID, intentSha256: input.intentSha256, frameMajor: true, schedule: input.schedule, rgbFrameFormat, artifacts: receipts, omittedArtifacts, timings };
     await manifestSink.write(encoder.encode(`${JSON.stringify(manifest)}\n`), input.signal);
     const manifestReceipt = await manifestSink.close(input.signal); receipts.push(manifestReceipt);
     emitProgress(input, timings, { event: 'completed', completedFrames: input.schedule.frameCount, artifact: manifestReceipt });
-    return { engine: BROWSER_RENDER_ENGINE_ID, intentSha256: input.intentSha256, artifacts: receipts, timings, frameCount: input.schedule.frameCount };
+    return { engine: BROWSER_RENDER_ENGINE_ID, intentSha256: input.intentSha256, artifacts: receipts, timings, frameCount: input.schedule.frameCount, rgbFrameFormat, omittedArtifacts };
   } catch (error) {
     pipeline.cancel(error);
     await Promise.allSettled(openAbortables.map((item) => item.abort(error)));
@@ -179,12 +207,30 @@ function capturePass(input: { pass: BrowserRenderPass; frameIndex: number; fps: 
   return { structured: captureRadarFrame({ faces, idFaces: ids.faces, actorVelocityByInstanceId: velocities, sensorVelocity: traceVelocity(input.actor.speedMps, input.actor.headingRad), horizontalFovDeg: pass.horizontalFovDeg, verticalFovDeg: pass.verticalFovDeg, rangeM: pass.rangeM, pointsPerSecond: pass.pointsPerSecond, fps: input.fps }) };
 }
 
-function serializeCapture(pass: BrowserRenderPass, capture: CapturedPass): { bytes: Uint8Array; extension: 'png' | 'ply' | 'csv' } {
-  if (pass.modality === 'rgb') return { bytes: encodePng8Rgba(pass.width, pass.height, capture.pixels!), extension: 'png' };
+type SerializedFrame = { bytes: Uint8Array; extension: 'png' | 'jpg' | 'ply' | 'csv' };
+
+function serializeCapture(pass: BrowserRenderPass, capture: CapturedPass, rgbFrameFormat: 'png' | 'jpg'): SerializedFrame | Promise<SerializedFrame> {
+  if (pass.modality === 'rgb') {
+    if (rgbFrameFormat === 'jpg') return encodeJpegRgba(pass.width, pass.height, capture.pixels!).then((bytes) => ({ bytes, extension: 'jpg' as const }));
+    return { bytes: encodePng8Rgba(pass.width, pass.height, capture.pixels!), extension: 'png' };
+  }
   if (pass.modality === 'depth') return { bytes: depthMetersToPng16(pass.width, pass.height, capture.depth!), extension: 'png' };
   if (pass.modality === 'semantic' || pass.modality === 'instance') return { bytes: encodePng8Rgba(pass.width, pass.height, capture.pixels!), extension: 'png' };
   if (pass.modality === 'lidar') return { bytes: encodeLidarPly(capture.structured as readonly LidarPoint[]), extension: 'ply' };
   return { bytes: encodeRadarCsv(capture.structured as readonly RadarDetection[]), extension: 'csv' };
+}
+
+/**
+ * Review-fidelity RGB frames exist to feed the review MP4 and quick scrubbing:
+ * native JPEG encoding is roughly an order of magnitude cheaper than the pure-JS
+ * PNG path and visually equivalent after the yuv420p H.264 encode. Dataset
+ * fidelity and lossless video keep lossless PNG frames; runtimes without
+ * OffscreenCanvas (unit tests) also keep PNG.
+ */
+export function resolveRgbFrameFormat(renderSpec: RenderSpecV3): 'png' | 'jpg' {
+  if (renderSpec.capabilityIntent.fidelity !== 'review') return 'png';
+  if (renderSpec.video?.quality === 'lossless') return 'png';
+  return typeof OffscreenCanvas === 'undefined' ? 'png' : 'jpg';
 }
 
 async function hashedSink(factory: ArtifactSinkFactory, identity: Parameters<ArtifactSinkFactory>[0], mediaType: string): Promise<HashedArtifactSink> { return new HashedArtifactSink(identity, mediaType, await factory(identity, mediaType)); }

@@ -55,13 +55,16 @@ async function main(argv: readonly string[]): Promise<void> {
   if (typeof mapId !== "string") throw new Error("scenario fixture is missing input.mapId");
   const clipSeconds = instance.input?.clipSeconds;
   if (typeof clipSeconds !== "number" || clipSeconds <= 0) throw new Error("scenario fixture has invalid input.clipSeconds");
+  const hostCatalogId = bundle.actors.find((actor) => actor.id === hostActorId)?.catalogId;
+  if (!hostCatalogId) throw new Error(`scenario fixture actor ${hostActorId} has no catalog identity`);
+  const requestedClipSeconds = args["clip-seconds"] ? Number(args["clip-seconds"]) : 1 / 24;
+  if (!Number.isFinite(requestedClipSeconds) || requestedClipSeconds <= 0) throw new Error("--clip-seconds must be a positive number");
+  const clipEndSeconds = Math.min(clipSeconds, requestedClipSeconds);
 
-  const playback = {
-    ...bundle,
-    actors: bundle.actors.map((actor) => actor.id === hostActorId
-      ? { ...actor, catalogId: "vehicle.kia.carnival" }
-      : actor),
-  };
+  // The browser engine materializes playback from the persisted {instance, trace}
+  // envelope, so the harness must ship the raw evidence pair rather than a
+  // pre-parsed bundle.
+  const playback = { instance, trace };
   const playbackPath = join(output, "inputs", "playback-bundle.json");
   const mapManifestPath = join(devAssets, mapId, "3d", "manifest.json");
   const xoscPath = join(output, "inputs", "scenario.xosc");
@@ -93,31 +96,25 @@ async function main(argv: readonly string[]): Promise<void> {
     },
     sensorHost: {
       actorId: hostActorId,
-      vehicleAsset: {
-        catalogAssetId: "vehicle.kia.carnival",
-        carlaBlueprintId: "vehicle.kia.carnival",
-        carlaClassPath: "/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C",
-        make: "Kia",
-        model: "Carnival",
-        baseType: "van",
-        sourceImage: {
-          repository: "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
-          indexSha256: "f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5",
-          linuxAmd64ManifestSha256: "baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64",
-        },
-      },
-      sensorRig: { rigId: "pronto.8-camera-6-lidar-4-radar", cameras: 8, lidars: 6, radars: 4 },
+      vehicleAsset: { catalogAssetId: hostCatalogId },
+      sensorRig: { rigId: "authored", cameras: 8, lidars: 6, radars: 4 },
     },
     renderSpec: {
       schema: "uniscenario.render-spec/v3",
       sources: prontoSources(hostActorId),
-      clip: { startSeconds: 0, endSeconds: Math.min(clipSeconds, 1 / 24) },
+      clip: { startSeconds: 0, endSeconds: clipEndSeconds },
       video: { width: 320, height: 180, fps: 24, container: "mp4", codec: "h264", quality: "draft" },
-      artifacts: ["manifest", "video"],
+      artifacts: args.artifacts ? args.artifacts.split(",") : ["manifest", "video"],
       capabilityIntent: {
-        required: ["sensor.rgb", "sensor.lidar", "sensor.radar", "artifact.video", "artifact.manifest"],
+        required: [
+          "sensor.rgb",
+          "sensor.lidar",
+          "sensor.radar",
+          "artifact.manifest",
+          ...(args.artifacts ?? "video").split(",").filter((kind) => kind !== "manifest").map((kind) => `artifact.${kind === "sensorArchive" ? "sensor_archive" : kind}`),
+        ],
         preferred: [],
-        fidelity: "review",
+        fidelity: (args.fidelity === "dataset" ? "dataset" : "review"),
       },
       authoredEnvironment: {
         weather: "clear",
@@ -143,6 +140,13 @@ async function main(argv: readonly string[]): Promise<void> {
     workspace: output,
     signal: new AbortController().signal,
   });
+  const workspaceManifest = JSON.parse(
+    await readFile(join(output, "render-manifest.json"), "utf8"),
+  ) as { timings?: Record<string, { count: number; totalMs: number; maxMs: number }> };
+  const artifactBytes = Object.fromEntries(result.artifacts.map((artifact) => [
+    artifact.kind === "sensor_archive" ? `sensor_archive:${artifact.sensor.sensorId}:${artifact.sensor.modality}` : artifact.kind,
+    artifact.sizeBytes,
+  ]));
   process.stdout.write(`${JSON.stringify({
     output,
     manifest: result.artifacts.find((artifact) => artifact.kind === "manifest")?.path,
@@ -151,7 +155,11 @@ async function main(argv: readonly string[]): Promise<void> {
     frameCount: result.frameCount,
     sourceFixture: instancePath,
     mapManifest: mapManifestPath,
-  })}\n`);
+    stageTimingsMs: result.stageTimingsMs,
+    browserStageTimings: workspaceManifest.timings ?? null,
+    artifactBytes,
+    warnings: result.runtimeManifest.warnings,
+  }, null, 2)}\n`);
 }
 
 async function inputFile(inputId: string, path: string): Promise<RenderInputFile> {
