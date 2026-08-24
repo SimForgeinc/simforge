@@ -95,9 +95,19 @@ export async function runCompilerLoop(baseUrl: string | URL, token: string, sign
   const xsdPath = createRequire(import.meta.url).resolve("@simforge/openscenario/schema/OpenSCENARIO.xsd");
   process.stdout.write(`${JSON.stringify({ component: "uniscenarios-local-compiler", event: "worker.started", workerId, compilerVersion: COMPILER_VERSION })}\n`);
   while (!signal.aborted) {
-    const claim = await client.claim(signal);
-    if (!claim) { await delay(POLL_MS, signal); continue; }
-    await runClaim(client, claim, xsdPath, signal);
+    try {
+      const claim = await client.claim(signal);
+      if (!claim) { await delay(POLL_MS, signal); continue; }
+      await runClaim(client, claim, xsdPath, signal);
+    } catch (error) {
+      if (signal.aborted) throw signal.reason;
+      process.stderr.write(`${JSON.stringify({
+        component: "uniscenarios-local-compiler",
+        event: "claim.retry",
+        error: error instanceof Error ? error.message : String(error),
+      })}\n`);
+      await delay(POLL_MS, signal);
+    }
   }
 }
 
