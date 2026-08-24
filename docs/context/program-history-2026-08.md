@@ -166,3 +166,19 @@ transformer, no TP/USP path). Package:
 - Artifacts for the user ship via `scp … seablue:~/Downloads/`.
 - Frozen scoring instrument: yolo11s @ ultralytics 8.4.126, conf 0.25 /
   IoU 0.5, weights `tools/bridge-fidelity/.corpus/weights/yolo11s.pt`.
+
+## 2026-08-23 (later): SimForge consolidation executed
+
+Rebrand program dispatched and landed on main the same day. Lanes: RebrandCore
+(deletions → CLI lib-face + ActorRenderer seam commits → atomic 24→13
+merge/rename sweep), DocsRewrite (README storefront + docs refile),
+ReleasePrep (publication manifest, 13-tarball audit, SimCloud sync data),
+VerifyMerged (full verification incl. Studio browser E2E). Post-merge fixes:
+browser-safe "." vs node-only "./node" entries for @simforge/compiler and
+@simforge/maps (studio client bundle had pulled fs); restored the
+digest-protected authored catalog artifact the sweep had rewritten; dev:worker
+made worker-only; studio/.next untracked. CLI suite's 62 remaining failures
+reproduce byte-for-byte at the pre-rebrand baseline with the same dev-assets —
+pre-existing local dev-assets drift, tracked as an open item, not a rebrand
+regression. Frozen wire contract (uniscenario.* schemas, /api/uniscenario/**,
+scenario-format ids, scene-state.v1) verified untouched.
