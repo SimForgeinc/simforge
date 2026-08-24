@@ -14,11 +14,17 @@ set -euo pipefail
 
 if [ "${1:-}" = "--print-approval-sql" ]; then
   rev="${2:?usage: deploy.sh --print-approval-sql <rev>}"
+  rev="$(git rev-parse --verify "$rev^{commit}")"
   digest="sha256:$(git show "$rev:pnpm-lock.yaml" | sha256sum | cut -d' ' -f1)"
   cat <<SQL
--- host-native approval: bind rows to revision + dependency-lockfile hash
+-- host-native approval: bind rows to revision + dependency-lockfile hash.
+-- current columns move WITH the approval: the approved_identity_ck constraint
+-- requires approved_* = current_* while a row is active, and the next
+-- registration overwrites current_* with what the worker actually runs.
 UPDATE uniscenario.worker_nodes
-   SET approved_worker_version = '$rev',
+   SET worker_version          = '$rev',
+       image_digest            = '$digest',
+       approved_worker_version = '$rev',
        approved_image_digest   = '$digest',
        approved_at             = NOW()
  WHERE id IN ('<native worker row ids>');
