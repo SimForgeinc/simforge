@@ -1,0 +1,85 @@
+{
+  "ticks": [
+    {
+      "simTick": 1,
+      "bundleOffset": 28928,
+      "bundleLen": 224,
+      "frames": [
+        {
+          "sensorId": "front",
+          "pass": "rgb",
+          "offset": 4096,
+          "len": 12288,
+          "width": 64,
+          "height": 48,
+          "format": "rgba8",
+          "digest": "a5749286"
+        },
+        {
+          "sensorId": "rear",
+          "pass": "rgb",
+          "offset": 16512,
+          "len": 12288,
+          "width": 64,
+          "height": 48,
+          "format": "rgba8",
+          "digest": "fe2b5b3a"
+        }
+      ]
+    },
+    {
+      "simTick": 2,
+      "bundleOffset": 54112,
+      "bundleLen": 224,
+      "frames": [
+        {
+          "sensorId": "front",
+          "pass": "rgb",
+          "offset": 29280,
+          "len": 12288,
+          "width": 64,
+          "height": 48,
+          "format": "rgba8",
+          "digest": "a5749286"
+        },
+        {
+          "sensorId": "rear",
+          "pass": "rgb",
+          "offset": 41696,
+          "len": 12288,
+          "width": 64,
+          "height": 48,
+          "format": "rgba8",
+          "digest": "fe2b5b3a"
+        }
+      ]
+    },
+    {
+      "simTick": 3,
+      "bundleOffset": 79296,
+      "bundleLen": 224,
+      "frames": [
+        {
+          "sensorId": "front",
+          "pass": "rgb",
+          "offset": 54464,
+          "len": 12288,
+          "width": 64,
+          "height": 48,
+          "format": "rgba8",
+          "digest": "a5749286"
+        },
+        {
+          "sensorId": "rear",
+          "pass": "rgb",
+          "offset": 66880,
+          "len": 12288,
+          "width": 64,
+          "height": 48,
+          "format": "rgba8",
+          "digest": "fe2b5b3a"
+        }
+      ]
+    }
+  ]
+}
