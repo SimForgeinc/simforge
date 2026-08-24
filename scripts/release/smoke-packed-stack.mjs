@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const config = JSON.parse(await readFile(path.join(repoRoot, 'config/simforge-stack.json'), 'utf8'));
-const root = await mkdtemp(path.join(tmpdir(), 'uniscenarios-packed-stack-'));
+const root = await mkdtemp(path.join(tmpdir(), 'simforge-packed-stack-'));
 const tarballs = path.join(root, 'tarballs');
 await mkdir(tarballs);
 
@@ -24,7 +24,7 @@ for (const entry of config.packages) {
 }
 
 await writeFile(path.join(root, 'package.json'), `${JSON.stringify({
-  name: 'uniscenarios-packed-stack-smoke',
+  name: 'simforge-packed-stack-smoke',
   private: true,
   type: 'module',
   dependencies,
@@ -52,7 +52,7 @@ const verified = JSON.parse(execFileSync(process.execPath, [smokeScript], {
 }));
 
 await writeFile(path.join(root, 'smoke-result.json'), `${JSON.stringify({
-  schema: 'uniscenarios.packed-stack-smoke/v1',
+  schema: 'simforge.packed-stack-smoke/v1',
   stackVersion: config.stackVersion,
   verified,
 }, null, 2)}\n`);

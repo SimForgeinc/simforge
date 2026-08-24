@@ -4,10 +4,14 @@
   "description": "WS5 EvalHarness \u2014 frozen policy evaluation protocol: versioned suite (policy-eval-suite.v1), deterministic env server over the suite entries, and suite-hash-keyed report inputs. The Python runner lives under qualification/policy-eval-runner.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SimForgeinc/UniScenarios",
+    "url": "https://github.com/SimForgeinc/SimForge",
     "directory": "packages/evaluation"
   },
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

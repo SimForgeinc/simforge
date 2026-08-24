@@ -1,10 +1,10 @@
 [project]
 name = "simforge-carla-api"
-version = "0.1.0"
+version = "0.1.0rc45"
 description = "CARLA-compatible Python API facade over the SimForge env-server and render path"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "Apache-2.0"
 dependencies = [
     "msgpack>=1.0",
     "numpy>=1.26",

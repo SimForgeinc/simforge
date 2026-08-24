@@ -4,7 +4,7 @@
   "description": "Framework-neutral UniScenarios v2 authoring document, interaction controller, route overlays, and editor contracts.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "url": "git+https://github.com/SimForgeinc/SimForge.git",
     "directory": "packages/editor"
   },
   "publishConfig": {
