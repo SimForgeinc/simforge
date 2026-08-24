@@ -767,7 +767,13 @@ export async function reserveBrowserRecordingArtifacts(
                 producer_job_id <> :job_id AS reused
            FROM uniscenario.artifacts
           WHERE workspace_id = :workspace_id AND sha256 = :sha256
-            AND artifact_kind = :artifact_kind LIMIT 1`,
+            AND artifact_kind = :artifact_kind AND deleted_at IS NULL
+            AND (
+              artifact_state = 'available'
+              OR (artifact_state = 'pending' AND producer_job_id = :job_id)
+            )
+          ORDER BY CASE artifact_state WHEN 'available' THEN 0 ELSE 1 END
+          LIMIT 1`,
         reservationParams,
       );
       let inserted: ArtifactRow | null = null;
@@ -798,43 +804,7 @@ export async function reserveBrowserRecordingArtifacts(
           { cause: error },
         );
       }
-      // A failed/expired recording quarantines its immutable outputs. Reclaim
-      // only an exact-byte quarantined row while holding this serialized local
-      // transaction; available artifacts retain normal digest reuse.
-      const reclaimed = existingDigest?.artifact_state === "quarantined"
-        && existingDigest.media_type === declaration.mediaType
-        && Number(existingDigest.byte_length) === declaration.sizeBytes
-        ? await tx.queryOne<ArtifactRow>(
-          `UPDATE uniscenario.artifacts
-              SET revision_id = :revision_id, media_type = :media_type,
-                  storage_bucket = :storage_bucket, storage_key = :storage_key,
-                  byte_length = :byte_length, artifact_state = 'pending',
-                  metadata = CAST(:metadata AS jsonb), deleted_at = NULL,
-                  producer_job_family = 'artifact_postprocess',
-                  producer_job_id = :job_id, provenance = CAST(:provenance AS jsonb)
-            WHERE workspace_id = :workspace_id AND sha256 = :sha256
-              AND artifact_kind = :artifact_kind AND artifact_state = 'quarantined'
-            RETURNING id, :artifact_role AS artifact_role,
-              :sensor_actor_id AS artifact_sensor_actor_id,
-              :sensor_id AS artifact_sensor_id,
-              :sensor_modality AS artifact_sensor_modality,
-              artifact_kind, media_type, sha256, byte_length, artifact_state,
-              storage_bucket, storage_key, producer_job_id, false AS reused`,
-          reservationParams,
-        )
-        : null;
-      const reusable = existingDigest
-        && existingDigest.deleted_at === null
-        && (
-          existingDigest.artifact_state === "available"
-          || (
-            existingDigest.artifact_state === "pending"
-            && existingDigest.producer_job_id === recordingId
-          )
-        )
-        ? existingDigest
-        : null;
-      const artifact = reclaimed ?? inserted ?? reusable;
+      const artifact = inserted ?? existingDigest;
       const conflicting = artifact ? null : existingDigest;
       if (
         !artifact
