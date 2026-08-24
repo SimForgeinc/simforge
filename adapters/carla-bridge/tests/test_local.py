@@ -156,7 +156,7 @@ def test_artifact_manifest_accepts_sensor_data() -> None:
 
     assert entries == [{
         "identity": {
-            "role": "sensorData",
+            "role": "sensorArchive",
             "actorId": "ego",
             "sensorId": "lidar-front",
             "modality": "lidar",

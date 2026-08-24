@@ -805,14 +805,14 @@ def _artifact_manifest_entries(items: Any) -> list[dict[str, Any]]:
         if isinstance(kind, str) and kind.startswith("framesArchive:"):
             role = "sensorArchive"
         elif isinstance(kind, str) and kind.startswith("sensorData:"):
-            role = "sensorData"
+            role = "sensorArchive"
         elif kind == "parity-report":
             role = "diagnostics"
         elif kind in {"video", "frames", "manifest", "trace", "annotations"}:
             role = kind
         else:
             raise RuntimeError(f"native executor returned unsupported artifact kind {kind!r}")
-        if role in {"video", "frames", "sensorArchive", "sensorData"}:
+        if role in {"video", "frames", "sensorArchive"}:
             actor_id = metadata.get("actorId")
             sensor_id = metadata.get("sensorId")
             modality = metadata.get("modality")
