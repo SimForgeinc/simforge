@@ -14,10 +14,10 @@ import path from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { DEV_ASSETS, REPO_ROOT } from '../maps.js';
-import { readTraceFile, writeTraceFile } from '../template-io.js';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
+import { readTraceFile, writeTraceFile } from '@simforge/compiler';
 
-const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'uniscenarios.js');
+const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
 const LTAP = path.join(REPO_ROOT, 'examples', 'ltap-opposing.template.json');
 const MAP = 'yale-street';
 const SUMO_SCENARIO = path.join(REPO_ROOT, 'examples', 'edge-cases', '03-red-light-ambulance-preemption', 'scenario.instance.json');
@@ -61,7 +61,7 @@ describe('uniscenarios — contract', () => {
     const run = await uniscenarios();
     expect(run.code).toBe(0);
     const payload = json<{ bin: string; commands: Array<{ name: string }> }>(run);
-    expect(payload.bin).toBe('uniscenarios');
+    expect(payload.bin).toBe('simforge');
     expect(payload.commands.map((c) => c.name)).toContain('sites match');
     expect(payload.commands.map((c) => c.name)).toContain('export');
     expect(payload.commands.map((c) => c.name)).toContain('debug');

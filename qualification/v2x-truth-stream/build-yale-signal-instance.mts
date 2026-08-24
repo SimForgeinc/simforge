@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 // Direct dist imports: this fixture tool lives outside the workspace package graph.
 import { loadMap } from '../../packages/cli/dist/index.js';
-import { buildMapControlPlan } from '../../packages/scenario-materializer/dist/index.js';
+import { buildMapControlPlan } from '../../packages/compiler/dist/index.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');

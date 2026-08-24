@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const config = JSON.parse(await readFile(path.join(repoRoot, 'config/uniscenarios-stack.json'), 'utf8'));
+const config = JSON.parse(await readFile(path.join(repoRoot, 'config/simforge-stack.json'), 'utf8'));
 const root = await mkdtemp(path.join(tmpdir(), 'uniscenarios-packed-stack-'));
 const tarballs = path.join(root, 'tarballs');
 await mkdir(tarballs);

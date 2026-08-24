@@ -2,7 +2,7 @@
 
 ## What was missing
 
-`packages/scenario-model/src/schema/v2/sensors.ts` declared an `ActorSensor` with a `dash_camera`
+`packages/scenario/src/schema/v2/sensors.ts` declared an `ActorSensor` with a `dash_camera`
 type and **nothing consumed it**. Worse than absent: `parseSimScenarioInput` *silently stripped*
 the field, so a template could declare a camera, validate clean, and simulate as though it had
 said nothing. Occlusion was purely geometric, so an entire class of edge case — the ones where the

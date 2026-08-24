@@ -10,7 +10,7 @@ import {
   TRACE_FORMAT_VERSION,
   type SimScenarioInput,
   type SimTrace,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 import {
   PlaybackLoadError,
   defaultCatalogIdForActorKind,

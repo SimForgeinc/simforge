@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { buildLaneGraph, parseSimScenarioInput, runSimulation } from '../../../../../packages/sim-engine/src/index.js';
+import { buildLaneGraph, parseSimScenarioInput, runSimulation } from '../../../../../packages/engine/src/index.js';
 const doc = JSON.parse(readFileSync(process.argv[2]!, 'utf8'));
 const graph = buildLaneGraph(JSON.parse(gunzipSync(readFileSync(`dev-assets/${doc.input.mapId}/topology-index.json.gz`)).toString('utf8')));
 const input = parseSimScenarioInput(doc.input);

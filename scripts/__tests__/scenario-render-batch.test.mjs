@@ -136,7 +136,7 @@ test('refuses resume after catalog, renderer, or render-setting drift', () => {
   );
   const studioDrift = provenance();
   studioDrift.rendererSources = studioDrift.rendererSources.map((item) => (
-    item.file === 'apps/studio/src/editor/actorRenderer.ts' ? { ...item, sha256: hash('0') } : item
+    item.file === 'studio/src/editor/actorRenderer.ts' ? { ...item, sha256: hash('0') } : item
   ));
   assert.throws(
     () => resumeBatchLedger(ledger, source, studioDrift, config()),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ExprScope, ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
-import type { SimTrace } from '@uniscenarios/sim-engine';
+import type { ExprScope, ScenarioTemplateV2 } from '@simforge/scenario';
+import type { SimTrace } from '@simforge/engine';
 
 import { checkInvariants } from '../invariants.js';
 

@@ -15,15 +15,15 @@ import {
   validateTemplate,
   type Interaction,
   type ScenarioTemplateV2,
-} from '@uniscenarios/scenario-model';
-import { criticalityWindow, evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
+} from '@simforge/scenario';
+import { criticalityWindow, evaluateTrace, runSimulation } from '@simforge/engine';
 
 import { adaptTemplate } from '../adapt.js';
-import { DEV_ASSETS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { findSite, matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { findSite, matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const MAP = 'yale-street';
 const BELMONT_MAP = 'belmont-research-center';

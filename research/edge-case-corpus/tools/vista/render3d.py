@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-WS-3 3D video renderer for the UniScenarios-vista edge-case corpus.
+WS-3 3D video renderer for the SimForge-vista edge-case corpus.
 
-Renders each corpus scenario as an H.264 MP4 *from the real UniScenarios 3D
-world* (apps/studio + city-renderer, three.js) by driving the Studio dev server
+Renders each corpus scenario as an H.264 MP4 *from the real SimForge 3D
+world* (studio + viewer, three.js) by driving the Studio dev server
 in Chrome through scripts/export-render.mjs (playwright-core).
 
 It does not reimplement any renderer. It is a batch driver:
@@ -15,7 +15,7 @@ It does not reimplement any renderer. It is a batch driver:
     run keeps everything it already produced.
 
 PREREQUISITE - the Studio dev server must already be running, started ONCE:
-    pnpm --filter @uniscenarios/studio dev --host 127.0.0.1 --port 5199
+    pnpm --filter @simforge/studio dev --host 127.0.0.1 --port 5199
 
 Usage:
     python3 render3d.py --records /tmp/vista-dataset-all/train.jsonl \
@@ -293,7 +293,7 @@ def write_index(index_file: Path, entries: dict, meta: dict) -> None:
     meta_tmp.write_text(json.dumps({
         "schema": "uniscenarios.vista.3d-video-index-meta.v1",
         "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "renderer": "apps/studio 3D world (city-renderer/three.js) via scripts/export-render.mjs",
+        "renderer": "studio 3D world (viewer/three.js) via scripts/export-render.mjs",
         **meta,
         "summary": {
             "total": len(records),

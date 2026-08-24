@@ -1,7 +1,7 @@
 import { parentPort, workerData } from 'node:worker_threads';
 
 import { runCell, type CellOptions } from './batch-cell.js';
-import { readTemplate } from './template-io.js';
+import { readTemplate } from '@simforge/compiler';
 
 interface WorkerInput {
   readonly templateFile: string;

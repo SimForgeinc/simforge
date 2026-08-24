@@ -3,10 +3,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { CliError } from '../errors.js';
-import { REPO_ROOT, artifactPresence } from '../maps.js';
+import { REPO_ROOT, artifactPresence } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const TEMPLATE = path.join(
   REPO_ROOT,

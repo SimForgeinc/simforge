@@ -116,7 +116,7 @@
     {
       "id": "D1",
       "severity": "high",
-      "where": "packages/sim-engine (sim/pairs.ts, trace/metrics.ts)",
+      "where": "packages/engine (sim/pairs.ts, trace/metrics.ts)",
       "fixed": false,
       "title": "a stationary actor beside the ego steals the episode min-TTC, and the occlusion metric with it",
       "detail": "readPair uses circumscribed radii (hypot(l,w)/2) and is lane-agnostic, so two cars 3.5 m apart laterally clamp gap to 0 and TTC to 0 while closing. revealToConflict is computed for the min-TTC pair only, so it silently disappears.",
@@ -190,7 +190,7 @@
     {
       "id": "D5",
       "severity": "medium",
-      "where": "packages/scenario-model (schema/v2/roles.ts FramePose) + cli buildOccluders",
+      "where": "packages/scenario (schema/v2/roles.ts FramePose) + cli buildOccluders",
       "fixed": false,
       "title": "the reveal-to-conflict lever is the one field that cannot be a parameter",
       "detail": "FramePose.tFrac is a plain number, not NumberOrExpr, so an occluder's lateral standoff cannot be swept while pose.s can. The ±1 cap also bounds a frame pose to one lane width, and props[].pose.laneOffset is accepted by the schema and silently ignored by buildOccluders."
@@ -198,7 +198,7 @@
     {
       "id": "D6",
       "severity": "medium",
-      "where": "packages/sim-engine (trace/metrics.ts)",
+      "where": "packages/engine (trace/metrics.ts)",
       "fixed": false,
       "title": "occlusion is only meaningful on a straight, and nothing says so",
       "detail": "on a bend the ego->VRU chord short-cuts across the inside of the curve and misses a kerbside occluder; revealToConflict then reports a long plausible number instead of \"this occluder does not occlude\". Forces curvatureDegPer10m to be a required clause, which is the campaign's largest cost to map coverage.",

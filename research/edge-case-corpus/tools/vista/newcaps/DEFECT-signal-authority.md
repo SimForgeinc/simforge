@@ -5,7 +5,7 @@ defect in its own right: both bugs are in shipped behaviour, both affect every s
 through the engine that carried the relevant phase, and they are wrong in **opposite directions**,
 so neither is a conservative approximation of the other.
 
-Source: `packages/sim-engine/src/sim/signals.ts`
+Source: `packages/engine/src/sim/signals.ts`
 
 ```ts
 export function phaseForbidsEntry(phase: SignalPhase): boolean {
@@ -94,7 +94,7 @@ AssertionError: expected true to be false
 ## Scope of the blast radius
 
 `phaseForbidsEntry` is the single executable right-of-way boundary for signals: it is consulted from
-`distanceToStopLine` in `packages/sim-engine/src/sim/controllers.ts` and nowhere else. So the two
+`distanceToStopLine` in `packages/engine/src/sim/controllers.ts` and nowhere else. So the two
 behaviours above are the *only* behaviours the engine has ever had for these phases. Nothing
 downstream can compensate: the trace records what the ego did, and what the ego did was wrong.
 
@@ -114,7 +114,7 @@ Implemented alongside the surface-patch work:
 - `flashing_yellow_arrow` and `flashing_red_arrow` are added to the indication vocabulary at both the
   authoring and engine layers, permissive and forbidding respectively.
 
-Regression tests: `packages/sim-engine/src/__tests__/environment-signal-failure.test.ts`.
+Regression tests: `packages/engine/src/__tests__/environment-signal-failure.test.ts`.
 
 
 ---
@@ -157,6 +157,6 @@ Consequence: a signal-phase scenario can be authored, materialized, simulated an
 signal never governs anybody. The phase appears in the trace, so it looks like it worked.
 
 Not fixed here. Owner: whoever owns `buildTrafficControls` / `resolveSiteSignalProgram` in
-`packages/scenario-materializer/src/materialize.ts` and the site-frame lane binding.
+`packages/compiler/src/materialize.ts` and the site-frame lane binding.
 Reproducer: `research/edge-case-corpus/tools/vista/newcaps/check-stopline-binding.ts` (per-instance)
 and `check-stopline-binding-corpus.ts` (over committed evidence).

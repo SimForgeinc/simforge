@@ -1,6 +1,6 @@
 # DEFECT: a constant negative `pose.s` on a role makes every site infeasible, with no clause named
 
-**Package:** `packages/anchor-matcher` / `packages/scenario-materializer` (NOT owned by caps-reverse)
+**Package:** `packages/compiler` / `packages/compiler` (NOT owned by caps-reverse)
 **Severity:** silent — `template validate` reports `ok`, `sites match` reports `totalSites: 0`, and no
 clause is attributed
 **Status:** open. Found while building the caps-reverse end-to-end proof; worked around, not fixed.

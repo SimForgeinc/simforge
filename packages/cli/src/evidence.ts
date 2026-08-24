@@ -8,9 +8,9 @@
  * different scenario and the cell must not be accepted or promoted.
  */
 
-import { contentHash, resolvePhysicsConfig, type MotionPhysicsMode, type SimTrace } from '@uniscenarios/sim-engine';
+import { contentHash, resolvePhysicsConfig, type MotionPhysicsMode, type SimTrace } from '@simforge/engine';
 
-import type { InstanceFile } from './template-io.js';
+import type { InstanceFile } from '@simforge/compiler';
 
 export interface EvidenceHashIssue {
   readonly code:

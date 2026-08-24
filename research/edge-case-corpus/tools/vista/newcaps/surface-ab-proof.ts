@@ -28,7 +28,7 @@ import {
   traceDigest,
   type LaneGraph,
   type SurfacePatch,
-} from '../../../../../packages/sim-engine/src/index.js';
+} from '../../../../../packages/engine/src/index.js';
 
 const graphs = new Map<string, LaneGraph>();
 function graphFor(mapId: string): LaneGraph {

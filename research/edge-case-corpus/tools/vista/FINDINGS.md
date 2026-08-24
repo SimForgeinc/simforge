@@ -990,7 +990,7 @@ the gate reads.
 ## 24. Measured throughput on a clean machine, with the FP-0 validator
 
 Every earlier throughput figure in this document was taken on a compromised setup: up to 31 orphaned
-worker processes competing for CPU, a CLI that resolved `@uniscenarios/*` to the MAIN checkout rather
+worker processes competing for CPU, a CLI that resolved `@simforge/*` to the MAIN checkout rather
 than the worktree, and a JSON parser that silently discarded whole briefs. Those numbers are withdrawn.
 This one is measured end to end after all three were fixed.
 

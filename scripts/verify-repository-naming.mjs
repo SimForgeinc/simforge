@@ -1,120 +1,125 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT_NAME = 'uniscenarios';
-const PACKAGE_SCOPE = '@uniscenarios/';
-const HISTORICAL_DOCUMENTS = new Set([
-  'docs/repository-transition.md',
-  'docs/uniscenarios-repository-extraction.md',
-]);
-const LEGACY_PUBLIC_NAME = /@scenario-studio(?:\/|\b)|\bscenario-studio\b|\bScenario Studio\b|\bSCENARIO_STUDIO\b/;
+export const PACKAGE_NAMES = [
+  'scenario',
+  'engine',
+  'maps',
+  'compiler',
+  'viewer',
+  'editor',
+  'playback',
+  'asset-catalog',
+  'render',
+  'openscenario',
+  'training-env',
+  'evaluation',
+  'cli',
+];
+
+const REMOVED_PATHS = [
+  'apps/studio',
+  'apps/cloud',
+  'native',
+  'packages/editor-ui',
+  'packages/scenario-model',
+  'packages/sim-engine',
+  'packages/scene-state',
+  'packages/xodr-tools',
+  'packages/map-intel',
+  'packages/anchor-matcher',
+  'packages/scenario-materializer',
+  'packages/city-renderer',
+  'packages/camera-rig',
+  'packages/editor-core',
+  'packages/ambient-traffic',
+  'packages/prop-catalog',
+  'packages/render-runtime',
+  'packages/browser-renderer',
+  'packages/native-renderer',
+  'packages/esmini-runner',
+  'packages/trace-comparator',
+  'packages/rl-env',
+  'packages/policy-eval',
+  'packages/examiner',
+];
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-function workspaceManifestPaths(root) {
-  const paths = [];
-  for (const parent of ['apps', 'packages']) {
-    const directory = join(root, parent);
-    if (!existsSync(directory)) continue;
+function sourceFiles(root) {
+  const files = [];
+  const pending = [root];
+  const ignored = new Set(['.git', '.next', 'dist', 'docs', 'node_modules']);
+  while (pending.length) {
+    const directory = pending.pop();
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const manifest = join(directory, entry.name, 'package.json');
-      if (existsSync(manifest)) paths.push(manifest);
+      if (ignored.has(entry.name)) continue;
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) pending.push(path);
+      else if (/\.(?:[cm]?[jt]sx?|json|ya?ml)$/u.test(entry.name)) files.push(path);
     }
   }
-  return paths.sort();
-}
-
-function markdownPathsBelow(root, relativeDirectory) {
-  const paths = [];
-  const directory = join(root, relativeDirectory);
-  if (!existsSync(directory)) return paths;
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    const path = `${relativeDirectory}/${entry.name}`;
-    if (entry.isDirectory()) paths.push(...markdownPathsBelow(root, path));
-    else if (entry.isFile() && entry.name.endsWith('.md')) paths.push(path);
-  }
-  return paths;
-}
-
-function publicDocumentationPaths(root) {
-  const paths = [];
-  for (const path of ['README.md']) {
-    if (existsSync(join(root, path))) paths.push(path);
-  }
-  for (const parent of ['apps', 'catalog', 'docs', 'examples', 'packages']) {
-    paths.push(...markdownPathsBelow(root, parent));
-  }
-  return paths.filter((path) => !HISTORICAL_DOCUMENTS.has(path)).sort();
+  return files;
 }
 
 export function verifyRepositoryNaming(root) {
   const errors = [];
   const rootManifest = readJson(join(root, 'package.json'));
-  if (rootManifest.name !== ROOT_NAME) {
-    errors.push(`package.json name must be ${ROOT_NAME}, found ${JSON.stringify(rootManifest.name)}`);
-  }
-  if (rootManifest.private !== true) errors.push('package.json must keep the workspace root private');
+  if (rootManifest.name !== 'simforge') errors.push('package.json name must be "simforge"');
 
-  const seenNames = new Set();
-  for (const path of workspaceManifestPaths(root)) {
+  const actualPackages = readdirSync(join(root, 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(root, 'packages', entry.name, 'package.json')))
+    .map((entry) => entry.name)
+    .sort();
+  const expectedPackages = [...PACKAGE_NAMES].sort();
+  if (JSON.stringify(actualPackages) !== JSON.stringify(expectedPackages)) {
+    errors.push(`packages/ must contain exactly: ${expectedPackages.join(', ')}`);
+  }
+  for (const name of PACKAGE_NAMES) {
+    const path = join(root, 'packages', name, 'package.json');
+    if (!existsSync(path)) continue;
     const manifest = readJson(path);
-    const displayPath = relative(root, path);
-    if (typeof manifest.name !== 'string' || !manifest.name.startsWith(PACKAGE_SCOPE)) {
-      errors.push(`${displayPath} name must use the ${PACKAGE_SCOPE} scope`);
-      continue;
-    }
-    if (seenNames.has(manifest.name)) errors.push(`duplicate workspace package name: ${manifest.name}`);
-    seenNames.add(manifest.name);
+    if (manifest.name !== `@simforge/${name}`) errors.push(`packages/${name}/package.json must be named @simforge/${name}`);
+    if (manifest.version !== '0.1.0-rc.45') errors.push(`packages/${name}/package.json must remain at 0.1.0-rc.45`);
   }
 
-  const cliPath = join(root, 'packages/cli/package.json');
-  if (existsSync(cliPath)) {
-    const cli = readJson(cliPath);
-    if (cli.bin?.uniscenarios !== './bin/uniscenarios.js') {
-      errors.push('CLI primary executable must be uniscenarios -> ./bin/uniscenarios.js');
-    }
-    if (cli.bin?.scen !== './bin/scen.js') {
-      errors.push('CLI compatibility executable must remain scen -> ./bin/scen.js');
-    }
-    const unexpectedBins = Object.keys(cli.bin ?? {}).filter((name) => name !== 'uniscenarios' && name !== 'scen');
-    if (unexpectedBins.length) errors.push(`CLI exposes unexpected executable names: ${unexpectedBins.join(', ')}`);
+  const studio = readJson(join(root, 'studio', 'package.json'));
+  if (studio.name !== '@simforge/studio') errors.push('studio/package.json must be named @simforge/studio');
+  for (const path of REMOVED_PATHS) {
+    if (existsSync(join(root, path))) errors.push(`${path} must not exist`);
+  }
+  if (!existsSync(join(root, 'renderer', 'Cargo.toml'))) errors.push('renderer/Cargo.toml must exist');
+
+  const cli = readJson(join(root, 'packages/cli/package.json'));
+  const expectedBins = { simforge: './bin/simforge.js', sf: './bin/sf.js', uniscenarios: './bin/uniscenarios.js' };
+  if (JSON.stringify(cli.bin) !== JSON.stringify(expectedBins)) errors.push('CLI bins must be simforge, sf, and deprecated uniscenarios');
+
+  const stack = readJson(join(root, 'config/simforge-stack.json'));
+  if (stack.packages?.length !== 13) errors.push('config/simforge-stack.json must contain 13 packages');
+  const stackNames = (stack.packages ?? []).map((item) => item.name).sort();
+  const packageNames = PACKAGE_NAMES.map((name) => `@simforge/${name}`).sort();
+  if (JSON.stringify(stackNames) !== JSON.stringify(packageNames)) errors.push('stack package names must match the 13-package workspace');
+  if (!stack.renameManifest || Object.keys(stack.renameManifest).length < 23) errors.push('stack renameManifest must cover every former package');
+
+  const legacyImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@uniscenarios\//u;
+  for (const path of sourceFiles(root)) {
+    const source = readFileSync(path, 'utf8');
+    if (legacyImport.test(source)) errors.push(`${relative(root, path)} imports the retired @uniscenarios scope`);
   }
 
-  for (const path of publicDocumentationPaths(root)) {
-    const lines = readFileSync(join(root, path), 'utf8').split('\n');
-    for (const [index, line] of lines.entries()) {
-      if (LEGACY_PUBLIC_NAME.test(line)) {
-        errors.push(`${path}:${index + 1} contains a legacy public product name`);
-      }
-    }
-  }
-
-  if (errors.length) throw new Error(`repository naming verification failed:\n- ${errors.join('\n- ')}`);
-  return {
-    rootName: ROOT_NAME,
-    packageScope: PACKAGE_SCOPE.slice(0, -1),
-    workspacePackageCount: seenNames.size,
-    documentationFileCount: publicDocumentationPaths(root).length,
-  };
+  if (errors.length) throw new Error(`Repository naming verification failed:\n- ${errors.join('\n- ')}`);
+  return { packageCount: PACKAGE_NAMES.length, scannedFiles: sourceFiles(root).length };
 }
 
 function main() {
-  try {
-    const root = resolve(process.argv[2] ?? join(dirname(fileURLToPath(import.meta.url)), '..'));
-    const result = verifyRepositoryNaming(root);
-    process.stdout.write(
-      `Verified UniScenarios naming: ${result.workspacePackageCount} workspace packages and ${result.documentationFileCount} public documents\n`,
-    );
-  } catch (error) {
-    process.stderr.write(`${error.message}\n`);
-    process.exitCode = 1;
-  }
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const result = verifyRepositoryNaming(root);
+  process.stdout.write(`SimForge naming verified (${result.packageCount} packages, ${result.scannedFiles} files).\n`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

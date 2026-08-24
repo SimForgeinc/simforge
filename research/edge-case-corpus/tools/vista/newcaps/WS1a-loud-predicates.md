@@ -5,7 +5,7 @@ implementation starting**. This file is written early and updated as work lands,
 
 ## BOTTOM LINE (provisional)
 
-The silent-drop path is **one function**: `packages/scenario-materializer/src/adapt.ts` →
+The silent-drop path is **one function**: `packages/compiler/src/adapt.ts` →
 `adaptTemplate()`. It records every discarded authored clause as an `AdaptNote {path, reason}` and
 returns it; `template validate` prints those notes under an `adapter/note` heading and still exits 0,
 and `sites match` puts them in `payload.adapterNotes` and still returns sites at score 1.00. Nothing

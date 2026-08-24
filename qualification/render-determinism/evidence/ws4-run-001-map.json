@@ -1,0 +1,169 @@
+{
+  "schema": "uniscenarios.render-determinism-manifest.v1",
+  "generatedAt": "2026-08-22T21:08:31.486Z",
+  "claim": "byte-exactness of the Chrome/three.js RGB export path across two independent renders of one fixed scene state on pinned hardware",
+  "mode": "map-orbit",
+  "scenario": {
+    "instanceId": null,
+    "mapId": "yale-street",
+    "inputs": {
+      "map": {
+        "id": "yale-street",
+        "note": "deterministic camera orbit over the streamed static city scene"
+      }
+    }
+  },
+  "rendererPath": {
+    "file": "scripts/export-render.mjs",
+    "sha256": "65d059a7d274d359dd4a134ee663fcc02d66d4034bdf7097cd0a258b7abe784f",
+    "engine": "chrome-headless three.js via Studio dev server (@simforge/studio)",
+    "invocation": {
+      "url": "http://127.0.0.1:5199/",
+      "flags": [
+        "--headless",
+        "--map",
+        "yale-street",
+        "--frames",
+        "8"
+      ],
+      "passesRenderedSequentially": true
+    }
+  },
+  "hardware": {
+    "collectedAt": "2026-08-22T21:08:31.486Z",
+    "chrome": {
+      "version": "151.0.7922.108",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+      "launchArgs": [
+        "--ignore-gpu-blocklist"
+      ],
+      "headless": true
+    },
+    "webgl": {
+      "available": true,
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "glslVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+      "unmaskedVendor": "Google Inc. (Google)",
+      "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "maxTextureSize": 8192
+    },
+    "host": {
+      "osPrettyName": "Ubuntu 24.04.4 LTS",
+      "kernel": "7.0.0-28-generic",
+      "arch": "x64",
+      "cpuModel": "Intel(R) Core(TM) Ultra 9 285K",
+      "cpuCount": 24,
+      "totalMemoryBytes": 66856239104,
+      "hostname": "path-B860I-AORUS-PRO-ICE",
+      "gpus": [
+        {
+          "name": "NVIDIA GeForce RTX 5080",
+          "driverVersion": "595.84",
+          "vbiosVersion": "98.03.6C.00.3E",
+          "pciBusId": "00000000:02:00.0"
+        }
+      ]
+    }
+  },
+  "passes": {
+    "rgb": {
+      "available": true,
+      "frameCount": 8,
+      "frames": [
+        {
+          "name": "yale-street/frames/frame-000000.png",
+          "bytes": 959517,
+          "sha256PassA": "e55578f0fe2fe79d65c3aed6a2813c7fda6ad8547b7d919753ccd85d0b2fd3bf",
+          "sha256PassB": "da7de229436c01b5d41dbba1e8ec3c5e460e16c79ef15f0fff51d69a82a492b2",
+          "equal": false
+        },
+        {
+          "name": "yale-street/frames/frame-000001.png",
+          "bytes": 856927,
+          "sha256PassA": "b2922146a921cf0ca1d1735ffd3615fc2d5cc006b868801eeae84c206335edb7",
+          "sha256PassB": "69e12c548d3e0dd08951e8c65ce3b90c8c81ef9f34ea228161a9d9093dc60d34",
+          "equal": false
+        },
+        {
+          "name": "yale-street/frames/frame-000002.png",
+          "bytes": 841172,
+          "sha256PassA": "c2d1bb957889d95fb697616db783b24f5beb984c8c4f7e585ab43589daea700e",
+          "sha256PassB": "e44e23b3bd83c7a0f6cb579200fc031d7bf1f23d4c715a7cb873687c02dd68d9",
+          "equal": false
+        },
+        {
+          "name": "yale-street/frames/frame-000003.png",
+          "bytes": 821169,
+          "sha256PassA": "8f3c8de85eb770b8012a8668e6d3d57c85e26c31fc1dbc8e5c4e844892de0afe",
+          "sha256PassB": "7c887112dd0d7f2dfc139e3dbaa87298fe4fad05f9f18d0c8990caa52986dde5",
+          "equal": false
+        },
+        {
+          "name": "yale-street/frames/frame-000004.png",
+          "bytes": 889156,
+          "sha256PassA": "9115fdb71648813fe5df947333535c5e0cded6eda389ca4f4f719b8cc2a83675",
+          "sha256PassB": "e7b149630a2aaf401cad2854c0b8f4731fddd5158c687dfd62589bfea9dc2be1",
+          "equal": false
+        },
+        {
+          "name": "yale-street/frames/frame-000005.png",
+          "bytes": 866710,
+          "sha256PassA": "140d7eb3841a2929ff211f231a1c509ee7a5aa3af3f0a291472b9c5e179a7806",
+          "sha256PassB": "27cea7960a9aa737051f145bf53c2ff6da7f924bd4ff557abdd2b8574380a74f",
+          "equal": false
+        },
+        {
+          "name": "yale-street/frames/frame-000006.png",
+          "bytes": 814663,
+          "sha256PassA": "f49bf559fea6e1bac915b5d369c697c92346e394703b0fae92436aab1d4fcd50",
+          "sha256PassB": "adc9e735258b1f8204e92089e4ee5a641ad65029fcfe096d67dd916285e9966a",
+          "equal": false
+        },
+        {
+          "name": "yale-street/frames/frame-000007.png",
+          "bytes": 833003,
+          "sha256PassA": "4ac4c86fa34865f4e295a92aec97e41ad35a64dde6939868a840c3593ddf7b72",
+          "sha256PassB": "139e4221909a3dbb70f7a8c3d8ef9c8203040700f6f9d82fb88589f4ad4c1b9f",
+          "equal": false
+        }
+      ],
+      "equalFrames": 0,
+      "byteStable": false
+    },
+    "depth": {
+      "available": false,
+      "reason": "the Chrome screenshot export path emits RGB stills only; depth is produced by the sensor-rig pipeline (packages/render src/sensors/depth-pass.ts) and is not exercised here"
+    },
+    "semantic": {
+      "available": false,
+      "reason": "not emitted by scripts/export-render.mjs; semantic G-buffer lives in packages/render src/sensors/id-pass.ts and requires the sensor-rig intent pipeline"
+    },
+    "instance": {
+      "available": false,
+      "reason": "not emitted by scripts/export-render.mjs; instance G-buffer shares the id-pass limitation above"
+    }
+  },
+  "verdict": {
+    "byteStable": false,
+    "mismatchedFrames": 8,
+    "scope": "RGB only, single GPU/driver/Chrome build, two processes on one machine — cross-hardware reproducibility is explicitly NOT claimed (see docs/determinism-claim.md)"
+  },
+  "runs": [
+    {
+      "label": "a",
+      "startedAt": "2026-08-22T20:58:13.126Z",
+      "finishedAt": "2026-08-22T21:03:19.815Z",
+      "exitCode": 0,
+      "stdoutTail": "> export yale-street\n{\n  \"outDir\": \"/home/path/UniScenarios-ws/ws4-renderer/artifacts/render-determinism/ws4-run-001-map/pass-a\",\n  \"maps\": [\n    \"yale-street\"\n  ],\n  \"diagnostics\": 0\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "label": "b",
+      "startedAt": "2026-08-22T21:03:19.815Z",
+      "finishedAt": "2026-08-22T21:08:30.722Z",
+      "exitCode": 0,
+      "stdoutTail": "> export yale-street\n{\n  \"outDir\": \"/home/path/UniScenarios-ws/ws4-renderer/artifacts/render-determinism/ws4-run-001-map/pass-b\",\n  \"maps\": [\n    \"yale-street\"\n  ],\n  \"diagnostics\": 0\n}\n",
+      "stderrTail": ""
+    }
+  ]
+}

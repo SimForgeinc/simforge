@@ -170,10 +170,10 @@ Note especially: a crossing VRU is bound `kind:"relative_to", ref:"ego"` with a 
 criticality comes from a **solver-owned `arrival` trigger** (`syncWith:"ego"`, `ttc:"param.arrivalTtc"`).
 
 ### Schemas worth knowing
-`packages/scenario-model/src/schema/v2/interactions.ts` has a first-class
+`packages/scenario/src/schema/v2/interactions.ts` has a first-class
 **`route` target `mode:"nearMiss"`** — a *re-solved, contact-free crossing intent* that stays valid when
 the target route, speed or site changes. Prefer it over hand-rolled polylines.
-`packages/sim-engine/src/schema/input.ts` has the trigger union: `at`, `after`, `when` (with a mandatory
+`packages/engine/src/schema/input.ts` has the trigger union: `at`, `after`, `when` (with a mandatory
 `byLatest` and `ifNever`), and `arrival` (with `syncWith` + exactly one of `ttc`/`deltaT`).
 
 ---
@@ -286,7 +286,7 @@ Statistically linked to the dominant failure: C2 failures start a median **8.1 m
 - A sub-agent measured the **instance** (materializer output, before simulation) on its own minimal
   2-role template and found placement **exact**: 20.7->20.6, 29.4->29.4, max error 0.4 m, correlation
   ~1.0. It concluded the gap is destroyed during the engine's **2 s warm-up** (unrecorded in the trace),
-  and was heading into `packages/sim-engine` to find it.
+  and was heading into `packages/engine` to find it.
 - I measured the instance on **my** template (built through the existing `ScenarioBuilder.place_actor`)
   and found placement already wrong: median error 10.9 m, correlation 0.06, capped near 13.6 m. Removing
   the extra role constraints (`requiredSameSegmentAs`, `requiredHeadingRelation`) did **not** help.
@@ -295,7 +295,7 @@ So it is either (i) warm-up dynamics, (ii) something the existing authoring surf
 **Measure it yourself, at BOTH the instance level and trace t=0, and settle it.**
 
 **A candidate cause I found by reading, and a patch I applied (UNVALIDATED — review it):**
-`packages/scenario-materializer/src/materialize.ts`, `coverTarget()`. The chain-extension loop
+`packages/compiler/src/materialize.ts`, `coverTarget()`. The chain-extension loop
 **only ever prepended predecessors** (`[chosen.rsl, ...current]`) — it extends *backwards* only. A role
 authored AHEAD of its reference projects past `route.lengthM` and `projectPoint` **clamps** there;
 prepending predecessors can never reach it, so the realised gap collapses to whatever runway the chain
@@ -308,7 +308,7 @@ successor instead of prepending a predecessor, choosing by smallest turn angle. 
 clean. **But placement was still capped at ~13.6 m in my probe afterwards, and the CLI uses `tsx` so the
 edit WAS live.** So either the patch is insufficient, or the cause is elsewhere.
 **Review this patch critically and revert it if it is not justified — I do not want an unvalidated engine
-change sitting in the tree.** `git diff packages/scenario-materializer/src/materialize.ts`
+change sitting in the tree.** `git diff packages/compiler/src/materialize.ts`
 
 ---
 
@@ -386,7 +386,7 @@ build step**, so any edit under `packages/` is live in the *next* CLI call anywh
   `ValueError: Key backend: 'module://matplotlib_inline...'`, do `os.environ.pop('MPLBACKEND', None)`
   before importing matplotlib, then `matplotlib.use("Agg")`.
 - My uncommitted source fixes are copied in (`isKnownPropCatalogId` in
-  `packages/scenario-materializer/src/prop-dims.ts` + tests; `trace/min-clearance.ts`,
+  `packages/compiler/src/prop-dims.ts` + tests; `trace/min-clearance.ts`,
   `trace/realized-pet.ts` + tests).
 - `research/edge-case-corpus/` contains the frozen inputs: both brief corpora, the lane contract, the
   admission diagnosis, the D1 defect report, `ALGORITHM.md`, `render.py`, and the gold example template.

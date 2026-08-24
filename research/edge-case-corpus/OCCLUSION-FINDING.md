@@ -9,7 +9,7 @@ A zero that looks like a pass and is not one.
 ## Root cause
 The tool surface had **no occlusion operation**. The agent could place an occluder prop, but nothing
 emitted the `occludes: {observer, target}` declaration the engine needs in order to prove occlusion.
-The schema supports it (`packages/scenario-model/src/schema/v2/props.ts`), together with
+The schema supports it (`packages/scenario/src/schema/v2/props.ts`), together with
 `targetRevealToConflictS`, which the materializer uses to nudge the prop until the simulated
 reveal-to-conflict time matches.
 

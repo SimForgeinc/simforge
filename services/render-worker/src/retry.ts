@@ -1,4 +1,4 @@
-import { abortableDelay, throwIfCanceled } from '@uniscenarios/render-runtime';
+import { abortableDelay, throwIfCanceled } from '@simforge/render';
 
 import type { RenderWorkerConfig } from './config.js';
 

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { parseTemplate, type ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
+import { parseTemplate, type ScenarioTemplateV2 } from '@simforge/scenario';
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 export const MAX_XOSC_BYTES = 1_048_576;

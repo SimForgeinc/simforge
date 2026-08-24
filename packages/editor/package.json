@@ -1,0 +1,44 @@
+{
+  "name": "@simforge/editor",
+  "version": "0.1.0-rc.45",
+  "description": "Framework-neutral UniScenarios v2 authoring document, interaction controller, route overlays, and editor contracts.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "directory": "packages/editor"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@simforge/asset-catalog": "workspace:*",
+    "@simforge/engine": "workspace:*",
+    "@simforge/scenario": "workspace:*",
+    "@simforge/viewer": "workspace:*",
+    "three": "^0.185.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

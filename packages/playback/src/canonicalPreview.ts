@@ -4,7 +4,7 @@ import {
   type LaneGraph,
   type SimResult,
   type SimScenarioInput,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 const canonicalPreviewCache = new Map<string, SimResult>();
 const CANONICAL_PREVIEW_CACHE_LIMIT = 16;

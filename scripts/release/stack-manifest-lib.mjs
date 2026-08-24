@@ -76,7 +76,7 @@ function assertCompiledPackage(packageJson) {
 export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   if (!repoRoot) throw new Error('repoRoot is required');
 
-  const config = await readJson(path.join(repoRoot, 'config/uniscenarios-stack.json'));
+  const config = await readJson(path.join(repoRoot, 'config/simforge-stack.json'));
   if (config.schema !== 'uniscenarios.stack-config/v1') {
     throw new Error(`Unsupported stack config schema: ${String(config.schema)}`);
   }
@@ -90,7 +90,7 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   const versions = new Map();
   for (const entry of config.packages) {
     const packageJson = await readJson(path.join(repoRoot, entry.path, 'package.json'));
-    if (typeof packageJson.name !== 'string' || !packageJson.name.startsWith('@uniscenarios/')) {
+    if (typeof packageJson.name !== 'string' || !packageJson.name.startsWith('@simforge/')) {
       throw new Error(`${entry.path} must declare an @uniscenarios package name`);
     }
     if (typeof packageJson.version !== 'string' || packageJson.version.length === 0) {

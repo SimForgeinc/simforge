@@ -4,13 +4,13 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { runSimulation } from '@uniscenarios/sim-engine';
+import { runSimulation } from '@simforge/engine';
 
 import { checkInvariants } from '../invariants.js';
-import { REPO_ROOT, artifactPresence } from '../maps.js';
+import { REPO_ROOT, artifactPresence } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const MAP = 'yale-street';
 const SITE_ID = '0cf36401b44b00cd';

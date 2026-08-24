@@ -13,12 +13,12 @@
     "offline-throughput"
   ],
   "oracle": {
-    "tool": "tools/physics-oracle/carla_oracle.py",
+    "tool": "research/physics-oracle/carla_oracle.py",
     "carlaServerVersion": "0.9.16",
     "vehicleBlueprint": "vehicle.lincoln.mkz_2020",
     "fixedDeltaSeconds": 0.02,
     "maps": ["Town01_Opt"],
-    "resultsDir": "tools/physics-oracle/results"
+    "resultsDir": "research/physics-oracle/results"
   },
   "citations": [
     {

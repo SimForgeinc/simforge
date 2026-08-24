@@ -1,5 +1,5 @@
 import type { AsamCapabilityReport, AsamExportIssue, AsamExportWarning } from './export/types.js';
-import type { SimScenarioInput, SimTrace } from '@uniscenarios/sim-engine';
+import type { SimScenarioInput, SimTrace } from '@simforge/engine';
 
 export type OpenScenarioValidationStatus = 'passed' | 'failed' | 'pending' | 'not-run' | 'unavailable';
 

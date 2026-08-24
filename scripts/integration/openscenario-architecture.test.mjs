@@ -23,19 +23,19 @@ async function sourceFiles(relative) {
 test('OpenSCENARIO standards behavior has one package owner', async () => {
   const canonical = await readJson('packages/openscenario/package.json');
   const cli = await readJson('packages/cli/package.json');
-  const runner = await readJson('packages/esmini-runner/package.json');
+  const runner = await readJson('packages/openscenario/package.json');
 
-  assert.equal(canonical.dependencies?.['@uniscenarios/cli'], undefined);
-  assert.equal(cli.dependencies?.['@uniscenarios/openscenario'], 'workspace:*');
-  assert.equal(runner.dependencies?.['@uniscenarios/openscenario'], 'workspace:*');
-  assert.equal(runner.dependencies?.['@uniscenarios/cli'], undefined);
+  assert.equal(canonical.dependencies?.['@simforge/cli'], undefined);
+  assert.equal(cli.dependencies?.['@simforge/openscenario'], 'workspace:*');
+  assert.equal(runner.dependencies?.['@simforge/openscenario'], 'workspace:*');
+  assert.equal(runner.dependencies?.['@simforge/cli'], undefined);
   assert.deepEqual(await sourceFiles('packages/cli/src/asam'), []);
   assert.equal(await exists('packages/openscenario/src/export/index.ts'), true);
   assert.equal(await exists('packages/openscenario/src/node/index.ts'), true);
 });
 
 test('Studio imports the standards package instead of CLI internals', async () => {
-  const roots = ['apps/studio/src', 'apps/studio/server'];
+  const roots = ['studio/app'];
   const pending = [...roots];
   const violations = [];
   while (pending.length) {
@@ -46,7 +46,7 @@ test('Studio imports the standards package instead of CLI internals', async () =
       if (entry.isDirectory()) pending.push(child);
       if (!entry.isFile() || !/\.[cm]?[jt]sx?$/u.test(entry.name)) continue;
       const source = await readFile(path.join(root, child), 'utf8');
-      if (source.includes('@uniscenarios/cli/asam') || source.includes('packages/cli/src/asam')) violations.push(child);
+      if (source.includes('@simforge/cli/asam') || source.includes('packages/cli/src/asam')) violations.push(child);
     }
   }
   assert.deepEqual(violations, []);

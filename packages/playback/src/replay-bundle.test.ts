@@ -2,7 +2,7 @@ import {
   exportOpenScenarioXml14,
   extractOpenScenarioExecutionPlan,
 } from '../../openscenario/src/index.js';
-import { buildLaneGraph, parseSimScenarioInput, type TopologyIndex } from '@uniscenarios/sim-engine';
+import { buildLaneGraph, parseSimScenarioInput, type TopologyIndex } from '@simforge/engine';
 import { describe, expect, it } from 'vitest';
 
 import { canonicalPreviewIdentity, samplePlaybackActors, samplePlaybackSignals } from './model';

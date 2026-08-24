@@ -5,8 +5,8 @@ import { basename, join } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
-import { hashFile, throwIfCanceled, type RenderInputFile } from '@uniscenarios/render-runtime';
-import type { JobInputTransfer } from '@uniscenarios/render-runtime';
+import { hashFile, throwIfCanceled, type RenderInputFile } from '@simforge/render';
+import type { JobInputTransfer } from '@simforge/render';
 
 function safeInputName(inputId: string): string {
   const stem = inputId.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 96) || 'input';

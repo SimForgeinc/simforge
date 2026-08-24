@@ -15,13 +15,13 @@ import {
   validateTemplate,
   type Interaction,
   type ScenarioTemplateV2,
-} from '@uniscenarios/scenario-model';
+} from '@simforge/scenario';
 
 import { adaptTemplate } from '../adapt.js';
 import { assertRequiredRoleBindings } from '../materialize.js';
-import { REPO_ROOT } from '../maps.js';
+import { REPO_ROOT } from '@simforge/compiler';
 import { resolveParams } from '../params.js';
-import { readTemplate } from '../template-io.js';
+import { readTemplate } from '@simforge/compiler';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'corridor');
 

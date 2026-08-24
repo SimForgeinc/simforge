@@ -26,20 +26,20 @@ import os from 'node:os';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import { MATCH_SEMANTICS_VERSION } from '@uniscenarios/anchor-matcher';
+import { MATCH_SEMANTICS_VERSION } from '@simforge/compiler';
 import {
   ENGINE_VERSION,
   contentHash,
   resolveAmbientTrafficProfile,
   type AmbientTrafficProfile,
-} from '@uniscenarios/sim-engine';
+} from '@simforge/engine';
 
 import { cellPaths, runCell, type CellOptions, type CellResult } from '../batch-cell.js';
 import { EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
 import { cellSeed, paramsVersion, templateId } from '../params.js';
-import { matchOnMaps } from '../sites.js';
-import { readTemplate, writeJsonFile } from '../template-io.js';
+import { matchOnMaps } from '@simforge/compiler';
+import { readTemplate, writeJsonFile } from '@simforge/compiler';
 import type { EvaluateFilterMode } from './evaluate.js';
 
 export interface BatchOptions {

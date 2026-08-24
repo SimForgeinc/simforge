@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildLaneGraph, parseSimScenarioInput } from '@uniscenarios/sim-engine';
+import { buildLaneGraph, parseSimScenarioInput } from '@simforge/engine';
 import { clearCanonicalPreviewCache, runCanonicalPreview } from '../canonicalPreview';
 
 describe('canonical native authoring preview', () => {

@@ -16,10 +16,10 @@ import {
   validateScenarioCatalog,
   type ScenarioCatalogManifest,
 } from '../catalog.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '@simforge/compiler';
 import { templateId as canonicalTemplateId } from '../materialize.js';
-import { matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 import { validateCatalogLiveClosure } from '../commands/catalog.js';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
@@ -179,7 +179,7 @@ describe('UniScenarios authored scenario catalog', () => {
 
   it.skipIf(!catalogMapAssets.available)(`verifies the authoritative 500-occurrence manifest through the real CLI${catalogMapAssets.missingReason}`, async () => {
     const verified = await execa('node', [
-      path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'uniscenarios.js'),
+      path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js'),
       'catalog', 'verify', manifestFile,
     ], { reject: false, timeout: 300_000 });
     expect(verified.exitCode).toBe(0);

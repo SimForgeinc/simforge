@@ -127,9 +127,9 @@ batch can never serve a differently-settled cell as fresh.
 ## REGRESSION STATUS
 * `npx tsc --noEmit -p packages/{sim-engine,scenario-materializer,cli}/tsconfig.json` — all three clean.
   (Per package; a bare `npx tsc --noEmit` prints help and exits 1 and is NOT a pass.)
-* `@uniscenarios/sim-engine`: **313 passed, 8 skipped, 0 failed** — exactly the WS-2 baseline.
-* `@uniscenarios/scenario-materializer`: **75 passed, 0 failed.**
-* `@uniscenarios/cli`: **71 failed, 298 passed, 1 skipped** against a baseline of 70 failures.
+* `@simforge/engine`: **313 passed, 8 skipped, 0 failed** — exactly the WS-2 baseline.
+* `@simforge/compiler`: **75 passed, 0 failed.**
+* `@simforge/cli`: **71 failed, 298 passed, 1 skipped** against a baseline of 70 failures.
   The one extra name is
   `campaign 688dd78d ... 'reversing-pedestrian' keeps all preserved draws truthful and collision-free`
   (`expected undefined to be defined` — the exact site no longer matches). **It is not mine**: I
@@ -147,11 +147,11 @@ uniscenarios batch ... --ambient city --ambient-settle 0   # exact pre-warm-up b
 `--ambient-settle` without `--ambient` (or with `--ambient off`) is a loud error, not a silent no-op.
 
 ## FILES
-* `packages/sim-engine/src/ambient/settle.ts` — NEW. `settleAmbientTraffic(base, graph, options)`.
-* `packages/sim-engine/src/ambient/traffic.ts` — `AmbientTrafficOptions.targetMultiplier`,
+* `packages/engine/src/ambient/settle.ts` — NEW. `settleAmbientTraffic(base, graph, options)`.
+* `packages/engine/src/ambient/traffic.ts` — `AmbientTrafficOptions.targetMultiplier`,
   `.cohortRadiusBonusM`, `.extraTravelSeconds`; `AmbientTrafficProvenance.placementTarget`.
-* `packages/sim-engine/src/index.ts` — exports.
-* `packages/scenario-materializer/src/materialize.ts` — `MaterializeOptions.ambientSettleSeconds`,
+* `packages/engine/src/index.ts` — exports.
+* `packages/compiler/src/materialize.ts` — `MaterializeOptions.ambientSettleSeconds`,
   the cohort constants, the settle call, `manifest.ambientSettle`, the replay-key stamp.
 * `packages/cli/src/main.ts`, `commands/batch.ts`, `batch-cell.ts` — `--ambient-settle` end to end.
 

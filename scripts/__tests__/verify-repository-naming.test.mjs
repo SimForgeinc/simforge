@@ -1,59 +1,54 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { mkdtempSync } from 'node:fs';
 
-import { verifyRepositoryNaming } from '../verify-repository-naming.mjs';
+import { PACKAGE_NAMES, verifyRepositoryNaming } from '../verify-repository-naming.mjs';
 
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), 'uniscenarios-naming-'));
-  mkdirSync(join(root, 'packages/cli'), { recursive: true });
-  mkdirSync(join(root, 'apps/studio'), { recursive: true });
-  mkdirSync(join(root, 'docs'), { recursive: true });
-  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'uniscenarios', private: true }));
-  writeFileSync(join(root, 'packages/cli/package.json'), JSON.stringify({
-    name: '@uniscenarios/cli',
-    bin: { uniscenarios: './bin/uniscenarios.js', scen: './bin/scen.js' },
+  const root = mkdtempSync(join(tmpdir(), 'simforge-naming-'));
+  mkdirSync(join(root, 'packages'), { recursive: true });
+  for (const name of PACKAGE_NAMES) {
+    mkdirSync(join(root, 'packages', name), { recursive: true });
+    writeFileSync(join(root, 'packages', name, 'package.json'), JSON.stringify({
+      name: `@simforge/${name}`,
+      version: '0.1.0-rc.45',
+      ...(name === 'cli' ? { bin: { simforge: './bin/simforge.js', sf: './bin/sf.js', uniscenarios: './bin/uniscenarios.js' } } : {}),
+    }));
+  }
+  mkdirSync(join(root, 'studio'), { recursive: true });
+  writeFileSync(join(root, 'studio', 'package.json'), JSON.stringify({ name: '@simforge/studio' }));
+  mkdirSync(join(root, 'renderer'), { recursive: true });
+  writeFileSync(join(root, 'renderer', 'Cargo.toml'), '[workspace]\n');
+  mkdirSync(join(root, 'config'), { recursive: true });
+  writeFileSync(join(root, 'config', 'simforge-stack.json'), JSON.stringify({
+    packages: PACKAGE_NAMES.map((name) => ({ name: `@simforge/${name}` })),
+    renameManifest: Object.fromEntries(Array.from({ length: 23 }, (_, index) => [`old-${index}`, `new-${index}`])),
   }));
-  writeFileSync(join(root, 'apps/studio/package.json'), JSON.stringify({ name: '@uniscenarios/studio' }));
-  writeFileSync(join(root, 'README.md'), '# UniScenarios\n');
-  writeFileSync(join(root, 'docs/repository-transition.md'), 'Historical source: Scenario Studio.\n');
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'simforge', private: true }));
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-test('accepts canonical names and permits legacy naming only in transition history', (t) => {
+test('accepts the consolidated SimForge layout', () => {
   const item = fixture();
-  t.after(item.cleanup);
-  assert.deepEqual(verifyRepositoryNaming(item.root), {
-    rootName: 'uniscenarios',
-    packageScope: '@uniscenarios',
-    workspacePackageCount: 2,
-    documentationFileCount: 1,
-  });
+  try { assert.equal(verifyRepositoryNaming(item.root).packageCount, 13); }
+  finally { item.cleanup(); }
 });
 
-test('rejects legacy public documentation naming and a foreign package scope', (t) => {
+test('rejects retired package imports', () => {
   const item = fixture();
-  t.after(item.cleanup);
-  writeFileSync(join(item.root, 'README.md'), '# Scenario Studio\n');
-  writeFileSync(join(item.root, 'apps/studio/package.json'), JSON.stringify({ name: '@scenario-studio/studio' }));
-  assert.throws(
-    () => verifyRepositoryNaming(item.root),
-    /apps\/studio\/package\.json name must use the @uniscenarios\/ scope[\s\S]*README\.md:1 contains a legacy public product name/,
-  );
+  try {
+    writeFileSync(join(item.root, 'packages', 'cli', 'legacy.ts'), "import x from '@" + "uniscenarios/cli';\n");
+    assert.throws(() => verifyRepositoryNaming(item.root), /imports the retired @uniscenarios scope/);
+  } finally { item.cleanup(); }
 });
 
-test('rejects a renamed root or compatibility-only CLI surface', (t) => {
+test('rejects removed directories and package drift', () => {
   const item = fixture();
-  t.after(item.cleanup);
-  writeFileSync(join(item.root, 'package.json'), JSON.stringify({ name: 'scenario-tools', private: false }));
-  writeFileSync(join(item.root, 'packages/cli/package.json'), JSON.stringify({
-    name: '@uniscenarios/cli',
-    bin: { scen: './bin/scen.js' },
-  }));
-  assert.throws(
-    () => verifyRepositoryNaming(item.root),
-    /package\.json name must be uniscenarios[\s\S]*workspace root private[\s\S]*CLI primary executable must be uniscenarios/,
-  );
+  try {
+    mkdirSync(join(item.root, 'apps', 'studio'), { recursive: true });
+    assert.throws(() => verifyRepositoryNaming(item.root), /apps\/studio must not exist/);
+  } finally { item.cleanup(); }
 });

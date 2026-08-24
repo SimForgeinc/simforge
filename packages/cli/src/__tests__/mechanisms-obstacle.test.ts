@@ -13,16 +13,16 @@ import {
   validateTemplate,
   type Interaction,
   type ScenarioTemplateV2,
-} from '@uniscenarios/scenario-model';
-import { runSimulation } from '@uniscenarios/sim-engine';
+} from '@simforge/scenario';
+import { runSimulation } from '@simforge/engine';
 
 import { adaptTemplate } from '../adapt.js';
 import { checkInvariants } from '../invariants.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
 import { resolveParams } from '../params.js';
-import { findSite, matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { findSite, matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const DIRECTORY = path.join(REPO_ROOT, 'examples', 'mechanisms', 'obstacle');
 const FILES = {

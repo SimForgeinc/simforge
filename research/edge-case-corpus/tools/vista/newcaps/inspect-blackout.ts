@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { buildLaneGraph, parseSimScenarioInput, runSimulation, type LaneGraph } from '../../../../../packages/sim-engine/src/index.js';
+import { buildLaneGraph, parseSimScenarioInput, runSimulation, type LaneGraph } from '../../../../../packages/engine/src/index.js';
 const graphs = new Map<string, LaneGraph>();
 const r = (v: number) => Math.round(v * 100) / 100;
 for (const path of process.argv.slice(2)) {

@@ -14,7 +14,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { PROP_DIMS, propDims } from '../prop-dims.js';
-import { REPO_ROOT } from '../maps.js';
+import { REPO_ROOT } from '@simforge/compiler';
 
 const CATALOG = path.join(REPO_ROOT, 'packages', 'prop-catalog', 'src', 'catalog.ts');
 

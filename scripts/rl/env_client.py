@@ -1,6 +1,6 @@
 """Framed msgpack client for the reactive-env-server (Phase 3).
 
-Mirrors `adapters/uniscenarios-gym` protocol v1 but adds:
+Mirrors `adapters/gym` protocol v1 but adds:
 - BEV decode (`np.float32` `[h, w, c]`, row 0 farthest forward),
 - explicit `col` / `goal` flags from the training shim,
 - batch ops over unix socket with pipelined requests.

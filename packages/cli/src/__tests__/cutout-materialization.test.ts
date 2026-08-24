@@ -5,14 +5,14 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { evaluateTrace, runSimulation } from '@uniscenarios/sim-engine';
+import { evaluateTrace, runSimulation } from '@simforge/engine';
 
 import { filtersFor } from '../commands/evaluate.js';
 import { checkInvariants } from '../invariants.js';
-import { DEV_ASSETS, REPO_ROOT } from '../maps.js';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler';
 import { materialize } from '../materialize.js';
-import { findSite, matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
+import { findSite, matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
 
 const MAP = 'yale-street';
 const TEMPLATE = path.join(

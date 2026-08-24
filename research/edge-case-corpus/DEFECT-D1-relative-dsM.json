@@ -93,8 +93,8 @@
   "contrastPassing": "passing traces start 19.2 m apart and end 0.5 m apart"
  },
  "suspectCode": [
-  "packages/scenario-materializer/src/materialize.ts:1858 longitudinalM = evalNum(role.dsM,...)",
-  "packages/scenario-materializer/src/materialize.ts:~1870 stations = referenceSpawnS + longitudinalM + ...",
+  "packages/compiler/src/materialize.ts:1858 longitudinalM = evalNum(role.dsM,...)",
+  "packages/compiler/src/materialize.ts:~1870 stations = referenceSpawnS + longitudinalM + ...",
   "materialize.ts:665-680 documents a KNOWN related hazard: the structural pass evaluates dsM as 0 because it is a site-dependent expression, so the lane chain is built too short and projectPoint silently CLAMPS to the route start. The backward-extension guard exists for the ego; the same clamp appears to hit relative_to roles, which would explain both the wrong sign and the uncorrelated magnitude."
  ],
  "whyItMattersForTheGoal": "Requirement A needs ~45-55% admission to reach ~100 archetypes from 208 briefs. The current rate is ~32%, and this defect alone accounts for the largest single share of failures.",

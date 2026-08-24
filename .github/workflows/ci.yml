@@ -51,9 +51,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install --yes libxml2-utils
       - name: Test and smoke-install public CARLA adapter
         run: |
-          python -m pip install "build==1.3.0" "./adapters/carla-bridge[dev]"
-          python -m pytest adapters/carla-bridge/tests -q
-          python -m build adapters/carla-bridge
+          python -m pip install "build==1.3.0" "./adapters/carla-exec[dev]"
+          python -m pytest adapters/carla-exec/tests -q
+          python -m build adapters/carla-exec
           python -m venv /tmp/uniscenarios-carla-smoke
-          /tmp/uniscenarios-carla-smoke/bin/python -m pip install adapters/carla-bridge/dist/*.whl
+          /tmp/uniscenarios-carla-smoke/bin/python -m pip install adapters/carla-exec/dist/*.whl
           /tmp/uniscenarios-carla-smoke/bin/uniscenarios-carla --help

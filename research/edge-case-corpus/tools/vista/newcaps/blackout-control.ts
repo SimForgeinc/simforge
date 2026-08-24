@@ -16,7 +16,7 @@ import { gunzipSync } from 'node:zlib';
 
 import {
   buildLaneGraph, parseSimScenarioInput, runSimulation, type LaneGraph,
-} from '../../../../../packages/sim-engine/src/index.js';
+} from '../../../../../packages/engine/src/index.js';
 
 const graphs = new Map<string, LaneGraph>();
 const r2 = (v: number) => Math.round(v * 100) / 100;

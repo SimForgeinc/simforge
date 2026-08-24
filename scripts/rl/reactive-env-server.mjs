@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * reactive-env-server — Phase 3 training shim over @uniscenarios/rl-env.
+ * reactive-env-server — Phase 3 training shim over @simforge/training-env.
  *
- * The stock `uniscenarios-env-server` does not expose RunOptions, so reactive
+ * The stock `simforge-env-server` does not expose RunOptions, so reactive
  * ambient traffic (RunOptions.ambientReactivity = 'reactive') and BEV
  * observation geometry cannot be enabled through it. This shim imports the
  * published dist surface (loadEpisodeSpec, EnvSession, wire codecs, socket
@@ -26,9 +26,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 // pnpm isolates deps per package: resolve @msgpack/msgpack through rl-env's own
 // node_modules rather than this script's location.
 const { createRequire } = await import('node:module');
-const { decode, encode } = createRequire(path.join(repoRoot, 'packages/rl-env/package.json'))('@msgpack/msgpack');
-const envServerDist = path.join(repoRoot, 'packages/rl-env/dist/env-server.js');
-const rlEnvDist = path.join(repoRoot, 'packages/rl-env/dist/index.js');
+const { decode, encode } = createRequire(path.join(repoRoot, 'packages/training-env/package.json'))('@msgpack/msgpack');
+const envServerDist = path.join(repoRoot, 'packages/training-env/dist/env-server.js');
+const rlEnvDist = path.join(repoRoot, 'packages/training-env/dist/index.js');
 
 const {
   FrameReader,

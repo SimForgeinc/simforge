@@ -8,12 +8,12 @@
 
 import path from 'node:path';
 
-import { runSimulation, traceDigest, type SimTrace } from '@uniscenarios/sim-engine';
+import { runSimulation, traceDigest, type SimTrace } from '@simforge/engine';
 
 import { EXIT } from '../errors.js';
-import { loadMap } from '../maps.js';
+import { loadMap } from '@simforge/compiler';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readInstance, writeTraceFile } from '../template-io.js';
+import { readInstance, writeTraceFile } from '@simforge/compiler';
 
 export interface SimulateOptions {
   readonly file: string;

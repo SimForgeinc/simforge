@@ -1,5 +1,5 @@
 {
-  "name": "@uniscenarios/playback",
+  "name": "@simforge/playback",
   "version": "0.1.0-rc.45",
   "description": "Deterministic UniScenarios trace loading, sampling, playback control, map runtime, collider, and browser traffic runtime.",
   "repository": {
@@ -20,21 +20,20 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./sumo-worker": {
-      "types": "./dist/traffic-provider/sumoWasmWorker.d.ts",
-      "default": "./dist/traffic-provider/sumoWasmWorker.js"
+    "./traffic": {
+      "types": "./dist/traffic/index.d.ts",
+      "default": "./dist/traffic/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "dependencies": {
-    "@uniscenarios/city-renderer": "workspace:*",
-    "@uniscenarios/editor-core": "workspace:*",
-    "@uniscenarios/openscenario": "workspace:*",
-    "@uniscenarios/prop-catalog": "workspace:*",
-    "@uniscenarios/scenario-model": "workspace:*",
-    "@uniscenarios/sim-engine": "workspace:*",
+    "@simforge/asset-catalog": "workspace:*",
+    "@simforge/engine": "workspace:*",
+    "@simforge/openscenario": "workspace:*",
+    "@simforge/scenario": "workspace:*",
+    "@simforge/viewer": "workspace:*",
     "three": "^0.185.0"
   },
   "devDependencies": {
@@ -43,7 +42,7 @@
     "vitest": "^3.0.0"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/traffic-provider/sumoWasmWorker.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "build": "tsup src/index.ts src/traffic/index.ts src/traffic-provider/sumoWasmWorker.ts --format esm --dts --sourcemap --clean --out-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   }

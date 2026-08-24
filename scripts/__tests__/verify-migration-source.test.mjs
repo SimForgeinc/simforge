@@ -209,7 +209,7 @@ test('rejects contradictory standalone naming metadata and verifier claims', (t)
   writeFileSync(item.manifestPath, JSON.stringify(malformed));
   assert.throws(
     () => verifyMigrationSource({ source: item.root, manifestPath: item.manifestPath }),
-    /manifest\.packageScope must be @uniscenarios/,
+    /manifest\.packageScope must be @simforge/,
   );
 });
 

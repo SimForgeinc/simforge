@@ -16,21 +16,21 @@ name: native-golden
 #      blocks /dev/dri or /dev/nvidia*
 #
 # Until the runner is registered this workflow shows as "queued" forever;
-# the exact same steps run locally via tools/golden-harness/ci-local.sh
-# (execution log committed at tools/golden-harness/evidence/).
+# the exact same steps run locally via qualification/golden-harness/ci-local.sh
+# (execution log committed at qualification/golden-harness/evidence/).
 
 on:
   push:
     branches: [main]
     paths:
-      - 'native/**'
-      - 'tools/golden-harness/**'
+      - 'renderer/**'
+      - 'qualification/golden-harness/**'
       - 'scripts/renderer-spike/**'
       - '.github/workflows/native-golden.yml'
   pull_request:
     paths:
-      - 'native/**'
-      - 'tools/golden-harness/**'
+      - 'renderer/**'
+      - 'qualification/golden-harness/**'
       - 'scripts/renderer-spike/**'
   workflow_dispatch: {}
 
@@ -61,8 +61,8 @@ jobs:
         with:
           path: |
             ~/.cargo/registry
-            native/target
-          key: native-golden-${{ runner.os }}-${{ hashFiles('native/Cargo.lock') }}
+            renderer/target
+          key: native-golden-${{ runner.os }}-${{ hashFiles('renderer/Cargo.lock') }}
 
       - name: Build native renderer
         working-directory: native
@@ -76,7 +76,7 @@ jobs:
           echo "corpus root: ${SCEN_SENSOR_CORPUS:-scripts/renderer-spike/corpus}"
 
       - name: Verify goldens (hash drift + frame-time budget)
-        run: node tools/golden-harness/golden.mjs verify all
+        run: node qualification/golden-harness/golden.mjs verify all
 
       - name: Upload verify artifacts (manifests + frames, always)
         if: always()

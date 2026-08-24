@@ -10,11 +10,11 @@ import {
   type ScenarioCatalogManifest,
 } from '../catalog.js';
 import { CliError, EXIT } from '../errors.js';
-import { REPO_ROOT } from '../maps.js';
+import { REPO_ROOT } from '@simforge/compiler';
 import { emit, emitLines } from '../output.js';
-import { CATALOG_EXACT_SITE_OPTIONS, clearSiteMatchCache, matchOnMap } from '../sites.js';
-import { readTemplate } from '../template-io.js';
-import { writeJsonFile } from '../template-io.js';
+import { CATALOG_EXACT_SITE_OPTIONS, clearSiteMatchCache, matchOnMap } from '@simforge/compiler';
+import { readTemplate } from '@simforge/compiler';
+import { writeJsonFile } from '@simforge/compiler';
 
 export interface CatalogCreateOptions {
   readonly out: string;
@@ -32,7 +32,7 @@ export async function catalogCreate(options: CatalogCreateOptions): Promise<numb
   const payload = catalogSummary(catalog, path.resolve(options.out));
   if (options.pretty) {
     emitLines([
-      `UniScenarios catalog ${catalog.catalogDigest}`,
+      `SimForge catalog ${catalog.catalogDigest}`,
       `${catalog.slots.length} deterministic authored designs: ${catalog.contract.slotsPerMap} × ${catalog.contract.supportedMaps.length} maps`,
       `progress: authored=${catalog.progress.authored}, generated=${catalog.progress.generated}, simulated=${catalog.progress.simulated}, rendered=${catalog.progress.rendered}, visually-accepted=${catalog.progress.visuallyAccepted}`,
       `manifest: ${path.resolve(options.out)}`,

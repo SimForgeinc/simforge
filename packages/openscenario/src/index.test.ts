@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { exportOpenScenarioXml14 } from './index.js';
 import { OFFICIAL_OPENSCENARIO_140_XSD } from './node/index.js';
 
-describe('@uniscenarios/openscenario public boundary', () => {
+describe('./index.js public boundary', () => {
   it('exposes the canonical OpenSCENARIO XML exporter', () => {
     expect(exportOpenScenarioXml14).toBeTypeOf('function');
   });

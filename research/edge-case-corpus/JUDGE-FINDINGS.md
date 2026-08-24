@@ -15,7 +15,7 @@ with zero collisions"*. It was right: `EpisodeMetrics.minDistance` reports the c
 value `max(0, centreDistance - (r_a + r_b))` over **circumscribed circles**. Car r=2.58 m against
 pedestrian r=0.42 m sum to 3.00 m, so every encounter closer than three metres reports exactly 0 m
 clearance alongside zero collisions. True footprint clearance on that cell: **0.421 m**.
-Fixed by `packages/sim-engine/src/trace/min-clearance.ts`.
+Fixed by `packages/engine/src/trace/min-clearance.ts`.
 
 It also consistently rejected cells with minTTC 3.4-4.8 s as non-critical. Also right: those passed
 only because the mechanism-aware criticality selector chose a different metric than the

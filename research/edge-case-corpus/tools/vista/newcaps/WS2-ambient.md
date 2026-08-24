@@ -6,7 +6,7 @@ the last thing I wrote).
 ## BOTTOM LINE (provisional — numbers not yet measured)
 
 The corpus pipeline runs on empty roads because **nothing on the `batch` path ever calls the native
-ambient generator**. The generator itself (`packages/sim-engine/src/ambient/traffic.ts`) is complete,
+ambient generator**. The generator itself (`packages/engine/src/ambient/traffic.ts`) is complete,
 deterministic and trace-bearing; it was simply never wired into `materialize()` → `runCell()` →
 `batch`. I am wiring exactly that path, plus the safety machinery that stops background traffic from
 stealing the scenario's own conflict.
@@ -129,20 +129,20 @@ That is the whole change: two lines, in one function. Properties:
 
 ## Test-suite baselines (measured BEFORE any change, on this worktree)
 
-* `@uniscenarios/sim-engine`: **313 passed, 8 skipped, 0 failed** (43 files passed, 1 skipped).
-* `@uniscenarios/cli`: **299 passed, 70 failed, 1 skipped** (29 files failed, 11 passed, 1 skipped).
+* `@simforge/engine`: **313 passed, 8 skipped, 0 failed** (43 files passed, 1 skipped).
+* `@simforge/cli`: **299 passed, 70 failed, 1 skipped** (29 files failed, 11 passed, 1 skipped).
   Note: the parent said ~67 pre-existing failures; the measured figure on this worktree is **70**.
   Post-change counts must be compared against 70, not 67.
 
 ## Files touched so far
 
-* `packages/sim-engine/src/trace/monitored-pairs.ts` — ambient exclusion in the pair policy.
-* `packages/sim-engine/src/trace/metrics.ts` — accumulator carries `ambientActorIds`.
-* `packages/sim-engine/src/sim/engine.ts` — collects ambient ids, feeds the accumulator, publishes
+* `packages/engine/src/trace/monitored-pairs.ts` — ambient exclusion in the pair policy.
+* `packages/engine/src/trace/metrics.ts` — accumulator carries `ambientActorIds`.
+* `packages/engine/src/sim/engine.ts` — collects ambient ids, feeds the accumulator, publishes
   `header.ambientActorIds`, applies the `requiredDecelMax` attribution.
-* `packages/sim-engine/src/sim/controllers.ts` — `governorCap` returns `requiredDecelExcludingLeader`.
-* `packages/sim-engine/src/ambient/traffic.ts` — authored-corridor exclusion.
-* `packages/scenario-materializer/src/materialize.ts` — `MaterializeOptions.ambient`, applied after
+* `packages/engine/src/sim/controllers.ts` — `governorCap` returns `requiredDecelExcludingLeader`.
+* `packages/engine/src/ambient/traffic.ts` — authored-corridor exclusion.
+* `packages/compiler/src/materialize.ts` — `MaterializeOptions.ambient`, applied after
   the authored feasibility verdict and before `inputHash`; `ReplayKey.ambientProfileHash`;
   `manifest.ambient` provenance.
 * `packages/cli/src/batch-cell.ts`, `packages/cli/src/commands/batch.ts`, `packages/cli/src/main.ts`

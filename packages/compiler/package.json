@@ -1,0 +1,43 @@
+{
+  "name": "@simforge/compiler",
+  "version": "0.1.0-rc.45",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/UniScenarios.git",
+    "directory": "packages/compiler"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@simforge/asset-catalog": "workspace:*",
+    "@simforge/engine": "workspace:*",
+    "@simforge/maps": "workspace:*",
+    "@simforge/scenario": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

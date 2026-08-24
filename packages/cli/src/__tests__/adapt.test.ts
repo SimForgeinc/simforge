@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@uniscenarios/scenario-model';
+import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@simforge/scenario';
 
 import { OPEN_END_M, adaptTemplate, templateCrossingAngle } from '../adapt.js';
 
