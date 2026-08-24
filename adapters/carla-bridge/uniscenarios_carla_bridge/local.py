@@ -24,6 +24,7 @@ from .runtime.backend import (
     KIA_CARNIVAL_MODEL,
     PRONTO_CHASE_CAMERA_SENSOR_ID,
     CarlaBackend,
+    cooked_map_name_for_xodr,
 )
 from .runtime.compiler import compile_xosc14
 from .runtime.contract import (
@@ -463,10 +464,9 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec, s
             "config": config,
         })
     outputs = [
-        output for output in artifacts if output not in {"sensorArchive", "diagnostics"}
+        output for output in artifacts
+        if output in {"video", "trace", "manifest", "annotations"}
     ]
-    if "sensorArchive" in artifacts and "frames" not in outputs:
-        outputs.append("frames")
     quality = "standard" if video is None else {
         "draft": "preview", "standard": "standard", "high": "high", "lossless": "cinematic",
     }[video["quality"]]
@@ -806,9 +806,16 @@ def _intent_lease(
     manifest_path = output_dir / ".execution-manifest.json"
     manifest_path.write_bytes(manifest_body)
     uploads: dict[str, dict[str, Any]] = {}
-    kinds = {"trace", "parity-report", *(output for output in parsed_spec.outputs if output != "frames")}
-    if "frames" in parsed_spec.outputs:
-        kinds.update(f"framesArchive:{sensor.artifact_name}" for sensor in parsed_spec.sensors)
+    kinds = {"trace", "parity-report", *parsed_spec.outputs}
+    if "video" in parsed_spec.outputs:
+        primary_rgb = next(
+            (sensor for sensor in parsed_spec.sensors if sensor.modality == "rgb"), None,
+        )
+        kinds.update(
+            f"sensorVideo:{sensor.artifact_name}"
+            for sensor in parsed_spec.sensors
+            if sensor is not primary_rgb
+        )
     kinds.update(
         f"sensorData:{sensor.artifact_name}"
         for sensor in parsed_spec.sensors
@@ -847,7 +854,11 @@ def _intent_lease(
         "mapVersionId": map_identity["revisionId"],
         "manifest": {"url": "local:manifest", "sha256": hashlib.sha256(manifest_body).hexdigest(), "sizeBytes": len(manifest_body)},
         "xosc": {"url": "local:xosc", "sha256": open_scenario["sha256"], "sizeBytes": open_scenario["sizeBytes"], "xsdSha256": OFFICIAL_XSD_SHA256},
-        "xodr": {"url": "local:xodr", "sha256": map_asset["sha256"], "sizeBytes": map_asset["sizeBytes"], "mapName": map_identity["mapId"]},
+        # A map whose XODR is cooked into the engine image must be requested by
+        # its cooked runtime world name so CARLA loads the real meshes and the
+        # approved signal identity remaps engage; uncooked maps keep their
+        # control-plane identity and render via the generated-OpenDRIVE world.
+        "xodr": {"url": "local:xodr", "sha256": map_asset["sha256"], "sizeBytes": map_asset["sizeBytes"], "mapName": cooked_map_name_for_xodr(str(map_asset["sha256"])) or map_identity["mapId"]},
         "assetCatalog": {"url": "local:catalog", "sha256": catalog_asset["sha256"], "sizeBytes": catalog_asset["sizeBytes"], "contractVersion": ASSET_CATALOG_SCHEMA, "catalogVersionId": catalog_version},
         "ambient": ambient, "runtimeRequirements": runtime_requirements,
     }
@@ -889,17 +900,17 @@ def _artifact_manifest_entries(items: Any) -> list[dict[str, Any]]:
         kind = item.get("kind")
         metadata = item.get("metadata")
         metadata = metadata if isinstance(metadata, Mapping) else {}
-        if isinstance(kind, str) and kind.startswith("framesArchive:"):
-            role = "sensorArchive"
+        if isinstance(kind, str) and kind.startswith("sensorVideo:"):
+            role = "video"
         elif isinstance(kind, str) and kind.startswith("sensorData:"):
             role = "sensorArchive"
         elif kind == "parity-report":
             role = "diagnostics"
-        elif kind in {"video", "frames", "manifest", "trace", "annotations"}:
+        elif kind in {"video", "manifest", "trace", "annotations"}:
             role = kind
         else:
             raise RuntimeError(f"native executor returned unsupported artifact kind {kind!r}")
-        if role in {"video", "frames", "sensorArchive"}:
+        if role in {"video", "sensorArchive"}:
             actor_id = metadata.get("actorId")
             sensor_id = metadata.get("sensorId")
             modality = metadata.get("modality")

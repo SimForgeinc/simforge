@@ -31,7 +31,7 @@ export type AuthoredSensorTransform = Readonly<{
 export type BrowserSensorFrameRecord = Readonly<{
   sensorId: string;
   kind: BrowserRenderPass["modality"];
-  format: "png" | "ply" | "csv";
+  format: "webm" | "ply" | "csv";
   outputFrameIndex: number;
   scheduledTimeS: number;
   relativePath: string;
@@ -52,15 +52,19 @@ export function buildSensorFrameRecord(input: Readonly<{
 }>): BrowserSensorFrameRecord {
   if (!Number.isSafeInteger(input.outputFrameIndex) || input.outputFrameIndex < 0) throw new Error("Frame index must be a non-negative integer.");
   if (!Number.isFinite(input.scheduledTimeS) || input.scheduledTimeS < 0) throw new Error("Scheduled time must be finite and non-negative.");
+  // Cameras persist no individual frames: their pose records reference the
+  // sensor's encoded video stream; lidar/radar reference archived data frames.
   const format: BrowserSensorFrameRecord["format"] =
-    input.pass.modality === "lidar" ? "ply" : input.pass.modality === "radar" ? "csv" : "png";
+    input.pass.modality === "lidar" ? "ply" : input.pass.modality === "radar" ? "csv" : "webm";
   const base = {
     sensorId: input.pass.sensorId,
     kind: input.pass.modality,
     format,
     outputFrameIndex: input.outputFrameIndex,
     scheduledTimeS: input.scheduledTimeS,
-    relativePath: sensorFramePath(input.pass.sensorId, input.outputFrameIndex, format),
+    relativePath: format === "webm"
+      ? `${input.pass.sensorId}.webm`
+      : sensorFramePath(input.pass.sensorId, input.outputFrameIndex, format),
     attachTo: input.pass.actorId,
     attachment: "rigid" as const,
     transform: Object.freeze({

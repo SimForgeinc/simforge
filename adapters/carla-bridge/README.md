@@ -59,7 +59,10 @@ their source XODR SHA-256 values; a digest or loaded-world identity mismatch is
 fatal. `UNISCENARIO_CARLA_SIGNAL_ID_MAP` supplies an explicit one-to-one authored
 to cooked OpenDRIVE signal-id map. `UNISCENARIO_SENSOR_WRITER_WORKERS` bounds
 parallel streaming writers. Set `UNISCENARIO_PRESENTATION_VIDEO_ENCODER=nvidia`
-to request `h264_nvenc`; PNG/PLY/CSV sensor frames remain the canonical output.
+to request `h264_nvenc` for the per-camera streaming encoders (default
+`software` = libx264). Camera frames stream directly into one H.264 MP4 per
+camera and never persist to disk; PLY/CSV frames remain the canonical output
+for lidar and radar measurement data.
 
 Managed Pronto execution derives from
 `ghcr.io/simforgeinc/carla-rfs-munich-belmont@sha256:baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64`

@@ -6,6 +6,22 @@ import type { LidarPoint } from './sensors/ply.js';
 
 export type ActiveSensorPass = Extract<BrowserRenderPass, { modality: 'lidar' | 'radar' }>;
 export type BrowserVideoConfig = Readonly<{ width: number; height: number; fps: number; quality: 'draft' | 'standard' | 'high' }>;
+/** Per-stream encoding evidence recorded by the render manifest. */
+export type SensorVideoEncoding = Readonly<{
+  codec: 'vp9';
+  container: 'webm';
+  width: number;
+  height: number;
+  fps: number;
+  quality: BrowserVideoConfig['quality'];
+  bitrate: number;
+}>;
+/** One captured pass observation; exactly one field is populated per modality. */
+export type SensorVideoFrame = Readonly<{
+  pixels?: Uint8Array;
+  depth?: Float32Array;
+  structured?: readonly LidarPoint[] | readonly RadarDetection[];
+}>;
 const BITRATE = { draft: 3_000_000, standard: 7_000_000, high: 14_000_000 } as const;
 
 /** Streams VP9 clusters as WebCodecs emits them; clip payloads never accumulate in memory. */
@@ -14,61 +30,103 @@ export class StreamingSensorVideoEncoder {
   private failure: Error | null = null;
   private frames = 0;
   private closed = false;
+  /** Reused RGBA scratch for depth visualization; cameras encode their readback buffer directly. */
+  private depthRgba: Uint8Array | null = null;
 
   private constructor(
-    readonly pass: ActiveSensorPass,
+    readonly pass: BrowserRenderPass,
     readonly schedule: Readonly<ResolvedFrameSchedule>,
     readonly config: BrowserVideoConfig,
+    private readonly bitrate: number,
     private readonly sink: HashedArtifactSink,
-    private readonly canvas: OffscreenCanvas | HTMLCanvasElement,
-    private readonly context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
+    private readonly canvas: OffscreenCanvas | HTMLCanvasElement | null,
+    private readonly context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null,
     private readonly encoder: VideoEncoder,
   ) {}
 
-  static async create(input: { pass: ActiveSensorPass; schedule: Readonly<ResolvedFrameSchedule>; config: BrowserVideoConfig; sink: HashedArtifactSink; signal?: AbortSignal }): Promise<StreamingSensorVideoEncoder> {
+  encoding(): SensorVideoEncoding {
+    return {
+      codec: 'vp9',
+      container: 'webm',
+      width: this.config.width,
+      height: this.config.height,
+      fps: this.config.fps,
+      quality: this.config.quality,
+      bitrate: this.bitrate,
+    };
+  }
+
+  static async create(input: { pass: BrowserRenderPass; schedule: Readonly<ResolvedFrameSchedule>; config: BrowserVideoConfig; sink: HashedArtifactSink; signal?: AbortSignal }): Promise<StreamingSensorVideoEncoder> {
     throwIfAborted(input.signal);
     if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') throw new Error('Headless Chromium does not provide WebCodecs VP9 encoding.');
     const pixels = Math.max(1, input.config.width * input.config.height);
+    const bitrate = Math.round(BITRATE[input.config.quality] * Math.max(0.45, Math.min(2.4, pixels / (1280 * 720))));
     const encoderConfig: VideoEncoderConfig = {
       codec: 'vp09.00.10.08', width: input.config.width, height: input.config.height, framerate: input.config.fps,
-      bitrate: Math.round(BITRATE[input.config.quality] * Math.max(0.45, Math.min(2.4, pixels / (1280 * 720)))), latencyMode: 'quality',
+      bitrate, latencyMode: 'quality',
     };
     if (!(await VideoEncoder.isConfigSupported(encoderConfig)).supported) throw new Error('Headless Chromium cannot encode the required VP9 WebM profile.');
-    let canvas: OffscreenCanvas | HTMLCanvasElement;
-    let context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null;
-    if (typeof OffscreenCanvas !== 'undefined') {
-      const offscreen = new OffscreenCanvas(input.config.width, input.config.height);
-      canvas = offscreen;
-      context = offscreen.getContext('2d', { alpha: false });
-    } else {
-      const element = Object.assign(document.createElement('canvas'), { width: input.config.width, height: input.config.height });
-      canvas = element;
-      context = element.getContext('2d', { alpha: false });
+    // Camera passes encode their readback RGBA buffer directly; only the
+    // lidar/radar visualizations rasterize through a 2D canvas.
+    const drawsCanvas = input.pass.modality === 'lidar' || input.pass.modality === 'radar';
+    let canvas: OffscreenCanvas | HTMLCanvasElement | null = null;
+    let context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null = null;
+    if (drawsCanvas) {
+      if (typeof OffscreenCanvas !== 'undefined') {
+        const offscreen = new OffscreenCanvas(input.config.width, input.config.height);
+        canvas = offscreen;
+        context = offscreen.getContext('2d', { alpha: false });
+      } else {
+        const element = Object.assign(document.createElement('canvas'), { width: input.config.width, height: input.config.height });
+        canvas = element;
+        context = element.getContext('2d', { alpha: false });
+      }
+      if (!context) throw new Error('A 2D canvas is required for active-sensor video.');
     }
-    if (!context) throw new Error('A 2D canvas is required for active-sensor video.');
     let instance: StreamingSensorVideoEncoder;
     const encoder = new VideoEncoder({
       error: (reason) => { instance.failure = reason instanceof Error ? reason : new Error(String(reason)); },
       output: (chunk) => instance.enqueue(chunk),
     });
-    instance = new StreamingSensorVideoEncoder(input.pass, input.schedule, input.config, input.sink, canvas, context, encoder);
+    instance = new StreamingSensorVideoEncoder(input.pass, input.schedule, input.config, bitrate, input.sink, canvas, context, encoder);
     await input.sink.write(webmHeader(input.config, input.schedule), input.signal);
     encoder.configure(encoderConfig);
     return instance;
   }
 
-  async encode(timing: FixedStepCaptureFrame, structured: readonly LidarPoint[] | readonly RadarDetection[], signal?: AbortSignal): Promise<void> {
+  async encode(timing: FixedStepCaptureFrame, captured: SensorVideoFrame, signal?: AbortSignal): Promise<void> {
     throwIfAborted(signal);
     if (this.closed || timing.index !== this.frames) throw new Error(`Sensor video expected frame ${this.frames}, received ${timing.index}.`);
-    if (this.pass.modality === 'lidar') drawLidar(this.context, this.pass, structured as readonly LidarPoint[], timing);
-    else drawRadar(this.context, this.pass, structured as readonly RadarDetection[], timing);
-    const frame = new VideoFrame(this.canvas, { timestamp: timing.timestampUs, duration: timing.durationUs });
+    const frame = this.videoFrame(timing, captured);
     try { this.encoder.encode(frame, { keyFrame: timing.index % Math.max(1, this.config.fps * 2) === 0 }); } finally { frame.close(); }
     this.frames += 1;
     if (this.encoder.encodeQueueSize > 3) {
       await this.encoder.flush(); await this.writes;
       if (this.failure) throw this.failure;
     }
+  }
+
+  private videoFrame(timing: FixedStepCaptureFrame, captured: SensorVideoFrame): VideoFrame {
+    const init = { timestamp: timing.timestampUs, duration: timing.durationUs } as const;
+    const { pass } = this;
+    if (pass.modality === 'lidar' || pass.modality === 'radar') {
+      if (!captured.structured || !this.context || !this.canvas) throw new Error(`Sensor video pass ${pass.sensorId} is missing its structured capture.`);
+      if (pass.modality === 'lidar') drawLidar(this.context, pass, captured.structured as readonly LidarPoint[], timing);
+      else drawRadar(this.context, pass, captured.structured as readonly RadarDetection[], timing);
+      return new VideoFrame(this.canvas, init);
+    }
+    const expectedBytes = pass.width * pass.height * 4;
+    if (pass.modality === 'depth') {
+      const depth = captured.depth;
+      if (!depth || depth.length !== pass.width * pass.height) throw new Error(`Depth video pass ${pass.sensorId} is missing its depth capture.`);
+      const rgba = this.depthRgba ?? new Uint8Array(expectedBytes);
+      this.depthRgba = rgba;
+      depthMetersToRgba(depth, pass.farM, rgba);
+      return new VideoFrame(rgba, { ...init, format: 'RGBA', codedWidth: pass.width, codedHeight: pass.height });
+    }
+    const pixels = captured.pixels;
+    if (!pixels || pixels.byteLength !== expectedBytes) throw new Error(`Camera video pass ${pass.sensorId} is missing its ${pass.modality} pixels.`);
+    return new VideoFrame(pixels, { ...init, format: 'RGBA', codedWidth: pass.width, codedHeight: pass.height });
   }
 
   async close(signal?: AbortSignal) {
@@ -114,6 +172,24 @@ function drawRadar(context: OffscreenCanvasRenderingContext2D | CanvasRenderingC
     context.fillStyle = detection.velocity < 0 ? `rgba(63,196,255,${0.55 + speed * 0.4})` : `rgba(255,101,72,${0.55 + speed * 0.4})`; context.beginPath(); context.arc(x, y, 3 + speed * 3, 0, Math.PI * 2); context.fill();
   }
   header(context, 'RADAR · RANGE / AZIMUTH', pass.sensorId, timing, `${detections.length} detections · ${pass.rangeM.toFixed(0)} m range`);
+}
+
+/**
+ * Grayscale depth visualization: near is bright, far fades logarithmically so
+ * close obstacles stay legible across the sensor's full metric range.
+ */
+export function depthMetersToRgba(depth: Float32Array, farM: number, rgba: Uint8Array): void {
+  const scale = 1 / Math.log1p(Math.max(1e-6, farM));
+  for (let index = 0; index < depth.length; index += 1) {
+    const meters = depth[index]!;
+    const normalized = meters >= farM ? 1 : Math.min(1, Math.log1p(Math.max(0, meters)) * scale);
+    const luminance = Math.round(255 * (1 - normalized));
+    const offset = index * 4;
+    rgba[offset] = luminance;
+    rgba[offset + 1] = luminance;
+    rgba[offset + 2] = luminance;
+    rgba[offset + 3] = 255;
+  }
 }
 
 function background(context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, width: number, height: number): void {

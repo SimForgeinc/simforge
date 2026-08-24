@@ -352,7 +352,7 @@ export const UniScenarioRenderSpecSchema = z.strictObject({
     fogDistance: z.number().nonnegative().optional(),
     wetness: z.number().min(0).max(100).optional(),
   }).default({}),
-  outputs: z.array(z.enum(["frames", "video", "trace", "manifest", "annotations"])).min(1),
+  outputs: z.array(z.enum(["video", "trace", "manifest", "annotations"])).min(1),
   formats: z.array(z.enum(["png", "ply", "csv", "mp4-h264", "json", "jsonl"])).min(1).default(["png", "mp4-h264", "json", "jsonl"]),
   executionMode: z.enum(["native-physics", "diagnostic-replay"]).default("native-physics"),
 }).superRefine((value, context) => {
@@ -367,21 +367,30 @@ export const UniScenarioRenderSpecSchema = z.strictObject({
     }
     ids.add(sensor.id);
   });
-  if (value.outputs.includes("frames")) {
+  {
+    // Lidar/radar measurement data always uploads alongside its video-only
+    // camera peers; individual camera frames are never persisted.
     const formats = new Set(value.formats);
     for (const sensor of value.sensors) {
       const expected = sensor.kind === "lidar" || sensor.kind === "semantic_lidar"
         ? "ply"
         : sensor.kind === "radar"
           ? "csv"
-          : "png";
-      if (!formats.has(expected)) {
+          : null;
+      if (expected && !formats.has(expected)) {
         context.addIssue({
           code: "custom",
           path: ["formats"],
-          message: `Sensor "${sensor.id}" requires ${expected} frame output.`,
+          message: `Sensor "${sensor.id}" requires ${expected} data output.`,
         });
       }
+    }
+    if (value.outputs.includes("video") && !formats.has("mp4-h264")) {
+      context.addIssue({
+        code: "custom",
+        path: ["formats"],
+        message: "Video output requires the mp4-h264 format.",
+      });
     }
   }
   if (value.outputs.includes("video") && !value.sensors.some((sensor) => sensor.kind === "rgb")) {

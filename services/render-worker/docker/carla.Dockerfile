@@ -55,6 +55,6 @@ USER carla
 WORKDIR /scratch
 VOLUME ["/scratch", "/cache", "/run/uniscenarios"]
 EXPOSE 8080
-HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 CMD ["node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 CMD ["node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT||8080}/health`).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
 ENTRYPOINT ["/usr/bin/tini", "--", "node", "/opt/uniscenarios/worker/dist/main.js"]
 CMD ["--config", "/config/worker.json"]

@@ -1,60 +1,27 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { resolveRgbFrameFormat } from './capture.js';
 import { sensorFramePath } from './artifacts.js';
 import { BridgeArtifactSink, type HeadlessArtifactBridge } from './headless.js';
-import type { RenderSpecV3 } from '@uniscenarios/scenario-model';
+import { depthMetersToRgba } from './video.js';
 
-function renderSpecOf(input: { fidelity: 'review' | 'dataset'; videoQuality?: 'draft' | 'standard' | 'high' | 'lossless' }): RenderSpecV3 {
-  return {
-    schema: 'uniscenario.render-spec/v3',
-    sources: [],
-    clip: { startSeconds: 0, endSeconds: 1 },
-    video: input.videoQuality
-      ? { width: 320, height: 180, fps: 24, container: 'mp4', codec: 'h264', quality: input.videoQuality }
-      : null,
-    artifacts: ['manifest', 'video'],
-    capabilityIntent: { required: [], preferred: [], fidelity: input.fidelity },
-    authoredEnvironment: {
-      weather: 'clear',
-      timeOfDay: 'noon',
-      sunAzimuthDeg: 180,
-      sunElevationDeg: 60,
-      surfacePatches: [],
-    },
-  } as unknown as RenderSpecV3;
-}
 
-describe('rgb frame format policy', () => {
-  const originalOffscreenCanvas = (globalThis as Record<string, unknown>)['OffscreenCanvas'];
-  afterEach(() => {
-    if (originalOffscreenCanvas === undefined) delete (globalThis as Record<string, unknown>)['OffscreenCanvas'];
-    else (globalThis as Record<string, unknown>)['OffscreenCanvas'] = originalOffscreenCanvas;
-  });
-
-  it('uses JPEG for review fidelity when OffscreenCanvas exists', () => {
-    (globalThis as Record<string, unknown>)['OffscreenCanvas'] = class {};
-    expect(resolveRgbFrameFormat(renderSpecOf({ fidelity: 'review', videoQuality: 'draft' }))).toBe('jpg');
-    expect(resolveRgbFrameFormat(renderSpecOf({ fidelity: 'review' }))).toBe('jpg');
-  });
-
-  it('keeps lossless PNG for dataset fidelity and lossless video', () => {
-    (globalThis as Record<string, unknown>)['OffscreenCanvas'] = class {};
-    expect(resolveRgbFrameFormat(renderSpecOf({ fidelity: 'dataset', videoQuality: 'draft' }))).toBe('png');
-    expect(resolveRgbFrameFormat(renderSpecOf({ fidelity: 'review', videoQuality: 'lossless' }))).toBe('png');
-  });
-
-  it('falls back to PNG when OffscreenCanvas is unavailable', () => {
-    delete (globalThis as Record<string, unknown>)['OffscreenCanvas'];
-    expect(resolveRgbFrameFormat(renderSpecOf({ fidelity: 'review', videoQuality: 'draft' }))).toBe('png');
+describe('sensor frame paths', () => {
+  it('lays out only lidar/radar measurement frames', () => {
+    expect(sensorFramePath('lidar-0', 7, 'ply')).toBe('lidar-0/00000007.ply');
+    expect(sensorFramePath('radar-0', 12, 'csv')).toBe('radar-0/00000012.csv');
   });
 });
 
-describe('sensor frame paths', () => {
-  it('lays out png, jpg, ply, and csv frames identically', () => {
-    expect(sensorFramePath('cam-0', 7, 'jpg')).toBe('cam-0/00000007.jpg');
-    expect(sensorFramePath('cam-0', 7, 'png')).toBe('cam-0/00000007.png');
-    expect(sensorFramePath('lidar-0', 7, 'ply')).toBe('lidar-0/00000007.ply');
+describe('depth video visualization', () => {
+  it('maps near depth bright and clamps beyond the far plane', () => {
+    const depth = new Float32Array([0, 10, 100, Number.POSITIVE_INFINITY]);
+    const rgba = new Uint8Array(depth.length * 4);
+    depthMetersToRgba(depth, 100, rgba);
+    expect(rgba[3]).toBe(255);
+    expect(rgba[0]).toBe(255);
+    expect(rgba[4]).toBeLessThan(255);
+    expect(rgba[4]).toBeGreaterThan(rgba[8]!);
+    expect(rgba[12]).toBe(0);
   });
 });
 

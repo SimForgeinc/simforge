@@ -144,7 +144,9 @@ async function main(argv: readonly string[]): Promise<void> {
     await readFile(join(output, "render-manifest.json"), "utf8"),
   ) as { timings?: Record<string, { count: number; totalMs: number; maxMs: number }> };
   const artifactBytes = Object.fromEntries(result.artifacts.map((artifact) => [
-    artifact.kind === "sensor_archive" ? `sensor_archive:${artifact.sensor.sensorId}:${artifact.sensor.modality}` : artifact.kind,
+    artifact.kind === "sensor_archive" || artifact.kind === "sensor_video"
+      ? `${artifact.kind}:${artifact.sensor.sensorId}:${artifact.sensor.modality}`
+      : artifact.kind,
     artifact.sizeBytes,
   ]));
   process.stdout.write(`${JSON.stringify({

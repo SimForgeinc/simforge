@@ -44,6 +44,7 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
     'sensor.lidar',
     'sensor.radar',
     'artifact.video',
+    'artifact.sensor_video',
     'artifact.frames',
     'artifact.sensor_archive',
     'artifact.manifest',
@@ -196,15 +197,10 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
             startedAt,
             completedAt: new Date().toISOString(),
             artifacts,
-            warnings: [
-              ...(result.rgbFrameFormat === 'jpg'
-                ? [{ code: 'rgb_frames_jpeg', message: 'rgb sensor archives carry review-fidelity JPEG frames instead of lossless PNG' }]
-                : []),
-              ...result.omittedArtifacts.map((omitted) => ({
-                code: 'sensor_archive_omitted',
-                message: `sensor archive omitted (${omitted.reason}): ${omitted.actorId}/${omitted.sensorId}/${omitted.modality}`,
-              })),
-            ],
+            warnings: result.omittedArtifacts.map((omitted) => ({
+              code: omitted.role === 'sensor-video' ? 'sensor_video_omitted' : 'sensor_archive_omitted',
+              message: `${omitted.role} omitted (${omitted.reason}): ${omitted.actorId}/${omitted.sensorId}/${omitted.modality}`,
+            })),
           } as RenderArtifactManifest;
         } finally {
           context.signal.removeEventListener('abort', abort);

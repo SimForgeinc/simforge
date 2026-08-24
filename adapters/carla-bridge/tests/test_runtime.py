@@ -270,18 +270,47 @@ def seal_lease(value, manifest: bytes = MANIFEST):
     return value
 
 
-def lease_value(outputs=None, uploads=None):
+def _sensor_artifact_name(sensor):
+    actor = sensor.get("actorId") if sensor.get("actorId") is not None else "world"
+    return f"{sensor['role']}:{actor}:{sensor['sensorId']}:{sensor['modality']}"
+
+
+DEFAULT_LEASE_SENSORS = [{
+    "role": "primary",
+    "actorId": "ego",
+    "sensorId": "hero",
+    "modality": "rgb",
+    "transform": {"x": -7.5, "y": 0, "z": 3, "pitch": -12, "yaw": 0, "roll": 0},
+    "config": {"width": 640, "height": 360, "fov": 90},
+}]
+
+
+def lease_value(outputs=None, uploads=None, sensors=None, formats=None):
     selected_outputs = outputs or ["trace"]
+    sensor_values = copy.deepcopy(sensors if sensors is not None else DEFAULT_LEASE_SENSORS)
     if uploads is None:
-        upload_kinds = list(dict.fromkeys(["trace", *[item for item in selected_outputs if item != "frames"]]))
-        if "frames" in selected_outputs:
-            upload_kinds.append("framesArchive:primary:ego:hero:rgb")
+        upload_kinds = list(dict.fromkeys(["trace", *selected_outputs]))
         media_types = {
             "trace": "application/gzip",
             "video": "video/mp4",
             "manifest": "application/json",
             "annotations": "application/x-ndjson",
         }
+        if "video" in selected_outputs:
+            primary_rgb = next(
+                (sensor for sensor in sensor_values if sensor["modality"] == "rgb"), None,
+            )
+            for sensor in sensor_values:
+                if sensor is primary_rgb:
+                    continue
+                kind = f"sensorVideo:{_sensor_artifact_name(sensor)}"
+                upload_kinds.append(kind)
+                media_types[kind] = "video/mp4"
+        for sensor in sensor_values:
+            if sensor["modality"] in {"lidar", "semantic-lidar", "radar"}:
+                kind = f"sensorData:{_sensor_artifact_name(sensor)}"
+                upload_kinds.append(kind)
+                media_types[kind] = "application/zip"
         uploads = {kind: {
             "uploadId": kind,
             "uploadUrl": f"memory:upload:{kind}",
@@ -313,17 +342,11 @@ def lease_value(outputs=None, uploads=None):
             "renderSpec": {
                 "schema": "uniscenario.render-spec/v1",
                 "fps": 25,
-                "sensors": [{
-                    "role": "primary",
-                    "actorId": "ego",
-                    "sensorId": "hero",
-                    "modality": "rgb",
-                    "transform": {"x": -7.5, "y": 0, "z": 3, "pitch": -12, "yaw": 0, "roll": 0},
-                    "config": {"width": 640, "height": 360, "fov": 90},
-                }],
+                "sensors": sensor_values,
                 "outputs": selected_outputs,
                 "executionMode": "native-physics",
                 "quality": "high",
+                **({"formats": formats} if formats is not None else {}),
             },
             "parityThresholds": {"positionM": 0.01, "headingDeg": 0.01, "speedMps": 0.01},
             "artifactUploads": uploads,
@@ -633,6 +656,17 @@ def test_native_low_speed_controller_has_feed_forward_braking_and_anti_windup():
     assert brake > 0.15
 
 
+class _FakeStreamEncoder:
+    """Stands in for _CameraStreamEncoder: records submissions, writes nothing."""
+
+    def __init__(self, destination):
+        self.destination = destination
+        self.submitted = []
+
+    def submit(self, data):
+        self.submitted.append(data)
+
+
 def _capture_backend(tmp_path, callback):
     backend = object.__new__(CarlaBackend)
     backend.sensor_lock = Lock()
@@ -647,6 +681,8 @@ def _capture_backend(tmp_path, callback):
     backend.sensor_timeout_s = 0.2
     backend.sensor_writer_workers = 2
     backend.sensor_writer_pool = None
+    backend.video_fps = 25.0
+    backend.fixed_timestep_s = 0.02
     backend.sensor_configs = {
         camera_id: {
             "target": tmp_path / camera_id,
@@ -658,6 +694,7 @@ def _capture_backend(tmp_path, callback):
             "extension": "png",
             "transform": {},
             "config": {"width": 640, "height": 360, "fov": 90},
+            "encoder": _FakeStreamEncoder(tmp_path / camera_id / "stream.mp4"),
         }
         for camera_id in ("hero", "rear")
     }
@@ -672,8 +709,6 @@ def _capture_backend(tmp_path, callback):
 class _SensorImage:
     def __init__(self, frame, timestamp=0.0):
         self.frame, self.timestamp = frame, timestamp
-    def save_to_disk(self, target):
-        Path(target).write_bytes(b"png")
 
 
 def test_capture_waits_for_all_delayed_sensors_on_the_exact_world_frame(tmp_path):
@@ -686,11 +721,13 @@ def test_capture_waits_for_all_delayed_sensors_on_the_exact_world_frame(tmp_path
     backend = _capture_backend(tmp_path, callbacks)
     backend.tick({"outputFrameIndex": 7, "scheduledTimeS": 7 / 30})
     for thread in threads: thread.join()
-    assert [(item["sensorId"], item["carlaFrame"], item["outputFrameIndex"]) for item in backend.sensor_manifest()] == [
-        ("hero", 42, 7), ("rear", 42, 7),
+    assert [(item["sensorId"], item["carlaFrame"], item["outputFrameIndex"], item["relativePath"]) for item in backend.sensor_manifest()] == [
+        ("hero", 42, 7, "hero/stream.mp4"), ("rear", 42, 7, "rear/stream.mp4"),
     ]
-    assert (tmp_path / "hero/00000007.png").is_file()
-    assert (tmp_path / "rear/00000007.png").is_file()
+    # Camera frames stream into their encoder; nothing lands on disk.
+    assert [len(config["encoder"].submitted) for config in backend.sensor_configs.values()] == [1, 1]
+    assert not list((tmp_path / "hero").glob("*.png"))
+    assert not list((tmp_path / "rear").glob("*.png"))
 
 
 def test_capture_fails_closed_when_one_sensor_times_out(tmp_path):
@@ -700,7 +737,7 @@ def test_capture_fails_closed_when_one_sensor_times_out(tmp_path):
         backend.tick({"outputFrameIndex": 0, "scheduledTimeS": 0.0})
 
 
-def test_capture_enforces_incremental_png_disk_quota_and_removes_overflow(tmp_path):
+def test_capture_enforces_incremental_bookkeeping_disk_quota(tmp_path):
     def callbacks(backend):
         backend._receive_sensor_frame("hero", _SensorImage(42))
         backend._receive_sensor_frame("rear", _SensorImage(42))
@@ -708,7 +745,7 @@ def test_capture_enforces_incremental_png_disk_quota_and_removes_overflow(tmp_pa
     backend.max_capture_disk_bytes = 4098
     with pytest.raises(ContractError, match="incremental temporary-disk quota"):
         backend.tick({"outputFrameIndex": 0, "scheduledTimeS": 0.0})
-    assert not (tmp_path / "hero/00000000.png").exists()
+    assert backend.sensor_records == []
 
 
 @pytest.mark.parametrize("frames, message", [([42, 42], "duplicate"), ([43, 42], "out-of-order")])
@@ -1295,7 +1332,6 @@ def test_rejects_fake_or_incomplete_ambient_provenance():
 
 
 def test_versioned_render_spec_supports_all_native_sensors_quality_environment_and_formats():
-    value = lease_value(outputs=["trace", "manifest", "annotations"])
     transform = {"x": 1.4, "y": 0, "z": 1.25, "pitch": -3, "yaw": 0, "roll": 0}
     camera = {"width": 1280, "height": 720, "fov": 82}
     lidar = {
@@ -1304,18 +1340,22 @@ def test_versioned_render_spec_supports_all_native_sensors_quality_environment_a
     }
     radar = {"horizontalFovDeg": 40, "verticalFovDeg": 20, "rangeM": 100, "pointsPerSecond": 20_000}
     modalities = ["rgb", "depth", "semantic", "instance", "normals", "lidar", "semantic-lidar", "radar"]
+    sensors = [
+        {
+            "role": f"capture-{index}", "actorId": "ego", "sensorId": f"sensor-{index}",
+            "modality": modality, "transform": transform,
+            "config": camera if modality in {"rgb", "depth", "semantic", "instance", "normals"} else lidar if "lidar" in modality else radar,
+        }
+        for index, modality in enumerate(modalities)
+    ]
+    value = lease_value(
+        outputs=["trace", "manifest", "annotations"],
+        sensors=sensors,
+        formats=["json", "jsonl", "ply", "csv"],
+    )
     value["job"]["renderSpec"].update({
         "quality": "cinematic",
         "environment": {"cloudiness": 70, "precipitation": 25, "wetness": 50, "sunAltitude": 12},
-        "formats": ["json", "jsonl"],
-        "sensors": [
-            {
-                "role": f"capture-{index}", "actorId": "ego", "sensorId": f"sensor-{index}",
-                "modality": modality, "transform": transform,
-                "config": camera if modality in {"rgb", "depth", "semantic", "instance", "normals"} else lidar if "lidar" in modality else radar,
-            }
-            for index, modality in enumerate(modalities)
-        ],
     })
     lease = parse_lease(seal_lease(value))
     assert [sensor.modality for sensor in lease.render_spec.sensors] == modalities
@@ -1420,29 +1460,203 @@ def test_cleanup_failure_is_chained_without_masking_execution_failure():
     assert str(raised.value.__cause__) == "secondary cleanup failure"
 
 
-def test_frame_archives_are_reserved_and_reported_per_sensor(monkeypatch):
-    lease = parse_lease(lease_value(outputs=["frames"]))
+class _StreamingSensorBackend(FakeBackend):
+    """Cameras produce one streamed mp4; lidar/radar land per-frame data files."""
+
+    def tick(self, capture=None, abort=None):
+        (abort or (lambda: None))()
+        self.calls.append(("tick", self.frame.index))
+        if capture is not None:
+            for sensor in self.sensor_specs:
+                sensor_key = sensor.artifact_name
+                target = self.output_dir / sensor_key
+                target.mkdir(parents=True, exist_ok=True)
+                output_index = int(capture["outputFrameIndex"])
+                if sensor.modality in {"rgb", "depth", "semantic", "instance", "normals"}:
+                    (target / "stream.mp4").write_bytes(b"mp4-stream")
+                    relative = f"{sensor_key}/stream.mp4"
+                elif sensor.modality == "radar":
+                    (target / f"{output_index:08d}.csv").write_text("depth,azimuth,altitude,velocity\n10,0,0,1\n")
+                    relative = f"{sensor_key}/{output_index:08d}.csv"
+                else:
+                    (target / f"{output_index:08d}.ply").write_text("ply\nend_header\n1 2 0.5 0.9\n")
+                    relative = f"{sensor_key}/{output_index:08d}.ply"
+                self.records.append({
+                    "artifactName": sensor_key,
+                    "role": sensor.role,
+                    "actorId": sensor.actor_id,
+                    "sensorId": sensor.sensor_id,
+                    "modality": sensor.modality,
+                    "outputFrameIndex": output_index,
+                    "scheduledTimeS": capture["scheduledTimeS"],
+                    "carlaFrame": self.frame.index + 1,
+                    "actualCarlaTimeS": self.frame.t,
+                    "relativePath": relative,
+                })
+        return {actor_id: {"x": state.x + self.offset, "y": state.y, "z": state.z, "headingDeg": state.heading_deg, "speedMps": state.speed_mps} for actor_id, state in self.frame.actors.items()}
+
+    def finalize_capture(self, expected_frame_count, abort=None):
+        (abort or (lambda: None))()
+        self.calls.append(("finalize", expected_frame_count))
+        per_sensor = {}
+        for record in self.records:
+            per_sensor[record["artifactName"]] = per_sensor.get(record["artifactName"], 0) + 1
+        assert per_sensor and all(count == expected_frame_count for count in per_sensor.values())
+
+
+VIDEO_TEST_SENSORS = [
+    {"role": "primary", "actorId": "ego", "sensorId": "hero", "modality": "rgb",
+     "transform": {"x": -7.5, "y": 0, "z": 3, "pitch": -12, "yaw": 0, "roll": 0},
+     "config": {"width": 640, "height": 360, "fov": 90}},
+    {"role": "chase", "actorId": "ego", "sensorId": "chase-cam", "modality": "rgb",
+     "transform": {"x": -9.0, "y": 0, "z": 4, "pitch": -15, "yaw": 0, "roll": 0},
+     "config": {"width": 640, "height": 360, "fov": 90}},
+    {"role": "depthcap", "actorId": "ego", "sensorId": "depth-1", "modality": "depth",
+     "transform": {"x": 1.5, "y": 0, "z": 1.6, "pitch": 0, "yaw": 0, "roll": 0},
+     "config": {"width": 640, "height": 360, "fov": 90}},
+    {"role": "roof", "actorId": "ego", "sensorId": "lidar-1", "modality": "lidar",
+     "transform": {"x": 0, "y": 0, "z": 2.4, "pitch": 0, "yaw": 0, "roll": 0},
+     "config": {"channels": 32, "rangeM": 120, "pointsPerSecond": 100_000,
+                "rotationFrequencyHz": 25, "upperFovDeg": 10, "lowerFovDeg": -30}},
+    {"role": "bumper", "actorId": "ego", "sensorId": "radar-1", "modality": "radar",
+     "transform": {"x": 2.2, "y": 0, "z": 0.6, "pitch": 0, "yaw": 0, "roll": 0},
+     "config": {"horizontalFovDeg": 40, "verticalFovDeg": 20, "rangeM": 100, "pointsPerSecond": 20_000}},
+]
+
+
+def _fake_ffprobe(command, _stage, _check_abort, _deadline):
+    assert command[0] == "ffprobe", "cameras adopt streamed mp4s; ffmpeg must not re-encode them"
+    return type("Result", (), {
+        "returncode": 0, "stderr": b"",
+        "stdout": b'{"streams":[{"nb_read_frames":"1","duration":"0.04"}]}',
+    })()
+
+
+def test_every_authored_camera_uploads_its_own_video_and_no_frame_archive_exists(monkeypatch):
+    lease = parse_lease(lease_value(outputs=["trace", "video"], sensors=VIDEO_TEST_SENSORS))
     assets = {"memory:manifest": MANIFEST, "memory:xosc": XOSC, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
     uploads = []
-    monkeypatch.setattr(Path, "read_bytes", lambda _self: pytest.fail("frame archives must stream from disk"))
+    monkeypatch.setattr(worker_runner, "_run_process", _fake_ffprobe)
     def stream_upload(url, body, media_type, headers):
         with body.open("rb") if isinstance(body, Path) else io.BytesIO(body) as source:
             uploads.append((url, source.read(), media_type, headers))
     result = execute_lease(
-        lease, FakeBackend(),
+        lease, _StreamingSensorBackend(),
         lambda body: {"valid": True, "xmlSha256": digest(body), "xsdSha256": OFFICIAL_XSD_SHA256},
         downloader=lambda url, _limit: assets[url],
         uploader=stream_upload,
     )
-    assert [item["kind"] for item in result["artifacts"]] == ["trace", "framesArchive:primary:ego:hero:rgb"]
-    assert result["artifacts"][1]["mediaType"] == "application/zip"
-    assert result["artifacts"][1]["metadata"] == {
-        "outputName": "primary", "actorId": "ego", "sensorId": "hero",
-        "modality": "rgb", "format": "png",
-        "frameCount": 1, "fps": 25.0, "durationS": 0.04,
-    }
-    assert uploads[1][0] == "memory:upload:framesArchive:primary:ego:hero:rgb"
-    assert uploads[1][1].startswith(b"PK")
+    kinds = [item["kind"] for item in result["artifacts"]]
+    # Every authored camera yields exactly one video artifact: the primary RGB
+    # stream doubles as the review "video"; every other camera gets its own
+    # sensorVideo. Lidar/radar keep data zips plus visualization videos.
+    assert kinds == [
+        "trace",
+        "video",
+        "sensorVideo:chase:ego:chase-cam:rgb",
+        "sensorVideo:depthcap:ego:depth-1:depth",
+        "sensorVideo:roof:ego:lidar-1:lidar",
+        "sensorVideo:bumper:ego:radar-1:radar",
+        "sensorData:roof:ego:lidar-1:lidar",
+        "sensorData:bumper:ego:radar-1:radar",
+    ]
+    assert not any(kind.startswith("framesArchive") for kind in kinds)
+    camera_artifacts = [item for item in result["artifacts"] if item["kind"] == "video" or ":rgb" in item["kind"] or ":depth" in item["kind"]]
+    for item in camera_artifacts:
+        assert item["mediaType"] == "video/mp4"
+        metadata = item["metadata"]
+        assert metadata["codec"] == "h264"
+        assert metadata["container"] == "mp4"
+        assert metadata["format"] == "mp4-h264"
+        assert metadata["encoder"] == "software"
+        assert metadata["fps"] == 25.0
+        assert metadata["frameCount"] == 1
+        assert (metadata["width"], metadata["height"]) == (640, 360)
+    primary = next(item for item in result["artifacts"] if item["kind"] == "video")
+    assert primary["metadata"]["sensorId"] == "hero"
+    # Adopted camera uploads carry the streamed bytes verbatim.
+    camera_uploads = [body for url, body, media_type, _headers in uploads if media_type == "video/mp4" and body == b"mp4-stream"]
+    assert len(camera_uploads) == 3
+    data_uploads = [body for _url, body, media_type, _headers in uploads if media_type == "application/zip"]
+    assert len(data_uploads) == 2 and all(body.startswith(b"PK") for body in data_uploads)
+
+
+def test_render_spec_rejects_frames_output_everywhere():
+    # "frames" is no longer a render output anywhere in the CARLA lane: the
+    # spec parser, the runtime requirements, and the lease reservation set all
+    # fail closed on it.
+    with pytest.raises(ContractError, match="renderSpec.outputs must contain unique supported values"):
+        parse_lease(lease_value(outputs=["frames"]))
+    value = lease_value(outputs=["trace"])
+    value["job"]["executionPackage"]["runtimeRequirements"]["outputs"] = ["frames", "trace"]
+    reseal_control(value["job"]["executionPackage"])
+    with pytest.raises(ContractError, match="runtimeRequirements.outputs must be sorted, unique supported values"):
+        parse_lease(value)
+
+
+def test_video_lease_requires_a_reservation_for_every_non_primary_sensor():
+    value = lease_value(outputs=["trace", "video"], sensors=VIDEO_TEST_SENSORS)
+    del value["job"]["artifactUploads"]["sensorVideo:chase:ego:chase-cam:rgb"]
+    with pytest.raises(ContractError, match="missing reservations: sensorVideo:chase:ego:chase-cam:rgb"):
+        parse_lease(value)
+    incomplete_data = lease_value(outputs=["trace", "video"], sensors=VIDEO_TEST_SENSORS)
+    del incomplete_data["job"]["artifactUploads"]["sensorData:roof:ego:lidar-1:lidar"]
+    with pytest.raises(ContractError, match="missing reservations: sensorData:roof:ego:lidar-1:lidar"):
+        parse_lease(incomplete_data)
+
+
+def test_camera_stream_encoder_backpressure_fails_closed():
+    from uniscenarios_carla_bridge.runtime.backend import (
+        CAMERA_ENCODER_QUEUE_FRAMES,
+        _CameraStreamEncoder,
+    )
+    encoder = object.__new__(_CameraStreamEncoder)
+    encoder.sensor_key = "hero"
+    encoder.error = None
+    encoder.queue = __import__("queue").Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
+    for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
+        encoder.submit(f"frame-{index}")
+    # The queue is bounded and non-blocking: overflow must raise instead of
+    # stalling the CARLA tick loop.
+    with pytest.raises(ContractError, match="backpressure budget"):
+        encoder.submit("frame-overflow")
+    # A failed writer thread surfaces on the next capture instead of hanging.
+    encoder.error = RuntimeError("ffmpeg died")
+    with pytest.raises(RuntimeError, match="camera stream encoder hero failed"):
+        encoder.submit("frame-after-error")
+
+
+def test_presentation_video_encoder_selection(monkeypatch):
+    from uniscenarios_carla_bridge.runtime.backend import _presentation_video_codec_args
+    monkeypatch.delenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", raising=False)
+    assert "libx264" in _presentation_video_codec_args()
+    monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
+    assert "libx264" in _presentation_video_codec_args()
+    monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "nvidia")
+    assert "h264_nvenc" in _presentation_video_codec_args()
+    monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "vhs")
+    with pytest.raises(RuntimeError, match="must be software or nvidia"):
+        _presentation_video_codec_args()
+
+
+def test_camera_stream_encoder_round_trips_real_frames_through_ffmpeg(tmp_path, monkeypatch):
+    from uniscenarios_carla_bridge.runtime.backend import _CameraStreamEncoder
+    monkeypatch.delenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", raising=False)
+    destination = tmp_path / "stream.mp4"
+    class Frame:
+        def __init__(self, payload): self.raw_data = payload
+        def convert(self, _converter): pytest.fail("converter must not run when None")
+    encoder = _CameraStreamEncoder("hero", 64, 36, 25.0, None, destination)
+    for _index in range(3):
+        encoder.submit(Frame(bytes(64 * 36 * 4)))
+    encoder.close()
+    assert destination.is_file() and destination.stat().st_size > 0
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0",
+         "-show_entries", "stream=nb_read_frames", "-of", "json", str(destination)],
+        capture_output=True, check=True,
+    )
+    assert json.loads(probe.stdout)["streams"][0]["nb_read_frames"] == "3"
 
 
 def test_multi_actor_pedestrian_and_lifecycle_capability_gates():
@@ -1630,23 +1844,31 @@ def test_artifact_digest_is_bound_before_checksum_header_upload():
     assert artifact["sha256"] == digest_hex
 
 
-def test_video_encoder_targets_primary_rgb_camera(monkeypatch, tmp_path):
+def test_collect_camera_video_adopts_stream_and_proves_frame_closure(monkeypatch, tmp_path):
     camera_dir = tmp_path / "frames" / "hero"
     camera_dir.mkdir(parents=True)
-    (camera_dir / "00000000.png").write_bytes(b"png")
+    (camera_dir / "stream.mp4").write_bytes(b"mp4")
     destination = tmp_path / "render.mp4"
     captured = []
     def run(command, _stage, _check_abort, _deadline):
         captured.append(command)
-        if command[0] == "ffmpeg":
-            Path(command[-1]).write_bytes(b"mp4")
-            return type("Result", (), {"returncode": 0, "stderr": b"", "stdout": b""})()
+        assert command[0] == "ffprobe", "adopted streams must never re-encode"
         return type("Result", (), {"returncode": 0, "stderr": b"", "stdout": b'{"streams":[{"nb_read_frames":"1","duration":"0.033333"}]}'})()
     monkeypatch.setattr(worker_runner, "_run_process", run)
-    assert worker_runner._encode_video(tmp_path / "frames", "hero", 30, destination, 1, 1024, lambda *_args: None, lambda: float("inf")) == destination
-    assert str(camera_dir / "%08d.png") in captured[0]
-    assert "libx264" in captured[0]
-    assert captured[1][0] == "ffprobe"
+    assert worker_runner._collect_camera_video(
+        tmp_path / "frames", "hero", 30, destination, 1, 1024, lambda *_args: None, lambda: float("inf"),
+    ) == destination
+    assert len(captured) == 1 and str(camera_dir / "stream.mp4") in captured[0]
+    # A stream that is not frame-closed against the capture schedule fails.
+    with pytest.raises(RuntimeError, match="not frame-closed"):
+        worker_runner._collect_camera_video(
+            tmp_path / "frames", "hero", 30, destination, 2, 1024, lambda *_args: None, lambda: float("inf"),
+        )
+    # A camera that never produced a stream fails closed.
+    with pytest.raises(RuntimeError, match="no encoded video stream"):
+        worker_runner._collect_camera_video(
+            tmp_path / "frames", "missing", 30, destination, 1, 1024, lambda *_args: None, lambda: float("inf"),
+        )
     monkeypatch.setattr(Path, "read_bytes", lambda _self: pytest.fail("video artifacts must stream from disk"))
     streamed = []
     artifact = worker_runner._artifact(
@@ -1957,10 +2179,13 @@ def test_slow_heartbeat_never_blocks_arriving_sensor_callback(tmp_path):
     lock = Lock()
     backend.sensor_lock = lock
     backend.sensor_condition = Condition(lock)
+    backend.video_fps = 25.0
+    backend.fixed_timestep_s = 0.02
     backend.sensor_configs = {"hero": {
         "target": tmp_path, "role": "primary", "actorId": None, "sensorId": "hero",
         "modality": "rgb", "converter": None, "extension": "png",
         "transform": {}, "config": {"width": 640, "height": 360, "fov": 90},
+        "encoder": _FakeStreamEncoder(tmp_path / "stream.mp4"),
     }}
     backend.sensor_writer_workers = 1
     backend.sensor_writer_pool = None
@@ -2106,21 +2331,11 @@ def test_backend_never_calls_fence_under_sensor_locks():
     assert violations == []
 
 
-def test_raw_frames_and_archive_share_one_peak_temp_budget(monkeypatch):
-    uploads = {
-        "trace": {
-            "uploadId": "trace", "uploadUrl": "memory:trace", "artifactUrl": "/api/uniscenario/artifact-uploads/trace",
-            "requiredHeaders": {"content-type": "application/gzip"},
-        },
-        "framesArchive:primary:ego:hero:rgb": {
-            "uploadId": "frames", "uploadUrl": "memory:frames", "artifactUrl": "/api/uniscenario/artifact-uploads/frames",
-            "requiredHeaders": {"content-type": "application/zip"},
-        },
-    }
-    lease = parse_lease(lease_value(outputs=["frames"], uploads=uploads))
+def test_streamed_camera_video_and_artifacts_share_one_peak_temp_budget(monkeypatch):
+    lease = parse_lease(lease_value(outputs=["trace", "video"]))
     assets = {"memory:manifest": MANIFEST, "memory:xosc": XOSC, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
     monkeypatch.setattr(worker_runner, "MAX_OUTPUT_BYTES", 1_100_000)
-    class LargeFrameBackend(FakeBackend):
+    class LargeStreamBackend(FakeBackend):
         def tick(self, capture=None, abort=None):
             (abort or (lambda: None))()
             self.calls.append(("tick", self.frame.index))
@@ -2128,27 +2343,27 @@ def test_raw_frames_and_archive_share_one_peak_temp_budget(monkeypatch):
                 sensor_key = "primary:ego:hero:rgb"
                 target = self.output_dir / sensor_key
                 target.mkdir(parents=True, exist_ok=True)
-                (target / "00000000.png").write_bytes(b"x" * 1_000_000)
+                (target / "stream.mp4").write_bytes(b"x" * 1_200_000)
                 self.records.append({
                     "artifactName": sensor_key, "role": "primary", "actorId": "ego",
                     "sensorId": "hero", "modality": "rgb", "outputFrameIndex": 0,
                     "scheduledTimeS": 0.0, "carlaFrame": 1, "actualCarlaTimeS": 0.0,
-                    "relativePath": f"{sensor_key}/00000000.png",
+                    "relativePath": f"{sensor_key}/stream.mp4",
                 })
             return {
                 actor_id: {"x": state.x, "y": state.y, "z": state.z, "headingDeg": state.heading_deg, "speedMps": state.speed_mps}
                 for actor_id, state in self.frame.actors.items()
             }
-    backend = LargeFrameBackend()
+    backend = LargeStreamBackend()
     uploaded = []
-    with pytest.raises(ContractError, match="pre-allocation budget"):
+    with pytest.raises(ContractError, match="shared temporary-disk budget"):
         execute_lease(
             lease, backend,
             lambda body: {"valid": True, "xmlSha256": digest(body), "xsdSha256": OFFICIAL_XSD_SHA256},
             downloader=lambda url, _limit: assets[url],
             uploader=lambda url, *_args: uploaded.append(url),
         )
-    assert uploaded == ["memory:trace"]
+    assert uploaded == []
     assert backend.calls[-1] == ("cleanup",)
 
 
@@ -2166,6 +2381,7 @@ def test_duration_frame_pixel_sensor_and_output_budgets(monkeypatch):
     )
     with pytest.raises(ContractError, match="capture exceeds 18000 frames"):
         worker_runner._enforce_render_budgets(lease, short, 18_001)
+    monkeypatch.setattr(worker_runner, "MAX_SENSOR_PIXELS", 640 * 360 * 18_000 - 1)
     with pytest.raises(ContractError, match="sensor pixels"):
         worker_runner._enforce_render_budgets(lease, short, 18_000)
 
@@ -2204,17 +2420,15 @@ def test_duration_and_output_budgets_fail_before_expensive_allocation(monkeypatc
     with pytest.raises(ContractError, match="scenario duration"):
         worker_compiler.compile_xosc14(too_long)
 
+    # Camera streams are budget-checked before any ffprobe/copy work starts.
     camera_dir = tmp_path / "hero"
     camera_dir.mkdir()
-    (camera_dir / "00000000.png").write_bytes(b"four")
-    monkeypatch.setattr(worker_runner.zipfile, "ZipFile", lambda *_args, **_kwargs: pytest.fail("ZIP must not allocate"))
-    with pytest.raises(ContractError, match="pre-allocation budget"):
-        worker_runner._archive_frames(
-            camera_dir, tmp_path / "frames.zip", 1, "png", 3, lambda *_args: None,
+    (camera_dir / "stream.mp4").write_bytes(b"four")
+    monkeypatch.setattr(worker_runner, "_run_process", lambda *_args, **_kwargs: pytest.fail("ffprobe must not start"))
+    with pytest.raises(ContractError, match="exceeds its output budget"):
+        worker_runner._collect_camera_video(
+            tmp_path, "hero", 30, tmp_path / "render.mp4", 1, 3, lambda *_args: None, lambda: float("inf"),
         )
-    monkeypatch.setattr(worker_runner, "_run_process", lambda *_args, **_kwargs: pytest.fail("ffmpeg must not start"))
-    with pytest.raises(ContractError, match="pre-allocation output budget"):
-        worker_runner._encode_video(tmp_path, "hero", 30, tmp_path / "render.mp4", 1, 3, lambda *_args: None, lambda: float("inf"))
 
 
 def test_worker_validator_pins_official_schema_and_rejects_invalid_xml():
@@ -2858,6 +3072,109 @@ def test_spawn_fails_closed_when_every_actor_is_unplaceable():
     frame = PlanFrame(0, 0, {"ego": ActorFrame("spawn", 0.0, 0.0, 0.0, 0.0, 0)}, {})
     with pytest.raises(RuntimeError, match="dropped every scenario actor"):
         backend.spawn({"ego": _vehicle_binding("ego")}, frame, _PLACEMENT_CATALOG)
+
+
+def test_spawn_drops_execution_semantics_actors_with_a_recorded_reason():
+    backend = _placement_backend(_PlacementWorld())
+    backend.execution_drops = {"deer": "native physics cannot execute authored knockdown poses without post-spawn teleport repair"}
+    frame = PlanFrame(0, 0, {
+        "ego": ActorFrame("spawn", 0.0, 0.0, 0.0, 0.0, 0),
+        "deer": ActorFrame("spawn", 8.0, 0.0, 0.0, 0.0, 0, downed=True),
+    }, {})
+    backend.spawn({"ego": _vehicle_binding("ego"), "deer": _vehicle_binding("deer")}, frame, _PLACEMENT_CATALOG)
+    assert set(backend.actors) == {"ego"}
+    assert backend.dropped_actor_ids == {"deer"}
+    # The knocked-down body was never handed to CARLA.
+    assert len(backend.world.transforms) == 1
+    report = backend.spawn_placement_report()
+    assert report["droppedActorIds"] == ["deer"]
+    assert report["actors"]["deer"] == {
+        "outcome": "dropped",
+        "cause": "execution-semantics",
+        "reason": "native physics cannot execute authored knockdown poses without post-spawn teleport repair",
+        "authored": {"x": 8.0, "y": 0.0, "z": 0.0},
+    }
+
+
+def test_knockdown_pose_drops_the_actor_instead_of_failing_the_render():
+    lease = parse_lease(lease_value())
+    plan = ExecutionPlan(
+        "uniscenario.execution-plan/v1", 0.02,
+        {
+            "ego": ActorBinding("ego", "actor_ego", "car", "vehicle.sedan"),
+            "deer": ActorBinding("deer", "actor_deer", "animal", "animal.deer"),
+        },
+        (
+            PlanFrame(0, 0.0, {
+                "ego": ActorFrame("spawn", 0, 0, 0, 0, 1.0),
+                "deer": ActorFrame("spawn", 5, 0, 0, 0, 0.0),
+            }, {}),
+            PlanFrame(1, 0.02, {
+                "ego": ActorFrame("active", 0.02, 0, 0, 0, 1.0),
+                # Knocked down mid-scenario, and sliding: the drop must also
+                # exempt the actor from the moving-animal gate.
+                "deer": ActorFrame("active", 5.01, 0, 0, 0, 0.5, downed=True),
+            }, {}),
+        ), "a" * 64,
+    )
+    drops = worker_runner._preflight_execution_semantics(lease, plan)
+    assert drops == {"deer": "native physics cannot execute authored knockdown poses without post-spawn teleport repair"}
+
+    # A knockdown-posed actor that hosts sensors cannot be dropped silently.
+    hosted = lease_value()
+    hosted["job"]["renderSpec"]["sensors"][0]["actorId"] = "deer"
+    hosted_lease = parse_lease(seal_lease(hosted))
+    with pytest.raises(ContractError, match="cannot attach to knockdown-posed actors"):
+        worker_runner._preflight_execution_semantics(hosted_lease, plan)
+
+
+def test_cooked_map_registry_resolves_known_xodrs_and_env_extensions(monkeypatch):
+    from uniscenarios_carla_bridge.runtime.backend import cooked_map_name_for_xodr
+    monkeypatch.delenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", raising=False)
+    richmond = "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643"
+    belmont = "35cf2b16a1d308c6436089a0edf66f20c87a79da12e79472a03a2f568ba28f63"
+    assert cooked_map_name_for_xodr(richmond) == "Richmond_Field_Station_Richmond_CA"
+    assert cooked_map_name_for_xodr(belmont) == "Belmont_Office_Park_Belmont_CA"
+    assert cooked_map_name_for_xodr("f" * 64) is None
+    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", json.dumps({"Munich": "e" * 64}))
+    assert cooked_map_name_for_xodr("e" * 64) == "Munich"
+    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", json.dumps({"NotRichmond": richmond}))
+    with pytest.raises(RuntimeError, match="conflicts with the built-in cooked world"):
+        cooked_map_name_for_xodr(richmond)
+    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", "not json")
+    with pytest.raises(RuntimeError, match="must be valid JSON"):
+        cooked_map_name_for_xodr(richmond)
+
+
+def test_cooked_xodr_never_falls_back_to_a_generated_world(monkeypatch):
+    monkeypatch.setenv("UNISCENARIO_CARLA_ALLOW_GENERATED_XODR", "1")
+    monkeypatch.delenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", raising=False)
+    richmond_xodr = b"richmond-source-xodr"
+    monkeypatch.setattr(
+        "uniscenarios_carla_bridge.runtime.backend.COOKED_MAP_NAMES_BY_XODR_SHA256",
+        {hashlib.sha256(richmond_xodr).hexdigest(): "Richmond_Field_Station_Richmond_CA"},
+    )
+    backend = object.__new__(CarlaBackend)
+    backend.carla = type("Carla", (), {
+        "OpendriveGenerationParameters": staticmethod(lambda **_kwargs: object()),
+    })()
+    backend.client = type("Client", (), {
+        "get_available_maps": lambda _self: ["/Game/Carla/Maps/Town10HD_Opt"],
+        "generate_opendrive_world": lambda _self, *_args: pytest.fail("cooked maps must never regenerate from XODR"),
+    })()
+    with pytest.raises(RuntimeError, match="refusing the generated-OpenDRIVE fallback"):
+        backend.load_opendrive("Richmond_Field_Station_Richmond_CA", richmond_xodr, 0.02)
+    # An uncooked XODR keeps the explicitly enabled generated-world fallback.
+    class GeneratedWorld:
+        def get_map(self):
+            return type("M", (), {"name": "Carla/Maps/OpenDriveMap"})()
+        def get_settings(self):
+            return type("S", (), {"synchronous_mode": True, "fixed_delta_seconds": 0.02})()
+        def apply_settings(self, _settings): pass
+    backend.client.generate_opendrive_world = lambda *_args: GeneratedWorld()
+    backend.load_opendrive("uncooked-map", b"<OpenDRIVE/>", 0.02)
+    assert backend.map_evidence["source"] == "generated-opendrive-world"
+    assert backend.map_evidence["requestedMapName"] == "uncooked-map"
 
 
 def test_prepare_scenario_resets_a_nudged_actor_to_its_placed_position():

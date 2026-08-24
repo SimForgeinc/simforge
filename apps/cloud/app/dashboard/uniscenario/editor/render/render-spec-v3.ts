@@ -157,11 +157,6 @@ export function buildCanonicalRenderSpec(input: CanonicalRenderSpecInput): Rende
     ...artifacts.map((artifact) => artifact === "sensorArchive" ? "artifact.sensor_archive" : `artifact.${artifact}`),
     "environment.authored",
     "timing.fixed_step",
-    ...(input.video
-      && artifacts.includes("sensorArchive")
-      && sources.some((source) => source.modality === "lidar" || source.modality === "radar")
-      ? ["artifact.sensor_video"]
-      : []),
     ...(input.staticSemantics && sources.some((source) => source.modality === "semantic")
       ? ["map.static_semantics"]
       : []),
@@ -202,14 +197,12 @@ export function browserRendererCapabilities(
       artifact === "sensorArchive" ? "artifact.sensor_archive" : `artifact.${artifact}`,
     );
   }
-  if (spec.video && spec.artifacts.includes("sensorArchive")) {
+  if (spec.video) {
     capabilities.add("artifact.video");
   }
-  if (
-    spec.video
-    && spec.artifacts.includes("sensorArchive")
-    && spec.sources.some((source) => source.modality === "lidar" || source.modality === "radar")
-  ) {
+  // Every camera source emits its own encoded video stream; lidar/radar add
+  // visualization videos when a video output is requested.
+  if (spec.sources.length > 0) {
     capabilities.add("artifact.sensor_video");
   }
   capabilities.add("environment.authored");

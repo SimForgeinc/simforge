@@ -1,13 +1,11 @@
 """Per-sensor MP4 export for CARLA renders.
 
-Frame archives are the canonical measurement record, but they are multi-gigabyte and nobody
-watches a zip. This module gives every sensor its own playable video: cameras straight from
-their PNG sequence, LiDAR as a top-down point cloud coloured by range, and radar as a
-range/azimuth plot coloured by radial velocity — the same two visualisations the browser
-renderer ships, so a clip reads the same in either engine.
-
-Rasterisation streams raw RGB frames into ffmpeg, so no intermediate images are written and a
-sensor video costs one pass over its captured frames.
+Every sensor owns exactly one playable video: cameras adopt the h264 stream
+their backend encoder already produced (raw frames pipe straight into ffmpeg
+and never land on disk), LiDAR renders as a top-down point cloud coloured by
+range, and radar as a range/azimuth plot coloured by radial velocity — the
+same two visualisations the browser renderer ships, so a clip reads the same
+in either engine.
 """
 from __future__ import annotations
 import shutil
@@ -53,21 +51,13 @@ def encode_camera_video(
     expected_frame_count: int,
     max_bytes: int,
 ) -> Path:
-    """Encode a camera's PNG sequence without re-rasterising it."""
+    """Adopt the camera's streamed h264 file; cameras persist no frame files."""
     stream = sensor_dir / "stream.mp4"
-    if stream.exists() and stream.stat().st_size > 0:
-        shutil.copyfile(stream, destination)
-        return destination
-    _frame_paths(sensor_dir, "png", expected_frame_count)
-    command = [
-        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-        "-framerate", f"{fps:g}", "-start_number", "0",
-        "-i", str(sensor_dir / "%08d.png"),
-        *_ffmpeg_common(fps, destination, max_bytes),
-    ]
-    result = subprocess.run(command, capture_output=True)
-    if result.returncode:
-        raise SensorVideoError(f"ffmpeg failed for {sensor_dir.name}: {result.stderr.decode(errors='replace')[:400]}")
+    if not stream.is_file() or stream.stat().st_size == 0:
+        raise SensorVideoError(f"camera {sensor_dir.name} produced no encoded video stream")
+    if stream.stat().st_size > max_bytes:
+        raise SensorVideoError(f"camera video {sensor_dir.name} exceeds its budget")
+    shutil.copyfile(stream, destination)
     return destination
 
 

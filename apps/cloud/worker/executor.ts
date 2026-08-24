@@ -111,14 +111,30 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
         });
         continue;
       }
+      if (artifact.identity.role === "video") {
+        const { actorId, sensorId, modality } = artifact.identity;
+        if (!actorId || !sensorId || !modality || artifact.mediaType !== "video/webm") {
+          throw new Error(`browser sensor video has invalid identity: ${artifact.relativePath}`);
+        }
+        artifacts.push({
+          kind: "sensor_video",
+          sensor: { actorId, sensorId, modality },
+          path: safeArtifactPath(request.workspace, artifact.relativePath),
+          mediaType: "video/webm",
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
+        });
+        continue;
+      }
       if (artifact.identity.role !== "sensorArchive") continue;
       const { actorId, sensorId, modality } = artifact.identity;
       if (!actorId || !sensorId || !modality || artifact.mediaType !== "application/zip") {
         throw new Error(`browser sensor archive has invalid identity: ${artifact.relativePath}`);
       }
+      if (modality !== "lidar" && modality !== "radar") {
+        throw new Error(`camera frame archives were removed; unexpected ${modality} archive: ${artifact.relativePath}`);
+      }
       if (!intent.renderSpec.artifacts.includes("sensorArchive")) {
-        // Produced transiently (RGB archives feed the review MP4) but not part of
-        // the declared artifact closure; recorded here so the omission is auditable.
         omittedArtifacts.push({ role: "sensorArchive", sensorId, modality, reason: "not_requested_by_render_spec" });
         continue;
       }
@@ -185,43 +201,31 @@ export type BrowserVideoEncoding = {
   readonly codec: "h264";
   readonly preset: string;
   readonly crf: number;
-  readonly frameFormat: "png" | "jpg";
+  readonly source: "vp9-webm";
   readonly fps: number;
 };
 
+/**
+ * The review MP4 transcodes the primary RGB camera's VP9 stream. Individual
+ * RGB frames are never persisted: each camera's only pixel artifact is its
+ * own encoded video, and the review cut derives from the presentation camera
+ * (the trailing chase view when authored, else the first RGB stream).
+ */
 async function encodeBrowserMp4(
   workspace: string,
   manifest: RenderExecutionResult["runtimeManifest"],
   intent: RenderIntentV1,
   signal: AbortSignal,
 ): Promise<{ artifact: RecordingArtifact; encoding: BrowserVideoEncoding }> {
-  const rgbArchives = manifest.artifacts
-    .filter((artifact) => artifact.identity.role === "sensorArchive" && artifact.identity.modality === "rgb")
+  const rgbVideos = manifest.artifacts
+    .filter((artifact) => artifact.identity.role === "video" && artifact.identity.modality === "rgb")
     .sort((left, right) => {
       const leftChase = left.identity.sensorId === "chase-cam-trailing" ? 0 : 1;
       const rightChase = right.identity.sensorId === "chase-cam-trailing" ? 0 : 1;
       return leftChase - rightChase || left.relativePath.localeCompare(right.relativePath);
     });
-  const source = rgbArchives[0];
-  if (!source) throw new Error("browser renderer produced no RGB frame archive for MP4 encoding");
-
-  const framesDirectory = join(workspace, ".recording-frames");
-  await rm(framesDirectory, { recursive: true, force: true });
-  await mkdir(framesDirectory, { recursive: true, mode: 0o700 });
-  await runProcess(
-    "unzip",
-    ["-q", safeArtifactPath(workspace, source.relativePath), "-d", framesDirectory],
-    signal,
-  );
-  const sensorDirectory = join(framesDirectory, requiredSafeSegment(source.identity.sensorId));
-  const frames = (await readdir(sensorDirectory))
-    .filter((name) => /^\d{8}\.(png|jpg)$/.test(name))
-    .sort();
-  if (frames.length === 0) throw new Error("RGB frame archive contains no PNG or JPEG frames");
-  const frameFormat = frames[0]!.endsWith(".jpg") ? "jpg" as const : "png" as const;
-  if (!frames.every((name) => name.endsWith(`.${frameFormat}`))) {
-    throw new Error("RGB frame archive mixes PNG and JPEG frames");
-  }
+  const source = rgbVideos[0];
+  if (!source) throw new Error("browser renderer produced no RGB camera video for MP4 encoding");
 
   const outputPath = join(workspace, "recording.mp4");
   await rm(outputPath, { force: true });
@@ -234,8 +238,8 @@ async function encodeBrowserMp4(
     [
       "-hide_banner",
       "-loglevel", "error",
-      "-framerate", String(fps),
-      "-i", join(sensorDirectory, `%08d.${frameFormat}`),
+      "-i", safeArtifactPath(workspace, source.relativePath),
+      "-an",
       "-c:v", "libx264",
       "-preset", preset,
       "-crf", String(crf),
@@ -249,7 +253,7 @@ async function encodeBrowserMp4(
   if (digest.sizeBytes === 0) throw new Error("ffmpeg produced an empty MP4");
   return {
     artifact: { kind: "video", path: outputPath, mediaType: "video/mp4", ...digest },
-    encoding: { codec: "h264", preset, crf, frameFormat, fps },
+    encoding: { codec: "h264", preset, crf, source: "vp9-webm", fps },
   };
 }
 

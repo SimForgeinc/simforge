@@ -1,5 +1,7 @@
 from __future__ import annotations
+import queue
 import subprocess
+import threading
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -13,7 +15,7 @@ from time import monotonic, sleep
 from typing import Any, Callable, Mapping, Protocol
 
 from .compiler import LIFECYCLE_ABSENT, ActorBinding, PlanFrame
-from .contract import ASSET_CATALOG_SCHEMA, ContractError, Environment, RenderSpec
+from .contract import ASSET_CATALOG_SCHEMA, CAMERA_MODALITIES, ContractError, Environment, RenderSpec
 
 #: Period of one deterministic flash cycle, 50% duty, phase-locked to plan time.
 FLASH_PERIOD_S = 1.0
@@ -241,12 +243,152 @@ COOKED_SIGNAL_ID_MAPS: Mapping[tuple[str, str, str], Mapping[str, str]] = {
         "1576737df37adb4caad6bef62210e060fcbf5c9a082ddd269515417616a36111",
     ): RICHMOND_COOKED_SIGNAL_ID_MAP,
 }
+
+#: Cooked RoadRunner worlds shipped in the managed CARLA engine images, keyed
+#: by the sha256 of the source XODR the control plane distributes for the map.
+#: Render packages name maps by their control-plane identity; this registry is
+#: the explicit bridge from that source identity to the runtime world CARLA
+#: actually cooked. UNISCENARIO_CARLA_COOKED_MAPS_JSON ({"<cookedName>":
+#: "<xodrSha256>"}) extends it for engines cooking additional worlds.
+COOKED_MAP_NAMES_BY_XODR_SHA256: Mapping[str, str] = {
+    # Richmond Field Station (richmond-field-station_20260410-185647)
+    "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643":
+        "Richmond_Field_Station_Richmond_CA",
+    # Belmont Office Park (belmont-research-center_20260410-184713)
+    "35cf2b16a1d308c6436089a0edf66f20c87a79da12e79472a03a2f568ba28f63":
+        "Belmont_Office_Park_Belmont_CA",
+}
+
+
+def _configured_cooked_map_names() -> dict[str, str]:
+    """Source-XODR sha256 -> cooked runtime map name (built-ins + env)."""
+    names = dict(COOKED_MAP_NAMES_BY_XODR_SHA256)
+    raw = os.environ.get("UNISCENARIO_CARLA_COOKED_MAPS_JSON", "").strip()
+    if not raw:
+        return names
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must be valid JSON") from exc
+    if not isinstance(parsed, Mapping):
+        raise RuntimeError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must be a JSON object of cooked map names to XODR sha256 values")
+    for name, sha in parsed.items():
+        if (
+            not isinstance(name, str) or not name
+            or not isinstance(sha, str) or len(sha) != 64
+            or any(character not in "0123456789abcdef" for character in sha)
+        ):
+            raise RuntimeError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must map cooked map names to lowercase XODR sha256 values")
+        if names.get(sha, name) != name:
+            raise RuntimeError(f"UNISCENARIO_CARLA_COOKED_MAPS_JSON conflicts with the built-in cooked world for {sha}")
+        names[sha] = name
+    return names
+
+
+def cooked_map_name_for_xodr(xodr_sha256: str) -> str | None:
+    """Return the cooked runtime world name for a source XODR, if one exists."""
+    return _configured_cooked_map_names().get(xodr_sha256)
+
+
 VISUAL_SAMPLE_TARGET = 4096
 VISUAL_MIN_LUMA_RANGE = 24
 VISUAL_MIN_CHROMATIC_FRACTION = 0.01
 VISUAL_MIN_MIDTONE_FRACTION = 0.02
 VISUAL_MAX_NEAR_BLACK_FRACTION = 0.98
 VISUAL_MAX_NEAR_WHITE_FRACTION = 0.98
+
+
+#: Frames a camera's encoder queue may hold before the render fails closed.
+#: The queue exists so a stalled ffmpeg process throttles its own writer
+#: thread instead of the CARLA tick loop; overflow means encoding cannot keep
+#: up with capture and the render is not real-time recoverable.
+CAMERA_ENCODER_QUEUE_FRAMES = 4
+
+
+def _presentation_video_codec_args() -> list[str]:
+    """Encoder selection shared by every per-camera stream (h264 mp4 output)."""
+    encoder = os.environ.get("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
+    if encoder not in {"software", "nvidia"}:
+        raise RuntimeError("UNISCENARIO_PRESENTATION_VIDEO_ENCODER must be software or nvidia")
+    if encoder == "nvidia":
+        return ["-c:v", "h264_nvenc", "-preset", "p5", "-cq", "17", "-profile:v", "high"]
+    return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-profile:v", "high", "-level:v", "4.2"]
+
+
+class _CameraStreamEncoder:
+    """One rawvideo->h264 ffmpeg pipe per camera, fed off the capture path.
+
+    Camera frames never touch disk: the writer thread applies the CARLA color
+    conversion and pipes raw BGRA into ffmpeg. The queue is bounded and
+    non-blocking so encoder backpressure can never stall the CARLA tick loop —
+    overflow fails the render instead.
+    """
+
+    _CLOSE = object()
+
+    def __init__(self, sensor_key: str, width: int, height: int, fps: float, converter: Any, destination: Path):
+        self.sensor_key = sensor_key
+        self.destination = destination
+        self.converter = converter
+        self.error: BaseException | None = None
+        self.queue: queue.Queue[Any] = queue.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
+        self.process = subprocess.Popen([
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-f", "rawvideo", "-pix_fmt", "bgra",
+            "-s", f"{width}x{height}", "-r", f"{fps:g}", "-i", "-",
+            *_presentation_video_codec_args(),
+            "-pix_fmt", "yuv420p",
+            "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
+            "-movflags", "+faststart",
+            str(destination),
+        ], stdin=subprocess.PIPE)
+        self.thread = threading.Thread(target=self._run, name=f"camera-encoder-{sensor_key}", daemon=True)
+        self.thread.start()
+
+    def _run(self) -> None:
+        try:
+            while True:
+                item = self.queue.get()
+                if item is self._CLOSE:
+                    return
+                if self.converter is not None:
+                    item.convert(self.converter)
+                self.process.stdin.write(memoryview(item.raw_data))
+        except BaseException as exc:  # noqa: BLE001 - surfaced on the capture path
+            self.error = exc
+
+    def submit(self, data: Any) -> None:
+        if self.error is not None:
+            raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
+        try:
+            self.queue.put_nowait(data)
+        except queue.Full as exc:
+            raise ContractError(
+                f"camera stream encoder {self.sensor_key} exceeded its "
+                f"{CAMERA_ENCODER_QUEUE_FRAMES}-frame backpressure budget"
+            ) from exc
+
+    def close(self, timeout_s: float = 300.0) -> None:
+        try:
+            self.queue.put(self._CLOSE, timeout=timeout_s)
+            self.thread.join(timeout=timeout_s)
+            if self.thread.is_alive():
+                raise RuntimeError(f"camera stream encoder {self.sensor_key} did not drain")
+            if self.error is not None:
+                raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
+            self.process.stdin.close()
+            code = self.process.wait(timeout=timeout_s)
+            if code != 0:
+                raise RuntimeError(f"camera stream encoder {self.sensor_key} exited with {code}")
+        finally:
+            if self.process.poll() is None:
+                self.process.kill()
+
+    def abort(self) -> None:
+        try:
+            self.process.kill()
+        except OSError:
+            pass
 
 
 def _normalized_map_name(value: object) -> str:
@@ -417,6 +559,7 @@ class CarlaBackend:
         self.last_carla_frame: int | None = None
         self.current_plan_frame: tuple[int, float] | None = None
         self.carla_to_plan_frame: dict[int, tuple[int, float]] = {}
+        self.video_fps: float | None = None
         self.last_controls: dict[str, dict[str, Any]] = {}
 
     def configure_execution(self, mode: str) -> None:
@@ -494,6 +637,19 @@ class CarlaBackend:
         available = list(available_getter() or ()) if callable(available_getter) else []
         matching = [value for value in available if _normalized_map_name(value) == requested_name]
         if len(matching) != 1:
+            package_xodr_sha256 = hashlib.sha256(xodr).hexdigest()
+            cooked_name = cooked_map_name_for_xodr(package_xodr_sha256)
+            if cooked_name is not None:
+                # This XODR has a cooked runtime world. Rendering it as a
+                # generated bare-OpenDRIVE world silently loses the cooked
+                # meshes and signal identities (and has crashed the engine on
+                # large maps), so a missing cooked world is fatal even when
+                # generated-XODR fallback is enabled for uncooked maps.
+                raise RuntimeError(
+                    f"CARLA runtime does not contain the cooked custom map {cooked_name} "
+                    f"required for this XODR ({package_xodr_sha256}); "
+                    "refusing the generated-OpenDRIVE fallback for a cooked map"
+                )
             if os.environ.get("UNISCENARIO_CARLA_ALLOW_GENERATED_XODR") != "1":
                 raise RuntimeError(
                     f"CARLA runtime does not contain exactly one cooked custom map named {requested_name}"
@@ -634,10 +790,23 @@ class CarlaBackend:
         self.spawn_planar_targets: dict[str, tuple[float, float]] = {}
         placements: dict[str, dict[str, Any]] = {}
         placed_footprints: list[tuple[float, float, float, float, float, float]] = []
+        # Actors the executor decided to drop before any CARLA body exists
+        # (e.g. authored knockdown poses native physics cannot execute). They
+        # are reported exactly like spawn-placement drops.
+        execution_drops: Mapping[str, str] = getattr(self, "execution_drops", {})
         library = self.world.get_blueprint_library()
         for actor_id, binding in actors.items():
             check()
             state = first_frame.actors[actor_id]
+            if actor_id in execution_drops:
+                self.dropped_actor_ids.add(actor_id)
+                placements[actor_id] = {
+                    "outcome": "dropped",
+                    "cause": "execution-semantics",
+                    "reason": execution_drops[actor_id],
+                    "authored": {"x": state.x, "y": state.y, "z": state.z},
+                }
+                continue
             entry = catalog.get(binding.catalog_name, {}) if isinstance(catalog, Mapping) else {}
             blueprint_id = entry.get("blueprintId") if isinstance(entry, Mapping) else None
             if not isinstance(blueprint_id, str) or not blueprint_id:
@@ -1294,8 +1463,16 @@ class CarlaBackend:
                 for name, value in quality_attributes[spec.quality].items():
                     if blueprint.has_attribute(name):
                         blueprint.set_attribute(name, value)
-                extension = "png"
-                converter = None if requested.modality == "rgb" else self.carla.ColorConverter.Raw
+                extension = "mp4"
+                # Camera pixels exist only as encoded video, so conversion picks
+                # the stream's visual representation: depth maps logarithmically,
+                # semantic ids use the CityScapes palette, instance ids stay raw.
+                converter = (
+                    None if requested.modality == "rgb"
+                    else self.carla.ColorConverter.LogarithmicDepth if requested.modality == "depth"
+                    else self.carla.ColorConverter.CityScapesPalette if requested.modality == "semantic"
+                    else self.carla.ColorConverter.Raw
+                )
             elif requested.modality in {"lidar", "semantic-lidar"}:
                 attributes = {
                     "channels": config["channels"],
@@ -1464,42 +1641,35 @@ class CarlaBackend:
             "cameras": cameras,
         }
 
-    def _rgb_encoder(self, sensor_key: str, config: dict[str, Any]) -> Any:
-        """Lazily start a rawvideo->mp4 encoder so RGB frames never touch disk."""
+    def _camera_encoder(self, sensor_key: str, config: dict[str, Any]) -> _CameraStreamEncoder:
+        """Every camera's frames stream straight into ffmpeg; disk frame files were removed."""
         encoder = config.get("encoder")
         if encoder is not None:
             return encoder
-        if os.environ.get("UNISCENARIO_RGB_STDOUT_VIDEO") != "1":
-            return None
-        width = int(config["config"]["width"])
-        height = int(config["config"]["height"])
-        fps = max(1, int(round(1.0 / float(self.fixed_timestep_s))))
-        destination = config["target"] / "stream.mp4"
-        command = [
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-f", "rawvideo", "-pix_fmt", "bgra",
-            "-s", f"{width}x{height}", "-r", str(fps), "-i", "-",
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
-            "-pix_fmt", "yuv420p", str(destination),
-        ]
-        process = subprocess.Popen(command, stdin=subprocess.PIPE)
-        config["encoder"] = process
-        return process
+        fps = float(self.video_fps) if self.video_fps else max(1.0, round(1.0 / float(self.fixed_timestep_s)))
+        encoder = _CameraStreamEncoder(
+            sensor_key,
+            int(config["config"]["width"]),
+            int(config["config"]["height"]),
+            fps,
+            config["converter"],
+            config["target"] / "stream.mp4",
+        )
+        config["encoder"] = encoder
+        return encoder
 
-    def _close_rgb_encoders(self) -> None:
+    def _close_camera_encoders(self) -> None:
         for sensor_key, config in sorted(self.sensor_configs.items()):
             encoder = config.get("encoder")
             if encoder is None:
                 continue
             try:
-                encoder.stdin.close()
-                code = encoder.wait(timeout=300)
-                if code != 0:
-                    raise RuntimeError(f"RGB stream encoder {sensor_key} exited with {code}")
+                encoder.close()
             except Exception as exc:
-                raise RuntimeError(f"RGB stream encoder {sensor_key} failed: {exc}") from exc
+                raise RuntimeError(f"camera stream encoder {sensor_key} failed: {exc}") from exc
             finally:
                 config["encoder"] = None
+
 
     def _write_sensor_frame(
         self,
@@ -1513,10 +1683,10 @@ class CarlaBackend:
         converter = config["converter"]
         if config["modality"] == "rgb" and hasattr(data, "raw_data"):
             self._sample_rgb_visual_quality(sensor_key, data)
-        encoder = self._rgb_encoder(sensor_key, config) if config["modality"] == "rgb" else None
-        if encoder is not None:
-            target = config["target"] / "stream.mp4"
-            encoder.stdin.write(memoryview(data.raw_data))
+        if config["modality"] in CAMERA_MODALITIES:
+            encoder = self._camera_encoder(sensor_key, config)
+            target = encoder.destination
+            encoder.submit(data)
             size = 0
             relative = f"{sensor_key}/stream.mp4"
         else:
@@ -2100,7 +2270,7 @@ class CarlaBackend:
                     f"sensor {sensor_key} capture is not frame-closed: "
                     f"{len(indexes)} of {expected_frame_count}"
                 )
-        self._close_rgb_encoders()
+        self._close_camera_encoders()
         if any(config["modality"] == "rgb" for config in self.sensor_configs.values()):
             self.visual_quality_evidence = dict(self._visual_quality_report())
             if self.visual_quality_evidence["verdict"] != "pass":
@@ -2129,7 +2299,7 @@ class CarlaBackend:
             encoder = config.get("encoder") if isinstance(config, dict) else None
             if encoder is not None:
                 try:
-                    encoder.kill()
+                    encoder.abort()
                 except Exception:
                     pass
                 config["encoder"] = None

@@ -1,7 +1,6 @@
 from __future__ import annotations
 import shutil
 
-from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import gzip
 import json
@@ -40,10 +39,10 @@ from .contract import (
     MAX_XODR_BYTES,
     MAX_XOSC_BYTES,
     SCHEMA,
-    SENSOR_FORMATS,
     reject_unsafe_xml_envelope,
 )
 from .parity import ParityAccumulator
+from .sensor_video import encode_sensor_video
 from .materialized_traffic import merge_materialized_traffic, parse_materialized_traffic
 from .validation import validate_xosc14
 
@@ -180,73 +179,47 @@ def _archive_sensor_data(
     return destination
 
 
-def _expected_frame_paths(
-    sensor_dir: Path,
-    expected_frame_count: int,
-    extension: str,
-    abort: Callable[[], None] | None = None,
-) -> list[Path]:
-    if abort:
-        abort()
-    frames = sorted(sensor_dir.glob(f"*.{extension}"))
-    expected = [sensor_dir / f"{index:08d}.{extension}" for index in range(expected_frame_count)]
-    if abort:
-        abort()
-    if frames != expected:
-        raise RuntimeError(
-            f"sensor {sensor_dir.name} produced {len(frames)} of {expected_frame_count} exact {extension} frames"
-        )
-    return frames
-
-
-def _archive_frames(
-    sensor_dir: Path,
+def _collect_camera_video(
+    frame_dir: Path,
+    camera_name: str,
+    fps: float,
     destination: Path,
     expected_frame_count: int,
-    extension: str,
-    max_bytes: int,
-    check_abort: Callable[[str, int, int], None],
-) -> Path:
-    frames = _expected_frame_paths(
-        sensor_dir, expected_frame_count, extension,
-        lambda: check_abort("archive_frames", 0, expected_frame_count),
-    )
-    source_bytes = 0
-    for index, frame in enumerate(frames):
-        check_abort("archive_frames", index, expected_frame_count)
-        source_bytes += frame.stat().st_size
-    if source_bytes + len(frames) * 512 + 1024 > max_bytes:
-        raise ContractError(f"frames archive {sensor_dir.name} exceeds its pre-allocation budget")
-    with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        for index, frame in enumerate(frames):
-            check_abort("archive_frames", index, expected_frame_count)
-            with frame.open("rb") as source, archive.open(f"{sensor_dir.name}/{frame.name}", "w") as target:
-                while chunk := source.read(1024 * 1024):
-                    check_abort("archive_frames", index, expected_frame_count)
-                    target.write(chunk)
-    if destination.stat().st_size > max_bytes:
-        raise ContractError(f"frames archive {sensor_dir.name} exceeds its output budget")
-    check_abort("archive_frames", expected_frame_count, expected_frame_count)
-    return destination
-
-def _archive_and_hash(
-    sensor_dir: Path,
-    destination: Path,
-    expected_frame_count: int,
-    extension: str,
     max_bytes: int,
     check_abort: Callable[[str, int, int], None],
     deadline_monotonic: Callable[[], float],
-) -> tuple[Path, str]:
-    archive = _archive_frames(
-        sensor_dir, destination, expected_frame_count, extension, max_bytes, check_abort,
-    )
-    digest = _body_digest(
-        archive,
-        deadline_monotonic,
-        lambda: check_abort("hash_frames_archive", expected_frame_count, expected_frame_count),
-    )
-    return archive, digest
+) -> Path:
+    """Adopt the camera's streamed h264 file and prove it frame-closed.
+
+    Individual camera frames are never written to disk: the backend pipes raw
+    frames into one ffmpeg encoder per camera and this collector validates the
+    resulting stream against the capture schedule.
+    """
+    stream = frame_dir / camera_name / "stream.mp4"
+    if not stream.is_file() or stream.stat().st_size == 0:
+        raise RuntimeError(f"camera {camera_name} produced no encoded video stream")
+    if stream.stat().st_size > max_bytes:
+        raise ContractError(f"camera video {camera_name} exceeds its output budget")
+    probe = _run_process([
+        "ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0",
+        "-show_entries", "stream=nb_read_frames,duration", "-of", "json", str(stream),
+    ], "probe_video", check_abort, deadline_monotonic)
+    if probe.returncode:
+        raise RuntimeError(f"ffprobe failed: {probe.stderr.decode(errors='replace')}")
+    try:
+        stream_info = json.loads(probe.stdout)["streams"][0]
+        frame_count = int(stream_info["nb_read_frames"])
+        duration = float(stream_info["duration"])
+    except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError("ffprobe did not return frame-closed video metadata") from exc
+    expected_duration = expected_frame_count / fps
+    if frame_count != expected_frame_count or abs(duration - expected_duration) > (1 / fps):
+        raise RuntimeError(
+            f"camera video {camera_name} is not frame-closed: {frame_count} frames/{duration}s, "
+            f"expected {expected_frame_count}/{expected_duration}s"
+        )
+    shutil.copyfile(stream, destination)
+    return destination
 
 
 def _pronto_rig_sensor_count(lease: Lease) -> int:
@@ -256,70 +229,6 @@ def _pronto_rig_sensor_count(lease: Lease) -> int:
         if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
     )
 
-
-def _encode_video(
-    frame_dir: Path,
-    camera_id: str,
-    fps: float,
-    destination: Path,
-    expected_frame_count: int,
-    max_bytes: int,
-    check_abort: Callable[[str, int, int], None],
-    deadline_monotonic: Callable[[], float],
-) -> Path:
-    camera_dir = frame_dir / camera_id
-    if not camera_dir.is_dir():
-        raise RuntimeError("video output requested but the backend produced no camera frames")
-    stream = camera_dir / "stream.mp4"
-    if stream.exists() and stream.stat().st_size > 0:
-        shutil.copyfile(stream, destination)
-        return destination
-    frames = _expected_frame_paths(camera_dir, expected_frame_count, "png", lambda: check_abort("encode_video", 0, expected_frame_count))
-    source_bytes = 0
-    for index, frame in enumerate(frames):
-        check_abort("encode_video", index, expected_frame_count)
-        source_bytes += frame.stat().st_size
-    if source_bytes > max_bytes:
-        raise ContractError("video source frames exceed the pre-allocation output budget")
-    encoder = os.environ.get("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
-    if encoder not in {"software", "nvidia"}:
-        raise RuntimeError("UNISCENARIO_PRESENTATION_VIDEO_ENCODER must be software or nvidia")
-    codec = "h264_nvenc" if encoder == "nvidia" else "libx264"
-    quality_options = (
-        ["-preset", "p5", "-cq", "17", "-profile:v", "high"]
-        if encoder == "nvidia"
-        else ["-preset", "medium", "-crf", "17", "-profile:v", "high", "-level:v", "4.2"]
-    )
-    result = _run_process([
-        "ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps),
-        "-start_number", "0", "-i", str(camera_dir / "%08d.png"),
-        "-frames:v", str(expected_frame_count),
-        "-c:v", codec, *quality_options, "-pix_fmt", "yuv420p",
-        "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709",
-        "-movflags", "+faststart", "-fs", str(max_bytes), str(destination),
-    ], "encode_video", check_abort, deadline_monotonic)
-    if result.returncode:
-        raise RuntimeError(f"ffmpeg failed: {result.stderr.decode(errors='replace')}")
-    probe = _run_process([
-        "ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0",
-        "-show_entries", "stream=nb_read_frames,duration", "-of", "json", str(destination),
-    ], "probe_video", check_abort, deadline_monotonic)
-    if probe.returncode:
-        raise RuntimeError(f"ffprobe failed: {probe.stderr.decode(errors='replace')}")
-    try:
-        stream = json.loads(probe.stdout)["streams"][0]
-        frame_count = int(stream["nb_read_frames"])
-        duration = float(stream["duration"])
-    except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
-        raise RuntimeError("ffprobe did not return frame-closed video metadata") from exc
-    expected_duration = expected_frame_count / fps
-    if frame_count != expected_frame_count or abs(duration - expected_duration) > (1 / fps):
-        raise RuntimeError(
-            f"encoded video is not frame-closed: {frame_count} frames/{duration}s, expected {expected_frame_count}/{expected_duration}s"
-        )
-    if destination.stat().st_size > max_bytes:
-        raise ContractError("video exceeds its output budget")
-    return destination
 
 
 def _run_process(
@@ -415,10 +324,35 @@ def _appearance_capability(plan: ExecutionPlan, abort: Callable[[], None] | None
     }
 
 
-def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
-    """Reject semantics the selected execution mode cannot honestly execute."""
+def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> dict[str, str]:
+    """Reject semantics the selected execution mode cannot honestly execute.
+
+    Returns the actors to drop before spawn (with the recorded reason):
+    authored knockdown poses cannot execute under native physics without a
+    post-spawn teleport repair, so the posed actor is dropped and reported in
+    the manifest instead of failing the whole render.
+    """
     if lease.render_spec.execution_mode != "native-physics":
-        return
+        return {}
+    downed_actors = sorted({
+        actor_id
+        for frame in plan.frames
+        for actor_id, state in frame.actors.items()
+        if state.downed
+    })
+    execution_drops = {
+        actor_id: "native physics cannot execute authored knockdown poses without post-spawn teleport repair"
+        for actor_id in downed_actors
+    }
+    dropped_mounts = sorted({
+        sensor.actor_id for sensor in lease.render_spec.sensors
+        if sensor.actor_id in execution_drops
+    })
+    if dropped_mounts:
+        raise ContractError(
+            "native sensors cannot attach to knockdown-posed actors that are dropped from execution: "
+            + ", ".join(dropped_mounts)
+        )
     appearance = _appearance_capability(plan)
     if appearance["unrenderedCues"]:
         raise ContractError(
@@ -429,7 +363,8 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
         actor_id
         for frame in plan.frames
         for actor_id, state in frame.actors.items()
-        if state.speed_mps < -1e-6
+        if actor_id not in execution_drops
+        and state.speed_mps < -1e-6
         and plan.actors[actor_id].kind not in {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
     })
     if reverse_non_vehicles:
@@ -437,22 +372,12 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
             "native physics cannot execute signed reverse motion for non-vehicle actors: "
             + ", ".join(reverse_non_vehicles)
         )
-    downed_actors = sorted({
-        actor_id
-        for frame in plan.frames
-        for actor_id, state in frame.actors.items()
-        if state.downed
-    })
-    if downed_actors:
-        raise ContractError(
-            "native physics cannot execute authored knockdown poses without post-spawn teleport repair: "
-            + ", ".join(downed_actors)
-        )
     unsupported_moving = sorted({
         actor_id
         for frame in plan.frames
         for actor_id, state in frame.actors.items()
-        if abs(state.speed_mps) > 1e-6
+        if actor_id not in execution_drops
+        and abs(state.speed_mps) > 1e-6
         and plan.actors[actor_id].kind in {"animal", "static", "static_object"}
     })
     if unsupported_moving:
@@ -465,7 +390,8 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
         actor_id
         for frame in plan.frames
         for actor_id, state in frame.actors.items()
-        if any(key.startswith(("light.", "door.")) for key in state.appearance)
+        if actor_id not in execution_drops
+        and any(key.startswith(("light.", "door.")) for key in state.appearance)
         and plan.actors[actor_id].kind not in vehicle_kinds
     })
     if invalid_vehicle_appearance:
@@ -483,6 +409,7 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> None:
             "native sensors cannot remain frame-closed when their attached actor is deleted: "
             + ", ".join(invalid_mounts)
         )
+    return execution_drops
 
 
 def _optional_backend_call(backend: RenderBackend, name: str, *args: object, abort: Callable[[], None]) -> Any:
@@ -852,15 +779,21 @@ def _parity_evidence(
         str(item.get("kind")) for item in artifacts
         if isinstance(item.get("kind"), str)
     }
-    expected_kinds: set[str] = set()
-    for output in lease.render_spec.outputs:
-        if output == "frames":
-            expected_kinds.update(
-                f"framesArchive:{sensor.artifact_name}"
-                for sensor in lease.render_spec.sensors
-            )
-        else:
-            expected_kinds.add(output)
+    expected_kinds: set[str] = set(lease.render_spec.outputs)
+    if "video" in lease.render_spec.outputs:
+        primary_rgb = next(
+            (sensor for sensor in lease.render_spec.sensors if sensor.modality == "rgb"), None,
+        )
+        expected_kinds.update(
+            f"sensorVideo:{sensor.artifact_name}"
+            for sensor in lease.render_spec.sensors
+            if sensor is not primary_rgb
+        )
+    expected_kinds.update(
+        f"sensorData:{sensor.artifact_name}"
+        for sensor in lease.render_spec.sensors
+        if sensor.modality in {"lidar", "semantic-lidar", "radar"}
+    )
     if lease.render_spec.execution_mode == "native-physics":
         expected_kinds.update({"manifest", "parity-report"})
     predicted_kinds = {
@@ -923,10 +856,16 @@ def _parity_evidence(
         })
     for actor_id in dropped_actor_ids:
         details = placement_actors.get(actor_id)
+        details = dict(details) if isinstance(details, Mapping) else {}
+        dropped_kind = (
+            "dropped-execution-semantics"
+            if details.get("cause") == "execution-semantics"
+            else "dropped-unplaceable"
+        )
         divergences.append({
-            "code": f"spawn-placement:dropped-unplaceable:{actor_id}",
+            "code": f"spawn-placement:{dropped_kind}:{actor_id}",
             "classification": "spawn-placement-drop",
-            "details": dict(details) if isinstance(details, Mapping) else {},
+            "details": details,
         })
     for actor_id in nudged_actor_ids:
         details = placement_actors.get(actor_id)
@@ -1114,15 +1053,10 @@ def _enforce_render_budgets(lease: Lease, plan: ExecutionPlan, capture_count: in
         if sensor.modality in {"lidar", "semantic-lidar", "radar"}:
             bytes_per_point = 24 if sensor.modality == "semantic-lidar" else 16
             point_bytes += int(sensor.config["pointsPerSecond"]) * bytes_per_point * duration
+    # Cameras never land raw frames on disk: each streams into its ffmpeg
+    # encoder and only the encoded mp4 plus per-frame bookkeeping remains.
     frame_file_count = len(lease.render_spec.sensors) * capture_count
-    projected_bytes = camera_pixels * 4 + point_bytes + frame_file_count * 4096
-    if os.environ.get("UNISCENARIO_RGB_STDOUT_VIDEO") == "1":
-        # streamed rgb: rawvideo pipes into ffmpeg, so only the encoded mp4 lands on disk
-        projected_bytes -= sum(
-            int(sensor.config["width"]) * int(sensor.config["height"]) * capture_count * 4
-            for sensor in lease.render_spec.sensors
-            if sensor.modality == "rgb"
-        )
+    projected_bytes = point_bytes + frame_file_count * 4096
     if projected_bytes > MAX_OUTPUT_BYTES:
         raise ContractError("projected raw capture exceeds the temporary-disk budget")
 
@@ -1308,7 +1242,7 @@ def execute_lease(
             frozenset(execution_manifest["materializedTraffic"]["overlapActorIds"]),
         )
     check_abort("compile_xosc")
-    _preflight_execution_semantics(lease, plan)
+    execution_drops = _preflight_execution_semantics(lease, plan)
     actor_ids = set(plan.actors)
     unknown_mounts = sorted({
         sensor.actor_id for sensor in lease.render_spec.sensors
@@ -1374,6 +1308,12 @@ def execute_lease(
             backend_fence("configure_environment")
             backend.configure_environment(lease.render_spec.environment)
             check_abort("configure_environment")
+            if execution_drops:
+                # Knockdown-posed actors are dropped from execution before any
+                # CARLA body exists; spawn records them in the placement report
+                # so the manifest carries an explicit per-actor diagnostic.
+                backend.execution_drops = dict(execution_drops)  # type: ignore[attr-defined]
+                emit("execution_actors_dropped", {"actorIds": sorted(execution_drops)})
             backend.spawn(plan.actors, plan.frames[0], catalog, abort=lambda: backend_fence("spawn_actors"))
             check_abort("spawn_actors")
             spawn_placement = _optional_backend_call(
@@ -1500,82 +1440,92 @@ def execute_lease(
         if "trace" in lease.render_spec.outputs or "trace" in lease.artifact_uploads:
             trace_body = _trace_to_path(plan, readbacks, signal_readbacks, collision_readbacks, package.control_sha256, package.source_input_digest, package.materialized_traffic_digest, Path(directory) / "trace.json.gz", min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes), lambda: check_abort("serialize_trace"))
             add_artifact(make_artifact("trace", trace_body, "application/gzip", lease.artifact_uploads.get("trace"), {"format": "json", "contentEncoding": "gzip"}))
-        if "frames" in lease.render_spec.outputs:
-            archive_limit = min(MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes, artifact_temp_limit)
-            worker_count = max(1, min(8, len(lease.render_spec.sensors)))
-            with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="carla-archive") as pool:
-                pending_archives = [
-                    (
-                        sensor,
-                        pool.submit(
-                            _archive_and_hash,
-                            output_dir / sensor.artifact_name,
-                            Path(directory) / f"sensor-{index:02d}.zip",
-                            expected_capture_count,
-                            SENSOR_FORMATS[sensor.modality],
-                            archive_limit,
-                            check_abort,
-                            absolute_deadline,
-                        ),
-                    )
-                    for index, sensor in enumerate(lease.render_spec.sensors)
-                ]
-                archives = [
-                    (sensor, *future.result())
-                    for sensor, future in pending_archives
-                ]
-            for sensor, body, archive_digest in archives:
-                upload_kind = f"framesArchive:{sensor.artifact_name}"
+        if "video" in lease.render_spec.outputs:
+            check_abort("collect_camera_videos", len(plan.frames), len(plan.frames))
+            video_encoder = os.environ.get("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
+            camera_sensors = [
+                sensor for sensor in lease.render_spec.sensors
+                if sensor.modality in CAMERA_MODALITIES
+            ]
+            primary_rgb_sensor = next(
+                sensor for sensor in camera_sensors if sensor.modality == "rgb"
+            )
+            for index, sensor in enumerate(camera_sensors):
+                remaining_bytes = min(MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes, artifact_temp_limit)
+                body = _collect_camera_video(
+                    output_dir,
+                    sensor.artifact_name,
+                    lease.render_spec.fps,
+                    Path(directory) / f"camera-video-{index:02d}.mp4",
+                    expected_capture_count,
+                    remaining_bytes,
+                    check_abort,
+                    absolute_deadline,
+                )
+                check_abort("collect_camera_videos", len(plan.frames), len(plan.frames))
+                # The primary RGB camera's stream doubles as the review MP4
+                # ("video"); every other camera uploads its own stream.
+                upload_kind = (
+                    "video" if sensor is primary_rgb_sensor
+                    else f"sensorVideo:{sensor.artifact_name}"
+                )
                 add_artifact(make_artifact(
                     upload_kind,
                     body,
-                    "application/zip",
+                    "video/mp4",
                     lease.artifact_uploads.get(upload_kind),
                     {
-                        "outputName": sensor.role,
                         "actorId": sensor.actor_id,
                         "sensorId": sensor.sensor_id,
                         "modality": sensor.modality,
-                        "format": SENSOR_FORMATS[sensor.modality],
+                        "outputName": sensor.role,
+                        "codec": "h264",
+                        "container": "mp4",
+                        "format": "mp4-h264",
+                        "encoder": video_encoder,
+                        "width": int(sensor.config["width"]),
+                        "height": int(sensor.config["height"]),
                         "frameCount": expected_capture_count,
                         "fps": lease.render_spec.fps,
                         "durationS": plan.frames[-1].t,
                     },
-                    archive_digest,
                 ))
-        if "video" in lease.render_spec.outputs:
-            check_abort("encode_video", len(plan.frames), len(plan.frames))
-            primary_rgb_sensor = next(
+            visualization_sensors = [
                 sensor for sensor in lease.render_spec.sensors
-                if sensor.modality == "rgb"
-            )
-            remaining_bytes = min(MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes, artifact_temp_limit)
-            body = _encode_video(
-                output_dir,
-                primary_rgb_sensor.artifact_name,
-                lease.render_spec.fps,
-                Path(directory) / "render.mp4",
-                expected_capture_count,
-                remaining_bytes,
-                check_abort,
-                absolute_deadline,
-            )
-            check_abort("encode_video", len(plan.frames), len(plan.frames))
-            add_artifact(make_artifact(
-                "video",
-                body,
-                "video/mp4",
-                lease.artifact_uploads.get("video"),
-                {
-                    "actorId": primary_rgb_sensor.actor_id,
-                    "sensorId": primary_rgb_sensor.sensor_id,
-                    "modality": primary_rgb_sensor.modality,
-                    "outputName": primary_rgb_sensor.role,
-                    "frameCount": expected_capture_count,
-                    "fps": lease.render_spec.fps,
-                    "durationS": plan.frames[-1].t,
-                },
-            ))
+                if sensor.modality in {"lidar", "semantic-lidar", "radar"}
+            ]
+            for index, sensor in enumerate(visualization_sensors):
+                check_abort("encode_sensor_visualization", index, len(visualization_sensors))
+                remaining_bytes = min(MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes, artifact_temp_limit)
+                viz_body = encode_sensor_video(
+                    sensor,
+                    output_dir,
+                    Path(directory) / f"sensor-viz-{index:02d}.mp4",
+                    lease.render_spec.fps,
+                    expected_capture_count,
+                    remaining_bytes,
+                    lambda: check_abort("encode_sensor_visualization", index, len(visualization_sensors)),
+                )
+                upload_kind = f"sensorVideo:{sensor.artifact_name}"
+                add_artifact(make_artifact(
+                    upload_kind,
+                    viz_body,
+                    "video/mp4",
+                    lease.artifact_uploads.get(upload_kind),
+                    {
+                        "actorId": sensor.actor_id,
+                        "sensorId": sensor.sensor_id,
+                        "modality": sensor.modality,
+                        "outputName": sensor.role,
+                        "codec": "h264",
+                        "container": "mp4",
+                        "format": "mp4-h264",
+                        "representation": "visualization",
+                        "frameCount": expected_capture_count,
+                        "fps": lease.render_spec.fps,
+                        "durationS": plan.frames[-1].t,
+                    },
+                ))
         data_sensors = [
             sensor for sensor in lease.render_spec.sensors
             if sensor.modality in {"lidar", "semantic-lidar", "radar"}

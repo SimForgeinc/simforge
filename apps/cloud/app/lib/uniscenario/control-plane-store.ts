@@ -171,7 +171,7 @@ const REQUIRED_SENSOR_KINDS = [
   "semantic_lidar",
   "radar",
 ] as const;
-const REQUIRED_OUTPUTS = ["frames", "video", "trace", "manifest", "annotations"] as const;
+const REQUIRED_OUTPUTS = ["video", "trace", "manifest", "annotations"] as const;
 const REQUIRED_WORKER_LIMITS = {
   maxDurationS: 120,
   maxSensors: 4,
@@ -324,7 +324,7 @@ export async function getUniScenarioControlPlaneHealth(workerNodeId?: string | n
            AND w.capabilities->'trafficModes' = '["disabled","native","sumo"]'::jsonb
            AND w.capabilities->'executionModes' = '["native-physics"]'::jsonb
            AND w.capabilities->'sensorKinds' = '["rgb","depth","semantic","instance","normals","lidar","semantic_lidar","radar"]'::jsonb
-           AND w.capabilities->'outputs' = '["frames","video","trace","manifest","annotations"]'::jsonb
+           AND w.capabilities->'outputs' = '["video","trace","manifest","annotations"]'::jsonb
            AND w.capabilities->'limits' = '{"maxDurationS":120,"maxSensors":4,"maxCaptureFrames":14400,"maxActors":256,"maxActorFrameStates":2000000,"maxSensorPixels":450000000,"maxOutputBytes":2147483648,"maxCameraWidth":1920,"maxCameraHeight":1080,"maxPixelsPerFrame":8294400}'::jsonb
        ) END AS worker_registered`,
     { worker_node_id: workerNodeId ?? "", environment },
@@ -1635,6 +1635,16 @@ export function executionPackageControlSha256(value: Record<string, unknown>): s
   return canonicalJsonSha256(stripPackageUrls(value));
 }
 
+/**
+ * The stable artifact name the CARLA bridge derives for a sensor
+ * (`Sensor.artifact_name` = `role:actor:sensorId:modality`). The legacy
+ * render-spec/v1 sensor carries one `id` for both the role and the sensor id.
+ */
+function bridgeSensorArtifactName(sensor: RenderSpec["sensors"][number]): string {
+  const modality = sensor.kind === "semantic_lidar" ? "semantic-lidar" : sensor.kind;
+  return `${sensor.id}:${sensor.attachTo}:${sensor.id}:${modality}`;
+}
+
 function outputReservations(row: LeaseSourceRow, attemptId: string, expiresAt: string): UploadReservation[] {
   const outputs = new Set(row.render_spec.outputs);
   const specs: Array<[string, string]> = [
@@ -1656,9 +1666,24 @@ function outputReservations(row: LeaseSourceRow, attemptId: string, expiresAt: s
     });
   }
   specs.push(["manifest", "application/json"]);
-  if (outputs.has("video")) specs.push(["video", "video/mp4"]);
-  if (outputs.has("frames")) {
-    for (const sensor of row.render_spec.sensors) specs.push([`sensorArchive-${sensor.id}`, "application/zip"]);
+  const sensors = row.render_spec.sensors;
+  if (outputs.has("video")) {
+    specs.push(["video", "video/mp4"]);
+    // Every sensor gets its own encoded video: cameras stream their pixels,
+    // lidar/radar get visualizations. The primary RGB camera's stream IS the
+    // review "video" upload, so it is not reserved twice.
+    const primaryRgb = sensors.find((sensor) => sensor.kind === "rgb");
+    for (const sensor of sensors) {
+      if (sensor === primaryRgb) continue;
+      specs.push([`sensorVideo:${bridgeSensorArtifactName(sensor)}`, "video/mp4"]);
+    }
+  }
+  // Lidar/radar measurement data always uploads; camera frame archives were
+  // removed outright (cameras are video-only).
+  for (const sensor of sensors) {
+    if (sensor.kind === "lidar" || sensor.kind === "semantic_lidar" || sensor.kind === "radar") {
+      specs.push([`sensorData:${bridgeSensorArtifactName(sensor)}`, "application/zip"]);
+    }
   }
   if (outputs.has("annotations")) specs.push(["annotations", "application/x-ndjson"]);
   const bucket = artifactBucket();
@@ -1942,7 +1967,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
          AND capabilities->'trafficModes' = '["disabled","native","sumo"]'::jsonb
          AND capabilities->'executionModes' = '["native-physics"]'::jsonb
          AND capabilities->'sensorKinds' = '["rgb","depth","semantic","instance","normals","lidar","semantic_lidar","radar"]'::jsonb
-         AND capabilities->'outputs' = '["frames","video","trace","manifest","annotations"]'::jsonb
+         AND capabilities->'outputs' = '["video","trace","manifest","annotations"]'::jsonb
          AND capabilities->'limits' = '{"maxDurationS":120,"maxSensors":4,"maxCaptureFrames":14400,"maxActors":256,"maxActorFrameStates":2000000,"maxSensorPixels":450000000,"maxOutputBytes":2147483648,"maxCameraWidth":1920,"maxCameraHeight":1080,"maxPixelsPerFrame":8294400}'::jsonb
          AND NOT EXISTS (
            SELECT 1 FROM uniscenario.worker_leases active
@@ -2607,20 +2632,23 @@ export function renderSensorArtifactMetadataError(
   renderSpec: RenderSpec,
   artifact: Pick<CompletionArtifact, "kind" | "metadata">,
 ): string | null {
-  if (!artifact.kind.startsWith("sensorArchive-")) return null;
+  const sensorScoped = artifact.kind.startsWith("sensorData:") || artifact.kind.startsWith("sensorVideo:");
+  if (!sensorScoped) return null;
+  const artifactName = artifact.kind.slice(artifact.kind.indexOf(":") + 1);
   const sensor = renderSpec.sensors.find(
-    (candidate) => `sensorArchive-${candidate.id}` === artifact.kind,
+    (candidate) => bridgeSensorArtifactName(candidate) === artifactName,
   );
   if (!sensor) return "artifact_sensor_identity_unknown";
-  const expectedFormat = sensor.kind === "lidar" || sensor.kind === "semantic_lidar"
-    ? "ply"
-    : sensor.kind === "radar"
-      ? "csv"
-      : "png";
+  if (
+    artifact.kind.startsWith("sensorData:")
+    && sensor.kind !== "lidar" && sensor.kind !== "semantic_lidar" && sensor.kind !== "radar"
+  ) {
+    return "artifact_sensor_metadata_mismatch";
+  }
+  const modality = sensor.kind === "semantic_lidar" ? "semantic-lidar" : sensor.kind;
   if (
     artifact.metadata?.sensorId !== sensor.id ||
-    artifact.metadata.sensorKind !== sensor.kind ||
-    artifact.metadata.format !== expectedFormat
+    artifact.metadata.modality !== modality
   ) {
     return "artifact_sensor_metadata_mismatch";
   }
