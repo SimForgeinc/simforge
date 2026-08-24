@@ -39,9 +39,10 @@ for host in "$@"; do
   (
     h0=$(date +%s)
     git push --quiet --force "ssh://$host$NATIVE/repo.git" "$rev:refs/heads/deploy"
-    ssh -o BatchMode=yes "$host" "$NATIVE/src/services/render-worker/native/sync-host.sh '$rev' \
-      || { git --git-dir=$NATIVE/repo.git --work-tree=$NATIVE/src checkout --detach -f '$rev' \
-           && $NATIVE/src/services/render-worker/native/sync-host.sh '$rev'; }"
+    # Run the sync script AT the deployed revision from a stable temp path —
+    # never execute a script that the checkout is about to replace under it.
+    git show "$rev:services/render-worker/native/sync-host.sh" \
+      | ssh -o BatchMode=yes "$host" "cat > /tmp/uniscenarios-sync-host.sh && bash /tmp/uniscenarios-sync-host.sh '$rev'"
     echo "[$host] done in $(( $(date +%s) - h0 ))s"
   ) &
   pids+=($!)
