@@ -48,9 +48,13 @@ const CARLA_CAPABILITIES: EngineCapabilityDeclaration = {
 };
 
 class CarlaProcessEngine implements RenderEngineAdapter {
-  readonly capabilities = CARLA_CAPABILITIES;
+  readonly capabilities: EngineCapabilityDeclaration;
 
-  constructor(private readonly binary: string) {}
+  constructor(private readonly binary: string, engineVersion?: string) {
+    this.capabilities = engineVersion
+      ? { ...CARLA_CAPABILITIES, engineVersion }
+      : CARLA_CAPABILITIES;
+  }
 
   async execute(context: RenderExecutionContext): Promise<RenderArtifactManifest> {
     await mkdir(context.workspace, { recursive: true });
@@ -147,5 +151,8 @@ export async function loadBuiltinRenderEngine(
   const binary = typeof options.binary === 'string'
     ? options.binary
     : process.env.UNISCENARIOS_CARLA_BINARY ?? 'uniscenarios-carla';
-  return new CarlaProcessEngine(binary);
+  // Host-native deployments report the deployed git revision as the engine
+  // version so worker_nodes provenance carries the exact source commit.
+  const engineVersion = typeof options.engineVersion === 'string' ? options.engineVersion : undefined;
+  return new CarlaProcessEngine(binary, engineVersion);
 }

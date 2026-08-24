@@ -9,6 +9,7 @@ import {
   RenderProgressRecordSchema,
   UnsupportedRenderIntentError,
   abortableDelay,
+  EngineCapabilityDeclarationSchema,
   assertEngineSupportsIntent,
   createFixedSchedules,
   hashFile,
@@ -17,6 +18,7 @@ import {
   loadRenderEngine,
   type CompletedArtifact,
   type JobLeasedResponse,
+  type EngineCapability,
   type RenderEngineAdapter,
   type RenderProgressRecord,
 } from '@uniscenarios/render-runtime';
@@ -44,8 +46,42 @@ function failureOf(error: unknown): { code: string; message: string; retryable: 
 }
 
 async function loadConfiguredEngine(config: RenderWorkerConfig): Promise<RenderEngineAdapter> {
-  if ('id' in config.engine) return loadBuiltinRenderEngine(config.engine.id, config.engine.options);
-  return loadRenderEngine(config.engine.module, config.engine.options);
+  const engine = 'id' in config.engine
+    ? await loadBuiltinRenderEngine(config.engine.id, config.engine.options)
+    : await loadRenderEngine(config.engine.module, config.engine.options);
+  return applyValidationLane(engine, config.validationLane);
+}
+
+/**
+ * Staged validation lane: overlay the engine's declared capabilities so the
+ * control plane itself fences this worker off from production claims (fence
+ * capability required by probe specs; dimension clamp rejects fleet-sized
+ * renders) and records staged provenance via the engineVersion override.
+ * The overlaid declaration is re-validated so a bad lane config fails at
+ * startup, never at claim time.
+ */
+function applyValidationLane(
+  engine: RenderEngineAdapter,
+  lane: RenderWorkerConfig['validationLane'],
+): RenderEngineAdapter {
+  if (!lane) return engine;
+  const declared = engine.capabilities;
+  const capabilities = EngineCapabilityDeclarationSchema.parse({
+    ...declared,
+    engineVersion: lane.engineVersion ?? declared.engineVersion,
+    capabilities: declared.capabilities.includes(lane.fenceCapability as EngineCapability)
+      ? [...declared.capabilities]
+      : [...declared.capabilities, lane.fenceCapability],
+    limits: {
+      ...declared.limits,
+      maxWidth: Math.min(declared.limits.maxWidth, lane.maxWidth),
+      maxHeight: Math.min(declared.limits.maxHeight, lane.maxHeight),
+    },
+  });
+  return {
+    capabilities,
+    execute: (context) => engine.execute(context),
+  };
 }
 
 async function runHeartbeat(
