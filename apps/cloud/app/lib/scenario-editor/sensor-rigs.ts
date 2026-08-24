@@ -240,60 +240,58 @@ export const PRESET_SDG_AV: SensorRig = {
 };
 
 /**
- * Pronto port configuration E.
- *
- * Source positions are millimetres in the vehicle-relative frame. Sensor
- * poses use metres, so the values below are converted by 1 / 1000 without
- * otherwise changing the supplied axes or yaw/pitch/roll convention.
+ * Pronto port configuration E. Source positions are millimetres relative to
+ * the roof-platform datum. Values below are canonical vehicle-relative metres:
+ * platform datum x=1.31775 m from vehicle center, z=1.65 m above ground.
  */
 export const PRESET_PRONTO: SensorRig = {
   id: "preset-pronto",
   name: "Pronto Rig",
   isBuiltIn: true,
   sensors: [
-    cam("pronto-cam0", "CAM0", { x: -0.1509, y: -0.7958, z: 0.0517, yaw: 122, pitch: 25 }, {
+    cam("pronto-cam0", "CAM0", { x: 1.16685, y: -0.7958, z: 1.7017, yaw: 122, pitch: 25 }, {
       fov: 120,
       mountId: "pronto-cam0",
       mountLabel: "Front Driver",
       mountRole: "perception",
     }),
-    cam("pronto-cam1", "CAM1", { x: -0.1508, y: 0, z: 0.0517, pitch: 10 }, {
+    cam("pronto-cam1", "CAM1", { x: 1.16695, y: 0, z: 1.7017, pitch: 10 }, {
       fov: 120,
       mountId: "pronto-cam1",
       mountLabel: "Front Center",
       mountRole: "perception",
     }),
-    cam("pronto-cam2", "CAM2", { x: -2.4603, y: -0.7958, z: 0.0517, yaw: 60, pitch: 25 }, {
+    cam("pronto-cam2", "CAM2", { x: -1.14255, y: -0.7958, z: 1.7017, yaw: 60, pitch: 25 }, {
       fov: 120,
       mountId: "pronto-cam2",
       mountLabel: "Rear Driver",
       mountRole: "perception",
     }),
-    cam("pronto-cam3", "CAM3", { x: -0.0484, y: -0.5953, z: 0.0727 }, {
+    cam("pronto-cam3", "CAM3", { x: 1.26935, y: -0.5953, z: 1.7227 }, {
       fov: 30,
       mountId: "pronto-cam3",
       mountLabel: "Front Driver — Falcon mount",
       mountRole: "perception",
     }),
-    cam("pronto-cam4", "CAM4", { x: -2.4603, y: 0.7958, z: 0.0517, yaw: -60, pitch: 25 }, {
+    cam("pronto-cam4", "CAM4", { x: -1.14255, y: 0.7958, z: 1.7017, yaw: -60, pitch: 25 }, {
       fov: 120,
       mountId: "pronto-cam4",
       mountLabel: "Rear Passenger",
       mountRole: "perception",
     }),
-    cam("pronto-cam5", "CAM5", { x: -2.4603, y: 0, z: 0.0517, yaw: 180, pitch: 10 }, {
+    cam("pronto-cam5", "CAM5", { x: -1.14255, y: 0, z: 1.7017, yaw: 180, pitch: 10 }, {
       fov: 120,
       mountId: "pronto-cam5",
       mountLabel: "Rear Center",
       mountRole: "perception",
     }),
-    cam("pronto-cam6", "CAM6", { x: -0.1508, y: 0.7985, z: 0.0517, yaw: -122, pitch: 25 }, {
+    cam("pronto-cam6", "CAM6", { x: 1.16695, y: 0.7985, z: 1.7017, yaw: -122, pitch: 25 }, {
       fov: 120,
       mountId: "pronto-cam6",
       mountLabel: "Front Passenger",
       mountRole: "perception",
     }),
-    cam("pronto-cam7", "CAM7", { x: -0.0616, y: 0.5927, z: 0.0727, pitch: 5 }, {
+    cam("pronto-cam7", "CAM7", { x: 1.25615, y: 0.5927, z: 1.7227, pitch: 5 }, {
       fov: 60,
       mountId: "pronto-cam7",
       mountLabel: "Front Passenger — Falcon mount",
@@ -302,43 +300,43 @@ export const PRESET_PRONTO: SensorRig = {
     lidar(
       "pronto-lidar-front-left",
       "Front left — Seyond Falcon",
-      { x: -0.1159, y: -0.4772, z: 0.1278 },
+      { x: 1.20185, y: -0.4772, z: 1.7778 },
       { horizontalFov: 120, upperFov: 12.5, lowerFov: -12.5 },
     ),
     lidar(
       "pronto-lidar-front-left-wide",
       "Front left wide — Seyond Robin W",
-      { x: -0.1343, y: -0.7671, z: 0.0786, yaw: 120 },
+      { x: 1.18345, y: -0.7671, z: 1.7286, yaw: 120 },
       { horizontalFov: 120, upperFov: 35, lowerFov: -35 },
     ),
     lidar(
       "pronto-lidar-front-right",
       "Front right — Seyond Falcon",
-      { x: -0.1159, y: 0.4798, z: 0.1278 },
+      { x: 1.20185, y: 0.4798, z: 1.7778 },
       { horizontalFov: 120, upperFov: 12.5, lowerFov: -12.5 },
     ),
     lidar(
       "pronto-lidar-front-right-wide",
       "Front right wide — Seyond Robin W",
-      { x: -0.1342, y: 0.7698, z: 0.0786, yaw: -120 },
+      { x: 1.18355, y: 0.7698, z: 1.7286, yaw: -120 },
       { horizontalFov: 120, upperFov: 35, lowerFov: -35 },
     ),
     lidar(
       "pronto-lidar-rear-left",
       "Rear left — Seyond Robin W",
-      { x: -2.4769, y: -0.7671, z: 0.0786, yaw: 60 },
+      { x: -1.15915, y: -0.7671, z: 1.7286, yaw: 60 },
       { horizontalFov: 120, upperFov: 35, lowerFov: -35 },
     ),
     lidar(
       "pronto-lidar-rear-right",
       "Rear right — Seyond Robin W",
-      { x: -2.4769, y: 0.7671, z: 0.0786, yaw: -60 },
+      { x: -1.15915, y: 0.7671, z: 1.7286, yaw: -60 },
       { horizontalFov: 120, upperFov: 35, lowerFov: -35 },
     ),
-    radar("pronto-rad-01", "RAD-01 — Altos V4", { x: -0.0593, y: -0.4871, z: 0.0748 }),
-    radar("pronto-rad-02", "RAD-02 — Altos V4", { x: -0.0593, y: 0.4699, z: 0.0748 }),
-    radar("pronto-rad-03", "RAD-03 — Altos RF6", { x: -2.5871, y: -0.461, z: 0.0315, yaw: 160 }),
-    radar("pronto-rad-04", "RAD-04 — Altos RF6", { x: -2.5374, y: 0.5142, z: 0.0315, yaw: -160 }),
+    radar("pronto-rad-01", "RAD-01 — Altos V4", { x: 1.25845, y: -0.4871, z: 1.7248 }),
+    radar("pronto-rad-02", "RAD-02 — Altos V4", { x: 1.25845, y: 0.4699, z: 1.7248 }),
+    radar("pronto-rad-03", "RAD-03 — Altos RF6", { x: -1.26935, y: -0.461, z: 1.6815, yaw: 160 }),
+    radar("pronto-rad-04", "RAD-04 — Altos RF6", { x: -1.21965, y: 0.5142, z: 1.6815, yaw: -160 }),
   ],
 };
 

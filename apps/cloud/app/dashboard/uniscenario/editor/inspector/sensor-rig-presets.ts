@@ -11,8 +11,13 @@ import {
 const MM_TO_M = 1 / 1_000;
 const DEG_TO_RAD = Math.PI / 180;
 const CAMERA_ASPECT_RATIO = 16 / 9;
+// Pronto's surveyed coordinates are relative to the center-front datum of the
+// roof platform, not the vehicle ground origin used by scenarios. The platform
+// extents center at 1,317.75 mm longitudinally; its base is 1,650 mm above ground.
+const PRONTO_DATUM_MM = Object.freeze({ longitudinal: 1_317.75, up: 1_650 });
 
-/** Convert Pronto's millimetre vehicle frame into the canonical sensor frame. */
+
+/** Convert Pronto's surveyed platform frame into the canonical vehicle frame. */
 function prontoMount(
   longitudinalMm: number,
   lateralRightMm: number,
@@ -23,8 +28,8 @@ function prontoMount(
 ): SensorRigMount {
   return {
     position: {
-      x: longitudinalMm * MM_TO_M,
-      y: upMm * MM_TO_M,
+      x: (longitudinalMm + PRONTO_DATUM_MM.longitudinal) * MM_TO_M,
+      y: (upMm + PRONTO_DATUM_MM.up) * MM_TO_M,
       z: -lateralRightMm * MM_TO_M,
     },
     rotation: {
