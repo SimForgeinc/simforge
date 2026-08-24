@@ -141,7 +141,9 @@ export const RenderIntentV1Schema = z.strictObject({
     });
   }
   const cameraIds = new Set(hostSources
-    .filter((source) => source.modality !== 'lidar' && source.modality !== 'radar')
+    .filter((source) => source.modality !== 'lidar'
+      && source.modality !== 'radar'
+      && source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID)
     .map((source) => source.sensorId));
   const lidarIds = new Set(hostSources
     .filter((source) => source.modality === 'lidar')

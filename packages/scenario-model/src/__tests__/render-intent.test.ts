@@ -168,6 +168,21 @@ describe('authored browser sensor host', () => {
     expect(parsed.renderSpec.sources).toHaveLength(1);
   });
 
+  it('excludes the trailing chase camera from authored physical sensor counts', () => {
+    const value = {
+      ...intent([camera('basic-dash-camera'), camera(PRONTO_CHASE_CAMERA_SENSOR_ID, 70)]),
+      sensorHost: {
+        actorId: HOST,
+        vehicleAsset: { catalogAssetId: 'vehicle.tesla.model3' },
+        sensorRig: { rigId: 'authored', cameras: 1, lidars: 0, radars: 0 },
+      },
+    };
+
+    const parsed = parseRenderIntent(value);
+
+    expect(parsed.renderSpec.sources).toHaveLength(2);
+  });
+
   it('rejects authored counts that do not match selected physical sensors', () => {
     const value = {
       ...intent([camera('basic-dash-camera')]),
