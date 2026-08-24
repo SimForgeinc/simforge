@@ -85,6 +85,7 @@ export async function reserveMaterializedTraffic(
        :sha256, :size_bytes, 'pending', CAST(:metadata AS jsonb),
        'artifact_postprocess', :producer_job_id, CAST(:provenance AS jsonb)
      ) ON CONFLICT (workspace_id, sha256, artifact_kind)
+     WHERE artifact_state IN ('pending', 'available') AND deleted_at IS NULL
      DO UPDATE SET
        metadata = EXCLUDED.metadata,
        producer_job_id = CASE WHEN uniscenario.artifacts.artifact_state = 'pending'

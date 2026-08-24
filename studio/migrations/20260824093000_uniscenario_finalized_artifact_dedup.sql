@@ -1,12 +1,12 @@
--- Pending recording artifacts belong to one fenced producer attempt and may
--- temporarily share bytes with another attempt. Deduplicate only finalized,
--- live immutable artifacts; reservation code reuses those rows by digest.
+-- Pending and available artifacts participate in the immutable digest fence.
+-- Quarantined/deleted producer history remains auditable without permanently
+-- blocking a clean retry of the same bytes.
 ALTER TABLE uniscenario.artifacts
   DROP CONSTRAINT IF EXISTS artifacts_workspace_id_sha256_artifact_kind_key;
 
-CREATE UNIQUE INDEX IF NOT EXISTS uniscenario_artifacts_available_digest_unique
+CREATE UNIQUE INDEX IF NOT EXISTS uniscenario_artifacts_live_digest_unique
   ON uniscenario.artifacts (workspace_id, sha256, artifact_kind)
-  WHERE artifact_state = 'available' AND deleted_at IS NULL;
+  WHERE artifact_state IN ('pending', 'available') AND deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS uniscenario_artifacts_digest_lookup_idx
   ON uniscenario.artifacts (workspace_id, sha256, artifact_kind, artifact_state);

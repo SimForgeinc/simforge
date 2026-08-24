@@ -153,7 +153,9 @@ async function publishOpenScenarioImportArtifact(input: {
          CAST(:metadata AS jsonb), :user_id, 'stream_sha256', :sha256,
          'artifact_postprocess', :producer_job_id, :attempt_id, CAST(:provenance AS jsonb)
        )
-       ON CONFLICT (workspace_id, sha256, artifact_kind) DO UPDATE SET
+       ON CONFLICT (workspace_id, sha256, artifact_kind)
+       WHERE artifact_state IN ('pending', 'available') AND deleted_at IS NULL
+       DO UPDATE SET
          artifact_state = 'pending', verified_at = NULL,
          producer_attempt_id = EXCLUDED.producer_attempt_id,
          provenance = EXCLUDED.provenance

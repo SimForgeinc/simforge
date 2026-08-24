@@ -1001,6 +1001,7 @@ export async function reserveCpuJobOutputs(
          :sha256, :byte_length, 'pending', CAST(:metadata AS jsonb), :job_family, :job_id,
          :attempt_id, CAST(:provenance AS jsonb)
        ) ON CONFLICT (workspace_id, sha256, artifact_kind)
+       WHERE artifact_state IN ('pending', 'available') AND deleted_at IS NULL
        DO UPDATE SET sha256 = EXCLUDED.sha256
        RETURNING id, artifact_state, storage_bucket, storage_key`,
         {

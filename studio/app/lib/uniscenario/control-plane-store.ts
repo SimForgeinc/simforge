@@ -3062,7 +3062,9 @@ export async function completeRenderJob(
            CAST(:metadata AS jsonb), NOW(), 's3_checksum_sha256', :sha256,
            'openscenario_render', :job_id, :attempt_id, CAST(:provenance AS jsonb)
          )
-         ON CONFLICT (workspace_id, sha256, artifact_kind) DO UPDATE SET
+         ON CONFLICT (workspace_id, sha256, artifact_kind)
+         WHERE artifact_state IN ('pending', 'available') AND deleted_at IS NULL
+         DO UPDATE SET
            sha256 = EXCLUDED.sha256
          RETURNING id, artifact_state, media_type, storage_bucket, storage_key,
            sha256, byte_length, verified_at::text AS verified_at,
