@@ -3,9 +3,10 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright-core';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration, type RenderArtifactManifest, type RenderEngineAdapter, type RenderExecutionContext } from '@uniscenarios/render-runtime';
+import { fixedStepFrameCount, parseRenderIntent } from '@uniscenarios/scenario-model';
 import { BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import type { ArtifactIdentity } from './artifacts.js';
-import { BROWSER_RENDER_REQUEST_V1_SCHEMA, parseBrowserRenderIntent, type ResolvedBrowserRenderRequest } from './intent.js';
+import { BROWSER_RENDER_REQUEST_V1_SCHEMA, RENDER_INTENT_V1_SCHEMA, parseBrowserRenderIntent, type BrowserRenderIntentV1, type ResolvedBrowserRenderRequest } from './intent.js';
 
 export interface BrowserRenderEngineOptions {
   readonly harnessUrl?: string;
@@ -57,7 +58,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       const startedAt = new Date().toISOString();
       const harnessUrl = options.harnessUrl ?? process.env.UNISCENARIOS_BROWSER_HARNESS_URL ?? new URL('../harness.html', import.meta.url).href;
       await fs.mkdir(context.workspace, { recursive: true });
-      const intent = parseBrowserRenderIntent(context.intent);
+      const intent = resolveBrowserRenderIntent(context.intent);
       const scenarioInput = context.inputs.get('scenario.xosc');
       if (!scenarioInput) throw new Error('Browser render requires mandatory input scenario.xosc.');
       for (const asset of intent.assets) {
@@ -189,6 +190,37 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
     },
   };
 }
+export function resolveBrowserRenderIntent(value: unknown): BrowserRenderIntentV1 {
+  const portable = parseRenderIntent(value);
+  const fps = portable.renderSpec.video?.fps ?? Math.max(
+    1,
+    ...portable.renderSpec.sources.flatMap((source) =>
+      'fps' in source.attributes ? [source.attributes.fps] : []
+    ),
+  );
+  const frameCount = fixedStepFrameCount(
+    portable.renderSpec.clip.startSeconds,
+    portable.renderSpec.clip.endSeconds,
+    fps,
+  );
+  return parseBrowserRenderIntent({
+    schema: RENDER_INTENT_V1_SCHEMA,
+    engine: 'browser',
+    sensorHost: portable.sensorHost,
+    assets: portable.assets,
+    renderSpec: portable.renderSpec,
+    schedule: {
+      startSeconds: portable.renderSpec.clip.startSeconds,
+      endSeconds: portable.renderSpec.clip.endSeconds,
+      fps,
+      frameCount,
+      timestampUnit: 'microseconds',
+      firstTimestampUs: 0,
+      endTimestampUs: Math.round(frameCount * 1_000_000 / fps),
+    },
+  });
+}
+
 
 type OutputFile = { identity: ArtifactIdentity; mediaType: string; relativePath: string; stream: WriteStream; closed: boolean };
 function requiredOutput(outputs: ReadonlyMap<string, OutputFile>, handle: string): OutputFile { const output = outputs.get(handle); if (!output || output.closed) throw new Error(`Unknown or closed artifact handle: ${handle}`); return output; }
