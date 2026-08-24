@@ -460,6 +460,7 @@ def _validate_authored_sensor_host(
         "cameras": len({
             sensor.sensor_id for sensor in sensors
             if sensor.modality in camera_modalities
+            and sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
         }),
         "lidars": len({
             sensor.sensor_id for sensor in sensors

@@ -122,6 +122,24 @@ def test_authored_sensor_host_accepts_exact_selected_rig() -> None:
         {"rigId": "authored", "cameras": 8, "lidars": 1, "radars": 0},
     )
 
+def test_authored_sensor_host_excludes_trailing_chase_camera_from_rig_count() -> None:
+    sensors = [
+        SimpleNamespace(sensor_id="camera-front", modality="rgb", actor_id="ego"),
+        SimpleNamespace(
+            sensor_id=local.PRONTO_CHASE_CAMERA_SENSOR_ID,
+            modality="rgb",
+            actor_id="ego",
+        ),
+    ]
+
+    local._validate_authored_sensor_host(
+        sensors,
+        "ego",
+        {"catalogAssetId": "vehicle.generic.sedan"},
+        {"rigId": "authored", "cameras": 1, "lidars": 0, "radars": 0},
+    )
+
+
 
 def test_authored_sensor_host_rejects_cross_actor_sources() -> None:
     sensors = [
