@@ -88,4 +88,6 @@ export type RenderExecutionResult = {
   readonly durationSeconds: number;
   readonly runtimeManifest: RenderArtifactManifest;
   readonly artifacts: readonly RecordingArtifact[];
+  /** Wall-clock stage costs for local profiling and progress diagnostics. */
+  readonly stageTimingsMs: Readonly<Record<string, number>>;
 };
