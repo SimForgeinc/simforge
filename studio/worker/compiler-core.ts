@@ -14,6 +14,7 @@ import {
   topologyWithMapSpeedLimits,
   type MapBundle,
   type MapControlPlan,
+  withStudioBodyColorTags,
 } from "@simforge/compiler";
 import { parseTemplate, serializeTemplate, validateTemplate, type ScenarioTemplateV2 } from "@simforge/scenario";
 import {
@@ -119,7 +120,7 @@ function concreteInput(template: ScenarioTemplateV2, bundle: MapBundle, ambientM
   const losses = materializationSemanticLosses(product.manifest.notes);
   if (losses.length > 0) throw new Error(`semantic_loss:${JSON.stringify(losses)}`);
   if (!product.manifest.feasible) throw new Error(`materialization_infeasible:${JSON.stringify(product.manifest.issues)}`);
-  const controlled = withParkedCarActors(withMapControls(product.input, buildMapControlPlan(bundle)), bakedParkedCarsFromExtensions(template.extensions));
+  const controlled = withParkedCarActors(withStudioBodyColorTags(withMapControls(product.input, buildMapControlPlan(bundle)), template), bakedParkedCarsFromExtensions(template.extensions));
   const ambient = materializeAmbientTrafficProfile(controlled, bundle.graph, ambientMode === "native" ? ambientTrafficProfileFromExtensions(template.extensions) : { version: 1, preset: "off", seed: "execution-provider-off" });
   return { input: ambient.input, siteId: product.manifest.replayKey.siteId, materialization: product.manifest, ambientTraffic: ambient.provenance };
 }
