@@ -209,8 +209,25 @@ function passKey(pass: BrowserRenderPass): string { return `${pass.actorId}\u000
 
 const scratchActorRotation = new Quaternion(); const scratchYaw = new Quaternion(); const scratchPitch = new Quaternion(); const scratchRoll = new Quaternion(); const scratchRelative = new Matrix4(); const scratchActorWorld = new Matrix4(); const scratchPosition = new Vector3(); const scratchScale = new Vector3(1, 1, 1); const scratchRotation = new Quaternion(); const scratchTarget = new Vector3(); const scratchUp = new Vector3();
 function sensorWorldMatrix(target: Matrix4, pass: BrowserRenderPass, x: number, z: number, heading: number): void {
-  scratchActorRotation.setFromAxisAngle(scratchUp.set(0, 1, 0), heading); scratchYaw.setFromAxisAngle(scratchUp.set(0, 1, 0), pass.transform.rotation.yawRad); scratchPitch.setFromAxisAngle(scratchUp.set(0, 0, 1), pass.transform.rotation.pitchRad); scratchRoll.setFromAxisAngle(scratchUp.set(1, 0, 0), pass.transform.rotation.rollRad); scratchRotation.copy(scratchYaw).multiply(scratchPitch).multiply(scratchRoll);
-  scratchRelative.compose(scratchPosition.set(pass.transform.position.x, pass.transform.position.y, pass.transform.position.z), scratchRotation, scratchScale); scratchActorWorld.compose(scratchPosition.set(x, 0, z), scratchActorRotation, scratchScale); target.multiplyMatrices(scratchActorWorld, scratchRelative);
+  const values = [
+    x, z, heading,
+    pass.transform.position.x, pass.transform.position.y, pass.transform.position.z,
+    pass.transform.rotation.yawRad, pass.transform.rotation.pitchRad, pass.transform.rotation.rollRad,
+  ];
+  if (values.some((value) => !Number.isFinite(value))) {
+    throw new Error(`Sensor ${pass.actorId}/${pass.sensorId} has a non-finite actor pose or mount transform.`);
+  }
+  // Sensor mounts are rigid. applySensorCamera() decomposes into this shared scratch vector,
+  // so restore the invariant before composing the next sensor instead of reusing mutable scale.
+  scratchScale.set(1, 1, 1);
+  scratchActorRotation.setFromAxisAngle(scratchUp.set(0, 1, 0), heading);
+  scratchYaw.setFromAxisAngle(scratchUp.set(0, 1, 0), pass.transform.rotation.yawRad);
+  scratchPitch.setFromAxisAngle(scratchUp.set(0, 0, 1), pass.transform.rotation.pitchRad);
+  scratchRoll.setFromAxisAngle(scratchUp.set(1, 0, 0), pass.transform.rotation.rollRad);
+  scratchRotation.copy(scratchYaw).multiply(scratchPitch).multiply(scratchRoll);
+  scratchRelative.compose(scratchPosition.set(pass.transform.position.x, pass.transform.position.y, pass.transform.position.z), scratchRotation, scratchScale);
+  scratchActorWorld.compose(scratchPosition.set(x, 0, z), scratchActorRotation, scratchScale);
+  target.multiplyMatrices(scratchActorWorld, scratchRelative);
 }
 function applySensorCamera(camera: PerspectiveCamera, world: Matrix4, pass: Exclude<BrowserRenderPass, { modality: 'lidar' | 'radar' }>): void {
   world.decompose(scratchPosition, scratchRotation, scratchScale); camera.position.copy(scratchPosition); camera.up.copy(scratchUp.set(0, 1, 0)).applyQuaternion(scratchRotation); camera.lookAt(scratchTarget.set(1, 0, 0).applyQuaternion(scratchRotation).add(scratchPosition)); camera.aspect = pass.width / pass.height; camera.fov = 2 * Math.atan(Math.tan(pass.horizontalFovDeg * Math.PI / 360) / camera.aspect) * 180 / Math.PI; camera.near = pass.nearM; camera.far = pass.farM; camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
