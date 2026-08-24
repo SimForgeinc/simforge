@@ -1,0 +1,86 @@
+{
+  "schema": "simforge.assets-manifest/v1",
+  "assetRootDefault": "~/simforge-assets",
+  "assetRootEnv": "SIMFORGE_ASSETS",
+  "notes": [
+    "Large assets NEVER live in git or in container images we build. They live under the asset root and are fetched on demand by scripts/assets/fetch.mjs.",
+    "CARLA is user-provided: users run their own CARLA container with maps baked inside (normal upstream distribution). We never package, rebuild, or redistribute CARLA or its map content. The docker-image entry below is a reference for the optional carla-up.sh developer convenience only.",
+    "file entries with \"url\": null are published through the SimForge platform blob store; digests below were measured from the canonical local copies on 2026-08-24. Populate url when a public location exists — fetch.mjs reports them honestly as unavailable until then."
+  ],
+  "assets": [
+    {
+      "id": "alpamayo-1.5-10b",
+      "class": "hf-cache",
+      "kind": "hf-repo",
+      "repo": "nvidia/Alpamayo-1.5-10B",
+      "revision": "7aba8293c09993f2e125c6819df05d7fa3e873ea",
+      "dest": "hf-cache",
+      "approxBytes": 7516192768,
+      "note": "Alpamayo VLA policy weights. Fetched into the standard HF hub cache layout (HF_HOME=<root>/hf-cache); integrity is content-addressed per blob by the HF hub protocol, pinned by revision."
+    },
+    {
+      "id": "carla-base-image",
+      "class": "carla",
+      "kind": "docker-image",
+      "ref": "ghcr.io/simforgeinc/carla-rr-maps:0.10.0",
+      "imageId": "sha256:8e7c7152f86a9e26878de5f280514f224290f70aad7b28d00d5087709504118e",
+      "userProvided": true,
+      "note": "Upstream-style CARLA 0.10.0 / UE 5.5 distribution with maps baked in. User-provided; fetch.mjs never pulls or builds it — status only reports presence and whether a server answers on :2000."
+    },
+    {
+      "id": "map-easterbrook-road",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_road.glb",
+      "sha256": "d20eb4dc1a893555768e2b97e172193163be4ef910865fd07d72eda8a98cb61a",
+      "bytes": 7558460
+    },
+    {
+      "id": "map-easterbrook-tile-0-1",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_tile_0_1.lod0.glb",
+      "sha256": "6519c3b52e31e6bb95d26c176b8ac417898dbc2973a302f242061c70a09bd250",
+      "bytes": 8374548
+    },
+    {
+      "id": "map-easterbrook-tile-1-0",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_tile_1_0.lod0.glb",
+      "sha256": "84be3b159ff2558bff48ea1468391c47a6cb7047058b40142741d19199e8978b",
+      "bytes": 6678068
+    },
+    {
+      "id": "map-easterbrook-tile-1-1",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_tile_1_1.lod0.glb",
+      "sha256": "5b5f653146a6e7fea257649d76ec245c99029c1e2da8b750a0ca0ba31f3eeca8",
+      "bytes": 9264904
+    },
+    {
+      "id": "map-yale-tile-0-0-lod3",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/yale/yale-tile_0_0.lod3.glb",
+      "sha256": "ef69b10f79a30d4450d635dc19e165be25368c9147730c316e3618211f2f224e",
+      "bytes": 1681132
+    },
+    {
+      "id": "refs-carla-baseline",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/",
+      "sha256": null,
+      "bytes": null,
+      "note": "CARLA reference shots for renderer look-parity work (in production by the ref-bake lane). Directory placeholder: entries gain per-file sha256 as shots land; status reports it as pending until then."
+    }
+  ]
+}
