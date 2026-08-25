@@ -154,5 +154,5 @@ export type {
   Vec3,
   VehicleLightState,
 } from './renderer-contract';
-export { ThreeRendererAdapter, cityViewerAsAdapterHost, contractActorToView } from './renderer-contract-adapter';
+export { ThreeRendererAdapter, cameraStateReport, cityViewerAsAdapterHost, contractActorToView } from './renderer-contract-adapter';
 export type { ThreeAdapterHost } from './renderer-contract-adapter';

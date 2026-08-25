@@ -54,6 +54,7 @@ import { ActorLibraryRail } from "./regions/ActorLibraryRail";
 import type { ViewportTool } from "./regions/actor-catalog";
 import { AmbientEditor } from "./authoring/AmbientEditor";
 import { EditorCanvasRegion } from "./regions/EditorCanvasRegion";
+import { HifiPreviewSlot } from "./regions/slots/HifiPreviewSlot";
 import {
   waitForMapModelsFullyLoaded,
 } from "../scene/map-camera-transition";
@@ -1031,6 +1032,14 @@ export function ScenarioEditorSurface({
       <AssistantChatSlot controller={controller} document={editorDocument} />
       <NotificationDockSlot documentId={record?.id ?? null} datasetId={datasetId} />
       <RoutePointSpeedWarningOverlay viewer={viewer} warnings={routeSpeedWarnings} />
+      <HifiPreviewSlot
+        active={active && !sharedPlayback?.inspecting}
+        documentId={record?.id ?? null}
+        scenarioRevision={editorDocument?.revision ?? null}
+        map={map}
+        state={state}
+        viewer={viewer}
+      />
       <TutorialOverlaySlot
         actorCount={state?.actors.length ?? 0}
         configuredRouteCount={editorDocument?.data.choreography.interactions.filter(

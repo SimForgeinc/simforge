@@ -188,6 +188,8 @@ pub enum ResponseBody {
         frames: Vec<FrameRecord>,
         /// Server-side render+publish wall time, milliseconds.
         server_ms: f64,
+        /// Fraction of camera pixels whose instance ID is non-zero.
+        coverage: Vec<CoverageRecord>,
     },
     Close {
         ok: bool,
@@ -235,6 +237,15 @@ pub struct FrameRecord {
     /// keeping those responses byte-identical.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
+}
+
+/// Geometry coverage measured from the instance-ID pass already rendered for
+/// a camera. A zero ID is the deterministic clear/background value.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CoverageRecord {
+    pub sensor_id: String,
+    pub fraction: f64,
 }
 
 /* --------------------------------------------------------------- framing */

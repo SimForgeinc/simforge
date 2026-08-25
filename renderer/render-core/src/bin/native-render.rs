@@ -257,6 +257,7 @@ struct SpikeState {
     frame_period_ms: Vec<f64>,
     readback_us_total: u64,
     captured_triples: u64,
+    coverage: Option<f64>,
     saved: bool,
 }
 
@@ -366,6 +367,7 @@ fn main() -> Result<()> {
                 frame_period_ms: Vec::new(),
                 readback_us_total: 0,
                 captured_triples: 0,
+                coverage: None,
                 saved: false,
             }
         })
@@ -810,6 +812,10 @@ fn collect_passes(
             // Save outputs from the final frame's passes.
             let grain = if args.profile.eq_ignore_ascii_case("cinematic") { args.grain } else { 0.0 };
             let seed = f as f32;
+            state.coverage = passes
+                .iter()
+                .find(|pass| pass.key == "id0")
+                .map(|pass| instance_coverage(&pass.data, args.width as usize, args.height as usize));
             save_outputs(&args, passes.iter().map(|p| (&p.key, &p.data)), grain, seed);
             write_timings(&args, &state);
             state.saved = true;
@@ -829,6 +835,14 @@ fn strip_padding(data: &[u8], width: usize, height: usize, pixel: usize) -> Vec<
         .flat_map(|r| &r[..row])
         .copied()
         .collect()
+}
+
+fn instance_coverage(data: &[u8], width: usize, height: usize) -> f64 {
+    let visible = strip_padding(data, width, height, 4)
+        .chunks_exact(4)
+        .filter(|pixel| pixel[0] != 0 || pixel[1] != 0 || pixel[2] != 0)
+        .count();
+    visible as f64 / (width * height) as f64
 }
 
 /// Deterministic monochrome film grain (same hash13 math as the WGSL
@@ -964,6 +978,7 @@ fn write_timings(args: &Args, state: &SpikeState) {
         "cameras": args.cameras.max(1),
         "passes": args.expected_keys(),
         "tiles": args.glbs.len(),
+        "coverage": state.coverage,
         "asset_load_ms": load_ms,
         "scene_build_ms": build_ms,
         "warmup_to_first_frame_ms": first_frame_ms,
