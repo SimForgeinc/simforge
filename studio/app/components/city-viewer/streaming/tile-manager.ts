@@ -532,7 +532,6 @@ export class TileManager {
         const instanceUrl = vegTile?.instanceFile ? this.resolveUrl(vegTile.instanceFile) : '';
         await this._vegInstancesReady;
         result = await loadVegetationTile(this.resolveUrl(lod.file), instanceUrl, lodLevel, this._abortCtrl.signal, tile.id, this._staticSemantics);
-        this.disableEnvMap(result.group);
       } else {
         result = await loadTileGLB(this.resolveUrl(lod.file), this._abortCtrl.signal, false, this._staticSemantics);
       }
@@ -1022,7 +1021,6 @@ export class TileManager {
       } else {
         loaded = await loadTileGLB(url, signal, false, this._staticSemantics);
       }
-      if (isVegetation) this.disableEnvMap(loaded.group);
       this.queue.complete(key);
 
       if (this.renderer) {
@@ -1053,20 +1051,6 @@ export class TileManager {
         recordTileFailure(err);
       }
     }
-  }
-
-  private disableEnvMap(group: THREE.Group): void {
-    group.traverse((obj) => {
-      if (!(obj as THREE.Mesh).isMesh) return;
-      const mats = Array.isArray((obj as THREE.Mesh).material)
-        ? (obj as THREE.Mesh).material as THREE.MeshStandardMaterial[]
-        : [(obj as THREE.Mesh).material as THREE.MeshStandardMaterial];
-      for (const mat of mats) {
-        if (!mat.isMeshStandardMaterial) continue;
-        mat.envMapIntensity = 0;
-        mat.roughness = Math.max(mat.roughness, 0.9);
-      }
-    });
   }
 
   private addTileToScene(key: string, tileId: string, lodLevel: number, entry: CacheEntry): void {

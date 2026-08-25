@@ -25,6 +25,25 @@ export type { AssetDownloadStats } from './download-progress';
 export { GroundIndex, isGroundSurfaceMesh } from './ground-index';
 export type { GroundIndexOptions, GroundIndexStats } from './ground-index';
 export { indexedWorldHeightSampler } from './indexed-height-sampler';
+export {
+  ATMOSPHERIC_TRANSMITTANCE,
+  CIVIL_TWILIGHT_DEG,
+  DEFAULT_TONEMAP,
+  EXTRATERRESTRIAL_ILLUMINANCE_LX,
+  SENSOR_EV100,
+  SHADOW_FILL_RATIO_MAX,
+  SHADOW_FILL_RATIO_MIN,
+  SUN_ANGULAR_DIAMETER_DEG,
+  VIEWER_ENVIRONMENT_INTENSITY,
+  VIEWER_EXPOSURE,
+  VIEWER_SUN_INTENSITY,
+  airMass,
+  ev100ForSunElevation,
+  sunColorTemperatureK,
+  sunDirectHorizontalIlluminanceLx,
+  sunDirectNormalIlluminanceLx,
+  twilightRamp,
+} from './lighting-calibration';
 export type { GroundHeightSampler } from './indexed-height-sampler';
 export { keepInRoadsOnly, isTrafficSignalMesh, isLowFidelityHiddenHelper, isRoadsOnlyHiddenHelper, LOW_FIDELITY_HIDDEN_ROLE, ROADS_ONLY_HIDDEN_ROLE } from './roads-only';
 export { ShadowAtlas } from './shadow-atlas';

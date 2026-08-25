@@ -94,6 +94,26 @@ describe('surface material profiles', () => {
     expect(road.material).toBe(material);
   });
 
+  it('blends toward the pack roughness instead of flooring at it', () => {
+    // The old hard `max(authored, target)` clamp flattened every classified
+    // surface to >=0.91 (docs/lighting-calibration.md §Materials).
+    const root = new Group();
+    const road = surface('Roads_Road_Layer0', 'Asphalt1_Road');
+    root.add(road);
+    const material = road.material as MeshStandardMaterial;
+    const authored = material.roughness; // 0.5
+    const style = BUILTIN_SURFACE_MATERIAL_PACK.classes.asphalt;
+
+    const registry = new SurfaceMaterialRegistry();
+    registry.registerTree(root, 'road');
+    registry.apply('enhanced');
+
+    const expected = authored + (style.roughness - authored) * style.roughnessMix;
+    expect(material.roughness).toBeCloseTo(expected, 5);
+    expect(material.roughness).toBeLessThan(style.roughness);
+    expect(material.roughness).toBeGreaterThan(authored);
+  });
+
   it('composes its shader after an existing baked-shadow patch and uses stable keys', () => {
     const root = new Group();
     const road = surface('Roads_Road_Layer0', 'Asphalt1_Road');

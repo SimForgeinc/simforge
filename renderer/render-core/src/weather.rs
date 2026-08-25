@@ -14,22 +14,23 @@ use bevy::prelude::{ChildOf, Commands, Entity, Name, Transform, Visibility};
 use bevy::render::mesh::Mesh3d;
 use std::ops::DerefMut;
 
-use crate::lighting::{CLEAR_DAY_SUN_LUX, kelvin_to_rgb, LightingPlan};
+use crate::calibration::{
+    daylight_fraction, ev100_for_sun_elevation, sun_color_temperature_k,
+    sun_direct_normal_illuminance_lx, SENSOR_EV100_FOG, SENSOR_EV100_NIGHT, SENSOR_EV100_RAIN,
+};
+use crate::lighting::{kelvin_to_rgb, LightingPlan};
 
-/// The map HDRIs are normalized (sky ≈ 1.26 luma units, measured for
-/// yale-street env/sky.hdr), not cd/m². Scale so the sky hemisphere delivers
-/// ~15 klx diffuse against the 100 klx physical sun (WMO/CIE clear-day sky
-/// diffuse is 10–25 klx; target shadowed/sunlit ratio ≈ 0.15–0.25 on
-/// horizontal surfaces). Empirically: 18 000 gave ratio 0.034 at rung 2;
-/// scaling by the same 8.33× the sun gained (12 klx → 100 klx) restores the
-/// With the probe volume fixed, 150 000 measured ratio 0.65 (washed out);
-/// solving e/(s+e) for the 0.20 target gives ≈20 000. NOTE: measure_shadow_fill
-/// reads sRGB-encoded pixels; 20 000 measures sRGB ratio 0.49 ≈ LINEAR 0.21
-/// (γ2.2), inside the 0.15–0.25 physical band, shadow tint +0.024 blue.
-pub const HDRI_TO_CDM2: f32 = 20_000.0;
+/// Re-exported from the shared lighting spec (docs/lighting-calibration.md):
+/// cd/m² per normalized-HDRI luma unit.
+pub use crate::calibration::HDRI_TO_CDM2;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, bevy::prelude::Resource)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, bevy::prelude::Resource,
+    serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "lowercase")]
 pub enum Weather {
+    #[default]
     Clear,
     Fog,
     Rain,
@@ -47,47 +48,57 @@ impl Weather {
         }
     }
 
-    /// Fixed EV100 used by the sensor profile (cinematic uses auto-exposure).
-    /// Day scenes: sunny-16; night urban: lit-street exposure.
-    pub fn sensor_ev100(&self) -> f32 {
+    /// Fixed EV100 used by the sensor profile (cinematic uses the same fixed
+    /// value until frame pacing makes auto-exposure deterministic).
+    /// Clear weather tracks the sun-elevation model; night is lit-street
+    /// exposure (docs/lighting-calibration.md §Exposure).
+    pub fn sensor_ev100(&self, sun_elev_deg: f32) -> f32 {
         match self {
-            Weather::Clear => 15.0,
-            Weather::Fog => 14.0,
-            Weather::Rain => 13.5,
-            Weather::Night => 9.0,
+            Weather::Clear => ev100_for_sun_elevation(sun_elev_deg),
+            Weather::Fog => SENSOR_EV100_FOG,
+            Weather::Rain => SENSOR_EV100_RAIN,
+            Weather::Night => SENSOR_EV100_NIGHT,
         }
     }
 
-    /// Resolve per-weather sun + IBL scaling into a `LightingPlan`.
-    pub fn lighting_plan(&self, sun_dir_color: Option<Color>) -> LightingPlan {
+    /// Resolve per-weather sun + IBL scaling into a `LightingPlan` for a sun
+    /// elevation. Sun intensity and sky brightness follow the shared spec's
+    /// elevation model (docs/lighting-calibration.md §Sun model / §Sky); the
+    /// weather factors below are relative to the clear-sky value at the same
+    /// elevation.
+    pub fn lighting_plan(&self, sun_dir_color: Option<Color>, sun_elev_deg: f32) -> LightingPlan {
+        let sun_lux = sun_direct_normal_illuminance_lx(sun_elev_deg);
+        let daylight = daylight_fraction(sun_elev_deg);
+        let sun_color = sun_dir_color
+            .unwrap_or_else(|| kelvin_to_rgb(sun_color_temperature_k(sun_elev_deg)));
         match self {
             Weather::Clear => LightingPlan {
-                sun_lux: CLEAR_DAY_SUN_LUX,
-                sun_color: sun_dir_color.unwrap_or_else(|| kelvin_to_rgb(5500.0)),
-                ev100_fixed: Some(self.sensor_ev100()),
-                env_intensity: HDRI_TO_CDM2,
-                skybox_brightness: HDRI_TO_CDM2,
+                sun_lux,
+                sun_color,
+                ev100_fixed: Some(self.sensor_ev100(sun_elev_deg)),
+                env_intensity: HDRI_TO_CDM2 * daylight,
+                skybox_brightness: HDRI_TO_CDM2 * daylight,
             },
             Weather::Fog => LightingPlan {
                 // Heavy overcast: direct sun mostly scattered away.
-                sun_lux: CLEAR_DAY_SUN_LUX * 0.25,
+                sun_lux: sun_lux * 0.25,
                 sun_color: Color::srgb(0.9, 0.93, 1.0),
-                ev100_fixed: Some(self.sensor_ev100()),
-                env_intensity: HDRI_TO_CDM2 * 1.2,
-                skybox_brightness: HDRI_TO_CDM2 * 0.8,
+                ev100_fixed: Some(self.sensor_ev100(sun_elev_deg)),
+                env_intensity: HDRI_TO_CDM2 * 1.2 * daylight,
+                skybox_brightness: HDRI_TO_CDM2 * 0.8 * daylight,
             },
             Weather::Rain => LightingPlan {
-                sun_lux: CLEAR_DAY_SUN_LUX * 0.3,
+                sun_lux: sun_lux * 0.3,
                 sun_color: Color::srgb(0.88, 0.92, 1.0),
-                ev100_fixed: Some(self.sensor_ev100()),
-                env_intensity: HDRI_TO_CDM2 * 1.1,
-                skybox_brightness: HDRI_TO_CDM2 * 0.7,
+                ev100_fixed: Some(self.sensor_ev100(sun_elev_deg)),
+                env_intensity: HDRI_TO_CDM2 * 1.1 * daylight,
+                skybox_brightness: HDRI_TO_CDM2 * 0.7 * daylight,
             },
             Weather::Night => LightingPlan {
                 // Moonlight ≈ 0.2–0.3 lx, cool color temperature.
                 sun_lux: 0.25,
                 sun_color: kelvin_to_rgb(12000.0),
-                ev100_fixed: Some(self.sensor_ev100()),
+                ev100_fixed: Some(self.sensor_ev100(sun_elev_deg)),
                 env_intensity: HDRI_TO_CDM2 * 0.004,
                 skybox_brightness: HDRI_TO_CDM2 * 0.004,
             },

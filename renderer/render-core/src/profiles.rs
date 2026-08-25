@@ -17,8 +17,6 @@ use bevy::post_process::dof::{DepthOfField, DepthOfFieldMode};
 use bevy::post_process::effect_stack::{ChromaticAberration, LensDistortion, Vignette};
 use bevy::post_process::motion_blur::MotionBlur;
 
-use crate::weather::Weather;
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, bevy::prelude::Resource)]
 pub enum RenderProfile {
     Sensor,
@@ -74,7 +72,9 @@ impl RenderProfile {
         self,
         commands: &mut bevy::prelude::Commands,
         entity: bevy::prelude::Entity,
-        weather: Weather,
+        // Fixed exposure from the resolved `LightingPlan` (`ev100_fixed`),
+        // per docs/lighting-calibration.md §Exposure.
+        ev100: f32,
         sky: Option<bevy::asset::Handle<bevy::image::Image>>,
         skybox_brightness: f32,
         ssr: bool,
@@ -82,7 +82,6 @@ impl RenderProfile {
         grain_intensity: f32,
         fx: CinematicFx,
     ) {
-        let ev100 = weather.sensor_ev100();
         match self {
             RenderProfile::Sensor => {
                 commands.entity(entity).insert((

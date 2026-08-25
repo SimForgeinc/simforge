@@ -29,14 +29,7 @@ use bevy::render::render_resource::{
     Extent3d, TextureDimension, TextureFormat, TextureViewDescriptor, TextureViewDimension,
 };
 
-/// Direct normal+horizontal sunlight illuminance on a clear day (WMO/CIE
-/// clear-sky midday value ≈ 100_000 lx).
-pub const CLEAR_DAY_SUN_LUX: f32 = 100_000.0;
-/// EV100 for direct sunlight (ISO 100): log2(100000/2.5) ≈ 15.3, standard
-/// sunny-16 calibration.
-pub const SUNLIGHT_EV100: f32 = 15.0;
-/// Sun angular diameter seen from Earth, in degrees.
-pub const SUN_ANGULAR_DIAMETER_DEG: f32 = 0.53;
+pub use crate::calibration::SUN_ANGULAR_DIAMETER_DEG;
 /// Ground-plane height of the yale-street corpus (see spike FINDINGS §5).
 pub const GROUND_Y: f32 = 12.99;
 
@@ -87,6 +80,76 @@ pub fn kelvin_to_rgb(kelvin: f32) -> Color {
         }
     };
     Color::srgb(lin(r), lin(g), lin(b))
+}
+
+/// Deterministic analytic clear-sky gradient cubemap for scenes that ship no
+/// HDRI: horizon→zenith Rayleigh-ish gradient, a Mie-like forward glow around
+/// the sun, and a dim ground hemisphere. Normalised to the same ≈1.26 mean
+/// sky luma as the measured map HDRIs so `HDRI_TO_CDM2` applies unchanged
+/// (docs/lighting-calibration.md §Sky).
+pub fn synthetic_sky_cubemap(sun_dir: Dir3, face_size: u32) -> Image {
+    // `sun_dir` is the direction light TRAVELS; the sun sits opposite it.
+    let to_sun = (-Vec3::from(*sun_dir)).normalize();
+    let n = face_size;
+    let zenith = Vec3::new(0.20, 0.42, 0.86);
+    let horizon = Vec3::new(0.86, 0.92, 1.02);
+    let ground = Vec3::new(0.28, 0.26, 0.23);
+    let shade = |dir: Vec3| -> Vec3 {
+        let sun_amount = dir.dot(to_sun).max(0.0);
+        // Broad forward-scatter glow; the solar disc itself is direct light,
+        // not IBL, so the lobe stays wide and modest.
+        let glow = sun_amount.powf(24.0) * 1.4 + sun_amount.powf(3.0) * 0.18;
+        if dir.y >= 0.0 {
+            let t = dir.y.powf(0.6);
+            horizon.lerp(zenith, t) + Vec3::splat(glow)
+        } else {
+            // Ground hemisphere: horizon-lit albedo falling off downward.
+            ground * (1.0 - (-dir.y).powf(0.5) * 0.6)
+        }
+    };
+    // Mean sky luma of the raw gradient, integrated over the upper
+    // hemisphere, is ≈0.66; scale to the measured HDRI normalisation of 1.26.
+    const SKY_LUMA_NORMALISATION: f32 = 1.26 / 0.66;
+
+    let mut data: Vec<u8> = Vec::with_capacity((n * n * 6 * 16) as usize);
+    for f in 0..6u32 {
+        for y in 0..n {
+            for x in 0..n {
+                let s = (2.0 * (x as f32 + 0.5) / n as f32) - 1.0;
+                let t = (2.0 * (y as f32 + 0.5) / n as f32) - 1.0;
+                let dir = match f {
+                    0 => Vec3::new(1.0, -t, -s),
+                    1 => Vec3::new(-1.0, -t, s),
+                    2 => Vec3::new(s, 1.0, -t),
+                    3 => Vec3::new(s, -1.0, t),
+                    4 => Vec3::new(s, -t, 1.0),
+                    _ => Vec3::new(-s, -t, -1.0),
+                }
+                .normalize();
+                let c = shade(dir) * SKY_LUMA_NORMALISATION;
+                data.extend_from_slice(&c.x.to_le_bytes());
+                data.extend_from_slice(&c.y.to_le_bytes());
+                data.extend_from_slice(&c.z.to_le_bytes());
+                data.extend_from_slice(&1.0f32.to_le_bytes());
+            }
+        }
+    }
+    let mut image = Image::new(
+        Extent3d {
+            width: n,
+            height: n,
+            depth_or_array_layers: 6,
+        },
+        TextureDimension::D2,
+        data,
+        TextureFormat::Rgba32Float,
+        RenderAssetUsages::default(),
+    );
+    image.texture_view_descriptor = Some(TextureViewDescriptor {
+        dimension: Some(TextureViewDimension::Cube),
+        ..Default::default()
+    });
+    image
 }
 
 /// Load an equirectangular `.hdr` file and convert it to a cubemap `Image`
@@ -190,7 +253,9 @@ pub fn spawn_lighting(
     plan: &LightingPlan,
     sun_dir: Dir3,
     cascade_max_distance: f32,
-    sky_hdr_path: &str,
+    // HDRI path for the sky/IBL; `None` generates the deterministic analytic
+    // gradient sky from `sun_dir` (`synthetic_sky_cubemap`).
+    sky_hdr_path: Option<&str>,
     legacy_args: (f32, f32), // (spike lux, spike ambient) used only at rung 0
 ) -> Result<Option<bevy::asset::Handle<Image>>> {
     if !rung.ibl() {
@@ -234,7 +299,10 @@ pub fn spawn_lighting(
 
     let mut sky_handle = None;
     if rung.ibl() {
-        let image = load_sky_cubemap(sky_hdr_path, 512)?;
+        let image = match sky_hdr_path {
+            Some(path) => load_sky_cubemap(path, 512)?,
+            None => synthetic_sky_cubemap(sun_dir, 512),
+        };
         let handle = images.add(image);
         // Runtime GPU filtering of GeneratedEnvironmentMapLight contributed
         // no measurable diffuse here; use the direct EnvironmentMapLight path

@@ -410,7 +410,7 @@ fn startup_setup(
     server: Res<AssetServer>,
 ) {
     let rung = LightingRung(args.rung);
-    let plan = weather.lighting_plan(None);
+    let plan = weather.lighting_plan(None, args.sun_elev);
 
     // WSB4 lighting ladder (see render_core::lighting).
     let sky = lighting::spawn_lighting(
@@ -420,7 +420,7 @@ fn startup_setup(
         &plan,
         sun_direction(args.sun_elev, args.sun_azim),
         400.0,
-        &args.sky,
+        Some(args.sky.as_str()),
         (args.lux, if rung.ibl() { 0.0 } else { args.ambient }),
     )
     .unwrap_or_else(|e| panic!("WSB4 lighting/sky setup failed: {e:#}"));
@@ -488,7 +488,8 @@ fn startup_setup(
         profile.apply(
             &mut commands,
             cam_id,
-            *weather,
+            plan.ev100_fixed
+                .unwrap_or_else(|| weather.sensor_ev100(args.sun_elev)),
             sky.clone(),
             plan.skybox_brightness,
             args.ssr,
