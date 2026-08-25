@@ -10,6 +10,12 @@
 
 import { canonicalJson, sha256 } from '../core/hash.js';
 import { quantizeTrace, type SimTrace } from './trace.js';
+// Node-only fallback: a static import would make this browser module unbundleable.
+async function loadNodeZlib() {
+  const specifier = ['node', 'zlib'].join(':');
+  return import(/* webpackIgnore: true */ specifier);
+}
+
 
 /** Canonical, quantised JSON bytes for a trace. */
 export function serializeTrace(trace: SimTrace): Uint8Array {
@@ -27,7 +33,7 @@ async function gzip(bytes: Uint8Array): Promise<Uint8Array> {
     const stream = new Blob([bytes.slice() as unknown as BlobPart]).stream().pipeThrough(new CS('gzip'));
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  const { gzipSync } = await import('node:zlib');
+  const { gzipSync } = await loadNodeZlib();
   return new Uint8Array(gzipSync(bytes));
 }
 
@@ -37,7 +43,7 @@ async function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
     const stream = new Blob([bytes.slice() as unknown as BlobPart]).stream().pipeThrough(new DS('gzip'));
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  const { gunzipSync } = await import('node:zlib');
+  const { gunzipSync } = await loadNodeZlib();
   return new Uint8Array(gunzipSync(bytes));
 }
 

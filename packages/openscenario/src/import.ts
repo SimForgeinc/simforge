@@ -1,6 +1,4 @@
-import { createHash } from 'node:crypto';
-
-import { parseTemplate, type ScenarioTemplateV2 } from '@simforge/scenario';
+import { parseTemplate, Sha256, type ScenarioTemplateV2 } from '@simforge/scenario';
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 export const MAX_XOSC_BYTES = 1_048_576;
@@ -260,7 +258,7 @@ export function analyzeOpenScenarioImport(bytes: Uint8Array, fileName = 'scenari
   };
   return {
     standard: `ASAM OpenSCENARIO ${revMajor}.${revMinor}`,
-    source: { byteLength: bytes.byteLength, sha256: createHash('sha256').update(bytes).digest('hex'), fileName, mediaType: 'application/xml' },
+    source: { byteLength: bytes.byteLength, sha256: new Sha256().update(bytes).digestHex(), fileName, mediaType: 'application/xml' },
     title: headerAttrs.description?.trim() || fileName.replace(/\.xosc$/i, '') || 'Imported OpenSCENARIO',
     description: headerAttrs.description ?? '',
     logicFile,
