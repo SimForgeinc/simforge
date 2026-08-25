@@ -11,7 +11,7 @@
     "test": "pnpm -r test",
     "test:portable": "pnpm --filter @simforge/scenario --filter @simforge/engine --filter @simforge/maps --filter @simforge/compiler --filter @simforge/viewer --filter @simforge/editor --filter @simforge/playback --filter @simforge/asset-catalog --filter @simforge/render --filter @simforge/openscenario test && pnpm --filter @simforge/cli test:portable",
     "test:render-presets:browser": "node scripts/verify-render-presets-browser.mjs",
-    "typecheck": "pnpm -r --filter \"./packages/**\" build && pnpm -r typecheck",
+    "typecheck": "pnpm -r typecheck",
     "render:export": "node scripts/export-render.mjs",
     "render:run": "pnpm --filter @simforge/cli simforge render run",
     "render:worker": "pnpm --filter @simforge/render-worker start",

@@ -712,7 +712,7 @@ function VegetationKnobs({
   );
 }
 
-export function VisualConfigHud({ onSunCommit }: VisualConfigHudProps = {}) {
+export function VisualConfigHud({ onSunCommit }: VisualConfigHudProps) {
   const [activeTab, setActiveTab] = useState<TabId>('central');
   const [importError, setImportError] = useState<string | null>(null);
   const [config, setConfig] = useState<VisualConfig>(() => loadVisualConfig());

@@ -8,7 +8,21 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./opendrive": {
+        "types": "./dist/opendrive.d.ts",
+        "default": "./dist/opendrive.js"
+      },
+      "./node": {
+        "types": "./dist/node.d.ts",
+        "default": "./dist/node.js"
+      }
+    }
   },
   "license": "Apache-2.0",
   "type": "module",
@@ -16,14 +30,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./opendrive": {
+      "development": "./src/opendrive.ts",
       "types": "./dist/opendrive.d.ts",
       "default": "./dist/opendrive.js"
     },
     "./node": {
+      "development": "./src/node.ts",
       "types": "./dist/node.d.ts",
       "default": "./dist/node.js"
     }

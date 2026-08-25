@@ -8,7 +8,46 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./import": {
+        "types": "./dist/import.d.ts",
+        "default": "./dist/import.js"
+      },
+      "./export": {
+        "types": "./dist/export/index.d.ts",
+        "default": "./dist/export/index.js"
+      },
+      "./export/types": {
+        "types": "./dist/export/types.d.ts",
+        "default": "./dist/export/types.js"
+      },
+      "./export/xml-1.4": {
+        "types": "./dist/export/xml-1.4.d.ts",
+        "default": "./dist/export/xml-1.4.js"
+      },
+      "./node": {
+        "types": "./dist/node/index.d.ts",
+        "default": "./dist/node/index.js"
+      },
+      "./execution-plan": {
+        "types": "./dist/execution-plan.d.ts",
+        "default": "./dist/execution-plan.js"
+      },
+      "./esmini": {
+        "types": "./dist/esmini/index.d.ts",
+        "default": "./dist/esmini/index.js"
+      },
+      "./trace-diff": {
+        "types": "./dist/trace-diff/index.d.ts",
+        "default": "./dist/trace-diff/index.js"
+      },
+      "./schema/*": "./schema/*"
+    }
   },
   "license": "Apache-2.0",
   "type": "module",
@@ -17,38 +56,47 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./import": {
+      "development": "./src/import.ts",
       "types": "./dist/import.d.ts",
       "default": "./dist/import.js"
     },
     "./export": {
+      "development": "./src/export/index.ts",
       "types": "./dist/export/index.d.ts",
       "default": "./dist/export/index.js"
     },
     "./export/types": {
+      "development": "./src/export/types.ts",
       "types": "./dist/export/types.d.ts",
       "default": "./dist/export/types.js"
     },
     "./export/xml-1.4": {
+      "development": "./src/export/xml-1.4.ts",
       "types": "./dist/export/xml-1.4.d.ts",
       "default": "./dist/export/xml-1.4.js"
     },
     "./node": {
+      "development": "./src/node/index.ts",
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
     "./execution-plan": {
+      "development": "./src/execution-plan.ts",
       "types": "./dist/execution-plan.d.ts",
       "default": "./dist/execution-plan.js"
     },
     "./esmini": {
+      "development": "./src/esmini/index.ts",
       "types": "./dist/esmini/index.d.ts",
       "default": "./dist/esmini/index.js"
     },
     "./trace-diff": {
+      "development": "./src/trace-diff/index.ts",
       "types": "./dist/trace-diff/index.d.ts",
       "default": "./dist/trace-diff/index.js"
     },
