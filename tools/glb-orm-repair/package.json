@@ -1,0 +1,16 @@
+{
+  "name": "@simforge/glb-orm-repair",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Wire packed ORM textures into existing GLB tiles and fix spec-as-baseColor mis-wiring, byte-preserving.",
+  "bin": {
+    "glb-orm-repair": "./bin/glb-orm-repair.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/repair.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
