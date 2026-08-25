@@ -422,6 +422,7 @@ function timedRouteTangent(
   points: NonNullable<ActorRuntime['timedRoute']>,
   index: number,
 ): Vec2 {
+  if (points.length === 1) return { x: 0, y: 0 };
   const point = points[index]!;
   if (index === 0) {
     const next = points[1]!;
@@ -521,6 +522,9 @@ function sampleTimedRoute(
   timeS: number,
   fallbackHeadingRad: number,
 ): TimedRouteSample {
+  if (points.length === 1) {
+    return { position: points[0]!.point, headingRad: fallbackHeadingRad, speedMps: 0 };
+  }
   const first = points[0]!;
   const last = points[points.length - 1]!;
   if (timeS < first.timeS) {
@@ -563,7 +567,7 @@ function releasedTimedRoute(
   fallbackHeadingRad: number,
 ): Route {
   const last = points.at(-1)!;
-  let previous = points.at(-2)!;
+  let previous = points.at(-2) ?? last;
   for (let index = points.length - 2; index >= 0; index -= 1) {
     const candidate = points[index]!;
     if (Math.hypot(last.point.x - candidate.point.x, last.point.y - candidate.point.y) > 1e-6) {
@@ -2720,7 +2724,10 @@ class Simulation {
       return plan;
     }
 
-    if (a.timedRoute && t + this.dt <= a.timedRoute.at(-1)!.timeS + 1e-9) {
+    if (a.timedRoute && (
+      a.timedRoute.length === 1
+      || t + this.dt <= a.timedRoute.at(-1)!.timeS + 1e-9
+    )) {
       const sampleAt = Math.min(t + this.dt, this.resolvedInput.clipSeconds);
       const sample = sampleTimedRoute(a.timedRoute, sampleAt, a.headingRad);
       const projected = a.route.projectPoint(sample.position);
