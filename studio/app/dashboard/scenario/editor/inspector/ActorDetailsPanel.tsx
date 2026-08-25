@@ -279,9 +279,7 @@ export function ActorDetailsPanel({
           </fieldset>
         ) : null}
 
-        {actor.kind === "vehicle" ? (
-          <ActorSensorsSection actor={actor} document={document} />
-        ) : null}
+        <ActorSensorsSection actor={actor} document={document} />
 
     </EditorDetailsPanel>
   );
