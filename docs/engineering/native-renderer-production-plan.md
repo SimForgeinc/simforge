@@ -103,24 +103,44 @@ environment light, so shadowed pixels got a constant gray. Ladder, in order:
 5. Solari raytraced GI (0.19, improved BRDF/temporal stability) as the Lumen
    analog — quality tier on RT hardware (5080), not the baseline.
 
-**UE5-parity checklist** (Bevy 0.19 status → action):
-| UE5 | Bevy | Action |
+**UE5-parity checklist** (Bevy 0.19 status):
+| UE5 | Bevy | Status |
 |---|---|---|
-| Lumen GI | Solari + IBL + irradiance volumes | IBL now, Solari tier |
-| VSM + SMRT | cascades + PCSS + contact shadows | configure + calibrate |
-| TSR/TAA | TAA, DLSS integration | cinematic profile only |
-| Auto exposure | AutoExposure built in | cinematic only; sensor = fixed EV |
-| Bloom/DoF/motion blur/LUT grading | built in | configure |
-| Vignette/lens distortion | new in 0.19 | configure (camera-ness) |
-| Film grain | absent | small custom pass (~1 d) |
-| Volumetric fog + physical atmosphere | built in (0.18+) | drives weather ladder |
-| SSR (wet road, night reflections) | deferred path, experimental | behind flag; reflection-probe fallback |
-| Nanite | meshlets experimental | skip — 4M tris total |
+| Lumen GI | IBL; optional Solari | Partial: IBL baseline; Solari exceeds the 3080/full-rig budget |
+| VSM + SMRT | 4 cascades + PCSS + contact shadows | Enabled at lighting rung 4 |
+| TSR/TAA | TAA | Enabled for cinematic cameras only |
+| Auto exposure | AutoExposure | Fixed calibrated EV retained to keep host-stepped output stable |
+| Bloom/DoF/motion blur/color grading | built in | Configurable per cinematic profile |
+| Vignette/lens distortion | built in | Configurable; conservative UE-like defaults |
+| Film grain | deterministic CPU pass in still renderer | Optional; excluded from service sensor payloads |
+| Volumetric fog + physical atmosphere | volumetric fog + HDRI/analytic sky | Enabled by weather |
+| SSR (wet road, night reflections) | deferred screen-space pass | Enabled for cinematic cameras |
+| Nanite | experimental meshlets | Not required at current corpus triangle counts |
 
 **Weather ladder** as engine-native lighting/participating media: clear, fog
 (volumetric + sky attenuation), rain (wet-road reflectance ramp + SSR),
 night (light temperature + streetlight emissives) — driven by the scenario's
 weather field, not post-hoc overlays (the W0 failure mode).
+
+The batch job and service scene JSON accept the same optional
+`profileConfig.cinematic` object. Missing fields inherit the RTX 3080 campaign
+defaults. Supported keys are `taa`, `ssr`, `ssao`, `ssaoUltra`,
+`chromaticAberration`, `vignetteIntensity`, `lensDistortion`,
+`dofApertureFStops`, `dofFocalDistanceM`, `dofEnabled`,
+`motionShutterAngle`, `motionSamples`, `bloomIntensity`,
+`gradingExposure`, `gradingTemperature`, `gradingTint`,
+`gradingPostSaturation`, and `gradingContrast`. Batch `schedule[].cameras[]`
+and service `ServiceCamera` also accept `profile: "sensor" | "cinematic"`;
+omission inherits the job/service profile. This is how the eight Pronto
+cameras stay on the deterministic sensor path while one chase camera uses the
+advanced cinematic pipeline in the same render tick.
+
+Static map GLBs go in `glbs`; vegetation prototype GLBs go in `vegGlbs` and
+must retain their sibling `.instances.json` files. Loading prototype GLBs as
+ordinary tiles is invalid because it draws neither authored instances nor
+correct alpha-cutout foliage. Service chase attachments use
+`offsetM: [forward, right, up]`; set `lookAtActor: true` to aim a trailing boom
+at the host actor while ordinary sensor mounts preserve explicit yaw/pitch.
 
 **Calibration & validation:** side-by-side vs W0 clips and real dashcam
 footage; frozen-detector visibility sanity (fog actually occludes); WS1

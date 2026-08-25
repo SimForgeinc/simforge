@@ -43,7 +43,7 @@ use bevy::render::{Extract, Render, RenderApp, RenderSystems};
 use bevy::window::ExitCondition;
 use bevy::world_serialization::{WorldAssetRoot, WorldInstance, WorldInstanceSpawner};
 use crate::lighting::{self, LightingRung};
-use crate::profiles::{CinematicFx, RenderProfile};
+use crate::profiles::{RenderProfile, RenderProfileConfig};
 use crate::weather::Weather;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -376,6 +376,7 @@ pub struct SceneApp {
     /// Fixed EV100 from the resolved `LightingPlan` (spec §Exposure).
     ev100_fixed: f32,
     rung: LightingRung,
+    profile_config: RenderProfileConfig,
 }
 
 impl SceneApp {
@@ -384,6 +385,14 @@ impl SceneApp {
     /// Fails when the lighting ladder cannot be built (e.g. an unreadable
     /// `sky_hdr`).
     pub fn new(lighting: &Lighting) -> Result<Self> {
+        Self::new_with_profile_config(lighting, RenderProfileConfig::default())
+    }
+
+    pub fn new_with_profile_config(
+        lighting: &Lighting,
+        profile_config: RenderProfileConfig,
+    ) -> Result<Self> {
+        profile_config.cinematic.validate()?;
         std::env::set_var("BEVY_ASSET_ROOT", "/");
         let (tx, rx) = crossbeam_channel::unbounded::<SentPass>();
         let mut app = App::new();
@@ -417,7 +426,15 @@ impl SceneApp {
                 ScheduleRunnerPlugin::run_loop(Duration::ZERO),
                 crate::road_detail::RoadDetailPlugin,
             ))
-            .add_systems(Update, spawn_loaded_tiles)
+            .add_systems(
+                Update,
+                (
+                    spawn_loaded_tiles,
+                    crate::veg::load_veg_roots,
+                    crate::veg::instantiate_veg,
+                )
+                    .chain(),
+            )
             .insert_resource(MainReceiver(rx.clone()));
 
         // WSB4 lighting ladder (shared spec: docs/lighting-calibration.md).
@@ -476,6 +493,7 @@ impl SceneApp {
                 lighting.weather.sensor_ev100(lighting.sun_elev_deg)
             }),
             rung,
+            profile_config,
         })
     }
 
@@ -493,6 +511,21 @@ impl SceneApp {
             let handle: Handle<Gltf> = server.load(path);
             self.app.world_mut().spawn(TileLoad(handle));
         }
+        Ok(())
+    }
+
+    /// Queue vegetation prototype GLBs plus their `.instances.json` sidecars.
+    /// Keeping this separate from static tiles avoids accidentally drawing the
+    /// uninstanced prototype roots.
+    pub fn load_vegetation(&mut self, glbs: &[String]) -> Result<()> {
+        for g in glbs {
+            if !std::path::Path::new(g).is_absolute() {
+                bail!("vegetation glb paths must be absolute: {g}");
+            }
+        }
+        let server = self.app.world().resource::<AssetServer>().clone();
+        let mut commands = self.app.world_mut().commands();
+        crate::veg::spawn_veg(&mut commands, &server, glbs);
         Ok(())
     }
 
@@ -531,13 +564,9 @@ impl SceneApp {
         let rgb_entity = e.id();
         self.next_camera_order += 10;
 
-        // Full WSB4 render profile on the RGB view (tonemap, fixed EV100,
-        // skybox, cinematic stack) + GTAO/contact shadows at rung ≥ 3. The
-        // instance-ID view below stays bare. Temporal/frame-dependent effects
-        // (TAA, motion blur, DoF) are held off — the host-driven loop renders
-        // single frames and must stay hash-stable — and the lens-character
-        // effects (chromatic aberration, bloom) are neutralised: job/service
-        // frames feed training and review, not stills grading.
+        // Sensor views retain the deterministic contract. Cinematic views use
+        // the configured temporal/reflection/filmic stack and can coexist in
+        // the same SceneApp.
         {
             let world = self.app.world_mut();
             let mut commands = world.commands();
@@ -547,18 +576,9 @@ impl SceneApp {
                 self.ev100_fixed,
                 self.sky.clone(),
                 self.skybox_brightness,
-                false, // ssr
-                false, // taa
-                0.0,   // grain: CPU-readback concern of the CLI, not the engine
-                CinematicFx {
-                    chromatic_aberration: 0.0,
-                    dof_enabled: false,
-                    motion_shutter_angle: 0.0,
-                    bloom_intensity: 0.0,
-                    ..CinematicFx::default()
-                },
+                self.profile_config.cinematic,
             );
-            if self.rung.ao_contact() {
+            if profile == Profile::Sensor && self.rung.ao_contact() {
                 lighting::apply_camera_ao(&mut commands, rgb_entity);
             }
         }
@@ -803,7 +823,24 @@ impl SceneApp {
                 let mut q = world.query_filtered::<&TileLoad, Without<SceneSpawned>>();
                 q.iter(world).count()
             };
-            if pending_loads == 0 {
+            let pending_vegetation = {
+                let mut q = world.query_filtered::<
+                    &crate::veg::VegLoad,
+                    (
+                        Without<crate::veg::VegSceneSpawned>,
+                        Without<crate::veg::VegFailed>,
+                    ),
+                >();
+                q.iter(world).count()
+            };
+            let pending_instances = {
+                let mut q = world.query_filtered::<
+                    &crate::veg::VegRoot,
+                    Without<crate::veg::VegInstantiated>,
+                >();
+                q.iter(world).count()
+            };
+            if pending_loads == 0 && pending_vegetation == 0 && pending_instances == 0 {
                 // Collect instance entities under the query's mutable borrow,
                 // then re-check readiness through plain world access.
                 let roots: Vec<Entity> = {
