@@ -30,7 +30,7 @@ import msgpack
 ENV_SERVER_PROTOCOL_VERSION = 1
 _HEADER = struct.Struct("<I")
 _REPO_SERVER_DIST = (
-    Path(__file__).resolve().parents[3] / "packages" / "rl-env" / "dist" / "env-server.js"
+    Path(__file__).resolve().parents[3] / "packages" / "training-env" / "dist" / "env-server.js"
 )
 
 
