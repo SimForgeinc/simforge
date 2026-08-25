@@ -15,6 +15,12 @@
 
 const GZIP_MAGIC_0 = 0x1f;
 const GZIP_MAGIC_1 = 0x8b;
+// Node-only fallback: a static import would make this browser module unbundleable.
+async function loadNodeZlib() {
+  const specifier = ['node', 'zlib'].join(':');
+  return import(/* webpackIgnore: true */ specifier);
+}
+
 
 /** True when the buffer starts with the gzip magic number. */
 export function isGzipped(bytes: Uint8Array): boolean {
@@ -30,7 +36,7 @@ async function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
     const buf = await new Response(stream).arrayBuffer();
     return new Uint8Array(buf);
   }
-  const { gunzipSync } = await import('node:zlib');
+  const { gunzipSync } = await loadNodeZlib();
   return new Uint8Array(gunzipSync(bytes));
 }
 

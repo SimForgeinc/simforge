@@ -17,7 +17,9 @@ async function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
     const stream = blob.stream().pipeThrough(new Decompressor('gzip'));
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  const { gunzipSync } = await import('node:zlib');
+  // Node-only fallback: a static import would make this browser module unbundleable.
+  const nodeZlibSpecifier = ['node', 'zlib'].join(':');
+  const { gunzipSync } = await import(/* webpackIgnore: true */ nodeZlibSpecifier);
   return new Uint8Array(gunzipSync(bytes));
 }
 
