@@ -20,8 +20,13 @@ renderer/*
 renderer/target/*
 !renderer/target/release/
 renderer/target/release/*
-!renderer/target/release/scen-play
-!renderer/target/release/sensor-capture
+!renderer/target/release/native-render-service
+!renderer/service/
+renderer/service/*
+!renderer/service/python/
+renderer/service/python/*
+!renderer/service/python/simforge_native/
+!renderer/service/python/simforge_native/**
 !adapters/
 adapters/*
 !adapters/carla-bridge/

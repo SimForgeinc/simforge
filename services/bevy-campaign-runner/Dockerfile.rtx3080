@@ -13,10 +13,10 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates ffmpeg libasound2t64 libudev1 libvulkan1 libx11-6 libxkbcommon0 python3 \
  && rm -rf /var/lib/apt/lists/*
 
-COPY renderer/target/release/scen-play /usr/local/bin/scen-play
-COPY renderer/target/release/sensor-capture /usr/local/bin/sensor-capture
+COPY renderer/target/release/native-render-service /usr/local/bin/native-render-service
+COPY renderer/service/python/simforge_native /opt/simforge/simforge_native
 COPY scripts/bevy-campaign-parity.py /usr/local/bin/bevy-campaign-parity
 
-RUN chmod 0755 /usr/local/bin/scen-play /usr/local/bin/sensor-capture /usr/local/bin/bevy-campaign-parity
+RUN chmod 0755 /usr/local/bin/native-render-service /usr/local/bin/bevy-campaign-parity
 WORKDIR /work
 ENTRYPOINT ["/usr/local/bin/bevy-campaign-parity"]

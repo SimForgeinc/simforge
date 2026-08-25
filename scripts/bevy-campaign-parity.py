@@ -109,6 +109,11 @@ def campaign_job_map(campaign: Path) -> dict[str, list[str]]:
         for job_id in ids:
             if job_id and job_id not in by_doc.setdefault(doc_id, []):
                 by_doc[doc_id].append(job_id)
+    live = load(campaign / "live-carla-state.json") if (campaign / "live-carla-state.json").exists() else {}
+    for doc_id, record in live.get("documents", {}).items():
+        job_id = record.get("jobId")
+        if job_id and job_id not in by_doc.setdefault(doc_id, []):
+            by_doc[doc_id].append(job_id)
     return by_doc
 
 
@@ -263,6 +268,7 @@ def inventory(args) -> None:
     campaign, repo, out = Path(args.campaign), Path(args.repo), Path(args.out)
     jobs = campaign_job_map(campaign)
     ledger = load(campaign / "ledger.json")
+    live = load(campaign / "live-carla-state.json") if (campaign / "live-carla-state.json").exists() else {}
     rows = []
     for selected in load(campaign / "selection.json"):
         doc_id = selected["docId"]
@@ -271,6 +277,7 @@ def inventory(args) -> None:
         video = carla_video(campaign, doc_id, jobs)
         spec = ffprobe(video) if video else {}
         record = ledger.get("documents", {}).get(doc_id, {})
+        live_record = live.get("documents", {}).get(doc_id, {})
         video_job_id = video.parent.name if video else None
         video_timing = next((
             float(h["renderS"]) for h in record.get("history", [])
@@ -289,7 +296,9 @@ def inventory(args) -> None:
             "video": {"path": str(video) if video else None, **spec},
             "durationS": float(scenario.get("choreography", {}).get("clipSeconds", DURATION_S)),
             "carlaA100RenderS": video_timing if video_timing is not None else (
-                times[-1] if times else (record.get("renderS") if record.get("lane") == "carla" else None)
+                live_record.get("renderS") if live_record.get("state") == "succeeded" else (
+                    times[-1] if times else (record.get("renderS") if record.get("lane") == "carla" else None)
+                )
             ),
         })
     dump(out, {"schema": "simforge.bevy-campaign-inventory/v1", "documents": rows})
@@ -605,7 +614,7 @@ def render_shard(args) -> None:
         job = Path(args.jobs) / doc_id / "job.json"
         output = Path(args.out) / doc_id
         try:
-            render_playback(argparse.Namespace(job=str(job), binary=args.binary, out=str(output), ticks=None))
+            render_service(argparse.Namespace(job=str(job), binary=args.binary, client_root=args.client_root, out=str(output), ticks=args.ticks))
         except (Exception, SystemExit) as error:
             failures.append({"docId": doc_id, "cause": str(error)})
     dump(Path(args.out) / "shard-results.json", {
@@ -621,12 +630,17 @@ def deploy(args) -> None:
     repo, parity = Path(args.repo), Path(args.parity)
     for host in HOSTS if not args.host else [args.host]:
         run(["ssh", f"root@{host}", f"mkdir -p {REMOTE_ROOT}/bin {REMOTE_ROOT}/corpus {REMOTE_ROOT}/catalog {REMOTE_ROOT}/jobs {REMOTE_ROOT}/outputs"])
-        run(["rsync", "-a", "--checksum", args.binary, f"root@{host}:{REMOTE_ROOT}/bin/scen-play"])
-        run(["rsync", "-a", "--checksum", str(repo / "scripts/bevy-campaign-parity.py"), f"root@{host}:{REMOTE_ROOT}/bin/"])
+        run(["rsync", "-a", "--checksum", args.binary, f"root@{host}:{REMOTE_ROOT}/bin/native-render-service"])
+        run(["rsync", "-a", "--checksum", str(repo / "renderer/service/python/simforge_native") + "/", f"root@{host}:{REMOTE_ROOT}/bin/simforge_native/"])
         run(["rsync", "-a", "--checksum", str(repo / "catalog/vehicles-carla") + "/", f"root@{host}:{REMOTE_ROOT}/catalog/vehicles-carla/"])
         run(["rsync", "-a", "--checksum", str(repo / ".corpus/belmont-research-center") + "/", f"root@{host}:{REMOTE_ROOT}/corpus/belmont-research-center/"])
         run(["rsync", "-a", "--checksum", str(repo / ".corpus/richmond-field-station") + "/", f"root@{host}:{REMOTE_ROOT}/corpus/richmond-field-station/"])
         run(["rsync", "-a", "--checksum", str(parity / "jobs") + "/", f"root@{host}:{REMOTE_ROOT}/jobs/"])
+        if args.image_archive:
+            archive = Path(args.image_archive)
+            remote_archive = f"{REMOTE_ROOT}/{archive.name}"
+            run(["rsync", "-a", "--checksum", str(archive), f"root@{host}:{remote_archive}"])
+            run(["ssh", f"root@{host}", f"docker load --input {remote_archive} >/dev/null"])
         run(["rsync", "-a", str(parity / "shards" / f"{host}.json"), f"root@{host}:{REMOTE_ROOT}/shard.json"])
         print(json.dumps({"host": host, "deployed": True}))
 
@@ -635,9 +649,11 @@ def fleet(args) -> None:
     hosts = HOSTS if not args.host else [args.host]
     def execute(host: str) -> tuple[str, int, str]:
         remote = (
-            f"SIMFORGE_BEVY_CAMPAIGN_ROOT={REMOTE_ROOT} python3 {REMOTE_ROOT}/bin/bevy-campaign-parity.py "
-            f"render-shard --shard {REMOTE_ROOT}/shard.json --jobs {REMOTE_ROOT}/jobs "
-            f"--binary {REMOTE_ROOT}/bin/scen-play --out {REMOTE_ROOT}/outputs"
+            f"docker run --rm --gpus all -e SIMFORGE_BEVY_CAMPAIGN_ROOT={REMOTE_ROOT} "
+            f"-v {REMOTE_ROOT}:{REMOTE_ROOT} {args.image} render-shard "
+            f"--shard {REMOTE_ROOT}/shard.json --jobs {REMOTE_ROOT}/jobs "
+            f"--binary /usr/local/bin/native-render-service --client-root /opt/simforge "
+            f"--out {REMOTE_ROOT}/outputs"
         )
         result = subprocess.run(["ssh", f"root@{host}", remote], text=True, capture_output=True)
         return host, result.returncode, result.stdout + result.stderr
@@ -727,9 +743,9 @@ def parser() -> argparse.ArgumentParser:
     q = sub.add_parser("assemble"); q.add_argument("--job", required=True); q.add_argument("--raw", required=True); q.add_argument("--out", required=True); q.set_defaults(func=assemble)
     q = sub.add_parser("render-playback"); q.add_argument("--job", required=True); q.add_argument("--binary", required=True); q.add_argument("--out", required=True); q.add_argument("--ticks", type=int); q.set_defaults(func=render_playback)
     q = sub.add_parser("render-service"); q.add_argument("--job", required=True); q.add_argument("--binary", required=True); q.add_argument("--client-root", required=True); q.add_argument("--out", required=True); q.add_argument("--ticks", type=int); q.set_defaults(func=render_service)
-    q = sub.add_parser("render-shard"); q.add_argument("--shard", required=True); q.add_argument("--jobs", required=True); q.add_argument("--binary", required=True); q.add_argument("--out", required=True); q.set_defaults(func=render_shard)
-    q = sub.add_parser("deploy"); q.add_argument("--repo", required=True); q.add_argument("--parity", required=True); q.add_argument("--binary", required=True); q.add_argument("--host"); q.set_defaults(func=deploy)
-    q = sub.add_parser("fleet"); q.add_argument("--parity", required=True); q.add_argument("--host"); q.set_defaults(func=fleet)
+    q = sub.add_parser("render-shard"); q.add_argument("--shard", required=True); q.add_argument("--jobs", required=True); q.add_argument("--binary", required=True); q.add_argument("--client-root", required=True); q.add_argument("--out", required=True); q.add_argument("--ticks", type=int); q.set_defaults(func=render_shard)
+    q = sub.add_parser("deploy"); q.add_argument("--repo", required=True); q.add_argument("--parity", required=True); q.add_argument("--binary", required=True); q.add_argument("--image-archive"); q.add_argument("--host"); q.set_defaults(func=deploy)
+    q = sub.add_parser("fleet"); q.add_argument("--parity", required=True); q.add_argument("--image", default="simforge/bevy-campaign-runner:final"); q.add_argument("--host"); q.set_defaults(func=fleet)
     q = sub.add_parser("compose"); q.add_argument("--campaign", required=True); q.add_argument("--parity", required=True); q.set_defaults(func=compose)
     q = sub.add_parser("scorecard"); q.add_argument("--parity", required=True); q.set_defaults(func=scorecard)
     return p
