@@ -193,13 +193,13 @@ export async function getMapBrowserPayloads(
     byte_length: number | string;
   }>(
     `SELECT m.relative_path, b.storage_bucket, b.storage_key, b.sha256, b.byte_length
-     FROM uniscenario.map_versions mv
-     JOIN uniscenario.browser_asset_sets s ON s.id = mv.browser_asset_set_id
+     FROM simforge.map_versions mv
+     JOIN simforge.browser_asset_sets s ON s.id = mv.browser_asset_set_id
        AND s.workspace_id = mv.workspace_id AND s.map_version_id = mv.id
        AND s.asset_set_state = 'available'
-     JOIN uniscenario.browser_asset_members m ON m.asset_set_id = s.id
+     JOIN simforge.browser_asset_members m ON m.asset_set_id = s.id
        AND m.relative_path LIKE '3d/%'
-     JOIN uniscenario.browser_asset_blobs b ON b.id = m.blob_id
+     JOIN simforge.browser_asset_blobs b ON b.id = m.blob_id
        AND b.verification_state = 'verified'
      WHERE mv.id = :map_version_id
        AND mv.workspace_id = :workspace_id

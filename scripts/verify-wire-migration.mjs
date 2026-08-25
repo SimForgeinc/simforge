@@ -30,7 +30,8 @@ function isEvidence(path) {
     || path.includes('/fixtures/')
     || path.startsWith('qualification/')
     || path.startsWith('run/evidence/')
-    || path.startsWith('scripts/native-evidence/');
+    || path.startsWith('scripts/native-evidence/')
+    || path === 'scripts/verify-wire-migration.mjs';
 }
 
 const failures = [];

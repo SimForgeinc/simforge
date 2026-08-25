@@ -502,8 +502,8 @@ export async function countRecentUploadsByUser(userId: string): Promise<number> 
 export async function countScenariosUsingGalleryAsset(catalogSlug: string): Promise<number> {
   const row = await queryOne<{ scenario_count: number }>(
     `SELECT COUNT(*)::int AS scenario_count
-     FROM uniscenario.documents d
-     JOIN uniscenario.drafts dr
+     FROM simforge.documents d
+     JOIN simforge.drafts dr
        ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
      WHERE d.deleted_at IS NULL
        AND EXISTS (
