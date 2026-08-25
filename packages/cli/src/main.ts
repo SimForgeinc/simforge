@@ -34,7 +34,13 @@ import { evidenceVerify } from './commands/evidence.js';
 import { exportScenario } from './commands/export.js';
 import { instantiate } from './commands/instantiate.js';
 import { locationsFind, locationsGet, locationsResolve } from './commands/locations.js';
-import { mapsList } from './commands/maps.js';
+import {
+  registryMapsIngest,
+  registryMapsList,
+  registryMapsPromote,
+  registryMapsPull,
+  registryMapsSourcePush,
+} from './commands/map-registry.js';
 import { schemas } from './commands/schemas.js';
 import { simulate } from './commands/simulate.js';
 import { debugScenario } from './commands/debug.js';
@@ -46,7 +52,11 @@ import { renderHash, renderRun } from './commands/render.js';
 import { corpusBuildCommand, corpusPrewarm } from './commands/corpus.js';
 
 const COMMANDS = [
-  { name: 'maps list', summary: 'the five dev maps, their artifacts and catalog revisions' },
+  { name: 'maps list', summary: 'list immutable maps and versions in the configured registry' },
+  { name: 'maps pull', summary: 'verify and materialize a registry map into local engine cache layouts' },
+  { name: 'maps ingest', summary: 'publish a pre-built closure directory and optional derived directories' },
+  { name: 'maps promote', summary: 'copy one immutable version between registries' },
+  { name: 'maps sources push', summary: 'resumably multipart-upload a raw source archive' },
   { name: 'locations find', summary: 'structured location query: --map --type --facts --near …' },
   { name: 'locations get', summary: 'one location by handle or id, optionally --describe' },
   { name: 'locations resolve', summary: 'free text → ranked handles' },
@@ -208,13 +218,114 @@ async function dispatch(argv: readonly string[]): Promise<number> {
 
   switch (head) {
     case 'maps': {
-      const args = parseArgs(argv.slice(2), { booleans: GLOBAL_BOOLEANS });
-      if (sub !== 'list') {
-        throw new CliError('unknown_command', `simforge maps ${sub ?? ''}`.trim(), {
-          detail: { known: ['list'] },
+      if (sub === 'list') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: ['registry'],
+        });
+        return registryMapsList({
+          pretty: boolFlag(args, 'pretty'),
+          registry: optionalString(args, 'registry'),
         });
       }
-      return mapsList({ pretty: boolFlag(args, 'pretty') });
+      if (sub === 'pull') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: [
+            'registry',
+            'cache-root',
+            'browser-root',
+            'dev-assets-root',
+            'native-corpus-root',
+            'browser-fingerprint',
+            'ktx2-fingerprint',
+            'native-fingerprint',
+          ],
+        });
+        return registryMapsPull({
+          reference: positional(args, 0, 'name[@version]'),
+          registry: optionalString(args, 'registry'),
+          cacheRoot: optionalString(args, 'cache-root'),
+          browserRoot: optionalString(args, 'browser-root'),
+          devAssetsRoot: optionalString(args, 'dev-assets-root'),
+          nativeCorpusRoot: optionalString(args, 'native-corpus-root'),
+          browserFingerprint: optionalString(args, 'browser-fingerprint'),
+          ktx2Fingerprint: optionalString(args, 'ktx2-fingerprint'),
+          nativeFingerprint: optionalString(args, 'native-fingerprint'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      if (sub === 'ingest') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: [
+            'name',
+            'registry',
+            'version',
+            'label',
+            'source-ref',
+            'browser-dir',
+            'browser-fingerprint',
+            'ktx2-dir',
+            'ktx2-fingerprint',
+            'native-dir',
+            'native-fingerprint',
+          ],
+        });
+        const version = optionalString(args, 'version');
+        if (version !== undefined && !/^v[1-9][0-9]*$/.test(version)) {
+          throw new CliError('bad_value', '--version must be v<N>', { path: '--version' });
+        }
+        return registryMapsIngest({
+          directory: positional(args, 0, 'closure-directory'),
+          name: requireString(args, 'name'),
+          registry: optionalString(args, 'registry'),
+          version: version as `v${number}` | undefined,
+          label: optionalString(args, 'label'),
+          sourceRef: optionalString(args, 'source-ref'),
+          browserDirectory: optionalString(args, 'browser-dir'),
+          browserFingerprint: optionalString(args, 'browser-fingerprint'),
+          ktx2Directory: optionalString(args, 'ktx2-dir'),
+          ktx2Fingerprint: optionalString(args, 'ktx2-fingerprint'),
+          nativeDirectory: optionalString(args, 'native-dir'),
+          nativeFingerprint: optionalString(args, 'native-fingerprint'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      if (sub === 'promote') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: ['from', 'destination-registry', 'to'],
+        });
+        const to = optionalString(args, 'to');
+        if (to !== undefined && to !== 'public') {
+          throw new CliError('bad_value', '--to must be public', { path: '--to' });
+        }
+        return registryMapsPromote({
+          reference: positional(args, 0, 'name@version'),
+          sourceRegistry: optionalString(args, 'from'),
+          destinationRegistry: optionalString(args, 'destination-registry'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      if (sub === 'sources' && argv[2] === 'push') {
+        const args = parseArgs(argv.slice(3), {
+          booleans: GLOBAL_BOOLEANS,
+          values: ['name', 'label', 'date', 'resume-file', 'registry'],
+        });
+        return registryMapsSourcePush({
+          archivePath: positional(args, 0, 'archive'),
+          name: requireString(args, 'name'),
+          label: optionalString(args, 'label'),
+          date: optionalString(args, 'date'),
+          resumeFile: optionalString(args, 'resume-file'),
+          registry: optionalString(args, 'registry'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      throw new CliError('unknown_command', `simforge maps ${sub ?? ''}`.trim(), {
+        detail: { known: ['list', 'pull', 'ingest', 'promote', 'sources push'] },
+      });
     }
 
     case 'locations': {
