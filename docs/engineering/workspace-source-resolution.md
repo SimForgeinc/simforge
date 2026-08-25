@@ -28,7 +28,7 @@ All 13 published packages use the same package-export shape:
 
 Every public JavaScript subpath follows the same rule. Static JSON and schema exports remain direct source-tree files because they are already publishable artifacts rather than compiled JavaScript.
 
-`tsconfig.base.json` selects the `development` condition and maps public workspace specifiers to their source entry points. The paths make `tsx` and TypeScript independent of package build order. Studio repeats those paths because its app-local `paths` object overrides the inherited object. Vitest and Next development select the `development` export condition; Studio lists the workspace packages in `transpilePackages` so Next compiles their TypeScript source.
+`tsconfig.base.json` selects the `development` condition and maps public workspace specifiers to their source entry points. The paths make `tsx` and TypeScript independent of package build order. Studio repeats those paths because its app-local `paths` object overrides the inherited object. Vitest selects the `development` export condition. Studio development runs Next with webpack, lists every workspace dependency in `transpilePackages`, and maps explicit `.js` relative imports to `.ts`/`.tsx`; that lets Next compile the packages' Node-compatible TypeScript source without rewriting its import specifiers.
 
 Do not add a package-specific alias to fix a stale-build failure. Add its public entry point to the package's `development` exports and both path maps, then keep the published `publishConfig.exports` dist-only.
 

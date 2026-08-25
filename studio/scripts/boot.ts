@@ -7,7 +7,7 @@ await seed();
 
 const children: ChildProcess[] = [];
 
-const server = spawn("pnpm", ["exec", "next", "dev", "-p", process.env.PORT ?? "5199"], {
+const server = spawn("pnpm", ["exec", "next", "dev", "--webpack", "-p", process.env.PORT ?? "5199"], {
   stdio: "inherit",
   env: process.env,
 });
