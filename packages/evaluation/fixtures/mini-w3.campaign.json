@@ -1,0 +1,42 @@
+{
+  "campaignId": "mini-w3",
+  "runsRoot": "~/simforge-assets/runs",
+  "decisionHz": 10,
+  "suite": [
+    {
+      "scenarioId": "synthetic-dynamic",
+      "spec": "../../../adapters/policy-runner/fixtures/synthetic-episode-dynamic.json",
+      "session": 0,
+      "steps": 40
+    },
+    {
+      "scenarioId": "synthetic-leadcar",
+      "spec": "synthetic-leadcar.episodes.json",
+      "session": 0,
+      "steps": 120
+    },
+    {
+      "scenarioId": "synthetic-straight-30s",
+      "spec": "../../../adapters/ros2-bridge/config/episodes/synthetic-straight.episodes.json",
+      "session": 0,
+      "steps": 300
+    }
+  ],
+  "seeds": [101, 202, 303],
+  "policies": [
+    {
+      "policyId": "scripted",
+      "runnerPolicy": "scripted",
+      "policySeed": 0,
+      "deadlineMs": 50,
+      "fallback": "zero-control"
+    },
+    {
+      "policyId": "torch-mlp",
+      "runnerPolicy": "torch",
+      "policySeed": 7,
+      "deadlineMs": 50,
+      "fallback": "zero-control"
+    }
+  ]
+}

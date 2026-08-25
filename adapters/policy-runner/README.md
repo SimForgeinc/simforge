@@ -22,9 +22,12 @@ python -m simforge_policy_runner \
     --out /tmp/trace.jsonl
 ```
 
-Prints the episode summary (digest, steps, misses, infer/roundtrip
-percentiles) as JSON; the trace file carries one record per decision plus a
-final summary line.
+Prints the episode summary (digest, steps, misses, checkpoint digest,
+infer/roundtrip percentiles) as JSON; the trace file carries a `reset`
+record, one record per decision (with the decoded `sv` state vector and the
+`terms` reward breakdown for downstream scoring — see
+`packages/evaluation` `scoring.ts`), and a final summary line. `--session`
+selects the env session (scenario instance) inside the spec.
 
 The bundled fixture is the gym adapter's synthetic two-car episode with
 `physics.mode = 'dynamic-v1'` so control actions actually drive the ego.

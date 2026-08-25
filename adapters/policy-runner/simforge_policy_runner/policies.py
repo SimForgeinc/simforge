@@ -8,6 +8,7 @@ so identical seeds yield bit-identical actions on one machine.
 
 from __future__ import annotations
 
+import hashlib
 import math
 from typing import Any, Protocol
 
@@ -18,6 +19,7 @@ from .protocol import control
 
 class Policy(Protocol):
     name: str
+    checkpoint_digest: str
 
     def act(self, step: int, state_vector: np.ndarray | None) -> dict[str, Any]:
         """Return one compact wire action for this decision."""
@@ -27,6 +29,10 @@ class ScriptedPolicy:
     """Smooth open-loop throttle/steer schedule; ignores observations."""
 
     name = "scripted"
+    #: Content digest of the (frozen) schedule below — the scripted policy's "weights".
+    checkpoint_digest = hashlib.sha256(
+        b"scripted-v1:throttle=0.35+0.15*sin(step/5.0);brake=0;steer=0.02*sin(step/7.0)"
+    ).hexdigest()
 
     def act(self, step: int, state_vector: np.ndarray | None) -> dict[str, Any]:
         throttle = 0.35 + 0.15 * math.sin(step / 5.0)
@@ -52,6 +58,12 @@ class TorchMlpPolicy:
             torch.nn.Linear(32, 3),
         )
         self.net.eval()
+        digest = hashlib.sha256()
+        for key, tensor in sorted(self.net.state_dict().items()):
+            digest.update(key.encode())
+            digest.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+        #: Content digest over the seeded weights, state_dict order — the real checkpoint identity.
+        self.checkpoint_digest = digest.hexdigest()
 
     def act(self, step: int, state_vector: np.ndarray | None) -> dict[str, Any]:
         torch = self._torch
