@@ -169,6 +169,17 @@ async function executeClaim(
     for (const input of job.inputs) {
       if (claimedInputIds.has(input.inputId)) throw new Error(`invalid duplicate claimed input ${input.inputId}`);
       claimedInputIds.add(input.inputId);
+      if (input.inputId.startsWith('map.assets/')) {
+        // Map tile closure ships as lease-only inputs (not part of the frozen
+        // intent, so digests stay stable). The claim carries the verified
+        // member sha256/size and downloadInputs enforces both; only the path
+        // shape needs guarding here (the engine materializes it on disk).
+        const relativePath = input.inputId.slice('map.assets/'.length);
+        if (relativePath.length === 0 || relativePath.startsWith('/') || relativePath.includes('..') || relativePath.includes(':')) {
+          throw new Error(`invalid claimed map asset input path ${input.inputId}`);
+        }
+        continue;
+      }
       const expected = expectedInputs.get(input.inputId);
       if (!expected) throw new Error(`invalid unreferenced claimed input ${input.inputId}`);
       if (expected.sha256 !== input.sha256 || expected.sizeBytes !== input.sizeBytes) {
