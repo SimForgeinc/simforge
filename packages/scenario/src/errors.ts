@@ -1,11 +1,6 @@
 /** Error types the package throws. All extend `Error` and set `name`. */
 
 import type { $ZodIssue } from 'zod/v4/core';
-import {
-  AUTHORED_ACTOR_LIMIT_CODE,
-  MAX_AUTHORED_ACTORS,
-  authoredActorLimitMessage,
-} from './actor-limits.js';
 
 /** A structured, JSON-safe view of one schema violation. */
 export interface ScenarioIssue {
@@ -115,18 +110,6 @@ export class ScenarioOperationError extends Error {
   override readonly name: string = 'ScenarioOperationError';
 }
 
-/** An authoring mutation would exceed the supported authored-actor envelope. */
-export class AuthoredActorLimitError extends ScenarioOperationError {
-  override readonly name = 'AuthoredActorLimitError';
-  readonly code = AUTHORED_ACTOR_LIMIT_CODE;
-  readonly actual: number;
-  readonly maximum = MAX_AUTHORED_ACTORS;
-
-  constructor(actual: number) {
-    super(authoredActorLimitMessage(actual));
-    this.actual = actual;
-  }
-}
 
 /** A file store was asked for a scenario it does not hold. */
 export class ScenarioNotFoundError extends Error {

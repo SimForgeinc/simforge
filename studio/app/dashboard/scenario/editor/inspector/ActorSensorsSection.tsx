@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { Radio, SlidersHorizontal } from "lucide-react";
-import {
-  defaultDashCamera,
-  supportsDashCamera,
-} from "@simforge/scenario";
+import { defaultDashCamera } from "@simforge/scenario";
 import { Switch } from "@/app/components/ui/switch";
 import type { ActorRecord, EditorDocument } from "@simforge/editor";
 import { SensorSetupModal } from "./SensorSetupModal";
@@ -44,7 +41,6 @@ export function ActorSensorsSection({
   const sensors = role.actor.sensors;
   const counts = sensorCounts(sensors);
   const rig = appliedRigPreset(sensors, role.actor, EDITOR_SENSOR_RIGS);
-  const canMountCamera = supportsDashCamera(role.actor);
 
   return (
     <section aria-labelledby="scenario-sensors-heading" className="space-y-1.5">
@@ -62,9 +58,7 @@ export function ActorSensorsSection({
 
       {counts.total === 0 ? (
         <p className="text-[9px] leading-3 text-white/35">
-          {canMountCamera
-            ? "A vehicle with a camera records the scenario."
-            : `A ${role.actor.class} has no camera mount, but can carry LiDAR or radar.`}
+          Add a camera or a full perception rig to record the scenario.
         </p>
       ) : (
         <p className="text-[9px] leading-3 text-white/45">
@@ -103,7 +97,7 @@ export function ActorSensorsSection({
           <SlidersHorizontal aria-hidden="true" className="size-3" />
           {counts.total === 0 ? "Add sensors" : "Configure"}
         </button>
-        {counts.total === 0 && canMountCamera ? (
+        {counts.total === 0 ? (
           <button
             aria-label="Add dash camera"
             className="editor-motion flex items-center justify-center gap-1 rounded-lg border border-[#E8E044]/35 bg-[#E8E044]/10 px-2 py-1.5 text-[9px] font-semibold text-[#E8E044] hover:bg-[#E8E044]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8E044]"

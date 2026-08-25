@@ -10,7 +10,6 @@ import {
   instantiateSensorRig,
   resolveSensorMountPreset,
   sensorAperture,
-  supportsDashCamera,
   type ActiveSensorField,
   type ActorSensor,
   type ActorSpec,
@@ -85,7 +84,6 @@ export function SensorSetupModal({
 
   const sensors: readonly ActorSensor[] = actor.sensors;
   const counts = sensorCounts(sensors);
-  const canMountCamera = supportsDashCamera(actor);
   const rig = useMemo(
     () => appliedRigPreset(sensors, actor, EDITOR_SENSOR_RIGS),
     [actor, sensors],
@@ -154,7 +152,6 @@ export function SensorSetupModal({
                 Production rigs
               </h3>
               {EDITOR_SENSOR_RIGS.map((preset) => {
-                const compatible = preset.compatibleActorClasses.includes(actor.class);
                 const applied = rig?.id === preset.id;
                 const presetCounts = sensorCounts(preset.sensors);
                 return (
@@ -166,9 +163,7 @@ export function SensorSetupModal({
                       applied
                         ? "border-primary bg-primary/10"
                         : "border-border hover:border-primary/50 hover:bg-muted/40",
-                      compatible ? "" : "cursor-not-allowed opacity-40",
                     )}
-                    disabled={!compatible}
                     key={preset.id}
                     onClick={() => {
                       setError(null);
@@ -179,7 +174,7 @@ export function SensorSetupModal({
                         setError(cause instanceof Error ? cause.message : "The rig could not be fitted.");
                       }
                     }}
-                    title={compatible ? preset.description : `Not available for a ${actor.class}`}
+                    title={preset.description}
                     type="button"
                   >
                     <span className="min-w-0 flex-1">
@@ -204,11 +199,10 @@ export function SensorSetupModal({
               </h3>
               <div className="grid grid-cols-3 gap-1.5">
                 <AddButton
-                  disabled={!canMountCamera}
                   icon={Camera}
                   label="Camera"
                   onClick={() => add("dash_camera")}
-                  title={canMountCamera ? "Add a dash camera" : `A ${actor.class} has no camera mount`}
+                  title="Add a camera"
                 />
                 <AddButton icon={Scan} label="LiDAR" onClick={() => add("lidar")} title="Add a roof LiDAR" />
                 <AddButton icon={Radar} label="Radar" onClick={() => add("radar")} title="Add a bumper radar" />

@@ -37,11 +37,7 @@ import { ExprSchema, NumberOrExprSchema } from '../../expr/index.js';
 import { LaneRefSchema as V1LaneRefSchema, PoseSchema as V1PoseSchema } from '../v1.js';
 import { ApproachRelationSchema, TurnDirectionSchema } from './anchor.js';
 import { FeatureRefSchema, RoleIdSchema, RoleRefSchema, V2ExtensionsSchema } from './common.js';
-import {
-  ActorSensorSchema,
-  supportsDashCamera,
-  type ActorSensor,
-} from './sensors.js';
+import { ActorSensorSchema, type ActorSensor } from './sensors.js';
 
 /** Actor classes. Drives dynamics limits, footprint, and occluder height. */
 export const ACTOR_CLASSES = [
@@ -109,7 +105,7 @@ export const ActorSpecSchema = z.strictObject({
    */
   static: z.boolean().default(false),
   /** Physical sensors mounted to this actor. Empty for legacy templates. */
-  sensors: z.array(ActorSensorSchema).max(32).default([]),
+  sensors: z.array(ActorSensorSchema).default([]),
 }).check((ctx) => {
   const ids = new Set<string>();
   ctx.value.sensors.forEach((sensor: ActorSensor, index: number) => {
@@ -122,14 +118,6 @@ export const ActorSpecSchema = z.strictObject({
       });
     }
     ids.add(sensor.id);
-    if (sensor.type === 'dash_camera' && !supportsDashCamera(ctx.value)) {
-      ctx.issues.push({
-        code: 'custom',
-        message: `dash cameras are not supported on actor class "${ctx.value.class}"`,
-        path: ['sensors', index, 'type'],
-        input: sensor.type,
-      });
-    }
   });
 });
 

@@ -431,7 +431,7 @@ function canonicalRig(programValue) {
       horizontalFovDeg: sensor.horizontalFovDeg, verticalFovDeg: sensor.verticalFovDeg, nearM: 0.5, farM: sensor.type === 'lidar' ? 200 : 100,
     } };
   });
-  const base = { id: programValue.prontoRig.id, name: programValue.prontoRig.name, compatibleActorClasses: ['car'], sensors };
+  const base = { id: programValue.prontoRig.id, name: programValue.prontoRig.name, sensors };
   return { ...base, rigSha256: sha256(base) };
 }
 

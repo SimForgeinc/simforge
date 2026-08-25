@@ -43,7 +43,6 @@
     "sourceFrame": "vehicle: longitudinal-mm, lateral-right-mm, up-mm",
     "canonicalFrame": "x-forward, y-up, z-left; metres; radians",
     "sourceDatumMm": {"longitudinal": 1317.75, "lateralRight": 0, "up": 1650},
-    "compatibleActorClasses": ["car"],
     "sensors": [
       {"id":"pronto-cam0","type":"dash_camera","label":"CAM0 — Front Driver","sourceMountMm":{"longitudinal":-150.9,"lateralRight":-795.8,"up":51.7},"rotationDeg":{"yaw":122,"pitch":25,"roll":0},"horizontalFovDeg":120},
       {"id":"pronto-cam1","type":"dash_camera","label":"CAM1 — Front Center","sourceMountMm":{"longitudinal":-150.8,"lateralRight":0,"up":51.7},"rotationDeg":{"yaw":0,"pitch":10,"roll":0},"horizontalFovDeg":120},
