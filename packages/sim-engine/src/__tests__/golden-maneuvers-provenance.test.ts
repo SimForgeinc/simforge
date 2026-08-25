@@ -32,9 +32,12 @@ const FIXTURE_PATH = fileURLToPath(
 interface V2Case {
   readonly id: string;
   readonly family: string;
+  readonly assertions?: readonly string[];
+  readonly substepsS?: readonly number[];
   readonly provenance?: string;
   readonly references?: readonly {
     readonly metric: string;
+    readonly value: number;
     readonly provenance?: string;
   }[];
 }
@@ -42,6 +45,9 @@ interface V2Case {
 interface V2Fixture extends GoldenManeuverFixture {
   readonly provenanceEnum?: readonly string[];
   readonly documentedEngineDerivedIds?: readonly string[];
+  readonly oracle: {
+    readonly carlaServerVersion: string;
+  };
   readonly cases: readonly V2Case[];
 }
 
