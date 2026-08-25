@@ -396,6 +396,7 @@ interface CorpusFileEntry {
   srcSha256: string;
   kind: 'glb' | 'sidecar' | 'scene';
   texturesConverted?: number;
+  prunedPrimitives?: number;
 }
 
 interface CorpusManifest {
@@ -436,6 +437,8 @@ export interface CorpusBuildResult {
   sourceBytes: number;
   texturesConverted: number;
   reusedFiles: number;
+  prunedPrimitives: number;
+  prunedFiles: Array<{ path: string; prunedPrimitives: number }>;
   durationMs: number;
   tools: CorpusTools;
 }
@@ -557,6 +560,8 @@ export async function corpusBuild(options: CorpusBuildOptions): Promise<CorpusBu
   const files: CorpusFileEntry[] = [];
   let texturesConverted = 0;
   let reusedFiles = 0;
+  let prunedPrimitives = 0;
+  const prunedFiles: Array<{ path: string; prunedPrimitives: number }> = [];
   let sourceBytes = 0;
 
   for (let i = 0; i < names.length; i += 1) {
@@ -572,6 +577,11 @@ export async function corpusBuild(options: CorpusBuildOptions): Promise<CorpusBu
       files.push({ ...cached });
       reusedFiles += 1;
       texturesConverted += cached.texturesConverted ?? 0;
+      const cachedPrunedPrimitives = cached.prunedPrimitives ?? 0;
+      prunedPrimitives += cachedPrunedPrimitives;
+      if (cachedPrunedPrimitives > 0) {
+        prunedFiles.push({ path: relPath, prunedPrimitives: cachedPrunedPrimitives });
+      }
       continue;
     }
 
@@ -592,8 +602,12 @@ export async function corpusBuild(options: CorpusBuildOptions): Promise<CorpusBu
         kind: 'sidecar',
       };
     } else {
-      const { doc, converted } = await decodeGlb(srcBytes, io);
+      const { doc, converted, prunedPrimitives: filePrunedPrimitives } = await decodeGlb(srcBytes, io);
       texturesConverted += converted;
+      prunedPrimitives += filePrunedPrimitives;
+      if (filePrunedPrimitives > 0) {
+        prunedFiles.push({ path: relPath, prunedPrimitives: filePrunedPrimitives });
+      }
       const outFile = path.join(outDir, relPath);
       const glb = await io.writeBinary(doc);
       await writeFile(outFile, glb);
@@ -605,6 +619,7 @@ export async function corpusBuild(options: CorpusBuildOptions): Promise<CorpusBu
         srcSha256: srcSha,
         kind: 'glb',
         ...(converted > 0 ? { texturesConverted: converted } : {}),
+        ...(filePrunedPrimitives > 0 ? { prunedPrimitives: filePrunedPrimitives } : {}),
       };
     }
     files.push(entry);
@@ -663,6 +678,8 @@ export async function corpusBuild(options: CorpusBuildOptions): Promise<CorpusBu
     sourceBytes,
     texturesConverted,
     reusedFiles,
+    prunedPrimitives,
+    prunedFiles,
     durationMs: Date.now() - started,
     tools,
   };
