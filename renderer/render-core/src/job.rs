@@ -34,8 +34,18 @@ pub struct RenderJob {
     pub far_m: f32,
     #[serde(default = "default_passes")]
     pub passes: PassSet,
+    /// Optional road-detail layer (simforge.road-detail/v1 sidecar paths),
+    /// applied after scene readiness. Absent -> legacy output, byte-identical.
+    #[serde(default)]
+    pub road_detail: Option<RoadDetailJob>,
     pub schedule: Vec<ScheduleEntry>,
     pub out_dir: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoadDetailJob {
+    pub sidecars: Vec<String>,
 }
 
 fn default_warmup() -> u32 {
@@ -183,6 +193,18 @@ pub fn run_job(job: &RenderJob) -> Result<RenderResults> {
         );
     }
     let legend = app.wait_until_ready()?;
+
+    // Optional road-detail layer: swap the named road/marking materials to
+    // the extended splat/wear material before pipeline warmup.
+    if let Some(rd) = &job.road_detail {
+        for sidecar in &rd.sidecars {
+            let stats = app.apply_road_detail(sidecar)?;
+            eprintln!(
+                "road-detail: {sidecar} -> {} road + {} marking entities",
+                stats.road_entities, stats.marking_entities
+            );
+        }
+    }
     let scene_ready_ms = t_start.elapsed().as_secs_f64() * 1000.0;
 
     // Warmup at the first pose set so pipelines/shaders compile before capture.
