@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { resolve } from "node:path";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: [
@@ -29,13 +28,6 @@ const nextConfig: NextConfig = {
       ...config.resolve.extensionAlias,
       ".js": [".ts", ".tsx", ".js"],
       ".jsx": [".tsx", ".jsx"],
-    };
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "./traffic-provider/sumoWasmWorker.js": resolve(
-        process.cwd(),
-        "../packages/playback/src/traffic-provider/sumoWasmWorker.ts",
-      ),
     };
     return config;
   },
