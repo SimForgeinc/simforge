@@ -32,9 +32,12 @@ gpu_lock="${3:-}"
 stale_after_s="${4:-3600}"
 render_pattern="${5:-uniscenarios-carla.*run-intent}"
 
-# pgrep -f matches full cmdlines, including THIS probe's own argv (the
-# pattern is one of its arguments) — exclude self and parent.
-live_renders="$(pgrep -f "$render_pattern" | grep -vE "^($$|$PPID)\$" || true)"
+# pgrep -f matches full cmdlines — including every shell up the ancestry whose
+# argv carries this pattern as literal text (ssh command strings, this probe's
+# own argv). Bracket-transform the first character so the regex never matches
+# its own literal text, and additionally drop self/parent pids.
+render_pattern_safe="[${render_pattern:0:1}]${render_pattern:1}"
+live_renders="$(pgrep -f "$render_pattern_safe" | grep -vE "^($$|$PPID)\$" || true)"
 if [ -n "$live_renders" ]; then
   echo "skip: live render subprocess matches '$render_pattern' (pids: $(echo "$live_renders" | tr '\n' ' '))"
   exit 0
