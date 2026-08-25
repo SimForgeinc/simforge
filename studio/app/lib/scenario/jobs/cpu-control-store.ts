@@ -447,7 +447,7 @@ async function expireCpuAttempts() {
             SET attempt_state = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE 'expired' END,
                 completed_at = NOW(),
                 failure_code = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE attempt.failure_code END
-           FROM scenario.${table} job
+           FROM simforge.${table} job
           WHERE job.id = :job_id AND attempt.job_family = :job_family AND attempt.job_id = job.id
             AND attempt.attempt_state = 'active' AND attempt.expires_at <= NOW()
           RETURNING attempt.id`,
@@ -458,7 +458,7 @@ async function expireCpuAttempts() {
         workspace_id: string;
         state: "queued" | "failed" | "cancelled";
       }>(
-        `UPDATE scenario.${table} job
+        `UPDATE simforge.${table} job
               SET ${stateColumn} = CASE
                     WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled'
                     WHEN job.attempt_count < job.max_attempts THEN 'queued'
@@ -926,7 +926,7 @@ export async function heartbeatCpuJob(
     if (!rows[0]) return null;
     const table = input.jobFamily === "openscenario_validate" ? "validation_runs" : "render_jobs";
     const state = await tx.queryRows<{ cancel_requested: boolean }>(
-      `UPDATE scenario.${table} SET progress = GREATEST(progress, :progress), updated_at = NOW()
+      `UPDATE simforge.${table} SET progress = GREATEST(progress, :progress), updated_at = NOW()
         WHERE id = :job_id AND cancel_requested_at IS NULL
       RETURNING false AS cancel_requested`,
       { job_id: jobId, progress: input.progress ?? 0 },
@@ -966,7 +966,7 @@ export async function reserveCpuJobOutputs(
   const reserved = await withScenarioJobTransaction(jobId, async (tx) => {
     const owner = await tx.queryOne<{ workspace_id: string; revision_id: string }>(
       `SELECT job.workspace_id, job.revision_id
-         FROM scenario.${table} job
+         FROM simforge.${table} job
          JOIN simforge.cpu_job_attempts attempt
            ON attempt.job_id = job.id AND attempt.job_family = :job_family
         WHERE job.id = :job_id AND job.${stateColumn} = 'running'
@@ -1388,7 +1388,7 @@ export async function failCpuJob(
     const current = await tx.queryOne<{ retry: boolean; cancelled: boolean }>(
       `SELECT (cancel_requested_at IS NULL AND attempt_count < max_attempts) AS retry,
               (cancel_requested_at IS NOT NULL) AS cancelled
-         FROM scenario.${table}
+         FROM simforge.${table}
         WHERE id = :job_id FOR UPDATE`,
       { job_id: jobId },
     );
@@ -1404,7 +1404,7 @@ export async function failCpuJob(
       },
     );
     await tx.execute(
-      `UPDATE scenario.${table} SET ${stateColumn} = :state,
+      `UPDATE simforge.${table} SET ${stateColumn} = :state,
          failure_code = :code, failure_detail = CAST(:detail AS jsonb),
          completed_at = CASE WHEN :retry THEN NULL ELSE NOW() END, updated_at = NOW()
        WHERE id = :job_id`,

@@ -59,6 +59,18 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
   },
   requiresGpu: false,
 };
+async function defaultBrowserHarnessUrl(): Promise<string> {
+  const packaged = new URL('../harness.html', import.meta.url);
+  try {
+    await fs.access(packaged);
+    return packaged.href;
+  } catch {
+    const source = new URL('../../harness.html', import.meta.url);
+    await fs.access(source);
+    return source.href;
+  }
+}
+
 
 /** Runtime package entrypoint discovered internally for public `--engine browser`. */
 export function createRenderEngine(options: BrowserRenderEngineOptions = {}): RenderEngineAdapter {
@@ -69,7 +81,9 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
     capabilities,
     async execute(context: RenderExecutionContext): Promise<RenderArtifactManifest> {
       const startedAt = new Date().toISOString();
-      const harnessUrl = options.harnessUrl ?? process.env.UNISCENARIOS_BROWSER_HARNESS_URL ?? new URL('../harness.html', import.meta.url).href;
+      const harnessUrl = options.harnessUrl
+        ?? process.env.UNISCENARIOS_BROWSER_HARNESS_URL
+        ?? await defaultBrowserHarnessUrl();
       await fs.mkdir(context.workspace, { recursive: true });
       const intent = resolveBrowserRenderIntent(context.intent);
       const scenarioInput = context.inputs.get('scenario.xosc');
