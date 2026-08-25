@@ -66,22 +66,30 @@ pub fn prewarm(spec: &SceneSpec) -> Result<SceneApp> {
         SceneApp::new_with_profile_config(&spec.lighting, spec.profile_config)?;
     app.load_tiles(&spec.glbs)?;
     app.load_vegetation(&spec.veg_glbs)?;
-    // Warm shaders with a throwaway camera so the first real request does not
-    // pay pipeline compilation. Registered pre-readiness per SceneApp rules.
-    app.add_camera(
-        CameraSpec {
-            sensor_id: "__prewarm__".into(),
-            width: 64,
-            height: 64,
-            fov_y_deg: 58.0,
-            near: spec.near_m,
-            far: spec.far_m,
-            passes: PassSet { rgb: true, id: false, depth: false },
-        },
-        spec.profile,
-    );
+    // Warm both profile pipelines because campaign service scenes normally
+    // inherit `sensor` while one per-camera override is cinematic.
+    for (sensor_id, profile) in [
+        ("__prewarm_sensor__", Profile::Sensor),
+        ("__prewarm_cinematic__", Profile::Cinematic),
+    ] {
+        app.add_camera(
+            CameraSpec {
+                sensor_id: sensor_id.into(),
+                width: 64,
+                height: 64,
+                fov_y_deg: 58.0,
+                near: spec.near_m,
+                far: spec.far_m,
+                passes: PassSet { rgb: true, id: false, depth: false },
+            },
+            profile,
+        );
+    }
     let _legend = app.wait_until_ready()?;
     app.warmup(spec.warmup_frames);
+    // Prewarm views must not consume render/readback work in every service
+    // tick; real retained-rig cameras are registered on first request.
+    app.clear_cameras();
     Ok(app)
 }
 
