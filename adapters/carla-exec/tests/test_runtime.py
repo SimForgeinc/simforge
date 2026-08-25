@@ -1733,7 +1733,9 @@ def test_video_lease_requires_a_reservation_for_every_non_primary_sensor():
         parse_lease(incomplete_data)
 
 
-def test_camera_stream_encoder_backpressure_fails_closed_after_deadline():
+def test_camera_stream_encoder_surfaces_writer_failure_while_backpressured():
+    import queue
+    import threading
     from simforge_carla_exec.runtime.backend import (
         CAMERA_ENCODER_QUEUE_FRAMES,
         _CameraStreamEncoder,
@@ -1741,15 +1743,20 @@ def test_camera_stream_encoder_backpressure_fails_closed_after_deadline():
     encoder = object.__new__(_CameraStreamEncoder)
     encoder.sensor_key = "hero"
     encoder.error = None
-    encoder.stall_deadline_s = 0.01
-    encoder.queue = __import__("queue").Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
+    encoder.queue_poll_s = 0.01
+    encoder.queue = queue.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
     for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
         encoder.submit(f"frame-{index}")
-    with pytest.raises(ContractError, match="backpressure budget"):
-        encoder.submit("frame-overflow")
-    encoder.error = RuntimeError("ffmpeg died")
-    with pytest.raises(RuntimeError, match="camera stream encoder hero failed"):
-        encoder.submit("frame-after-error")
+    failed = threading.Timer(
+        0.02,
+        lambda: setattr(encoder, "error", RuntimeError("ffmpeg died")),
+    )
+    failed.start()
+    try:
+        with pytest.raises(RuntimeError, match="camera stream encoder hero failed"):
+            encoder.submit("frame-after-error")
+    finally:
+        failed.join()
 
 
 def test_camera_stream_encoder_absorbs_transient_burst():
@@ -1762,7 +1769,7 @@ def test_camera_stream_encoder_absorbs_transient_burst():
     encoder = object.__new__(_CameraStreamEncoder)
     encoder.sensor_key = "hero"
     encoder.error = None
-    encoder.stall_deadline_s = 1.0
+    encoder.queue_poll_s = 0.01
     encoder.queue = queue.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
     for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
         encoder.submit(f"frame-{index}")
