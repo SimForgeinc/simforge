@@ -1,0 +1,16 @@
+{
+  "name": "@simforge/road-detail-gen",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic simforge.road-detail/v1 splat/decal sidecar generator (seeded procedural wear along the lane graph).",
+  "bin": {
+    "road-detail-gen": "./bin/road-detail-gen.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/gen.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

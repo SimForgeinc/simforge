@@ -122,6 +122,9 @@ export interface NativeCameraSchedule {
     sunLux?: number;
     ambient?: number;
   };
+  /** Optional simforge.road-detail/v1 sidecars (absolute paths), applied by
+   * the renderer after scene readiness (docs/road-detail.md). */
+  roadDetail?: { sidecars: string[] };
   frames: ScheduleFrame[];
 }
 
@@ -176,6 +179,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
         schema: JOB_SCHEMA,
         profile: schedule.profile,
         ...(schedule.lighting ? { lighting: schedule.lighting } : {}),
+        ...(schedule.roadDetail ? { roadDetail: schedule.roadDetail } : {}),
         glbs: tileInputs.map((tile) => tile.path),
         schedule: schedule.frames.map((frame) => ({
           frameIndex: frame.frameIndex,
