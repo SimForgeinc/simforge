@@ -1,6 +1,7 @@
 import {
   Boxes,
   Database,
+  FlaskConical,
   Map,
   PackageCheck,
   Settings,
@@ -37,6 +38,13 @@ export const DASHBOARD_APPS: NavItem[] = [
     description: "Scenario datasets and authoring",
     icon: Database,
     match: (p) => p.startsWith("/dashboard/scenario"),
+  },
+  {
+    href: "/dashboard/evaluation",
+    label: "Evaluation",
+    description: "Eval campaigns, playback, and promotion",
+    icon: FlaskConical,
+    match: (p) => p.startsWith("/dashboard/evaluation"),
   },
   {
     href: "/dashboard/dataset-export",
