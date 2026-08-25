@@ -4,25 +4,38 @@
 # actor spawn/destroy — exactly the path that degrades with server uptime and
 # otherwise wedges renders for a full 18-min lease).
 #
-#   server-health-probe.sh <server-container> <rpc-port> [gpu-lock-path]
+#   server-health-probe.sh <server-container> <rpc-port> [gpu-lock-path] [stale-after-s] [render-proc-pattern]
 #
 # SAFETY: probe-ticks populates and ticks the world, so it MUST NOT run while
-# a render holds the lane. If a gpu-lock path is given and the lock exists,
-# the probe is skipped (exit 0). Wire as a systemd timer per lane, e.g.:
+# a render holds the lane. Two host-local gates, both must clear:
+#   1. Process state (the strong invariant): skip while any live render
+#      subprocess matches [render-proc-pattern] (default
+#      'uniscenarios-carla.*run-intent'). Immune to wall-time growth and to
+#      stale locks; conservatively over-gates across co-hosted lanes, which
+#      only delays probing.
+#   2. gpu.lock freshness: skip while a given lock is younger than
+#      [stale-after-s]. The lock mtime is written ONCE at acquisition and
+#      never refreshed, and real attempts have run 29 min under load, so the
+#      default is 3600 s — a too-long window merely delays probing, a
+#      too-short one would tick a world mid-render. An older lock is STALE
+#      (gpu-lock.ts dead-owner check is defeated by pid reuse; lock files
+#      survive worker restarts): warn loudly and probe anyway so a stale lock
+#      can never silently disable health probing.
+# Wire as a systemd timer per lane, e.g.:
 #   OnUnitInactiveSec=10min uniscenarios-server-health@carla-0.service
 # Restart on failure is the proven remedy (workers reconnect per job).
 set -euo pipefail
 
-container="${1:?usage: server-health-probe.sh <server-container> <rpc-port> [gpu-lock-path] [stale-after-s]}"
+container="${1:?usage: server-health-probe.sh <server-container> <rpc-port> [gpu-lock-path] [stale-after-s] [render-proc-pattern]}"
 port="${2:?rpc port required}"
 gpu_lock="${3:-}"
-# A lease never legitimately outlives the control plane's reap window, so a
-# lock older than this is STALE (gpu-lock.ts dead-owner check is defeated by
-# pid reuse; lock files survive worker restarts). A stale lock must not
-# silently disable health probing forever: warn and probe anyway — the lease
-# behind it has already expired and the job requeued, so ticking the world
-# cannot corrupt a valid render.
-stale_after_s="${4:-1800}"
+stale_after_s="${4:-3600}"
+render_pattern="${5:-uniscenarios-carla.*run-intent}"
+
+if pgrep -f "$render_pattern" >/dev/null 2>&1; then
+  echo "skip: live render subprocess matches '$render_pattern'"
+  exit 0
+fi
 
 if [ -n "$gpu_lock" ] && [ -e "$gpu_lock" ]; then
   lock_age=$(( $(date +%s) - $(stat -c %Y "$gpu_lock") ))
