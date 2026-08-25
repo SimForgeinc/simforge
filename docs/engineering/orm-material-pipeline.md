@@ -62,3 +62,24 @@ untouched by construction, and every run re-verifies before writing.
 Sidecar textures for repairs must be CC0 (Poly Haven / ambientCG; staged under
 `~/simforge-assets/map-bundles/cc0-textures/`). RoadRunner Asset Library
 textures must not be wired into new payloads pending legal review.
+
+## Degenerate primitives in published tiles
+
+Three published Easterbrook LOD0 tiles (`tile_0_1`, `tile_1_0`, `tile_1_1`) ship a
+mesh primitive whose `POSITION` accessor has `count: 0`. glTF requires
+`accessor.count >= 1`, and the undefined bounds serialize as
+`min: [null, null, null]` / `max: [null, null, null]`. Bevy's loader rejects the
+**entire file** for this:
+
+```
+invalid glTF: meshes[0].primitives[8].attributes["POSITION"].min: Invalid value;
+```
+
+That is why native full-scene renders were limited to `road.glb`. An empty
+primitive draws nothing, so `decodeGlb` prunes it (and any mesh left with no
+primitives) during the corpus build and reports `prunedPrimitives`. After the
+prune the same three tiles load and render: 3 tiles, 123 instance-legend
+entries, `asset_load_ms` ~442, zero loader errors.
+
+Publishers should drop empty primitives at export; the corpus prune is the
+ingest-side guard so a defective bundle can still be rendered.
