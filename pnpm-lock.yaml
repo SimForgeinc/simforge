@@ -650,6 +650,8 @@ importers:
 
   tools/glb-orm-repair: {}
 
+  tools/road-detail-gen: {}
+
 packages:
 
   '@alloc/quick-lru@5.2.0':
