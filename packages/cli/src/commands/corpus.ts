@@ -91,11 +91,23 @@ function isPackageJson(value: unknown, name: string): value is { version: string
   return 'version' in value && typeof (value as Record<string, unknown>)['version'] === 'string';
 }
 
+/**
+ * Semantics of our own decode step, independent of dependency versions. The
+ * cache reuses a previous build when source hashes AND this fingerprint match,
+ * so any change to `decodeGlb` behaviour MUST bump this — otherwise every
+ * existing corpus silently keeps serving artifacts produced by the old decoder.
+ *
+ * 2: prune degenerate (zero-vertex) primitives, whose null accessor bounds are
+ *    invalid glTF and make Bevy reject the whole file.
+ */
+const DECODER_REVISION = 2;
+
 interface CorpusTools {
   node: string;
   gltfTransform: string;
   meshoptimizer: string;
   sharp: string;
+  decoder: number;
 }
 
 export function corpusTools(): CorpusTools {
@@ -104,6 +116,7 @@ export function corpusTools(): CorpusTools {
     gltfTransform: pkgVersion('@gltf-transform/core'),
     meshoptimizer: pkgVersion('meshoptimizer'),
     sharp: pkgVersion('sharp'),
+    decoder: DECODER_REVISION,
   };
 }
 
@@ -670,7 +683,10 @@ function sameTools(a: CorpusTools, b: CorpusTools): boolean {
     a.node === b.node &&
     a.gltfTransform === b.gltfTransform &&
     a.meshoptimizer === b.meshoptimizer &&
-    a.sharp === b.sharp
+    a.sharp === b.sharp &&
+    // Must be compared: a decoder-semantics bump is precisely how a cached
+    // corpus built by an older decoder gets invalidated.
+    a.decoder === b.decoder
   );
 }
 
