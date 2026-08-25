@@ -18,8 +18,6 @@
 
 import {
   TemplateDocument,
-  AuthoredActorLimitError,
-  MAX_AUTHORED_ACTORS,
   ScenarioNotFoundError,
   WebTemplateFileStore,
   newTemplateId,
@@ -623,12 +621,6 @@ export class EditorDocument {
    * @returns The new actor ids, in input order.
    */
   add(inputs: readonly NewActor[]): string[] {
-    const nextActorCount = this.#doc.roles.length + inputs.length;
-    if (nextActorCount > MAX_AUTHORED_ACTORS) {
-      // Preflight the whole gesture so a multi-place operation cannot partially
-      // commit before the shared TemplateDocument guard rejects a later actor.
-      throw new AuthoredActorLimitError(nextActorCount);
-    }
     const ids: string[] = [];
     this.#transaction(() => {
       for (const input of inputs) ids.push(this.#addActor(input));

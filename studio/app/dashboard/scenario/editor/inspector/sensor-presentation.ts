@@ -156,7 +156,6 @@ export function appliedRigPreset(
 ): SensorRigPreset | undefined {
   if (sensors.length === 0) return undefined;
   return presets.find((preset) => {
-    if (!preset.compatibleActorClasses.includes(actor.class)) return false;
     if (preset.sensors.length !== sensors.length) return false;
     let instantiated: readonly ActorSensor[];
     try {

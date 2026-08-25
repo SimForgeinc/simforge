@@ -1,11 +1,7 @@
 "use client";
 
 import { Gauge, Plus, Trash2 } from "lucide-react";
-import {
-  defaultDashCamera,
-  supportsDashCamera,
-  type ActorSensor,
-} from "@simforge/scenario";
+import { defaultDashCamera, type ActorSensor } from "@simforge/scenario";
 import { Button } from "@/app/components/ui/button";
 import { Switch } from "@/app/components/ui/switch";
 import type { EditorDocument } from "@simforge/editor";
@@ -36,28 +32,21 @@ export function ActorCameras({
         <>
           <div className="mt-3 flex items-center text-xs">
             <span>{sensorSummary(role.actor.sensors)}</span>
-            {supportsDashCamera(role.actor) ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="ml-auto h-7 text-primary hover:text-primary"
-                onClick={() =>
-                  document.addActorSensor(
-                    role.id,
-                    defaultDashCamera(role.actor),
-                  )
-                }
-              >
-                <Plus aria-hidden="true" />
-                Camera
-              </Button>
-            ) : null}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="ml-auto h-7 text-primary hover:text-primary"
+              onClick={() =>
+                document.addActorSensor(
+                  role.id,
+                  defaultDashCamera(role.actor),
+                )
+              }
+            >
+              <Plus aria-hidden="true" />
+              Camera
+            </Button>
           </div>
-          {!supportsDashCamera(role.actor) ? (
-            <p className="mt-3 text-xs text-muted-foreground">
-              {role.actor.class} has no supported camera mount.
-            </p>
-          ) : null}
           {role.actor.sensors.map((sensor) => {
             const kind = sensorKind(sensor);
             const name = sensor.label ?? kind;

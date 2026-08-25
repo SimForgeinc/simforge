@@ -110,7 +110,6 @@ export const PRONTO_SENSOR_RIG: SensorRigPreset = SensorRigPresetSchema.parse({
   id: "pronto-port-e",
   name: "Pronto Rig",
   description: "Port configuration E · 8 cameras · 6 LiDAR · 4 radar",
-  compatibleActorClasses: ["car", "van"],
   sensors: [
     camera("pronto-cam0", "CAM0 — Front Driver", 120, prontoMount(-150.9, -795.8, 51.7, 122, 25)),
     camera("pronto-cam1", "CAM1 — Front Center", 120, prontoMount(-150.8, 0, 51.7, 0, 10)),
