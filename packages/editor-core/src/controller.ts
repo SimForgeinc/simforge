@@ -822,7 +822,8 @@ export class EditorController extends EditorControllerInput {
         z: patch?.z ?? actor.z,
         headingRad: patch?.headingRad ?? actor.headingRad,
         dims: actor.dims,
-        bodyColor: actor.bodyColor
+        bodyColor: actor.bodyColor,
+        sensors: actor.sensors
       };
     });
     this.renderer.sync(views);

@@ -398,6 +398,7 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
           const pointIndex = this.customRouteDraft.draggingPointIndex;
           if (ground && pointIndex !== null && this.customRouteDraft.points[pointIndex]) {
             this.customRouteDraft.points[pointIndex] = {
+              ...this.customRouteDraft.points[pointIndex],
               x: Number(ground.x.toFixed(3)),
               z: Number(ground.z.toFixed(3)),
             };

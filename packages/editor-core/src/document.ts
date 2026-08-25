@@ -730,6 +730,25 @@ export class EditorDocument {
     });
   }
 
+  /**
+   * Replace one actor's complete physical sensor suite as one undoable edit.
+   *
+   * Sensor ids are authored identity, so the supplied records are installed
+   * unchanged rather than regenerated or merged by modality.
+   */
+  replaceActorSensors(actorId: string, sensors: readonly ActorSensor[]): void {
+    const current = this.#doc.role(actorId);
+    if (!current || current.kind !== 'scene_absolute') {
+      throw new Error(`actor "${actorId}" does not exist`);
+    }
+    this.#transaction(() => {
+      this.#doc.replaceRole(actorId, {
+        ...current,
+        actor: { ...current.actor, sensors: [...sensors] },
+      });
+    });
+  }
+
   /** Delete actors and every now-orphaned authored reference as one gesture. */
   remove(ids: readonly string[]): void {
     const deleting = [...new Set(ids)].filter((id) => this.#doc.role(id) !== undefined);
