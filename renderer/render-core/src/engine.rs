@@ -375,7 +375,6 @@ pub struct SceneApp {
     skybox_brightness: f32,
     /// Fixed EV100 from the resolved `LightingPlan` (spec §Exposure).
     ev100_fixed: f32,
-    rung: LightingRung,
     profile_config: RenderProfileConfig,
 }
 
@@ -396,7 +395,12 @@ impl SceneApp {
         std::env::set_var("BEVY_ASSET_ROOT", "/");
         let (tx, rx) = crossbeam_channel::unbounded::<SentPass>();
         let mut app = App::new();
-        let rung = LightingRung(lighting.rung);
+        // The reusable job/service engine may render sensor and cinematic
+        // views together. PCSS is stochastic on current wgpu/Bevy and made
+        // sensor RGB hashes differ between identical replays, so mixed
+        // SceneApp lighting is capped at deterministic hard cascades.
+        // The standalone cinematic CLI still exposes rung-4 PCSS.
+        let rung = LightingRung(lighting.rung.min(3));
         let plan = lighting.weather.lighting_plan(None, lighting.sun_elev_deg);
         let sun_dir = sun_direction(lighting.sun_elev_deg, lighting.sun_azim_deg);
         app.insert_resource(ClearColor(Color::srgb(0.53, 0.74, 0.92)))
@@ -492,7 +496,6 @@ impl SceneApp {
             ev100_fixed: plan.ev100_fixed.unwrap_or_else(|| {
                 lighting.weather.sensor_ev100(lighting.sun_elev_deg)
             }),
-            rung,
             profile_config,
         })
     }
@@ -578,9 +581,8 @@ impl SceneApp {
                 self.skybox_brightness,
                 self.profile_config.cinematic,
             );
-            if profile == Profile::Sensor && self.rung.ao_contact() {
-                lighting::apply_camera_ao(&mut commands, rgb_entity);
-            }
+            // Sensor deliberately receives no stochastic screen-space
+            // AO/contact pass. Cinematic owns those effects.
         }
         self.app.world_mut().flush();
 
