@@ -68,7 +68,14 @@ export type ResponseEnvelope = WireResponse;
 
 /* ------------------------------------------------------------- actions */
 
-/** One trajectory sample in the ego's world frame (metres, radians, m/s, seconds from now). */
+/**
+ * One trajectory sample in the *ego frame at plan issuance*: x forward along
+ * the ego heading, y left (90° CCW), heading relative to the ego yaw
+ * (radians), signed speed (m/s, negative = reverse), `t` seconds from
+ * issuance. Samples are strictly future (`t > 0`) — the first point is not
+ * the current pose. Matches the Alpamayo adapter's "ego frame at t0"
+ * waypoint convention (FLU, z dropped).
+ */
 export interface TrajectoryPoint {
   readonly x: number;
   readonly y: number;
@@ -78,10 +85,18 @@ export interface TrajectoryPoint {
 }
 
 /**
- * Trajectory action. v1 servers reduce it to a speed setpoint: the target
- * speed is taken from the earliest point with `t > 0` (the next waypoint),
- * falling back to the first point. Lateral tracking of the polyline is a
- * v2 concern; steering stays with the authored route logic.
+ * Trajectory action. Execution is a server property (reported by
+ * `policy.hello` as `trajExec`):
+ *
+ * - `'pure-pursuit'` (default): the trajectory executor anchors the plan to
+ *   the world frame at the pose of the observation this act responds to and
+ *   tracks it — pure-pursuit preview steering + the plan's time-indexed
+ *   speed profile — until a *different* plan replaces it (zero-order hold;
+ *   byte-identical points hold the original anchor). See
+ *   docs/policy-step.md "Trajectory execution".
+ * - `'speed-setpoint'` (v1 reduction, kept for regression comparability):
+ *   the target speed is taken from the earliest point with `t > 0` (falling
+ *   back to the first point); steering stays with the authored route logic.
  */
 export interface ActionTrajectory {
   readonly kind: 'trajectory';
@@ -101,6 +116,9 @@ export type PolicyAction = ActionTrajectory | ActionControl;
 /** Fallback applied when a decision misses its deadline. */
 export type FallbackPolicy = 'repeat-last' | 'zero-control' | 'scripted';
 export const FALLBACK_POLICIES: readonly FallbackPolicy[] = ['repeat-last', 'zero-control', 'scripted'];
+
+/** How a server executes trajectory actions (see {@link ActionTrajectory}). */
+export type TrajectoryExecution = 'pure-pursuit' | 'speed-setpoint';
 
 /* ------------------------------------------------------ frame bundles */
 
@@ -141,6 +159,8 @@ export interface PolicyHello {
   readonly actions: readonly PolicyAction['kind'][];
   readonly fallbacks: readonly FallbackPolicy[];
   readonly obs: { readonly sv: boolean; readonly bev: boolean; readonly frameBundle: boolean };
+  /** How this server executes trajectory actions. */
+  readonly trajExec: TrajectoryExecution;
 }
 
 /* ------------------------------------------------------ deadline report */
@@ -184,11 +204,14 @@ export function decodePolicyAction(wire: unknown): PolicyAction {
 }
 
 /**
- * Reduce a policy action to the engine's {@link EnvAction}.
+ * Reduce a policy action to the engine's {@link EnvAction} — the
+ * `'speed-setpoint'` trajectory execution (see {@link TrajectoryExecution}).
  *
  * Control passes through verbatim. A trajectory reduces to a speed setpoint
  * (see {@link ActionTrajectory}); negative setpoint speed flips the motion
- * direction with the setpoint magnitude preserved.
+ * direction with the setpoint magnitude preserved. The `'pure-pursuit'`
+ * execution path lives in policy-session.ts on top of the engine's
+ * TrajectoryFollower.
  */
 export function toEnvAction(action: PolicyAction): EnvAction {
   if (action.kind === 'control') {

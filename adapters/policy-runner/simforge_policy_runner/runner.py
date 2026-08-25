@@ -6,6 +6,12 @@ far. Wall-clock timing (``timing``) and the reported ``elapsedMs`` are
 *excluded* from the digest: two runs with the same seed, policy, and forced
 misses produce identical digests even though inference latency varies.
 
+Digest-covered per step: the wire action ``a`` (trajectory points included),
+the policy's ``reasoning`` text (chain-of-causation; None on held plans and
+control policies), and ``ex`` — the server's trajectory-executor telemetry
+(pose, signed cross-track error, applied setpoints, preview point; None on
+non-trajectory steps or 'speed-setpoint' servers).
+
 Deadline misses are exercised deterministically: ``force_miss_at`` steps
 report a fixed elapsedMs of 4x the deadline instead of the measured time,
 so the fallback path is part of the digested dynamics. Spurious misses
@@ -61,6 +67,7 @@ class EpisodeSummary:
     truncated: bool
     infer_ms: dict[str, float] = field(default_factory=dict)
     roundtrip_ms: dict[str, float] = field(default_factory=dict)
+    cross_track_m: dict[str, float] = field(default_factory=dict)
 
 
 def run_episode(
@@ -101,6 +108,7 @@ def run_episode(
     lines: list[str] = []
     infer_samples: list[float] = []
     roundtrip_samples: list[float] = []
+    cross_track_samples: list[float] = []
     misses = 0
     terminated = truncated = False
     steps_done = 0
@@ -109,7 +117,7 @@ def run_episode(
         state_vector = _state_vector(frame)
 
         t0 = time.perf_counter()
-        action = policy.act(step, state_vector)
+        decision = policy.act(step, state_vector)
         infer_ms = (time.perf_counter() - t0) * 1000.0
 
         # Forced misses report a fixed, deterministic elapsed time; honest
@@ -117,7 +125,7 @@ def run_episode(
         reported_ms = deadline_ms * 4.0 if step in force_miss_at else infer_ms
 
         t1 = time.perf_counter()
-        response = server.request("policy.act", s=session, steps=[{"a": action, "elapsedMs": reported_ms}])
+        response = server.request("policy.act", s=session, steps=[{"a": decision.action, "elapsedMs": reported_ms}])
         roundtrip_ms = (time.perf_counter() - t1) * 1000.0
 
         frame = response["rs"][0]
@@ -129,11 +137,16 @@ def run_episode(
         steps_done = step + 1
         infer_samples.append(infer_ms)
         roundtrip_samples.append(roundtrip_ms)
+        executor = frame.get("ex")
+        if executor is not None:
+            cross_track_samples.append(abs(float(executor["ct"])))
 
         deterministic = {
             "step": step,
             "t": frame["t"],
-            "a": action,
+            "a": decision.action,
+            "reasoning": decision.reasoning,
+            "ex": executor,
             "miss": int(miss),
             "applied": deadline["ap"],
             "rw": frame["rw"],
@@ -166,6 +179,7 @@ def run_episode(
         truncated=truncated,
         infer_ms=_percentiles(infer_samples),
         roundtrip_ms=_percentiles(roundtrip_samples),
+        cross_track_m=_percentiles(cross_track_samples),
     )
     lines.append(json.dumps({"summary": summary.__dict__}, sort_keys=True))
 

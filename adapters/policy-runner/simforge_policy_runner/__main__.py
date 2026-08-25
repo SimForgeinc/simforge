@@ -22,7 +22,7 @@ from .runner import run_episode
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="simforge-policy-runner")
     parser.add_argument("--spec", required=True, help="episode spec JSON for the env-server")
-    parser.add_argument("--policy", choices=("scripted", "torch"), default="scripted")
+    parser.add_argument("--policy", choices=("scripted", "trajectory", "torch"), default="scripted")
     parser.add_argument("--seed", default="42", help="episode seed (int or string)")
     parser.add_argument("--policy-seed", type=int, default=0, help="torch weight seed")
     parser.add_argument("--steps", type=int, default=30)

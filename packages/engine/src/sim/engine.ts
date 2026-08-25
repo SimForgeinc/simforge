@@ -176,13 +176,16 @@ export interface ActionHookContext {
 /**
  * Caller-supplied override of the choreography intent for one actor on one
  * tick. Present fields replace the engine-computed setpoints just before the
- * motion backend steps; omitted fields keep the authored behavior. `control`
+ * motion backend steps; omitted fields keep the authored behavior.
+ * `previewPoint`/`previewHeadingRad` redirect the dynamic backend's
+ * pure-pursuit steering off the authored route (trajectory-following
+ * executors set both; see sim/trajectory-follower.ts). `control`
  * additionally bypasses the dynamic backend's setpoint controller while
  * staying inside the profile's steer clamp/rate/lag and jerk envelope (see
  * `MotionIntent.control`).
  */
 export type ActionOverride = Partial<
-  Pick<MotionIntent, 'motionDirection' | 'targetSpeedMps' | 'targetAccelerationMps2'>
+  Pick<MotionIntent, 'motionDirection' | 'targetSpeedMps' | 'targetAccelerationMps2' | 'previewPoint' | 'previewHeadingRad'>
 > & {
   readonly control?: VehicleControl;
 };
@@ -1267,6 +1270,8 @@ class Simulation {
       ...(override.targetAccelerationMps2 !== undefined
         ? { targetAccelerationMps2: override.targetAccelerationMps2 }
         : {}),
+      ...(override.previewPoint !== undefined ? { previewPoint: override.previewPoint } : {}),
+      ...(override.previewHeadingRad !== undefined ? { previewHeadingRad: override.previewHeadingRad } : {}),
       ...(override.control !== undefined ? { control: override.control } : {}),
     };
   }

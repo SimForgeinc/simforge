@@ -1,0 +1,888 @@
+{
+  "version": 1,
+  "instances": [
+    {
+      "input": {
+        "schemaVersion": 1,
+        "mapId": "synthetic-straight",
+        "clipSeconds": 14,
+        "warmupSeconds": 1,
+        "dt": 0.02,
+        "seed": "fixture",
+        "physics": {
+          "mode": "dynamic-v1"
+        },
+        "operationalConditions": {
+          "weather": "clear",
+          "timeOfDay": "day",
+          "traffic": "moderate",
+          "visibility": "unrestricted",
+          "effects": {
+            "visibilityRangeM": 10000,
+            "frictionScale": 1,
+            "trafficSpeedFactor": 1
+          }
+        },
+        "metricSubject": "ego",
+        "actors": [
+          {
+            "id": "ego",
+            "kind": "vehicle",
+            "dims": {
+              "l": 4.5,
+              "w": 1.9,
+              "h": 1.5
+            },
+            "initial": {
+              "laneRef": {
+                "rsl": "1:0:-1",
+                "s": 20,
+                "tFrac": 0
+              },
+              "pose": {
+                "x": 20,
+                "z": 0,
+                "headingRad": 0
+              },
+              "speedMps": 10
+            },
+            "behavior": {
+              "rules": {
+                "obeySignals": true,
+                "yield": true,
+                "yieldToVehicles": true,
+                "yieldToPedestrians": true,
+                "collisionAvoidance": true,
+                "aggression": 0.5,
+                "speedFactor": 1
+              },
+              "route": {
+                "kind": "follow",
+                "startRsl": "1:0:-1",
+                "turns": [],
+                "maxLengthM": 2000
+              },
+              "cruiseSpeedMps": 10
+            },
+            "presentAtStart": true,
+            "tags": [],
+            "static": false
+          },
+          {
+            "id": "other",
+            "kind": "vehicle",
+            "dims": {
+              "l": 4.5,
+              "w": 1.9,
+              "h": 1.5
+            },
+            "initial": {
+              "laneRef": {
+                "rsl": "1:0:-2",
+                "s": 40,
+                "tFrac": 0
+              },
+              "pose": {
+                "x": 40,
+                "z": 3.5,
+                "headingRad": 0
+              },
+              "speedMps": 8
+            },
+            "behavior": {
+              "rules": {
+                "obeySignals": true,
+                "yield": true,
+                "yieldToVehicles": true,
+                "yieldToPedestrians": true,
+                "collisionAvoidance": true,
+                "aggression": 0.5,
+                "speedFactor": 1
+              },
+              "route": {
+                "kind": "follow",
+                "startRsl": "1:0:-2",
+                "turns": [],
+                "maxLengthM": 2000
+              },
+              "cruiseSpeedMps": 8
+            },
+            "presentAtStart": true,
+            "tags": [],
+            "static": false
+          }
+        ],
+        "interactions": [],
+        "signalPrograms": [],
+        "roadControls": [],
+        "surfacePatches": [],
+        "props": [],
+        "occluders": [],
+        "occlusionPairs": []
+      },
+      "topology": {
+        "schemaVersion": 1,
+        "mapName": "synthetic-straight",
+        "source": {
+          "xodrSha256": "synthetic"
+        },
+        "lanes": {
+          "1:0:-1": {
+            "rsl": "1:0:-1",
+            "roadId": 1,
+            "section": 0,
+            "laneId": -1,
+            "laneType": "driving",
+            "isJunction": false,
+            "junctionId": null,
+            "predecessors": [],
+            "successors": [],
+            "speedLimitKph": 50,
+            "representativeWidthM": 3.5,
+            "widthSamples": [
+              {
+                "s": 0,
+                "widthM": 3.5
+              },
+              {
+                "s": 400,
+                "widthM": 3.5
+              }
+            ],
+            "adjacentLanes": {
+              "left": {
+                "side": "left",
+                "laneRsl": null,
+                "sameDirection": false,
+                "permissionIds": []
+              },
+              "right": {
+                "side": "right",
+                "laneRsl": "1:0:-2",
+                "sameDirection": true,
+                "permissionIds": [
+                  "1:0:-1:right:1:0:-2"
+                ]
+              }
+            },
+            "laneChangePermissions": [
+              {
+                "id": "1:0:-1:right:1:0:-2",
+                "side": "right",
+                "startS": 0,
+                "endS": 400,
+                "allowed": true,
+                "marking": "broken",
+                "source": "fixture"
+              }
+            ],
+            "polyline": [
+              {
+                "x": 0,
+                "y": 0
+              },
+              {
+                "x": 5,
+                "y": 0
+              },
+              {
+                "x": 10,
+                "y": 0
+              },
+              {
+                "x": 15,
+                "y": 0
+              },
+              {
+                "x": 20,
+                "y": 0
+              },
+              {
+                "x": 25,
+                "y": 0
+              },
+              {
+                "x": 30,
+                "y": 0
+              },
+              {
+                "x": 35,
+                "y": 0
+              },
+              {
+                "x": 40,
+                "y": 0
+              },
+              {
+                "x": 45,
+                "y": 0
+              },
+              {
+                "x": 50,
+                "y": 0
+              },
+              {
+                "x": 55,
+                "y": 0
+              },
+              {
+                "x": 60,
+                "y": 0
+              },
+              {
+                "x": 65,
+                "y": 0
+              },
+              {
+                "x": 70,
+                "y": 0
+              },
+              {
+                "x": 75,
+                "y": 0
+              },
+              {
+                "x": 80,
+                "y": 0
+              },
+              {
+                "x": 85,
+                "y": 0
+              },
+              {
+                "x": 90,
+                "y": 0
+              },
+              {
+                "x": 95,
+                "y": 0
+              },
+              {
+                "x": 100,
+                "y": 0
+              },
+              {
+                "x": 105,
+                "y": 0
+              },
+              {
+                "x": 110,
+                "y": 0
+              },
+              {
+                "x": 115,
+                "y": 0
+              },
+              {
+                "x": 120,
+                "y": 0
+              },
+              {
+                "x": 125,
+                "y": 0
+              },
+              {
+                "x": 130,
+                "y": 0
+              },
+              {
+                "x": 135,
+                "y": 0
+              },
+              {
+                "x": 140,
+                "y": 0
+              },
+              {
+                "x": 145,
+                "y": 0
+              },
+              {
+                "x": 150,
+                "y": 0
+              },
+              {
+                "x": 155,
+                "y": 0
+              },
+              {
+                "x": 160,
+                "y": 0
+              },
+              {
+                "x": 165,
+                "y": 0
+              },
+              {
+                "x": 170,
+                "y": 0
+              },
+              {
+                "x": 175,
+                "y": 0
+              },
+              {
+                "x": 180,
+                "y": 0
+              },
+              {
+                "x": 185,
+                "y": 0
+              },
+              {
+                "x": 190,
+                "y": 0
+              },
+              {
+                "x": 195,
+                "y": 0
+              },
+              {
+                "x": 200,
+                "y": 0
+              },
+              {
+                "x": 205,
+                "y": 0
+              },
+              {
+                "x": 210,
+                "y": 0
+              },
+              {
+                "x": 215,
+                "y": 0
+              },
+              {
+                "x": 220,
+                "y": 0
+              },
+              {
+                "x": 225,
+                "y": 0
+              },
+              {
+                "x": 230,
+                "y": 0
+              },
+              {
+                "x": 235,
+                "y": 0
+              },
+              {
+                "x": 240,
+                "y": 0
+              },
+              {
+                "x": 245,
+                "y": 0
+              },
+              {
+                "x": 250,
+                "y": 0
+              },
+              {
+                "x": 255,
+                "y": 0
+              },
+              {
+                "x": 260,
+                "y": 0
+              },
+              {
+                "x": 265,
+                "y": 0
+              },
+              {
+                "x": 270,
+                "y": 0
+              },
+              {
+                "x": 275,
+                "y": 0
+              },
+              {
+                "x": 280,
+                "y": 0
+              },
+              {
+                "x": 285,
+                "y": 0
+              },
+              {
+                "x": 290,
+                "y": 0
+              },
+              {
+                "x": 295,
+                "y": 0
+              },
+              {
+                "x": 300,
+                "y": 0
+              },
+              {
+                "x": 305,
+                "y": 0
+              },
+              {
+                "x": 310,
+                "y": 0
+              },
+              {
+                "x": 315,
+                "y": 0
+              },
+              {
+                "x": 320,
+                "y": 0
+              },
+              {
+                "x": 325,
+                "y": 0
+              },
+              {
+                "x": 330,
+                "y": 0
+              },
+              {
+                "x": 335,
+                "y": 0
+              },
+              {
+                "x": 340,
+                "y": 0
+              },
+              {
+                "x": 345,
+                "y": 0
+              },
+              {
+                "x": 350,
+                "y": 0
+              },
+              {
+                "x": 355,
+                "y": 0
+              },
+              {
+                "x": 360,
+                "y": 0
+              },
+              {
+                "x": 365,
+                "y": 0
+              },
+              {
+                "x": 370,
+                "y": 0
+              },
+              {
+                "x": 375,
+                "y": 0
+              },
+              {
+                "x": 380,
+                "y": 0
+              },
+              {
+                "x": 385,
+                "y": 0
+              },
+              {
+                "x": 390,
+                "y": 0
+              },
+              {
+                "x": 395,
+                "y": 0
+              },
+              {
+                "x": 400,
+                "y": 0
+              }
+            ]
+          },
+          "1:0:-2": {
+            "rsl": "1:0:-2",
+            "roadId": 1,
+            "section": 0,
+            "laneId": -2,
+            "laneType": "driving",
+            "isJunction": false,
+            "junctionId": null,
+            "predecessors": [],
+            "successors": [],
+            "speedLimitKph": 50,
+            "representativeWidthM": 3.5,
+            "widthSamples": [
+              {
+                "s": 0,
+                "widthM": 3.5
+              },
+              {
+                "s": 400,
+                "widthM": 3.5
+              }
+            ],
+            "adjacentLanes": {
+              "left": {
+                "side": "left",
+                "laneRsl": "1:0:-1",
+                "sameDirection": true,
+                "permissionIds": [
+                  "1:0:-2:left:1:0:-1"
+                ]
+              },
+              "right": {
+                "side": "right",
+                "laneRsl": null,
+                "sameDirection": false,
+                "permissionIds": []
+              }
+            },
+            "laneChangePermissions": [
+              {
+                "id": "1:0:-2:left:1:0:-1",
+                "side": "left",
+                "startS": 0,
+                "endS": 400,
+                "allowed": true,
+                "marking": "broken",
+                "source": "fixture"
+              }
+            ],
+            "polyline": [
+              {
+                "x": 0,
+                "y": -3.5
+              },
+              {
+                "x": 5,
+                "y": -3.5
+              },
+              {
+                "x": 10,
+                "y": -3.5
+              },
+              {
+                "x": 15,
+                "y": -3.5
+              },
+              {
+                "x": 20,
+                "y": -3.5
+              },
+              {
+                "x": 25,
+                "y": -3.5
+              },
+              {
+                "x": 30,
+                "y": -3.5
+              },
+              {
+                "x": 35,
+                "y": -3.5
+              },
+              {
+                "x": 40,
+                "y": -3.5
+              },
+              {
+                "x": 45,
+                "y": -3.5
+              },
+              {
+                "x": 50,
+                "y": -3.5
+              },
+              {
+                "x": 55,
+                "y": -3.5
+              },
+              {
+                "x": 60,
+                "y": -3.5
+              },
+              {
+                "x": 65,
+                "y": -3.5
+              },
+              {
+                "x": 70,
+                "y": -3.5
+              },
+              {
+                "x": 75,
+                "y": -3.5
+              },
+              {
+                "x": 80,
+                "y": -3.5
+              },
+              {
+                "x": 85,
+                "y": -3.5
+              },
+              {
+                "x": 90,
+                "y": -3.5
+              },
+              {
+                "x": 95,
+                "y": -3.5
+              },
+              {
+                "x": 100,
+                "y": -3.5
+              },
+              {
+                "x": 105,
+                "y": -3.5
+              },
+              {
+                "x": 110,
+                "y": -3.5
+              },
+              {
+                "x": 115,
+                "y": -3.5
+              },
+              {
+                "x": 120,
+                "y": -3.5
+              },
+              {
+                "x": 125,
+                "y": -3.5
+              },
+              {
+                "x": 130,
+                "y": -3.5
+              },
+              {
+                "x": 135,
+                "y": -3.5
+              },
+              {
+                "x": 140,
+                "y": -3.5
+              },
+              {
+                "x": 145,
+                "y": -3.5
+              },
+              {
+                "x": 150,
+                "y": -3.5
+              },
+              {
+                "x": 155,
+                "y": -3.5
+              },
+              {
+                "x": 160,
+                "y": -3.5
+              },
+              {
+                "x": 165,
+                "y": -3.5
+              },
+              {
+                "x": 170,
+                "y": -3.5
+              },
+              {
+                "x": 175,
+                "y": -3.5
+              },
+              {
+                "x": 180,
+                "y": -3.5
+              },
+              {
+                "x": 185,
+                "y": -3.5
+              },
+              {
+                "x": 190,
+                "y": -3.5
+              },
+              {
+                "x": 195,
+                "y": -3.5
+              },
+              {
+                "x": 200,
+                "y": -3.5
+              },
+              {
+                "x": 205,
+                "y": -3.5
+              },
+              {
+                "x": 210,
+                "y": -3.5
+              },
+              {
+                "x": 215,
+                "y": -3.5
+              },
+              {
+                "x": 220,
+                "y": -3.5
+              },
+              {
+                "x": 225,
+                "y": -3.5
+              },
+              {
+                "x": 230,
+                "y": -3.5
+              },
+              {
+                "x": 235,
+                "y": -3.5
+              },
+              {
+                "x": 240,
+                "y": -3.5
+              },
+              {
+                "x": 245,
+                "y": -3.5
+              },
+              {
+                "x": 250,
+                "y": -3.5
+              },
+              {
+                "x": 255,
+                "y": -3.5
+              },
+              {
+                "x": 260,
+                "y": -3.5
+              },
+              {
+                "x": 265,
+                "y": -3.5
+              },
+              {
+                "x": 270,
+                "y": -3.5
+              },
+              {
+                "x": 275,
+                "y": -3.5
+              },
+              {
+                "x": 280,
+                "y": -3.5
+              },
+              {
+                "x": 285,
+                "y": -3.5
+              },
+              {
+                "x": 290,
+                "y": -3.5
+              },
+              {
+                "x": 295,
+                "y": -3.5
+              },
+              {
+                "x": 300,
+                "y": -3.5
+              },
+              {
+                "x": 305,
+                "y": -3.5
+              },
+              {
+                "x": 310,
+                "y": -3.5
+              },
+              {
+                "x": 315,
+                "y": -3.5
+              },
+              {
+                "x": 320,
+                "y": -3.5
+              },
+              {
+                "x": 325,
+                "y": -3.5
+              },
+              {
+                "x": 330,
+                "y": -3.5
+              },
+              {
+                "x": 335,
+                "y": -3.5
+              },
+              {
+                "x": 340,
+                "y": -3.5
+              },
+              {
+                "x": 345,
+                "y": -3.5
+              },
+              {
+                "x": 350,
+                "y": -3.5
+              },
+              {
+                "x": 355,
+                "y": -3.5
+              },
+              {
+                "x": 360,
+                "y": -3.5
+              },
+              {
+                "x": 365,
+                "y": -3.5
+              },
+              {
+                "x": 370,
+                "y": -3.5
+              },
+              {
+                "x": 375,
+                "y": -3.5
+              },
+              {
+                "x": 380,
+                "y": -3.5
+              },
+              {
+                "x": 385,
+                "y": -3.5
+              },
+              {
+                "x": 390,
+                "y": -3.5
+              },
+              {
+                "x": 395,
+                "y": -3.5
+              },
+              {
+                "x": 400,
+                "y": -3.5
+              }
+            ]
+          }
+        },
+        "gates": [],
+        "junctions": {}
+      }
+    }
+  ]
+}
