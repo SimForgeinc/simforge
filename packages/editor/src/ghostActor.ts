@@ -14,11 +14,12 @@ export class GhostActor {
   readonly group = new Group();
 
   private readonly validMaterial: MeshBasicMaterial;
+  private readonly freeMaterial: MeshBasicMaterial;
   private readonly invalidMaterial: MeshBasicMaterial;
   private readonly meshes: Mesh[] = [];
   private readonly arrow: LineSegments;
   private catalogId: CatalogId | null = null;
-  private valid = true;
+  private outcome: 'snapped' | 'free' | 'invalid' = 'snapped';
   private readonly unsubscribeExternalModelChanges: () => void;
 
   constructor() {
@@ -33,6 +34,7 @@ export class GhostActor {
       toneMapped: false,
     };
     this.validMaterial = new MeshBasicMaterial({ ...base, color: 0x35d07f });
+    this.freeMaterial = new MeshBasicMaterial({ ...base, color: 0xf59e0b });
     this.invalidMaterial = new MeshBasicMaterial({ ...base, color: 0xf05252 });
 
     this.arrow = new LineSegments(
@@ -75,14 +77,20 @@ export class GhostActor {
 
   /** Green when the placement is legal, red when it is not. */
   setValid(valid: boolean): void {
-    if (valid === this.valid) return;
-    this.valid = valid;
+    this.setOutcome(valid ? 'snapped' : 'invalid');
+  }
+
+  /** Drop preview colour: green = will snap, amber = free, red = invalid. */
+  setOutcome(outcome: 'snapped' | 'free' | 'invalid'): void {
+    if (outcome === this.outcome) return;
+    this.outcome = outcome;
     for (const mesh of this.meshes) mesh.material = this.material();
   }
 
   dispose(): void {
     this.unsubscribeExternalModelChanges();
     this.validMaterial.dispose();
+    this.freeMaterial.dispose();
     this.invalidMaterial.dispose();
     this.arrow.geometry.dispose();
     (this.arrow.material as Material).dispose();
@@ -105,7 +113,8 @@ export class GhostActor {
   }
 
   private material(): MeshBasicMaterial {
-    return this.valid ? this.validMaterial : this.invalidMaterial;
+    if (this.outcome === 'invalid') return this.invalidMaterial;
+    return this.outcome === 'free' ? this.freeMaterial : this.validMaterial;
   }
 
   /** A facing arrow on the ground, so heading is readable before the click. */

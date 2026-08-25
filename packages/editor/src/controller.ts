@@ -58,6 +58,8 @@ import {
 } from './laneIndex';
 import { firstOverlap, type Footprint } from './obb';
 import { authoringRoutes } from './routeOverlay';
+import { resolveVehicleDrop, DROP_SNAP_RADIUS_M, type DropOutcome } from './drop-resolver';
+import { actorIdsInRect, applySelectionOp, selectionOpForModifiers, type ScreenRect, type SelectionOp } from './marquee';
 
 export type EditorMode = 'idle' | 'placing' | 'grab' | 'rotate' | 'drawingRoute';
 export type CustomRouteTool = 'add' | 'move';
@@ -97,6 +99,8 @@ export interface EditorState {
   readonly canRedo: boolean;
   readonly dirty: boolean;
   readonly savedAt: number | null;
+  /** Live drop-resolver verdict for the in-flight move (see `DropOutcome`). */
+  readonly dropOutcome: DropOutcome | null;
 }
 
 /** Live pose overrides used while a modal gesture is in flight. */
@@ -401,100 +405,44 @@ export class EditorController extends EditorControllerInput {
     const dz = ground.z - session.start.z;
     session.valid = true;
     session.reason = null;
+    let anyFree = false;
 
     this.preview.clear();
     for (const actor of session.origin.values()) {
       const targetX = actor.x + dx;
       const targetZ = actor.z + dz;
       if (!actor.static && isRoadBoundMotorVehicle(actor.catalogId)) {
-        const snapped = this.snapMotorVehicle(actor.catalogId, new Vector3(targetX, actor.y, targetZ), {
-          lateralM: actor.laneRef?.t ?? 0,
-          fallbackHeadingRad: actor.headingRad
+        // Road semantics apply at the drop, through the one resolver: the
+        // nearest usable lane within DROP_SNAP_RADIUS_M snaps (heading to lane
+        // travel, authored lateral offset preserved); anything else places the
+        // vehicle free — "unanchored" — instead of refusing the move.
+        const resolved = resolveVehicleDrop(this.laneIndex, targetX, targetZ, {
+          preferredLateralM: actor.laneRef?.t ?? 0,
+          fallbackHeadingRad: actor.headingRad,
+          bodyWidthM: actor.dims.w,
+          radiusM: DROP_SNAP_RADIUS_M,
+          routeUsable: (anchor) => this.routeForLaneMutation(actor, anchor) !== null,
         });
-        if (!snapped.valid || !snapped.laneRef) {
-          session.valid = false;
-          session.reason = snapped.reason ?? 'No valid driving lane nearby';
-          this.preview.set(actor.id, {
-            x: snapped.x,
-            y: snapped.y,
-            z: snapped.z,
-            headingRad: snapped.headingRad,
-            laneRef: null,
-            routeLaneRsls: null
-          });
-          continue;
-        }
-        const route = this.routeForLaneMutation(actor, snapped.laneRef);
-        if (!route) {
-          session.valid = false;
-          session.reason = 'No usable route from that road position';
-        }
+        if (resolved.outcome === 'free') anyFree = true;
         this.preview.set(actor.id, {
-          x: snapped.x,
-          y: snapped.y,
-          z: snapped.z,
-          headingRad: snapped.headingRad,
-          laneRef: snapped.laneRef,
+          x: resolved.x,
+          y: this.groundY(resolved.x, resolved.z, actor.y),
+          z: resolved.z,
+          headingRad: resolved.headingRad,
+          laneRef: resolved.laneRef,
           routeLaneRsls: null,
         });
         continue;
       }
-      const breakAnchor = this.altDown;
-      if (breakAnchor && actor.laneRef) session.broke = true;
-      const lane = !breakAnchor && actor.laneRef ? this.laneFor(actor.laneRef) : null;
-      if (lane && actor.laneRef) {
-        // Anchored: the drag slides along the lane, it does not leave the road
-      // network. Lanes are short — a junction lane on Yale Street can be 8 m —
-        // so a drag that runs off the end hands over to whichever lane is now
-        // nearest instead of piling up at the terminus. That keeps "drag a car
-        // down the street" working across road and section boundaries, which a
-        // strict single-lane projection cannot do.
-        const hit = this.laneIndex.project(lane, targetX, targetZ);
-        const ranOff = hit.s <= 1e-6 || hit.s >= lane.length - 1e-6;
-        const handoff =
-          ranOff && hit.distance > lane.widthM
-            ? this.laneIndex.nearest(targetX, targetZ, SNAP_RADIUS_M)
-            : null;
-        const use = handoff && handoff.distance < hit.distance ? handoff : hit;
-        const anchor: LaneAnchor =
-          use === hit
-            ? { ...actor.laneRef, s: hit.s }
-            : {
-                roadId: use.lane.roadId,
-                section: use.lane.section,
-                laneId: use.lane.laneId,
-                s: use.s,
-                t: use.t,
-                headingOffsetRad: actor.laneRef.headingOffsetRad
-              };
-        const route = this.routeForLaneMutation(actor, anchor);
-        if (!route) {
-          if (!session.direct) {
-            this.preview.clear();
-            this.flash('No usable route from that road position — move cancelled');
-            return;
-          }
-          session.valid = false;
-          session.reason = 'No usable route from that road position';
-        }
-        const pose = this.laneIndex.poseAt(use.lane, anchor.s, anchor.t);
-        this.preview.set(actor.id, {
-          x: pose.x,
-          y: this.groundY(pose.x, pose.z, actor.y),
-          z: pose.z,
-          headingRad: normalizeHeading(pose.headingRad + anchor.headingOffsetRad),
-          laneRef: anchor,
-          routeLaneRsls: null,
-        });
-        continue;
-      }
+      // Pedestrians, props and parked bodies move free, ground-height sampled.
+      // A previous lane anchor no longer describes the new spot, so it clears.
       this.preview.set(actor.id, {
         x: targetX,
         y: this.groundY(targetX, targetZ, actor.y),
         z: targetZ,
         headingRad: normalizeHeading(actor.headingRad + (actor.kind !== 'vehicle' || actor.static ? session.headingOffsetRad : 0)),
-        laneRef: breakAnchor && actor.laneRef ? null : undefined,
-        routeLaneRsls: breakAnchor && actor.laneRef ? null : undefined
+        laneRef: actor.laneRef ? null : undefined,
+        routeLaneRsls: actor.laneRef ? null : undefined
       });
     }
     {
@@ -513,10 +461,15 @@ export class EditorController extends EditorControllerInput {
           session.valid = false;
           session.reason = `Overlaps ${describe(blocker)}`;
         }
-        if (session.direct) {
+      }
+      session.outcome = !session.valid ? 'invalid' : anyFree ? 'free' : 'snapped';
+      if (session.direct) {
+        for (const [id, actor] of session.origin) {
+          const patch = this.preview.get(id);
+          if (!patch) continue;
           this.ghost.show(actor.catalogId);
           this.ghost.setPose(patch.x, patch.y, patch.z, patch.headingRad);
-          this.ghost.setValid(session.valid);
+          this.ghost.setOutcome(session.outcome);
           break;
         }
       }
@@ -539,19 +492,36 @@ export class EditorController extends EditorControllerInput {
     session.delta = delta;
 
     this.preview.clear();
+    const single = session.origin.size === 1;
     for (const actor of session.origin.values()) {
-      // Rotate in place, not about the group pivot: a scenario author turning
-      // three queued cars wants them all turned, not swung off their lane.
+      // Blender contract: the group turns about its shared centroid — offsets
+      // orbit the pivot and each heading turns by the same delta. A single
+      // actor's centroid is itself, which degenerates to rotate-in-place.
       const headingRad = normalizeHeading(actor.headingRad + delta);
-      const patch: PosePatch = { x: actor.x, y: actor.y, z: actor.z, headingRad };
+      const offsetX = actor.x - session.centerX;
+      const offsetZ = actor.z - session.centerZ;
+      const cos = Math.cos(delta);
+      const sin = Math.sin(delta);
+      // Headings measure against -z (atan2(-dz, dx)), so the matching positive
+      // planar rotation is x' = x·cos + z·sin, z' = z·cos − x·sin.
+      const x = single ? actor.x : session.centerX + offsetX * cos + offsetZ * sin;
+      const z = single ? actor.z : session.centerZ + offsetZ * cos - offsetX * sin;
+      const patch: PosePatch = { x, y: this.groundY(x, z, actor.y), z, headingRad };
       if (actor.laneRef) {
-        const lane = this.laneFor(actor.laneRef);
-        if (lane) {
-          const pose = this.laneIndex.poseAt(lane, actor.laneRef.s, actor.laneRef.t);
-          patch.laneRef = {
-            ...actor.laneRef,
-            headingOffsetRad: headingDelta(pose.headingRad, headingRad)
-          };
+        if (single) {
+          const lane = this.laneFor(actor.laneRef);
+          if (lane) {
+            const pose = this.laneIndex.poseAt(lane, actor.laneRef.s, actor.laneRef.t);
+            patch.laneRef = {
+              ...actor.laneRef,
+              headingOffsetRad: headingDelta(pose.headingRad, headingRad)
+            };
+          }
+        } else {
+          // The orbit moved an anchored body off its anchor point; the stale
+          // anchor cannot describe the new spot, so it clears (free placement).
+          patch.laneRef = null;
+          patch.routeLaneRsls = null;
         }
       }
       this.preview.set(actor.id, patch);
@@ -577,7 +547,7 @@ export class EditorController extends EditorControllerInput {
         ...(patch.routeLaneRsls === undefined ? {} : { routeLaneRsls: patch.routeLaneRsls })
       });
     }
-    const broke = this.grab?.broke === true;
+    const freed = this.grab?.outcome === 'free';
     this.preview.clear();
     this.grab = null;
     this.rotate = null;
@@ -585,7 +555,7 @@ export class EditorController extends EditorControllerInput {
     this.ghost.hide();
     this.endDirectPress();
     if (updates.length > 0) this.doc.update(updates);
-    if (broke) this.flash('lane anchor cleared');
+    if (freed) this.flash('placed off-road — unanchored (use Re-snap to re-anchor)');
     this.syncScene();
     this.notify();
   }
@@ -697,10 +667,11 @@ export class EditorController extends EditorControllerInput {
   protected pick(event: PointerEvent): void {
     const id = this.actorIdAt(event);
     if (!id) {
-      if (!event.shiftKey) this.setSelection([]);
+      // Shift/Ctrl clicks are set edits; only a plain empty click clears.
+      if (!event.shiftKey && !event.ctrlKey && !event.metaKey) this.setSelection([]);
       return;
     }
-    this.selectPickedActor(id, event.shiftKey, true);
+    this.selectPickedActor(id, selectionOpForModifiers(event), true);
   }
 
   protected actorIdAt(event: PointerEvent): string | null {
@@ -720,20 +691,55 @@ export class EditorController extends EditorControllerInput {
     return this.routeRenderer.draftPointIndexAt(this.raycaster);
   }
 
-  protected selectPickedActor(id: string, additive: boolean, frame: boolean): void {
-    if (additive) {
-      const next = this.selection.includes(id)
-        ? this.selection.filter((x) => x !== id)
-        : [...this.selection, id];
-      this.setSelection(next);
-    } else {
-      this.setSelection([id]);
-      // A direct scene click has the same camera contract as clicking the
-      // actor's name in the timeline: smoothly frame that actor.  Keep this
-      // out of `setSelection` so Speed/Actions controls, box selection, and
-      // playback-driven selection remain completely camera-neutral.
-      if (frame) this.frameActor(id);
+  protected selectPickedActor(id: string, op: SelectionOp, frame: boolean): void {
+    if (op !== 'replace') {
+      this.setSelection(applySelectionOp(this.selection, [id], op));
+      return;
     }
+    this.setSelection([id]);
+    // A direct scene click has the same camera contract as clicking the
+    // actor's name in the timeline: smoothly frame that actor.  Keep this
+    // out of `setSelection` so Speed/Actions controls, box selection, and
+    // playback-driven selection remain completely camera-neutral.
+    if (frame) this.frameActor(id);
+  }
+
+  /**
+   * Marquee release: screen-space centroid test against every placed actor,
+   * combined with the current selection under the modifier rule. Deliberately
+   * camera-neutral — box selection never reframes.
+   */
+  protected applyMarqueeSelection(rect: ScreenRect, op: SelectionOp): void {
+    const surface = getViewerSurfaceRect(this.viewer);
+    const picked = actorIdsInRect(this.doc.actors, this.viewer.camera, surface, rect);
+    this.setSelection(applySelectionOp(this.selection, picked, op));
+  }
+
+  /** The translucent DOM rectangle the operator drags. Owned here, not React:
+   * it must track the pointer without waiting for a render commit. */
+  protected marqueeBox: HTMLDivElement | null = null;
+
+  protected syncMarqueeBox(rect: ScreenRect | null): void {
+    if (!rect) {
+      this.marqueeBox?.remove();
+      this.marqueeBox = null;
+      return;
+    }
+    if (!this.marqueeBox) {
+      const box = document.createElement('div');
+      box.dataset.testid = 'editor-marquee';
+      box.style.position = 'fixed';
+      box.style.zIndex = '40';
+      box.style.pointerEvents = 'none';
+      box.style.border = '1px solid rgba(96, 165, 250, 0.9)';
+      box.style.background = 'rgba(59, 130, 246, 0.15)';
+      (this.host ?? document.body).appendChild(box);
+      this.marqueeBox = box;
+    }
+    this.marqueeBox.style.left = `${rect.left}px`;
+    this.marqueeBox.style.top = `${rect.top}px`;
+    this.marqueeBox.style.width = `${rect.right - rect.left}px`;
+    this.marqueeBox.style.height = `${rect.bottom - rect.top}px`;
   }
 
   // --------------------------------------------------------------- helpers
@@ -791,6 +797,47 @@ export class EditorController extends EditorControllerInput {
   protected groundY(x: number, z: number, fallback: number): number {
     const sampled = this.sampleHeight(x, z);
     return sampled === null ? fallback : sampled;
+  }
+
+  /** Public cursor→ground projection for host tools (paste at a client point). */
+  groundPointAtClient(clientX: number, clientY: number): { x: number; y: number; z: number } | null {
+    const point = this.groundPoint({ clientX, clientY });
+    return point ? { x: point.x, y: point.y, z: point.z } : null;
+  }
+
+  /** Last ground point under the cursor, if the pointer has crossed the map. */
+  get cursorGroundPoint(): { x: number; y: number; z: number } | null {
+    const point = this.lastGround;
+    return point ? { x: point.x, y: point.y, z: point.z } : null;
+  }
+
+  /**
+   * Resolve a paste placement through the same road-semantics rule as a drop:
+   * a road-bound vehicle snaps to the nearest usable lane within
+   * {@link DROP_SNAP_RADIUS_M} (heading to lane travel, lateral offset
+   * preserved) or places free — never refused; everything else grounds at the
+   * requested point.
+   */
+  resolveDrop(
+    catalogId: CatalogId,
+    x: number,
+    z: number,
+    options: { preferredLateralM?: number; headingRad?: number; static?: boolean; fallbackY?: number } = {},
+  ): { outcome: 'snapped' | 'free'; x: number; y: number; z: number; headingRad: number; laneRef: LaneAnchor | null } {
+    const heading = options.headingRad ?? 0;
+    const fallbackY = options.fallbackY ?? 0;
+    if (!options.static && isRoadBoundMotorVehicle(catalogId)) {
+      const speedKph = defaultDrivingSpeedKph(catalogId) ?? DEFAULT_AUTHORED_VEHICLE_SPEED_KPH;
+      const resolved = resolveVehicleDrop(this.laneIndex, x, z, {
+        preferredLateralM: options.preferredLateralM ?? 0,
+        fallbackHeadingRad: heading,
+        bodyWidthM: getEntry(catalogId).dims.w,
+        radiusM: DROP_SNAP_RADIUS_M,
+        routeUsable: (anchor) => this.planLaneRoute(anchor, speedKph) !== null,
+      });
+      return { ...resolved, y: this.groundY(resolved.x, resolved.z, fallbackY) };
+    }
+    return { outcome: 'free', x, y: this.groundY(x, z, fallbackY), z, headingRad: heading, laneRef: null };
   }
 
   protected laneFor(anchor: LaneAnchor): IndexedLane | null {
@@ -928,7 +975,8 @@ export class EditorController extends EditorControllerInput {
       canUndo: this.doc.canUndo,
       canRedo: this.doc.canRedo,
       dirty: this.doc.isDirty,
-      savedAt: this.doc.savedAt
+      savedAt: this.doc.savedAt,
+      dropOutcome: this.mode === 'grab' ? this.grab?.outcome ?? null : null
     };
   }
 
@@ -962,22 +1010,25 @@ export class EditorController extends EditorControllerInput {
           const rotatable = [...this.grab.origin.values()].every((actor) => actor.kind !== 'vehicle' || actor.static);
           const roadVehicle = [...this.grab.origin.values()].some((actor) => !actor.static && isRoadBoundMotorVehicle(actor.catalogId));
           if (roadVehicle) {
-            return this.grab.valid
-              ? `snapped to ${laneLabelFromPreview(this.preview, this.grab.origin) ?? 'driving lane'} · release confirm · Esc cancel`
-              : `${this.grab.reason ?? 'no valid driving lane'} · release cancels move · Esc cancel`;
+            if (this.grab.outcome === 'invalid') {
+              return `${this.grab.reason ?? 'invalid position'} · release cancels move · Esc cancel`;
+            }
+            return this.grab.outcome === 'free'
+              ? 'off-road — will place unanchored · release confirm · Esc cancel'
+              : `snapped to ${laneLabelFromPreview(this.preview, this.grab.origin) ?? 'driving lane'} · release confirm · Esc cancel`;
           }
           return rotatable
             ? 'move · Q / E rotate 5° · release confirm · Esc cancel'
             : 'move · release confirm · Esc cancel';
         }
-        return 'move · click confirm · ⌥ break lane anchor · right-click cancel';
+        return 'move · click confirm · right-click cancel';
       }
       case 'rotate':
         return 'rotate · ⇧ 15° snap · click confirm · right-click cancel';
       default:
         return this.selection.length > 0
-          ? `${this.selection.length} selected · hold-drag move · R rotate · ⌘D duplicate · ⌫ delete · ⇧click add`
-          : 'choose a build tool · click select · hold-drag actor move · left-drag rotate · middle-drag / WASD pan';
+          ? `${this.selection.length} selected · hold-drag move · ⌘C copy · ⌘D duplicate · ⌫ delete · ⇧click add · ⌃click toggle`
+          : 'click select · drag box-select · hold-drag actor move · middle-drag / WASD pan';
     }
   }
 }

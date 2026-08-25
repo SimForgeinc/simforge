@@ -46,6 +46,8 @@ import {
   type EditorDocument,
 } from './document';
 import { normalizeHeading, type LaneIndex } from './laneIndex';
+import { normalizedRect, selectionOpForModifiers, type ScreenRect, type SelectionOp } from './marquee';
+import type { DropOutcome } from './drop-resolver';
 
 export type EditorMode = 'idle' | 'placing' | 'grab' | 'rotate' | 'drawingRoute';
 export type CustomRouteTool = 'add' | 'move';
@@ -85,6 +87,8 @@ export interface EditorState {
   readonly canRedo: boolean;
   readonly dirty: boolean;
   readonly savedAt: number | null;
+  /** Live drop-resolver verdict for the in-flight move. */
+  readonly dropOutcome: DropOutcome | null;
 }
 
 interface DirectMovePress {
@@ -149,7 +153,7 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
     if (meta && event.key.toLowerCase() === 'd') {
       event.preventDefault();
       event.stopPropagation();
-      this.duplicateSelection();
+      this.duplicateSelection({ drag: true });
       return;
     }
     if (meta && event.key.toLowerCase() === 'a') {
@@ -171,19 +175,12 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
       case 'Escape':
         event.preventDefault();
         event.stopPropagation();
+        if (this.marqueePress) {
+          this.clearMarquee();
+          this.notify();
+          return;
+        }
         this.cancel();
-        return;
-      case 'g':
-      case 'G':
-        event.preventDefault();
-        event.stopPropagation();
-        this.beginGrab();
-        return;
-      case 'r':
-      case 'R':
-        event.preventDefault();
-        event.stopPropagation();
-        this.beginRotate();
         return;
       case 'Delete':
         event.preventDefault();
@@ -357,6 +354,19 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
         this.viewer.controls.setEnabled(false);
         return;
       }
+      // Empty ground: the press is a potential marquee. The camera rig is
+      // disabled rather than the event consumed, so a genuine click still
+      // reaches sibling canvas listeners (signal orbs select on click).
+      this.marqueePress = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        shiftKey: event.shiftKey,
+        ctrlKey: event.ctrlKey || event.metaKey,
+      };
+      try { this.viewer.renderer.domElement.setPointerCapture(event.pointerId); } catch { /* synthetic/legacy canvas */ }
+      this.viewer.controls.setEnabled(false);
+      return;
     }
 
     if (this.mode === 'placing' && event.button === 0) {
@@ -394,6 +404,17 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
       if (!direct.active && this.pressMoved) this.activateDirectMove(direct);
       if (direct.active) this.updateGrab(event);
       else this.groundPoint(event);
+      return;
+    }
+
+    const marquee = this.marqueePress;
+    if (marquee && marquee.pointerId === event.pointerId) {
+      if (this.pressMoved || this.marqueeRect) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.marqueeRect = normalizedRect(marquee.x, marquee.y, event.clientX, event.clientY);
+        this.syncMarqueeBox(this.marqueeRect);
+      }
       return;
     }
 
@@ -439,8 +460,8 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
         this.updateRotate(event);
         return;
       default:
-        // Idle: remember where the cursor is on the ground so `G`/`R` have an
-        // anchor the moment they are pressed.
+        // Idle: remember where the cursor is on the ground so paste and
+        // duplicate-drag have an anchor the moment they are invoked.
         this.groundPoint(event);
     }
   };
@@ -472,7 +493,11 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
     // Pointer capture is best-effort. Browsers can retarget or drop capture
     // when opening portal UI during the gesture, so the matching release must
     // still finish the actor press even when it lands outside the canvas.
-    if (!this.isCanvasEvent(event) && direct?.pointerId !== event.pointerId) return;
+    if (
+      !this.isCanvasEvent(event)
+      && direct?.pointerId !== event.pointerId
+      && this.marqueePress?.pointerId !== event.pointerId
+    ) return;
     if (!this.authoringEnabled) return;
     if (direct && direct.pointerId === event.pointerId) {
       event.preventDefault();
@@ -485,13 +510,35 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
       this.pressMoved = false;
       if (!active) {
         this.endDirectPress();
-        this.selectPickedActor(actorId, event.shiftKey, true);
+        this.selectPickedActor(actorId, selectionOpForModifiers(event), true);
       } else if (valid) {
         this.commitModal();
       } else {
         this.cancelModal();
         this.flash(reason ?? 'Move cancelled — choose a valid position');
       }
+      return;
+    }
+
+    const marquee = this.marqueePress;
+    if (marquee && marquee.pointerId === event.pointerId) {
+      const rect = this.marqueeRect;
+      this.clearMarquee();
+      this.pressButton = -1;
+      const moved = this.pressMoved;
+      this.pressMoved = false;
+      if (rect && moved) {
+        // A live marquee owns the release outright: nothing behind it (signal
+        // orbs, camera) may also interpret the gesture.
+        event.preventDefault();
+        event.stopPropagation();
+        this.applyMarqueeSelection(
+          rect,
+          marquee.shiftKey ? 'add' : marquee.ctrlKey ? 'toggle' : 'replace',
+        );
+        return;
+      }
+      if (event.button === 0 && this.mode === 'idle') this.pick(event);
       return;
     }
 
@@ -515,6 +562,12 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
   };
 
   protected onPointerCancel = (event: PointerEvent): void => {
+    if (this.marqueePress?.pointerId === event.pointerId) {
+      this.clearMarquee();
+      this.pressButton = -1;
+      this.pressMoved = false;
+      return;
+    }
     const direct = this.directPress;
     if (!direct || direct.pointerId !== event.pointerId) return;
     event.preventDefault();
@@ -524,6 +577,20 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
     this.cancelModal();
     this.notify();
   };
+
+  /** Drop marquee bookkeeping and give the pointer back to the camera. */
+  protected clearMarquee(): void {
+    const press = this.marqueePress;
+    if (!press) return;
+    try {
+      const canvas = this.viewer.renderer.domElement;
+      if (canvas.hasPointerCapture?.(press.pointerId)) canvas.releasePointerCapture(press.pointerId);
+    } catch { /* capture is optional in synthetic/legacy canvases */ }
+    this.marqueePress = null;
+    this.marqueeRect = null;
+    this.syncMarqueeBox(null);
+    this.viewer.controls.setEnabled(true);
+  }
 
   protected onWheel = (event: WheelEvent): void => {
     // Only steal the wheel when it has a lane to nudge along; otherwise it is
@@ -547,15 +614,25 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
     if (press.timer !== null) clearTimeout(press.timer);
     press.timer = null;
     press.active = true;
-    this.selection = [actor.id];
+    // A hold on a member of the current multi-selection moves the whole
+    // selection as one rigid group; a hold on anything else selects it alone.
+    const groupIds = this.selection.includes(actor.id) && this.selection.length > 1
+      ? this.selection
+      : [actor.id];
+    this.selection = [...groupIds];
+    const origin = new Map<string, ActorRecord>();
+    for (const id of groupIds) {
+      const member = this.doc.actor(id);
+      if (member) origin.set(id, member);
+    }
     this.grab = {
-      origin: new Map([[actor.id, actor]]),
+      origin,
       start: press.startGround.clone(),
-      broke: false,
       direct: true,
       valid: true,
       reason: null,
-      headingOffsetRad: 0
+      headingOffsetRad: 0,
+      outcome: 'snapped'
     };
     this.mode = 'grab';
     this.ghost.show(actor.catalogId);
@@ -583,6 +660,8 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
   protected abstract pick(event: PointerEvent): void;
   protected abstract actorIdAt(event: PointerEvent): string | null;
   protected abstract routePointIndexAt(event: PointerEvent): number | null;
-  protected abstract selectPickedActor(id: string, additive: boolean, frame: boolean): void;
+  protected abstract selectPickedActor(id: string, op: SelectionOp, frame: boolean): void;
+  protected abstract applyMarqueeSelection(rect: ScreenRect, op: SelectionOp): void;
+  protected abstract syncMarqueeBox(rect: ScreenRect | null): void;
   protected abstract groundPoint(event: { clientX: number; clientY: number }): Vector3 | null;
 }

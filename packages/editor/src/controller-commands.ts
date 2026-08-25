@@ -39,10 +39,13 @@
 import { Raycaster, Vector2, Vector3 } from 'three';
 import { getViewerSurfaceRect, type EditorViewer } from './viewer-contract';
 import { getEntry, type CatalogId } from '@simforge/asset-catalog';
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
+import type { Interaction, ScenarioTemplateV2 } from '@simforge/scenario';
 import type { SceneTrace, SimScenarioInput } from '@simforge/engine';
 import { ActorRenderer, type ActorView } from '@simforge/viewer';
 import { GhostActor } from './ghostActor';
+import { interactionDraftId } from './interaction-palette';
+import { resolveVehicleDrop, RESNAP_RADIUS_M, type DropOutcome } from './drop-resolver';
+import type { ScreenRect } from './marquee';
 
 import {
   actorKindFor,
@@ -109,6 +112,12 @@ export interface EditorState {
   readonly canRedo: boolean;
   readonly dirty: boolean;
   readonly savedAt: number | null;
+  /**
+   * Aggregate commit feedback for the in-flight move: `snapped` (green) means
+   * every road vehicle re-anchors on drop, `free` (amber) means at least one
+   * lands unanchored, `invalid` (red) means the drop is refused (overlap).
+   */
+  readonly dropOutcome: DropOutcome | null;
 }
 
 /** Live pose overrides used while a modal gesture is in flight. */
@@ -124,11 +133,12 @@ interface PosePatch {
 interface GrabSession {
   origin: Map<string, ActorRecord>;
   start: Vector3;
-  broke: boolean;
   direct: boolean;
   valid: boolean;
   reason: string | null;
   headingOffsetRad: number;
+  /** Live resolver verdict for the whole moving set. */
+  outcome: DropOutcome;
 }
 
 interface DirectMovePress {
@@ -218,6 +228,16 @@ export abstract class EditorControllerCommands {
   } | null = null;
   protected grab: GrabSession | null = null;
   protected directPress: DirectMovePress | null = null;
+  /** Armed on empty-ground left press; becomes a live marquee past the slop. */
+  protected marqueePress: {
+    pointerId: number;
+    x: number;
+    y: number;
+    shiftKey: boolean;
+    ctrlKey: boolean;
+  } | null = null;
+  /** Live marquee rectangle in client coordinates; null while not dragging. */
+  protected marqueeRect: ScreenRect | null = null;
   protected rotate: RotateSession | null = null;
   protected message: string | null = null;
   protected messageTimer: ReturnType<typeof setTimeout> | null = null;
@@ -391,6 +411,7 @@ export abstract class EditorControllerCommands {
     window.removeEventListener('keydown', this.onKeyDown, { capture: true });
     window.removeEventListener('keyup', this.onKeyUp, { capture: true });
     this.endDirectPress();
+    this.clearMarquee();
     this.host = null;
   }
 
@@ -778,41 +799,141 @@ export abstract class EditorControllerCommands {
    * own heading otherwise. Pedestrians and props use a flat 2 m, since their
    * body length is not a meaningful spacing.
    */
-  duplicateSelection(): void {
+  duplicateSelection(options: { drag?: boolean } = {}): void {
     if (!this.authoringEnabled) return;
     if (this.selection.length === 0) return;
     const inputs: NewActor[] = [];
+    const interactions: Interaction[] = [];
+    const clipSeconds = this.doc.data.choreography.clipSeconds;
     for (const id of this.selection) {
       const actor = this.doc.actor(id);
       if (!actor) continue;
+      const newId = this.doc.allocateActorId(actor.catalogId);
       const gap = actor.kind === 'vehicle' ? actor.dims.l + 1 : 2;
       const lane = actor.laneRef ? this.laneFor(actor.laneRef) : null;
+      const shared: Pick<NewActor, 'id' | 'catalogId' | 'label' | 'bodyColor' | 'initialSpeedKph' | 'driverProfile' | 'static'> = {
+        id: newId,
+        catalogId: actor.catalogId,
+        ...(actor.label === undefined ? {} : { label: actor.label }),
+        ...(actor.bodyColor === undefined ? {} : { bodyColor: actor.bodyColor }),
+        ...(actor.initialSpeedKph === undefined ? {} : { initialSpeedKph: actor.initialSpeedKph }),
+        ...(actor.driverProfile === undefined ? {} : { driverProfile: actor.driverProfile }),
+        ...(actor.static === undefined ? {} : { static: actor.static }),
+      };
+      let dx: number;
+      let dz: number;
       if (lane && actor.laneRef) {
         const s = advanceAlongTravel(lane, actor.laneRef.s, -gap);
         const pose = this.laneIndex.poseAt(lane, s, actor.laneRef.t);
+        dx = pose.x - actor.x;
+        dz = pose.z - actor.z;
         inputs.push({
-          catalogId: actor.catalogId,
+          ...shared,
           x: pose.x,
           y: this.groundY(pose.x, pose.z, actor.y),
           z: pose.z,
           headingRad: normalizeHeading(pose.headingRad + actor.laneRef.headingOffsetRad),
           laneRef: { ...actor.laneRef, s }
         });
+      } else {
+        dx = -Math.cos(actor.headingRad) * gap;
+        dz = Math.sin(actor.headingRad) * gap;
+        const x = actor.x + dx;
+        const z = actor.z + dz;
+        inputs.push({
+          ...shared,
+          x,
+          y: this.groundY(x, z, actor.y),
+          z,
+          headingRad: actor.headingRad
+        });
+      }
+      interactions.push(...this.cloneOwnedRouteClips(actor.id, newId, dx, dz, clipSeconds));
+    }
+    const ids = this.doc.addWithInteractions(inputs, interactions);
+    this.setSelection(ids);
+    this.flash(`duplicated ${ids.length}`);
+    // Duplicate-and-drag: the copies follow the cursor until the click commits.
+    if (options.drag && this.lastGroundPoint) this.beginGrab();
+  }
+
+  /**
+   * Clone the route clips one actor owns onto its copy, translated rigidly by
+   * the duplicate/paste offset.
+   *
+   * A timed route is normalized full-width (`trigger` at 0, `until` at the
+   * clip end) so the copy satisfies the timeline's exclusive full-width
+   * contract for custom timed routes on its own actor.
+   */
+  protected cloneOwnedRouteClips(
+    sourceActorId: string,
+    newActorId: string,
+    dx: number,
+    dz: number,
+    clipSeconds: number,
+  ): Interaction[] {
+    const clones: Interaction[] = [];
+    let ordinal = 0;
+    for (const interaction of this.doc.data.choreography.interactions) {
+      if (interaction.actor !== sourceActorId || interaction.verb !== 'route') continue;
+      const target = interaction.target;
+      if (target.mode !== 'customRoute' && target.mode !== 'customTimedRoute') continue;
+      const points = target.points.map((point) => ({
+        ...point,
+        x: Number((point.x + dx).toFixed(3)),
+        z: Number((point.z + dz).toFixed(3)),
+      })) as typeof target.points;
+      clones.push({
+        ...interaction,
+        id: interactionDraftId('route', newActorId, ordinal++),
+        actor: newActorId,
+        target: { ...target, points } as Interaction['target'],
+        ...(target.mode === 'customTimedRoute'
+          ? {
+              trigger: { kind: 'at', t: 0 },
+              until: { kind: 'at', t: clipSeconds },
+            }
+          : {}),
+      } as Interaction);
+    }
+    return clones;
+  }
+
+  /**
+   * One-click re-anchor for an unanchored road vehicle: resolve the nearest
+   * usable driving lane within {@link RESNAP_RADIUS_M} and snap onto it.
+   */
+  resnapToLane(ids: readonly string[]): void {
+    if (!this.authoringEnabled) return;
+    const updates: ActorUpdate[] = [];
+    let missed = 0;
+    for (const id of ids) {
+      const actor = this.doc.actor(id);
+      if (!actor || actor.static || actor.kind !== 'vehicle') continue;
+      const resolved = resolveVehicleDrop(this.laneIndex, actor.x, actor.z, {
+        preferredLateralM: actor.laneRef?.t ?? 0,
+        fallbackHeadingRad: actor.headingRad,
+        bodyWidthM: actor.dims.w,
+        radiusM: RESNAP_RADIUS_M,
+        routeUsable: (anchor) => this.routeForLaneMutation(actor, anchor) !== null,
+      });
+      if (resolved.outcome !== 'snapped' || !resolved.laneRef) {
+        missed++;
         continue;
       }
-      const x = actor.x - Math.cos(actor.headingRad) * gap;
-      const z = actor.z + Math.sin(actor.headingRad) * gap;
-      inputs.push({
-        catalogId: actor.catalogId,
-        x,
-        y: this.groundY(x, z, actor.y),
-        z,
-        headingRad: actor.headingRad
+      updates.push({
+        id,
+        x: resolved.x,
+        y: this.groundY(resolved.x, resolved.z, actor.y),
+        z: resolved.z,
+        headingRad: resolved.headingRad,
+        laneRef: resolved.laneRef,
+        routeLaneRsls: null,
       });
     }
-    const ids = this.doc.add(inputs);
-    this.selection = ids;
-    this.flash(`duplicated ${ids.length}`);
+    if (updates.length > 0) this.doc.update(updates);
+    if (missed > 0) this.flash(`no usable driving lane within ${RESNAP_RADIUS_M} m`);
+    else if (updates.length > 0) this.flash(`snapped ${updates.length} to lane`);
   }
 
   undo(): void {
@@ -844,11 +965,11 @@ export abstract class EditorControllerCommands {
     this.grab = {
       origin: new Map(this.selection.map((id) => [id, this.doc.actor(id) as ActorRecord])),
       start: start.clone(),
-      broke: false,
       direct: false,
       valid: true,
       reason: null,
-      headingOffsetRad: 0
+      headingOffsetRad: 0,
+      outcome: 'snapped'
     };
     this.mode = 'grab';
     this.notify();
@@ -1019,6 +1140,7 @@ export abstract class EditorControllerCommands {
   protected abstract readonly onKeyDown: (event: KeyboardEvent) => void;
   protected abstract readonly onKeyUp: (event: KeyboardEvent) => void;
   protected abstract endDirectPress(): void;
+  protected abstract clearMarquee(): void;
   protected abstract get lastGroundPoint(): Vector3 | null;
   protected abstract cancelModal(): void;
   protected abstract groundY(x: number, z: number, fallback: number): number;
