@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { lonLatToScene } from "@/app/components/city-viewer/geo-utils";
+import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates";
 import type { MapAsset } from "@simforge/studio-shared";
 import { resolvePlaceHighlight } from "@/app/lib/maps/frontend/place-highlight";
 import type { PlaceHighlight, PlaceHighlightContext } from "@/app/lib/maps/frontend/place-highlight";

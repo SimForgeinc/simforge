@@ -5,12 +5,10 @@ import type { CityViewer } from "@simforge/viewer";
 import { ActorRenderer } from "@simforge/viewer";
 import { CityView } from "@simforge/viewer/react";
 import { cn } from "@/app/lib/utils";
-import {
-  readRenderingPreference,
-  RENDERING_PREFERENCE_CHANGE_EVENT,
-  type RenderingPreference,
-} from "@/app/components/city-viewer/rendering-preference";
-import { useRegisterRenderingBenchmarkTarget } from "@/app/components/city-viewer/rendering-benchmark-target";
+import { readRenderingPreference,
+RENDERING_PREFERENCE_CHANGE_EVENT,
+type RenderingPreference, } from "@/app/components/rendering-preference"
+import { useRegisterRenderingBenchmarkTarget } from "@/app/components/rendering-benchmark-target"
 import { AUTHORING_QUALITY } from "../editor/authoring-quality";
 import {
   animateMapCamera,

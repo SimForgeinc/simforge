@@ -31,6 +31,7 @@ import { useProximityArrows } from "./useProximityArrows";
 import { useScenarioOverlayState } from "./useScenarioOverlayState";
 import { useMapAssetOperations } from "./useMapAssetOperations";
 import { MapDetailRightPanel } from "./MapDetailRightPanel";
+import { DigitalTwinViewerPanel } from "./DigitalTwinViewerPanel";
 
 type DetailTab = "overview" | "layers" | "analytics" | "insights";
 
@@ -68,6 +69,7 @@ export function MapDetailPageClient({
 
   // Active tab — preserved across map switches
   const [activeTab, setActiveTab] = useState<DetailTab>("overview");
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   const [focusFamilyId, setFocusFamilyId] = useState<string | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -190,7 +192,7 @@ export function MapDetailPageClient({
   const scenarioOverlay = useScenarioOverlayState({
     currentAsset,
     aiSearchMessages: aiSearch.messages,
-    viewMode: "2d",
+    viewMode,
   });
 
   // Map asset operations (extracted hook)
@@ -302,13 +304,18 @@ export function MapDetailPageClient({
   }, [data.selectedEnrichment, data.signalOverlayGeoJSON]);
 
   // Proximity arrows (extracted hook)
-  const { proximityArrowGeoJSON, topologyPathGeoJSON, relatedHighlights } = useProximityArrows({
+  const {
+    proximityArrowGeoJSON,
+    topologyPathGeoJSON,
+    proximityArrows3D,
+    relatedHighlights,
+  } = useProximityArrows({
     selectedSearchResultId,
     placeHighlight,
     highlightedRelatedObjectId,
     searchResults: searchState.results,
     aiChatCandidates,
-    viewMode: "2d",
+    viewMode,
     currentAsset,
     ctx: {
       candidates: data.candidateLocations,
@@ -679,6 +686,23 @@ export function MapDetailPageClient({
             >
               <Home className="size-3.5" />
             </button>
+            <div className="flex rounded-md border border-border bg-background/95 p-0.5 shadow-sm">
+              {(["2d", "3d"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setViewMode(mode)}
+                  className={`rounded px-2 py-1 text-[11px] font-medium uppercase transition-colors ${
+                    viewMode === mode
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  aria-pressed={viewMode === mode}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Floating search bar */}
@@ -706,57 +730,73 @@ export function MapDetailPageClient({
           ) : null}
 
           <div className="absolute inset-0">
-            <MapAssetsMapDynamic
-                assets={[currentAsset]}
-                selectedAssetId={currentAsset.map_asset_id}
-                showLaneChips
-                selectedGeoJSON={data.selectedGeoJSON}
-                selectedEnrichment={data.selectedEnrichment}
-                enabledOverlayLayerIds={data.enabledOverlayLayerIds}
-                enabledFeatureTypeIds={data.enabledFeatureTypeIds}
-                lanePolygonsGeoJSON={data.lanePolygonsGeoJSON}
-                laneRenderMode={data.laneRenderMode}
-                geojsonLoading={data.geojsonLoading}
-                onSelectAsset={() => {}}
-                onSelectFeature={handleSelectFeature}
-                selectedFeatureId={data.selectedFeatureId}
-                selectedLanePolygonId={
-                  data.selectedFeatures.find((f) => f.id === data.selectedFeatureId)
-                    ?.lanePolygonId ?? null
+            {viewMode === "3d" ? (
+              <DigitalTwinViewerPanel
+                asset={currentAsset}
+                focusTarget={
+                  scenarioOverlay.scenarioFocusTarget3D ?? placeHighlight.focusTarget
                 }
-                candidateLocations={data.candidateLocations}
-                selectedCandidateLocationId={data.selectedCandidateLocationId}
-                candidateFamilyLayers={data.candidateFamilyLayers}
-                enabledCandidateFamilyIds={data.enabledCandidateFamilyIds}
-                twinFidelityScorecard={data.twinFidelityScorecard}
-                enabledTwinFidelityLayerIds={data.enabledTwinFidelityLayerIds}
-                signalOverlayGeoJSON={data.signalOverlayGeoJSON}
-                speedLimitOverlayGeoJSON={data.speedLimitOverlayGeoJSON}
-                inHouseSpeedLimitOverlayGeoJSON={data.inHouseSpeedLimitOverlayGeoJSON}
-                enabledSignalCategories={data.enabledSignalCategories}
-                userGeoJsonLayers={data.userGeoJsonLayers}
-                selectedOverlayCoords={mergedOverlayCoords}
-                selectedOverlayGeometry={data.selectedOverlayGeometry}
-                highlightedFeatureIds={highlightedFeatureIds}
-                relatedHighlightedFeatureIds={relatedHighlights.featureIds}
-                relatedOverlayCoords={relatedHighlights.overlayCoords}
-                relatedCandidateIds={relatedHighlights.candidateIds}
-                proximityArrows={proximityArrowGeoJSON}
-                topologyPaths={topologyPathGeoJSON}
-                actorTrajectoryOverlay={scenarioOverlay.actorTrajectoryOverlay}
-                esminiTrajectoryOverlay={scenarioOverlay.esminiTrajectoryOverlay}
-                actorSpawnOverlay={scenarioOverlay.actorSpawnOverlay}
-                collisionPointOverlay={scenarioOverlay.collisionPointOverlay}
-                focusBounds={scenarioOverlay.scenarioFocusBounds?.bounds ?? placeHighlight.bounds}
+                resetViewNonce={resetViewNonce}
                 searchResultMarkers={searchResultMarkers}
                 hoveredSearchResultId={hoveredSearchResultId}
-                selectedSearchResultId={selectedSearchResultId}
-                onSelectSearchResult={handleSelectSearchResult}
-                resetViewNonce={resetViewNonce}
-                satelliteEnabled={satelliteBasemap}
-                onSatelliteEnabledChange={setSatelliteBasemap}
-                enableMeasureTool
-            />
+                proximityArrows={proximityArrows3D}
+                actorTrajectories={scenarioOverlay.actorTrajectories3D}
+                collisionMarker={scenarioOverlay.collisionMarker3D}
+                actorSpawns={scenarioOverlay.actorSpawns3D}
+              />
+            ) : (
+              <MapAssetsMapDynamic
+                  assets={[currentAsset]}
+                  selectedAssetId={currentAsset.map_asset_id}
+                  showLaneChips
+                  selectedGeoJSON={data.selectedGeoJSON}
+                  selectedEnrichment={data.selectedEnrichment}
+                  enabledOverlayLayerIds={data.enabledOverlayLayerIds}
+                  enabledFeatureTypeIds={data.enabledFeatureTypeIds}
+                  lanePolygonsGeoJSON={data.lanePolygonsGeoJSON}
+                  laneRenderMode={data.laneRenderMode}
+                  geojsonLoading={data.geojsonLoading}
+                  onSelectAsset={() => {}}
+                  onSelectFeature={handleSelectFeature}
+                  selectedFeatureId={data.selectedFeatureId}
+                  selectedLanePolygonId={
+                    data.selectedFeatures.find((f) => f.id === data.selectedFeatureId)
+                      ?.lanePolygonId ?? null
+                  }
+                  candidateLocations={data.candidateLocations}
+                  selectedCandidateLocationId={data.selectedCandidateLocationId}
+                  candidateFamilyLayers={data.candidateFamilyLayers}
+                  enabledCandidateFamilyIds={data.enabledCandidateFamilyIds}
+                  twinFidelityScorecard={data.twinFidelityScorecard}
+                  enabledTwinFidelityLayerIds={data.enabledTwinFidelityLayerIds}
+                  signalOverlayGeoJSON={data.signalOverlayGeoJSON}
+                  speedLimitOverlayGeoJSON={data.speedLimitOverlayGeoJSON}
+                  inHouseSpeedLimitOverlayGeoJSON={data.inHouseSpeedLimitOverlayGeoJSON}
+                  enabledSignalCategories={data.enabledSignalCategories}
+                  userGeoJsonLayers={data.userGeoJsonLayers}
+                  selectedOverlayCoords={mergedOverlayCoords}
+                  selectedOverlayGeometry={data.selectedOverlayGeometry}
+                  highlightedFeatureIds={highlightedFeatureIds}
+                  relatedHighlightedFeatureIds={relatedHighlights.featureIds}
+                  relatedOverlayCoords={relatedHighlights.overlayCoords}
+                  relatedCandidateIds={relatedHighlights.candidateIds}
+                  proximityArrows={proximityArrowGeoJSON}
+                  topologyPaths={topologyPathGeoJSON}
+                  actorTrajectoryOverlay={scenarioOverlay.actorTrajectoryOverlay}
+                  esminiTrajectoryOverlay={scenarioOverlay.esminiTrajectoryOverlay}
+                  actorSpawnOverlay={scenarioOverlay.actorSpawnOverlay}
+                  collisionPointOverlay={scenarioOverlay.collisionPointOverlay}
+                  focusBounds={scenarioOverlay.scenarioFocusBounds?.bounds ?? placeHighlight.bounds}
+                  searchResultMarkers={searchResultMarkers}
+                  hoveredSearchResultId={hoveredSearchResultId}
+                  selectedSearchResultId={selectedSearchResultId}
+                  onSelectSearchResult={handleSelectSearchResult}
+                  resetViewNonce={resetViewNonce}
+                  satelliteEnabled={satelliteBasemap}
+                  onSatelliteEnabledChange={setSatelliteBasemap}
+                  enableMeasureTool
+              />
+            )}
           </div>
 
           {/* Fly-by media player */}

@@ -1,4 +1,4 @@
-import type { RenderingPreference } from "@/app/components/city-viewer/rendering-preference";
+import type { RenderingPreference } from "@/app/components/rendering-preference"
 import type { ScenarioMapOption } from "@/app/dashboard/scenario/list/document-map-groups";
 import {
   isCityAssetVariantManifest,

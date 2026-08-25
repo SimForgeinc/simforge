@@ -70,6 +70,8 @@ export interface StaticSemanticsReference {
 
 export interface CityManifest {
   version: string;
+  generator?: string;
+  created?: string;
   scene: ManifestScene;
   tiles: ManifestTile[];
   staticLayers?: ManifestStaticLayer[];

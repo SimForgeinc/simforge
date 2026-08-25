@@ -1,5 +1,5 @@
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
-import { readRenderingPreference } from "@/app/components/city-viewer/rendering-preference";
+import { readRenderingPreference } from "@/app/components/rendering-preference"
 
 const MB = 1024 * 1024;
 

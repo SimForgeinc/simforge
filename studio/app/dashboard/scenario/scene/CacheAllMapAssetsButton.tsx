@@ -3,7 +3,7 @@
 import { Check, Database } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CloudActivityIndicator } from "@/app/components/CloudLoadingSurface";
-import { readRenderingPreference } from "@/app/components/city-viewer/rendering-preference";
+import { readRenderingPreference } from "@/app/components/rendering-preference"
 import { Button } from "@/app/components/ui/button";
 import { listMapOptions } from "@/app/dashboard/scenario/list/api";
 import {

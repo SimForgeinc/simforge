@@ -23,7 +23,7 @@
 
 import { primaryActor, type MapAsset, type ScenarioEditorActorDraft } from "@simforge/studio-shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
-import { lonLatToScene } from "@/app/components/city-viewer/geo-utils";
+import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates"
 import {
   actorPlannedTrajectories,
   type PlannedActorTrajectory,

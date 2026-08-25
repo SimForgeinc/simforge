@@ -8,11 +8,9 @@ import { ProfileMapPreparation } from "@/app/components/ProfileMapPreparation";
 import { SkyCloudBackdrop } from "@/app/components/SkyCloudBackdrop";
 import { useSetPageTitle } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";
-import {
-  readRenderingPreference,
-  saveRenderingPreference,
-  type RenderingPreference,
-} from "@/app/components/city-viewer/rendering-preference";
+import { readRenderingPreference,
+saveRenderingPreference,
+type RenderingPreference, } from "@/app/components/rendering-preference"
 import { QualityChooser } from "@/app/dashboard/scenario/editor/states/EditorStatePanels";
 import { listMapOptions } from "@/app/dashboard/scenario/list/api";
 import type { ScenarioMapOption } from "@/app/dashboard/scenario/list/document-map-groups";
