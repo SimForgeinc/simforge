@@ -32,8 +32,11 @@ gpu_lock="${3:-}"
 stale_after_s="${4:-3600}"
 render_pattern="${5:-uniscenarios-carla.*run-intent}"
 
-if pgrep -f "$render_pattern" >/dev/null 2>&1; then
-  echo "skip: live render subprocess matches '$render_pattern'"
+# pgrep -f matches full cmdlines, including THIS probe's own argv (the
+# pattern is one of its arguments) — exclude self and parent.
+live_renders="$(pgrep -f "$render_pattern" | grep -vE "^($$|$PPID)\$" || true)"
+if [ -n "$live_renders" ]; then
+  echo "skip: live render subprocess matches '$render_pattern' (pids: $(echo "$live_renders" | tr '\n' ' '))"
   exit 0
 fi
 
