@@ -34,7 +34,7 @@ def test_run_intent_records_named_preflight_failure_before_exit(
     )
 
     def fail(*_args, **_kwargs):
-        raise local.ContractError("the Pronto host has no deterministic same-class CARLA fallback")
+        raise local.ContractError("vehicle actor has no same-class native CARLA fallback")
 
     monkeypatch.setattr(local, "_execute_local_lease", fail)
     args = SimpleNamespace(
@@ -47,7 +47,7 @@ def test_run_intent_records_named_preflight_failure_before_exit(
         port=2000,
     )
 
-    with pytest.raises(local.ContractError, match="deterministic same-class"):
+    with pytest.raises(local.ContractError, match="same-class native"):
         local._run_intent(args)
 
     records = [json.loads(line) for line in progress_path.read_text("utf-8").splitlines()]
@@ -61,7 +61,7 @@ def test_run_intent_records_named_preflight_failure_before_exit(
         **{key: records[2][key] for key in ("schema", "jobId", "attempt", "sequence", "timestamp")},
         "event": "warning",
         "code": "carla.execution_failed",
-        "message": "the Pronto host has no deterministic same-class CARLA fallback",
+        "message": "vehicle actor has no same-class native CARLA fallback",
     }
 def test_render_control_lineage_digest_matches_simcloud_contract() -> None:
     intent = {
@@ -111,14 +111,6 @@ def test_probe_is_read_only_and_always_cleans_up(monkeypatch: pytest.MonkeyPatch
             "repository": "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
             "indexDigest": local.CARLA_IMAGE_INDEX_DIGEST,
             "linuxAmd64ManifestDigest": local.CARLA_IMAGE_AMD64_MANIFEST_DIGEST,
-        },
-        "prontoSensorHost": {
-            "catalogId": local.KIA_CARNIVAL_CATALOG_ID,
-            "blueprintId": local.KIA_CARNIVAL_BLUEPRINT_ID,
-            "classPath": local.KIA_CARNIVAL_CLASS_PATH,
-            "make": local.KIA_CARNIVAL_MAKE,
-            "model": local.KIA_CARNIVAL_MODEL,
-            "baseType": local.KIA_CARNIVAL_BASE_TYPE,
         },
     }
     assert calls == [("carla.test", 2000), "world", "server-version", "cleanup"]
@@ -218,66 +210,65 @@ def test_tick_barrier_probe_detects_un_commanded_engine_ticks(
     assert world.settings_history[-1].synchronous_mode is False
 
 
-def test_review_sensor_selection_is_explicit_and_minimal() -> None:
-    sensors = [
-        SimpleNamespace(sensor_id="camera-front", modality="rgb", actor_id="ego"),
-        SimpleNamespace(sensor_id="lidar-front", modality="lidar", actor_id="ego"),
-        SimpleNamespace(sensor_id="radar-front", modality="radar", actor_id="ego"),
-    ]
-
-    local._validate_pronto_sensor_selection(sensors, "ego", representative=True)
-    with pytest.raises(local.ContractError, match="all exact Pronto sensors"):
-        local._validate_pronto_sensor_selection(sensors, "ego", representative=False)
-
-
-def test_authored_sensor_host_accepts_exact_selected_rig() -> None:
+def test_sedan_sensor_host_accepts_full_pronto_rig_without_kia_identity() -> None:
     sensors = [
         *[
-            SimpleNamespace(sensor_id=f"camera-{index}", modality="rgb", actor_id="ego")
+            SimpleNamespace(role=f"camera-{index}", sensor_id=f"camera-{index}", modality="rgb", actor_id="ego")
             for index in range(8)
         ],
-        SimpleNamespace(sensor_id="lidar-roof", modality="lidar", actor_id="ego"),
+        *[
+            SimpleNamespace(role=f"lidar-{index}", sensor_id=f"lidar-{index}", modality="lidar", actor_id="ego")
+            for index in range(6)
+        ],
+        *[
+            SimpleNamespace(role=f"radar-{index}", sensor_id=f"radar-{index}", modality="radar", actor_id="ego")
+            for index in range(4)
+        ],
     ]
-
-    local._validate_authored_sensor_host(
-        sensors,
-        "ego",
-        {"catalogAssetId": "vehicle.generic.sedan"},
-        {"rigId": "authored", "cameras": 8, "lidars": 1, "radars": 0},
+    hosts = sorted(
+        (
+            {
+                "sourceId": sensor.role,
+                "actorId": sensor.actor_id,
+                "vehicleAsset": {"catalogAssetId": "vehicle.sedan"},
+            }
+            for sensor in sensors
+        ),
+        key=lambda item: item["sourceId"],
     )
 
-def test_authored_sensor_host_excludes_trailing_chase_camera_from_rig_count() -> None:
+    local._validate_sensor_hosts(sensors, hosts)
+
+def test_sensor_hosts_cover_trailing_chase_camera_as_its_own_source() -> None:
     sensors = [
-        SimpleNamespace(sensor_id="camera-front", modality="rgb", actor_id="ego"),
+        SimpleNamespace(role="front", sensor_id="camera-front", modality="rgb", actor_id="ego"),
         SimpleNamespace(
+            role="chase",
             sensor_id=local.PRONTO_CHASE_CAMERA_SENSOR_ID,
             modality="rgb",
             actor_id="ego",
         ),
     ]
-
-    local._validate_authored_sensor_host(
-        sensors,
-        "ego",
-        {"catalogAssetId": "vehicle.generic.sedan"},
-        {"rigId": "authored", "cameras": 1, "lidars": 0, "radars": 0},
-    )
-
-
-
-def test_authored_sensor_host_rejects_cross_actor_sources() -> None:
-    sensors = [
-        SimpleNamespace(sensor_id="camera-front", modality="rgb", actor_id="ego"),
-        SimpleNamespace(sensor_id="camera-rear", modality="rgb", actor_id="other"),
+    hosts = [
+        {"sourceId": "chase", "actorId": "ego", "vehicleAsset": {"catalogAssetId": "vehicle.sedan"}},
+        {"sourceId": "front", "actorId": "ego", "vehicleAsset": {"catalogAssetId": "vehicle.sedan"}},
     ]
 
-    with pytest.raises(local.ContractError, match="counts and actor"):
-        local._validate_authored_sensor_host(
-            sensors,
-            "ego",
-            {"catalogAssetId": "vehicle.generic.sedan"},
-            {"rigId": "authored", "cameras": 2, "lidars": 0, "radars": 0},
-        )
+    local._validate_sensor_hosts(sensors, hosts)
+
+
+
+def test_sensor_hosts_accept_sources_on_multiple_actors() -> None:
+    sensors = [
+        SimpleNamespace(role="front", sensor_id="camera-front", modality="rgb", actor_id="ego"),
+        SimpleNamespace(role="rear", sensor_id="camera-rear", modality="rgb", actor_id="other"),
+    ]
+    hosts = [
+        {"sourceId": "front", "actorId": "ego", "vehicleAsset": {"catalogAssetId": "vehicle.sedan"}},
+        {"sourceId": "rear", "actorId": "other", "vehicleAsset": {"catalogAssetId": "vehicle.van"}},
+    ]
+
+    local._validate_sensor_hosts(sensors, hosts)
 
 
 

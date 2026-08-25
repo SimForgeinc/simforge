@@ -64,16 +64,15 @@ to request `h264_nvenc` for the per-camera streaming encoders (default
 camera and never persist to disk; PLY/CSV frames remain the canonical output
 for lidar and radar measurement data.
 
-Managed Pronto execution derives from
+Managed execution currently derives from
 `ghcr.io/simforgeinc/carla-rfs-munich-belmont@sha256:baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64`
 (OCI index `sha256:f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5`).
-All 18 sensors must attach to one host actor whose catalog asset and CARLA
-blueprint are both exactly `vehicle.kia.carnival`. The packaged evidence is
-`CarlaUnreal/Content/Carla/Config/VehicleParameters.json`: Make `Kia`, Model
-`Carnival`, BaseType `van`, class
-`/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C`.
-The runtime rejects mismatched intent identity, catalog binding, spawned actor
-type-id, sensor parent readback, or image-manifest provenance.
+Sensors attach to the authored host actor after its catalog binding is resolved.
+Any native CARLA vehicle blueprint is valid. A non-native vehicle binding uses
+the nearest deterministic same-class native fallback and records the
+substitution in `carlaVehicleFallbacks`; execution fails closed only when the
+claimed catalog has no native blueprint for that actor class. Parent readback
+verifies the resolved actor identity without imposing a model-specific host.
 
 ## Develop and verify
 

@@ -19,12 +19,6 @@ from .capabilities import native_sensor_capabilities
 from .runtime.backend import (
     CARLA_IMAGE_AMD64_MANIFEST_DIGEST,
     CARLA_IMAGE_INDEX_DIGEST,
-    KIA_CARNIVAL_BASE_TYPE,
-    KIA_CARNIVAL_BLUEPRINT_ID,
-    KIA_CARNIVAL_CATALOG_ID,
-    KIA_CARNIVAL_CLASS_PATH,
-    KIA_CARNIVAL_MAKE,
-    KIA_CARNIVAL_MODEL,
     PRONTO_CHASE_CAMERA_SENSOR_ID,
     CarlaBackend,
     cooked_map_name_for_xodr,
@@ -65,14 +59,6 @@ def _probe(host: str, port: int) -> dict[str, object]:
                 "repository": "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
                 "indexDigest": CARLA_IMAGE_INDEX_DIGEST,
                 "linuxAmd64ManifestDigest": CARLA_IMAGE_AMD64_MANIFEST_DIGEST,
-            },
-            "prontoSensorHost": {
-                "catalogId": KIA_CARNIVAL_CATALOG_ID,
-                "blueprintId": KIA_CARNIVAL_BLUEPRINT_ID,
-                "classPath": KIA_CARNIVAL_CLASS_PATH,
-                "make": KIA_CARNIVAL_MAKE,
-                "model": KIA_CARNIVAL_MODEL,
-                "baseType": KIA_CARNIVAL_BASE_TYPE,
             },
         }
     finally:
@@ -121,13 +107,10 @@ def _probe_tick_barrier(
 
             empty_extra, empty_ratio = measure(60)
             library = world.get_blueprint_library()
-            try:
-                blueprint = library.find(KIA_CARNIVAL_BLUEPRINT_ID)
-            except RuntimeError:
-                candidates = sorted(library.filter("vehicle.*"), key=lambda item: item.id)
-                if not candidates:
-                    raise RuntimeError("current world offers no vehicle blueprint for the probe")
-                blueprint = candidates[0]
+            candidates = sorted(library.filter("vehicle.*"), key=lambda item: item.id)
+            if not candidates:
+                raise RuntimeError("current world offers no vehicle blueprint for the probe")
+            blueprint = candidates[0]
             spawn_points = world.get_map().get_spawn_points()
             if not spawn_points:
                 raise RuntimeError("current world offers no spawn points for the probe vehicle")
@@ -220,9 +203,6 @@ def _execute_local_lease(
         uploader=upload_local,
         authorize_upload=bind_local,
         progress=progress,
-        runtime_asset_overrides={
-            KIA_CARNIVAL_CATALOG_ID: {"blueprintId": KIA_CARNIVAL_BLUEPRINT_ID},
-        },
     )
 
 
@@ -482,89 +462,42 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec, s
     return native_value, RenderSpec.parse(native_value), str(capability_intent["fidelity"])
 
 
-def _validate_pronto_sensor_selection(
-    sensors: list[Any],
-    host_actor_id: str,
-    *,
-    representative: bool,
-) -> None:
-    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
-    chase_sensors = [
-        sensor for sensor in sensors
-        if sensor.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID
-    ]
-    rig_sensors = [
-        sensor for sensor in sensors
-        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
-    ]
-    actual_rig = (
-        len({sensor.sensor_id for sensor in rig_sensors if sensor.modality in camera_modalities}),
-        len({
-            sensor.sensor_id for sensor in rig_sensors
-            if sensor.modality in {"lidar", "semantic-lidar"}
-        }),
-        len({sensor.sensor_id for sensor in rig_sensors if sensor.modality == "radar"}),
-    )
-    actor_ids = {sensor.actor_id for sensor in sensors}
-    if representative:
-        if actual_rig != (1, 1, 1) or actor_ids != {host_actor_id}:
-            raise ContractError(
-                "CARLA review mode requires exactly one camera, one LiDAR, and one radar on sensorHost.actorId"
-            )
-    elif simforge_env("SDG_EXPANSION") == "1":
-        rgb_ids = {sensor.sensor_id for sensor in sensors if sensor.modality == "rgb"}
-        derived = {
-            name: tuple(name.split("__"))
-            for name in (str(sensor.sensor_id) for sensor in rig_sensors)
-            if "__" in name
-        }
-        unknown_bases = sorted({name.split("__")[0] for name in derived} - rgb_ids)
-        bad_modality = sorted(
-            name for name, (_, modality) in derived.items()
-            if modality not in camera_modalities - {"rgb"}
-        )
-        if unknown_bases or bad_modality or len(rgb_ids) < 8 or actual_rig[1] < 6 or actual_rig[2] < 4:
-            raise ContractError(
-                "SDG expansion sensors must derive from real rgb rig cameras via id__modality"
-            )
-    elif actual_rig != (8, 6, 4) or actor_ids != {host_actor_id}:
-        raise ContractError("all exact Pronto sensors must attach to render intent sensorHost.actorId")
-    if len(chase_sensors) > 1 or any(sensor.modality != "rgb" for sensor in chase_sensors):
-        raise ContractError("a render carries at most one RGB trailing chase camera")
 
 
-def _validate_authored_sensor_host(
+def _validate_sensor_hosts(
     sensors: Sequence[Any],
-    host_actor_id: str,
-    vehicle_asset: Mapping[str, Any],
-    sensor_rig: Mapping[str, Any],
+    sensor_hosts: Any,
 ) -> None:
-    if set(vehicle_asset) != {"catalogAssetId"} or not isinstance(
-        vehicle_asset.get("catalogAssetId"), str
-    ) or not vehicle_asset["catalogAssetId"]:
-        raise ContractError("authored render intent sensorHost requires one catalogAssetId")
-    camera_modalities = {"rgb", "depth", "semantic", "instance", "normals"}
-    actual_rig = {
-        "rigId": "authored",
-        "cameras": len({
-            sensor.sensor_id for sensor in sensors
-            if sensor.modality in camera_modalities
-            and sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
-        }),
-        "lidars": len({
-            sensor.sensor_id for sensor in sensors
-            if sensor.modality in {"lidar", "semantic-lidar"}
-        }),
-        "radars": len({
-            sensor.sensor_id for sensor in sensors
-            if sensor.modality == "radar"
-        }),
-    }
-    if dict(sensor_rig) != actual_rig or {
-        sensor.actor_id for sensor in sensors
-    } != {host_actor_id}:
+    if not isinstance(sensor_hosts, list):
+        raise ContractError("render intent sensorHosts must be an array")
+    parsed: list[tuple[str, str, str]] = []
+    for index, item in enumerate(sensor_hosts):
+        if not isinstance(item, Mapping) or set(item) != {
+            "sourceId", "actorId", "vehicleAsset",
+        }:
+            raise ContractError(f"render intent sensorHosts.{index} has invalid fields")
+        source_id = item.get("sourceId")
+        actor_id = item.get("actorId")
+        vehicle_asset = item.get("vehicleAsset")
+        catalog_id = (
+            vehicle_asset.get("catalogAssetId")
+            if isinstance(vehicle_asset, Mapping) and set(vehicle_asset) == {"catalogAssetId"}
+            else None
+        )
+        if not all(isinstance(value, str) and value for value in (source_id, actor_id, catalog_id)):
+            raise ContractError(f"render intent sensorHosts.{index} has invalid identity")
+        parsed.append((source_id, actor_id, catalog_id))
+    if parsed != sorted(parsed, key=lambda item: item[0]):
+        raise ContractError("render intent sensorHosts must be sorted by sourceId")
+    if len({item[0] for item in parsed}) != len(parsed):
+        raise ContractError("render intent sensorHosts sourceId values must be unique")
+    expected = sorted(
+        ((str(sensor.role), str(sensor.actor_id)) for sensor in sensors),
+        key=lambda item: item[0],
+    )
+    if [(source_id, actor_id) for source_id, actor_id, _ in parsed] != expected:
         raise ContractError(
-            "authored sensorHost counts and actor must match the immutable render sources"
+            "render intent sensorHosts must exactly cover immutable render sources"
         )
 
 
@@ -574,7 +507,7 @@ def _intent_lease(
     inputs: Mapping[str, Path],
     output_dir: Path,
 ) -> tuple[Any, dict[str, Path]]:
-    expected_fields = {"schema", "intentId", "executionPackage", "scenarioRevision", "renderSpec", "sensorHost", "assets", "seed"}
+    expected_fields = {"schema", "intentId", "executionPackage", "scenarioRevision", "renderSpec", "sensorHosts", "assets", "seed"}
     if set(intent) != expected_fields or intent.get("schema") != INTENT_SCHEMA:
         raise ContractError(f"render intent must use strict {INTENT_SCHEMA} fields")
     intent_id = intent.get("intentId")
@@ -588,56 +521,7 @@ def _intent_lease(
     if not isinstance(assets, list):
         raise ContractError("render intent assets must be an array")
     native_render_spec, parsed_spec, fidelity = _render_spec_v3_to_native(intent.get("renderSpec"))
-    sensor_host = intent.get("sensorHost")
-    if not isinstance(sensor_host, Mapping) or set(sensor_host) != {
-        "actorId", "vehicleAsset", "sensorRig",
-    }:
-        raise ContractError("render intent sensorHost has invalid fields")
-    host_actor_id = sensor_host.get("actorId")
-    vehicle_asset = sensor_host.get("vehicleAsset")
-    sensor_rig = sensor_host.get("sensorRig")
-    if not isinstance(host_actor_id, str) or not host_actor_id:
-        raise ContractError("render intent sensorHost.actorId must be non-empty")
-    if not isinstance(vehicle_asset, Mapping) or not isinstance(sensor_rig, Mapping):
-        raise ContractError("render intent sensorHost asset or rig is invalid")
-    if sensor_rig.get("rigId") == "authored":
-        _validate_authored_sensor_host(
-            parsed_spec.sensors,
-            host_actor_id,
-            vehicle_asset,
-            sensor_rig,
-        )
-    else:
-        source_image = vehicle_asset.get("sourceImage")
-        if {
-            key: value for key, value in vehicle_asset.items() if key != "sourceImage"
-        } != {
-            "catalogAssetId": KIA_CARNIVAL_CATALOG_ID,
-            "carlaBlueprintId": KIA_CARNIVAL_BLUEPRINT_ID,
-            "carlaClassPath": KIA_CARNIVAL_CLASS_PATH,
-            "make": KIA_CARNIVAL_MAKE,
-            "model": KIA_CARNIVAL_MODEL,
-            "baseType": KIA_CARNIVAL_BASE_TYPE,
-        }:
-            raise ContractError("render intent sensorHost.vehicleAsset must be the exact Kia Carnival identity")
-        if source_image != {
-            "repository": "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
-            "indexSha256": CARLA_IMAGE_INDEX_DIGEST.removeprefix("sha256:"),
-            "linuxAmd64ManifestSha256": CARLA_IMAGE_AMD64_MANIFEST_DIGEST.removeprefix("sha256:"),
-        }:
-            raise ContractError("render intent sensorHost.vehicleAsset.sourceImage must identify the pinned Kia image")
-        if sensor_rig != {
-            "rigId": "pronto.8-camera-6-lidar-4-radar",
-            "cameras": 8,
-            "lidars": 6,
-            "radars": 4,
-        }:
-            raise ContractError("render intent sensorHost.sensorRig must identify the exact Pronto 8/6/4 rig")
-        _validate_pronto_sensor_selection(
-            parsed_spec.sensors,
-            host_actor_id,
-            representative=simforge_env("RENDER_SMOKE") == "1",
-        )
+    _validate_sensor_hosts(parsed_spec.sensors, intent.get("sensorHosts"))
     xosc_path = inputs.get("scenario.xosc")
     if xosc_path is None:
         raise ContractError("input package is missing scenario.xosc")

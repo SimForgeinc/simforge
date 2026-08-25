@@ -17,13 +17,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from .transport import download, upload
-from .backend import (
-    KIA_CARNIVAL_BLUEPRINT_ID,
-    KIA_CARNIVAL_CATALOG_ID,
-    PRONTO_CHASE_CAMERA_SENSOR_ID,
-    RenderBackend,
-    runtime_asset_bindings,
-)
+from .backend import RenderBackend, runtime_asset_bindings
 from .compiler import (
     LIFECYCLE_ABSENT,
     ExecutionPlan,
@@ -228,93 +222,90 @@ def _collect_camera_video(
     return destination
 
 
-def _pronto_rig_sensor_count(lease: Lease) -> int:
-    """Measurement devices only: the trailing chase camera is a presentation view."""
-    return sum(
-        1 for sensor in lease.render_spec.sensors
-        if sensor.sensor_id != PRONTO_CHASE_CAMERA_SENSOR_ID
-    )
-
-
-def _catalog_dims(entry: Mapping[str, object], catalog_id: str) -> Mapping[str, float]:
+def _catalog_dims(entry: Mapping[str, object]) -> Mapping[str, float] | None:
     dims = entry.get("dims")
     if not isinstance(dims, Mapping):
-        raise ContractError(
-            f'asset catalog entry "{catalog_id}" needs dimensions for deterministic Pronto-host fallback'
-        )
+        return None
     narrowed: dict[str, float] = {}
     for axis in ("l", "w", "h"):
         value = dims.get(axis)
         if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
-            raise ContractError(
-                f'asset catalog entry "{catalog_id}" has invalid {axis} dimension for deterministic Pronto-host fallback'
-            )
+            return None
         narrowed[axis] = float(value)
     return narrowed
 
 
-def _apply_pronto_host_fallback(
-    lease: Lease,
+def _apply_actor_fallbacks(
     plan: ExecutionPlan,
     catalog: Mapping[str, Mapping[str, object]],
     abort: Callable[[], None] | None = None,
 ) -> tuple[ExecutionPlan, tuple[Mapping[str, object], ...]]:
-    """Bind an authored same-class Pronto host to the canonical Kia runtime body."""
-    if _pronto_rig_sensor_count(lease) != 18:
-        return plan, ()
-    host_ids = {sensor.actor_id for sensor in lease.render_spec.sensors}
-    if len(host_ids) != 1 or None in host_ids:
-        raise ContractError("the Pronto rig must bind to exactly one sensor host actor")
-    host_actor_id = next(iter(host_ids))
-    binding = plan.actors.get(host_actor_id)
-    if binding is None:
-        raise ContractError(f"the Pronto sensor host actor is absent from the execution plan: {host_actor_id}")
-    authored_entry = catalog.get(binding.catalog_name)
-    target_entry = catalog.get(KIA_CARNIVAL_CATALOG_ID)
-    if not isinstance(authored_entry, Mapping):
-        raise ContractError(f"asset catalog has no CARLA binding for Pronto host {host_actor_id}")
-    if (
-        binding.catalog_name == KIA_CARNIVAL_CATALOG_ID
-        and authored_entry.get("blueprintId") == KIA_CARNIVAL_BLUEPRINT_ID
-    ):
-        return plan, ()
-    if (
-        not isinstance(target_entry, Mapping)
-        or target_entry.get("blueprintId") != KIA_CARNIVAL_BLUEPRINT_ID
-    ):
-        raise ContractError(
-            "asset catalog lacks the canonical vehicle.kia.carnival Pronto-host binding"
-        )
+    """Resolve non-native road-user bindings to deterministic same-class CARLA bodies."""
     vehicle_kinds = {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
-    authored_class = authored_entry.get("actorClass")
-    target_class = target_entry.get("actorClass")
-    if (
-        binding.kind not in vehicle_kinds
-        or not isinstance(authored_class, str)
-        or authored_class != target_class
-    ):
-        raise ContractError(
-            "the Pronto sensor host has no deterministic same-class CARLA fallback: "
-            f'actor={host_actor_id} catalog="{binding.catalog_name}" '
-            f'class="{authored_class}" requiredClass="{target_class}"'
-        )
-    authored_dims = _catalog_dims(authored_entry, binding.catalog_name)
-    target_dims = _catalog_dims(target_entry, KIA_CARNIVAL_CATALOG_ID)
-    diagnostic: Mapping[str, object] = {
-        "actorId": host_actor_id,
-        "authoredCatalogId": binding.catalog_name,
-        "fallbackCatalogId": KIA_CARNIVAL_CATALOG_ID,
-        "vehicleClass": authored_class,
-        "lengthDeltaM": target_dims["l"] - authored_dims["l"],
-        "widthDeltaM": target_dims["w"] - authored_dims["w"],
-        "heightDeltaM": target_dims["h"] - authored_dims["h"],
-    }
-    substituted = substitute_actor_catalog_bindings(
-        plan,
-        {host_actor_id: KIA_CARNIVAL_CATALOG_ID},
-        abort,
+    substitutions: dict[str, str] = {}
+    diagnostics: list[Mapping[str, object]] = []
+    for actor_id, binding in sorted(plan.actors.items()):
+        is_vehicle = binding.kind in vehicle_kinds
+        is_pedestrian = binding.kind == "pedestrian"
+        if not is_vehicle and not is_pedestrian:
+            continue
+        authored_entry = catalog.get(binding.catalog_name)
+        if not isinstance(authored_entry, Mapping):
+            raise ContractError(f"asset catalog has no CARLA binding for road user {actor_id}")
+        native_prefixes = ("vehicle.", "bike.") if is_vehicle else ("walker.",)
+        authored_blueprint = authored_entry.get("blueprintId")
+        if isinstance(authored_blueprint, str) and authored_blueprint.startswith(native_prefixes):
+            continue
+        authored_class = authored_entry.get("actorClass")
+        if not isinstance(authored_class, str) or not authored_class:
+            raise ContractError(
+                f'road user {actor_id} catalog "{binding.catalog_name}" declares no actorClass'
+            )
+        authored_dims = _catalog_dims(authored_entry)
+        candidates: list[tuple[float, str, Mapping[str, float] | None]] = []
+        for catalog_id, entry in catalog.items():
+            blueprint = entry.get("blueprintId")
+            if entry.get("actorClass") != authored_class or not isinstance(blueprint, str):
+                continue
+            if not blueprint.startswith(native_prefixes):
+                continue
+            dims = _catalog_dims(entry)
+            distance = (
+                abs(dims["l"] - authored_dims["l"])
+                + abs(dims["w"] - authored_dims["w"])
+                if dims is not None and authored_dims is not None
+                else float("inf")
+            )
+            candidates.append((distance, catalog_id, dims))
+        if not candidates:
+            raise ContractError(
+                "road user has no same-class native CARLA fallback: "
+                f'actor={actor_id} catalog="{binding.catalog_name}" class="{authored_class}"'
+            )
+        _, fallback_id, fallback_dims = min(candidates, key=lambda item: (item[0], item[1]))
+        substitutions[actor_id] = fallback_id
+        diagnostics.append({
+            "actorId": actor_id,
+            "authoredCatalogId": binding.catalog_name,
+            "fallbackCatalogId": fallback_id,
+            "vehicleClass": authored_class,
+            "lengthDeltaM": (
+                fallback_dims["l"] - authored_dims["l"]
+                if fallback_dims is not None and authored_dims is not None else 0.0
+            ),
+            "widthDeltaM": (
+                fallback_dims["w"] - authored_dims["w"]
+                if fallback_dims is not None and authored_dims is not None else 0.0
+            ),
+            "heightDeltaM": (
+                fallback_dims["h"] - authored_dims["h"]
+                if fallback_dims is not None and authored_dims is not None else 0.0
+            ),
+        })
+    return (
+        substitute_actor_catalog_bindings(plan, substitutions, abort),
+        tuple(diagnostics),
     )
-    return substituted, (diagnostic,)
 
 
 
@@ -431,20 +422,17 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> dict[st
         actor_id: "native physics cannot execute authored knockdown poses without post-spawn teleport repair"
         for actor_id in downed_actors
     }
-    dropped_mounts = sorted({
-        sensor.actor_id for sensor in lease.render_spec.sensors
-        if sensor.actor_id in execution_drops
-    })
-    if dropped_mounts:
-        raise ContractError(
-            "native sensors cannot attach to knockdown-posed actors that are dropped from execution: "
-            + ", ".join(dropped_mounts)
-        )
     appearance = _appearance_capability(plan)
-    if appearance["unrenderedCues"]:
-        raise ContractError(
-            "native physics render contains unsupported appearance cues: "
-            + ", ".join(appearance["unrenderedCues"])
+    cue_actors = sorted({
+        actor_id
+        for frame in plan.frames
+        for actor_id, state in frame.actors.items()
+        if any(key.startswith("cue.") for key in state.appearance)
+    })
+    for actor_id in cue_actors:
+        execution_drops.setdefault(
+            actor_id,
+            "native physics dropped actor with unsupported appearance cue",
         )
     reverse_non_vehicles = sorted({
         actor_id
@@ -454,10 +442,10 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> dict[st
         and state.speed_mps < -1e-6
         and plan.actors[actor_id].kind not in {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
     })
-    if reverse_non_vehicles:
-        raise ContractError(
-            "native physics cannot execute signed reverse motion for non-vehicle actors: "
-            + ", ".join(reverse_non_vehicles)
+    for actor_id in reverse_non_vehicles:
+        execution_drops.setdefault(
+            actor_id,
+            "native physics dropped non-vehicle actor with signed reverse motion",
         )
     unsupported_moving = sorted({
         actor_id
@@ -467,10 +455,19 @@ def _preflight_execution_semantics(lease: Lease, plan: ExecutionPlan) -> dict[st
         and abs(state.speed_mps) > 1e-6
         and plan.actors[actor_id].kind in {"animal", "static", "static_object"}
     })
-    if unsupported_moving:
+    for actor_id in unsupported_moving:
+        execution_drops.setdefault(
+            actor_id,
+            "native physics dropped moving non-actuated actor",
+        )
+    dropped_mounts = sorted({
+        sensor.actor_id for sensor in lease.render_spec.sensors
+        if sensor.actor_id in execution_drops
+    })
+    if dropped_mounts:
         raise ContractError(
-            "native physics cannot execute moving non-actuated actors: "
-            + ", ".join(unsupported_moving)
+            "native sensors cannot attach to actors dropped from execution: "
+            + ", ".join(dropped_mounts)
         )
     vehicle_kinds = {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
     invalid_vehicle_appearance = sorted({
@@ -507,7 +504,6 @@ def _optional_backend_call(backend: RenderBackend, name: str, *args: object, abo
 
 
 def _preflight_asset_semantics(
-    lease: Lease,
     plan: ExecutionPlan,
     catalog: Mapping[str, Mapping[str, object]],
 ) -> None:
@@ -521,22 +517,6 @@ def _preflight_asset_semantics(
             raise ContractError(f"vehicle actor {actor_id} is bound to non-vehicle CARLA blueprint {blueprint}")
         if binding.kind == "pedestrian" and not blueprint.startswith("walker."):
             raise ContractError(f"pedestrian actor {actor_id} is bound to non-walker CARLA blueprint {blueprint}")
-    if _pronto_rig_sensor_count(lease) == 18:
-        host_ids = {sensor.actor_id for sensor in lease.render_spec.sensors}
-        if len(host_ids) != 1 or None in host_ids:
-            raise ContractError("the Pronto rig must bind to exactly one sensor host actor")
-        host_actor_id = next(iter(host_ids))
-        binding = plan.actors.get(host_actor_id)
-        entry = catalog.get(binding.catalog_name) if binding is not None else None
-        if (
-            binding is None
-            or binding.catalog_name != KIA_CARNIVAL_CATALOG_ID
-            or not isinstance(entry, Mapping)
-            or entry.get("blueprintId") != KIA_CARNIVAL_BLUEPRINT_ID
-        ):
-            raise ContractError(
-                "the Pronto sensor host must bind exact catalog/blueprint vehicle.kia.carnival"
-            )
 
 
 def _manifest_to_path(
@@ -728,19 +708,6 @@ def _parity_evidence(
             or runtime_evidence.get("motionApplication") != "native-controls"
         ):
             semantic_failures.append("native-physics-authority")
-        if _pronto_rig_sensor_count(lease) == 18:
-            runtime_image = runtime_evidence.get("runtimeImage")
-            sensor_host = runtime_evidence.get("prontoSensorHost")
-            if not isinstance(runtime_image, Mapping) or runtime_image.get("exact") is not True:
-                semantic_failures.append("pronto-runtime-image-identity")
-            if (
-                not isinstance(sensor_host, Mapping)
-                or sensor_host.get("catalogId") != KIA_CARNIVAL_CATALOG_ID
-                or sensor_host.get("observedBlueprintId") != KIA_CARNIVAL_BLUEPRINT_ID
-                or sensor_host.get("requiredBlueprintId") != KIA_CARNIVAL_BLUEPRINT_ID
-                or sensor_host.get("verification") != "catalog-binding-and-runtime-type-id-readback"
-            ):
-                semantic_failures.append("pronto-kia-sensor-host-readback")
         map_evidence = runtime_evidence.get("map")
         runtime_xodr_sha256 = (
             map_evidence.get("runtimeXodrSha256")
@@ -1355,8 +1322,7 @@ def execute_lease(
             raise ContractError(f"runtime asset override conflicts with catalog entry {catalog_id}")
         catalog[catalog_id] = dict(binding)
     check_abort("index_asset_catalog")
-    plan, runtime_vehicle_fallbacks = _apply_pronto_host_fallback(
-        lease,
+    plan, runtime_vehicle_fallbacks = _apply_actor_fallbacks(
         plan,
         catalog,
         lambda: check_abort("index_asset_catalog"),
@@ -1374,7 +1340,7 @@ def execute_lease(
         emit("actor_fallbacks_applied", {
             "carlaVehicleFallbacks": [dict(item) for item in runtime_vehicle_fallbacks],
         })
-    _preflight_asset_semantics(lease, plan, catalog)
+    _preflight_asset_semantics(plan, catalog)
     emit("plan_compiled", {
         "planSha256": plan.sha256,
         "frames": len(plan.frames),

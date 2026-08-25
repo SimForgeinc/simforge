@@ -242,7 +242,7 @@ def _kind(entity: ET.Element, properties: Mapping[str, str]) -> str:
         return "vehicle"
     if entity.find("Pedestrian") is not None:
         return "pedestrian"
-    return "static"
+    return "static_object"
 
 
 def _entities(root: ET.Element, abort: Callable[[], None]) -> dict[str, ActorBinding]:
@@ -374,10 +374,11 @@ def _trajectories(root: ET.Element, actors: Mapping[str, ActorBinding], abort: C
         actions = group.findall(".//FollowTrajectoryAction")
         if not actions:
             continue
-        if len(actor_ids) != 1:
-            raise ContractError("replay ManeuverGroup must bind exactly one known actor")
-        for action in actions:
-            add(actor_ids[0], action)
+        if not actor_ids:
+            raise ContractError("replay ManeuverGroup references no known actor")
+        for actor_id in actor_ids:
+            for action in actions:
+                add(actor_id, action)
     abort()
     return result
 
@@ -475,12 +476,13 @@ def _appearance_and_lifecycle(
                 continue
             at = _event_time(event, "appearance or entity-lifecycle replay event")
             if appearance:
-                if len(group_actors) != 1:
-                    raise ContractError("appearance ManeuverGroup must bind exactly one known actor")
-                for action in appearance:
-                    abort()
-                    for key, value in _appearance_settings(action):
-                        settings.append((at, group_actors[0], key, value))
+                if not group_actors:
+                    raise ContractError("appearance ManeuverGroup references no known actor")
+                for actor_id in group_actors:
+                    for action in appearance:
+                        abort()
+                        for key, value in _appearance_settings(action):
+                            settings.append((at, actor_id, key, value))
             for entity_action in deletions:
                 abort()
                 actor_id = by_ref.get(entity_action.get("entityRef", ""))

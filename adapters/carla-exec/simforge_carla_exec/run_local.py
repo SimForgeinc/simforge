@@ -217,8 +217,17 @@ def build_intent(scenario_bytes: bytes, xodr_path: Path, catalog_path: Path,
             "map": {"mapId": map_label, "revisionId": map_revision,
                     "sha256": hashlib.sha256(xodr_bytes).hexdigest()},
         },
-        "sensorHost": {"actorId": actor_id, "vehicleAsset": VEHICLE_ASSET,
-                       "sensorRig": {"rigId": "pronto.8-camera-6-lidar-4-radar", **rig_counts}},
+        "sensorHosts": sorted(
+            (
+                {
+                    "sourceId": source["outputName"],
+                    "actorId": actor_id,
+                    "vehicleAsset": {"catalogAssetId": VEHICLE_ASSET["catalogAssetId"]},
+                }
+                for source in sources
+            ),
+            key=lambda item: item["sourceId"],
+        ),
         "renderSpec": {
             "schema": "uniscenario.render-spec/v3",
             "sources": sources,
