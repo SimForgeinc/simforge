@@ -153,6 +153,26 @@ class SimForgeBridge(Node):
         self._prev_yaw: float | None = None
         self._last_action: dict[str, Any] = {}
 
+    # ----------------------------------------------------------- subclass hooks
+    #
+    # The Autoware module (autoware_bridge.py) extends the MVP through these
+    # two seams; the Ackermann path itself is unchanged.
+
+    def _make_client(self, spec_path: Path) -> EnvServerClient:
+        """Env-server client factory (subclasses may return an extended client)."""
+        return EnvServerClient(default_server_command(spec_path))
+
+    def _publish_extra_state(
+        self,
+        frame: StepFrame,
+        stamp: TimeMsg,
+        t_ns: int,
+        yaw: float,
+        quat: tuple[float, float, float, float],
+        yaw_rate: float,
+    ) -> None:
+        """Called at the end of every ``_publish_state`` (reset frame included)."""
+
     # ------------------------------------------------------------- control in
 
     def _on_control(self, msg: AckermannDriveStamped) -> None:
@@ -254,6 +274,7 @@ class SimForgeBridge(Node):
             self._bag.write("/tf", tf_msg, t_ns)
             self._bag.write("/simforge/odom", odom, t_ns)
             self._bag.write("/simforge/vehicle_status", status, t_ns)
+        self._publish_extra_state(frame, stamp, t_ns, yaw, (qx, qy, qz, qw), yaw_rate)
 
     def _publish_episode_event(self, event: dict[str, Any], t: float) -> None:
         msg = String(data=json.dumps(event, sort_keys=True, separators=(",", ":")))
@@ -265,7 +286,7 @@ class SimForgeBridge(Node):
 
     def run(self) -> dict[str, Any]:
         spec_path = Path(self.episodes).resolve()
-        client = EnvServerClient(default_server_command(spec_path))
+        client = self._make_client(spec_path)
         try:
             info = client.hello()
             self._dt_decision = 1.0 / float(info["decisionHz"])
