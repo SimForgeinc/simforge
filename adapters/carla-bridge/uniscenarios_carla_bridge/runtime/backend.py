@@ -1629,7 +1629,21 @@ class CarlaBackend:
                 self.carla.Rotation(pitch=t["pitch"], yaw=-t["yaw"], roll=t["roll"]),
             )
             parent = self.actors.get(requested.actor_id) if requested.actor_id is not None else None
-            sensor_actor = self.world.spawn_actor(blueprint, transform, attach_to=parent)
+            if parent is not None and requested.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID:
+                # The presentation chase camera replicates the SimCloud v1
+                # worker's trailing view, which attached via SpringArmGhost so
+                # the follow framing stays damped and never rigidly inherits
+                # the subject's pitch/roll. Measurement-rig sensors stay rigid.
+                attachment_types = getattr(self.carla, "AttachmentType", None)
+                spring_arm_ghost = getattr(attachment_types, "SpringArmGhost", None) if attachment_types is not None else None
+                if spring_arm_ghost is not None:
+                    sensor_actor = self.world.spawn_actor(
+                        blueprint, transform, attach_to=parent, attachment_type=spring_arm_ghost,
+                    )
+                else:
+                    sensor_actor = self.world.spawn_actor(blueprint, transform, attach_to=parent)
+            else:
+                sensor_actor = self.world.spawn_actor(blueprint, transform, attach_to=parent)
             if sensor_actor is None:
                 raise RuntimeError(f"CARLA failed to spawn native sensor {key}")
             observed_sensor_type = str(getattr(sensor_actor, "type_id", ""))

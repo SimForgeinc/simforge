@@ -12,6 +12,7 @@ import shutil
 
 import math
 import subprocess
+from collections import deque
 from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
 from typing import Any
@@ -154,27 +155,52 @@ def _read_radar_detections(path: Path) -> list[tuple[float, float, float, float]
     return detections
 
 
-def _lidar_frames(frames: Sequence[Path], range_m: float) -> Iterator[bytes]:
+def _sweep_window_ticks(fps: float, rotation_hz: float) -> int:
+    """Ticks needed for one full lidar revolution at the capture cadence.
+
+    A CARLA lidar delivers only the sector swept during each fixed tick, so a
+    single per-tick bucket is a strobing partial pinwheel (~150° at 10 Hz /
+    24 fps). One revolution spans fps / rotation_hz ticks.
+    """
+    if rotation_hz <= 0.0:
+        return 1
+    return max(1, math.ceil(fps / rotation_hz))
+
+
+def _lidar_frames(
+    frames: Sequence[Path],
+    range_m: float,
+    fps: float,
+    rotation_hz: float,
+) -> Iterator[bytes]:
     # Returns cluster within a few tens of metres, so cap the view well inside a 200 m sensor
     # range; otherwise the cloud collapses into a dot at the centre of the frame.
     span = max(1.0, min(range_m, 60.0))
     scale = min(VIDEO_WIDTH / (span * 2.2), VIDEO_HEIGHT / (span * 2.2))
     origin_x, origin_y = VIDEO_WIDTH // 2, VIDEO_HEIGHT // 2
+    # Video frame N accumulates the tick buckets of the full revolution that
+    # ENDS at tick N, so every frame shows a complete 360° cloud whose newest
+    # sector shares camera frame N's sim time — coherent and time-aligned.
+    window = _sweep_window_ticks(fps, rotation_hz)
+    revolution: deque[list[tuple[float, float, float, float]]] = deque(maxlen=window)
     for path in frames:
+        revolution.append(_read_lidar_points(path))
         frame = _blank_frame()
         _grid(frame, span, scale, origin_x, origin_y)
-        for x, y, _z, intensity in _read_lidar_points(path):
-            distance = math.hypot(x, y)
-            if distance > span:
-                continue
-            colour = _range_colour(distance / span)
-            shade = 0.55 + 0.45 * min(1.0, max(0.0, intensity))
-            _plot(
-                frame,
-                origin_x - int(y * scale),
-                origin_y - int(x * scale),
-                (int(colour[0] * shade), int(colour[1] * shade), int(colour[2] * shade)),
-            )
+        for bucket in revolution:
+            for x, y, _z, intensity in bucket:
+                distance = math.hypot(x, y)
+                if distance > span:
+                    continue
+                colour = _range_colour(distance / span)
+                shade = 0.75 + 0.25 * min(1.0, max(0.0, intensity))
+                _plot(
+                    frame,
+                    origin_x - int(y * scale),
+                    origin_y - int(x * scale),
+                    (int(colour[0] * shade), int(colour[1] * shade), int(colour[2] * shade)),
+                    radius=2,
+                )
         yield bytes(frame)
 
 
@@ -249,7 +275,10 @@ def encode_sensor_video(
     if modality in LIDAR_MODALITIES:
         frames = _frame_paths(sensor_dir, "ply", expected_frame_count)
         range_m = float(sensor.config.get("rangeM", 100.0))
-        return _encode_raw_frames(_lidar_frames(frames, range_m), fps, destination, max_bytes, check_abort)
+        rotation_hz = float(sensor.config.get("rotationFrequencyHz", 10.0))
+        return _encode_raw_frames(
+            _lidar_frames(frames, range_m, fps, rotation_hz), fps, destination, max_bytes, check_abort,
+        )
     if modality == "radar":
         frames = _frame_paths(sensor_dir, "csv", expected_frame_count)
         range_m = float(sensor.config.get("rangeM", 100.0))

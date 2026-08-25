@@ -3776,3 +3776,54 @@ def test_cooked_map_remap_freezes_unauthored_extra_heads_red_and_records_evidenc
     strict.signals, strict.signal_snapshots = {}, {}
     with pytest.raises(RuntimeError, match="extra: 444"):
         strict.bind_signals(("421",))
+
+
+def _write_ascii_ply(path: Path, points: list[tuple[float, float, float, float]]) -> None:
+    lines = [
+        "ply", "format ascii 1.0", f"element vertex {len(points)}",
+        "property float32 x", "property float32 y", "property float32 z",
+        "property float32 I", "end_header",
+    ]
+    lines.extend(f"{x} {y} {z} {i}" for x, y, z, i in points)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def test_lidar_video_frames_accumulate_one_full_revolution(tmp_path):
+    """A per-tick .ply holds only the sector swept that tick; frame N must draw
+    the revolution ENDING at tick N (rolling window), never a lone bucket and
+    never buckets older than one revolution."""
+    from uniscenarios_carla_bridge.runtime import sensor_video
+
+    fps, rotation_hz = 24.0, 10.0
+    assert sensor_video._sweep_window_ticks(fps, rotation_hz) == 3
+    assert sensor_video._sweep_window_ticks(24.0, 24.0) == 1
+    assert sensor_video._sweep_window_ticks(24.0, 0.0) == 1
+
+    span = 60.0  # rangeM 200 is capped at the 60 m view
+    scale = min(sensor_video.VIDEO_WIDTH / (span * 2.2), sensor_video.VIDEO_HEIGHT / (span * 2.2))
+    origin_x, origin_y = sensor_video.VIDEO_WIDTH // 2, sensor_video.VIDEO_HEIGHT // 2
+
+    # One uniquely-placed point per tick bucket, all forward of the sensor.
+    # Distances avoid the 20 m grid-ring multiples so probes never hit ring pixels.
+    forward = [10.0, 15.0, 30.0, 45.0, 55.0]
+    frames = []
+    for index, x in enumerate(forward):
+        path = tmp_path / f"{index:08d}.ply"
+        _write_ascii_ply(path, [(x, 0.0, 0.0, 1.0)])
+        frames.append(path)
+
+    def lit(frame: bytes, x_m: float) -> bool:
+        px = origin_x
+        py = origin_y - int(x_m * scale)
+        offset = (py * sensor_video.VIDEO_WIDTH + px) * 3
+        return frame[offset:offset + 3] != bytes(sensor_video._BACKGROUND)
+
+    rendered = list(sensor_video._lidar_frames(frames, 200.0, fps, rotation_hz))
+    assert len(rendered) == len(forward)
+    # Frame 0: only bucket 0.
+    assert lit(rendered[0], forward[0]) and not lit(rendered[0], forward[1])
+    # Frame 2: buckets 0..2 — a full revolution of ticks.
+    assert all(lit(rendered[2], forward[i]) for i in range(3))
+    # Frame 4: buckets 2..4 only; buckets older than one revolution are gone.
+    assert all(lit(rendered[4], forward[i]) for i in (2, 3, 4))
+    assert not lit(rendered[4], forward[0]) and not lit(rendered[4], forward[1])
