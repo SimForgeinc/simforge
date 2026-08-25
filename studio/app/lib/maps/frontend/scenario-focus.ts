@@ -19,7 +19,7 @@
 
 import type { MapAsset, ScenarioEditorActorDraft } from "@simcloud/shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
-import { lonLatToScene } from "@/app/components/city-viewer/geo-utils";
+import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates"
 import { actorPlannedTrajectories } from "./scenario-trajectories";
 import { actorPlannedSpawns } from "./scenario-actor-spawns";
 import { deriveCollisionPoint } from "./scenario-collision-point";

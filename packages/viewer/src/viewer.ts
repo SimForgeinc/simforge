@@ -72,6 +72,7 @@ import {
   type PreparedAsset,
   type StreamTileDef,
 } from './streaming';
+import { ViewerOverlayLayer, type ViewerOverlayState, type ViewerPoint3 } from './overlays';
 import { buildVegetation, type VegPrototypeGroup } from './vegetation';
 import type {
   BenchResult,
@@ -307,6 +308,7 @@ export class CityViewer {
   private sceneBox = new Box3();
   private cameraGroundIndex: GroundIndex | null = null;
   private cameraConstraintRefresh = 0;
+  private readonly overlays: ViewerOverlayLayer;
   private localEnvelopeBounds: Box3 | null = null;
   private localBuildingMax = 0;
   private localGroundY = 0;
@@ -402,7 +404,14 @@ export class CityViewer {
     this.cityGroup.name = 'city-tiles';
     this.vegetationGroup.name = 'vegetation';
     this.roadGroup.name = 'road';
-    this.scene.add(this.roadGroup, this.cityGroup, this.vegetationGroup, this.luminaires.group);
+    this.overlays = new ViewerOverlayLayer((x, z) => this.sampleGroundHeight(x, z));
+    this.scene.add(
+      this.roadGroup,
+      this.cityGroup,
+      this.vegetationGroup,
+      this.luminaires.group,
+      this.overlays.group,
+    );
 
     this.camera = new PerspectiveCamera(55, this.aspect(), 0.5, 6000);
     this.camera.position.set(0, 200, 400);
@@ -741,6 +750,25 @@ export class CityViewer {
   resetCamera(): void {
     if (!this.manifest || this.sceneBox.isEmpty()) return;
     this.frameCamera(this.sceneBox.getCenter(new Vector3()), this.sceneBox.getSize(new Vector3()));
+  }
+
+  /** Frame a neighborhood and leave a persistent ground marker at its center. */
+  focusOnLocation(position: ViewerPoint3, radius = 20): void {
+    const center = new Vector3(position.x, position.y, position.z);
+    const diameter = Math.max(4, radius * 2);
+    this.frameCamera(center, new Vector3(diameter, diameter * 0.5, diameter));
+    this.setOverlays({
+      markers: [{ id: 'location-focus', position, color: '#f97316' }],
+    });
+  }
+
+  /** Replace all transient editor/search overlays in one atomic scene update. */
+  setOverlays(state: ViewerOverlayState): void {
+    this.overlays.set(state);
+  }
+
+  clearOverlays(): void {
+    this.overlays.clear();
   }
 
   getCameraDiagnostics(): CameraDiagnostics {
@@ -2037,6 +2065,7 @@ export class CityViewer {
     this.snowCover.dispose();
     this.sky.dispose();
     this.luminaires.dispose();
+    this.overlays.dispose();
     this.vegetationData.clear();
     this.surfaceMaterials.dispose();
     if (this.sun) this.scene.remove(this.sun, this.sun.target);

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import type { RenderingPreference } from "@/app/components/city-viewer/rendering-preference";
+import type { RenderingPreference } from "@/app/components/rendering-preference"
 import { listMapOptions } from "@/app/dashboard/scenario/list/api";
 import type { ScenarioMapOption } from "@/app/dashboard/scenario/list/document-map-groups";
 import {

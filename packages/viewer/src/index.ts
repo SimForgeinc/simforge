@@ -1,5 +1,13 @@
 export { CityViewer } from './viewer';
 export type { CityViewerLayers } from './viewer';
+export { ViewerOverlayLayer } from './overlays';
+export type {
+  ViewerMarker,
+  ViewerOverlayState,
+  ViewerPath,
+  ViewerPin,
+  ViewerPoint3,
+} from './overlays';
 export { DEFAULT_ACTIVE_LUMINAIRE_LIMIT, isLuminaireObjectName, LuminaireLightingController } from './luminaire-lighting';
 export type { LuminaireLightingStats } from './luminaire-lighting';
 export { CameraRig } from './camera-controls';

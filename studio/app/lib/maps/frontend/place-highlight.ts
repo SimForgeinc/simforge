@@ -6,11 +6,9 @@ import type {
   MapAssetEnrichmentSnapshot,
 } from "@simcloud/shared";
 import { candidateLocationBounds } from "./candidate-location-utils";
-import {
-  candidateToFocusTarget,
-  lonLatToScene,
-  type FocusTarget,
-} from "@/app/components/city-viewer/geo-utils";
+import { candidateToFocusTarget,
+lonLatToScene,
+type FocusTarget, } from "@/app/lib/maps/frontend/city-scene-coordinates"
 import { GEOJSON_FEATURE_ID_PROP } from "./feature-inspection-types";
 import type { MapSearchDocumentGeometryRef } from "../search/map-search-corpus";
 

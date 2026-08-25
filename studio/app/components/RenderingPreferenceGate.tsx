@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { readRenderingPreference } from "@/app/components/city-viewer/rendering-preference";
+import { readRenderingPreference } from "@/app/components/rendering-preference"
 import { installMapAssetFetchGateway } from "@/app/lib/maps/frontend/map-asset-cache";
 
 installMapAssetFetchGateway();

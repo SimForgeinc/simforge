@@ -14,7 +14,7 @@
 
 import type { MapAsset, ScenarioEditorActorDraft } from "@simcloud/shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
-import { lonLatToScene } from "@/app/components/city-viewer/geo-utils";
+import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates"
 import { deriveActorColor } from "@/app/lib/scenario-editor/actor-color";
 
 type RuntimePoint = { x: number; y: number };
