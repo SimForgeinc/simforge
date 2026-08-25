@@ -89,6 +89,29 @@ Closed-loop integration note: frames arriving from the Bevy shm ring
 `encoding: "raw"`; the `policy_step` bridge only needs to accumulate 4 ticks
 per camera and forward the ego history.
 
+## Camera-rig bridge (frame bundles -> observations)
+
+`src/simforge_alpamayo/bridge.py` (torch-free; numpy only, PIL only when
+resizing) converts `render_bundle` shm frame bundles into wire observations:
+
+- `BundleObservationBridge.for_profile("alpamayo-2cam" | "alpamayo-4cam")`
+  mirrors the authored sensor-rig presets in
+  `packages/scenario/src/schema/v2/sensor-rigs.ts` — preset sensor ids ARE
+  the dataset camera names, mapped to upstream indices via
+  `ALPAMAYO_CAMERA_INDEX` (2-cam = [1, 6], 4-cam = [0, 1, 2, 6]).
+- `push_bundle(bundle)` ingests one tick zero-copy up to the single
+  unavoidable RGBA->RGB pack (~0.6 ms/cam/frame at 512x384, measured in
+  `last_convert_s`); `observation(ego_history_xyz)` assembles the rolling
+  4-frame window (cold start replicates the oldest frame) with cameras
+  emitted camera-index ascending.
+- Ego history helpers produce the FLU ego frame at t0 frozen with the
+  trajectory executor (x forward, y left, z up, newest == origin).
+
+End-to-end conformance (render -> bundle -> bridge -> act -> trajectory) on
+a real map tile: `scripts/rig_conformance.py` (both servers must already be
+running). Unit tests: `python3 -m pytest adapters/alpamayo/tests/test_bridge.py`
+from the repo root, against the recorded ring in `renderer/service/testdata`.
+
 ## Benchmarks / quality
 
 ```bash

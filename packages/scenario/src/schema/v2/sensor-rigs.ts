@@ -379,12 +379,134 @@ const ALPAMAYO_PAI = SensorRigPresetSchema.parse({
   ],
 });
 
+/* ----------------------------------------------- Alpamayo model-input rigs */
+
+/**
+ * Upstream Alpamayo 1.5 camera-index convention
+ * (NVlabs/alpamayo1.5 `load_physical_aiavdataset.py`). The inference wire
+ * (`adapters/alpamayo` `act.obs.cameras[].camera_id`) identifies cameras only
+ * by these integers and sorts ascending; sensor ids in the Alpamayo rig
+ * presets below are exactly these dataset camera names so bridges can map a
+ * rendered frame to its model slot with a table lookup.
+ */
+export const ALPAMAYO_CAMERA_INDEX = Object.freeze({
+  camera_cross_left_120fov: 0,
+  camera_front_wide_120fov: 1,
+  camera_cross_right_120fov: 2,
+  camera_rear_left_70fov: 3,
+  camera_rear_tele_30fov: 4,
+  camera_rear_right_70fov: 5,
+  camera_front_tele_30fov: 6,
+} as const);
+
+export type AlpamayoCameraName = keyof typeof ALPAMAYO_CAMERA_INDEX;
+
+/**
+ * Model-native render size: 512*384 == 196,608 px == the upstream Qwen image
+ * processor's MAX_PIXELS, so frames rendered at this size are never resized
+ * by the model server (adapters/alpamayo obs.py uses the same constant for
+ * its synthetic profiles and latency benchmarks).
+ *
+ * Honest approximation vs the real PhysicalAI-AV rig: the dataset cameras
+ * are 1920x1208 (aspect ~1.589). We keep each camera's HORIZONTAL FoV and
+ * render at 4:3, so the authored vertical FoV is wider than the calibrated
+ * rig (120° wide/cross: ~104.9° vs ~94.9°; 30° tele: ~22.6° vs ~19.0°) and
+ * frames show more sky/hood than the training distribution. Mounts are
+ * authored approximations of the rig geometry, not the per-vehicle
+ * calibration shipped inside the gated dataset (the wire protocol carries no
+ * extrinsics/intrinsics — cameras are identified by index only), so pose
+ * error degrades trajectory quality gracefully rather than causing
+ * shape/contract failures.
+ */
+export const ALPAMAYO_RENDER_WIDTH = 512;
+export const ALPAMAYO_RENDER_HEIGHT = 384;
+
+const ALPAMAYO_CAMERA_TEMPLATES: Readonly<
+  Partial<Record<AlpamayoCameraName, SensorRigCameraTemplate>>
+> = Object.freeze({
+  camera_cross_left_120fov: camera(
+    'camera_cross_left_120fov', 'Cross Left 120 FOV',
+    mountFromV1(FRONT_TOP_LEFT, { x: 1.9, lateralRight: -0.42, up: 1.46, yawDeg: -55 }),
+    { fov: 120, width: ALPAMAYO_RENDER_WIDTH, height: ALPAMAYO_RENDER_HEIGHT },
+  ),
+  camera_front_wide_120fov: camera(
+    'camera_front_wide_120fov', 'Front Wide 120 FOV',
+    mountFromV1(FRONT_TOP_CENTER, { x: 2.05, lateralRight: 0, up: 1.5 }),
+    { fov: 120, width: ALPAMAYO_RENDER_WIDTH, height: ALPAMAYO_RENDER_HEIGHT },
+  ),
+  camera_cross_right_120fov: camera(
+    'camera_cross_right_120fov', 'Cross Right 120 FOV',
+    mountFromV1(FRONT_TOP_RIGHT, { x: 1.9, lateralRight: 0.42, up: 1.46, yawDeg: 55 }),
+    { fov: 120, width: ALPAMAYO_RENDER_WIDTH, height: ALPAMAYO_RENDER_HEIGHT },
+  ),
+  camera_front_tele_30fov: camera(
+    'camera_front_tele_30fov', 'Front Tele 30 FOV',
+    mountFromV1(FRONT_TOP_CENTER, { x: 2.08, lateralRight: 0, up: 1.52 }),
+    { fov: 30, width: ALPAMAYO_RENDER_WIDTH, height: ALPAMAYO_RENDER_HEIGHT },
+  ),
+});
+
+/**
+ * Build a model-input rig preset from dataset camera names. Sensors are
+ * ordered camera-index ascending so rig registration order (and therefore
+ * shm frame-bundle entry order) matches the model server's sorted camera
+ * order without a bridge-side reorder.
+ */
+export function buildAlpamayoRigPreset(
+  id: string,
+  name: string,
+  cameraNames: readonly AlpamayoCameraName[],
+  description?: string,
+): SensorRigPreset {
+  const sensors = [...cameraNames]
+    .sort((a, b) => ALPAMAYO_CAMERA_INDEX[a] - ALPAMAYO_CAMERA_INDEX[b])
+    .map((cameraName) => {
+      const template = ALPAMAYO_CAMERA_TEMPLATES[cameraName];
+      if (!template) {
+        throw new Error(`no authored Alpamayo camera template for "${cameraName}"`);
+      }
+      return template;
+    });
+  return SensorRigPresetSchema.parse({
+    id,
+    name,
+    ...(description === undefined ? {} : { description }),
+    compatibleActorClasses: ['car'],
+    sensors,
+  });
+}
+
+/** Recommended closed-loop profile: NF4 act p50 1.41 s, peak 8.7 GB VRAM. */
+const ALPAMAYO_2CAM = buildAlpamayoRigPreset(
+  'alpamayo-2cam',
+  'Alpamayo 2-Camera (front wide + tele)',
+  ['camera_front_wide_120fov', 'camera_front_tele_30fov'],
+  'Lean Alpamayo 1.5 input rig: camera indices [1, 6] at the model-native '
+  + '512x384 render size. Recommended NF4 closed-loop profile.',
+);
+
+/** Dataset-default eval profile: indices [0, 1, 2, 6], NF4 act p50 ~2.4 s. */
+const ALPAMAYO_4CAM = buildAlpamayoRigPreset(
+  'alpamayo-4cam',
+  'Alpamayo 4-Camera (dataset default)',
+  [
+    'camera_cross_left_120fov',
+    'camera_front_wide_120fov',
+    'camera_cross_right_120fov',
+    'camera_front_tele_30fov',
+  ],
+  'Alpamayo 1.5 dataset-default input rig: camera indices [0, 1, 2, 6] at '
+  + 'the model-native 512x384 render size.',
+);
+
 export const BUILT_IN_SENSOR_RIGS: readonly SensorRigPreset[] = Object.freeze([
   BASIC_DASH_CAMERA,
   TESLA_HW3,
   WAYMO_5TH_GEN,
   NVIDIA_SDG_AV,
   ALPAMAYO_PAI,
+  ALPAMAYO_2CAM,
+  ALPAMAYO_4CAM,
 ]);
 
 const BUILT_IN_SENSOR_RIGS_BY_ID: Readonly<Record<string, SensorRigPreset>> = {
@@ -393,6 +515,8 @@ const BUILT_IN_SENSOR_RIGS_BY_ID: Readonly<Record<string, SensorRigPreset>> = {
   'waymo-5th-gen': WAYMO_5TH_GEN,
   'nvidia-sdg-av': NVIDIA_SDG_AV,
   'alpamayo-pai': ALPAMAYO_PAI,
+  'alpamayo-2cam': ALPAMAYO_2CAM,
+  'alpamayo-4cam': ALPAMAYO_4CAM,
 };
 
 export function sensorRigPreset(id: string): SensorRigPreset | undefined {
