@@ -57,7 +57,7 @@ describe('all checked-in campaign artifacts', () => {
             failures.push(`scenario ${ordinal}: expected exact 0–20 second evidence`);
           }
           const galleryCamera = galleryCameraChoice(bundle);
-          if (galleryCamera.policy !== 'all-actors' || galleryCamera.egoActorId !== null) {
+          if (galleryCamera.policy !== 'all-actors' || galleryCamera.subjectActorId !== null) {
             failures.push(`scenario ${ordinal}: expected neutral all-actors Gallery replay`);
           }
           const catalogEntry = GENERATED_CAMPAIGN_ENTRIES.find((candidate) => candidate.ordinal === ordinal);

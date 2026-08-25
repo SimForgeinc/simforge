@@ -710,14 +710,9 @@ function controlsForTemplate(runtime: MapRuntime, template: ScenarioTemplateV2):
     ...runtime.controls,
     signalPrograms: compileMapSignalPlans(runtime.controls.signalPrograms, template.mapSignalPlans, {
       mapId: runtime.bundle.mapId,
-      controlDigest: runtime.identity.controlDigest,
       clipSeconds: template.choreography.clipSeconds,
       warmupSeconds: template.choreography.warmupSeconds,
       signalCatalog: runtime.bundle.signalCatalog,
-      topology: runtime.topology,
-      conflictPairsByJunction: Object.fromEntries(
-        Object.entries(runtime.bundle.index.junctionDescriptors).map(([id, descriptor]) => [id, descriptor.conflictPairs]),
-      ),
       worldSignalSetIds: directWorldHandles,
     }),
   };

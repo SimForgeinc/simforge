@@ -138,7 +138,7 @@ export function mapIssues(template: ScenarioTemplateV2, map: MapContext): Clause
       if (haveM < needM) {
         out.push(
           issue(
-            'warning',
+            'error',
             'runway_insufficient',
             path,
             `role "${role.id}" needs ${needM.toFixed(0)} m of road ahead to travel the whole ${template.choreography.clipSeconds}s clip at ${speedKph.toFixed(0)} kph, but only ${haveM.toFixed(0)} m is drivable`,
