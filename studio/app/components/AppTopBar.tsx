@@ -67,7 +67,7 @@ export function AppTopBar({
     ? slotCtx?.customTitle ?? routePageTitle
     : routePageTitle;
   const unbrandedPageTitle = displayPageTitle
-    ?.replace(/^SIMCLOUD\s*[-—:]\s*/i, "")
+    ?.replace(/^SIMFORGE\s*[-—:]\s*/i, "")
     .trim();
 
   useEffect(() => {
@@ -146,7 +146,7 @@ export function AppTopBar({
                 suppressHydrationWarning
                 className="flex min-w-0 items-baseline gap-2 truncate text-foreground"
                 data-topbar-slot="title"
-                aria-label={`SIMCLOUD - ${unbrandedPageTitle}`}
+                aria-label={`SIMFORGE - ${unbrandedPageTitle}`}
               >
                 <span
                   className="shrink-0 text-[20px] uppercase"
@@ -158,7 +158,7 @@ export function AppTopBar({
                   }}
                   data-topbar-slot="brand"
                 >
-                  SIMCLOUD
+                  SIMFORGE
                 </span>
                 <span aria-hidden="true" className="shrink-0 text-foreground/35">
                   -

@@ -41,7 +41,7 @@ export type CloudLoadingSurfaceProps = {
 };
 
 /**
- * The single loading language for SimCloud workspaces.
+ \* The single loading language for SimForge workspaces.
  *
  * Screen and pane loaders share the same cloud field and intentionally keep
  * their content flat: loading is a transient layer, not another card in the
@@ -50,7 +50,7 @@ export type CloudLoadingSurfaceProps = {
  */
 export function CloudLoadingSurface({
   scope = "pane",
-  eyebrow = "SimCloud",
+  eyebrow = "SimForge",
   title,
   detail,
   progress,

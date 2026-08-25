@@ -53,7 +53,7 @@ const INITIAL_ROUTE_SOURCE: DashboardLoadingSource = {
   kind: "route",
   title: "Loading your workspace…",
   detail: "Opening the dashboard in your workspace.",
-  eyebrow: "SimCloud",
+  eyebrow: "SimForge",
   progress: null,
   progressLabel: "Cloud workspace",
   priority: ROUTE_PRIORITY,
@@ -179,7 +179,7 @@ export function DashboardLoadingProvider({ children }: { children: ReactNode }) 
           dataLoadPhase={renderedSource.phase}
           dataTransitionState={visible ? "covering" : "revealing"}
           detail={renderedSource.detail}
-          eyebrow={renderedSource.eyebrow ?? "SimCloud"}
+          eyebrow={renderedSource.eyebrow ?? "SimForge"}
           icon={renderedSource.icon}
           progress={failed ? undefined : renderedSource.progress}
           progressLabel={renderedSource.progressLabel}
@@ -231,7 +231,7 @@ export function dashboardRouteLoadingSource({
     kind: "route",
     title: detail,
     detail: `Opening ${label.toLowerCase()} in your workspace.`,
-    eyebrow: "SimCloud",
+    eyebrow: "SimForge",
     progress: null,
     progressLabel: "Cloud workspace",
     priority: ROUTE_PRIORITY + depth,
