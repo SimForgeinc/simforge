@@ -22,7 +22,7 @@ git -C "$ROOT/vendor/alpamayo1.5" checkout --quiet "$VENDOR_COMMIT"
 cd "$ROOT/vendor/alpamayo1.5"
 uv venv --python 3.12 --allow-existing .venv
 VIRTUAL_ENV="$PWD/.venv" uv sync --active --no-install-package flash-attn
-VIRTUAL_ENV="$PWD/.venv" uv pip install bitsandbytes==0.49.2 'torchao>=0.12' msgpack
+VIRTUAL_ENV="$PWD/.venv" uv pip install bitsandbytes==0.49.2 torchao==0.12.0 msgpack
 
 # 3. Pre-fetch pinned weights (~22 GB) + gated config/tokenizer repos.
 #    nvidia/Cosmos-Reason2-8B is gated:auto -> requires `hf auth login` first.
