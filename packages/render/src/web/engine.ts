@@ -65,9 +65,9 @@ async function defaultBrowserHarnessUrl(): Promise<string> {
     await fs.access(packaged);
     return packaged.href;
   } catch {
-    const source = new URL('../../harness.html', import.meta.url);
-    await fs.access(source);
-    return source.href;
+    const developmentBuild = new URL('../../dist/harness.html', import.meta.url);
+    await fs.access(developmentBuild);
+    return developmentBuild.href;
   }
 }
 
