@@ -9,7 +9,7 @@ use bevy::camera::{Exposure, Hdr};
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::light::Skybox;
 use bevy::pbr::{
-    ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
+    ContactShadows, ScreenSpaceAmbientOcclusion, ScreenSpaceAmbientOcclusionQualityLevel,
     ScreenSpaceReflections,
 };
 use bevy::post_process::bloom::Bloom;
@@ -233,6 +233,7 @@ impl RenderProfile {
                         },
                         ..Default::default()
                     });
+                    cam.insert(ContactShadows::default());
                 }
             }
         }
@@ -271,5 +272,38 @@ mod tests {
             ..Default::default()
         };
         assert!(invalid.validate().is_err());
+    }
+
+    #[test]
+    fn sensor_profile_has_no_stochastic_screen_space_components() {
+        let mut world = bevy::prelude::World::new();
+        let sensor = world.spawn_empty().id();
+        let cinematic = world.spawn_empty().id();
+        {
+            let mut commands = world.commands();
+            RenderProfile::Sensor.apply(
+                &mut commands,
+                sensor,
+                12.0,
+                None,
+                1.0,
+                CinematicFx::default(),
+            );
+            RenderProfile::Cinematic.apply(
+                &mut commands,
+                cinematic,
+                12.0,
+                None,
+                1.0,
+                CinematicFx::default(),
+            );
+        }
+        world.flush();
+        assert!(world.get::<TemporalAntiAliasing>(sensor).is_none());
+        assert!(world.get::<ScreenSpaceAmbientOcclusion>(sensor).is_none());
+        assert!(world.get::<ContactShadows>(sensor).is_none());
+        assert!(world.get::<TemporalAntiAliasing>(cinematic).is_some());
+        assert!(world.get::<ScreenSpaceAmbientOcclusion>(cinematic).is_some());
+        assert!(world.get::<ContactShadows>(cinematic).is_some());
     }
 }
