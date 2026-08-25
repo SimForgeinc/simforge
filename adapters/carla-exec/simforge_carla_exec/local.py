@@ -208,11 +208,38 @@ def _execute_local_lease(
 
 
 
+def _canonical_render_intent_json(intent: Mapping[str, Any]) -> str:
+    """Match @simforge/scenario canonicalizeRenderIntent exactly.
+
+    Object keys use the shared canonical JSON ordering. The wire contract also
+    defines the two per-source arrays as order-insensitive and sorts them by
+    source identity before hashing.
+    """
+    normalized = dict(intent)
+    sensor_hosts = intent.get("sensorHosts")
+    if isinstance(sensor_hosts, list):
+        normalized["sensorHosts"] = sorted(
+            sensor_hosts,
+            key=lambda host: host.get("sourceId", "") if isinstance(host, Mapping) else "",
+        )
+    render_spec = intent.get("renderSpec")
+    if isinstance(render_spec, Mapping):
+        normalized_spec = dict(render_spec)
+        sources = render_spec.get("sources")
+        if isinstance(sources, list):
+            normalized_spec["sources"] = sorted(
+                sources,
+                key=lambda source: source.get("outputName", "") if isinstance(source, Mapping) else "",
+            )
+        normalized["renderSpec"] = normalized_spec
+    return canonical_json(normalized)
+
+
 def _read_input_package(path: Path, intent: Mapping[str, Any]) -> tuple[str, dict[str, Path]]:
     package = json.loads(path.read_text("utf-8"))
     if not isinstance(package, Mapping) or set(package) != INPUT_PACKAGE_SCHEMA_FIELDS:
         raise ContractError("input package must contain exactly intentSha256 and inputs")
-    expected_intent_sha = hashlib.sha256(canonical_json(intent).encode("utf-8")).hexdigest()
+    expected_intent_sha = hashlib.sha256(_canonical_render_intent_json(intent).encode("utf-8")).hexdigest()
     if package.get("intentSha256") != expected_intent_sha:
         raise ContractError("input package intentSha256 does not match canonical render intent bytes")
     raw_inputs = package.get("inputs")

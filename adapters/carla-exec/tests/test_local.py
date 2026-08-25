@@ -14,6 +14,45 @@ def test_default_schema_is_bundled_and_digest_pinned() -> None:
     assert local.DEFAULT_XSD.is_file()
     assert hashlib.sha256(local.DEFAULT_XSD.read_bytes()).hexdigest() == OFFICIAL_XSD_SHA256
 
+def test_render_intent_digest_sorts_per_source_arrays_like_typescript(tmp_path) -> None:
+    intent = {
+        "schema": "uniscenario.render-intent/v1",
+        "sensorHosts": [
+            {"sourceId": "z-source", "actorId": "actor-z"},
+            {"sourceId": "a-source", "actorId": "actor-a"},
+        ],
+        "renderSpec": {
+            "sources": [
+                {"outputName": "z-source", "actorId": "actor-z"},
+                {"outputName": "a-source", "actorId": "actor-a"},
+            ],
+        },
+    }
+    sorted_intent = {
+        **intent,
+        "sensorHosts": list(reversed(intent["sensorHosts"])),
+        "renderSpec": {"sources": list(reversed(intent["renderSpec"]["sources"]))},
+    }
+    expected = hashlib.sha256(
+        local._canonical_render_intent_json(sorted_intent).encode("utf-8")
+    ).hexdigest()
+    input_path = tmp_path / "input"
+    input_path.write_bytes(b"x")
+    package_path = tmp_path / "input-package.json"
+    package_path.write_text(json.dumps({
+        "intentSha256": expected,
+        "inputs": [{
+            "inputId": "scenario.xosc",
+            "path": "input",
+            "sha256": hashlib.sha256(b"x").hexdigest(),
+            "sizeBytes": 1,
+        }],
+    }), "utf-8")
+
+    digest, _inputs = local._read_input_package(package_path, intent)
+    assert digest == expected
+
+
 
 def test_run_intent_records_named_preflight_failure_before_exit(
     tmp_path,

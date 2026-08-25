@@ -254,8 +254,7 @@ def run_local_command(args: argparse.Namespace) -> dict[str, object]:
     import shutil
     from argparse import Namespace
 
-    from .local import _run_intent
-    from .runtime.contract import canonical_json
+    from .local import _canonical_render_intent_json, _run_intent
 
     output_dir = Path(args.output)
     inputs_dir = output_dir / "inputs"
@@ -284,7 +283,7 @@ def run_local_command(args: argparse.Namespace) -> dict[str, object]:
                 "sha256": hashlib.sha256(body).hexdigest(), "sizeBytes": len(body)}
 
     package = {
-        "intentSha256": hashlib.sha256(canonical_json(intent).encode("utf-8")).hexdigest(),
+        "intentSha256": hashlib.sha256(_canonical_render_intent_json(intent).encode("utf-8")).hexdigest(),
         "inputs": [entry("scenario.xosc", Path(args.scenario)),
                    entry("local-map", xodr_input), entry("local-catalog", catalog_input)],
     }
