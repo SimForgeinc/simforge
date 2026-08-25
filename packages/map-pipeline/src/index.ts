@@ -1,0 +1,129 @@
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import { assembleClosure } from './assemble.js';
+import type { ClosureStageResult } from './assemble.js';
+import { canonicalJson, filesUnder } from './closure.js';
+import type { MapClosure } from './closure.js';
+import { browserOptimize, ktx2Variant, nativeCorpus } from './derived.js';
+import type { DerivedStageResult } from './derived.js';
+import { fbxToTiles } from './tiling.js';
+import type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from './tiling.js';
+
+export { assembleClosure } from './assemble.js';
+export type { AssembleClosureOptions, ClosureStageResult } from './assemble.js';
+export { canonicalJson, closureBytes, closureDigest, sha256 } from './closure.js';
+export type { ClosureKind, ClosureMember, MapClosure } from './closure.js';
+export {
+  browserOptimize,
+  browserToolFingerprint,
+  ktx2ToolFingerprint,
+  ktx2Variant,
+  nativeCorpus,
+  nativeCorpusToolFingerprint,
+} from './derived.js';
+export type { DerivedStageResult } from './derived.js';
+export { FBX_TILER_REVISION, assignGridCell, fbxToTiles } from './tiling.js';
+export type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from './tiling.js';
+
+export interface RunMapPipelineOptions {
+  sourceDir: string;
+  name: string;
+  workDir: string;
+  blender?: string;
+  cellSize?: number;
+  ktxBinDir?: string;
+  derived?: boolean;
+}
+
+export interface RegistryClosureArtifact {
+  kind: MapClosure['kind'];
+  fingerprint?: string;
+  registryPath: string;
+  digest: string;
+  closure: MapClosure;
+  contentDir: string;
+}
+
+export interface MapPipelineResult {
+  name: string;
+  canonical: RegistryClosureArtifact;
+  derived: RegistryClosureArtifact[];
+  stages: {
+    tiles: StageResult;
+    canonical: ClosureStageResult;
+    browser?: DerivedStageResult;
+    ktx2?: DerivedStageResult;
+    nativeCorpus?: DerivedStageResult;
+  };
+}
+
+function registryArtifact(stage: ClosureStageResult | DerivedStageResult): RegistryClosureArtifact {
+  const fingerprint = stage.closure.toolFingerprint;
+  return {
+    kind: stage.closure.kind,
+    ...(fingerprint ? { fingerprint } : {}),
+    registryPath: stage.closure.kind === 'canonical'
+      ? 'closure.json'
+      : `derived/${stage.closure.kind}-${fingerprint}.json`,
+    digest: stage.closureDigest,
+    closure: stage.closure,
+    contentDir: stage.outputDir,
+  };
+}
+
+export async function runMapPipeline(options: RunMapPipelineOptions): Promise<MapPipelineResult> {
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(options.name)) {
+    throw new Error(`map name must be a lowercase registry slug: ${options.name}`);
+  }
+  const tiles = await fbxToTiles({
+    sourceDir: options.sourceDir,
+    workDir: options.workDir,
+    ...(options.blender ? { blender: options.blender } : {}),
+    ...(options.cellSize ? { cellSize: options.cellSize } : {}),
+  });
+  const canonical = await assembleClosure({
+    tiles,
+    mapName: options.name,
+    sourceDir: options.sourceDir,
+    workDir: options.workDir,
+  });
+  if (options.derived === false) {
+    return { name: options.name, canonical: registryArtifact(canonical), derived: [], stages: { tiles, canonical } };
+  }
+  const browser = await browserOptimize(canonical, options.workDir);
+  const ktx2 = await ktx2Variant(browser, options.workDir, options.ktxBinDir);
+  const corpus = await nativeCorpus(browser, options.workDir);
+  return {
+    name: options.name,
+    canonical: registryArtifact(canonical),
+    derived: [registryArtifact(browser), registryArtifact(ktx2), registryArtifact(corpus)],
+    stages: { tiles, canonical, browser, ktx2, nativeCorpus: corpus },
+  };
+}
+
+/**
+ * Materialize a pipeline result as content-addressed blobs plus registry closure
+ * descriptors. Registry publishers can upload this directory without opening or
+ * rewriting any content bytes.
+ */
+export async function materializeRegistryPayload(result: MapPipelineResult, outputDir: string): Promise<void> {
+  const artifacts = [result.canonical, ...result.derived];
+  await mkdir(outputDir, { recursive: true });
+  for (const artifact of artifacts) {
+    for (const relativePath of await filesUnder(artifact.contentDir)) {
+      const member = artifact.closure.members[relativePath];
+      if (!member) throw new Error(`${artifact.kind} closure omits ${relativePath}`);
+      const destination = path.join(outputDir, 'blobs', 'sha256', member.sha256.slice(0, 2), member.sha256);
+      await mkdir(path.dirname(destination), { recursive: true });
+      try {
+        await readFile(destination);
+      } catch {
+        await cp(path.join(artifact.contentDir, relativePath), destination);
+      }
+    }
+    const descriptor = path.join(outputDir, artifact.registryPath);
+    await mkdir(path.dirname(descriptor), { recursive: true });
+    await writeFile(descriptor, canonicalJson(artifact.closure));
+  }
+}
