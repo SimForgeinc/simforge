@@ -25,8 +25,5 @@ export function assertBrowserSensorHosts(
     }
     const actor = bundle.actors.find((candidate) => candidate.id === host.actorId);
     if (!actor) throw new Error(`Browser sensor host ${host.actorId} is absent from immutable playback metadata.`);
-    if (actor.catalogId !== host.vehicleAsset.catalogAssetId) {
-      throw new Error(`Browser sensor host ${host.actorId} expected ${host.vehicleAsset.catalogAssetId}; received ${actor.catalogId}.`);
-    }
   }
 }

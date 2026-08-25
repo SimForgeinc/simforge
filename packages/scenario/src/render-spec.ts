@@ -17,9 +17,7 @@ import {
   type Environment,
 } from './schema/v2/environment.js';
 import {
-  ActorSensorSchema,
   SensorMountSchema,
-  type ActorSensor,
   type SensorMount,
 } from './schema/v2/sensors.js';
 
@@ -521,55 +519,8 @@ export const RenderSpecV3Schema = z.strictObject({
   }
 });
 
-const ResolvedCaptureSourceSchema = RenderSensorSourceSchema.extend({
-  /** Full immutable physical-sensor snapshot from the bound revision. */
-  sensor: ActorSensorSchema,
-}).check((ctx) => {
-  if (ctx.value.sensor.id !== ctx.value.sensorId) {
-    ctx.issues.push({
-      code: 'custom',
-      message: 'sensor snapshot id does not match sensorId',
-      path: ['sensor', 'id'],
-      input: ctx.value.sensor.id,
-    });
-  }
-  if (!sensorSupportsModality(ctx.value.sensor, ctx.value.modality)) {
-    ctx.issues.push({
-      code: 'custom',
-      message: `sensor type "${ctx.value.sensor.type}" cannot provide modality "${ctx.value.modality}"`,
-      path: ['modality'],
-      input: ctx.value.modality,
-    });
-  }
-});
-const ResolvedCaptureSourceV3Schema = RenderSourceV3Schema.and(z.strictObject({
-  sensor: ActorSensorSchema,
-})).check((ctx) => {
-  if (ctx.value.sensor.id !== ctx.value.sensorId) {
-    ctx.issues.push({
-      code: 'custom',
-      message: 'sensor snapshot id does not match sensorId',
-      path: ['sensor', 'id'],
-      input: ctx.value.sensor.id,
-    });
-  }
-  if (!sensorSupportsRenderModality(ctx.value.sensor, ctx.value.modality)) {
-    ctx.issues.push({
-      code: 'custom',
-      message: `sensor type "${ctx.value.sensor.type}" cannot provide modality "${ctx.value.modality}"`,
-      path: ['modality'],
-      input: ctx.value.modality,
-    });
-  }
-  if (!sameCanonicalValue(ctx.value.transform, ctx.value.sensor.mount)) {
-    ctx.issues.push({
-      code: 'custom',
-      message: 'resolved source transform must match the immutable sensor mount',
-      path: ['transform'],
-      input: ctx.value.transform,
-    });
-  }
-});
+const ResolvedCaptureSourceSchema = RenderSensorSourceSchema;
+const ResolvedCaptureSourceV3Schema = RenderSourceV3Schema;
 
 const AnyResolvedCaptureSourceSchema = z.union([
   ResolvedCaptureSourceSchema,
@@ -719,7 +670,7 @@ export const ResolvedCaptureManifestSchema = z.strictObject({
   if (ctx.value.resolvedSources.length !== spec.sources.length) {
     ctx.issues.push({
       code: 'custom',
-      message: 'every render source must have exactly one resolved sensor snapshot',
+      message: 'every submitted render source must have exactly one resolved source',
       path: ['resolvedSources'],
       input: ctx.value.resolvedSources,
     });
@@ -929,10 +880,6 @@ type MutableResolvedCaptureManifest = z.infer<typeof ResolvedCaptureManifestSche
 export type ResolvedCaptureManifest = DeepReadonly<MutableResolvedCaptureManifest>;
 export type CaptureSourceProvenance = z.infer<typeof CaptureSourceProvenanceSchema>;
 
-export interface CaptureActorSensors {
-  readonly id: string;
-  readonly sensors: readonly ActorSensor[];
-}
 
 /** Partial numeric resolutions supplied only where authoring used expressions. */
 export interface EnvironmentNumericResolutionInput {
@@ -966,7 +913,6 @@ export interface ResolveCaptureManifestContext {
   readonly mapEvidence: MutableResolvedCaptureManifest['mapEvidence'];
   readonly renderer: MutableResolvedCaptureManifest['renderer'];
   readonly revisionEnvironment: RevisionEnvironmentContext;
-  readonly actors: readonly CaptureActorSensors[];
 }
 
 /** Validate/default an editable render spec without introducing a platform dependency. */
@@ -1121,9 +1067,9 @@ export function parseResolvedCaptureManifest(value: unknown): ResolvedCaptureMan
 }
 
 /**
- * Resolve stable actor/sensor references and renderer capabilities into an
- * immutable, revision-bound receipt. A missing required capability or mutable
- * sensor reference fails closed; preferred capabilities become warnings.
+ * Resolve submitted sources and renderer capabilities into an immutable,
+ * revision-bound receipt. Submitted sensor identities, modalities, and transforms
+ * are accepted as authored; worker capability admission remains authoritative.
  */
 export function resolveCaptureManifest(
   value: unknown,
@@ -1149,31 +1095,7 @@ export function resolveCaptureManifest(
     context.revisionEnvironment,
     playbackEvidence,
   );
-  const actors = new Map(context.actors.map((actor) => [actor.id, actor]));
-  const resolvedSources = renderSpec.sources.map((source) => {
-    const actor = actors.get(source.actorId);
-    if (!actor) throw new Error(`capture actor "${source.actorId}" does not exist in the bound revision`);
-    const sensor = actor.sensors.find((candidate) => candidate.id === source.sensorId);
-    if (!sensor) {
-      throw new Error(`capture sensor "${source.sensorId}" does not exist on actor "${source.actorId}"`);
-    }
-    if (!sensor.enabled) {
-      throw new Error(`capture sensor "${source.sensorId}" on actor "${source.actorId}" is disabled`);
-    }
-    const supports = 'transform' in source
-      ? sensorSupportsRenderModality(sensor, source.modality)
-      : sensorSupportsModality(sensor, source.modality);
-    if (!supports) {
-      throw new Error(`capture sensor "${source.sensorId}" cannot provide modality "${source.modality}"`);
-    }
-    if ('transform' in source
-      && !sameCanonicalValue(source.transform, sensor.mount)) {
-      throw new Error(
-        `capture source "${source.outputName}" transform does not match sensor "${source.sensorId}" mount`,
-      );
-    }
-    return { ...source, sensor };
-  });
+  const resolvedSources = renderSpec.sources;
 
   const required = requiredCapabilities(renderSpec);
   const available = new Set(context.renderer.availableCapabilities);
@@ -1219,16 +1141,6 @@ export function resolveCaptureManifest(
   });
 }
 
-function sensorSupportsModality(sensor: ActorSensor, modality: CaptureSensorModality): boolean {
-  return sensor.type === 'dash_camera'
-    && (modality === 'rgb' || modality === 'depth' || modality === 'semantic' || modality === 'instance');
-}
-
-function sensorSupportsRenderModality(sensor: ActorSensor, modality: RenderModality): boolean {
-  if (modality === 'lidar') return sensor.type === 'lidar';
-  if (modality === 'radar') return sensor.type === 'radar';
-  return sensor.type === 'dash_camera';
-}
 
 function parseAnyRenderSpec(value: unknown): RenderSpecV2 | RenderSpecV3 {
   return z.union([RenderSpecV2Schema, RenderSpecV3Schema]).parse(value);
