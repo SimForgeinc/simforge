@@ -97,6 +97,41 @@ describe('world-session live truth stream', () => {
     }
   });
 
+  it('carries runtime spawn and despawn lifecycle with spawn-record dimensions', () => {
+    const world = new WorldSession({ input: signalizedInput(), graph });
+    const subscription = world.subscribeTruth();
+    world.advance(1);
+    subscription.drain();
+
+    const spawned = world.applyCommand('c0001', 0, {
+      kind: 'spawn',
+      spawn: {
+        id: 'delivery',
+        kind: 'truck',
+        pose: { x: 160, z: 3.5 },
+        dims: { l: 7.2, w: 2.4, h: 3.1 },
+      },
+    });
+    expect(spawned.ok).toBe(true);
+    world.advance(1);
+    const spawnFrame = decodeOne(subscription.read()!);
+    expect(spawnFrame.scene.actors.find((actor) => actor.id === 'delivery')?.kind).toBe('spawn');
+    expect(spawnFrame.actors.find((actor) => actor.id === 'delivery')).toEqual(expect.objectContaining({
+      class: 'truck',
+      dims: { l: 7.2, w: 2.4, h: 3.1 },
+    }));
+
+    expect(world.applyCommand('c0001', 1, { kind: 'despawn', actorId: 'delivery' }).ok).toBe(true);
+    world.advance(1);
+    const despawnFrame = decodeOne(subscription.read()!);
+    expect(despawnFrame.scene.actors.find((actor) => actor.id === 'delivery')?.kind).toBe('despawn');
+    expect(despawnFrame.actors.find((actor) => actor.id === 'delivery')?.dims).toEqual({
+      l: 7.2,
+      w: 2.4,
+      h: 3.1,
+    });
+  });
+
   it('reassembles arbitrarily split length-prefixed transport chunks', () => {
     const framed = runBytes(1)[0]!;
     const client = new TruthStreamClient();
