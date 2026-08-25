@@ -1,0 +1,15 @@
+[package]
+name = "simforge-vehicle-smoke"
+version = "0.1.0"
+edition = "2021"
+description = "Headless-ish Bevy load test for SimForge CARLA vehicle GLBs: loads a GLB, applies an optional body_paint tint, screenshots, exits."
+license = "Apache-2.0"
+
+# Standalone: intentionally detached from the engine workspace.
+[workspace]
+
+[dependencies]
+bevy = { version = "0.19.1", default-features = true, features = ["png", "hdr", "ktx2", "tonemapping_luts"] }
+
+[profile.release]
+opt-level = 2

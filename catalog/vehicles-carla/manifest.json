@@ -1,0 +1,999 @@
+{
+  "version": 1,
+  "convention": {
+    "axes": "y-up, right-handed; +X = vehicle forward; -Z = vehicle left; meters",
+    "origin": "CARLA vehicle pivot projected to ground (y=0); matches CARLA actor transforms",
+    "nodes": "body (+ wheel_fl/fr/rl/rr, door_fl/fr/rl/rr on rigged vehicles; wheel_f/r + handlebar on two-wheelers); wheel/door node origins at wheel centers / door hinges",
+    "tint": "materials named 'body_paint' are neutral (white baseColorFactor): set baseColorFactor to the authored catalog color; 'body_livery' materials MUST NOT be tinted",
+    "textures": "PNG, <=2048px body/livery, <=1024px details; ORM packed occlusion(R) roughness(G) metallic(B); normal maps OpenGL +Y"
+  },
+  "vehicles": {
+    "vehicle_sedan_lincoln_mkz": {
+      "file": "models/vehicle_sedan_lincoln_mkz.glb",
+      "family": "sedan",
+      "display": "Lincoln MKZ 2017",
+      "carla_blueprint": "vehicle.lincoln.mkz_2017",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.89,
+        2.23,
+        1.55
+      ],
+      "bbox": {
+        "min": [
+          -2.452,
+          0.001,
+          -1.113
+        ],
+        "max": [
+          2.44,
+          1.553,
+          1.113
+        ]
+      },
+      "tris": 116159,
+      "verts": 88778,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "door_rl",
+        "door_rr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "body_paint",
+        "lincoln_mkz_interior2",
+        "lincoln_mkz_interior01",
+        "glass",
+        "lincoln_mkz_emissive"
+      ],
+      "textures": [
+        "T_LincolnMKZ_Interior02_d 1024x1024",
+        "T_LincolnMKZ_Interior02_n 1024x1024",
+        "T_LincolnMKZ_Interior02_orm 1024x1024",
+        "T_LincolnMKZ_Interior01_d 1024x1024",
+        "T_LincolnMKZ_Interior01_n 1024x1024",
+        "T_LincolnMKZ_Interior01_ormh 1024x1024"
+      ],
+      "size_bytes": 8936184,
+      "sha256": "7243955057e273733036bb03dc9a4ece7f059cf9c20842e44fbbb3acec760b32"
+    },
+    "vehicle_sedan_dodge_charger": {
+      "file": "models/vehicle_sedan_dodge_charger.glb",
+      "family": "sedan",
+      "display": "Dodge Charger 2020",
+      "carla_blueprint": "vehicle.dodge.charger_2020",
+      "tintable": true,
+      "dims_lwh_m": [
+        5.01,
+        2.1,
+        1.54
+      ],
+      "bbox": {
+        "min": [
+          -2.509,
+          -0.007,
+          -1.048
+        ],
+        "max": [
+          2.497,
+          1.533,
+          1.048
+        ]
+      },
+      "tris": 114789,
+      "verts": 86966,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "door_rl",
+        "door_rr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "body_paint",
+        "dodge_charger_details01",
+        "dodge_charger_details02",
+        "glass",
+        "glass",
+        "dodge_charger_cop_emissive"
+      ],
+      "textures": [
+        "T_DodgeCharger_Details01_d 1024x1024",
+        "T_DodgeCharger_Details01_n 1024x1024",
+        "T_DodgeCharger_Details01_ormh 1024x1024",
+        "T_DodgeCharger_Details02_d 1024x1024",
+        "T_DodgeCharger_Details02_n 1024x1024",
+        "T_DodgeCharger_Details02_orm 1024x1024"
+      ],
+      "size_bytes": 8233840,
+      "sha256": "68d993ff00d645564b349011eacfd1fec09d69f7a78f4e771f10538a6a7ce24e"
+    },
+    "vehicle_police_dodge_charger": {
+      "file": "models/vehicle_police_dodge_charger.glb",
+      "family": "police",
+      "display": "Dodge Charger Police 2020",
+      "carla_blueprint": "vehicle.dodge.charger_police_2020",
+      "tintable": false,
+      "dims_lwh_m": [
+        5.24,
+        2.1,
+        1.68
+      ],
+      "bbox": {
+        "min": [
+          -2.509,
+          -0.007,
+          -1.049
+        ],
+        "max": [
+          2.728,
+          1.675,
+          1.048
+        ]
+      },
+      "tris": 118080,
+      "verts": 90859,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "door_rl",
+        "door_rr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "dodge_charger_cop_details02",
+        "body_livery",
+        "dodge_charger_cop_details01",
+        "glass",
+        "glass",
+        "glass",
+        "glass",
+        "glass",
+        "dodge_charger_cop_emissive",
+        "dodge_charger_cop_emissive_sirens"
+      ],
+      "textures": [
+        "T_DodgeChargerCop_Details02_d 1024x1024",
+        "T_DodgeChargerCop_Details02_n 1024x1024",
+        "T_DodgeChargerCop_Details02_orm 1024x1024",
+        "T_DodgeChargerCop_Bodywork_d 2048x2048",
+        "T_DodgeCharger_Details01_d 1024x1024",
+        "T_DodgeCharger_Details01_n 1024x1024",
+        "T_DodgeCharger_Details01_ormh 1024x1024"
+      ],
+      "size_bytes": 8882240,
+      "sha256": "2d37575da0af3e815b41581a5b47d48440a2938bda5e75462c6cae76c5cfde89"
+    },
+    "vehicle_sedan_ford_crown": {
+      "file": "models/vehicle_sedan_ford_crown.glb",
+      "family": "sedan",
+      "display": "Ford Crown (taxi)",
+      "carla_blueprint": "vehicle.ford.crown",
+      "tintable": false,
+      "dims_lwh_m": [
+        5.36,
+        1.93,
+        1.57
+      ],
+      "bbox": {
+        "min": [
+          -2.497,
+          -0.019,
+          -0.965
+        ],
+        "max": [
+          2.858,
+          1.555,
+          0.965
+        ]
+      },
+      "tris": 94616,
+      "verts": 73091,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "door_rl",
+        "door_rr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "ford_crown02_details02",
+        "ford_crown02_details01",
+        "body_livery",
+        "glass",
+        "glass",
+        "ford_crown01_emissive"
+      ],
+      "textures": [
+        "T_FordCrown02_Details02_d 1024x1024",
+        "T_FordCrown02_Details02_n 1024x1024",
+        "T_FordCrown02_Details02_orm 1024x1024",
+        "T_FordCrown01_Details_d 1024x1024",
+        "T_FordCrown01_Details_n 1024x1024",
+        "T_FordCrown01_Details_orm 1024x1024",
+        "T_FordCrown02_Bodywork_d 2048x2048",
+        "T_Blinker_d 32x64"
+      ],
+      "size_bytes": 8183612,
+      "sha256": "2b0c17f12d850f91101cc5c0cade1e5cd3c21204a43c54c4dbea91f9931e08a9"
+    },
+    "vehicle_sedan_tesla_model3": {
+      "file": "models/vehicle_sedan_tesla_model3.glb",
+      "family": "sedan",
+      "display": "Tesla Model 3",
+      "carla_blueprint": "vehicle.tesla.model3",
+      "tintable": false,
+      "dims_lwh_m": [
+        4.79,
+        2.16,
+        1.48
+      ],
+      "bbox": {
+        "min": [
+          -2.395,
+          -0.009,
+          -1.08
+        ],
+        "max": [
+          2.391,
+          1.473,
+          1.08
+        ]
+      },
+      "tris": 14804,
+      "verts": 10770,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "body_livery",
+        "license_plate",
+        "interior_tesla_m3",
+        "glass",
+        "wheels_tesla_m3"
+      ],
+      "textures": [
+        "M_Tesla_Bodywork_d_a 2048x2048",
+        "M_Tesla_Bodywork_n 1024x1024",
+        "M_Tesla_Bodywork_orm 1024x1024",
+        "T_LicensePlate_d 512x512",
+        "M_Tesla_details_d 1024x1024",
+        "M_Tesla_details_n 1024x1024",
+        "M_Tesla_details_orm 1024x1024",
+        "M_tesla_wheels_d 1024x1024",
+        "M_tesla_wheels_n 1024x1024",
+        "M_tesla_wheels_orm 1024x1024"
+      ],
+      "size_bytes": 6257556,
+      "sha256": "f4906b8afc82a69d95132146ced52aa960c6cfe4c502929a3a6283318ce2722b"
+    },
+    "vehicle_suv_nissan_patrol": {
+      "file": "models/vehicle_suv_nissan_patrol.glb",
+      "family": "suv",
+      "display": "Nissan Patrol 2021",
+      "carla_blueprint": "vehicle.nissan.patrol_2021",
+      "tintable": true,
+      "dims_lwh_m": [
+        5.59,
+        2.44,
+        2.06
+      ],
+      "bbox": {
+        "min": [
+          -2.755,
+          -0.02,
+          -1.218
+        ],
+        "max": [
+          2.836,
+          2.039,
+          1.218
+        ]
+      },
+      "tris": 91520,
+      "verts": 73204,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "door_rl",
+        "door_rr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "outside_01_patrol2024",
+        "outside_02_patrol2024",
+        "body_paint",
+        "details1_patrol2024",
+        "glass",
+        "glass",
+        "lights_patrol2021",
+        "glass",
+        "glass"
+      ],
+      "textures": [
+        "T_outside_01_NissanPatrol2021_d 1024x1024",
+        "T_outside_01_NissanPatrol2021_n 1024x1024",
+        "T_outside_01_NissanPatrol2021_orm 1024x1024",
+        "T_outside_02_NissanPatrol2021_d 1024x1024",
+        "T_outside_02_NissanPatrol2021_n 1024x1024",
+        "T_outside_02_NissanPatrol2021_orm 1024x1024",
+        "T_Interior_NissanPatrol2021_d 1024x1024",
+        "T_Interior_NissanPatrol2021_n 1024x1024",
+        "T_Interior_NissanPatrol2021_ormh 1024x1024"
+      ],
+      "size_bytes": 10009128,
+      "sha256": "edce2506049352e26a073efbcdf490cf2042542265850095f7df7d73f1d88e8b"
+    },
+    "vehicle_hatchback_mini_cooper": {
+      "file": "models/vehicle_hatchback_mini_cooper.glb",
+      "family": "hatchback",
+      "display": "Mini Cooper S 2021",
+      "carla_blueprint": "vehicle.mini.cooper_s_2021",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.55,
+        2.26,
+        1.77
+      ],
+      "bbox": {
+        "min": [
+          -2.31,
+          0.002,
+          -1.131
+        ],
+        "max": [
+          2.242,
+          1.773,
+          1.131
+        ]
+      },
+      "tris": 101564,
+      "verts": 83637,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "mini_cooper_details02",
+        "mini_cooper_details01",
+        "body_paint",
+        "glass",
+        "glass",
+        "glass",
+        "glass",
+        "mini_cooper_emissive"
+      ],
+      "textures": [
+        "T_MiniCooper_Details02_d 1024x1024",
+        "T_MiniCooper_Details02_n 1024x1024",
+        "T_MiniCooper_Details02_orm 1024x1024",
+        "T_MiniCooper_Details01_d 1024x1024",
+        "T_MiniCooper_Details01_n 1024x1024",
+        "T_MiniCooper_Details01_ormh 1024x1024",
+        "T_Blinker_d 32x64"
+      ],
+      "size_bytes": 8420332,
+      "sha256": "f49ec6e4b9fdaee6fb9e0b490a1b511ff719aad4a11ddb1554fdcd1bd3bb38d0"
+    },
+    "vehicle_coupe_ford_mustang": {
+      "file": "models/vehicle_coupe_ford_mustang.glb",
+      "family": "coupe",
+      "display": "Ford Mustang",
+      "carla_blueprint": "vehicle.ford.mustang",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.72,
+        1.89,
+        1.3
+      ],
+      "bbox": {
+        "min": [
+          -2.327,
+          0.0,
+          -0.947
+        ],
+        "max": [
+          2.391,
+          1.301,
+          0.947
+        ]
+      },
+      "tris": 16927,
+      "verts": 16939,
+      "nodes": [
+        "body",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "license_plate",
+        "details_mustang",
+        "glass",
+        "body_paint",
+        "lights_text_mustang",
+        "vehicle_lights_mustang"
+      ],
+      "textures": [
+        "T_LicensePlate_d 512x512",
+        "T_Mustang_details_d 1024x1024",
+        "T_Mustang_Details_n 1024x1024",
+        "T_Mustang_Details_orm 1024x1024"
+      ],
+      "size_bytes": 3487452,
+      "sha256": "f4cc002c88e2126affeb7dd960bfc8aac34867e28841560014034a6136f0d937"
+    },
+    "vehicle_minivan_bmw_gran_tourer": {
+      "file": "models/vehicle_minivan_bmw_gran_tourer.glb",
+      "family": "minivan",
+      "display": "BMW Gran Tourer",
+      "carla_blueprint": "vehicle.bmw.grandtourer",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.61,
+        2.24,
+        1.67
+      ],
+      "bbox": {
+        "min": [
+          -2.306,
+          -0.069,
+          -1.121
+        ],
+        "max": [
+          2.306,
+          1.599,
+          1.12
+        ]
+      },
+      "tris": 27071,
+      "verts": 18480,
+      "nodes": [
+        "body",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "rubber_inst",
+        "bmwgran_tourer_wheel_cover",
+        "black",
+        "polished_aluminium_white_inst",
+        "bmwgran_tourer_grill",
+        "glass",
+        "bmwgran_tourer_head_lights",
+        "body_paint",
+        "plasticgrey_inst",
+        "rubber",
+        "bmwgran_tourer_logo",
+        "license_plate"
+      ],
+      "textures": [
+        "T_BMWGranTourer_WheelCover_d 800x534",
+        "T_BMWGranTourer_WheelCover_n 800x534",
+        "T_BMWGranTourer_Grill_n 1024x1024",
+        "T_BMWGranTourer_Grill_orm 1024x1024",
+        "T_BMWGranTourer_HeadLights_d 1024x768",
+        "T_BMWGranTourer_HeadLights_n 1024x768",
+        "T_BMWGranTourer_Logo_d 1000x1000",
+        "T_BMWGranTourer_Logo_n 1000x1000",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 3514464,
+      "sha256": "6733c345fef27f85888667c8cd6dac9f1ff037cbf40da0367710c22125a6abd7"
+    },
+    "vehicle_van_mercedes_sprinter": {
+      "file": "models/vehicle_van_mercedes_sprinter.glb",
+      "family": "van",
+      "display": "Mercedes Sprinter",
+      "carla_blueprint": "vehicle.mercedes.sprinter",
+      "tintable": true,
+      "dims_lwh_m": [
+        5.92,
+        2.32,
+        2.73
+      ],
+      "bbox": {
+        "min": [
+          -2.968,
+          0.006,
+          -1.157
+        ],
+        "max": [
+          2.947,
+          2.732,
+          1.162
+        ]
+      },
+      "tris": 107176,
+      "verts": 82493,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "mercedes_sprinter_details03",
+        "mercedes_sprinter_details01",
+        "body_paint",
+        "mercedes_sprinter_details02",
+        "glass",
+        "glass",
+        "glass",
+        "glass",
+        "glass",
+        "mercedes_sprinter_emissive"
+      ],
+      "textures": [
+        "T_MercedesSprinter_Details03_d 1024x1024",
+        "T_MercedesSprinter_Details03_n 1024x1024",
+        "T_MercedesSprinter_Details03_orm 1024x1024",
+        "T_MercedesSprinter_Details01_d 1024x1024",
+        "T_MercedesSprinter_Details01_n 1024x1024",
+        "T_MercedesSprinter_Details01_orm 1024x1024",
+        "T_MercedesSprinter_Details02_d 1024x1024",
+        "T_MercedesSprinter_Details02_n 1024x1024",
+        "T_MercedesSprinter_Details02_orm 1024x1024",
+        "T_Blinker_d 32x64"
+      ],
+      "size_bytes": 10989900,
+      "sha256": "c8f91488d67a51e8fa298df4598558f84315d071e471e213fe5d7a137034f908"
+    },
+    "vehicle_van_volkswagen_t2": {
+      "file": "models/vehicle_van_volkswagen_t2.glb",
+      "family": "van",
+      "display": "Volkswagen T2",
+      "carla_blueprint": "vehicle.volkswagen.t2_2021",
+      "tintable": false,
+      "dims_lwh_m": [
+        4.44,
+        1.88,
+        1.99
+      ],
+      "bbox": {
+        "min": [
+          -2.104,
+          -0.002,
+          -0.939
+        ],
+        "max": [
+          2.338,
+          1.985,
+          0.939
+        ]
+      },
+      "tris": 91371,
+      "verts": 55943,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "body_livery",
+        "volkswagen_t2_interior_parked",
+        "glass"
+      ],
+      "textures": [
+        "T_VolkswagenT2_Bodywork_d 2048x2048",
+        "T_VolkswagenT2_Interior_Parked_d 1024x1024",
+        "T_VolkswagenT2_Interior_Parked_n 1024x1024",
+        "T_VolkswagenT2_Interior_Parked_orm 1024x1024"
+      ],
+      "size_bytes": 8489168,
+      "sha256": "08bd573638278860fd8507686d0beab781507dc3c24b404dd0003e6536719100"
+    },
+    "vehicle_bus_mitsubishi_fusorosa": {
+      "file": "models/vehicle_bus_mitsubishi_fusorosa.glb",
+      "family": "bus",
+      "display": "Mitsubishi Fuso Rosa",
+      "carla_blueprint": "vehicle.mitsubishi.fusorosa",
+      "tintable": false,
+      "dims_lwh_m": [
+        10.17,
+        3.93,
+        4.24
+      ],
+      "bbox": {
+        "min": [
+          -5.581,
+          0.011,
+          -2.055
+        ],
+        "max": [
+          4.593,
+          4.252,
+          1.87
+        ]
+      },
+      "tris": 143937,
+      "verts": 136465,
+      "nodes": [
+        "body",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "mitsubishi_fuso_rosa_interior",
+        "body_livery",
+        "mitsubishi_fuso_rosa_details",
+        "mitsubishi_fuso_rosa_glass_emissive_ext",
+        "glass",
+        "mitsubishi_fuso_rosa_glass_emissive_int",
+        "glass",
+        "mitsubishi_fuso_rosa_emissive"
+      ],
+      "textures": [
+        "T_MitsubishiFusoRosa_Interior_d 1024x1024",
+        "T_MitsubishiFusoRosa_Interior_n 1024x1024",
+        "T_MitsubishiFusoRosa_Interior_orm 1024x1024",
+        "T_MitsubishiFusoRosa_Bodywork_05_d 2048x2048",
+        "T_MitsubishiFusoRosa_Details_d 1024x1024",
+        "T_MitsubishiFusoRosa_Details_n 1024x1024",
+        "T_MitsubishiFusoRosa_Details_orm 1024x1024",
+        "T_Blinker_d 32x64"
+      ],
+      "size_bytes": 13702056,
+      "sha256": "4c2061dac9d7351796029f6e8b79b1cedbaec43de660a9c6d29d510f88300048"
+    },
+    "vehicle_truck_carlacola": {
+      "file": "models/vehicle_truck_carlacola.glb",
+      "family": "truck",
+      "display": "CarlaCola box truck",
+      "carla_blueprint": "vehicle.carlamotors.carlacola",
+      "tintable": true,
+      "dims_lwh_m": [
+        8.0,
+        3.38,
+        4.05
+      ],
+      "bbox": {
+        "min": [
+          -4.025,
+          0.0,
+          -1.69
+        ],
+        "max": [
+          3.978,
+          4.055,
+          1.69
+        ]
+      },
+      "tris": 172618,
+      "verts": 139352,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "carla_cola_details01",
+        "carla_cola_details03",
+        "body_paint",
+        "carla_cola_details02",
+        "carla_cola_details04",
+        "european_hgv_details01",
+        "european_hgv_details03",
+        "european_hgv_emissive",
+        "glass",
+        "european_hgv_glass_emissive_ext",
+        "european_hgv_glass_emissive_int",
+        "glass"
+      ],
+      "textures": [
+        "T_ActrosFiretruck_Details01_d 1024x1024",
+        "T_ActrosFiretruck_Details01_n 1024x1024",
+        "T_ActrosFiretruck_Details01_orm 1024x1024",
+        "T_EuropeanHGV_Details03_d 1024x1024",
+        "T_EuropeanHGV_Details03_n 1024x1024",
+        "T_EuropeanHGV_Details03_orm 1024x1024",
+        "T_EuropeanHGV_Details02_d 1024x1024",
+        "T_EuropeanHGV_Details02_n 1024x1024",
+        "T_EuropeanHGV_Details02_orm 1024x1024",
+        "T_CarlaCola_Details04_d 1024x1024",
+        "T_CarlaCola_Details04_n 1024x1024",
+        "T_CarlaCola_Details04_orm 1024x1024",
+        "T_Blinker_d 32x64"
+      ],
+      "size_bytes": 16737196,
+      "sha256": "ac1003559a0e299acd8242b50b98e91f9851ad3724d11977ec64b23d3f2a87f7"
+    },
+    "vehicle_truck_european_hgv": {
+      "file": "models/vehicle_truck_european_hgv.glb",
+      "family": "truck",
+      "display": "European HGV tractor",
+      "carla_blueprint": "vehicle.carlamotors.european_hgv",
+      "tintable": true,
+      "dims_lwh_m": [
+        7.92,
+        3.38,
+        3.78
+      ],
+      "bbox": {
+        "min": [
+          -3.945,
+          0.0,
+          -1.692
+        ],
+        "max": [
+          3.979,
+          3.783,
+          1.69
+        ]
+      },
+      "tris": 103290,
+      "verts": 93864,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "european_hgv_details03",
+        "european_hgv_details02",
+        "body_paint",
+        "european_hgv_details01",
+        "none"
+      ],
+      "textures": [
+        "T_EuropeanHGV_Details03_d 1024x1024",
+        "T_EuropeanHGV_Details03_n 1024x1024",
+        "T_EuropeanHGV_Details03_orm 1024x1024",
+        "T_EuropeanHGV_Details02_d 1024x1024",
+        "T_EuropeanHGV_Details02_n 1024x1024",
+        "T_EuropeanHGV_Details02_orm 1024x1024",
+        "T_ActrosFiretruck_Details01_d 1024x1024",
+        "T_ActrosFiretruck_Details01_n 1024x1024",
+        "T_ActrosFiretruck_Details01_orm 1024x1024"
+      ],
+      "size_bytes": 12719324,
+      "sha256": "d2f607611a81b81082142e515a1787158f227146790285002e9f3462941ab06f"
+    },
+    "vehicle_pickup_tesla_cybertruck": {
+      "file": "models/vehicle_pickup_tesla_cybertruck.glb",
+      "family": "pickup",
+      "display": "Tesla Cybertruck",
+      "carla_blueprint": "vehicle.tesla.cybertruck",
+      "tintable": false,
+      "dims_lwh_m": [
+        6.27,
+        2.39,
+        2.1
+      ],
+      "bbox": {
+        "min": [
+          -3.137,
+          -0.0,
+          -1.195
+        ],
+        "max": [
+          3.137,
+          2.098,
+          1.195
+        ]
+      },
+      "tris": 30174,
+      "verts": 34003,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "glass",
+        "interior_cybertruck",
+        "body_livery",
+        "vehicle_lights_cybertruck"
+      ],
+      "textures": [
+        "M_Cybertruck_interior_d 1024x1024",
+        "M_Cybertruck_interior_n 1024x1024",
+        "M_Cybertruck_interior_ormh 1024x1024",
+        "M_CyberTruck_bodywork_d 2048x2048",
+        "M_Cybertruck_bodywork_n 1024x1024",
+        "M_Cybertruck_bodywork_ormh 1024x1024"
+      ],
+      "size_bytes": 7306404,
+      "sha256": "de8452597568d1579e8b981d6be0ac8d731e5cc38ea83e7e346497462c5f999e"
+    },
+    "vehicle_motorcycle_harley": {
+      "file": "models/vehicle_motorcycle_harley.glb",
+      "family": "motorcycle",
+      "display": "Harley-Davidson Low Rider",
+      "carla_blueprint": "vehicle.harley-davidson.low_rider",
+      "tintable": true,
+      "dims_lwh_m": [
+        2.36,
+        0.76,
+        1.43
+      ],
+      "bbox": {
+        "min": [
+          -1.187,
+          0.022,
+          -0.38
+        ],
+        "max": [
+          1.169,
+          1.451,
+          0.384
+        ]
+      },
+      "tris": 24298,
+      "verts": 20807,
+      "nodes": [
+        "body",
+        "handlebar",
+        "wheel_f",
+        "wheel_r"
+      ],
+      "materials": [
+        "harley_wheels",
+        "harley_body",
+        "license_plate",
+        "glass",
+        "harley_lamp_support",
+        "harley_front_lamp",
+        "body_paint"
+      ],
+      "textures": [
+        "T_Harley_Wheels_d 1024x1024",
+        "T_Harley_Wheels_n 1024x1024",
+        "T_Harley_Wheels_orm 1024x1024",
+        "T_Harley_Body_d 1024x1024",
+        "T_Harley_Body_n 1024x1024",
+        "T_Harley_Body_orm 1024x1024",
+        "T_LicensePlate_d 512x512",
+        "T_Harley_LampSupport_d 1024x1024",
+        "T_Harley_LampSupport_n 1024x1024",
+        "T_Harley_LampSupport_orm 1024x1024"
+      ],
+      "size_bytes": 9186052,
+      "sha256": "3a62ab86449571a6399673657db2a5679729b0b253b2e59636c17b5ee20b3eb9"
+    },
+    "vehicle_motorcycle_kawasaki_ninja": {
+      "file": "models/vehicle_motorcycle_kawasaki_ninja.glb",
+      "family": "motorcycle",
+      "display": "Kawasaki Ninja",
+      "carla_blueprint": "vehicle.kawasaki.ninja",
+      "tintable": false,
+      "dims_lwh_m": [
+        2.03,
+        0.8,
+        1.15
+      ],
+      "bbox": {
+        "min": [
+          -1.036,
+          0.013,
+          -0.401
+        ],
+        "max": [
+          0.997,
+          1.158,
+          0.402
+        ]
+      },
+      "tris": 12704,
+      "verts": 12259,
+      "nodes": [
+        "body",
+        "handlebar",
+        "wheel_f",
+        "wheel_r"
+      ],
+      "materials": [
+        "kawasaki_ninja_wheels",
+        "kawasaki_ninja_metal",
+        "license_plate",
+        "body_livery",
+        "kawasaki_ninja_plastic"
+      ],
+      "textures": [
+        "T_KawasakiNinja_Wheels_d 1024x1024",
+        "T_KawasakiNinja_Wheels_n 1024x1024",
+        "T_KawasakiNinja_Wheels_orm 1024x1024",
+        "T_KawasakiNinja_Metal_d 1024x1024",
+        "T_KawasakiNinja_Metal_n 1024x1024",
+        "T_KawasakiNinja_Metal_orm 1024x1024",
+        "T_LicensePlate_d 512x512",
+        "T_KawasakiNinja_Plastic_d 1024x1024",
+        "T_KawasakiNinja_Plastic_n 1024x1024",
+        "T_KawasakiNinja_Plastic_orm 1024x1024"
+      ],
+      "size_bytes": 5916364,
+      "sha256": "85b6d787effb742b09ccf8af5871fce8e397021cc7e0d4b6bffd0fb3c1cfb02d"
+    },
+    "vehicle_scooter_vespa": {
+      "file": "models/vehicle_scooter_vespa.glb",
+      "family": "motorcycle",
+      "display": "Vespa ZX 125",
+      "carla_blueprint": "vehicle.vespa.zx125",
+      "tintable": false,
+      "dims_lwh_m": [
+        1.81,
+        0.86,
+        1.32
+      ],
+      "bbox": {
+        "min": [
+          -0.892,
+          0.003,
+          -0.428
+        ],
+        "max": [
+          0.913,
+          1.326,
+          0.428
+        ]
+      },
+      "tris": 7948,
+      "verts": 6847,
+      "nodes": [
+        "body",
+        "handlebar",
+        "wheel_f",
+        "wheel_r"
+      ],
+      "materials": [
+        "vespa_metal",
+        "vespa_lights_02",
+        "body_livery",
+        "vespa_lights_01",
+        "vespa_seat",
+        "vespa_wheels"
+      ],
+      "textures": [
+        "T_Vespa_Metal_d 1024x1024",
+        "T_Vespa_Metal_n 1024x1024",
+        "T_Vespa_Metal_orm 1024x1024",
+        "T_Vespa_Lights_02_d 1024x1024",
+        "T_Vespa_Lights_02_n 1024x1024",
+        "T_Vespa_Lights_02_orm 1024x1024",
+        "T_Vespa_Lights_01_d 1024x1024",
+        "T_Vespa_Lights_01_n 1024x1024",
+        "T_Vespa_Lights_01_orm 1024x1024",
+        "T_Vespa_Seat_d 1024x1024",
+        "T_Vespa_Seat_n 1024x1024",
+        "T_Vespa_Seat_orm 1024x1024",
+        "T_Vespa_Wheels_d 1024x1024",
+        "T_Vespa_Wheels_n 1024x1024",
+        "T_Vespa_Wheels_orm 1024x1024"
+      ],
+      "size_bytes": 6654312,
+      "sha256": "ec5ac959bb9244ba712a78f0ddaef74bfb5fb8d618136a758ae0583dd3608dc1"
+    }
+  }
+}

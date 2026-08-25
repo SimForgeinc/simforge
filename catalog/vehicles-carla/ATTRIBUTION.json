@@ -1,0 +1,172 @@
+{
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "source": "CARLA Simulator content (carla-simulator, CVC/UAB Barcelona), cooked UE assets from the CARLA 0.10.0 UE5 distribution",
+  "source_url": "https://github.com/carla-simulator/carla",
+  "notice": "CARLA-specific assets are distributed under CC BY 4.0 per the CARLA project README. Meshes and textures were extracted from cooked Unreal Engine packages with CUE4Parse, door/glass/emissive blueprint components merged, decimated with meshoptimizer, and re-authored as glTF 2.0 binaries. No RoadRunner Asset Library content is included.",
+  "assets": {
+    "vehicle_sedan_lincoln_mkz": {
+      "title": "Lincoln MKZ 2017",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_LincolnMKZ"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Lincoln MKZ 2017\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_sedan_dodge_charger": {
+      "title": "Dodge Charger 2020",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_DodgeCharger"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Dodge Charger 2020\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_police_dodge_charger": {
+      "title": "Dodge Charger Police 2020",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_DodgeChargerCop"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Dodge Charger Police 2020\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_sedan_ford_crown": {
+      "title": "Ford Crown (taxi)",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_FordCrown2024"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Ford Crown (taxi)\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_sedan_tesla_model3": {
+      "title": "Tesla Model 3",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_Tesla"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Tesla Model 3\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_suv_nissan_patrol": {
+      "title": "Nissan Patrol 2021",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_NissanPatrol"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Nissan Patrol 2021\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_hatchback_mini_cooper": {
+      "title": "Mini Cooper S 2021",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_MiniCooper"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Mini Cooper S 2021\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_coupe_ford_mustang": {
+      "title": "Ford Mustang",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_Mustang"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Ford Mustang\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_minivan_bmw_gran_tourer": {
+      "title": "BMW Gran Tourer",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_BMWGranTourer"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"BMW Gran Tourer\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_van_mercedes_sprinter": {
+      "title": "Mercedes Sprinter",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_MercedesSprinter"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Mercedes Sprinter\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_van_volkswagen_t2": {
+      "title": "Volkswagen T2",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_VolkswagenT2_Parked",
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_VolkswagenT2_Glass_Parked"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Volkswagen T2\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_bus_mitsubishi_fusorosa": {
+      "title": "Mitsubishi Fuso Rosa",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_MitsubishiFusoRosa"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Mitsubishi Fuso Rosa\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_truck_carlacola": {
+      "title": "CarlaCola box truck",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_CarlaCola"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"CarlaCola box truck\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_truck_european_hgv": {
+      "title": "European HGV tractor",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_EuropeanHGV_Parked"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"European HGV tractor\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_pickup_tesla_cybertruck": {
+      "title": "Tesla Cybertruck",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_Cybertruck"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Tesla Cybertruck\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_motorcycle_harley": {
+      "title": "Harley-Davidson Low Rider",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_Harley"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Harley-Davidson Low Rider\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_motorcycle_kawasaki_ninja": {
+      "title": "Kawasaki Ninja",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_KawasakiNinja"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Kawasaki Ninja\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_scooter_vespa": {
+      "title": "Vespa ZX 125",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_Vespa"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Vespa ZX 125\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    }
+  }
+}
