@@ -21,7 +21,6 @@ async function loadNodeZlib() {
   return import(/* webpackIgnore: true */ specifier);
 }
 
-
 /** True when the buffer starts with the gzip magic number. */
 export function isGzipped(bytes: Uint8Array): boolean {
   return bytes.length >= 2 && bytes[0] === GZIP_MAGIC_0 && bytes[1] === GZIP_MAGIC_1;
