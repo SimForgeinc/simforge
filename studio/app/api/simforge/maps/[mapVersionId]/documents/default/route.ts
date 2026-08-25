@@ -14,7 +14,10 @@ import {
   requireScenarioMutationOrigin,
   SCENARIO_PRIVATE_CACHE_HEADERS,
 } from "@/app/lib/scenario/http";
-import { withSceneMinutes } from "@/app/dashboard/scenario/editor/scene-time";
+import {
+  FRESH_SCENARIO_MINUTES,
+  withSceneMinutes,
+} from "@/app/dashboard/scenario/editor/scene-time";
 
 const EDITOR_APP_VERSION = "0.1.0-editor";
 
@@ -50,14 +53,10 @@ export async function POST(
   // creation paths agree byte for byte. The schema's warmup default is 5 seconds of settling before
   // recording; a 20-second scenario should be 20 seconds.
   template.setClip(undefined, 0);
-  const localMinutesHeader = request.headers.get("x-simforge-local-minutes");
-  const localMinutes = localMinutesHeader === null ? null : Number(localMinutesHeader);
-  const content = localMinutes !== null && Number.isFinite(localMinutes)
-    ? {
-        ...template.data,
-        environment: withSceneMinutes(template.data.environment, localMinutes),
-      }
-    : template.data;
+  const content = {
+    ...template.data,
+    environment: withSceneMinutes(template.data.environment, FRESH_SCENARIO_MINUTES),
+  };
   const document = await createScenarioDocument(auth.context, {
     title: template.data.meta.name,
     schemaVersion: SCENARIO_SCHEMA_VERSION,

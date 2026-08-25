@@ -3,6 +3,8 @@ import type { Environment, TimeOfDay } from "@simforge/scenario";
 export const SCENE_TIME_EXTENSION_KEY = "org.simforge.sceneTime.v1" as const;
 
 export const MINUTES_PER_DAY = 24 * 60;
+/** Fresh scenarios always open at a deterministic dawn baseline. */
+export const FRESH_SCENARIO_MINUTES = 6 * 60 + 30;
 
 const PRESET_MINUTES: Readonly<Record<TimeOfDay, number>> = {
   dawn: 6 * 60,
