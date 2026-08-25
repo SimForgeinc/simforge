@@ -76,7 +76,7 @@ class World:
         self.debug = DebugHelper()
         #: Weather: authored conditions + any set_weather overrides.
         self._weather = from_operational_conditions(self.scenario.operational_conditions)
-        self._weather_patch: dict | None = None
+        self._truth_frame: dict | None = None
 
     # ------------------------------------------------------------- settings
 
@@ -185,13 +185,50 @@ class World:
     def get_actor(self, actor_id: int) -> Actor | None:
         return self._actors.get(actor_id)
 
+    def _truth_records(self) -> list[dict]:
+        """Ground-truth scene-state.v1 records when a subscription exists."""
+        feed = getattr(self._client, "truth_stream", None)
+        if feed is None:
+            return []
+        try:
+            frame = feed.pump(timeout_s=0.02)
+        except Exception:
+            return []
+        if frame is not None:
+            self._truth_frame = frame
+        return list((self._truth_frame or {}).get("frame", {}).get("actors", []))
+
+    def get_signal_snapshots(self) -> list[dict]:
+        """V1 signalSnapshotAt(t) array from the latest truth-stream frame."""
+        return list((self._truth_frame or {}).get("signals", []))
+
     def actor_state(self, actor_id) -> dict | None:
-        """Engine-derived state for one bound actor at the current tick."""
+        """Engine state for one bound actor at the current tick.
+
+        Ground truth first: with a truth-stream subscription the V1
+        scene-state.v1 records replace perception-derived non-ego poses
+        (record position[0]/position[2] are carla x/y; heading identical).
+        Perception-derived fallback otherwise.
+        """
         step = self._last_step
         if step is None:
             return None
         role = next((a for a in self._actors.values() if a.id == actor_id), None)
         key = role.role_name if role else str(actor_id)
+        for record in self._truth_records():
+            if record.get("id") != key or record.get("kind") == "despawn":
+                continue
+            pos, vel = record["position"], record.get("velocity") or (0, 0, 0)
+            accel = record.get("acceleration") or (0, 0, 0)
+            return {
+                "transform": Transform(
+                    location=Location(x=float(pos[0]), y=float(pos[2]), z=0.0),
+                    rotation=Rotation(yaw=((math.degrees(float(record.get("yawRad", 0.0)))
+                                            + 180.0) % 360.0) - 180.0),
+                ),
+                "accel_mps2": math.copysign(math.hypot(float(accel[0]), float(accel[2])),
+                                            float(accel[0]) or 1.0),
+            }
         if key == self.ego_id and step.get("state_vector") is not None:
             sv = step["state_vector"]
             return {

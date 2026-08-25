@@ -94,7 +94,7 @@ class Client:
     def __init__(self, host: str = "localhost", port: int = 2000, *,
                  episodes_spec: str | None = None, session: int = 0,
                  clip_seconds: float | None = None, max_decisions: int | None = None,
-                 worker_threads: int = 0) -> None:
+                 worker_threads: int = 0, truth_stream: bool | None = None) -> None:
         self._host, self._port = host, port
         self._session = session
         self._episodes_spec = episodes_spec or os.environ.get("UNISCENARIO_EPISODES")
@@ -107,16 +107,48 @@ class Client:
         self._dev_assets_root = os.environ.get("UNISCENARIO_DEV_ASSETS")
         #: One TrafficManager handle per client (carla semantics).
         self._traffic_manager = None
+        #: Optional V1 truth-stream subscription (env UNISCENARIO_TRUTH_STREAM=1):
+        # ground-truth per-engine-tick actor records + signal snapshots.
+        self._truth_stream_enabled = bool(truth_stream) if truth_stream is not None \
+            else os.environ.get("UNISCENARIO_TRUTH_STREAM", "").lower() in ("1", "true", "yes")
+        self._truth_stream = None
+
+    @property
+    def truth_stream(self):
+        """The V1 truth-stream subscription, or None when not enabled.
+
+        In this mode the facade's own connection IS the subscribed socket
+        (one env-server process): every ``world.tick()`` steps the same
+        simulation whose ground-truth frames arrive on the side channel.
+        """
+        self.connection
+        return self._truth_stream
+
+    def close(self) -> None:
+        if self._truth_stream is not None:
+            try:
+                self._truth_stream.close()
+            except Exception:  # pragma: no cover - best-effort goodbye
+                pass
+            self._truth_stream = None
+        if self._connection is not None:
+            self._connection.close()
 
     # -- lifecycle ----------------------------------------------------------
 
     @property
-    def connection(self) -> EnvServerClient:
+    def connection(self):
         if self._connection is None:
-            self._connection = EnvServerClient(
-                self._episodes_spec, clip_seconds=self._clip_seconds,
-                max_decisions=self._max_decisions,
-            )
+            if self._truth_stream_enabled:
+                from .truth import open_connection
+
+                self._connection, self._truth_stream = open_connection(
+                    self._episodes_spec, session=self._session)
+            else:
+                self._connection = EnvServerClient(
+                    self._episodes_spec, clip_seconds=self._clip_seconds,
+                    max_decisions=self._max_decisions,
+                )
             hello = self._connection.request({"op": "hello"})
             if hello.get("proto") != ENV_SERVER_PROTOCOL_VERSION:
                 raise RuntimeError(
