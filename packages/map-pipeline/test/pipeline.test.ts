@@ -90,6 +90,14 @@ describe('FBX tiling and closure assembly', () => {
       expect(artifact.registryPath).toBe(`derived/${artifact.kind}-${artifact.fingerprint}.json`);
       expect(artifact.closure.metadata).toEqual({ viewerOnly: true });
     }
+    const nativeStage = result.stages.nativeCorpus;
+    if (!nativeStage) throw new Error('native corpus stage was not built');
+    for (const memberPath of Object.keys(nativeStage.closure.members)) {
+      if (!memberPath.endsWith('.glb')) continue;
+      const bytes = await readFile(path.join(nativeStage.outputDir, memberPath));
+      expect(bytes.includes(Buffer.from('EXT_texture_webp'))).toBe(false);
+      expect(bytes.includes(Buffer.from('EXT_meshopt_compression'))).toBe(false);
+    }
     await materializeRegistryPayload(result, payloadDir);
     for (const artifact of [result.canonical, ...result.derived]) {
       await expect(stat(path.join(payloadDir, artifact.registryPath))).resolves.toBeDefined();

@@ -24,6 +24,7 @@
     "@gltf-transform/extensions": "4.4.2",
     "@gltf-transform/functions": "4.4.2",
     "@simforge/maps": "workspace:*",
+    "@simforge/map-registry": "workspace:*",
     "meshoptimizer": "1.2.0",
     "sharp": "0.34.5",
     "zod": "^4.4.3"

@@ -75,8 +75,7 @@ function derivedClosureKey(name: string, version: MapVersion, closure: MapClosur
   if (closure.kind === 'canonical' || closure.toolFingerprint === undefined) {
     throw new Error('derived closure requires a derived kind and tool fingerprint');
   }
-  const fingerprint = sha256(closure.toolFingerprint).slice(0, 24);
-  return `maps/${name}/${version}/derived/${closure.kind}-${fingerprint}.json`;
+  return `maps/${name}/${version}/derived/${closure.kind}-${closure.toolFingerprint}.json`;
 }
 
 export interface PublishVersionInput {
@@ -291,8 +290,7 @@ export async function loadDerivedClosure(
   kind: 'browser-optimized' | 'ktx2' | 'native-corpus',
   toolFingerprint: string,
 ): Promise<MapClosure> {
-  const fingerprint = sha256(toolFingerprint).slice(0, 24);
-  const key = `maps/${name}/${version}/derived/${kind}-${fingerprint}.json`;
+  const key = `maps/${name}/${version}/derived/${kind}-${toolFingerprint}.json`;
   const closure = parseJson<MapClosure>(await backend.get(key), key);
   assertClosure(closure);
   return closure;

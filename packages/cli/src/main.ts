@@ -54,7 +54,7 @@ import { corpusBuildCommand, corpusPrewarm } from './commands/corpus.js';
 const COMMANDS = [
   { name: 'maps list', summary: 'list immutable maps and versions in the configured registry' },
   { name: 'maps pull', summary: 'verify and materialize a registry map into local engine cache layouts' },
-  { name: 'maps ingest', summary: 'publish a pre-built closure directory and optional derived directories' },
+  { name: 'maps ingest', summary: 'build and publish FBX/GLB sources, or publish a pre-built closure directory' },
   { name: 'maps promote', summary: 'copy one immutable version between registries' },
   { name: 'maps sources push', summary: 'resumably multipart-upload a raw source archive' },
   { name: 'locations find', summary: 'structured location query: --map --type --facts --near …' },
@@ -277,7 +277,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           throw new CliError('bad_value', '--version must be v<N>', { path: '--version' });
         }
         return registryMapsIngest({
-          directory: positional(args, 0, 'closure-directory'),
+          directory: positional(args, 0, 'source-directory'),
           name: requireString(args, 'name'),
           registry: optionalString(args, 'registry'),
           version: version as `v${number}` | undefined,

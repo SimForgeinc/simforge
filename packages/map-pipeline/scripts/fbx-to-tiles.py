@@ -1,8 +1,10 @@
 import argparse
+import hashlib
 import json
 import math
 import os
 import re
+import shutil
 import sys
 
 import bpy
@@ -29,11 +31,13 @@ def reset_scene():
 def source_files(source):
     if os.path.isfile(source):
         return [source]
+    directory_name = os.path.basename(os.path.abspath(source))
+    preferred = os.path.join(source, f'{directory_name}.fbx')
+    if os.path.isfile(preferred):
+        return [preferred]
     accepted = ('.fbx', '.glb', '.gltf')
-    return [os.path.join(root, name)
-            for root, _, names in os.walk(source)
-            for name in sorted(names)
-            if name.lower().endswith(accepted)]
+    return [os.path.join(source, name) for name in sorted(os.listdir(source))
+            if name.lower().endswith(accepted) and os.path.isfile(os.path.join(source, name))]
 
 
 def import_source(filename):
@@ -42,6 +46,32 @@ def import_source(filename):
         bpy.ops.import_scene.fbx(filepath=filename, use_anim=False, automatic_bone_orientation=False)
     else:
         bpy.ops.import_scene.gltf(filepath=filename, import_pack_images=True)
+
+
+def normalize_source_images(output):
+    converted_dir = os.path.join(output, '.converted-textures')
+    replacements = {}
+    for image in sorted(list(bpy.data.images), key=lambda value: value.name):
+        source_path = bpy.path.abspath(image.filepath) if image.filepath else ''
+        if os.path.splitext(source_path)[1].lower() not in ('.exr', '.tga'):
+            continue
+        if os.path.isfile(source_path):
+            with open(source_path, 'rb') as source_handle:
+                digest_source = source_handle.read()
+        else:
+            digest_source = image.name.encode('utf8')
+        digest = hashlib.sha256(digest_source).hexdigest()
+        os.makedirs(converted_dir, exist_ok=True)
+        target = os.path.join(converted_dir, f'{digest}.png')
+        image.save_render(target, scene=bpy.context.scene)
+        replacements[image] = bpy.data.images.load(target, check_existing=False)
+    for material in bpy.data.materials:
+        if not material.use_nodes or material.node_tree is None:
+            continue
+        for node in material.node_tree.nodes:
+            if node.type == 'TEX_IMAGE' and node.image in replacements:
+                node.image = replacements[node.image]
+    return converted_dir
 
 
 def world_bounds(obj):
@@ -61,9 +91,10 @@ def classify(obj):
 
 def export_objects(objects, filename):
     bpy.ops.object.select_all(action='DESELECT')
-    for obj in sorted(objects, key=lambda value: value.name):
+    ordered = sorted(objects, key=lambda value: value.name)
+    for obj in ordered:
         obj.select_set(True)
-    bpy.context.view_layer.objects.active = sorted(objects, key=lambda value: value.name)[0]
+    bpy.context.view_layer.objects.active = ordered[0]
     bpy.ops.export_scene.gltf(
         filepath=filename,
         export_format='GLB',
@@ -88,6 +119,37 @@ def aggregate_bounds(objects):
     }
 
 
+def export_vegetation_prototypes(source, output):
+    if not os.path.isdir(source):
+        return []
+    prototype_dir = os.path.join(source, 'vegetation_prototypes')
+    if not os.path.isdir(prototype_dir):
+        return []
+    rows = []
+    destination = os.path.join(output, 'tiles', 'prototypes')
+    os.makedirs(destination, exist_ok=True)
+    for filename in sorted(os.listdir(prototype_dir)):
+        if not filename.lower().endswith('.fbx'):
+            continue
+        source_file = os.path.join(prototype_dir, filename)
+        if not os.path.isfile(source_file):
+            continue
+        reset_scene()
+        import_source(source_file)
+        objects = sorted([obj for obj in bpy.context.scene.objects if obj.type == 'MESH'], key=lambda value: value.name)
+        if not objects:
+            continue
+        for obj in objects:
+            obj.data.calc_loop_triangles()
+        normalize_source_images(output)
+        stem = re.sub(r'[^a-zA-Z0-9_.-]+', '-', os.path.splitext(filename)[0]).strip('-')
+        relative_file = f'tiles/prototypes/{stem}.glb'
+        export_objects(objects, os.path.join(output, relative_file))
+        rows.append({'id': stem, 'file': relative_file, 'bounds': aggregate_bounds(objects),
+                     'triangles': triangle_count(objects)})
+    return rows
+
+
 def triangle_count(objects):
     return sum(len(obj.data.loop_triangles) if obj.data.loop_triangles else len(obj.data.polygons) * 2
                for obj in objects if obj.type == 'MESH')
@@ -98,7 +160,7 @@ def main():
     reset_scene()
     sources = source_files(args.source)
     if not sources:
-        raise RuntimeError('source contains no FBX, GLB, or glTF files')
+        raise RuntimeError('source contains no top-level FBX, GLB, or glTF files')
     for filename in sorted(sources):
         import_source(filename)
 
@@ -108,6 +170,7 @@ def main():
     for obj in objects:
         obj.data.calc_loop_triangles()
 
+    converted_dir = normalize_source_images(args.output)
     categories = {key: [] for key in ('road', 'static', 'vegetation')}
     for obj in objects:
         categories[classify(obj)].append(obj)
@@ -123,8 +186,7 @@ def main():
 
     rows = []
     export_objects(categories['road'], os.path.join(args.output, 'tiles', 'road.glb'))
-    road_bounds = aggregate_bounds(categories['road'])
-    rows.append({'kind': 'road', 'file': 'tiles/road.glb', 'bounds': road_bounds,
+    rows.append({'kind': 'road', 'file': 'tiles/road.glb', 'bounds': aggregate_bounds(categories['road']),
                  'triangles': triangle_count(categories['road'])})
 
     for kind in ('static', 'vegetation'):
@@ -143,17 +205,19 @@ def main():
             rows.append({'kind': kind, 'file': f'tiles/{name}', 'gridX': grid_x, 'gridZ': grid_z,
                          'bounds': aggregate_bounds(members), 'triangles': triangle_count(members)})
 
+    prototypes = export_vegetation_prototypes(args.source, args.output)
     inventory = {
         'schema': 'simforge.fbx-tiles.v1',
         'cellSize': args.cell_size,
         'origin': [origin_x, scene_bounds['min'][1], origin_z],
         'bounds': scene_bounds,
         'objects': rows,
+        'vegetationPrototypes': prototypes,
     }
     with open(os.path.join(args.output, 'inventory.json'), 'w', encoding='utf8', newline='\n') as handle:
         json.dump(inventory, handle, sort_keys=True, separators=(',', ':'))
         handle.write('\n')
-
+    shutil.rmtree(converted_dir, ignore_errors=True)
 
 if __name__ == '__main__':
     main()

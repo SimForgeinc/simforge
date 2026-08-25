@@ -1,38 +1,11 @@
-import { createHash } from 'node:crypto';
+import { canonicalJson, sha256 } from '@simforge/map-registry';
+import type { ClosureMember, MapClosure } from '@simforge/map-registry';
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-export type ClosureKind = 'canonical' | 'browser-optimized' | 'ktx2' | 'native-corpus';
-
-export interface ClosureMember {
-  sha256: string;
-  bytes: number;
-}
-
-export interface MapClosure {
-  schema: 'map-closure.v1';
-  members: Record<string, ClosureMember>;
-  kind: ClosureKind;
-  toolFingerprint?: string;
-  metadata?: { viewerOnly?: boolean };
-}
-
-export function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  if (value !== null && typeof value === 'object') {
-    const record = value as Record<string, unknown>;
-    return `{${Object.keys(record)
-      .filter((key) => record[key] !== undefined)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
-      .join(',')}}`;
-  }
-  return JSON.stringify(value) ?? 'null';
-}
-
-export function sha256(bytes: Uint8Array | string): string {
-  return createHash('sha256').update(bytes).digest('hex');
-}
+export type ClosureKind = MapClosure['kind'];
+export type { ClosureMember, MapClosure };
+export { canonicalJson, sha256 };
 
 export function closureBytes(closure: MapClosure): Buffer {
   return Buffer.from(canonicalJson(closure));

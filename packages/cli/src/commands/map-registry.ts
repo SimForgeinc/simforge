@@ -1,3 +1,7 @@
+import { access, mkdtemp, rm } from 'node:fs/promises';
+import { homedir, tmpdir } from 'node:os';
+import { runMapPipeline } from '@simforge/map-pipeline';
+import type { RegistryClosureArtifact } from '@simforge/map-pipeline';
 import {
   closureFromDirectory,
   createRegistryBackend,
@@ -14,7 +18,6 @@ import {
   type MapVersion,
   type RegistryBackend,
 } from '@simforge/map-registry';
-import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { EXIT } from '../errors.js';
 import { emit, emitLines } from '../output.js';
@@ -77,26 +80,63 @@ async function optionalDerived(
   return closureFromDirectory(resolve(directory), kind, fingerprint);
 }
 
+function pipelineArtifactInput(artifact: RegistryClosureArtifact): DerivedClosureInput {
+  const files = Object.fromEntries(
+    Object.keys(artifact.closure.members).map((memberPath) => [
+      memberPath,
+      join(artifact.contentDir, ...memberPath.split('/')),
+    ]),
+  );
+  return { closure: artifact.closure, files };
+}
+
 export async function registryMapsIngest(options: RegistryIngestOptions): Promise<number> {
-  const canonical = await closureFromDirectory(resolve(options.directory));
-  const candidates = await Promise.all([
-    optionalDerived(options.browserDirectory, 'browser-optimized', options.browserFingerprint),
-    optionalDerived(options.ktx2Directory, 'ktx2', options.ktx2Fingerprint),
-    optionalDerived(options.nativeDirectory, 'native-corpus', options.nativeFingerprint),
-  ]);
-  const derived = candidates.filter((value): value is DerivedClosureInput => value !== undefined);
-  const url = registryUrl(options.registry);
-  const published = await publishVersion(writableBackend(url), {
-    name: options.name,
-    version: options.version,
-    closure: canonical.closure,
-    files: canonical.files,
-    derived,
-    summary: options.label === undefined ? {} : { label: options.label },
-    sourceRef: options.sourceRef,
-  });
-  emit({ registry: url, ...published }, options);
-  return EXIT.ok;
+  const directory = resolve(options.directory);
+  let prebuilt = true;
+  try {
+    await access(join(directory, '3d', 'manifest.json'));
+  } catch {
+    prebuilt = false;
+  }
+
+  let pipelineWorkDir: string | undefined;
+  try {
+    let canonical: DerivedClosureInput;
+    let derived: DerivedClosureInput[];
+    if (prebuilt) {
+      canonical = await closureFromDirectory(directory);
+      const candidates = await Promise.all([
+        optionalDerived(options.browserDirectory, 'browser-optimized', options.browserFingerprint),
+        optionalDerived(options.ktx2Directory, 'ktx2', options.ktx2Fingerprint),
+        optionalDerived(options.nativeDirectory, 'native-corpus', options.nativeFingerprint),
+      ]);
+      derived = candidates.filter((value): value is DerivedClosureInput => value !== undefined);
+    } else {
+      pipelineWorkDir = await mkdtemp(join(tmpdir(), 'simforge-map-ingest-'));
+      const pipeline = await runMapPipeline({
+        sourceDir: directory,
+        name: options.name,
+        workDir: pipelineWorkDir,
+      });
+      canonical = pipelineArtifactInput(pipeline.canonical);
+      derived = pipeline.derived.map(pipelineArtifactInput);
+    }
+
+    const url = registryUrl(options.registry);
+    const published = await publishVersion(writableBackend(url), {
+      name: options.name,
+      version: options.version,
+      closure: canonical.closure,
+      files: canonical.files,
+      derived,
+      summary: options.label === undefined ? {} : { label: options.label },
+      sourceRef: options.sourceRef,
+    });
+    emit({ registry: url, ...published }, options);
+    return EXIT.ok;
+  } finally {
+    if (pipelineWorkDir !== undefined) await rm(pipelineWorkDir, { recursive: true, force: true });
+  }
 }
 
 export interface RegistryPullOptions {

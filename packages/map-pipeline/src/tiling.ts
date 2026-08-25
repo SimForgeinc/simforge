@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { hashTree, sha256 } from './closure.js';
 
 const execFileAsync = promisify(execFile);
-export const FBX_TILER_REVISION = 1;
+export const FBX_TILER_REVISION = 2;
 
 export interface GridDefinition {
   originX: number;

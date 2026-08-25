@@ -16,7 +16,7 @@ import type { StageResult } from './tiling.js';
 
 const BROWSER_OPTIMIZER_REVISION = 1;
 const KTX2_REPACK_REVISION = 1;
-const NATIVE_CORPUS_DECODER_REVISION = 2;
+const NATIVE_CORPUS_DECODER_REVISION = 3;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const SHARP_VERSION = '0.34.5';
 const MESHOPTIMIZER_VERSION = '1.2.0';
@@ -108,7 +108,9 @@ export async function nativeCorpus(source: DerivedStageResult, workDir: string):
     const document = await io.readBinary(input);
     await document.transform(dequantize());
     for (const extension of document.getRoot().listExtensionsUsed()) {
-      if (extension.extensionName === 'EXT_meshopt_compression') extension.dispose();
+      if (extension.extensionName === 'EXT_meshopt_compression' || extension.extensionName === 'EXT_texture_webp') {
+        extension.dispose();
+      }
     }
     for (const mesh of document.getRoot().listMeshes()) {
       for (const primitive of mesh.listPrimitives()) {

@@ -72,6 +72,9 @@ importers:
       '@simforge/engine':
         specifier: workspace:*
         version: link:../engine
+      '@simforge/map-pipeline':
+        specifier: workspace:*
+        version: link:../map-pipeline
       '@simforge/map-registry':
         specifier: workspace:*
         version: link:../map-registry
@@ -233,6 +236,9 @@ importers:
       '@gltf-transform/functions':
         specifier: 4.4.2
         version: 4.4.2(@types/node@22.20.1)
+      '@simforge/map-registry':
+        specifier: workspace:*
+        version: link:../map-registry
       '@simforge/maps':
         specifier: workspace:*
         version: link:../maps
@@ -245,11 +251,6 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
-  packages/map-registry:
-    dependencies:
-      '@aws-sdk/client-s3':
-        specifier: ^3.873.0
-        version: 3.1117.0
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -260,6 +261,22 @@ importers:
       tsx:
         specifier: ^4.20.0
         version: 4.23.12
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@1.21.7)(tsx@4.23.12)
+
+  packages/map-registry:
+    dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.873.0
+        version: 3.1117.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.1
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
