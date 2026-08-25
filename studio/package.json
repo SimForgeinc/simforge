@@ -14,7 +14,7 @@
     "worker:hifi-preview": "tsx scripts/hifi-preview-worker.ts",
     "test:models": "tsx --test app/lib/models/__tests__/model-run-store.test.ts worker/__tests__/model-run-loop.test.ts",
     "test:eval": "tsx --test app/lib/evaluation/__tests__/eval-api.test.ts",
-    "test:hifi-preview": "tsx --test app/lib/hifi-preview/__tests__/camera-roundtrip.test.ts worker/__tests__/native-ready-map.test.ts",
+    "test:hifi-preview": "tsx --test app/lib/hifi-preview/__tests__/camera-roundtrip.test.ts worker/__tests__/native-ready-map.test.ts worker/__tests__/payload-framing.test.ts",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

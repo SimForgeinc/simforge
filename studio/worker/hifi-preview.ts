@@ -52,11 +52,26 @@ import {
   resolveNativeReadyMap,
   type NativeReadyMap,
 } from "./native-ready-map";
+import { computePayloadWorldBounds, framePayload } from "./payload-framing";
+import { renderWithCoverageFallback, type RenderCamera } from "./preview-coverage";
 
 const CONNECT_TIMEOUT_MS = 240_000; // covers prewarm + first shader compile
 const RPC_TIMEOUT_MS = 120_000;
 const PNG_EXPORT_TIMEOUT_MS = 60_000;
 const SENSOR_ID = "hifi";
+
+function cameraCoverage(response: Record<string, unknown>): number {
+  const records = response.coverage;
+  if (!Array.isArray(records)) return Number.NaN;
+  const record = records.find((candidate) =>
+    candidate !== null
+    && typeof candidate === "object"
+    && "sensorId" in candidate
+    && candidate.sensorId === SENSOR_ID);
+  return record && typeof record === "object" && "fraction" in record
+    ? Number(record.fraction)
+    : Number.NaN;
+}
 
 
 function log(event: string, fields: Record<string, unknown>): void {
@@ -318,11 +333,17 @@ export async function executeHifiPreview(
   }
 
   const nativeMap = await resolveMapPayloads(lease.workspaceId, request.mapVersionId, request.scene.mapId);
+  const worldBounds = await computePayloadWorldBounds(nativeMap.payloads.map((payload) => payload.path));
+  const framedCamera = framePayload(
+    worldBounds,
+    request.width / request.height,
+    request.camera.intrinsics.fovYDeg,
+  );
 
   const workspace = await mkdtemp(join(tmpdir(), "simforge-hifi-"));
   const socketPath = join(workspace, "render.sock");
   const shmPath = `/dev/shm/simforge-hifi-${process.pid}-${lease.requestId.slice(-8)}`;
-  const exportDir = join(workspace, "export");
+  const exportRoot = join(workspace, "export");
   const sceneSpecPath = join(workspace, "scene.json");
   await writeFile(sceneSpecPath, JSON.stringify({
     glbs: nativeMap.payloads.map((payload) => payload.path),
@@ -371,23 +392,50 @@ export async function executeHifiPreview(
       });
     }
 
-    const rendered = await client.request("render", {
-      tick_id: request.tick,
-      cameras: [{
-        sensorId: SENSOR_ID,
-        width: request.width,
-        height: request.height,
-        fovDeg: request.camera.intrinsics.fovYDeg,
-        eye: request.camera.pose.position,
-        target: request.camera.pose.target,
-      }],
-      export_dir: exportDir,
-      ...(request.scene.actors.length > 0 ? { tick_index: 0 } : {}),
+    const requestedCamera: RenderCamera = {
+      eye: request.camera.pose.position,
+      target: request.camera.pose.target,
+    };
+    const rendered = await renderWithCoverageFallback({
+      requestedCamera,
+      framedCamera,
+      worldBounds,
+      render: async (camera, attempt) => {
+        const attemptExportDir = join(exportRoot, attempt);
+        const fields = {
+          tick_id: request.tick,
+          cameras: [{
+            sensorId: SENSOR_ID,
+            width: request.width,
+            height: request.height,
+            fovDeg: request.camera.intrinsics.fovYDeg,
+            eye: camera.eye,
+            target: camera.target,
+          }],
+          ...(request.scene.actors.length > 0 ? { tick_index: 0 } : {}),
+        };
+        // A camera pose transition needs one service request to settle all
+        // readback buffers before the exported retry. This is still one
+        // fallback pose; no intermediate image is accepted or stored.
+        const settle = attempt === "framed"
+          ? await client!.request("render", fields)
+          : null;
+        const response = await client!.request("render", {
+          ...fields,
+          export_dir: attemptExportDir,
+        });
+        return {
+          response,
+          exportDir: attemptExportDir,
+          coverage: cameraCoverage(response),
+          renderMs: Number(response.server_ms ?? 0) + Number(settle?.server_ms ?? 0),
+        };
+      },
     });
-    const renderMs = Number(rendered.server_ms ?? 0);
+    const renderMs = rendered.renderMs;
 
     // PNG export is demoted off the render critical path (WSB5); wait for it.
-    const pngPath = join(exportDir, `tick-${String(request.tick).padStart(6, "0")}.${SENSOR_ID}.rgb.png`);
+    const pngPath = join(rendered.exportDir, `tick-${String(request.tick).padStart(6, "0")}.${SENSOR_ID}.rgb.png`);
     const pngDeadline = Date.now() + PNG_EXPORT_TIMEOUT_MS;
     let pngBytes: Buffer | null = null;
     while (Date.now() < pngDeadline) {
@@ -432,8 +480,12 @@ export async function executeHifiPreview(
       mapId: request.scene.mapId,
       mapDigest: nativeMap.mapDigest,
       payloadDigests: nativeMap.payloads.map((payload) => payload.sha256),
-      // Echoed verbatim: the exact contract camera the frame was rendered from.
+      // The request report remains intact; renderedCamera records framing.
       camera: request.camera,
+      renderedCamera: { position: rendered.camera.eye, target: rendered.camera.target },
+      coverage: rendered.coverage,
+      fallbackFraming: rendered.fallbackFraming,
+      worldBounds,
       frame: {
         width: request.width,
         height: request.height,

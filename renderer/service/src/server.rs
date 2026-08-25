@@ -8,8 +8,8 @@
 //! V2 protocol (V4 SensorRig) adds `load_scene_state`, `reset_cameras`,
 //! `encode_jpeg`, per-camera rigid `attach` + semantic + CARLA depth
 use crate::proto::{
-    decode_request, encode_frame, CameraAttach, FrameReader, FrameRecord, RequestBody, ResponseBody,
-    ServiceCamera, ShmInfo, WireRequest, WireResponse, JpegItem,
+    decode_request, encode_frame, CameraAttach, CoverageRecord, FrameReader, FrameRecord, JpegItem,
+    RequestBody, ResponseBody, ServiceCamera, ShmInfo, WireRequest, WireResponse,
     NATIVE_SERVICE_PROTOCOL_VERSION,
 };
 use crate::scene::SceneState;
@@ -81,6 +81,20 @@ pub fn prewarm(spec: &SceneSpec) -> Result<SceneApp> {
 fn row_stride(width: u32, pixel_bytes: usize) -> usize {
     let row = width as usize * pixel_bytes;
     row.div_ceil(256) * 256
+}
+
+/// Fraction of visible pixels in an RGBA8 instance-ID readback. RGB encodes
+/// the little-endian 24-bit ID; alpha is intentionally ignored because the
+/// clear target and opaque geometry both carry alpha 255.
+fn instance_coverage(data: &[u8], width: u32, height: u32) -> f64 {
+    let stride = row_stride(width, 4);
+    let visible = data
+        .chunks_exact(stride)
+        .take(height as usize)
+        .flat_map(|row| row[..width as usize * 4].chunks_exact(4))
+        .filter(|pixel| pixel[0] != 0 || pixel[1] != 0 || pixel[2] != 0)
+        .count();
+    visible as f64 / f64::from(width * height)
 }
 
 /// Cached payload of one pass from the last rendered tick (JPEG source).
@@ -419,11 +433,20 @@ fn render_tick(
         Err(error) => return WireResponse::error(i, format!("render: {error:#}")),
     };
     let mut frames = Vec::new();
+    let mut coverage = Vec::with_capacity(cameras.len());
     let mut export_payloads: Vec<(String, String, u32, u32, Vec<u8>)> = Vec::new();
     // Publish in deterministic order: cameras in request order,
     // passes rgb/id/depth/semantic within each.
     for cam in &cameras {
         let stride = row_stride(cam.width, 4);
+        let id_key = format!("{}:id", cam.sensor_id);
+        let Some(id_data) = passes.get(&id_key) else {
+            return WireResponse::error(i, format!("coverage requires id pass for {}", cam.sensor_id));
+        };
+        coverage.push(CoverageRecord {
+            sensor_id: cam.sensor_id.clone(),
+            fraction: instance_coverage(id_data, cam.width, cam.height),
+        });
         let mut publish = |state: &mut ServiceState,
                            pass: &str,
                            format_tag: u32,
@@ -544,7 +567,10 @@ fn render_tick(
             async_export_pngs(&dir, tick_id, &export_payloads);
         });
     }
-    WireResponse { i, body: ResponseBody::Render { ok: true, tick_id, frames, server_ms } }
+    WireResponse {
+        i,
+        body: ResponseBody::Render { ok: true, tick_id, frames, server_ms, coverage },
+    }
 }
 
 fn encode_jpeg_op(state: &mut ServiceState, i: u64, items: Vec<JpegItem>) -> WireResponse {
@@ -809,5 +835,20 @@ fn async_export_pngs(dir: &str, tick_id: u64, payloads: &[(String, String, u32, 
         if let Err(error) = result {
             eprintln!("async export failed for {path:?}: {error}");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{instance_coverage, row_stride};
+
+    #[test]
+    fn coverage_counts_nonzero_rgb_and_ignores_alpha_and_padding() {
+        let mut data = vec![0_u8; row_stride(2, 4) * 2];
+        data[3] = 255; // Background alpha must not count.
+        data[4] = 1;
+        data[row_stride(2, 4) + 1] = 2;
+        data[row_stride(2, 4) + 8] = 9; // Padding must not count.
+        assert_eq!(instance_coverage(&data, 2, 2), 0.5);
     }
 }

@@ -9,10 +9,9 @@
  * `native-render-service` on source-digest-matched native-ready corpus
  * payloads and completes the request with a PNG artifact URL plus provenance.
  *
- * Camera round-trip guarantee: the request camera is echoed verbatim into
- * `provenance.camera`, so the pose/matrices the Bevy frame was rendered from
- * are exactly the pose/matrices the Three viewport reported (asserted within
- * the parity-fixture tolerances by `__tests__/camera-roundtrip.test.ts`).
+ * The request camera is preserved verbatim in provenance. When coverage
+ * proves it sees no geometry, the worker retries once with world-bounds
+ * framing and records the actual rendered pose separately.
  */
 import { z } from "zod";
 import type { CameraStateReport } from "@simforge/viewer";
@@ -123,8 +122,17 @@ export type HifiPreviewProvenance = {
   mapId: string;
   mapDigest: string;
   payloadDigests: string[];
-  /** Request camera echoed verbatim — the pose the Bevy frame was rendered from. */
+  /** Request camera echoed verbatim for contract auditability. */
   camera: z.infer<typeof CameraStateReportSchema>;
+  /** Actual Bevy pose, which differs when world-bounds fallback framing ran. */
+  renderedCamera: { position: [number, number, number]; target: [number, number, number] };
+  /** Fraction of frame pixels with a non-zero instance ID. */
+  coverage: number;
+  fallbackFraming: boolean;
+  worldBounds: {
+    min: [number, number, number];
+    max: [number, number, number];
+  };
   frame: { width: number; height: number; pass: "rgb"; sha256: string; sizeBytes: number };
   map: {
     tileCount: number;

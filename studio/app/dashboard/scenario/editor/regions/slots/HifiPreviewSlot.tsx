@@ -47,6 +47,8 @@ const FRIENDLY_ERRORS: Record<string, string> = {
   native_payload_build_invalid: "The native payload build did not match the published map.",
   native_payload_build_failed: "The native payload build failed. Check the Studio worker log for details.",
   render_export_timeout: "The renderer produced no frame in time.",
+  camera_sees_nothing:
+    "The native camera still sees no map geometry after automatic framing. Rebuild the map's native corpus, then retry; if it persists, inspect the reported world bounds in the worker log.",
 };
 
 type PreviewState =
@@ -329,6 +331,14 @@ export function HifiPreviewSlot({
                 <span title="Native-ready payloads rendered">
                   native tiles {preview.record.provenance.map.tileCount}
                 </span>
+                <span title="Non-background instance-ID pixel coverage">
+                  coverage {(preview.record.provenance.coverage * 100).toFixed(1)}%
+                </span>
+                {preview.record.provenance.fallbackFraming ? (
+                  <span title="The caller camera was empty; world-bounds framing was used">
+                    fallback framing
+                  </span>
+                ) : null}
                 <span title="Render wall time">
                   {(preview.record.provenance.timings.renderMs / 1000).toFixed(2)}s render
                 </span>
