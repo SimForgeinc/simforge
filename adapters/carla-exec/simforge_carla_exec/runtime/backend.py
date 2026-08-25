@@ -298,6 +298,20 @@ VISUAL_MIN_MIDTONE_FRACTION = 0.02
 VISUAL_MAX_NEAR_BLACK_FRACTION = 0.98
 VISUAL_MAX_NEAR_WHITE_FRACTION = 0.98
 
+#: Per-actor residual budgets for native spawn settle. CARLA Actor angular
+#: velocity is read in degrees/s and converted to rad/s before this gate.
+#: 0.02 rad/s (~1.15 deg/s) is the canonical bridge threshold: comfortably
+#: above parked Chaos jitter while still rejecting genuinely tumbling actors.
+STABILITY_THRESHOLDS: Mapping[str, float] = {
+    "linearMps": 0.02,
+    "verticalMps": 0.01,
+    "angularRadps": 0.02,
+    "horizontalDriftM": 0.001,
+    "verticalDriftM": 0.001,
+    "yawDriftDeg": 0.02,
+}
+STABILITY_CONSECUTIVE_TICKS = 5
+
 
 #: Frames a camera's encoder queue may hold before the render fails closed.
 #: The queue exists so a stalled ffmpeg process throttles its own writer
@@ -1270,13 +1284,8 @@ class CarlaBackend:
         return {
             "schema": "uniscenario.native-stability/v1",
             "thresholds": {
-                "linearMps": 0.02,
-                "verticalMps": 0.01,
-                "angularRadps": 0.02,
-                "horizontalDriftM": 0.001,
-                "verticalDriftM": 0.001,
-                "yawDriftDeg": 0.02,
-                "consecutiveTicks": 5,
+                **STABILITY_THRESHOLDS,
+                "consecutiveTicks": STABILITY_CONSECUTIVE_TICKS,
             },
             "initialVelocityMps": {
                 actor_id: first_frame.actors[actor_id].speed_mps for actor_id in sorted(self.actors)
@@ -1313,7 +1322,10 @@ class CarlaBackend:
                 angular = actor.get_angular_velocity()
                 prior = previous[actor_id]
                 linear_speed = sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2)
-                angular_speed = sqrt(angular.x ** 2 + angular.y ** 2 + angular.z ** 2)
+                # carla.Actor.get_angular_velocity() returns degrees/s (unlike
+                # ActorSnapshot, which returns rad/s). Convert the vector
+                # magnitude before applying the canonical rad/s threshold.
+                angular_speed = radians(sqrt(angular.x ** 2 + angular.y ** 2 + angular.z ** 2))
                 horizontal_drift = sqrt(
                     (transform.location.x - prior.location.x) ** 2
                     + (transform.location.y - prior.location.y) ** 2
@@ -1328,13 +1340,9 @@ class CarlaBackend:
                     "verticalDriftM": vertical_drift,
                     "yawDriftDeg": yaw_drift,
                 }
-                actor_stable = not (
-                    linear_speed > 0.02
-                    or abs(velocity.z) > 0.01
-                    or angular_speed > 0.02
-                    or horizontal_drift > 0.001
-                    or vertical_drift > 0.001
-                    or yaw_drift > 0.02
+                actor_stable = all(
+                    value <= STABILITY_THRESHOLDS[metric]
+                    for metric, value in residuals[actor_id].items()
                 )
                 if not actor_stable:
                     stable = False
@@ -1363,7 +1371,7 @@ class CarlaBackend:
             unfrozen_statics = (static_actor_ids & set(self.actors)) - self.frozen_static_actor_ids
             converged = stable and not unfrozen_statics and tick >= minimum_ticks
             consecutive = consecutive + 1 if converged else 0
-            if consecutive >= 5:
+            if consecutive >= STABILITY_CONSECUTIVE_TICKS:
                 return {"phase": phase, "ticks": tick, "residuals": residuals}
         raise RuntimeError(
             f"native actor stability did not converge during {phase} after {maximum_ticks} ticks: {residuals}"

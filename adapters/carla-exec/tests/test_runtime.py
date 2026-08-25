@@ -592,6 +592,51 @@ def test_native_prepare_fails_closed_when_motion_never_converges():
     with pytest.raises(RuntimeError, match="spawn settle.*linearMps.*verticalMps"):
         backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=25)
 
+def test_native_stability_accepts_near_still_carla_angular_velocity_in_degrees():
+    class Vector3D:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class Transform:
+        def __init__(self):
+            self.location = Vector3D()
+            self.rotation = type("Rotation", (), {"yaw": 0})()
+    class Actor:
+        def get_transform(self): return Transform()
+        def get_velocity(self): return Vector3D()
+        def get_angular_velocity(self): return Vector3D(z=0.043238)
+    class World:
+        def tick(self): pass
+
+    backend = object.__new__(CarlaBackend)
+    backend.world = World()
+    backend.actors = {"ego": Actor()}
+    report = backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=100)
+    assert report["ticks"] == 24
+    assert report["residuals"]["ego"]["angularRadps"] == pytest.approx(
+        0.00075463, rel=1e-4
+    )
+
+
+def test_native_stability_rejects_genuinely_tumbling_carla_actor():
+    class Vector3D:
+        def __init__(self, x=0, y=0, z=0): self.x, self.y, self.z = x, y, z
+    class Transform:
+        def __init__(self):
+            self.location = Vector3D()
+            self.rotation = type("Rotation", (), {"yaw": 0})()
+    class Actor:
+        def get_transform(self): return Transform()
+        def get_velocity(self): return Vector3D()
+        def get_angular_velocity(self): return Vector3D(z=14.8)
+    class World:
+        def tick(self): pass
+
+    backend = object.__new__(CarlaBackend)
+    backend.world = World()
+    backend.actors = {"spinner": Actor()}
+    with pytest.raises(RuntimeError, match="spawn settle.*angularRadps"):
+        backend._wait_for_native_stability("spawn settle", minimum_ticks=20, maximum_ticks=25)
+
+
 
 def test_native_stability_accepts_late_convergence_with_five_tick_proof():
     class Vector3D:
