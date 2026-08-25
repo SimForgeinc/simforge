@@ -29,6 +29,11 @@ pub struct CameraAttach {
     pub yaw_deg: f32,
     #[serde(default)]
     pub pitch_deg: f32,
+    /// Aim at the attached actor origin instead of projecting the mount's
+    /// yaw/pitch. Intended for trailing chase cameras; sensor mounts leave it
+    /// false and retain their calibrated rigid orientation.
+    #[serde(default)]
+    pub look_at_actor: bool,
 }
 
 /// Hard cap on one framed message; guards against a corrupt length prefix.
@@ -67,6 +72,11 @@ pub struct ServiceCamera {
     /// explicit eye/target fields are ignored.
     #[serde(default)]
     pub attach: Option<CameraAttach>,
+    /// Optional per-camera render profile. Omit to inherit the service scene
+    /// profile. A campaign chase camera can therefore be cinematic while the
+    /// retained Pronto cameras remain sensor-profile and hash-stable.
+    #[serde(default)]
+    pub profile: Option<render_core::engine::Profile>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -295,4 +305,29 @@ pub fn encode_frame<T: Serialize>(value: &T) -> Result<Vec<u8>, rmp_serde::encod
 /// Decode one length-prefixed request payload.
 pub fn decode_request(payload: &[u8]) -> Result<WireRequest, String> {
     rmp_serde::from_slice(payload).map_err(|e| format!("bad request: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use render_core::engine::Profile;
+
+    #[test]
+    fn camera_profile_is_optional_and_camel_case() {
+        let base = r#"{
+            "sensorId":"pronto-cam0","width":1920,"height":1080,"fovDeg":60,
+            "eye":[0,2,0],"target":[1,2,0]
+        }"#;
+        let sensor: ServiceCamera = serde_json::from_str(base).unwrap();
+        assert_eq!(sensor.profile, None);
+
+        let cinematic: ServiceCamera = serde_json::from_str(
+            &base.replace(
+                "\"eye\"",
+                "\"profile\":\"cinematic\",\"eye\"",
+            ),
+        )
+        .unwrap();
+        assert_eq!(cinematic.profile, Some(Profile::Cinematic));
+    }
 }

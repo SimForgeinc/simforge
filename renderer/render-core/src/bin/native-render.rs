@@ -115,11 +115,11 @@ struct Args {
     /// HDRI for the sky/IBL (equirectangular .hdr).
     #[arg(long, default_value = "/home/path/local-simforge/maps/yale-street/browser/3d/env/sky.hdr")]
     sky: String,
-    /// Enable SSR (deferred path) — rain wet-road reflections experiment.
-    #[arg(long, default_value_t = false)]
+    /// Cinematic: screen-space reflections (deferred path).
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     ssr: bool,
     /// Cinematic: temporal anti-aliasing.
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     taa: bool,
     /// Cinematic film-grain intensity (0 disables).
     #[arg(long, default_value_t = 0.06)]
@@ -129,13 +129,14 @@ struct Args {
     #[arg(long, value_delimiter = ',')]
     veg_glbs: Vec<String>,
     /// Cinematic chromatic-aberration intensity (0 disables).
-    #[arg(long, default_value_t = 1.2)]
+    #[arg(long, default_value_t = 0.0)]
     ca: f32,
     /// Cinematic DoF aperture in f-stops (higher = deeper focus).
-    #[arg(long, default_value_t = 6.5)]
+    #[arg(long, default_value_t = 8.0)]
     dof_fstops: f32,
-    /// Cinematic: disable depth of field entirely.
-    #[arg(long, default_value_t = false)]
+    /// Cinematic: keep depth of field disabled. Pass `--no-dof=false` only
+    /// for a chase camera with a known focal target.
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     no_dof: bool,
     /// Cinematic motion-blur shutter angle in degrees (0 disables).
     #[arg(long, default_value_t = 90.0)]
@@ -144,8 +145,8 @@ struct Args {
     /// (lets lazy GLB uploads land in the uncapped headless loop).
     #[arg(long, default_value_t = 0)]
     settle_ms: i64,
-    /// Cinematic bloom intensity (Bloom::NATURAL is 0.15; 0 disables).
-    #[arg(long, default_value_t = 0.15)]
+    /// Cinematic bloom intensity (0 disables).
+    #[arg(long, default_value_t = 0.10)]
     bloom: f32,
 }
 
@@ -494,18 +495,18 @@ fn startup_setup(
                 .unwrap_or_else(|| weather.sensor_ev100(args.sun_elev)),
             sky.clone(),
             plan.skybox_brightness,
-            args.ssr,
-            args.taa,
-            args.grain,
             render_core::profiles::CinematicFx {
+                ssr: args.ssr,
+                taa: args.taa,
                 chromatic_aberration: args.ca,
                 dof_aperture_f_stops: args.dof_fstops,
                 dof_enabled: !args.no_dof,
                 motion_shutter_angle: args.shutter,
                 bloom_intensity: args.bloom,
+                ..Default::default()
             },
         );
-        if LightingRung(args.rung).ao_contact() {
+        if *profile == RenderProfile::Sensor && LightingRung(args.rung).ao_contact() {
             lighting::apply_camera_ao(&mut commands, cam_id);
         }
         if *weather == Weather::Fog {

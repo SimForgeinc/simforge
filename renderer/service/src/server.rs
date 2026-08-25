@@ -16,6 +16,7 @@ use crate::scene::SceneState;
 use crate::shm::{BundleEntry, ShmRing, FORMAT_DEPTH32F, FORMAT_JPEG, FORMAT_RGBA8};
 use anyhow::{Context, Result};
 use render_core::engine::{CameraSpec, LegendEntry, Lighting, PassSet, Profile, SceneApp};
+use render_core::profiles::RenderProfileConfig;
 use std::collections::HashMap;
 use std::io::Write;
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -26,9 +27,15 @@ use std::path::Path;
 #[serde(rename_all = "camelCase")]
 pub struct SceneSpec {
     pub glbs: Vec<String>,
+    /// Vegetation prototype GLBs with sibling instance sidecars.
+    #[serde(default)]
+    pub veg_glbs: Vec<String>,
     #[serde(default)]
     pub lighting: Lighting,
     pub profile: Profile,
+    /// Advanced cinematic settings; ignored by sensor cameras.
+    #[serde(default)]
+    pub profile_config: RenderProfileConfig,
     #[serde(default = "default_near")]
     pub near_m: f32,
     #[serde(default = "default_far")]
@@ -55,8 +62,10 @@ fn default_warmup() -> u32 {
 /// registered BEFORE the readiness barrier, which is also the documented
 /// SceneApp contract.
 pub fn prewarm(spec: &SceneSpec) -> Result<SceneApp> {
-    let mut app = SceneApp::new(&spec.lighting)?;
+    let mut app =
+        SceneApp::new_with_profile_config(&spec.lighting, spec.profile_config)?;
     app.load_tiles(&spec.glbs)?;
+    app.load_vegetation(&spec.veg_glbs)?;
     // Warm shaders with a throwaway camera so the first real request does not
     // pay pipeline compilation. Registered pre-readiness per SceneApp rules.
     app.add_camera(
@@ -348,6 +357,9 @@ fn resolve_pose(
         ground + off[2],
         pos[2] - sy * off[0] + cy * off[1],
     ];
+    if attach.look_at_actor {
+        return Ok((eye, [pos[0], ground + 1.0, pos[2]]));
+    }
     // CARLA yaw is left-handed (clockwise from above); Uni yaw is CCW, so a
     // CARLA-relative mount yaw subtracts. Pitch passes through (negative =
     // down, matching CARLA semantics).
@@ -387,7 +399,7 @@ fn ensure_camera(state: &mut ServiceState, cam: &ServiceCamera, passes: PassSet)
             far: state.far_m,
             passes,
         },
-        state.profile,
+        cam.profile.unwrap_or(state.profile),
     );
     true
 }

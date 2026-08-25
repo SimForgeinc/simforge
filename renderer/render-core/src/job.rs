@@ -8,6 +8,7 @@
 //! Determinism: PNGs encode via the `image` crate with fixed settings; depth
 //! is written as little-endian Depth32Float (reverse-Z) raw rows.
 use crate::engine::{CameraSpec, Lighting, PassSet, Profile, SceneApp};
+use crate::profiles::RenderProfileConfig;
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -25,7 +26,14 @@ pub struct RenderJob {
     pub profile: Profile,
     #[serde(default)]
     pub lighting: Lighting,
+    /// Cinematic pipeline settings. Ignored by sensor cameras.
+    #[serde(default)]
+    pub profile_config: RenderProfileConfig,
     pub glbs: Vec<String>,
+    /// Vegetation prototype GLBs; each must have a sibling
+    /// `.instances.json` sidecar.
+    #[serde(default)]
+    pub veg_glbs: Vec<String>,
     #[serde(default = "default_warmup")]
     pub warmup_frames: u32,
     #[serde(default = "default_near")]
@@ -82,6 +90,10 @@ pub struct JobCamera {
     pub fov_deg: f32,
     pub eye: [f32; 3],
     pub target: [f32; 3],
+    /// Optional per-camera override. This lets a cinematic chase camera render
+    /// beside a sensor-profile rig in the same scene/tick.
+    #[serde(default)]
+    pub profile: Option<Profile>,
 }
 
 /// One produced artifact file, hashed for the artifact manifest.
@@ -149,15 +161,21 @@ pub fn run_job(job: &RenderJob) -> Result<RenderResults> {
         width: u32,
         height: u32,
         fov_deg: f32,
+        profile: Profile,
     }
     let mut geoms: HashMap<String, CamGeom> = HashMap::new();
     for entry in &job.schedule {
         for cam in &entry.cameras {
+            let profile = cam.profile.unwrap_or(job.profile);
             match geoms.get(&cam.sensor_id) {
                 Some(g) => {
-                    if g.width != cam.width || g.height != cam.height || g.fov_deg != cam.fov_deg {
+                    if g.width != cam.width
+                        || g.height != cam.height
+                        || g.fov_deg != cam.fov_deg
+                        || g.profile != profile
+                    {
                         bail!(
-                            "camera {} changed geometry across schedule",
+                            "camera {} changed geometry or profile across schedule",
                             cam.sensor_id
                         );
                     }
@@ -165,7 +183,12 @@ pub fn run_job(job: &RenderJob) -> Result<RenderResults> {
                 None => {
                     geoms.insert(
                         cam.sensor_id.clone(),
-                        CamGeom { width: cam.width, height: cam.height, fov_deg: cam.fov_deg },
+                        CamGeom {
+                            width: cam.width,
+                            height: cam.height,
+                            fov_deg: cam.fov_deg,
+                            profile,
+                        },
                     );
                 }
             }
@@ -173,8 +196,9 @@ pub fn run_job(job: &RenderJob) -> Result<RenderResults> {
     }
 
     let t_start = Instant::now();
-    let mut app = SceneApp::new(&job.lighting)?;
+    let mut app = SceneApp::new_with_profile_config(&job.lighting, job.profile_config)?;
     app.load_tiles(&job.glbs)?;
+    app.load_vegetation(&job.veg_glbs)?;
     let mut sensors: Vec<&String> = geoms.keys().collect();
     sensors.sort(); // deterministic camera order -> deterministic entity order
     for sensor_id in sensors {
@@ -189,7 +213,7 @@ pub fn run_job(job: &RenderJob) -> Result<RenderResults> {
                 far: job.far_m,
                 passes: job.passes,
             },
-            job.profile,
+            g.profile,
         );
     }
     let legend = app.wait_until_ready()?;
