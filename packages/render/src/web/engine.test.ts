@@ -1,7 +1,8 @@
+import { chromium } from 'playwright-core';
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { EngineCapabilityDeclarationSchema } from '../index.js';
-import { createRenderEngine, decodePlaybackArchive, normalizeSavedPlaybackTrace, resolveBrowserRenderIntent } from './engine.js';
+import { bootBrowserHarness, browserChromiumArgs, createRenderEngine, decodePlaybackArchive, installArtifactBridgeInitScript, normalizeSavedPlaybackTrace, resolveBrowserHarnessUrl, resolveBrowserRenderIntent } from './engine.js';
 
 describe('browser render engine registration', () => {
   it('publishes the canonical worker capability declaration', () => {
@@ -17,6 +18,23 @@ describe('browser render engine registration', () => {
       requiresGpu: false,
     });
   });
+});
+
+describe('browser worker harness boot', () => {
+  it('installs the browser adapter with the worker Chromium flags and default harness', async () => {
+    const browser = await chromium.launch({
+      headless: true,
+      args: browserChromiumArgs([]),
+    });
+    try {
+      const page = await browser.newPage();
+      await installArtifactBridgeInitScript(page);
+      await bootBrowserHarness(page, await resolveBrowserHarnessUrl(), 10_000);
+      await expect(page.evaluate(() => globalThis.__simforgeBrowserRender?.engine)).resolves.toBe('browser');
+    } finally {
+      await browser.close();
+    }
+  }, 20_000);
 });
 
 describe('browser render intent adapter', () => {

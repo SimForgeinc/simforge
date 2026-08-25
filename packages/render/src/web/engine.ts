@@ -3,7 +3,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { gunzip } from 'node:zlib';
 import { promisify } from 'node:util';
-import { chromium } from 'playwright-core';
+import { chromium, type Page } from 'playwright-core';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration, type RenderArtifactManifest, type RenderEngineAdapter, type RenderExecutionContext } from '../index.js';
 import { fixedStepFrameCount, parseRenderIntent } from '@simforge/scenario';
 import { parsePlaybackPair, type PlaybackBundle } from '@simforge/playback';
@@ -59,7 +59,7 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
   },
   requiresGpu: false,
 };
-async function defaultBrowserHarnessUrl(): Promise<string> {
+export async function resolveBrowserHarnessUrl(): Promise<string> {
   const packaged = new URL('../harness.html', import.meta.url);
   try {
     await fs.access(packaged);
@@ -70,6 +70,53 @@ async function defaultBrowserHarnessUrl(): Promise<string> {
     return developmentBuild.href;
   }
 }
+
+export async function bootBrowserHarness(page: Page, harnessUrl: string, timeout = 30_000): Promise<void> {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.goto(harnessUrl, { waitUntil: 'networkidle' });
+  try {
+    await page.waitForFunction(() => globalThis.__simforgeBrowserRender?.engine === 'browser', undefined, { timeout });
+  } catch (error) {
+    const detail = pageErrors.length > 0 ? ` Page errors: ${pageErrors.join(' | ')}` : '';
+    throw new Error(`Browser render harness did not boot from ${harnessUrl}.${detail}`, { cause: error });
+  }
+}
+export function browserChromiumArgs(chromiumExtraArgs: readonly string[]): string[] {
+  return [
+    '--enable-webgl',
+    '--ignore-gpu-blocklist',
+    '--allow-file-access-from-files',
+    '--disable-web-security',
+    // SwiftShader's Vulkan backend is the safe default; a host overriding
+    // GL selection owns the whole GPU configuration (the feature flag
+    // conflicts with --use-angle overrides).
+    ...(chromiumExtraArgs.length === 0 ? ['--enable-features=Vulkan'] : []),
+    ...chromiumExtraArgs,
+  ];
+}
+export async function installArtifactBridgeInitScript(page: Page): Promise<void> {
+  // Playwright serializes function-valued init scripts. Runtime transpilers such
+  // as tsx can decorate that function with module-scoped helpers (`__name`),
+  // which do not exist in the page and prevent the bridge from being installed.
+  // A self-contained script string crosses the worker/page boundary verbatim.
+  await page.addInitScript({
+    content: `{
+      const root = globalThis;
+      Object.assign(root, {
+        __simforgeArtifactBridge: {
+          open: (identity, mediaType) => root.__simforgeArtifactOpen(identity, mediaType),
+          write: (handle, base64) => root.__simforgeArtifactWrite(handle, base64),
+          close: (handle) => root.__simforgeArtifactClose(handle),
+          abort: (handle, message) => root.__simforgeArtifactAbort(handle, message),
+          progress: (line) => root.__simforgeProgress(line),
+        },
+      });
+    }`,
+  });
+}
+
+
 
 
 /** Runtime package entrypoint discovered internally for public `--engine browser`. */
@@ -83,7 +130,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       const startedAt = new Date().toISOString();
       const harnessUrl = options.harnessUrl
         ?? process.env.UNISCENARIOS_BROWSER_HARNESS_URL
-        ?? await defaultBrowserHarnessUrl();
+        ?? await resolveBrowserHarnessUrl();
       await fs.mkdir(context.workspace, { recursive: true });
       const intent = resolveBrowserRenderIntent(context.intent);
       const scenarioInput = context.inputs.get('scenario.xosc');
@@ -115,14 +162,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
         ...(options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH
           ? { executablePath: options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH }
           : {}),
-        args: [
-          '--enable-webgl', '--ignore-gpu-blocklist', '--allow-file-access-from-files', '--disable-web-security',
-          // SwiftShader's Vulkan backend is the safe default; a host overriding
-          // GL selection owns the whole GPU configuration (the feature flag
-          // conflicts with --use-angle overrides).
-          ...(chromiumExtraArgs.length === 0 ? ['--enable-features=Vulkan'] : []),
-          ...chromiumExtraArgs,
-        ],
+        args: browserChromiumArgs(chromiumExtraArgs),
       });
       try {
         const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -161,23 +201,11 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
             completed: progress.completedFrames ?? 0, total: progress.totalFrames ?? 0, unit: 'frames',
           });
         });
-        await page.addInitScript(() => {
-          const root = globalThis as typeof globalThis & Record<string, (...args: unknown[]) => Promise<unknown>>;
-          Object.assign(globalThis, {
-            __simforgeArtifactBridge: {
-              open: (identity: unknown, mediaType: string) => root.__simforgeArtifactOpen!(identity, mediaType),
-              write: (handle: string, base64: string) => root.__simforgeArtifactWrite!(handle, base64),
-              close: (handle: string) => root.__simforgeArtifactClose!(handle),
-              abort: (handle: string, message: string) => root.__simforgeArtifactAbort!(handle, message),
-              progress: (line: string) => root.__simforgeProgress!(line),
-            },
-          });
-        });
+        await installArtifactBridgeInitScript(page);
         const abort = () => { void page.close(); };
         context.signal.addEventListener('abort', abort, { once: true });
         try {
-          await page.goto(harnessUrl, { waitUntil: 'networkidle' });
-          await page.waitForFunction(() => globalThis.__simforgeBrowserRender?.engine === 'browser');
+          await bootBrowserHarness(page, harnessUrl);
           const result = await page.evaluate(async (intent) => {
             if (!globalThis.__simforgeBrowserRender) throw new Error('Browser render harness did not install its adapter.');
             return globalThis.__simforgeBrowserRender.render(intent);
