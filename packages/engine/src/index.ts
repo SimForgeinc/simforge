@@ -172,6 +172,17 @@ export {
   resolveVehiclePhysicsProfile,
 } from './sim/dynamic-v1.js';
 export type { ResolvedVehiclePhysicsProfile } from './sim/dynamic-v1.js';
+export {
+  TrajectoryFollower,
+  DEFAULT_TRAJECTORY_FOLLOWER_CONFIG,
+  anchorPlanToWorld,
+} from './sim/trajectory-follower.js';
+export type {
+  FollowerCommand,
+  TrackedPose,
+  TrajectoryFollowerConfig,
+  TrajectoryPlanPoint,
+} from './sim/trajectory-follower.js';
 export type {
   MotionActorInitialization,
   MotionBackend,

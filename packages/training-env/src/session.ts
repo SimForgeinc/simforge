@@ -294,6 +294,18 @@ export class EnvSession {
     return this.tickObserver ? { onTick: this.tickObserver } : {};
   }
 
+  /**
+   * Planar ego pose + travel speed at the current engine snapshot — the
+   * observation instant the next `step()` action responds to. Null before
+   * `reset()`.
+   */
+  egoPose(): { tS: number; x: number; y: number; yawRad: number; speedMps: number } | null {
+    if (!this.engineSession) return null;
+    const snap = this.engineSession.peek();
+    const ego = snapshotEgo(snap.actors, this.egoId);
+    return { tS: snap.tS, x: ego.x, y: ego.y, yawRad: ego.headingRad, speedMps: ego.speedMps };
+  }
+
   /** The live engine's SignalBook (overrides included); null before reset(). */
   signalBook(): SignalBook | null {
     return this.engineSession?.signalBook() ?? null;

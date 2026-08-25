@@ -71,6 +71,7 @@ export type {
   PolicyAction,
   PolicyHello,
   ResponseEnvelope,
+  TrajectoryExecution,
   TrajectoryPoint,
   WirePolicyAction,
 } from './policy-step.js';

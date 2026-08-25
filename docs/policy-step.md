@@ -65,8 +65,14 @@ ego.
 {proto, envProto, sessions, decisionHz, engineHz, egos: [id…],
  actions: ['trajectory', 'control'],
  fallbacks: ['repeat-last', 'zero-control', 'scripted'],
- obs: {sv, bev, frameBundle}}
+ obs: {sv, bev, frameBundle},
+ trajExec: 'pure-pursuit' | 'speed-setpoint'}
 ```
+
+`trajExec` reports how this server executes trajectory actions (see
+"Trajectory execution" below); it is a server construction option
+(`registerPolicySession(server, {trajectoryExecution})`), default
+`'pure-pursuit'`.
 
 ### `policy.reset {s?, seed?, deadlineMs?, fallback?}`
 
@@ -100,15 +106,82 @@ env session.
 
 Tagged unions; compact wire forms in parentheses:
 
-- **trajectory** (`{k: 't', p: [[x, y, heading, speed, t]…]}`) — ego-frame
-  samples: metres, radians, m/s, seconds from now. **v1 reduction**: the
-  server reduces a trajectory to a speed setpoint taken from the earliest
-  point with `t > 0` (falling back to the first point); negative speed
-  flips the motion direction. Lateral tracking of the polyline is a v2
-  concern — steering stays with the authored route logic.
+- **trajectory** (`{k: 't', p: [[x, y, heading, speed, t]…]}`) — samples in
+  the **ego frame at plan issuance**: x forward along the ego heading, y
+  left (90° CCW), heading relative to the ego yaw (radians), signed speed
+  (m/s, negative = reverse), `t` seconds from issuance. Samples are
+  strictly future (`t > 0`): the first point is *not* the current pose.
+  This matches the Alpamayo adapter's "ego frame at t0" waypoint
+  convention (FLU, z dropped; headings/speeds derived by the bridge from
+  consecutive 10 Hz waypoints). Execution depends on the server's
+  `trajExec` mode — see "Trajectory execution" below.
 - **control** (`{k: 'c', c: [throttle, brake, steer]}`) — low-level
   passthrough into the force-based vehicle backend (`dynamic-v1` physics;
   inert under `kinematic-v1`).
+
+## Trajectory execution
+
+Under `trajExec: 'pure-pursuit'` (default) the server really tracks the
+polyline; `'speed-setpoint'` keeps the v1 reduction for regression
+comparability (target speed from the earliest `t > 0` sample, steering
+stays with the authored route logic; step frames carry no `ex`).
+
+Executor pipeline (`@simforge/engine` `sim/trajectory-follower.ts`, wired
+in `policy-session.ts`):
+
+1. **Anchoring.** A trajectory action whose points differ from the held
+   plan is anchored to the world frame at the ego pose of the observation
+   the act responds to (`anchorPlanToWorld`), and its issuance time is
+   pinned there — the samples' `t` count from that instant.
+2. **Zero-order hold.** Acts whose points are byte-identical to the held
+   plan keep the original anchor. A 0.5 Hz replanner over 10 Hz decisions
+   therefore resends the same points between replans; only a *different*
+   plan re-anchors. `policy.reset` clears the held plan.
+3. **Per-decision tracking.** Each act produces one engine action from the
+   live pose: a pure-pursuit preview point + heading on the plan polyline
+   (lookahead `clamp(2.5 m + 0.55 s · |v|, 2.5 m, 12 m)`), the
+   time-indexed speed setpoint (piecewise-linear in plan `t`, clamped at
+   the ends) and its slope as feedforward acceleration. Steering itself is
+   the dynamic backend's calibrated bicycle controller — the preview
+   override goes through the same steer clamp/rate/lag envelope as
+   authored driving. Negative plan speeds flip the motion direction with
+   the magnitude preserved.
+4. **Projection.** Cross-track error is the signed lateral offset to the
+   plan polyline (+left of the plan direction); the first and last
+   segments project as open-ended rays so a pose behind the
+   strictly-future first sample reads as along-track (negative), not
+   lateral, error.
+
+Every trajectory-executed step frame carries `ex`:
+
+```
+{x, y, h, v,            ego pose + travel speed the command was computed from
+ ct, at, age,           signed cross-track (m, +left), along-track (m), plan age (s)
+ sp, ax, dir,           applied speed setpoint, feedforward accel, direction
+ px, py, ph}            pure-pursuit preview point + heading (world frame)
+```
+
+Determinism is inherited: the executor is a pure function of the plan and
+pose stream, so the same seed and action sequence yields byte-identical
+responses (`trajectory-executor.test.ts` digests two episodes).
+
+### Tracking bounds
+
+Measured on the fixed-step dynamic-v1 sim (50 Hz engine, 10 Hz decisions,
+0.5 Hz scripted replans, S-curve amplitude 1.5 m / period 10 s at 8 m/s;
+`packages/training-env/src/__tests__/trajectory-executor.test.ts`):
+
+| metric                                   | measured        | documented bound |
+|------------------------------------------|-----------------|------------------|
+| abs cross-track error (after 1 s settle) | p50 0.14 m, p95 0.24 m, max 0.29 m | ≤ 0.35 m |
+| speed-setpoint jump at plan swap         | ≤ 0.02 m/s      | ≤ 0.5 m/s |
+| preview-heading jump at plan swap        | ≤ 0.01 rad      | ≤ 0.15 rad |
+
+Bounds are for plans within the calibrated envelope (lateral accel well
+under the profile's limit; the fixture curve peaks at ~0.6 m/s²). Sharper
+plans track with proportionally larger corner-cutting error — pure pursuit
+cuts inside a curve by roughly `Ld²/2R`.
+
 
 ## Step frames
 
@@ -123,6 +196,9 @@ extended with:
 
 - `dl` (`policy.act` only): `{lim: deadlineMs|null, el: elapsedMs|null,
   miss: 0|1, ap: 'policy'|'repeat-last'|'zero-control'|'scripted'}`.
+- `ex` (`policy.act` only, `trajExec: 'pure-pursuit'` trajectory steps
+  only): executor telemetry — pose, cross-track/along-track, applied
+  setpoints and preview point (see "Trajectory execution").
 - `fb`: `null`, or a shared-memory frame-bundle reference (ShmBridge
   contract): `{shm, tick, cams: [[id, digest, off, len, w, h, fmt]…]}`
   where `digest` is CRC32 (IEEE) of the payload bytes as 8-char lowercase
@@ -145,8 +221,11 @@ bytes. The server never inspects it and it never affects stepping.
 
 `adapters/policy-runner` (`simforge_policy_runner`) is the canonical
 client: it spawns/attaches to an env-server, runs seeded episodes against
-a scripted policy and a small PyTorch MLP, records per-step inference
-timing and deadline misses, and writes an episode trace as JSONL. Each
-record carries a `digest` of its deterministic fields (wall-clock timing is
-excluded); the final line holds the chained episode digest — two runs with
+scripted control and scripted-trajectory policies and a small PyTorch MLP,
+records per-step inference timing and deadline misses, and writes an
+episode trace as JSONL. Each record carries the deterministic step fields
+— including the wire action, the policy's per-act `reasoning` text and the
+`ex` executor telemetry — plus a `digest`: a SHA-256 chained over the
+canonical JSON of every deterministic record so far (wall-clock timing is
+excluded). The final line holds the chained episode digest — two runs with
 the same seed and policy must match digests exactly.

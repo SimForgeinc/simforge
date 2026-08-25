@@ -6,7 +6,7 @@
  * against the same seed observes byte-identical episodes.
  */
 
-import type { VehicleControl } from '@simforge/engine';
+import type { Vec2, VehicleControl } from '@simforge/engine';
 
 /** One policy decision, applied to the metric-subject actor via the engine's action hook. */
 export interface EnvAction {
@@ -14,6 +14,14 @@ export interface EnvAction {
   readonly targetSpeedMps?: number;
   readonly targetAccelerationMps2?: number;
   readonly motionDirection?: -1 | 1;
+  /**
+   * Pure-pursuit steering override: aim the dynamic backend's bicycle
+   * steering at this world-frame point/heading instead of the authored
+   * route (set together by the trajectory executor; see
+   * `@simforge/engine` sim/trajectory-follower.ts).
+   */
+  readonly previewPoint?: Vec2;
+  readonly previewHeadingRad?: number;
   /**
    * Low-level control passthrough (steer/pedals) into the force-based backend.
    * Stays inside the profile's steer clamp/rate/lag and jerk envelope.
