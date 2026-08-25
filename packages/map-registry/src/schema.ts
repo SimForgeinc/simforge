@@ -14,6 +14,7 @@ export interface MapClosure {
   members: Record<string, ClosureMember>;
   kind: 'canonical' | DerivedClosureKind;
   toolFingerprint?: string;
+  metadata?: { viewerOnly?: boolean };
 }
 
 export interface MapVersionRecord {

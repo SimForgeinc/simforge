@@ -52,6 +52,7 @@
     "@simforge/engine": "workspace:*",
     "@simforge/maps": "workspace:*",
     "@simforge/map-registry": "workspace:*",
+    "@simforge/map-pipeline": "workspace:*",
     "@simforge/openscenario": "workspace:*",
     "@simforge/render": "workspace:*",
     "@simforge/scenario": "workspace:*",
