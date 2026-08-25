@@ -24,12 +24,6 @@
     "sourceRevision": "__REV__",
     "deployment": "host-native"
   },
-  "validationLane": {
-    "fenceCapability": "control.native",
-    "maxWidth": 320,
-    "maxHeight": 240,
-    "engineVersion": "__REV__"
-  },
   "scratchDir": "/opt/simforge/uniscenarios-native/state/scratch",
   "cacheDir": "/opt/simforge/uniscenarios-native/state/cache",
   "gpuLockPath": "/opt/simforge/uniscenarios-native/state/run/gpu.lock",
