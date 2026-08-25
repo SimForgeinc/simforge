@@ -375,6 +375,7 @@ impl SceneApp {
                         ..default()
                     }),
                 ScheduleRunnerPlugin::run_loop(Duration::ZERO),
+                crate::road_detail::RoadDetailPlugin,
             ))
             .add_systems(Update, spawn_loaded_tiles)
             .insert_resource(MainReceiver(rx.clone()));
@@ -560,6 +561,26 @@ impl SceneApp {
     /// Ground height under (x, z) from the readiness height field.
     pub fn ground_at(&self, x: f32, z: f32) -> f32 {
         self.ground.sample(x, z)
+    }
+
+    /// Apply a `simforge.road-detail/v1` sidecar (splat-blended asphalt
+    /// variants + wear/marking modulation + decal overlay) to the spawned
+    /// scene. Call after [`Self::wait_until_ready`]; follow with
+    /// [`Self::warmup`] so the extended-material pipelines compile before
+    /// capture. No-op for the instance-ID pass (ID materials are never
+    /// GLB-named).
+    pub fn apply_road_detail(
+        &mut self,
+        sidecar_path: &str,
+    ) -> Result<crate::road_detail::RoadDetailStats> {
+        let stats =
+            crate::road_detail::apply(&mut self.app, std::path::Path::new(sidecar_path))
+                .map_err(|e| anyhow::anyhow!("{e:#}"))?;
+        // Pump one update so the swapped materials extract before the next
+        // render; drain any passes it produced.
+        self.app.update();
+        while self.receiver.try_recv().is_ok() {}
+        Ok(stats)
     }
 
     /// Spawn or move one scene-state actor cuboid. The box is named

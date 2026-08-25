@@ -20,6 +20,7 @@ pub mod scene_state;
 pub mod engine;
 pub mod job;
 pub mod lighting;
+pub mod road_detail;
 pub mod post_grain;
 pub mod profiles;
 pub mod veg;

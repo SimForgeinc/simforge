@@ -1,7 +1,7 @@
 {
   "schema": "sensor-corpus.v1",
   "mapId": "easterbrook-discovery-school",
-  "sourceRoot": "dev-assets/easterbrook-discovery-school/browser/3d",
+  "sourceRoot": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d",
   "tools": {
     "node": "v22.23.2",
     "gltfTransform": "4.4.2",
@@ -29,7 +29,7 @@
       "path": "tiles/road.glb",
       "bytes": 55569092,
       "sha256": "42ab3d840492875247d8baa6dc04c49e075e83ffd72e89cbd7ddd6cae0c0029e",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/road.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/road.glb",
       "srcSha256": "d20eb4dc1a893555768e2b97e172193163be4ef910865fd07d72eda8a98cb61a",
       "kind": "glb",
       "texturesConverted": 57
@@ -38,7 +38,7 @@
       "path": "tiles/tile_0_1.lod0.glb",
       "bytes": 59609280,
       "sha256": "8150fd1f0b84a0efe132a9b5a474de581206e60efdf1850655be0d37e472da3a",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod0.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod0.glb",
       "srcSha256": "6519c3b52e31e6bb95d26c176b8ac417898dbc2973a302f242061c70a09bd250",
       "kind": "glb",
       "texturesConverted": 83
@@ -47,7 +47,7 @@
       "path": "tiles/tile_0_1.lod1.glb",
       "bytes": 57922884,
       "sha256": "925036d1096db4e41fd857c55f1783bf465b54df3fa09c04193cc4829149136f",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod1.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod1.glb",
       "srcSha256": "f8b5a3fc8264710024b03cae8596bb7ea9075d8a52b6a9f7850e969d684d9d52",
       "kind": "glb",
       "texturesConverted": 83
@@ -56,7 +56,7 @@
       "path": "tiles/tile_0_1.lod2.glb",
       "bytes": 17205008,
       "sha256": "0ea536093f807ee15a2b37a2bb2716c860bdf460442d74f3e85a58957b6152a6",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod2.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod2.glb",
       "srcSha256": "0b4a555719adcc1596f763872a7d218bc403c0393c17194f6ad6e5302a16ae8d",
       "kind": "glb",
       "texturesConverted": 83
@@ -65,7 +65,7 @@
       "path": "tiles/tile_0_1.lod3.glb",
       "bytes": 6308220,
       "sha256": "18e3b0cbea78b931d5509bdb5c3cd96413c7d7b7d7a7527aef2d5ba50f356620",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod3.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_0_1.lod3.glb",
       "srcSha256": "b9a0a7b3ab838e8e2fe5dcd6fa9f7d0a7769fedf4efafb47c744841d7dd8dff9",
       "kind": "glb",
       "texturesConverted": 83
@@ -74,7 +74,7 @@
       "path": "tiles/tile_1_0.lod0.glb",
       "bytes": 50729868,
       "sha256": "cd0a9e181b8182724131fde554a6d3a656704fd1b9a67189e416cc0aa0cef82d",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod0.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod0.glb",
       "srcSha256": "84be3b159ff2558bff48ea1468391c47a6cb7047058b40142741d19199e8978b",
       "kind": "glb",
       "texturesConverted": 54
@@ -83,7 +83,7 @@
       "path": "tiles/tile_1_0.lod1.glb",
       "bytes": 39588964,
       "sha256": "1710cc4fb2631abe4191db342d508f9e1b1fe61544a737f01339c2f9ee13938a",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod1.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod1.glb",
       "srcSha256": "88aeb43cd2b33258a9121bda3860c4934ca8a869c261d19c8296b55f2fb7d73a",
       "kind": "glb",
       "texturesConverted": 54
@@ -92,7 +92,7 @@
       "path": "tiles/tile_1_0.lod2.glb",
       "bytes": 11656264,
       "sha256": "f9077132a25bc923ce1abda54eccc66b8af3029c17507b5a53be73f533cd7b11",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod2.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod2.glb",
       "srcSha256": "c94e0521ee48dc67bc19f6143fb954fbf1d55652b0064a3bf341737439afc1be",
       "kind": "glb",
       "texturesConverted": 54
@@ -101,7 +101,7 @@
       "path": "tiles/tile_1_0.lod3.glb",
       "bytes": 4311240,
       "sha256": "5dd69bb1ed53af29d25c3a3720c559c1743fd053a33ab5e519b4c41eb6b755f7",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod3.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_0.lod3.glb",
       "srcSha256": "653902167ad244f92218f889d0be8d8800b280adaf68ffcb92ee5381b7288c4d",
       "kind": "glb",
       "texturesConverted": 54
@@ -110,7 +110,7 @@
       "path": "tiles/tile_1_1.lod0.glb",
       "bytes": 51448996,
       "sha256": "a7b64665e5095d6dc228113d90578fd938cba5be8ad0b74a29c5665dba142989",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod0.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod0.glb",
       "srcSha256": "5b5f653146a6e7fea257649d76ec245c99029c1e2da8b750a0ca0ba31f3eeca8",
       "kind": "glb",
       "texturesConverted": 65
@@ -119,7 +119,7 @@
       "path": "tiles/tile_1_1.lod1.glb",
       "bytes": 47653032,
       "sha256": "6f81561e3faf1875b342cf19d2acb21beed3c8617457a3e56f3d3e75bceaf32b",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod1.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod1.glb",
       "srcSha256": "c556dd85bce9110f765062131906e0c9eb779d653837f8ba16a81d76d7e0bc21",
       "kind": "glb",
       "texturesConverted": 65
@@ -128,7 +128,7 @@
       "path": "tiles/tile_1_1.lod2.glb",
       "bytes": 16661260,
       "sha256": "9d7d05463e25c32ede5d9adeaab805ca7903ec55621c5777c1641c2a086db6a4",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod2.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod2.glb",
       "srcSha256": "3b10203d5b7aca6c67d8f1a35993a403be98d4b76a187419f8c13f2e473cfd29",
       "kind": "glb",
       "texturesConverted": 65
@@ -137,7 +137,7 @@
       "path": "tiles/tile_1_1.lod3.glb",
       "bytes": 7777944,
       "sha256": "d3da9b3aabf53d67cb9b37eff7a0be69499a4a9c0cae1939eaad52418018f749",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod3.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/tile_1_1.lod3.glb",
       "srcSha256": "84bdc28dc96746cc26b341ea17fa2ff1f007b54f84081b2821e03a9c8c264118",
       "kind": "glb",
       "texturesConverted": 65
@@ -146,7 +146,7 @@
       "path": "tiles/veg_0_0.instances.json",
       "bytes": 946,
       "sha256": "12dab074b4b8230136e07131be648d18aac5d8a4bd69ca9c4f8f0e27bec78ac6",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.instances.json",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.instances.json",
       "srcSha256": "12dab074b4b8230136e07131be648d18aac5d8a4bd69ca9c4f8f0e27bec78ac6",
       "kind": "sidecar"
     },
@@ -154,7 +154,7 @@
       "path": "tiles/veg_0_0.lod0.glb",
       "bytes": 6523400,
       "sha256": "edeaf38d20f1578ac17f0012e8874dfc41b3ce4746bd965e0645b8ee6f3289a2",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod0.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod0.glb",
       "srcSha256": "23817d26a2ccb7895a4cd52460eabdd10ecdfde5ec0606b6d750f9ea6b2da38c",
       "kind": "glb",
       "texturesConverted": 3
@@ -163,7 +163,7 @@
       "path": "tiles/veg_0_0.lod1.glb",
       "bytes": 6378920,
       "sha256": "8271b96b18f2bbee6ccb363705a06e7b84fe7964aa1ac3fc7a5cd53bebf20600",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod1.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod1.glb",
       "srcSha256": "3d29615aad08a7794103e905eaa77b59fd3c6b1d7cd5ae416e5b4bc3f70e8fa9",
       "kind": "glb",
       "texturesConverted": 3
@@ -172,7 +172,7 @@
       "path": "tiles/veg_0_0.lod2.glb",
       "bytes": 2468968,
       "sha256": "4ea1df91e9e97f2b495818e02b6bbeb5747a7a1812f989c0c2461d3ff0265970",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod2.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod2.glb",
       "srcSha256": "6774c5a448b245e28705de5922ae15bae02f786fa6759723b6a161e843c88b3f",
       "kind": "glb",
       "texturesConverted": 3
@@ -181,7 +181,7 @@
       "path": "tiles/veg_0_0.lod3.glb",
       "bytes": 1443668,
       "sha256": "92045212dfaf881b355250720a9f229320f52c47db6eabd99144bed02c0cd6e7",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod3.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_0.lod3.glb",
       "srcSha256": "a668b00c63277ae6cbacbf7ab928c53f908aeb35c0654be58e55dfb07fd25112",
       "kind": "glb",
       "texturesConverted": 3
@@ -190,7 +190,7 @@
       "path": "tiles/veg_0_1.instances.json",
       "bytes": 32891,
       "sha256": "dd0679372bbda16a427448e309720faac4da4475f0861c84620a00148feff7b4",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.instances.json",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.instances.json",
       "srcSha256": "dd0679372bbda16a427448e309720faac4da4475f0861c84620a00148feff7b4",
       "kind": "sidecar"
     },
@@ -198,7 +198,7 @@
       "path": "tiles/veg_0_1.lod0.glb",
       "bytes": 6759556,
       "sha256": "81f40862f248384fc5fdac400c9d303fce6eec91c386b815cf3366ed85b02fc4",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod0.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod0.glb",
       "srcSha256": "7b65405f892ce45d0aa3ac4ae48a4d1f5b71a347b8af217ba94c9ba3062d13d3",
       "kind": "glb",
       "texturesConverted": 4
@@ -207,7 +207,7 @@
       "path": "tiles/veg_0_1.lod1.glb",
       "bytes": 6615056,
       "sha256": "28f66a835127f11f29827fc9c7de315f604821116f61efc30b4a4e43225795c7",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod1.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod1.glb",
       "srcSha256": "5b584c424f317351cb6691085b4029a0c017e424d41bf55c79868c6769071b5b",
       "kind": "glb",
       "texturesConverted": 4
@@ -216,7 +216,7 @@
       "path": "tiles/veg_0_1.lod2.glb",
       "bytes": 2705092,
       "sha256": "a327a7897a1198c4e5b409dcaa11ca2aae56606d3bc8c377810abe98a8aaed82",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod2.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod2.glb",
       "srcSha256": "ecec05ae2d23c97ce6f7b846c6a6c885e6293e8eba39aaa335333e731ab9a027",
       "kind": "glb",
       "texturesConverted": 4
@@ -225,7 +225,7 @@
       "path": "tiles/veg_0_1.lod3.glb",
       "bytes": 1538148,
       "sha256": "fc40fd00570d67f862047d44881267ed342467596e8ab72b84eaf578e0d5d3e3",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod3.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_0_1.lod3.glb",
       "srcSha256": "100312f011d7d17d377c316721f98c4d3faa2c31a8a7bb47d2cb40da70c20329",
       "kind": "glb",
       "texturesConverted": 4
@@ -234,7 +234,7 @@
       "path": "tiles/veg_1_0.instances.json",
       "bytes": 36563,
       "sha256": "516721f0e3b2af479ea0020a2e49bdb6e78c721b01d2daa9ed9e07dd25663c85",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.instances.json",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.instances.json",
       "srcSha256": "516721f0e3b2af479ea0020a2e49bdb6e78c721b01d2daa9ed9e07dd25663c85",
       "kind": "sidecar"
     },
@@ -242,7 +242,7 @@
       "path": "tiles/veg_1_0.lod0.glb",
       "bytes": 6759208,
       "sha256": "2a1ed0e1dd60b0c1119cbf08523993745cd1122a975dc091e34bf3443e78482d",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod0.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod0.glb",
       "srcSha256": "fd2c3a7c88712b483c7c4bd4e95219015ad4b232c3c03d7be3436437a34ccb86",
       "kind": "glb",
       "texturesConverted": 4
@@ -251,7 +251,7 @@
       "path": "tiles/veg_1_0.lod1.glb",
       "bytes": 6614708,
       "sha256": "1267ff9fb0da058da73c1079c229eb2712b21ae5c42e87002b6cf3e9b178eccb",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod1.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod1.glb",
       "srcSha256": "65f58df23326c34079d87281f3e3ac61cc633f020b5839d54f194c0574e820a0",
       "kind": "glb",
       "texturesConverted": 4
@@ -260,7 +260,7 @@
       "path": "tiles/veg_1_0.lod2.glb",
       "bytes": 2704748,
       "sha256": "b77d21eb723433c92ce0e8661b8db512a3fdf669b3f385f109333583742b8db5",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod2.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod2.glb",
       "srcSha256": "ca849f05c5f2ba2cdde9ea2038ea31fa8fcf5a8e11d4a1eed0d5da909ad4fbc6",
       "kind": "glb",
       "texturesConverted": 4
@@ -269,7 +269,7 @@
       "path": "tiles/veg_1_0.lod3.glb",
       "bytes": 1537800,
       "sha256": "1553799e7b46e67fbe8119123657e6d5da158ae32baf37cc26760da873f8a164",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod3.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_0.lod3.glb",
       "srcSha256": "bf13fe1a3aec64a3c93ca94bd23ea2fc9860916332a9d2e59b802cbe6333c1c3",
       "kind": "glb",
       "texturesConverted": 4
@@ -278,7 +278,7 @@
       "path": "tiles/veg_1_1.instances.json",
       "bytes": 26267,
       "sha256": "8ddadd328ac1c3c7a36ddf5882b18cca0212fe36134fae3ad0d93817a35151ec",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.instances.json",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.instances.json",
       "srcSha256": "8ddadd328ac1c3c7a36ddf5882b18cca0212fe36134fae3ad0d93817a35151ec",
       "kind": "sidecar"
     },
@@ -286,7 +286,7 @@
       "path": "tiles/veg_1_1.lod0.glb",
       "bytes": 6759556,
       "sha256": "81f40862f248384fc5fdac400c9d303fce6eec91c386b815cf3366ed85b02fc4",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod0.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod0.glb",
       "srcSha256": "7b65405f892ce45d0aa3ac4ae48a4d1f5b71a347b8af217ba94c9ba3062d13d3",
       "kind": "glb",
       "texturesConverted": 4
@@ -295,7 +295,7 @@
       "path": "tiles/veg_1_1.lod1.glb",
       "bytes": 6615056,
       "sha256": "28f66a835127f11f29827fc9c7de315f604821116f61efc30b4a4e43225795c7",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod1.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod1.glb",
       "srcSha256": "5b584c424f317351cb6691085b4029a0c017e424d41bf55c79868c6769071b5b",
       "kind": "glb",
       "texturesConverted": 4
@@ -304,7 +304,7 @@
       "path": "tiles/veg_1_1.lod2.glb",
       "bytes": 2705092,
       "sha256": "a327a7897a1198c4e5b409dcaa11ca2aae56606d3bc8c377810abe98a8aaed82",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod2.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod2.glb",
       "srcSha256": "ecec05ae2d23c97ce6f7b846c6a6c885e6293e8eba39aaa335333e731ab9a027",
       "kind": "glb",
       "texturesConverted": 4
@@ -313,7 +313,7 @@
       "path": "tiles/veg_1_1.lod3.glb",
       "bytes": 1538148,
       "sha256": "fc40fd00570d67f862047d44881267ed342467596e8ab72b84eaf578e0d5d3e3",
-      "srcPath": "dev-assets/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod3.glb",
+      "srcPath": "../simforge-assets/map-bundles/easterbrook-discovery-school/browser/3d/tiles/veg_1_1.lod3.glb",
       "srcSha256": "100312f011d7d17d377c316721f98c4d3faa2c31a8a7bb47d2cb40da70c20329",
       "kind": "glb",
       "texturesConverted": 4
