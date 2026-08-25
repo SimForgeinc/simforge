@@ -82,6 +82,18 @@ def ffprobe(path: Path) -> dict:
     return streams[0] if streams else {}
 
 
+def video_coverage(path: Path) -> dict:
+    signal = run([
+        "ffmpeg", "-v", "error", "-i", str(path), "-vf", "signalstats,metadata=print:file=-",
+        "-an", "-f", "null", "-",
+    ], capture=True)
+    luma = [float(value) for value in re.findall(r"lavfi\.signalstats\.YAVG=([0-9.]+)", signal.stdout)]
+    hashes = run(["ffmpeg", "-v", "error", "-i", str(path), "-an", "-f", "framemd5", "-"], capture=True)
+    frame_hashes = [line.rsplit(",", 1)[-1].strip() for line in hashes.stdout.splitlines() if line and not line.startswith("#")]
+    mean_luma = statistics.fmean(luma) if luma else 0.0
+    return {"meanLuma": mean_luma, "nonBlank": mean_luma > 2.0, "uniqueFrames": len(set(frame_hashes))}
+
+
 def campaign_job_map(campaign: Path) -> dict[str, list[str]]:
     by_doc: dict[str, list[str]] = {}
     qa_records = load(campaign / "qa-records.json") if (campaign / "qa-records.json").exists() else {}
@@ -230,6 +242,21 @@ def corpus_glbs(repo: Path, map_id: str) -> list[str]:
         raise FileNotFoundError(f"no materialized corpus GLBs for {map_id}")
     return paths
 
+def corpus_vegetation(repo: Path, map_id: str) -> tuple[list[str], list[str]]:
+    root = repo / ".corpus" / map_id
+    manifest = load(root / "manifest.json")
+    prototypes, sidecars = [], []
+    for record in manifest["files"]:
+        rel = record["path"]
+        path = root / rel
+        if not path.is_file():
+            continue
+        if "/veg_" in rel and rel.endswith(".lod0.glb"):
+            prototypes.append(str(path.resolve()))
+        elif rel.endswith(".instances.json"):
+            sidecars.append(str(path.resolve()))
+    return prototypes, sidecars
+
 
 def inventory(args) -> None:
     campaign, repo, out = Path(args.campaign), Path(args.repo), Path(args.out)
@@ -243,6 +270,11 @@ def inventory(args) -> None:
         video = carla_video(campaign, doc_id, jobs)
         spec = ffprobe(video) if video else {}
         record = ledger.get("documents", {}).get(doc_id, {})
+        video_job_id = video.parent.name if video else None
+        video_timing = next((
+            float(h["renderS"]) for h in record.get("history", [])
+            if h.get("jobId") == video_job_id and h.get("renderS")
+        ), None)
         times = [] if record.get("lane") != "carla" else [
             float(h["renderS"]) for h in record.get("history", [])
             if h.get("state") == "succeeded" and h.get("renderS")
@@ -255,7 +287,9 @@ def inventory(args) -> None:
             "chase": next(s for s in sensors if s["id"] == "chase-cam-trailing"),
             "video": {"path": str(video) if video else None, **spec},
             "durationS": float(scenario.get("choreography", {}).get("clipSeconds", DURATION_S)),
-            "carlaA100RenderS": times[-1] if times else (record.get("renderS") if record.get("lane") == "carla" else None),
+            "carlaA100RenderS": video_timing if video_timing is not None else (
+                times[-1] if times else (record.get("renderS") if record.get("lane") == "carla" else None)
+            ),
         })
     dump(out, {"schema": "simforge.bevy-campaign-inventory/v1", "documents": rows})
     print(json.dumps({"documents": len(rows), "carlaVideos": sum(bool(r["video"]["path"]) for r in rows),
@@ -277,8 +311,10 @@ def prepare(args) -> None:
         dump(job_dir / "scene-states.json", states)
         dump(job_dir / "scene-playback.json", playback)
         shutil.copy2(scenario_path, job_dir / "scenario.json")
+        veg_glbs, veg_sidecars = corpus_vegetation(repo, map_id)
         job = {"schema": "simforge.bevy-campaign-job/v1", **row, "fps": FPS, "width": WIDTH, "height": HEIGHT,
                "frameCount": len(states), "corpusGlbs": corpus_glbs(repo, map_id),
+               "vegGlbs": veg_glbs, "vegSidecars": veg_sidecars,
                "vehicleModels": str((repo / "catalog/vehicles-carla").resolve()),
                "rigProgram": str((repo / "qualification/render-qualification-program.v1.json").resolve()),
                "xodr": str((Path("/home/path/local-uniscenarios/maps") / map_id / "xodr.xodr").resolve()),
@@ -405,38 +441,43 @@ def relocated_job(job: dict, job_path: Path) -> dict:
     moved["vehicleModels"] = str(root / "catalog" / "vehicles-carla")
     return moved
 
-
 def render_playback(args) -> None:
     job_path = Path(args.job)
     job = relocated_job(load(job_path), job_path)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    frame_count = min(job["frameCount"], args.ticks) if args.ticks else job["frameCount"]
     initial_y = load(Path(job["jobDir"]) / "scene-playback.json")["frames"][0]["actors"][0]["position"][1]
     cmd = [args.binary, "--glbs", ",".join(job["corpusGlbs"]), "--scene-state", str(Path(job["jobDir"]) / "scene-playback.json"),
-           "--ticks", str(job["frameCount"]), "--width", str(job["width"]), "--height", str(job["height"]),
+           "--ticks", str(frame_count), "--width", str(job["width"]), "--height", str(job["height"]),
            "--fov", str(job["chase"]["camera"]["verticalFovDeg"]), "--warmup", "20", "--ground-y", str(initial_y),
            "--camera", "follow", "--chase-dist", "8.6", "--chase-height", "3.2", "--out-dir", str(out),
            "--vehicle-models", job["vehicleModels"]]
-    started = time.time(); samples = []
+    started = time.time()
+    samples = []
     process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     while process.poll() is None:
         sample = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used", "--format=csv,noheader,nounits"],
                                 text=True, capture_output=True)
         if sample.returncode == 0:
-            try: samples.append([int(v.strip()) for v in sample.stdout.strip().split(",")])
-            except ValueError: pass
+            try:
+                samples.append([int(v.strip()) for v in sample.stdout.strip().split(",")])
+            except ValueError:
+                pass
         time.sleep(1)
     log = process.stdout.read() if process.stdout else ""
     (out / "renderer.log").write_text(log)
     if process.returncode:
         raise SystemExit(f"renderer exited {process.returncode}")
     wall = time.time() - started
-    benchmark = {"docId": job["docId"], "wallS": wall, "fps": job["frameCount"] / wall,
+    benchmark = {"docId": job["docId"], "wallS": wall, "fps": frame_count / wall,
                  "gpuUtilMeanPct": statistics.fmean(s[0] for s in samples) if samples else None,
                  "gpuUtilMaxPct": max((s[0] for s in samples), default=None),
                  "vramMaxMiB": max((s[1] for s in samples), default=None)}
+    video_path = out / "chase-cam-trailing.mp4"
+    encode_pngs(str(out / "frame-%04d.rgb.png"), video_path, job["fps"])
+    benchmark["coverage"] = video_coverage(video_path)
     dump(out / "benchmark.json", benchmark)
-    encode_pngs(str(out / "frame-%04d.rgb.png"), out / "chase-cam-trailing.mp4", job["fps"])
     print(json.dumps(benchmark))
 
 def render_shard(args) -> None:
@@ -446,7 +487,7 @@ def render_shard(args) -> None:
         job = Path(args.jobs) / doc_id / "job.json"
         output = Path(args.out) / doc_id
         try:
-            render_playback(argparse.Namespace(job=str(job), binary=args.binary, out=str(output)))
+            render_playback(argparse.Namespace(job=str(job), binary=args.binary, out=str(output), ticks=None))
         except (Exception, SystemExit) as error:
             failures.append({"docId": doc_id, "cause": str(error)})
     dump(Path(args.out) / "shard-results.json", {
@@ -566,7 +607,7 @@ def parser() -> argparse.ArgumentParser:
     q = sub.add_parser("inventory"); q.add_argument("--campaign", required=True); q.add_argument("--repo", required=True); q.add_argument("--out", required=True); q.set_defaults(func=inventory)
     q = sub.add_parser("prepare"); q.add_argument("--campaign", required=True); q.add_argument("--repo", required=True); q.add_argument("--out", required=True); q.set_defaults(func=prepare)
     q = sub.add_parser("assemble"); q.add_argument("--job", required=True); q.add_argument("--raw", required=True); q.add_argument("--out", required=True); q.set_defaults(func=assemble)
-    q = sub.add_parser("render-playback"); q.add_argument("--job", required=True); q.add_argument("--binary", required=True); q.add_argument("--out", required=True); q.set_defaults(func=render_playback)
+    q = sub.add_parser("render-playback"); q.add_argument("--job", required=True); q.add_argument("--binary", required=True); q.add_argument("--out", required=True); q.add_argument("--ticks", type=int); q.set_defaults(func=render_playback)
     q = sub.add_parser("render-shard"); q.add_argument("--shard", required=True); q.add_argument("--jobs", required=True); q.add_argument("--binary", required=True); q.add_argument("--out", required=True); q.set_defaults(func=render_shard)
     q = sub.add_parser("deploy"); q.add_argument("--repo", required=True); q.add_argument("--parity", required=True); q.add_argument("--binary", required=True); q.add_argument("--host"); q.set_defaults(func=deploy)
     q = sub.add_parser("fleet"); q.add_argument("--parity", required=True); q.add_argument("--host"); q.set_defaults(func=fleet)
