@@ -1,26 +1,38 @@
 # syntax=docker/dockerfile:1.7
+# Thin browser worker: code layers only, on top of the pinned
+# browser-worker-base (node + chromium + OS deps — see base.browser.Dockerfile).
+# Dependency installs are ordered before source copies and use BuildKit cache
+# mounts, so a code-only change rebuilds in seconds and pushes/pulls only thin
+# layers on hosts where the base is seeded.
+ARG BROWSER_WORKER_BASE_IMAGE
+# Manifest-pruning stage: reduce /packages to package.json files only, so the
+# pnpm install layer below is keyed on manifests (content-checksummed COPY)
+# and stays cached across source-only changes.
+FROM node:22.14.0-bookworm-slim AS manifests
+WORKDIR /src
+COPY --from=source /packages ./packages
+RUN find ./packages -mindepth 2 -maxdepth 2 ! -name package.json -exec rm -rf {} +
+
 FROM node:22.14.0-bookworm-slim AS build
 WORKDIR /src
 RUN corepack enable && corepack prepare pnpm@11.18.0 --activate
+# Dependency manifests first: pnpm install stays cached across code changes.
 COPY --from=source /package.json /pnpm-lock.yaml /pnpm-workspace.yaml /tsconfig.base.json ./
+COPY --from=manifests /src/packages ./packages
+COPY --from=source /services/render-worker/package.json ./services/render-worker/package.json
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
+    pnpm install --frozen-lockfile --ignore-scripts --store-dir /pnpm-store
 COPY --from=source /packages ./packages
 COPY --from=source /services/render-worker ./services/render-worker
-RUN pnpm install --frozen-lockfile --ignore-scripts \
- && pnpm --filter @uniscenarios/browser-renderer... --filter @uniscenarios/render-worker... build \
+RUN pnpm --filter @uniscenarios/browser-renderer... --filter @uniscenarios/render-worker... build \
  && pnpm deploy --legacy --filter @uniscenarios/render-worker --prod /out/worker \
  && pnpm deploy --legacy --filter @uniscenarios/browser-renderer --prod /out/browser-renderer
 
-FROM node:22.14.0-bookworm-slim AS runtime
+FROM ${BROWSER_WORKER_BASE_IMAGE} AS runtime
+ARG BROWSER_WORKER_BASE_IMAGE
 ARG SOURCE_REVISION
 ARG IMAGE_VERSION
-RUN test -n "$SOURCE_REVISION" && test -n "$IMAGE_VERSION" \
- && apt-get update \
- && apt-get install -y --no-install-recommends chromium tini ca-certificates ffmpeg libegl1 libgles2 \
- && rm -rf /var/lib/apt/lists/* \
- && groupadd --system --gid 10001 renderer \
- && useradd --system --uid 10001 --gid renderer --home-dir /nonexistent --shell /usr/sbin/nologin renderer \
- && mkdir -p /opt/uniscenarios /scratch /cache /run/uniscenarios \
- && chown -R renderer:renderer /scratch /cache /run/uniscenarios
+RUN test -n "$SOURCE_REVISION" && test -n "$IMAGE_VERSION"
 COPY --from=build --chown=renderer:renderer /out/worker /opt/uniscenarios/worker
 COPY --from=build --chown=renderer:renderer /out/browser-renderer /opt/uniscenarios/browser-renderer
 # Real-GPU rendering by default: ANGLE over EGL with the NVIDIA glvnd vendor.
@@ -42,6 +54,7 @@ LABEL org.opencontainers.image.title="UniScenarios browser render worker" \
       org.opencontainers.image.revision="$SOURCE_REVISION" \
       org.opencontainers.image.source="https://github.com/SimForgeinc/UniScenarios" \
       io.uniscenarios.engine="browser" \
+      io.uniscenarios.worker-base="$BROWSER_WORKER_BASE_IMAGE" \
       io.uniscenarios.contract="uniscenario.render-worker-control/v2"
 USER 10001:10001
 WORKDIR /scratch

@@ -1,0 +1,28 @@
+# UniScenarios host-native render worker (systemd template).
+# Instance name = config basename, e.g.:
+#   systemctl enable --now uniscenarios-native-worker@carla-0.service
+# reads /opt/simforge/uniscenarios-native/config/carla-0.json and
+#       /opt/simforge/uniscenarios-native/env/carla-0.env
+#
+# Installed by bootstrap-host.sh, which substitutes __RUN_USER__.
+[Unit]
+Description=UniScenarios host-native render worker (%i)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__RUN_USER__
+EnvironmentFile=/opt/simforge/uniscenarios-native/env/%i.env
+ExecStart=/opt/simforge/uniscenarios-native/node/bin/node /opt/simforge/uniscenarios-native/current/worker/dist/main.js --config /opt/simforge/uniscenarios-native/config/%i.json
+WorkingDirectory=/opt/simforge/uniscenarios-native
+Restart=always
+RestartSec=5
+# A worker whose revision/lockfile hash is not approved refuses registration
+# and exits; the restart loop retries until the operator approves the row.
+StartLimitIntervalSec=0
+KillSignal=SIGTERM
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

@@ -18,6 +18,27 @@ const ModuleControlConfigSchema = z.strictObject({
   options: ModuleOptionsSchema.default({}),
 });
 
+/**
+ * Images-last staged validation lane. A worker carrying this block is a
+ * temporary "-staged" identity that runs unreleased code (mounted wheel/dist)
+ * on top of a baked chassis image. The lane is fenced off from production
+ * claims in both directions by the control plane's own compatibility checks:
+ * - `fenceCapability` is added to the engine's declared capabilities; probe
+ *   render specs list it in `capabilityIntent.required`, which no permanent
+ *   fleet worker declares, so the fleet can never claim a staged probe.
+ * - `maxWidth`/`maxHeight` clamp the declared limits so every production
+ *   render (>=540p sources) is dimension-incompatible with this worker and
+ *   can never be claimed by it. Probe specs must fit inside the clamp.
+ * - `engineVersion` (typically the staged source commit SHA) overrides the
+ *   engine's version string so worker_nodes provenance records exactly which
+ *   unreleased code ran.
+ */
+const ValidationLaneConfigSchema = z.strictObject({
+  fenceCapability: z.string().min(1).max(64),
+  maxWidth: z.number().int().min(16).max(1024),
+  maxHeight: z.number().int().min(16).max(1024),
+  engineVersion: z.string().min(1).max(128).optional(),
+});
 export const RenderWorkerConfigSchema = z.strictObject({
   workerId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/),
   instanceId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/),
@@ -48,6 +69,21 @@ export const RenderWorkerConfigSchema = z.strictObject({
     host: z.string().min(1).default('0.0.0.0'),
     port: z.number().int().min(1).max(65535).default(8080),
   }).prefault({}),
+  /** Extra host binaries to verify at startup, beyond the audited per-engine defaults (see preflight.ts). */
+  requiredBinaries: z.array(z.string().min(1).max(4096)).max(32).optional(),
+  validationLane: ValidationLaneConfigSchema.optional(),
+}).check((ctx) => {
+  if (!ctx.value.validationLane) return;
+  for (const field of ['workerId', 'instanceId'] as const) {
+    if (!ctx.value[field].endsWith('-staged')) {
+      ctx.issues.push({
+        code: 'custom',
+        path: [field],
+        message: `${field} must end with "-staged" when validationLane is configured so worker provenance is always distinguishable`,
+        input: ctx.value[field],
+      });
+    }
+  }
 });
 
 export type RenderWorkerConfig = z.infer<typeof RenderWorkerConfigSchema>;

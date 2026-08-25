@@ -1,0 +1,40 @@
+{
+  "workerId": "uniscenario-carla-simforge1-native-0-staged",
+  "instanceId": "simforge1-native-carla-0-__REV8__-staged",
+  "engine": {
+    "id": "carla",
+    "options": {
+      "binary": "/opt/simforge/uniscenarios-native/venv/bin/uniscenarios-carla",
+      "engineVersion": "__REV__"
+    }
+  },
+  "control": {
+    "kind": "module",
+    "module": "file:///opt/simforge/uniscenarios-native/config/simcloud-control-adapter.mjs",
+    "options": {
+      "baseUrl": "https://dev.simforge.ai",
+      "workerId": "uniscenario-carla-simforge1-native-0-staged",
+      "tokenEnv": "UNISCENARIO_RENDER_WORKER_TOKEN"
+    }
+  },
+  "labels": {
+    "codeDigest": "__CODE_DIGEST__",
+    "hardwareProfile": "a100-sxm4-40gb-v1",
+    "gpuModel": "NVIDIA-A100-SXM4-40GB",
+    "gpuMemoryMiB": "40960",
+    "sourceRevision": "__REV__",
+    "deployment": "host-native"
+  },
+  "validationLane": {
+    "fenceCapability": "artifact.frames",
+    "maxWidth": 320,
+    "maxHeight": 240,
+    "engineVersion": "__REV__"
+  },
+  "scratchDir": "/opt/simforge/uniscenarios-native/state/scratch",
+  "cacheDir": "/opt/simforge/uniscenarios-native/state/cache",
+  "gpuLockPath": "/opt/simforge/uniscenarios-native/state/run/gpu.lock",
+  "pollIntervalMs": 2000,
+  "retries": { "maxAttempts": 4, "initialDelayMs": 500, "maxDelayMs": 10000 },
+  "health": { "host": "0.0.0.0", "port": 18095 }
+}

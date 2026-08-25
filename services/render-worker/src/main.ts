@@ -1,5 +1,6 @@
 import { loadRenderWorkerConfig } from './config.js';
 import { startWorkerHealthServer } from './health.js';
+import { assertWorkerBinaries } from './preflight.js';
 import { createControlTransport } from './transport.js';
 import { runRenderWorker } from './worker.js';
 
@@ -12,6 +13,7 @@ function configPath(argv: readonly string[]): string {
 
 export async function main(argv: readonly string[]): Promise<void> {
   const config = await loadRenderWorkerConfig(configPath(argv));
+  await assertWorkerBinaries(config);
   const health = await startWorkerHealthServer(config.health.host, config.health.port);
   const drain = new AbortController();
   let signalCount = 0;

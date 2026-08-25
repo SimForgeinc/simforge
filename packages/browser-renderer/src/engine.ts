@@ -85,11 +85,29 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       if (!mapInput) throw new Error('Browser render requires materialized asset map.manifest.');
       const playbackInput = context.inputs.get('playback.bundle');
       if (!playbackInput) throw new Error('Browser render requires materialized asset playback.bundle.');
+      // Map tiles/environment ship as extra lease inputs (`map.assets/<path
+      // relative to the manifest>`). CityViewer resolves tile files relative to
+      // the manifest URL, so materialize the closure beside the manifest; a
+      // content-addressed manifest alone can never resolve its siblings.
+      const mapDir = path.join(context.workspace, 'map-assets');
+      await fs.mkdir(mapDir, { recursive: true });
+      const manifestPath = path.join(mapDir, 'manifest.json');
+      await materializeInput(mapInput.path, manifestPath);
+      for (const [inputId, input] of context.inputs) {
+        if (!inputId.startsWith('map.assets/')) continue;
+        const relativePath = inputId.slice('map.assets/'.length);
+        if (relativePath.length === 0 || relativePath.startsWith('/') || relativePath.includes('..') || relativePath.includes(':')) {
+          throw new Error(`Browser render map asset has an unsafe path: ${inputId}`);
+        }
+        const destination = path.join(mapDir, relativePath);
+        await fs.mkdir(path.dirname(destination), { recursive: true });
+        await materializeInput(input.path, destination);
+      }
       const request: ResolvedBrowserRenderRequest = {
         schema: BROWSER_RENDER_REQUEST_V1_SCHEMA,
         intentSha256: context.intentSha256,
         intent,
-        mapManifestUrl: pathToFileURL(mapInput.path).href,
+        mapManifestUrl: pathToFileURL(manifestPath).href,
         playbackBundle: await materializePlaybackBundle(await fs.readFile(playbackInput.path)),
       };
       const outputs = new Map<string, OutputFile>();
@@ -215,6 +233,16 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       }
     },
   };
+}
+
+/** Hardlink when possible (inputs are immutable), copy across filesystems. */
+async function materializeInput(sourcePath: string, destinationPath: string): Promise<void> {
+  await fs.rm(destinationPath, { force: true });
+  try {
+    await fs.link(sourcePath, destinationPath);
+  } catch {
+    await fs.copyFile(sourcePath, destinationPath);
+  }
 }
 export async function decodePlaybackArchive(bytes: Uint8Array): Promise<unknown> {
   const decoded = bytes[0] === 0x1f && bytes[1] === 0x8b
