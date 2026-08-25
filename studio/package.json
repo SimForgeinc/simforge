@@ -12,6 +12,7 @@
     "worker:harness": "tsx worker/harness.ts",
     "worker:model-run": "tsx scripts/model-run-worker.ts",
     "test:models": "tsx --test app/lib/models/__tests__/model-run-store.test.ts worker/__tests__/model-run-loop.test.ts",
+    "test:eval": "tsx --test app/lib/evaluation/__tests__/eval-api.test.ts",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
