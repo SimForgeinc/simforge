@@ -188,7 +188,10 @@ impl VehicleModelCatalog {
                         .get("tintable")
                         .and_then(|v| v.as_bool())
                         .unwrap_or(false),
-                    scale_to_dims: true,
+                    // vehicle.semi_truck: catalog length includes a trailer
+                    // but the GLB is the tractor unit only — length scaling
+                    // would squash it (sidecar ships scaleToDims=false too).
+                    scale_to_dims: *catalog_id != "vehicle.semi_truck",
                     model_length_m: entry
                         .get("dims_lwh_m")
                         .and_then(|v| v.as_array())
