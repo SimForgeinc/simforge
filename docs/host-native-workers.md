@@ -139,3 +139,15 @@ Evidence: pilot row `uniscenario-carla-simforge1-native-0-staged`; probe jobs
 usrj_1845187fa300494b9453b5e7 (shakedown, succeeded) and
 usrj_5040b2a01f874c29b29ca8d5 (timed, succeeded, attempt runtime_version =
 the just-committed revision; renderer stderr carried the deploy marker).
+
+## Engine-server hygiene (known issue)
+
+The pinned CARLA engine servers degrade with uptime (rc.60-era engine:
+`failed to destroy actor` / `Invalid session: no stream` / client SIGABRT;
+renders wedge for the full lease with the GPU idle). The container
+HEALTHCHECK does NOT catch this — it probes the worker HTTP port, not CARLA
+RPC liveness. Remedy: `docker restart uniscenarios-carla-server-<lane>`
+(workers stay up and reconnect per job; observed twice on a100-1, 23:11Z and
+00:39Z 2026-08-24/25). Next cycle: replace the server healthcheck with a
+`uniscenarios-carla probe-ticks` RPC liveness check, or add a scheduled
+restart at a quiet window.
