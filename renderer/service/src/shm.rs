@@ -58,6 +58,10 @@ pub const FORMAT_DEPTH32F: u32 = 2;
 pub const FORMAT_JPEG: u32 = 3;
 /// F4: frame-bundle table record (see [`encode_bundle`]).
 pub const FORMAT_BUNDLE: u32 = 4;
+/// Deterministic ASCII PLY lidar payload.
+pub const FORMAT_LIDAR_PLY: u32 = 5;
+/// Deterministic radar measurement CSV payload.
+pub const FORMAT_RADAR_CSV: u32 = 6;
 
 /// Reserved sensor id of bundle records in the ring.
 pub const BUNDLE_SENSOR_ID: &str = "__bundle__";

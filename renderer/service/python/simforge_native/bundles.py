@@ -45,7 +45,14 @@ BUNDLE_MAGIC = int.from_bytes(b"SFBNDL01", "little")
 BUNDLE_HEADER_BYTES = 32
 BUNDLE_ENTRY_BYTES = 96
 
-FORMAT_NAMES = {1: "rgba8", 2: "depth32f", 3: "jpeg", 4: "bundle"}
+FORMAT_NAMES = {
+    1: "rgba8",
+    2: "depth32f",
+    3: "jpeg",
+    4: "bundle",
+    5: "ply-ascii",
+    6: "radar-csv",
+}
 
 
 class TornBundleError(RuntimeError):

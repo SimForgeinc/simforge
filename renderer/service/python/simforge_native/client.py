@@ -195,18 +195,22 @@ class NativeRenderClient:
         return self._rpc({"i": self._next(), "op": "encode_jpeg", "items": items})
 
     def render_bundle(self, sim_tick: int, cameras: list[dict] | None = None,
-                      tick_index: int | None = None, passes: list[str] | None = None) -> dict:
-        """F4: render every rig camera and publish one atomic frame bundle.
+                      tick_index: int | None = None, passes: list[str] | None = None,
+                      lidars: list[dict] | None = None,
+                      radars: list[dict] | None = None) -> dict:
+        """Render the retained camera/lidar/radar rig as one atomic bundle.
 
-        `cameras` upserts the retained rig (send once, then omit on the hot
-        loop); `passes` defaults to ["rgb"] server-side and is frozen per
-        camera at first registration (reset_cameras to change). The response
-        carries per-frame records with crc32 `digest` plus the bundle
-        record's `bundle_offset`/`bundle_len`.
+        Send declarations once, then omit them on the persistent hot loop.
+        Lidar and radar records use passes ``lidar`` and ``radar`` and expose
+        their deterministic PLY/CSV bytes through the same shm offsets.
         """
         req = {"i": self._next(), "op": "render_bundle", "sim_tick": sim_tick}
         if cameras is not None:
             req["cameras"] = cameras
+        if lidars is not None:
+            req["lidars"] = lidars
+        if radars is not None:
+            req["radars"] = radars
         if tick_index is not None:
             req["tick_index"] = tick_index
         if passes is not None:

@@ -276,12 +276,24 @@ struct TileLoad(Handle<Gltf>);
 struct SceneSpawned;
 #[derive(Component)]
 struct IdClone;
+#[derive(Component, Clone, Copy)]
+struct InstanceId(u32);
+
 
 /// One legend entry: instance-ID value -> source mesh name.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LegendEntry {
     pub id: u32,
     pub name: String,
+}
+
+/// World-space triangle snapshot for deterministic CPU lidar/radar raycasts.
+#[derive(Clone, Copy, Debug)]
+pub struct SensorTriangle {
+    pub a: [f32; 3],
+    pub b: [f32; 3],
+    pub c: [f32; 3],
+    pub instance_id: u32,
 }
 
 #[derive(Resource, Default)]
@@ -741,6 +753,7 @@ impl SceneApp {
             Name::new(format!("actor:{id}")),
             Mesh3d(mesh_handle.clone()),
             MeshMaterial3d(mat_handle),
+            InstanceId(instance_id),
             transform,
         )).id();
         world.spawn((
@@ -768,6 +781,9 @@ impl SceneApp {
                 .map(|(e, _)| e)
                 .collect();
             world.despawn(entity);
+            for clone in clones {
+                world.despawn(clone);
+            }
             self.actor_classes.remove(&instance);
         }
     }
@@ -775,6 +791,64 @@ impl SceneApp {
     /// Semantic class name of a dynamic-actor instance id, if any.
     pub fn actor_instance_class(&self, instance_id: u32) -> Option<&str> {
         self.actor_classes.get(&instance_id).map(|s| s.as_str())
+    }
+
+    /// Stable instance id allocated to a dynamic actor, if it is spawned.
+    pub fn actor_instance_id(&self, actor_id: &str) -> Option<u32> {
+        self.actors.get(actor_id).map(|(_, instance_id)| *instance_id)
+    }
+
+    /// Snapshot either static map geometry or dynamic actor geometry.
+    ///
+    /// Static geometry is captured once by the long-lived service; only the
+    /// small actor snapshot is rebuilt after each applied scene tick.
+    pub fn sensor_triangles(&mut self, dynamic_actors: bool) -> Vec<SensorTriangle> {
+        let world = self.app.world_mut();
+        let mut query = world.query_filtered::<
+            (&Mesh3d, &GlobalTransform, &InstanceId, Option<&Name>),
+            Without<IdClone>,
+        >();
+        let meshes = world.resource::<Assets<Mesh>>();
+        let mut out = Vec::new();
+        for (mesh3d, transform, instance_id, name) in query.iter(world) {
+            let is_actor = name.is_some_and(|name| name.as_str().starts_with("actor:"));
+            if is_actor != dynamic_actors {
+                continue;
+            }
+            let Some(mesh) = meshes.get(&mesh3d.0) else { continue };
+            let Some(attribute) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) else { continue };
+            let bevy::mesh::VertexAttributeValues::Float32x3(vertices) = attribute else { continue };
+            let matrix = transform.to_matrix();
+            let mut push = |indices: [usize; 3]| {
+                let point = |index: usize| matrix.transform_point3(Vec3::from(vertices[index])).to_array();
+                out.push(SensorTriangle {
+                    a: point(indices[0]),
+                    b: point(indices[1]),
+                    c: point(indices[2]),
+                    instance_id: instance_id.0,
+                });
+            };
+            match mesh.indices() {
+                Some(bevy::mesh::Indices::U16(indices)) => {
+                    for tri in indices.chunks_exact(3) {
+                        push([tri[0] as usize, tri[1] as usize, tri[2] as usize]);
+                    }
+                }
+                Some(bevy::mesh::Indices::U32(indices)) => {
+                    for tri in indices.chunks_exact(3) {
+                        push([tri[0] as usize, tri[1] as usize, tri[2] as usize]);
+                    }
+                }
+                None => {
+                    for first in (0..vertices.len()).step_by(3) {
+                        if first + 2 < vertices.len() {
+                            push([first, first + 1, first + 2]);
+                        }
+                    }
+                }
+            }
+        }
+        out
     }
 
     /// Drop every registered camera group (respawn-on-view-change primitive:
@@ -879,7 +953,8 @@ impl SceneApp {
         // Deterministic instance-ID assignment: sort by mesh name then entity
         // bits (independent of ECS iteration order), then clone each mesh onto
         // render layer 1 under an unlit RGB24-encoded ID material.
-        let mut entries: Vec<(String, u64, Handle<Mesh>, Option<Entity>, Transform)> = Vec::new();
+        let mut entries: Vec<(String, u64, Entity, Handle<Mesh>, Option<Entity>, Transform)> =
+            Vec::new();
         {
             let mut q = world.query::<(
                 Entity,
@@ -893,6 +968,7 @@ impl SceneApp {
                     name.map(|n| n.to_string())
                         .unwrap_or_else(|| format!("unnamed_mesh_{e}")),
                     e.to_bits(),
+                    e,
                     mesh.0.clone(),
                     child_of.map(|c| c.parent()),
                     transform.copied().unwrap_or(Transform::IDENTITY),
@@ -903,12 +979,20 @@ impl SceneApp {
 
         // Create all ID materials under one mutable borrow, then spawn the
         // clone entities once the assets borrow is released.
-        let prepared: Vec<(u32, String, Handle<Mesh>, Handle<StandardMaterial>, Option<Entity>, Transform)> = {
+        let prepared: Vec<(
+            u32,
+            String,
+            Entity,
+            Handle<Mesh>,
+            Handle<StandardMaterial>,
+            Option<Entity>,
+            Transform,
+        )> = {
             let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
             entries
                 .into_iter()
                 .enumerate()
-                .map(|(i, (name, _, mesh_h, parent, transform))| {
+                .map(|(i, (name, _, entity, mesh_h, parent, transform))| {
                     let id = (i + 1) as u32; // 0 reserved as background
                     let bytes = id.to_le_bytes();
                     let mat = materials.add(StandardMaterial {
@@ -916,12 +1000,13 @@ impl SceneApp {
                         unlit: true,
                         ..default()
                     });
-                    (id, name, mesh_h, mat, parent, transform)
+                    (id, name, entity, mesh_h, mat, parent, transform)
                 })
                 .collect()
         };
         let mut legend = Vec::with_capacity(prepared.len());
-        for (id, name, mesh_h, mat, parent, transform) in prepared {
+        for (id, name, entity, mesh_h, mat, parent, transform) in prepared {
+            world.entity_mut(entity).insert(InstanceId(id));
             let mut cmd = world.spawn((
                 IdClone,
                 Mesh3d(mesh_h),
