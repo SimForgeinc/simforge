@@ -413,6 +413,7 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
             "despawn" => state.app.remove_actor(&actor.id),
             "spawn" | "update" => {
                 let class = actor.actor_class.clone().unwrap_or_else(|| "prop".into());
+                let color = actor_color(actor, &class)?;
                 let dims = actor_dims(&class);
                 let model = resolve_actor_model(state, actor);
                 let yaw = quat_yaw(&actor.transform.rotation);
@@ -428,7 +429,7 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                     position,
                     yaw,
                     dims,
-                    class_color(&class),
+                    color,
                     false,
                 );
                 if let Some(model) = model {
@@ -451,7 +452,12 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                         };
                         state
                             .app
-                            .attach_actor_model(&actor.id, &model.glb_path, scale)
+                            .attach_actor_model(
+                                &actor.id,
+                                &model.glb_path,
+                                scale,
+                                model.tintable.then_some(color),
+                            )
                             .map_err(|error| format!("load actor model {}: {error:#}", actor.id))?;
                     }
                 }
@@ -503,6 +509,16 @@ fn class_color(class: &str) -> [f32; 3] {
         "pedestrian" => [0.75, 0.65, 0.55],
         _ => [0.5, 0.5, 0.5],
     }
+}
+
+fn actor_color(actor: &ActorState, class: &str) -> Result<[f32; 3], String> {
+    let Some(authored) = actor.color.as_deref() else {
+        return Ok(class_color(class));
+    };
+    let color = render_core::catalog::parse_hex_color(authored)
+        .ok_or_else(|| format!("invalid actor color {authored:?} for {}", actor.id))?
+        .to_srgba();
+    Ok([color.red, color.green, color.blue])
 }
 
 fn resolved_actor_y(position_y: f32, authored_ground_y: Option<f32>, sampled_ground_y: f32) -> f32 {
@@ -1309,7 +1325,10 @@ fn async_export_pngs(dir: &str, tick_id: u64, payloads: &[(String, String, u32, 
 
 #[cfg(test)]
 mod tests {
-    use super::{actor_base_y, instance_coverage, row_stride, CombinedSensorScene};
+    use super::{
+        actor_base_y, actor_color, instance_coverage, row_stride, CombinedSensorScene,
+    };
+    use crate::scene::{ActorState, ActorTransform};
     use bevy::math::{Quat, Vec3};
     use sensors::bvh::{RaycastScene, Tri};
     use sensors::taxonomy::SemanticClass;
@@ -1329,6 +1348,29 @@ mod tests {
         assert_eq!(actor_base_y(2.225, None, -9.7), 2.225);
         assert_eq!(actor_base_y(0.0, Some(3.5), -9.7), 3.5);
         assert_eq!(actor_base_y(0.0, None, 1.75), 1.75);
+    }
+
+    #[test]
+    fn authored_actor_color_and_no_color_palette_are_deterministic() {
+        let actor = |color: Option<&str>| ActorState {
+            id: "vehicle-test".into(),
+            kind: "spawn".into(),
+            catalog_id: Some("vehicle.hatchback".into()),
+            actor_class: Some("car".into()),
+            color: color.map(str::to_owned),
+            transform: ActorTransform {
+                position: [0.0; 3],
+                rotation: [0.0, 0.0, 0.0, 1.0],
+            },
+            velocity: [0.0; 3],
+        };
+        let red = actor_color(&actor(Some("#8f2f2f")), "car").unwrap();
+        assert_eq!(red, [143.0 / 255.0, 47.0 / 255.0, 47.0 / 255.0]);
+        assert_eq!(
+            actor_color(&actor(None), "car").unwrap(),
+            [0.65, 0.67, 0.70]
+        );
+        assert!(actor_color(&actor(Some("red")), "car").is_err());
     }
 
     fn deterministic_sensor_run() -> Vec<(Vec<u8>, Vec<u8>)> {

@@ -26,7 +26,7 @@ use bevy::app::ScheduleRunnerPlugin;
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera::RenderTarget;
 use bevy::core_pipeline::tonemapping::Tonemapping;
-use bevy::gltf::Gltf;
+use bevy::gltf::{Gltf, GltfMaterialName};
 use bevy::light::DirectionalLightShadowMap;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
@@ -378,6 +378,9 @@ pub struct SceneApp {
     actors: HashMap<String, (Entity, u32)>,
     /// Dynamic actor id -> (loaded catalog GLB root, authored scale, mesh count).
     actor_models: HashMap<String, (Entity, f32, usize)>,
+    /// Per-actor cloned tint material handles. Catalog materials are shared
+    /// assets, so tinting must never mutate the source GLB material.
+    actor_tint_materials: HashMap<String, Vec<Handle<StandardMaterial>>>,
     /// Instance id -> semantic class name for dynamically spawned actors.
     actor_classes: HashMap<u32, String>,
     /// Next instance id for dynamic actors (beyond the static legend range).
@@ -505,6 +508,7 @@ impl SceneApp {
             ready: false,
             actors: HashMap::new(),
             actor_models: HashMap::new(),
+            actor_tint_materials: HashMap::new(),
             actor_classes: HashMap::new(),
             next_instance_id: 0,
             ground: GroundField::default(),
@@ -793,6 +797,7 @@ impl SceneApp {
         actor_id: &str,
         glb_path: &std::path::Path,
         uniform_scale: f32,
+        tint: Option<[f32; 3]>,
     ) -> Result<()> {
         let mesh_count_before = {
             let world = self.app.world_mut();
@@ -867,6 +872,57 @@ impl SceneApp {
                 bail!("actor model scene failed to instantiate: {}", glb_path.display());
             }
         }
+        let tint_materials = if let Some(color) = tint {
+            let targets = {
+                let world = self.app.world();
+                let mut stack = vec![model_root];
+                let mut targets = Vec::new();
+                while let Some(entity) = stack.pop() {
+                    if let Some(children) = world.get::<Children>(entity) {
+                        stack.extend(children.iter());
+                    }
+                    if world
+                        .get::<GltfMaterialName>(entity)
+                        .is_some_and(|name| &**name == "body_paint")
+                    {
+                        if let Some(material) =
+                            world.get::<MeshMaterial3d<StandardMaterial>>(entity)
+                        {
+                            targets.push((entity, material.0.clone()));
+                        }
+                    }
+                }
+                targets
+            };
+            let Some((_, source_handle)) = targets.first() else {
+                bail!(
+                    "tintable actor model has no body_paint mesh slots: {}",
+                    glb_path.display()
+                );
+            };
+            let tinted_handle = {
+                let world = self.app.world_mut();
+                let mut tinted = world
+                    .resource::<Assets<StandardMaterial>>()
+                    .get(source_handle)
+                    .cloned()
+                    .ok_or_else(|| anyhow::anyhow!(
+                        "body_paint material missing after actor model load: {}",
+                        glb_path.display()
+                    ))?;
+                tinted.base_color = Color::srgb(color[0], color[1], color[2]);
+                world.resource_mut::<Assets<StandardMaterial>>().add(tinted)
+            };
+            for (entity, _) in targets {
+                self.app
+                    .world_mut()
+                    .entity_mut(entity)
+                    .insert(MeshMaterial3d(tinted_handle.clone()));
+            }
+            vec![tinted_handle]
+        } else {
+            Vec::new()
+        };
         let mesh_count_after = {
             let world = self.app.world_mut();
             let mut query = world.query::<&Mesh3d>();
@@ -880,6 +936,8 @@ impl SceneApp {
             actor_id.to_string(),
             (model_root, uniform_scale, model_mesh_count),
         );
+        self.actor_tint_materials
+            .insert(actor_id.to_string(), tint_materials);
         Ok(())
     }
 
@@ -892,6 +950,20 @@ impl SceneApp {
             .get(actor_id)
             .map(|(_, _, count)| *count)
             .unwrap_or(0)
+    }
+
+    /// Effective sRGB base colors of this actor's cloned `body_paint`
+    /// materials. Empty means the catalog model is not tintable.
+    pub fn actor_model_tint_colors(&self, actor_id: &str) -> Vec<[f32; 4]> {
+        let Some(handles) = self.actor_tint_materials.get(actor_id) else {
+            return Vec::new();
+        };
+        let materials = self.app.world().resource::<Assets<StandardMaterial>>();
+        handles
+            .iter()
+            .filter_map(|handle| materials.get(handle))
+            .map(|material| material.base_color.to_srgba().to_f32_array())
+            .collect()
     }
 
     /// Remove a despawned scene-state actor (both the visible box and its
@@ -914,6 +986,7 @@ impl SceneApp {
             if let Some((model, _, _)) = self.actor_models.remove(id) {
                 world.despawn(model);
             }
+            self.actor_tint_materials.remove(id);
         }
     }
 
@@ -1432,7 +1505,7 @@ mod tests {
             [0.5, 0.5, 0.5],
             false,
         );
-        app.attach_actor_model("vehicle-test", &vehicle, 1.0)
+        app.attach_actor_model("vehicle-test", &vehicle, 1.0, Some([0.56, 0.18, 0.18]))
             .unwrap();
         app.upsert_actor(
             "walker-test",
@@ -1443,11 +1516,16 @@ mod tests {
             [0.5, 0.5, 0.5],
             false,
         );
-        app.attach_actor_model("walker-test", &pedestrian, 1.0)
+        app.attach_actor_model("walker-test", &pedestrian, 1.0, None)
             .unwrap();
 
         assert!(app.actor_model_mesh_count("vehicle-test") > 1);
         assert!(app.actor_model_mesh_count("walker-test") > 1);
+        assert_eq!(
+            app.actor_model_tint_colors("vehicle-test"),
+            vec![[0.56, 0.18, 0.18, 1.0]]
+        );
+        assert!(app.actor_model_tint_colors("walker-test").is_empty());
         // Bevy's async asset tasks can still hold the test-only wgpu device
         // when the process tears down; the production service intentionally
         // lives for the process lifetime.
