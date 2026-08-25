@@ -40,6 +40,10 @@ pub struct ActorState {
     pub catalog_id: Option<String>,
     #[serde(rename = "actorClass", default)]
     pub actor_class: Option<String>,
+    /// Authored sRGB body colour (`#RRGGBB`). Absent actors use the
+    /// deterministic class palette.
+    #[serde(default)]
+    pub color: Option<String>,
     pub transform: ActorTransform,
     #[serde(default)]
     pub velocity: [f32; 3],
@@ -67,5 +71,26 @@ impl SceneState {
             ));
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SceneState;
+
+    #[test]
+    fn actor_color_deserializes_from_scene_state() {
+        let state: SceneState = serde_json::from_str(
+            r##"{
+                "version":"scene-state.v1","mapId":"belmont-research-center",
+                "actors":[{
+                    "id":"mini","kind":"spawn","catalogId":"vehicle.hatchback",
+                    "actorClass":"car","color":"#8f2f2f",
+                    "transform":{"position":[0,0,0]}
+                }]
+            }"##,
+        )
+        .unwrap();
+        assert_eq!(state.actors[0].color.as_deref(), Some("#8f2f2f"));
     }
 }

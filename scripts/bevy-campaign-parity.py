@@ -42,6 +42,8 @@ MAP_SLUG = {
     "Richmond Field Station": "richmond-field-station",
 }
 REMOTE_ROOT = "/opt/simforge/bevy-campaign-parity"
+VEGETATION_DISTANCE_M = 120.0
+VEGETATION_GLB_BUDGET_BYTES = 256 << 20
 
 
 def load(path: Path):
@@ -218,6 +220,7 @@ def scene_documents(scenario: dict, map_id: str, fps: int) -> tuple[list[dict], 
                 "catalogId": actor.get("catalogId", "unknown"),
                 "actorClass": actor.get("class", "prop"),
                 "transform": {"position": position, "rotation": quat_y(heading)},
+                "color": role.get("extensions", {}).get("studio.presentation.bodyColor"),
                 "position": position, "rotation": quat_y(heading), "yawRad": heading,
                 "velocity": velocity,
             })
@@ -457,6 +460,55 @@ def relocated_job(job: dict, job_path: Path) -> dict:
     moved["vehicleModels"] = str(root / "catalog" / "vehicles-carla")
     return moved
 
+def budget_vegetation(job: dict) -> tuple[list[str], dict]:
+    """Choose route-near vegetation prototypes within the measured 10 GB fleet budget."""
+    states = load(Path(job["jobDir"]) / "scene-states.json")
+    route = [
+        actor["transform"]["position"]
+        for frame in states[::FPS]
+        for actor in frame["actors"]
+        if actor["id"] == "ego" and actor["kind"] != "despawn"
+    ]
+    if not route:
+        return [], {"distanceM": VEGETATION_DISTANCE_M, "glbBudgetBytes": VEGETATION_GLB_BUDGET_BYTES,
+                    "selectedGlbs": 0, "selectedBytes": 0, "selectedInstances": 0}
+
+    glbs_by_stem = {
+        str(Path(path)).removesuffix(".lod0.glb"): path
+        for path in job.get("vegGlbs", [])
+    }
+    candidates = []
+    for sidecar in job.get("vegSidecars", []):
+        data = load(Path(sidecar))
+        transforms = data.get("transforms", [])
+        if not transforms:
+            continue
+        distance_sq = min(
+            (transforms[index + 12] - point[0]) ** 2 + (transforms[index + 14] - point[2]) ** 2
+            for index in range(0, len(transforms), 16)
+            for point in route
+        )
+        stem = str(Path(sidecar)).removesuffix(".instances.json")
+        glb = glbs_by_stem.get(stem)
+        if glb and distance_sq <= VEGETATION_DISTANCE_M ** 2:
+            candidates.append((distance_sq, glb, sum(data.get("counts", []))))
+
+    selected, selected_bytes, selected_instances = [], 0, 0
+    for _, glb, instances in sorted(candidates, key=lambda value: (value[0], value[1])):
+        size = Path(glb).stat().st_size
+        if selected_bytes + size > VEGETATION_GLB_BUDGET_BYTES:
+            continue
+        selected.append(glb)
+        selected_bytes += size
+        selected_instances += instances
+    return selected, {
+        "distanceM": VEGETATION_DISTANCE_M,
+        "glbBudgetBytes": VEGETATION_GLB_BUDGET_BYTES,
+        "selectedGlbs": len(selected),
+        "selectedBytes": selected_bytes,
+        "selectedInstances": selected_instances,
+    }
+
 def service_cameras(job: dict) -> list[dict]:
     cameras = []
     for sensor in job["sensors"]:
@@ -608,8 +660,9 @@ def render_service(args) -> None:
     out.mkdir(parents=True, exist_ok=True)
     frame_count = min(job["frameCount"], args.ticks) if args.ticks else job["frameCount"]
     campaign_root = Path(os.environ.get("SIMFORGE_BEVY_CAMPAIGN_ROOT", REMOTE_ROOT))
+    vegetation, vegetation_budget = budget_vegetation(job)
     scene = {
-        "glbs": job["corpusGlbs"], "vegGlbs": [], "profile": "sensor",
+        "glbs": job["corpusGlbs"], "vegGlbs": vegetation, "profile": "sensor",
         "profileConfig": {"cinematic": {"taa": True, "ssr": True, "ssao": True, "ssaoUltra": True}},
         "nearM": 0.05, "farM": 1000, "warmupFrames": 20,
         "vehicleModels": str(campaign_root / "catalog" / "vehicles-carla"),
@@ -704,6 +757,7 @@ def render_service(args) -> None:
         "vramMaxMiB": max((s[1] for s in samples), default=None),
         "vramP50MiB": percentile([s[1] for s in samples], .5),
         "vramP95MiB": percentile([s[1] for s in samples], .95),
+        "vegetationBudget": vegetation_budget,
         "replayDigest": replay_digest.hexdigest(),
         "coverage": video_coverage(out / "chase-cam-trailing.mp4"),
         "artifactCount": len(manifest["artifacts"]),
