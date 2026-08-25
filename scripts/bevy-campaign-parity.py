@@ -23,6 +23,7 @@ import subprocess
 import sys
 import time
 import zipfile
+import zlib
 
 FPS = 24
 WIDTH = 1280
@@ -480,6 +481,122 @@ def service_cameras(job: dict) -> list[dict]:
     return cameras
 
 
+def service_range_sensors(job: dict) -> tuple[list[dict], list[dict]]:
+    authored = {
+        sensor_id: {"horizontalFovDeg": 120.0, "verticalFovDeg": 70.0 if "wide" in sensor_id or "rear" in sensor_id else 25.0}
+        for sensor_id in LIDARS
+    }
+    authored.update({
+        sensor_id: {"horizontalFovDeg": 30.0, "verticalFovDeg": 30.0}
+        for sensor_id in RADARS
+    })
+    lidars, radars = [], []
+    for sensor in job["sensors"]:
+        if sensor["type"] not in {"lidar", "radar"}:
+            continue
+        mount = sensor["mount"]
+        position, rotation = mount["position"], mount["rotation"]
+        base = {
+            "sensorId": sensor["id"],
+            "attach": {
+                "actorId": "ego",
+                "offsetM": [position["x"], position.get("z", 0), position["y"]],
+                "yawDeg": math.degrees(rotation.get("yawRad", 0)),
+            },
+        }
+        spec = authored[sensor["id"]]
+        if sensor["type"] == "lidar":
+            lidars.append(base | {
+                "channels": 4,
+                "rotationFrequencyHz": 10.0,
+                "pointsPerSecond": 2560,
+                "horizontalFovDeg": spec["horizontalFovDeg"],
+                "verticalFovDeg": spec["verticalFovDeg"],
+                "rangeM": 80.0,
+            })
+        else:
+            radars.append(base | {
+                "pointsPerSecond": 1280,
+                "horizontalFovDeg": spec["horizontalFovDeg"],
+                "verticalFovDeg": spec["verticalFovDeg"],
+                "rangeM": 80.0,
+            })
+    return lidars, radars
+
+
+def finalize_service_artifacts(job: dict, out: Path) -> dict:
+    artifacts = [(sensor, "sensor-video", out / f"{sensor}.mp4") for sensor in CAMERAS]
+    for sensor, suffix, parser in (
+        [(sensor, "ply", lidar_points) for sensor in LIDARS]
+        + [(sensor, "csv", radar_points) for sensor in RADARS]
+    ):
+        archive = out / f"{sensor}.zip"
+        count = archive_stream(out / sensor, archive, suffix)
+        if not count:
+            continue
+        viz = out / "viz" / sensor
+        for index, source in enumerate(sorted((out / sensor).glob(f"*.{suffix}"))):
+            draw_points(parser(source), viz / f"{index:08d}.ppm")
+        video = out / f"{sensor}.mp4"
+        encode_pngs(str(viz / "%08d.ppm"), video, job["fps"])
+        artifacts.extend([(sensor, "sensor-video", video), (sensor, "sensor-archive", archive)])
+    manifest = []
+    for sensor, kind, path in artifacts:
+        if not path.is_file():
+            continue
+        manifest.append({
+            "sensorId": sensor,
+            "kind": kind,
+            "relativePath": path.name,
+            "mediaType": "video/mp4" if path.suffix == ".mp4" else "application/zip",
+            "sizeBytes": path.stat().st_size,
+            "sha256": sha256(path),
+        })
+    expected = (
+        {(sensor, "sensor-video") for sensor in CAMERAS + LIDARS + RADARS}
+        | {(sensor, "sensor-archive") for sensor in LIDARS + RADARS}
+    )
+    actual = {(artifact["sensorId"], artifact["kind"]) for artifact in manifest}
+    result = {
+        "schema": "simforge.bevy-artifact-manifest/v1",
+        "docId": job["docId"],
+        "artifacts": manifest,
+        "complete": actual == expected,
+        "missing": sorted([list(value) for value in expected - actual]),
+    }
+    dump(out / "manifest.json", result)
+    shutil.rmtree(out / "viz", ignore_errors=True)
+    for sensor in LIDARS + RADARS:
+        shutil.rmtree(out / sensor, ignore_errors=True)
+    return result
+
+
+def write_actor_visuals(job: dict, campaign_root: Path, out: Path) -> None:
+    vehicle_entries = load(campaign_root / "catalog" / "vehicles-carla" / "catalog-models.json")["entries"]
+    pedestrian_entries = load(campaign_root / "catalog" / "pedestrians-carla" / "catalog-models.json")["entries"]
+    actors = []
+    for actor in job["actors"]:
+        catalog_id = actor.get("catalogId")
+        actor_class = actor.get("class")
+        if catalog_id in vehicle_entries:
+            source, resolution = "glb", "exact"
+        elif actor_class == "pedestrian" and pedestrian_entries:
+            source = "glb"
+            resolution = "exact" if catalog_id in pedestrian_entries else "deterministic"
+        else:
+            source, resolution = "cuboid", "unknown"
+        actors.append({
+            "actorId": "ego" if actor["id"] == job["subjectActorId"] else actor["id"],
+            "catalogId": catalog_id,
+            "actorClass": actor_class,
+            "source": source,
+            "resolution": resolution,
+        })
+    dump(out / "actor-visuals.json", {"docId": job["docId"], "actors": actors})
+
+
+
+
 def render_service(args) -> None:
     client_root = Path(args.client_root)
     sys.path.insert(0, str(client_root))
@@ -490,19 +607,23 @@ def render_service(args) -> None:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     frame_count = min(job["frameCount"], args.ticks) if args.ticks else job["frameCount"]
+    campaign_root = Path(os.environ.get("SIMFORGE_BEVY_CAMPAIGN_ROOT", REMOTE_ROOT))
     scene = {
-        "glbs": job["corpusGlbs"], "vegGlbs": job.get("vegGlbs", []), "profile": "sensor",
+        "glbs": job["corpusGlbs"], "vegGlbs": [], "profile": "sensor",
         "profileConfig": {"cinematic": {"taa": True, "ssr": True, "ssao": True, "ssaoUltra": True}},
         "nearM": 0.05, "farM": 1000, "warmupFrames": 20,
+        "vehicleModels": str(campaign_root / "catalog" / "vehicles-carla"),
+        "pedestrianModels": str(campaign_root / "catalog" / "pedestrians-carla"),
     }
     scene_path, socket_path, shm_path = out / "service-scene.json", out / "renderer.sock", out / "frames.shm"
     dump(scene_path, scene)
     socket_path.unlink(missing_ok=True)
     shm_path.unlink(missing_ok=True)
+    log_stream = (out / "renderer.log").open("w")
     service = subprocess.Popen([
         args.binary, "--scene", str(scene_path), "--socket", str(socket_path),
         "--shm", str(shm_path), "--shm-size-mb", "512",
-    ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    ], stdout=log_stream, stderr=subprocess.STDOUT, text=True)
     deadline = time.time() + 300
     while not socket_path.exists() and service.poll() is None and time.time() < deadline:
         time.sleep(0.1)
@@ -514,6 +635,9 @@ def render_service(args) -> None:
     if not response.get("ok"):
         raise RuntimeError(f"load_scene_state failed: {response}")
     cameras = service_cameras(job)
+    lidars, radars = service_range_sensors(job)
+    for sensor in lidars + radars:
+        (out / sensor["sensorId"]).mkdir(parents=True, exist_ok=True)
     encoders = {}
     for camera in cameras:
         path = out / f"{camera['sensorId']}.mp4"
@@ -528,16 +652,31 @@ def render_service(args) -> None:
     started = time.time()
     try:
         for tick in range(frame_count):
-            response = client.render_bundle(tick, cameras if tick == 0 else None, tick_index=tick, passes=["rgb"])
+            response = client.render_bundle(
+                tick,
+                cameras if tick == 0 else None,
+                tick_index=tick,
+                passes=["rgb"],
+                lidars=lidars if tick == 0 else None,
+                radars=radars if tick == 0 else None,
+            )
             if not response.get("ok"):
                 raise RuntimeError(f"render_bundle tick {tick} failed: {response}")
             server_ms.append(float(response["server_ms"]))
             for frame in sorted(response["frames"], key=lambda value: (value["sensorId"], value["pass"])):
                 replay_digest.update(f"{tick}:{frame['sensorId']}:{frame['pass']}:{frame.get('digest','')}\\n".encode())
             for frame in response["frames"]:
-                if frame["pass"] != "rgb":
-                    continue
-                encoders[frame["sensorId"]].stdin.write(client.read_record(frame))
+                payload = client.read_record(frame)
+                digest = f"{zlib.crc32(payload) & 0xffffffff:08x}"
+                if digest != frame["digest"]:
+                    raise RuntimeError(
+                        f"CRC mismatch for {frame['sensorId']} tick {tick}: {digest} != {frame['digest']}"
+                    )
+                if frame["pass"] == "rgb":
+                    encoders[frame["sensorId"]].stdin.write(payload)
+                elif frame["pass"] in {"lidar", "radar"}:
+                    suffix = "ply" if frame["pass"] == "lidar" else "csv"
+                    (out / frame["sensorId"] / f"{tick:08d}.{suffix}").write_bytes(payload)
             if tick % 12 == 0:
                 sample = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used", "--format=csv,noheader,nounits"],
                                         text=True, capture_output=True)
@@ -552,18 +691,25 @@ def render_service(args) -> None:
         if service.poll() is None:
             service.terminate()
         service.wait(timeout=30)
-        log = service.stdout.read() if service.stdout else ""
-        (out / "renderer.log").write_text(log)
+        log_stream.close()
+        socket_path.unlink(missing_ok=True)
+        shm_path.unlink(missing_ok=True)
     wall = time.time() - started
+    manifest = finalize_service_artifacts(job, out)
     benchmark = {
         "docId": job["docId"], "wallS": wall, "fps": frame_count / wall,
         "serverFrameMsMean": statistics.fmean(server_ms), "serverFrameMsP95": percentile(server_ms, .95),
         "gpuUtilMeanPct": statistics.fmean(s[0] for s in samples) if samples else None,
-        "gpuUtilMaxPct": max((s[0] for s in samples), default=None),
+        "gpuUtilP95Pct": percentile([s[0] for s in samples], .95),
         "vramMaxMiB": max((s[1] for s in samples), default=None),
+        "vramP50MiB": percentile([s[1] for s in samples], .5),
+        "vramP95MiB": percentile([s[1] for s in samples], .95),
         "replayDigest": replay_digest.hexdigest(),
         "coverage": video_coverage(out / "chase-cam-trailing.mp4"),
+        "artifactCount": len(manifest["artifacts"]),
+        "artifactComplete": manifest["complete"],
     }
+    write_actor_visuals(job, campaign_root, out)
     dump(out / "benchmark.json", benchmark)
     print(json.dumps(benchmark))
 
@@ -609,20 +755,28 @@ def render_playback(args) -> None:
 
 def render_shard(args) -> None:
     shard = load(Path(args.shard))
-    failures = []
+    failures, retries = [], []
     for doc_id in shard["documents"]:
         job = Path(args.jobs) / doc_id / "job.json"
         output = Path(args.out) / doc_id
-        try:
-            render_service(argparse.Namespace(job=str(job), binary=args.binary, client_root=args.client_root, out=str(output), ticks=args.ticks))
-        except (Exception, SystemExit) as error:
-            failures.append({"docId": doc_id, "cause": str(error)})
+        last_error = None
+        for attempt in range(2):
+            try:
+                render_service(argparse.Namespace(job=str(job), binary=args.binary, client_root=args.client_root, out=str(output), ticks=args.ticks))
+                if attempt:
+                    retries.append({"docId": doc_id, "attempts": attempt + 1})
+                last_error = None
+                break
+            except (Exception, SystemExit) as error:
+                last_error = str(error)
+        if last_error is not None:
+            failures.append({"docId": doc_id, "cause": last_error, "attempts": 2})
     dump(Path(args.out) / "shard-results.json", {
         "host": shard.get("host"), "documents": len(shard["documents"]), "failures": failures,
+        "retries": retries,
     })
     if failures:
         raise SystemExit(f"{len(failures)} shard documents failed")
-
 
 
 
@@ -632,7 +786,9 @@ def deploy(args) -> None:
         run(["ssh", f"root@{host}", f"mkdir -p {REMOTE_ROOT}/bin {REMOTE_ROOT}/corpus {REMOTE_ROOT}/catalog {REMOTE_ROOT}/jobs {REMOTE_ROOT}/outputs"])
         run(["rsync", "-a", "--checksum", args.binary, f"root@{host}:{REMOTE_ROOT}/bin/native-render-service"])
         run(["rsync", "-a", "--checksum", str(repo / "renderer/service/python/simforge_native") + "/", f"root@{host}:{REMOTE_ROOT}/bin/simforge_native/"])
+        run(["rsync", "-a", "--checksum", str(repo / "scripts/bevy-campaign-parity.py"), f"root@{host}:{REMOTE_ROOT}/bin/bevy-campaign-parity.py"])
         run(["rsync", "-a", "--checksum", str(repo / "catalog/vehicles-carla") + "/", f"root@{host}:{REMOTE_ROOT}/catalog/vehicles-carla/"])
+        run(["rsync", "-a", "--checksum", str(repo / "catalog/pedestrians-carla") + "/", f"root@{host}:{REMOTE_ROOT}/catalog/pedestrians-carla/"])
         run(["rsync", "-a", "--checksum", str(repo / ".corpus/belmont-research-center") + "/", f"root@{host}:{REMOTE_ROOT}/corpus/belmont-research-center/"])
         run(["rsync", "-a", "--checksum", str(repo / ".corpus/richmond-field-station") + "/", f"root@{host}:{REMOTE_ROOT}/corpus/richmond-field-station/"])
         run(["rsync", "-a", "--checksum", str(parity / "jobs") + "/", f"root@{host}:{REMOTE_ROOT}/jobs/"])
@@ -649,10 +805,10 @@ def fleet(args) -> None:
     hosts = HOSTS if not args.host else [args.host]
     def execute(host: str) -> tuple[str, int, str]:
         remote = (
-            f"docker run --rm --gpus all -e SIMFORGE_BEVY_CAMPAIGN_ROOT={REMOTE_ROOT} "
-            f"-v {REMOTE_ROOT}:{REMOTE_ROOT} {args.image} render-shard "
+            f"SIMFORGE_BEVY_CAMPAIGN_ROOT={REMOTE_ROOT} "
+            f"python3 {REMOTE_ROOT}/bin/bevy-campaign-parity.py render-shard "
             f"--shard {REMOTE_ROOT}/shard.json --jobs {REMOTE_ROOT}/jobs "
-            f"--binary /usr/local/bin/native-render-service --client-root /opt/simforge "
+            f"--binary {REMOTE_ROOT}/bin/native-render-service --client-root {REMOTE_ROOT}/bin "
             f"--out {REMOTE_ROOT}/outputs"
         )
         result = subprocess.run(["ssh", f"root@{host}", remote], text=True, capture_output=True)

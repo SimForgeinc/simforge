@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates ffmpeg libasound2t64 libudev1 libvulkan1 libx11-6 libxkbcommon0 python3 \
+ && apt-get install -y --no-install-recommends ca-certificates ffmpeg libasound2t64 libudev1 libvulkan1 libx11-6 libxkbcommon0 python3 python3-numpy vulkan-tools \
  && rm -rf /var/lib/apt/lists/*
 
 COPY renderer/target/release/native-render-service /usr/local/bin/native-render-service

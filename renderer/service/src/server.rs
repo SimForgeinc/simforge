@@ -487,6 +487,7 @@ fn quat_yaw(q: &[f32; 4]) -> f32 {
 fn actor_dims(class: &str) -> [f32; 3] {
     match class {
         "car" => [4.5, 1.6, 1.8],
+        "van" | "suv" | "pickup" => [4.8, 1.9, 2.0],
         "truck" | "bus" => [8.0, 3.0, 2.5],
         "motorcycle" | "cyclist" => [2.2, 1.5, 0.9],
         "pedestrian" => [0.5, 1.8, 0.5],
