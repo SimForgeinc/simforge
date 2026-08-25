@@ -1235,7 +1235,6 @@ fn render_bundle_op(
                 sensors::formats::encode_radar_csv(&detections),
             ));
         }
-        drop(instance_class);
         for (sensor_id, pass, format_tag, format_name, count, data) in sensor_payloads {
             if let Err(error) = publish_sensor_payload(
                 state,
