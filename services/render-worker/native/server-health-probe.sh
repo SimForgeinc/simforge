@@ -23,7 +23,7 @@ if [ -n "$gpu_lock" ] && [ -e "$gpu_lock" ]; then
 fi
 
 NATIVE=/opt/simforge/uniscenarios-native
-if "$NATIVE/venv/bin/uniscenarios-carla" probe-ticks --host 127.0.0.1 --port "$port" --ticks 60 >/dev/null 2>&1; then
+if "$NATIVE/venv/bin/uniscenarios-carla" --host 127.0.0.1 --port "$port" probe-ticks --ticks 60 >/dev/null 2>&1; then
   echo "healthy: $container (rpc :$port)"
   exit 0
 fi
