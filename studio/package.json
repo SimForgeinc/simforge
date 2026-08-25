@@ -10,6 +10,8 @@
     "seed": "tsx scripts/seed.ts",
     "worker": "tsx worker/index.ts",
     "worker:harness": "tsx worker/harness.ts",
+    "worker:model-run": "tsx scripts/model-run-worker.ts",
+    "test:models": "tsx --test app/lib/models/__tests__/model-run-store.test.ts worker/__tests__/model-run-loop.test.ts",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
