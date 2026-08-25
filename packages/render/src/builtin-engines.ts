@@ -50,7 +50,11 @@ const CARLA_CAPABILITIES: EngineCapabilityDeclaration = {
 class CarlaProcessEngine implements RenderEngineAdapter {
   readonly capabilities = CARLA_CAPABILITIES;
 
-  constructor(private readonly binary: string) {}
+  constructor(
+    private readonly binary: string,
+    private readonly host: string,
+    private readonly port: number,
+  ) {}
 
   async execute(context: RenderExecutionContext): Promise<RenderArtifactManifest> {
     await mkdir(context.workspace, { recursive: true });
@@ -65,6 +69,8 @@ class CarlaProcessEngine implements RenderEngineAdapter {
     })}\n`, { mode: 0o600 });
 
     const child = spawn(this.binary, [
+      '--host', this.host,
+      '--port', String(this.port),
       'run-intent',
       '--intent', intentPath,
       '--package', packagePath,
@@ -147,5 +153,14 @@ export async function loadBuiltinRenderEngine(
   const binary = typeof options.binary === 'string'
     ? options.binary
     : process.env.UNISCENARIOS_CARLA_BINARY ?? 'simforge-carla-api';
-  return new CarlaProcessEngine(binary);
+  const host = typeof options.host === 'string'
+    ? options.host
+    : process.env.CARLA_HOST ?? '127.0.0.1';
+  const configuredPort = typeof options.port === 'number'
+    ? options.port
+    : Number(process.env.CARLA_PORT ?? 2000);
+  if (!Number.isInteger(configuredPort) || configuredPort < 1 || configuredPort > 65_535) {
+    throw new Error(`Invalid CARLA port: ${String(configuredPort)}`);
+  }
+  return new CarlaProcessEngine(binary, host, configuredPort);
 }
