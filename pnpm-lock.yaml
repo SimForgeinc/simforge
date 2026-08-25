@@ -654,6 +654,8 @@ importers:
         specifier: 0.34.5
         version: 0.34.5
 
+  tools/glb-orm-repair: {}
+
 packages:
 
   '@alloc/quick-lru@5.2.0':

@@ -120,7 +120,10 @@ describe('published v2 JSON Schemas', () => {
   it('gives every schema its own \\$id under one base', () => {
     const ids = buildAllV2JsonSchemas().map(([, doc]) => (doc as { $id: string }).$id);
     expect(new Set(ids).size).toBe(3);
-    for (const id of ids) expect(id).toMatch(/^https:\/\/schemas\.simforge\.dev\//);
+    // schemas.uniscenarios.dev is a FROZEN wire identifier (published $id in stored
+    // documents); the SimForge rebrand deliberately does not touch it. See
+    // docs/engineering/simcloud-sync.md FROZEN_CONTRACT.
+    for (const id of ids) expect(id).toMatch(/^https:\/\/schemas\.uniscenarios\.dev\//);
   });
 
   it('exports the committed paths it writes', () => {
