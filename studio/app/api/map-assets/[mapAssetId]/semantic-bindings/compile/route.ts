@@ -4,7 +4,7 @@ import {
   ScenarioEditorActorDraftSchema,
   SemanticActorIntentSchema,
   RuntimeTopologyFamilySchema,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { getCurrentSession } from "@/app/lib/auth/session";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";
 import {

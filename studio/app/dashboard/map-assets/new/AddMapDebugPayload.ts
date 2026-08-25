@@ -1,5 +1,5 @@
 import { S3_BUCKET_PUBLIC } from "@/app/lib/s3/s3-config";
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import {
   formatTimestamp,
   generateMapAssetId,

@@ -4,7 +4,7 @@
  * RoadRunner's road-network GeoJSON only carries lane *centerlines* (rendered
  * as polylines). The XODR, however, declares each lane's `<width>` polynomial,
  * so we can reconstruct the true filled lane area. The geometry engine lives in
- * `@simcloud/shared` (`buildLanePolygonsLocal`, shared with the topology
+ * `@simforge/studio-shared` (`buildLanePolygonsLocal`, shared with the topology
  * builder); here we project each ring from the XODR planView meter frame to
  * WGS84 using the file's `<geoReference>` projection — the same projection the
  * authored GeoJSON and runtime overlay already align on.
@@ -12,7 +12,7 @@
  * The result is uploaded as a per-map sidecar artifact (`lane_polygons_geojson`)
  * during Phase 1 metadata population, mirroring the signals overlay sidecar.
  */
-import { MapProjection, buildLanePolygonsLocal } from "@simcloud/shared";
+import { MapProjection, buildLanePolygonsLocal } from "@simforge/studio-shared";
 import { extractCoordinateRefFromXodr } from "./xodr";
 
 type GeoJSONPolygon = { type: "Polygon"; coordinates: [number, number][][] };

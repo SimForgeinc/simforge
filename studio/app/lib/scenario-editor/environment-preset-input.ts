@@ -1,7 +1,7 @@
 /**
  * Environment-preset input handling for scenario drafts.
  *
- * The schema of record is `EnvironmentPresetSchema` from `@simcloud/shared` —
+ * The schema of record is `EnvironmentPresetSchema` from `@simforge/studio-shared` —
  * a struct of up to three enum selections (`lighting`, `weather`,
  * `roadSurface`) plus an optional `intentPrompt`. That struct is what the
  * xosc writer (`xosc-writer/environment.ts`) and the CARLA worker's
@@ -36,7 +36,7 @@ import {
   type EnvironmentPresetLighting,
   type EnvironmentPresetRoadSurface,
   type EnvironmentPresetWeather,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)

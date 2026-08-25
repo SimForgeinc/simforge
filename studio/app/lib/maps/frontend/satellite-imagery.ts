@@ -1,4 +1,4 @@
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 
 /**
  * SimScene CDN serving per-map satellite ortho tile pyramids (CloudFront in

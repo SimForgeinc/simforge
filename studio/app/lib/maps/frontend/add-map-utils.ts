@@ -3,7 +3,7 @@
  * for testability. No React hooks, no DOM access.
  */
 
-import type { MapAssetArtifactType } from "@simcloud/shared";
+import type { MapAssetArtifactType } from "@simforge/studio-shared";
 
 // ---------------------------------------------------------------------------
 // Types (shared with AddMapForm)

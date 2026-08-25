@@ -10,11 +10,11 @@ import type {
   ScenarioEditorTimedWaypoint,
   ScenarioEditorTimelineClip,
   ScenarioEditorTimelineAction,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   DEFAULT_CARLA_ACTOR_BLUEPRINTS,
   SCENARIO_TIMING,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { ActorBlueprintLibrary } from "@/app/lib/runtime/runtime-types";
 import type { RuntimeRoadOverlayCollection } from "@/app/lib/editor-map/types";
 

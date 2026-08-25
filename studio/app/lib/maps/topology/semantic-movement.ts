@@ -6,7 +6,7 @@ import type {
   SemanticMapGraph,
   TopologyGate,
   Vec2,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   dist,
   projectOnPolyline,

@@ -3,7 +3,7 @@ import type {
   MapPlaceContext,
   MapSource,
   MapStats,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { extractGeojsonDerivedStats } from "./geojson-stats";
 import { extractRrdataSchemaVersion, extractSignalizationFromRrdata } from "./rrdata-xml";
 import {

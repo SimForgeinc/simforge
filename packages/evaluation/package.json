@@ -1,7 +1,7 @@
 {
   "name": "@simforge/evaluation",
   "version": "0.1.0-rc.45",
-  "description": "WS5 EvalHarness \u2014 frozen policy evaluation protocol: versioned suite (policy-eval-suite.v1), deterministic env server over the suite entries, and suite-hash-keyed report inputs. The Python runner lives under qualification/policy-eval-runner.",
+  "description": "WS5 EvalHarness — frozen policy evaluation protocol: versioned suite (policy-eval-suite.v1), deterministic env server over the suite entries, and suite-hash-keyed report inputs. The Python runner lives under qualification/policy-eval-runner.",
   "repository": {
     "type": "git",
     "url": "https://github.com/SimForgeinc/simforge",
@@ -10,7 +10,13 @@
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -22,6 +28,7 @@
   },
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }

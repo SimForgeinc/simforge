@@ -18,7 +18,7 @@ import {
   type MapTopologyIndex,
   type ScenarioEditorActorDraft,
   type ScenarioIntention,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   findCollisionSites,
   type JunctionConstraintIndex,
@@ -72,7 +72,7 @@ import type {
   ProjectedOccluder,
   ProjectedParkingLot,
 } from "@/app/lib/llm/scenario-generation/load-pedestrian-regions";
-import type { Vec2 } from "@simcloud/shared";
+import type { Vec2 } from "@simforge/studio-shared";
 import type { ScenarioRequest } from "./scenario-request";
 import { stampCollisionGeneratedOutput } from "@/app/lib/scenario-generation/scenario-intention";
 import { finalizeGeneratedActorBehaviors } from "@/app/lib/scenario-generation/generated-actor-behavior";

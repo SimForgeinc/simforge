@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 
 interface UseMapAssetOperationsInput {
   currentAsset: MapAsset;

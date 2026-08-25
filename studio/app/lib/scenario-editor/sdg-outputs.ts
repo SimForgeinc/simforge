@@ -4,7 +4,7 @@ import type {
   SdgRenderOutputPlan,
   RenderOutputSpec,
   Sensor,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   DEFAULT_SDG_DIRECT_RENDER_DRAFT,
   SDG_OUTPUTS,
@@ -15,7 +15,7 @@ import {
   expandSdgOutputs,
   getRequiredSdgRawModalities,
   orderedSdgOutputs,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { getSdgSensorConfigWarning } from "@/app/lib/scenario-sdg/sdg-camera-mounts";
 import {
   ALPAMAYO_PAI_CAMERA_MOUNT_IDS,

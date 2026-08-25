@@ -21,7 +21,7 @@ import {
   isPedestrianSpawnCandidate,
   type CandidateLocation,
   type MapAsset,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { readSemanticRoadSegmentsByMapAssetId } from "@/app/lib/maps/topology/server/semantic-road-network";
 import { lngLatToRuntimePoint } from "@/app/lib/editor-map/coordinates";
 import { getCandidateLocationsByMapAssetId } from "@/app/lib/db/map-candidate-location-store";

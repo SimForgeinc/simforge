@@ -5,7 +5,7 @@ import {
   type GeneratedScenarioMetadata,
   type ScenarioEditorActorDraft,
   type ScenarioIntention,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 export type ScenarioMetadataSoftwareVersions =
   GeneratedScenarioMetadata["testCase"]["softwareVersions"];

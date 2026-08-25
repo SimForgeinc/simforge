@@ -1,5 +1,5 @@
-import type { MapAsset } from "@simcloud/shared";
-import { laneTravelIncreasesSFromCenterline } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
+import { laneTravelIncreasesSFromCenterline } from "@simforge/studio-shared";
 import type { RuntimeMapResponse } from "@/app/lib/runtime/runtime-types";
 import { lngLatToRuntimePoint, runtimePointToLngLat } from "./coordinates";
 import { normalizeRuntimeLaneType } from "./runtime-layer-visibility";

@@ -7,7 +7,7 @@ import {
   MapAssetSchema,
   ScenarioSchema,
   CandidateLocationSchema,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 // ---- Path params ----
 export const ScenarioIdParams = z.object({ scenarioId: z.string().describe("Scenario identifier") });

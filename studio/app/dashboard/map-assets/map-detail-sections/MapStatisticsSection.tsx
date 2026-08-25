@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight, Check, Copy } from "lucide-react";
-import type { CandidateLocation, MapStats } from "@simcloud/shared";
+import type { CandidateLocation, MapStats } from "@simforge/studio-shared";
 import { MapStatsDisplay } from "./MapStatsDisplay";
 import { cn } from "@/app/lib/utils";
 

@@ -1,5 +1,5 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { MapOverlayLayerId } from "@simcloud/shared";
+import type { MapOverlayLayerId } from "@simforge/studio-shared";
 import type { RoadNetworkFeatureTypeId } from "@/app/lib/maps/frontend/road-network-feature-types";
 
 // ---------------------------------------------------------------------------

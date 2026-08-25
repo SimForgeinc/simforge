@@ -16,9 +16,9 @@ import type {
   MapTopologyIndex,
   TopologyLane,
   Vec2,
-} from "@simcloud/shared";
-import type { TravelAwareTopologyIndex } from "@simcloud/shared";
-import { laneTravelIncreasesS, travelOrderedPolyline } from "@simcloud/shared";
+} from "@simforge/studio-shared";
+import type { TravelAwareTopologyIndex } from "@simforge/studio-shared";
+import { laneTravelIncreasesS, travelOrderedPolyline } from "@simforge/studio-shared";
 import type { PlannedCollision } from "../collision-route-planner";
 import {
   buildPlannedActorFromTopology,

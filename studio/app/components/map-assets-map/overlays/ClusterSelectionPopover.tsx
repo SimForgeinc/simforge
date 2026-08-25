@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import { C } from "../map-layer-constants";
 
 interface ClusterSelectionPopoverProps {

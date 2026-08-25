@@ -9,7 +9,7 @@ import type {
   MapAssetEnrichmentSnapshot,
   MapOverlayLayerId,
   CandidateLocation,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   ALL_FEATURE_TYPE_IDS,
   type RoadNetworkFeatureTypeId,

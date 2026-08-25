@@ -13,7 +13,7 @@
  * Shared by the normal-driving batch generator (`batchGenerateScenarios`) and
  * the collision scene-population layer.
  */
-import type { MapTopologyIndex } from "@simcloud/shared";
+import type { MapTopologyIndex } from "@simforge/studio-shared";
 
 /** A Parking lane sourced from the map topology index. `points` are runtime
  * meters; road_id/section_id/lane_id are OpenDRIVE ids. */

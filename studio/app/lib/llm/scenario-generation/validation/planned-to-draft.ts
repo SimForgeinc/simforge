@@ -15,7 +15,7 @@ import {
   TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
   type ScenarioEditorActorDraft,
   type TimedInstructions,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { PEDESTRIAN_LIMITS } from "@simforge/engine";
 import {
   ADULT_RUN_SPEED_MPS,

@@ -1,7 +1,7 @@
 import {
   ScenarioEditorActorDraftSchema,
   type ScenarioEditorActorDraft,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 export const ACTOR_SETUP_HISTORY_VERSION = 1;
 export const DEFAULT_ACTOR_SETUP_HISTORY_MAX_ENTRIES = 100;

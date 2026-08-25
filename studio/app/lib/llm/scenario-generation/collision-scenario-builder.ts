@@ -31,7 +31,7 @@ import {
   type CollisionRequiredGeometry,
   type NpcAggressiveness,
   type ScenarioValidationReport,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { AppContext } from "@/app/lib/db/app-context";
 import { execute } from "@/app/lib/db/data-api";
 import { ensureDefaultDatasetForWorkspace } from "@/app/lib/db/dataset-store";

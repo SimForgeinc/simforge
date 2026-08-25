@@ -254,7 +254,7 @@ export function RenderTheater({
           <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto p-4">
             {hero ? (
               <figure className="render-glass flex min-h-0 flex-col border" key={hero.id}>
-                {/* Presigned URL; a same-origin poster does not exist for managed renders. */}
+                {/* Render artifacts are served through the local object-store URL. */}
                 <video
                   autoPlay
                   className="aspect-video w-full render-video-mat object-contain"

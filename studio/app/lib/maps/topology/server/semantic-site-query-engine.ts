@@ -11,7 +11,7 @@ import {
   type SemanticSiteQueryCandidate,
   type SemanticSiteQueryResult,
   type SemanticFeatureGraph,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 const MAX_ANCHOR_CANDIDATES = 50_000;
 const MAX_DISTANCE_COMPARISONS = 1_000_000;

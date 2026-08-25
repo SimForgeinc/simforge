@@ -2,7 +2,7 @@ import type {
   CandidateLocation,
   MapAsset,
   MapAssetEnrichmentSnapshot,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { MapRecord, Bounds } from "@/app/lib/runtime/map-data";
 import type {
   CarlaSessionStatus,

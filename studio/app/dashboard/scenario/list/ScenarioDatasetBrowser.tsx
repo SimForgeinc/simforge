@@ -51,23 +51,13 @@ export function ScenarioDatasetBrowser({
 }: DatasetBrowserProps) {
   const searchId = useId();
   const [datasetSearchQuery, setDatasetSearchQuery] = useState("");
-  const [showOrganizationDatasets, setShowOrganizationDatasets] = useState(false);
-
-  const visibleOrderedDatasets = useMemo(() => {
-    if (!expanded || showOrganizationDatasets) return orderedDatasets;
-    return orderedDatasets.filter(isWorkspaceOwnedDataset);
-  }, [expanded, orderedDatasets, showOrganizationDatasets]);
 
   const filteredDatasets = useMemo(() => {
-    if (!expanded) return visibleOrderedDatasets;
+    if (!expanded) return orderedDatasets;
     const query = datasetSearchQuery.trim().toLowerCase();
-    if (!query) return visibleOrderedDatasets;
-    return visibleOrderedDatasets.filter((dataset) => datasetMatchesSearch(dataset, query));
-  }, [datasetSearchQuery, expanded, visibleOrderedDatasets]);
-
-  const organizationDatasetCount = expanded
-    ? orderedDatasets.filter((dataset) => !isWorkspaceOwnedDataset(dataset)).length
-    : 0;
+    if (!query) return orderedDatasets;
+    return orderedDatasets.filter((dataset) => datasetMatchesSearch(dataset, query));
+  }, [datasetSearchQuery, expanded, orderedDatasets]);
 
   return (
     <div
@@ -79,7 +69,7 @@ export function ScenarioDatasetBrowser({
         // "no datasets" to a screen reader and flashes empty for everyone else.
         <WorkspacePaneLoading
           className="min-h-40"
-          hint="Reading the scenarios available in this workspace."
+          hint="Reading locally stored scenarios."
           message="Loading datasets"
         />
       ) : datasets.length === 0 ? (
@@ -164,13 +154,6 @@ export function ScenarioDatasetBrowser({
                   />
                 ))
               )}
-              {organizationDatasetCount > 0 ? (
-                <OrganizationDatasetReveal
-                  expanded={showOrganizationDatasets}
-                  count={organizationDatasetCount}
-                  onClick={() => setShowOrganizationDatasets((current) => !current)}
-                />
-              ) : null}
             </div>
           </div>
         </div>
@@ -199,7 +182,7 @@ function DatasetHero() {
   return (
     <div className="min-w-0 max-w-[620px]" data-testid="scenario-dataset-hero-copy">
       <p className="font-meta text-micro font-medium uppercase tracking-meta-tight text-muted-foreground sm:text-xs">
-        Scenario data workspace
+        Local scenario library
       </p>
       <h2 className="mt-1 max-w-none font-display text-[clamp(24px,3.6vw,42px)] font-semibold leading-tight tracking-[-0.03em] text-foreground">
         Scenario Datasets
@@ -211,32 +194,6 @@ function DatasetHero() {
   );
 }
 
-function OrganizationDatasetReveal({
-  expanded,
-  count,
-  onClick,
-}: {
-  expanded: boolean;
-  count: number;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      className="flex min-h-[180px] flex-1 items-center justify-center border-b border-border px-4 py-8"
-      data-testid="scenario-organization-datasets-reveal"
-    >
-      <button
-        type="button"
-        aria-expanded={expanded}
-        onClick={onClick}
-        className="border-b border-border pb-1 font-meta text-micro uppercase tracking-meta-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-      >
-        {expanded ? "Hide" : "Show"} {count} shared{" "}
-        {count === 1 ? "dataset" : "datasets"}
-      </button>
-    </div>
-  );
-}
 
 function datasetMatchesSearch(dataset: ScenarioDatasetDto, query: string) {
   return [
@@ -253,14 +210,8 @@ function datasetMatchesSearch(dataset: ScenarioDatasetDto, query: string) {
     .includes(query);
 }
 
-/**
- * Whether this row belongs to the viewing workspace rather than being shared into view.
- *
- * v1 read a stored `mutability` column that was never actually set to `read_only`; v2 derives it, so
- * this reads the two fields the derivation is built from — `visibility` and `is_system_managed`
- * (§6.5). It is a display hint only: `resolveScenarioDatasetAccess` is the enforcement.
- */
-function isWorkspaceOwnedDataset(dataset: ScenarioDatasetDto) {
+/** System-managed fixture datasets remain read-only in the local library. */
+function isEditableDataset(dataset: ScenarioDatasetDto) {
   return dataset.visibility === "workspace" && !dataset.isSystemManaged;
 }
 
@@ -304,7 +255,7 @@ function DatasetListRow({
   // pairs and reads 0 for every dataset until someone pins one — which is exactly the number v2's
   // old grid showed.
   const total = documentCount ?? dataset.documentCount;
-  const readOnly = !isWorkspaceOwnedDataset(dataset);
+  const readOnly = !isEditableDataset(dataset);
   const documentLabel = total === 1 ? "1 scenario" : `${total.toLocaleString()} scenarios`;
 
   return (
@@ -439,7 +390,7 @@ function DatasetCompactRow({
   onDelete?: () => void;
 }) {
   const total = documentCount ?? dataset.documentCount;
-  const readOnly = !isWorkspaceOwnedDataset(dataset);
+  const readOnly = !isEditableDataset(dataset);
   return (
     <div className="group relative flex w-full items-center justify-between gap-2 border border-border bg-surface-raised px-3 py-2.5 text-left transition-colors hover:border-primary/50">
       <button

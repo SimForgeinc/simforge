@@ -9,7 +9,7 @@
 import { CATALOG } from "@simforge/asset-catalog";
 import type { CatalogId } from "@simforge/asset-catalog";
 
-import type { ParkedCar } from "@/app/lib/simcloud-shared/parked-cars";
+import type { ParkedCar } from "@/app/lib/studio-shared/parked-cars";
 import type { ParkingStall } from "./stalls";
 
 /** Catalog entries the catalog itself marks as parkable. */
@@ -37,7 +37,7 @@ export const PARKABLE_MODELS: readonly ParkableModel[] = CATALOG.filter(
 }));
 
 // One definition, shared with the compiler: `catalogId` is a plain string there
-// because `@simcloud/shared` must stay free of `@simforge/*`. Callers that
+// because `@simforge/studio-shared` must stay free of `@simforge/*`. Callers that
 // need the branded `CatalogId` narrow it at the renderer boundary.
 export type { ParkedCar };
 

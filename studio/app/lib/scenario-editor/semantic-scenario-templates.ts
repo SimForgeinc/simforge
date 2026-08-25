@@ -4,7 +4,7 @@ import {
   SemanticScenarioTemplateSchema,
   type SemanticScenarioTemplate,
   type SemanticSiteQuery,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 const baseCorridorQuery: SemanticSiteQuery = {
   schemaVersion: SEMANTIC_SITE_QUERY_SCHEMA_VERSION,

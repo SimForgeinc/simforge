@@ -1,4 +1,4 @@
-import { type Sensor } from "@simcloud/shared";
+import { type Sensor } from "@simforge/studio-shared";
 
 export type SensorRig = {
   id: string;

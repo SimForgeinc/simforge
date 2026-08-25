@@ -6,8 +6,8 @@
  * directly from the service continue to work unchanged.
  */
 import { z } from "zod";
-import { COLLISION_FAMILY_IDS } from "@simcloud/shared";
-import type { CollisionFamilyId } from "@simcloud/shared";
+import { COLLISION_FAMILY_IDS } from "@simforge/studio-shared";
+import type { CollisionFamilyId } from "@simforge/studio-shared";
 import type { RelatedObjectRef, SearchFilterChip } from "@/app/lib/maps/search/map-search";
 import type { GeometryReport } from "@/app/lib/maps/search/server/inspect-location-geometry";
 import type { PlannerTrace } from "@/app/lib/llm/scenario-generation/planner/planner-trace";

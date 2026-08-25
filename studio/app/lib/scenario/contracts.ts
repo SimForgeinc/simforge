@@ -11,7 +11,7 @@ import {
   ScenarioRenderWorkerIdentitySchema,
   type ScenarioParityEvidenceV1,
   type ScenarioRenderResourceRequest,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { acceptedStoredSchemaId } from "./stored-wire-compat";
 
 export const SCENARIO_SCHEMA_VERSION = String(SCENARIO_TEMPLATE_VERSION);

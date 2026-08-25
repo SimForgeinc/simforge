@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils";
-import type { MapAssetEnrichmentSnapshot } from "@simcloud/shared";
+import type { MapAssetEnrichmentSnapshot } from "@simforge/studio-shared";
 
 type EnrichmentSectionProps = {
   open: boolean;

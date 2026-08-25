@@ -14,7 +14,7 @@
  * Relation-query thresholds (near / adjacent_to / within distances) live in
  * `./search-constants.ts` alongside the rest of the runtime search knobs.
  */
-import type { CandidateLocationKind, OsmRoadClass } from "@simcloud/shared";
+import type { CandidateLocationKind, OsmRoadClass } from "@simforge/studio-shared";
 
 // ---------------------------------------------------------------------------
 // Speed (mph)

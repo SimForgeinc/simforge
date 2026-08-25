@@ -9,7 +9,7 @@ import {
   type ScenarioEditorActorDraft,
   type SemanticActorIntent,
   type SemanticLaneRole,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { SemanticFeatureSelection } from "@/app/lib/editor-map/semantic-overlay";
 
 // Typed client for POST /api/map-assets/:mapAssetId/semantic-bindings/compile.

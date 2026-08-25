@@ -33,8 +33,8 @@ import {
   type TrafficAggressiveness,
   type TrafficDensity,
   type VehicleMixPreset,
-} from "@simcloud/shared";
-import type { EnvironmentPreset } from "@simcloud/shared";
+} from "@simforge/studio-shared";
+import type { EnvironmentPreset } from "@simforge/studio-shared";
 import { z } from "zod";
 import { lenientEnvironmentPreset } from "@/app/lib/scenario-editor/environment-preset-input";
 import {

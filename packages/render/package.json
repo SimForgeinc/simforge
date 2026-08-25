@@ -8,7 +8,21 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./web": {
+        "types": "./dist/web/index.d.ts",
+        "default": "./dist/web/index.js"
+      },
+      "./native": {
+        "types": "./dist/native/index.d.ts",
+        "default": "./dist/native/index.js"
+      }
+    }
   },
   "license": "Apache-2.0",
   "type": "module",
@@ -16,14 +30,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./web": {
+      "development": "./src/web/index.ts",
       "types": "./dist/web/index.d.ts",
       "default": "./dist/web/index.js"
     },
     "./native": {
+      "development": "./src/native/index.ts",
       "types": "./dist/native/index.d.ts",
       "default": "./dist/native/index.js"
     }

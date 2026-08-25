@@ -23,15 +23,14 @@ or reimplement portable behavior. A product need that changes scenario semantics
 is implemented and tested here first, released as a complete stack, and then
 consumed by Cloud.
 
-### The local product surface: `studio/`
+### The local Studio surface: `studio/`
 
-`studio/` is a deliberate, scoped copy of SimForge Cloud's presentation and API
-layer so the complete product runs locally. It stays byte-faithful to the Cloud
-source except for workspace dependency specifiers/imports required by the
-merged packages. It must not grow product semantics Cloud lacks. The local app
-consumes workspace packages in the same shape that Cloud consumes released
-tarballs. The historical construction plan is
-[simcloud-local-port-plan.md](simcloud-local-port-plan.md).
+`studio/` exposes the same portable authoring, playback, evaluation, model,
+map, and rendering surfaces as the hosted product, stripped of productization.
+Code flows one way, from SimForge to SimForge Cloud: shared logic is extracted
+into a SimForge package and consumed by the platform, never copied from product
+code back into this repository. Identity, organizations, billing, entitlements,
+managed storage, remote fleets, and hosted job controls belong only in Cloud.
 
 ## Ownership
 

@@ -4,7 +4,7 @@ import {
   type ScenarioEditorActorDraft,
   type ScenarioIntention,
   type ScenarioMetadata,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   buildScenarioMetadata,
   inferScenarioIntentionForBackfill,

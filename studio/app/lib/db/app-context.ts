@@ -26,18 +26,6 @@ export async function provisionAppContext(session: AuthenticatedUser): Promise<A
   return getAppContext(session);
 }
 
-export async function provisionDefaultAppContextForUser(userId: string): Promise<AppContext | null> {
-  return userId === LOCAL_USER_ID ? getAppContext(LOCAL_SESSION) : null;
-}
-
-export async function provisionAppContextForWorkspaceAccess(
-  userId: string,
-  workspaceId: string,
-): Promise<AppContext | null> {
-  return userId === LOCAL_USER_ID && workspaceId === LOCAL_WORKSPACE_ID
-    ? getAppContext(LOCAL_SESSION)
-    : null;
-}
 
 export async function getActiveAppContext(session: AuthenticatedUser): Promise<AppContext> {
   return getAppContext(session);

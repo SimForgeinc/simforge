@@ -25,7 +25,7 @@
  *
  * No server I/O — pure math on topology data.
  */
-import type { MapTopologyIndex, TopologyGate, Vec2 } from "@simcloud/shared";
+import type { MapTopologyIndex, TopologyGate, Vec2 } from "@simforge/studio-shared";
 import {
   buildGatePolyline,
   walkPredecessorsBackward,

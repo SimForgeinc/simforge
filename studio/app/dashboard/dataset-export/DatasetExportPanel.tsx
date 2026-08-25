@@ -12,8 +12,8 @@ import {
   DATASET_EXPORT_RECIPES,
   isDatasetExportRecipeQueueable,
   type DatasetExportRecipeId,
-} from "@/app/lib/simcloud-shared/dataset-export-recipes";
-import type { ExportFormat } from "@/app/lib/simcloud-shared/dataset";
+} from "@/app/lib/studio-shared/dataset-export-recipes";
+import type { ExportFormat } from "@/app/lib/studio-shared/dataset";
 import { cn } from "@/app/lib/utils";
 import { useVisiblePolling } from "@/app/lib/use-visible-polling";
 

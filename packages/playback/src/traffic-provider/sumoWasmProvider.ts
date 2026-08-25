@@ -7,6 +7,7 @@ import type {
   TrafficStepRequest,
   TrafficStepResult,
 } from './protocol';
+declare const process: { readonly env: { readonly NODE_ENV?: string } };
 
 interface PendingRequest {
   readonly resolve: (value: SumoWorkerResponse) => void;
@@ -107,11 +108,14 @@ export class SumoWasmTrafficProvider implements TrafficProvider {
 
   private ensureWorker(): Worker {
     if (this.worker) return this.worker;
-    // Keep the URL directly at the creation site. Turbopack's worker transform
-    // cannot discover it when it is hidden in a constructor default value.
+    // Keep both URLs directly at the creation site so webpack can bundle the
+    // TypeScript worker in workspace development while packed JavaScript keeps
+    // loading the compiled worker artifact.
     const worker = this.workerFactory
       ? this.workerFactory()
-      : new Worker(new URL('./traffic-provider/sumoWasmWorker.js', import.meta.url), { type: 'module' });
+      : process.env.NODE_ENV === 'development'
+        ? new Worker(new URL('./sumoWasmWorker.ts', import.meta.url), { type: 'module' })
+        : new Worker(new URL('./traffic-provider/sumoWasmWorker.js', import.meta.url), { type: 'module' });
     worker.onmessage = (event: MessageEvent<SumoWorkerResponse>) => {
       const pending = this.pending.get(event.data.id);
       if (!pending) return;

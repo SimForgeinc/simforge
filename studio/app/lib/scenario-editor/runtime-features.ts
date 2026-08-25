@@ -3,7 +3,7 @@ import {
   CARLA_RUNTIME_UE5,
   normalizeCarlaRuntime,
 } from "@/app/lib/scenario/renderer/runtime-profile";
-import type { SensorOutputModality } from "@simcloud/shared";
+import type { SensorOutputModality } from "@simforge/studio-shared";
 
 // The normals camera was verified working on the UE5 image (2026-06-12
 // spike: standalone spawn + frames + real pixel content), so nothing is

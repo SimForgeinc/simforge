@@ -1,4 +1,4 @@
-import type { ScenarioStatus } from "@simcloud/shared";
+import type { ScenarioStatus } from "@simforge/studio-shared";
 import { Clock, Loader2, CheckCheck, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 

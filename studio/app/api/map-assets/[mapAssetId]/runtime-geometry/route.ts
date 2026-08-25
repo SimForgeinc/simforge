@@ -1,4 +1,4 @@
-import { laneTravelIncreasesSByConvention } from "@simcloud/shared";
+import { laneTravelIncreasesSByConvention } from "@simforge/studio-shared";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRouteSession } from "@/app/lib/auth/route-session";

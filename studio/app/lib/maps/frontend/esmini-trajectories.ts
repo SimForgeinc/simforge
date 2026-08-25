@@ -14,7 +14,7 @@
  * overlay uses. That equivalence is what makes the two overlays line up.
  */
 
-import type { EsminiValidationMetrics, MapAsset } from "@simcloud/shared";
+import type { EsminiValidationMetrics, MapAsset } from "@simforge/studio-shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
 import { deriveActorColor } from "@/app/lib/scenario-editor/actor-color";
 

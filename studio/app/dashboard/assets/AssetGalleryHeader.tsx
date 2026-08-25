@@ -1,6 +1,6 @@
 "use client";
 
-import { Boxes, Map as MapIcon, Sparkles, Upload } from "lucide-react";
+import { Boxes, Map as MapIcon, Upload } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { PageHeader } from "@/app/components/ui/page-header";
 import { AssetGallerySegmented } from "./AssetGallerySegmented";
@@ -15,8 +15,8 @@ const SECTION_OPTIONS = [
 
 const SECTION_DESCRIPTION = {
   models:
-    "Every scenario-ready 3D model the SimForge community has published. Upload a model to add it to the local library.",
-  maps: "Published map versions every scenario in this workspace can be authored on.",
+    "Scenario-ready 3D models stored in the local library.",
+  maps: "Local map versions available for scenario authoring.",
 } as const satisfies Record<GallerySection, string>;
 
 export function AssetGalleryHeader({
@@ -35,25 +35,14 @@ export function AssetGalleryHeader({
       <div className="mx-auto max-w-[1500px]">
         <PageHeader
           className="border-b-0 bg-transparent px-0 pb-4 sm:px-0"
-          eyebrow="Public library"
-          title="Asset Gallery"
+          eyebrow="Local library"
+          title="Assets"
           description={SECTION_DESCRIPTION[section]}
           actions={
-            <>
-              {/* Generating is the headline capability and leads the pair, but it
-                  only produces a model — there is no map generator behind it, so
-                  in the Maps section the button would be a promise nothing keeps. */}
-              {section === "models" ? (
-                <Button type="button" disabled title="Meshy generation is unavailable in local mode">
-                  <Sparkles aria-hidden="true" />
-                  Generate asset · In development
-                </Button>
-              ) : null}
-              <Button type="button" variant="outline" onClick={onUpload}>
-                <Upload aria-hidden="true" />
-                {section === "maps" ? "Upload new map" : "Upload new asset"}
-              </Button>
-            </>
+            <Button type="button" variant="outline" onClick={onUpload}>
+              <Upload aria-hidden="true" />
+              {section === "maps" ? "Import map" : "Import model"}
+            </Button>
           }
         />
         <AssetGallerySegmented

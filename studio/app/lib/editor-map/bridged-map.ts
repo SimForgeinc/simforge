@@ -1,4 +1,4 @@
-import type { CandidateLocation, MapAsset } from "@simcloud/shared";
+import type { CandidateLocation, MapAsset } from "@simforge/studio-shared";
 import { getBrowserAssetUrl } from "@/app/lib/assets/asset-url-service";
 import type { Bounds, MapRecord, RoadRecord } from "@/app/lib/runtime/map-data";
 import type {

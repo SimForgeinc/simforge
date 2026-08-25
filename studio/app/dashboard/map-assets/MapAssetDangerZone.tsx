@@ -40,7 +40,7 @@ export function MapAssetDangerZone({
       >
         <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
         <h3 className="flex-1 text-xs font-semibold uppercase tracking-wide text-destructive">
-          Delete map (admin)
+          Delete map
         </h3>
         <ChevronDown
           className={`size-3.5 shrink-0 text-destructive/70 transition-transform duration-150 ${dangerOpen ? "rotate-180" : ""}`}

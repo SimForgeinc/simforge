@@ -6,9 +6,9 @@ import { extractSignalFeaturesFromXodr } from "@/app/lib/maps/metadata/xodr-sign
 import {
   buildMapTopologyIndex,
   TOPOLOGY_CONTENT_EPOCH,
-} from "@simcloud/shared/map-topology/build-topology-index";
+} from "@simforge/studio-shared/map-topology/build-topology-index";
 
-import type { MapTopologyIndex } from "@simcloud/shared/map-topology/types";
+import type { MapTopologyIndex } from "@simforge/studio-shared/map-topology/types";
 import type { LanePolygonFeatureCollection } from "@/app/lib/maps/metadata/lane-polygons";
 import type { SignalFeatureCollection } from "@/app/lib/maps/metadata/xodr-signals";
 

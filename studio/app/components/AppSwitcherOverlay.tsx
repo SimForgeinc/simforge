@@ -2,44 +2,24 @@
 
 import Link from "next/link";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Coins, FlaskConical, HardDrive, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { RefObject } from "react";
 import { AppSwitcherArt } from "@/app/components/AppSwitcherArt";
 import { SkyCloudBackdrop } from "@/app/components/SkyCloudBackdrop";
-import { WorkspaceSwitcher } from "@/app/components/WorkspaceSwitcher";
 import { DASHBOARD_APPS } from "@/app/lib/dashboard-nav";
-import {
-  setExperimentalFeaturesEnabled,
-  useExperimentalFeaturesEnabled,
-} from "@/app/lib/experimental-features";
 import { cn } from "@/app/lib/utils";
-
-type WorkspaceInfo = {
-  id: string;
-  type: string;
-  name: string;
-};
 
 export function AppSwitcherOverlay({
   open,
   onOpenChange,
   pathname,
-  accountEmail,
-  creditsLabel,
-  workspaces,
-  activeWorkspaceId,
   triggerRef,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pathname: string;
-  accountEmail: string;
-  creditsLabel: string;
-  workspaces: WorkspaceInfo[];
-  activeWorkspaceId: string;
   triggerRef: RefObject<HTMLButtonElement | null>;
 }) {
-  const experimentalEnabled = useExperimentalFeaturesEnabled();
   const close = () => onOpenChange(false);
 
   return (
@@ -64,7 +44,7 @@ export function AppSwitcherOverlay({
             Switch app
           </DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
-            Choose a SimForge app or manage your workspace.
+            Choose a SimForge app or configure local features.
           </DialogPrimitive.Description>
           <DialogPrimitive.Close
             className="fixed right-5 top-5 z-20 grid size-10 place-items-center rounded-full text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8E044] sm:right-8 sm:top-8"
@@ -195,69 +175,6 @@ export function AppSwitcherOverlay({
               })}
             </div>
 
-            <div data-testid="app-switcher-footer">
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)_minmax(360px,1.35fr)]">
-                <div className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
-                  <span className="size-2 shrink-0 rounded-sm bg-[#E8E044] shadow-[0_0_14px_rgba(232,224,68,0.35)]" />
-                  <div className="min-w-0 flex-1">
-                    <p
-                      id="workspace-switcher-heading"
-                      className="mb-0.5 font-meta text-[8px] font-bold uppercase tracking-[0.16em] text-white/30"
-                    >
-                      Workspace
-                    </p>
-                    <WorkspaceSwitcher
-                      workspaces={workspaces}
-                      activeWorkspaceId={activeWorkspaceId}
-                      onNavigate={close}
-                      onWorkspaceSelected={close}
-                      className="flex min-w-0 flex-1 flex-col-reverse [&>button]:h-6 [&>button]:border-0 [&>button]:bg-transparent [&>button]:p-0 [&>button]:text-xs [&>div]:mb-2 [&>div]:mt-0"
-                    />
-                  </div>
-                </div>
-
-                <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
-                  <p className="font-meta text-[8px] font-bold uppercase tracking-[0.16em] text-white/30">
-                    Account balance
-                  </p>
-                  <p className="mt-0.5 truncate text-xs font-semibold text-white/80">
-                    {creditsLabel}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-white/35">
-                    <Coins
-                      className="size-3.5 text-[#E8E044]"
-                      aria-hidden="true"
-                    />
-                    <span className="truncate">{accountEmail}</span>
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-1 rounded-xl border border-white/[0.07] bg-white/[0.025] p-1">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExperimentalFeaturesEnabled(!experimentalEnabled)
-                    }
-                    aria-label={`${experimentalEnabled ? "Disable" : "Enable"} experimental features`}
-                    aria-pressed={experimentalEnabled}
-                    data-testid="experimental-features-toggle"
-                    className={cn(
-                      "flex min-h-12 items-center justify-center gap-2 rounded-lg px-2 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E8E044]",
-                      experimentalEnabled
-                        ? "bg-[#E8E044]/10 text-[#E8E044]"
-                        : "text-white/45 hover:bg-white/[0.05] hover:text-white",
-                    )}
-                  >
-                    <FlaskConical className="size-3.5 shrink-0" aria-hidden="true" />
-                    <span>Experimental {experimentalEnabled ? "on" : "off"}</span>
-                  </button>
-                  <div className="flex min-h-12 items-center justify-center gap-2 rounded-lg px-2 text-[10px] font-medium text-white/45">
-                    <HardDrive className="size-3.5 shrink-0" aria-hidden="true" />
-                    <span>Local workspace</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

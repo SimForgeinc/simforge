@@ -1,4 +1,4 @@
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import type { Bounds } from "@/app/lib/runtime/map-data";
 import { localPointToLngLat } from "./coordinates";
 

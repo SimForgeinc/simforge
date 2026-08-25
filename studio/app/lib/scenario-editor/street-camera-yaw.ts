@@ -1,4 +1,4 @@
-import type { Sensor } from "@simcloud/shared";
+import type { Sensor } from "@simforge/studio-shared";
 
 export const STREET_CAMERA_YAW_BASIS_VERSION = "simforge.street-camera-yaw.v2";
 export const STREET_CAMERA_CLOCKWISE_OFFSET_DEGREES = -90;

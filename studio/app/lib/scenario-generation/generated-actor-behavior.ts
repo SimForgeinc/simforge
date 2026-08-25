@@ -5,7 +5,7 @@ import {
   type RuntimeScenarioEditorActor,
   type ScenarioEditorActorDraft,
   type TimedInstructions,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 export type GeneratedActorBehaviorIntent = {
   timedInstructionIntents?: TimedInstructions["intent"];

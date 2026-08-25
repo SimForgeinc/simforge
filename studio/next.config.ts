@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   serverExternalPackages: ["@electric-sql/pglite"],
   transpilePackages: [
+    "@simforge/asset-catalog",
+    "@simforge/compiler",
+    "@simforge/maps",
+    "@simforge/openscenario",
+    "@simforge/render",
     "@simforge/playback/traffic",
     "@simforge/viewer",
     "@simforge/editor",
@@ -27,6 +32,14 @@ const nextConfig: NextConfig = {
     "@simforge/scenario",
     "@simforge/engine",
   ],
+  webpack(config) {
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      ".js": [".ts", ".tsx", ".js"],
+      ".jsx": [".tsx", ".jsx"],
+    };
+    return config;
+  },
   experimental: {
     externalDir: true,
   },

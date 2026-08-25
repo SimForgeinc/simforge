@@ -2,7 +2,7 @@
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import { MapDetailPageClient } from "@/app/dashboard/map-assets/[mapAssetId]/MapDetailPageClient";
 import type { MapTemplateScenarioRow } from "@/app/lib/db/scenario-query-store";
 import type { ScenarioSummary } from "@/app/lib/scenarios";

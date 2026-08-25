@@ -18,7 +18,7 @@
  * travel-direction authority.
  */
 import "server-only";
-import { COLLISION_TEMPLATES, TARGET_COLLISION_TIME_S, type CollisionFamilyId } from "@simcloud/shared";
+import { COLLISION_TEMPLATES, TARGET_COLLISION_TIME_S, type CollisionFamilyId } from "@simforge/studio-shared";
 import { getMapAssetByRuntimeNameFromDb } from "@/app/lib/db/map-asset-store";
 import {
   getRuntimeBoundMapTopology,
@@ -203,7 +203,7 @@ const WALKER_CROSSING_DURATION_S = 6;
 const PEDESTRIAN_CROSSING_HALF_WIDTH_M = 4;
 
 // Arrival time is now uniform (`TARGET_COLLISION_TIME_S`, imported from
-// @simcloud/shared) — every actor is back-calculated so the collision
+// @simforge/studio-shared) — every actor is back-calculated so the collision
 // lands at the same planned moment regardless of family.
 
 // ── Bundle loading ──────────────────────────────────────────────────────────

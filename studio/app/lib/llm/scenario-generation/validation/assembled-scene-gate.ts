@@ -18,7 +18,7 @@
  * keeps the scene; only a defect on a PRINCIPAL (subject / conflict actor /
  * occluder) rejects the site.
  */
-import type { ScenarioEditorActorDraft } from "@simcloud/shared";
+import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
 import {
   boxesOverlap,
   type OrientedBox,

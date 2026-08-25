@@ -6,7 +6,7 @@
  * `BEHAVIOR_TIME_QUANTUM_S = 0.1` exists twice in `packages/shared` — `scenario-behavior.ts:57` and
  * `preview-engine/constants.ts:20` — and this is deliberately NOT a third alias of either. Both live
  * in the v1 package, every one of that package's `preview-engine` consumers is a v1 file, and
- * `lib/scenario/**` presently imports `@simcloud/shared` in zero files. Reaching across would make
+ * `lib/scenario/**` presently imports `@simforge/studio-shared` in zero files. Reaching across would make
  * this the first v2→v1 dependency in an otherwise clean tree, in a constant, on the eve of v1's
  * deletion.
  *

@@ -28,7 +28,7 @@
  * where a head could not be resolved to an OpenDRIVE `<signal>` id.
  */
 
-import type { JunctionSignalPlan } from "@simcloud/shared";
+import type { JunctionSignalPlan } from "@simforge/studio-shared";
 
 /** One junction of `signal_program.json`, as written by scripts/sumo/signal_program.py. */
 export interface SumoSignalProgramJunction {

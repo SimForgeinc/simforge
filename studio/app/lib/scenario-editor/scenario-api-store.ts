@@ -1,4 +1,4 @@
-import type { JunctionSignalPlan, ScenarioEditorActorDraft } from "@simcloud/shared";
+import type { JunctionSignalPlan, ScenarioEditorActorDraft } from "@simforge/studio-shared";
 import type { AppContext } from "@/app/lib/db/app-context";
 import { execute, queryOne, queryRows, withTransaction } from "@/app/lib/db/data-api";
 import {

@@ -1,4 +1,4 @@
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 
 export type EditorMapAsset = MapAsset & {
   editor_runtime_bundle_ready?: boolean;

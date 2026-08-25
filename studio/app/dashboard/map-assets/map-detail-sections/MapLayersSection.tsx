@@ -11,7 +11,7 @@ import { SIGNAL_CATEGORY_CONFIG } from "@/app/lib/maps/frontend/signal-overlay";
 import { enrichmentGlyphPath } from "@/app/components/map-assets-map/map-icons";
 import { cn } from "@/app/lib/utils";
 import type { LaneRenderMode } from "@/app/lib/maps/frontend/lane-render-mode";
-import type { MapOverlayLayer, MapOverlayLayerId } from "@simcloud/shared";
+import type { MapOverlayLayer, MapOverlayLayerId } from "@simforge/studio-shared";
 import type { ScenarioCandidateFamilyLayer } from "@/app/lib/maps/frontend/scenario-candidate-layers";
 import {
   TWIN_FIDELITY_RESOLUTIONS,

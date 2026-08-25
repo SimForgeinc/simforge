@@ -87,10 +87,6 @@ export function ScenarioJobDetails({
           style={{ width: `${Math.max(4, percent)}%` }}
         />
       </div>
-      <Details title="Cost">
-        <Row label="Billing" value="Free" />
-        <Row label="Estimated cost" value="$0.00" />
-      </Details>
       <Details title="OpenSCENARIO provenance">
         <Row label="Document" value={provenance?.documentId ?? "Loading…"} />
         <Row
