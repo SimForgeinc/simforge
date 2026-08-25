@@ -1,16 +1,27 @@
 //! Procedural actor geometry bound to prop-catalog entries.
 //!
 //! The prop-catalog builds three.js meshes in code (packages/prop-catalog);
-//! there are no GLBs, so render-core mirrors the same minimum visual grammar
-//! procedurally: body/cabin/wheels for vehicles, capsule+head for
-//! pedestrians. Actor local frame: length along +X so a yaw-about-+Y rotation
-//! by `headingRad` aligns +X with the scene-frame travel direction
-//! `(cos h, 0, -sin h)`.
+//! render-core mirrors the same minimum visual grammar procedurally:
+//! body/cabin/wheels for vehicles, capsule+head for pedestrians. This is the
+//! fallback path for catalog ids without a vehicles-carla GLB (see
+//! `vehicle_model.rs`). Actor local frame: length along +X so a
+//! yaw-about-+Y rotation by `headingRad` aligns +X with the scene-frame
+//! travel direction `(cos h, 0, -sin h)`.
 
 use bevy::math::primitives::{Capsule3d, Cuboid, Cylinder};
 use bevy::prelude::{Color, Mesh, Transform};
 
 use crate::scene_state::{ActorDesc, Dims};
+
+/// What a part is, for animation hooks and tinting.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ActorPartKind {
+    /// Receives the authored body tint.
+    Body,
+    /// Spins about its local Z (axle) axis when the actor moves.
+    Wheel { radius: f32 },
+    Other,
+}
 
 pub struct ActorPart {
     pub mesh: Mesh,
@@ -20,6 +31,36 @@ pub struct ActorPart {
     pub name: String,
     /// Base colour (sRGB).
     pub color: Color,
+    pub kind: ActorPartKind,
+}
+
+/// Parse an authored `#rrggbb` hex color.
+pub fn parse_hex_color(hex: &str) -> Option<Color> {
+    let hex = hex.trim_start_matches('#');
+    if hex.len() != 6 {
+        return None;
+    }
+    let v = u32::from_str_radix(hex, 16).ok()?;
+    Some(Color::srgb_u8((v >> 16) as u8, (v >> 8) as u8, v as u8))
+}
+
+/// The body colour an actor renders with: authored `color` when present,
+/// else the deterministic catalog-id palette.
+pub fn actor_body_color(actor: &ActorDesc) -> Color {
+    actor
+        .color
+        .as_deref()
+        .and_then(parse_hex_color)
+        .unwrap_or_else(|| vehicle_color(&actor.catalog_id))
+}
+
+/// Effective dims for an actor: authored, else per-class defaults.
+pub fn actor_dims(actor: &ActorDesc) -> Dims {
+    actor.dims.unwrap_or(match actor.actor_class.as_str() {
+        "pedestrian" => Dims { l: 0.6, w: 0.6, h: 1.75 },
+        "bicycle" => Dims { l: 1.7, w: 0.5, h: 1.7 },
+        _ => Dims { l: 4.7, w: 1.82, h: 1.45 },
+    })
 }
 
 fn vehicle_color(catalog_id: &str) -> Color {
@@ -38,17 +79,14 @@ fn vehicle_color(catalog_id: &str) -> Color {
     )
 }
 
-const WHEEL_COLOR: Color = Color::srgb(0.08, 0.08, 0.09);
+pub const WHEEL_COLOR: Color = Color::srgb(0.08, 0.08, 0.09);
 
-/// Build the part list for one actor description.
+/// Build the part list for one actor description (the primitive fallback
+/// used when the catalog id has no vehicles-carla GLB).
 pub fn actor_parts(actor: &ActorDesc) -> Vec<ActorPart> {
-    let dims = actor.dims.unwrap_or(match actor.actor_class.as_str() {
-        "pedestrian" => Dims { l: 0.6, w: 0.6, h: 1.75 },
-        "bicycle" => Dims { l: 1.7, w: 0.5, h: 1.7 },
-        _ => Dims { l: 4.7, w: 1.82, h: 1.45 },
-    });
+    let dims = actor_dims(actor);
     let (l, w, h) = (dims.l as f32, dims.w as f32, dims.h as f32);
-    let color = vehicle_color(&actor.catalog_id);
+    let color = actor_body_color(actor);
     let mut parts = Vec::new();
 
     match actor.actor_class.as_str() {
@@ -61,6 +99,7 @@ pub fn actor_parts(actor: &ActorDesc) -> Vec<ActorPart> {
                 offset: Transform::from_xyz(0.0, h * 0.38, 0.0),
                 name: "torso".into(),
                 color,
+                kind: ActorPartKind::Body,
             });
             parts.push(ActorPart {
                 mesh: Mesh::from(Cuboid::new(
@@ -71,16 +110,18 @@ pub fn actor_parts(actor: &ActorDesc) -> Vec<ActorPart> {
                 offset: Transform::from_xyz(0.0, h * 0.82, 0.0),
                 name: "head".into(),
                 color,
+                kind: ActorPartKind::Other,
             });
         }
         "bicycle" => {
             let wheel_r = h * 0.16;
             for (i, dx) in [l * 0.32, -l * 0.32].into_iter().enumerate() {
                 parts.push(ActorPart {
-                    mesh: rotated_cyl(wheel_r, 0.04),
+                    mesh: axle_cyl(wheel_r, 0.04),
                     offset: Transform::from_xyz(dx, wheel_r, 0.0),
                     name: format!("wheel{i}"),
                     color: WHEEL_COLOR,
+                    kind: ActorPartKind::Wheel { radius: wheel_r },
                 });
             }
             parts.push(ActorPart {
@@ -88,6 +129,7 @@ pub fn actor_parts(actor: &ActorDesc) -> Vec<ActorPart> {
                 offset: Transform::from_xyz(0.0, h * 0.42, 0.0),
                 name: "frame".into(),
                 color,
+                kind: ActorPartKind::Body,
             });
             parts.push(ActorPart {
                 mesh: Mesh::from(Cuboid::new(
@@ -98,6 +140,7 @@ pub fn actor_parts(actor: &ActorDesc) -> Vec<ActorPart> {
                 offset: Transform::from_xyz(-l * 0.05, h * 0.72, 0.0),
                 name: "rider".into(),
                 color,
+                kind: ActorPartKind::Other,
             });
         }
         "truck" | "bus" => {
@@ -106,6 +149,7 @@ pub fn actor_parts(actor: &ActorDesc) -> Vec<ActorPart> {
                 offset: Transform::from_xyz(0.0, h * 0.55, 0.0),
                 name: "body".into(),
                 color,
+                kind: ActorPartKind::Body,
             });
             add_wheels(&mut parts, l, w, h);
         }
@@ -116,21 +160,21 @@ pub fn actor_parts(actor: &ActorDesc) -> Vec<ActorPart> {
                 offset: Transform::from_xyz(0.0, h * 0.36, 0.0),
                 name: "body".into(),
                 color,
+                kind: ActorPartKind::Body,
             });
             parts.push(ActorPart {
                 mesh: Mesh::from(Cuboid::new(l * 0.48, h * 0.40, w * 0.86)),
                 offset: Transform::from_xyz(-l * 0.06, h * 0.78, 0.0),
                 name: "cabin".into(),
                 color,
+                kind: ActorPartKind::Body,
             });
             add_wheels(&mut parts, l, w, h);
         }
     }
 
-    // Namespaced part names keep the legend unambiguous.
-    for p in &mut parts {
-        p.name = format!("{}:{}", actor.id, p.name);
-    }
+    // Names stay bare; consumers namespace them per actor when building
+    // legends (parts are shared prototypes across same-shape actors).
     parts
 }
 
@@ -146,20 +190,23 @@ fn add_wheels(parts: &mut Vec<ActorPart>, l: f32, w: f32, h: f32) {
     .enumerate()
     {
         parts.push(ActorPart {
-            mesh: rotated_cyl(r, 0.22),
+            mesh: axle_cyl(r, 0.22),
             offset: Transform::from_xyz(dx, r, dz),
             name: format!("wheel{i}"),
             color: WHEEL_COLOR,
+            kind: ActorPartKind::Wheel { radius: r },
         });
     }
 }
 
-/// Cylinder along the X axis (wheel orientation).
-fn rotated_cyl(r: f32, width: f32) -> Mesh {
+/// Cylinder whose axis is local Z — the axle axis for wheels of a +X-forward
+/// body (matches the vehicles-carla wheel convention: spin = rotation about
+/// local Z).
+fn axle_cyl(r: f32, width: f32) -> Mesh {
     let mut mesh = Mesh::from(Cylinder {
         radius: r,
         half_height: width / 2.0,
     });
-    mesh.rotate_by(bevy::math::Quat::from_rotation_z(std::f32::consts::FRAC_PI_2));
+    mesh.rotate_by(bevy::math::Quat::from_rotation_x(std::f32::consts::FRAC_PI_2));
     mesh
 }

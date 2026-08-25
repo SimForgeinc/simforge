@@ -12,8 +12,10 @@
 //! - `native-render`: the spike application (flag-compatible baseline).
 //! - `scen-play`: scene-state.v1 trace playback with actors + motion vectors.
 
+pub mod actor_lights;
 pub mod calibration;
 pub mod catalog;
+pub mod fixture;
 pub mod motion_vector;
 pub mod playback;
 pub mod readback;
@@ -24,4 +26,5 @@ pub mod lighting;
 pub mod post_grain;
 pub mod profiles;
 pub mod veg;
+pub mod vehicle_model;
 pub mod weather;
