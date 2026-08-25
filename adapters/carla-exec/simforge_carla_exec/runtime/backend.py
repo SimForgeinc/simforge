@@ -439,8 +439,8 @@ def runtime_asset_bindings(
     *,
     expected_catalog_version_id: str,
     abort: Callable[[], None] | None = None,
-) -> dict[str, Mapping[str, str]]:
-    """Validate a signed asset-catalog manifest and index its exact CARLA bindings."""
+) -> dict[str, Mapping[str, object]]:
+    """Validate a signed asset catalog and index CARLA bindings plus fallback semantics."""
     check = abort or (lambda: None)
     check()
     if not isinstance(manifest, Mapping):
@@ -452,7 +452,7 @@ def runtime_asset_bindings(
     entries = manifest.get("entries")
     if not isinstance(entries, list):
         raise ContractError("asset catalog manifest entries must be an array")
-    bindings: dict[str, Mapping[str, str]] = {}
+    bindings: dict[str, Mapping[str, object]] = {}
     for index, entry in enumerate(entries):
         check()
         if not isinstance(entry, Mapping):
@@ -467,7 +467,23 @@ def runtime_asset_bindings(
         blueprint_id = carla.get("blueprintId") if isinstance(carla, Mapping) else None
         if not isinstance(blueprint_id, str) or not blueprint_id:
             raise ContractError(f"asset catalog entry {asset_id} has no exact CARLA blueprintId")
-        bindings[asset_id] = {"blueprintId": blueprint_id}
+        indexed: dict[str, object] = {"blueprintId": blueprint_id}
+        actor_class = entry.get("actorClass")
+        if isinstance(actor_class, str) and actor_class:
+            indexed["actorClass"] = actor_class
+        dims = entry.get("dims")
+        if isinstance(dims, Mapping):
+            narrowed_dims = {
+                axis: float(dims[axis])
+                for axis in ("l", "w", "h")
+                if isinstance(dims.get(axis), (int, float))
+                and not isinstance(dims.get(axis), bool)
+                and isfinite(float(dims[axis]))
+                and float(dims[axis]) > 0
+            }
+            if len(narrowed_dims) == 3:
+                indexed["dims"] = narrowed_dims
+        bindings[asset_id] = indexed
     if not bindings:
         raise ContractError("asset catalog manifest must contain at least one entry")
     check()

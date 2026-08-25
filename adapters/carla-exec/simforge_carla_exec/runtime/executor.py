@@ -24,7 +24,12 @@ from .backend import (
     RenderBackend,
     runtime_asset_bindings,
 )
-from .compiler import LIFECYCLE_ABSENT, ExecutionPlan, compile_xosc14
+from .compiler import (
+    LIFECYCLE_ABSENT,
+    ExecutionPlan,
+    compile_xosc14,
+    substitute_actor_catalog_bindings,
+)
 from .contract import (
     CAMERA_MODALITIES,
     ContractError,
@@ -231,6 +236,87 @@ def _pronto_rig_sensor_count(lease: Lease) -> int:
     )
 
 
+def _catalog_dims(entry: Mapping[str, object], catalog_id: str) -> Mapping[str, float]:
+    dims = entry.get("dims")
+    if not isinstance(dims, Mapping):
+        raise ContractError(
+            f'asset catalog entry "{catalog_id}" needs dimensions for deterministic Pronto-host fallback'
+        )
+    narrowed: dict[str, float] = {}
+    for axis in ("l", "w", "h"):
+        value = dims.get(axis)
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+            raise ContractError(
+                f'asset catalog entry "{catalog_id}" has invalid {axis} dimension for deterministic Pronto-host fallback'
+            )
+        narrowed[axis] = float(value)
+    return narrowed
+
+
+def _apply_pronto_host_fallback(
+    lease: Lease,
+    plan: ExecutionPlan,
+    catalog: Mapping[str, Mapping[str, object]],
+    abort: Callable[[], None] | None = None,
+) -> tuple[ExecutionPlan, tuple[Mapping[str, object], ...]]:
+    """Bind an authored same-class Pronto host to the canonical Kia runtime body."""
+    if _pronto_rig_sensor_count(lease) != 18:
+        return plan, ()
+    host_ids = {sensor.actor_id for sensor in lease.render_spec.sensors}
+    if len(host_ids) != 1 or None in host_ids:
+        raise ContractError("the Pronto rig must bind to exactly one sensor host actor")
+    host_actor_id = next(iter(host_ids))
+    binding = plan.actors.get(host_actor_id)
+    if binding is None:
+        raise ContractError(f"the Pronto sensor host actor is absent from the execution plan: {host_actor_id}")
+    authored_entry = catalog.get(binding.catalog_name)
+    target_entry = catalog.get(KIA_CARNIVAL_CATALOG_ID)
+    if not isinstance(authored_entry, Mapping):
+        raise ContractError(f"asset catalog has no CARLA binding for Pronto host {host_actor_id}")
+    if (
+        binding.catalog_name == KIA_CARNIVAL_CATALOG_ID
+        and authored_entry.get("blueprintId") == KIA_CARNIVAL_BLUEPRINT_ID
+    ):
+        return plan, ()
+    if (
+        not isinstance(target_entry, Mapping)
+        or target_entry.get("blueprintId") != KIA_CARNIVAL_BLUEPRINT_ID
+    ):
+        raise ContractError(
+            "asset catalog lacks the canonical vehicle.kia.carnival Pronto-host binding"
+        )
+    vehicle_kinds = {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
+    authored_class = authored_entry.get("actorClass")
+    target_class = target_entry.get("actorClass")
+    if (
+        binding.kind not in vehicle_kinds
+        or not isinstance(authored_class, str)
+        or authored_class != target_class
+    ):
+        raise ContractError(
+            "the Pronto sensor host has no deterministic same-class CARLA fallback: "
+            f'actor={host_actor_id} catalog="{binding.catalog_name}" '
+            f'class="{authored_class}" requiredClass="{target_class}"'
+        )
+    authored_dims = _catalog_dims(authored_entry, binding.catalog_name)
+    target_dims = _catalog_dims(target_entry, KIA_CARNIVAL_CATALOG_ID)
+    diagnostic: Mapping[str, object] = {
+        "actorId": host_actor_id,
+        "authoredCatalogId": binding.catalog_name,
+        "fallbackCatalogId": KIA_CARNIVAL_CATALOG_ID,
+        "vehicleClass": authored_class,
+        "lengthDeltaM": target_dims["l"] - authored_dims["l"],
+        "widthDeltaM": target_dims["w"] - authored_dims["w"],
+        "heightDeltaM": target_dims["h"] - authored_dims["h"],
+    }
+    substituted = substitute_actor_catalog_bindings(
+        plan,
+        {host_actor_id: KIA_CARNIVAL_CATALOG_ID},
+        abort,
+    )
+    return substituted, (diagnostic,)
+
+
 
 def _run_process(
     command: list[str],
@@ -423,7 +509,7 @@ def _optional_backend_call(backend: RenderBackend, name: str, *args: object, abo
 def _preflight_asset_semantics(
     lease: Lease,
     plan: ExecutionPlan,
-    catalog: Mapping[str, Mapping[str, str]],
+    catalog: Mapping[str, Mapping[str, object]],
 ) -> None:
     vehicle_kinds = {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter"}
     for actor_id, binding in plan.actors.items():
@@ -465,6 +551,7 @@ def _manifest_to_path(
     destination: Path,
     max_bytes: int,
     abort: Callable[[], None],
+    carla_vehicle_fallbacks: tuple[Mapping[str, object], ...],
 ) -> Path:
     value = {
         "schema": "uniscenario.render-manifest/v1",
@@ -490,6 +577,7 @@ def _manifest_to_path(
         "xoscValidation": dict(validation),
         "workerAttestation": dict(attestation),
         "parity": dict(parity),
+        "carlaVehicleFallbacks": [dict(item) for item in carla_vehicle_fallbacks],
         "parityEvidence": dict(parity_evidence),
         "artifacts": [dict(item) for item in artifacts],
         "sensorFrames": sensor_records,
@@ -1251,7 +1339,6 @@ def execute_lease(
     })
     if unknown_mounts:
         raise RuntimeError(f"sensor mounts reference unknown actors: {', '.join(unknown_mounts)}")
-    emit("plan_compiled", {"planSha256": plan.sha256, "frames": len(plan.frames), "fixedTimestepS": plan.fixed_timestep_s})
     try:
         catalog_manifest = json.loads(catalog_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -1268,7 +1355,31 @@ def execute_lease(
             raise ContractError(f"runtime asset override conflicts with catalog entry {catalog_id}")
         catalog[catalog_id] = dict(binding)
     check_abort("index_asset_catalog")
+    plan, runtime_vehicle_fallbacks = _apply_pronto_host_fallback(
+        lease,
+        plan,
+        catalog,
+        lambda: check_abort("index_asset_catalog"),
+    )
+    compiled_vehicle_fallbacks = execution_manifest.get("carlaVehicleFallbacks", [])
+    if not isinstance(compiled_vehicle_fallbacks, list) or any(
+        not isinstance(item, Mapping) for item in compiled_vehicle_fallbacks
+    ):
+        raise ContractError("execution manifest carlaVehicleFallbacks must be an array of objects")
+    carla_vehicle_fallbacks = (
+        *(dict(item) for item in compiled_vehicle_fallbacks),
+        *runtime_vehicle_fallbacks,
+    )
+    if runtime_vehicle_fallbacks:
+        emit("actor_fallbacks_applied", {
+            "carlaVehicleFallbacks": [dict(item) for item in runtime_vehicle_fallbacks],
+        })
     _preflight_asset_semantics(lease, plan, catalog)
+    emit("plan_compiled", {
+        "planSha256": plan.sha256,
+        "frames": len(plan.frames),
+        "fixedTimestepS": plan.fixed_timestep_s,
+    })
     accumulator = ParityAccumulator(lease.parity_thresholds)
     readbacks: list[Mapping[str, Mapping[str, object]]] = []
     signal_readbacks: list[Mapping[str, str]] = []
@@ -1601,7 +1712,20 @@ def execute_lease(
                 {"schema": "uniscenario.parity-evidence/v1"},
             ))
         if "manifest" in lease.render_spec.outputs:
-            manifest_body = _manifest_to_path(lease, plan, sensor_records, validation, parity_value, parity_evidence, attestation, artifacts, Path(directory) / "manifest.json", min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes), lambda: check_abort("serialize_manifest"))
+            manifest_body = _manifest_to_path(
+                lease,
+                plan,
+                sensor_records,
+                validation,
+                parity_value,
+                parity_evidence,
+                attestation,
+                artifacts,
+                Path(directory) / "manifest.json",
+                min(artifact_temp_limit, MAX_ARTIFACT_BYTES, MAX_OUTPUT_BYTES - output_bytes),
+                lambda: check_abort("serialize_manifest"),
+                carla_vehicle_fallbacks,
+            )
             add_artifact(make_artifact("manifest", manifest_body, "application/json", lease.artifact_uploads.get("manifest")))
     return {
         "status": "succeeded" if parity.accepted else "failed-parity",
@@ -1611,6 +1735,7 @@ def execute_lease(
         "attestation": attestation,
         "parity": parity_value,
         "parityEvidence": parity_evidence,
+        "carlaVehicleFallbacks": [dict(item) for item in carla_vehicle_fallbacks],
         "artifacts": artifacts,
     }
 

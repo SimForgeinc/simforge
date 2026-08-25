@@ -1055,7 +1055,7 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
     def emit(event: str, payload: Mapping[str, object]) -> None:
         nonlocal sequence
-        if event not in {"job.started", "progress"}:
+        if event not in {"job.started", "stage.started", "progress", "warning"}:
             return
         if event == "progress":
             record = {
@@ -1063,6 +1063,18 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
                 "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
                 "event": "stage.progress", "stage": "rendering",
                 "completed": payload["completedFrames"], "total": payload["totalFrames"], "unit": "frames",
+            }
+        elif event == "stage.started":
+            record = {
+                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "stage.started", "stage": payload["stage"],
+            }
+        elif event == "warning":
+            record = {
+                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "warning", "code": payload["code"], "message": payload["message"],
             }
         else:
             record = {
@@ -1076,10 +1088,18 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
     progress_path.write_text("", "utf-8")
     emit("job.started", {})
+    emit("stage.started", {"stage": "preparing"})
     started_at = datetime.now(timezone.utc).isoformat()
-    result = _execute_local_lease(
-        lease, asset_paths, output_dir, DEFAULT_XSD, args.host, args.port, progress=emit,
-    )
+    try:
+        result = _execute_local_lease(
+            lease, asset_paths, output_dir, DEFAULT_XSD, args.host, args.port, progress=emit,
+        )
+    except Exception as exc:
+        emit("warning", {
+            "code": "carla.execution_failed",
+            "message": str(exc)[:4096] or exc.__class__.__name__,
+        })
+        raise
     manifest_entries = _artifact_manifest_entries(result["artifacts"])
     artifact_manifest = {
         "schema": "uniscenario.render-artifact-manifest/v1",

@@ -4,7 +4,7 @@ import hashlib
 import json
 import math
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Callable, Mapping
 
 from .contract import MAX_ACTOR_COUNT, MAX_ACTOR_FRAME_STATES, MAX_DURATION_SECONDS, ContractError, reject_unsafe_xml_envelope
@@ -583,6 +583,33 @@ def _canonical_plan_sha256(
             add(f"L|{signal_id}|{frame.signals[signal_id]}")
     abort()
     return digest.hexdigest()
+
+
+def substitute_actor_catalog_bindings(
+    plan: ExecutionPlan,
+    substitutions: Mapping[str, str],
+    abort: Callable[[], None] | None = None,
+) -> ExecutionPlan:
+    """Return a hash-honest plan with selected runtime catalog identities replaced."""
+    if not substitutions:
+        return plan
+    check = abort or (lambda: None)
+    unknown = sorted(set(substitutions) - set(plan.actors))
+    if unknown:
+        raise ContractError(
+            "runtime catalog substitutions reference unknown actors: "
+            + ", ".join(unknown)
+        )
+    actors = {
+        actor_id: (
+            replace(binding, catalog_name=substitutions[actor_id])
+            if actor_id in substitutions
+            else binding
+        )
+        for actor_id, binding in plan.actors.items()
+    }
+    digest = _canonical_plan_sha256(actors, plan.frames, plan.semantic_metadata, check)
+    return replace(plan, actors=actors, sha256=digest)
 
 
 def compile_xosc14(xml_bytes: bytes, abort: Callable[[], None] | None = None) -> ExecutionPlan:

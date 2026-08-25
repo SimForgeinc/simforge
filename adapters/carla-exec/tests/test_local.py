@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 
 from types import SimpleNamespace
 import pytest
@@ -12,6 +13,56 @@ from simforge_carla_exec.runtime.contract import OFFICIAL_XSD_SHA256
 def test_default_schema_is_bundled_and_digest_pinned() -> None:
     assert local.DEFAULT_XSD.is_file()
     assert hashlib.sha256(local.DEFAULT_XSD.read_bytes()).hexdigest() == OFFICIAL_XSD_SHA256
+
+
+def test_run_intent_records_named_preflight_failure_before_exit(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    intent_path = tmp_path / "intent.json"
+    intent_path.write_text(json.dumps({"intentId": "intent-1"}), "utf-8")
+    progress_path = tmp_path / "progress.jsonl"
+    monkeypatch.setattr(
+        local,
+        "_read_input_package",
+        lambda _package_path, _intent: ("a" * 64, {}),
+    )
+    monkeypatch.setattr(
+        local,
+        "_intent_lease",
+        lambda _intent, _sha, _inputs, _output: (object(), {}),
+    )
+
+    def fail(*_args, **_kwargs):
+        raise local.ContractError("the Pronto host has no deterministic same-class CARLA fallback")
+
+    monkeypatch.setattr(local, "_execute_local_lease", fail)
+    args = SimpleNamespace(
+        intent=str(intent_path),
+        package=str(tmp_path / "package.json"),
+        output=str(tmp_path / "output"),
+        progress=str(progress_path),
+        manifest=str(tmp_path / "manifest.json"),
+        host="127.0.0.1",
+        port=2000,
+    )
+
+    with pytest.raises(local.ContractError, match="deterministic same-class"):
+        local._run_intent(args)
+
+    records = [json.loads(line) for line in progress_path.read_text("utf-8").splitlines()]
+    assert [record["event"] for record in records] == [
+        "job.started",
+        "stage.started",
+        "warning",
+    ]
+    assert records[1]["stage"] == "preparing"
+    assert records[2] == {
+        **{key: records[2][key] for key in ("schema", "jobId", "attempt", "sequence", "timestamp")},
+        "event": "warning",
+        "code": "carla.execution_failed",
+        "message": "the Pronto host has no deterministic same-class CARLA fallback",
+    }
 def test_render_control_lineage_digest_matches_simcloud_contract() -> None:
     intent = {
         "executionPackage": {

@@ -12,6 +12,7 @@ import subprocess
 from threading import Condition, Lock, Thread
 import time
 import textwrap
+from types import SimpleNamespace
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -933,6 +934,72 @@ def test_signed_manifest_shape_resolves_only_nested_exact_carla_bindings():
     del malformed["entries"][0]["runtimeBindings"]["carla"]["blueprintId"]
     with pytest.raises(ContractError, match="no exact CARLA blueprintId"):
         runtime_asset_bindings(malformed, expected_catalog_version_id="uscatalog-1")
+
+
+def test_pronto_host_uses_same_class_kia_fallback_and_records_provenance() -> None:
+    xosc = XOSC.replace(b"catalog:vehicle.sedan", b"catalog:vehicle.ambulance")
+    plan = compile_xosc14(xosc)
+    original_sha256 = plan.sha256
+    sensors = tuple(
+        SimpleNamespace(sensor_id=f"pronto-{index}", actor_id="ego")
+        for index in range(18)
+    )
+    lease = SimpleNamespace(render_spec=SimpleNamespace(sensors=sensors))
+    catalog = {
+        "vehicle.ambulance": {
+            "blueprintId": "vehicle.ambulance.ford",
+            "actorClass": "van",
+            "dims": {"l": 6.1, "w": 2.1, "h": 2.65},
+        },
+        "vehicle.kia.carnival": {
+            "blueprintId": "vehicle.kia.carnival",
+            "actorClass": "van",
+            "dims": {"l": 5.15, "w": 2.0, "h": 1.78},
+        },
+    }
+
+    substituted, fallbacks = worker_runner._apply_pronto_host_fallback(
+        lease,
+        plan,
+        catalog,
+    )
+
+    assert substituted.actors["ego"].catalog_name == "vehicle.kia.carnival"
+    assert substituted.sha256 != original_sha256
+    assert fallbacks == ({
+        "actorId": "ego",
+        "authoredCatalogId": "vehicle.ambulance",
+        "fallbackCatalogId": "vehicle.kia.carnival",
+        "vehicleClass": "van",
+        "lengthDeltaM": 5.15 - 6.1,
+        "widthDeltaM": 2.0 - 2.1,
+        "heightDeltaM": 1.78 - 2.65,
+    },)
+    worker_runner._preflight_asset_semantics(lease, substituted, catalog)
+
+
+def test_pronto_host_fallback_fails_closed_across_vehicle_classes() -> None:
+    plan = compile_xosc14(XOSC)
+    sensors = tuple(
+        SimpleNamespace(sensor_id=f"pronto-{index}", actor_id="ego")
+        for index in range(18)
+    )
+    lease = SimpleNamespace(render_spec=SimpleNamespace(sensors=sensors))
+    catalog = {
+        "vehicle.sedan": {
+            "blueprintId": "vehicle.lincoln.mkz",
+            "actorClass": "car",
+            "dims": {"l": 4.7, "w": 1.82, "h": 1.45},
+        },
+        "vehicle.kia.carnival": {
+            "blueprintId": "vehicle.kia.carnival",
+            "actorClass": "van",
+            "dims": {"l": 5.15, "w": 2.0, "h": 1.78},
+        },
+    }
+
+    with pytest.raises(ContractError, match="no deterministic same-class CARLA fallback"):
+        worker_runner._apply_pronto_host_fallback(lease, plan, catalog)
 
 
 def test_compiles_canonical_init_follow_trajectory_action():
