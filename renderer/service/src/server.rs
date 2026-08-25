@@ -286,17 +286,20 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                 let class = actor.actor_class.clone().unwrap_or_else(|| "prop".into());
                 let dims = actor_dims(&class);
                 let yaw = quat_yaw(&actor.transform.rotation);
-                // Traces carry no height channel: snap onto the static ground
-                // field whenever the doc does not pin a ground elevation.
-                let snap = actor.transform.position[1].abs() < 1e-4 && frame.ground_y.is_none();
+                let mut position = actor.transform.position;
+                position[1] = actor_base_y(
+                    position[1],
+                    frame.ground_y,
+                    state.app.ground_at(position[0], position[2]),
+                );
                 state.app.upsert_actor(
                     &actor.id,
                     &class,
-                    actor.transform.position,
+                    position,
                     yaw,
                     dims,
                     class_color(&class),
-                    snap,
+                    false,
                 );
             }
             other => return Err(format!("unknown actor kind {other:?} for {}", actor.id)),
@@ -304,6 +307,17 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
     }
     state.current_tick = Some(index);
     Ok(())
+}
+
+/// Height precedence for authored scene state. Non-zero actor Y is canonical;
+/// frame `groundY` is the explicit fallback for legacy zero-height traces;
+/// mesh sampling is only the last resort when neither is authored.
+fn actor_base_y(authored_y: f32, frame_ground_y: Option<f32>, sampled_y: f32) -> f32 {
+    if authored_y.abs() >= 1e-4 {
+        authored_y
+    } else {
+        frame_ground_y.unwrap_or(sampled_y)
+    }
 }
 
 fn quat_yaw(q: &[f32; 4]) -> f32 {
@@ -356,17 +370,21 @@ fn resolve_pose(
         .ok_or_else(|| format!("attach actor {:?} not present in tick {index}", attach.actor_id))?;
     let yaw = quat_yaw(&actor.transform.rotation);
     let pos = actor.transform.position;
-    let ground = state.app.ground_at(pos[0], pos[2]);
+    let base_y = actor_base_y(
+        pos[1],
+        frame.ground_y,
+        state.app.ground_at(pos[0], pos[2]),
+    );
     // Actor-local mount (x fwd, y right, z up) -> world (y-up, yaw about +Y).
     let (sy, cy) = yaw.sin_cos();
     let off = attach.offset_m;
     let eye = [
         pos[0] + cy * off[0] + sy * off[1],
-        ground + off[2],
+        base_y + off[2],
         pos[2] - sy * off[0] + cy * off[1],
     ];
     if attach.look_at_actor {
-        return Ok((eye, [pos[0], ground + 1.0, pos[2]]));
+        return Ok((eye, [pos[0], base_y + 1.0, pos[2]]));
     }
     // CARLA yaw is left-handed (clockwise from above); Uni yaw is CCW, so a
     // CARLA-relative mount yaw subtracts. Pitch passes through (negative =
@@ -860,7 +878,7 @@ fn async_export_pngs(dir: &str, tick_id: u64, payloads: &[(String, String, u32, 
 
 #[cfg(test)]
 mod tests {
-    use super::{instance_coverage, row_stride};
+    use super::{actor_base_y, instance_coverage, row_stride};
 
     #[test]
     fn coverage_counts_nonzero_rgb_and_ignores_alpha_and_padding() {
@@ -870,5 +888,12 @@ mod tests {
         data[row_stride(2, 4) + 1] = 2;
         data[row_stride(2, 4) + 8] = 9; // Padding must not count.
         assert_eq!(instance_coverage(&data, 2, 2), 0.5);
+    }
+
+    #[test]
+    fn authored_actor_height_precedes_mesh_ground() {
+        assert_eq!(actor_base_y(2.225, None, -9.7), 2.225);
+        assert_eq!(actor_base_y(0.0, Some(3.5), -9.7), 3.5);
+        assert_eq!(actor_base_y(0.0, None, 1.75), 1.75);
     }
 }
