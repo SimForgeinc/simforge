@@ -313,11 +313,12 @@ STABILITY_THRESHOLDS: Mapping[str, float] = {
 STABILITY_CONSECUTIVE_TICKS = 5
 
 
-#: Frames a camera's encoder queue may hold before the render fails closed.
-#: The queue exists so a stalled ffmpeg process throttles its own writer
-#: thread instead of the CARLA tick loop; overflow means encoding cannot keep
-#: up with capture and the render is not real-time recoverable.
-CAMERA_ENCODER_QUEUE_FRAMES = 4
+#: Frames held by each camera's bounded encoder queue. The queue absorbs
+#: transient x264 bursts without allowing unbounded frame memory.
+CAMERA_ENCODER_QUEUE_FRAMES = 8
+#: A full queue throttles the synchronous capture path for this bounded window;
+#: sustained overrun still fails closed.
+CAMERA_ENCODER_STALL_DEADLINE_S = 5.0
 
 
 def _presentation_video_codec_args() -> list[str]:
@@ -334,11 +335,10 @@ class _CameraStreamEncoder:
     """One rawvideo->h264 ffmpeg pipe per camera, fed off the capture path.
 
     Camera frames never touch disk: the writer thread applies the CARLA color
-    conversion and pipes raw BGRA into ffmpeg. The queue is bounded and
-    non-blocking so encoder backpressure can never stall the CARLA tick loop —
-    overflow fails the render instead.
+    conversion and pipes raw BGRA into ffmpeg. The bounded queue absorbs brief
+    encoder bursts; when full, capture waits for a bounded interval so the
+    synchronous tick loop naturally throttles to encoder throughput.
     """
-
     _CLOSE = object()
 
     def __init__(self, sensor_key: str, width: int, height: int, fps: float, converter: Any, destination: Path):
@@ -346,6 +346,7 @@ class _CameraStreamEncoder:
         self.destination = destination
         self.converter = converter
         self.error: BaseException | None = None
+        self.stall_deadline_s = CAMERA_ENCODER_STALL_DEADLINE_S
         self.queue: queue.Queue[Any] = queue.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
         self.process = subprocess.Popen([
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -377,10 +378,20 @@ class _CameraStreamEncoder:
             raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
         try:
             self.queue.put_nowait(data)
+            return
+        except queue.Full:
+            pass
+        try:
+            self.queue.put(data, timeout=self.stall_deadline_s)
         except queue.Full as exc:
+            if self.error is not None:
+                raise RuntimeError(
+                    f"camera stream encoder {self.sensor_key} failed: {self.error}"
+                ) from self.error
             raise ContractError(
                 f"camera stream encoder {self.sensor_key} exceeded its "
-                f"{CAMERA_ENCODER_QUEUE_FRAMES}-frame backpressure budget"
+                f"{CAMERA_ENCODER_QUEUE_FRAMES}-frame backpressure budget "
+                f"for longer than {self.stall_deadline_s:g}s"
             ) from exc
 
     def close(self, timeout_s: float = 300.0) -> None:

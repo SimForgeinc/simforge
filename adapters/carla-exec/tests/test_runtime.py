@@ -1733,7 +1733,7 @@ def test_video_lease_requires_a_reservation_for_every_non_primary_sensor():
         parse_lease(incomplete_data)
 
 
-def test_camera_stream_encoder_backpressure_fails_closed():
+def test_camera_stream_encoder_backpressure_fails_closed_after_deadline():
     from simforge_carla_exec.runtime.backend import (
         CAMERA_ENCODER_QUEUE_FRAMES,
         _CameraStreamEncoder,
@@ -1741,17 +1741,38 @@ def test_camera_stream_encoder_backpressure_fails_closed():
     encoder = object.__new__(_CameraStreamEncoder)
     encoder.sensor_key = "hero"
     encoder.error = None
+    encoder.stall_deadline_s = 0.01
     encoder.queue = __import__("queue").Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
     for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
         encoder.submit(f"frame-{index}")
-    # The queue is bounded and non-blocking: overflow must raise instead of
-    # stalling the CARLA tick loop.
     with pytest.raises(ContractError, match="backpressure budget"):
         encoder.submit("frame-overflow")
-    # A failed writer thread surfaces on the next capture instead of hanging.
     encoder.error = RuntimeError("ffmpeg died")
     with pytest.raises(RuntimeError, match="camera stream encoder hero failed"):
         encoder.submit("frame-after-error")
+
+
+def test_camera_stream_encoder_absorbs_transient_burst():
+    import queue
+    import threading
+    from simforge_carla_exec.runtime.backend import (
+        CAMERA_ENCODER_QUEUE_FRAMES,
+        _CameraStreamEncoder,
+    )
+    encoder = object.__new__(_CameraStreamEncoder)
+    encoder.sensor_key = "hero"
+    encoder.error = None
+    encoder.stall_deadline_s = 1.0
+    encoder.queue = queue.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
+    for index in range(CAMERA_ENCODER_QUEUE_FRAMES):
+        encoder.submit(f"frame-{index}")
+    drained = threading.Timer(0.02, encoder.queue.get)
+    drained.start()
+    try:
+        encoder.submit("frame-burst")
+    finally:
+        drained.join()
+    assert encoder.queue.full()
 
 
 def test_presentation_video_encoder_selection(monkeypatch):
