@@ -1,12 +1,10 @@
 /**
  * Parked cars as an ambient-traffic extension.
  *
- * Parked cars are deliberately *not* authored actors. `AuthoredActorLimitError`
- * caps a scenario at 32 authored actors and `authoredActorCount` is documented
- * as excluding "ambient traffic generated at runtime" — one parking row is
- * 20-40 stalls and Di Rosa has 859, so roles are not an option. They ride the
- * ambient path instead, stored on the document exactly like the other
- * execution-bearing ambient choices (`studio.ambientTraffic.provider.v1`,
+ * Generated parking rows remain ambient traffic rather than authored roles:
+ * they are execution settings, not individually choreographed participants.
+ * The extension is stored on the document with the other execution-bearing
+ * ambient choices (`studio.ambientTraffic.provider.v1`,
  * `…acceleratedSignalCycles.v1`, `…allSignalsGreen.v1`).
  */
 

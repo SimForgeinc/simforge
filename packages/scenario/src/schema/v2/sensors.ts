@@ -4,16 +4,6 @@ import { z } from 'zod';
 
 import { EntityIdSchema, Vec3Schema } from '../v1.js';
 
-/** Actor classes that currently have a supported physical dash-camera mount. */
-export const DASH_CAMERA_ACTOR_CLASSES = [
-  'car',
-  'truck',
-  'bus',
-  'van',
-  'motorcycle',
-] as const;
-
-export type DashCameraActorClass = (typeof DASH_CAMERA_ACTOR_CLASSES)[number];
 
 /** Euler orientation in the actor-local frame, in radians. */
 export const SensorRotationSchema = z.strictObject({
@@ -256,10 +246,6 @@ export function firstEnabledDashCamera(
   return dashCameras(actor)[0];
 }
 
-export interface ActorForDashCamera {
-  class: string;
-  dims?: { length: number; width: number; height: number };
-}
 
 /* -------------------------------------------------- map/percept divergence */
 
@@ -372,9 +358,6 @@ export type MapDivergenceKind = z.infer<typeof MapDivergenceKindSchema>;
 export type MapDivergenceExtent = z.infer<typeof MapDivergenceExtentSchema>;
 export type TemplatePerception = z.infer<typeof TemplatePerceptionSchema>;
 
-export function supportsDashCamera(actor: Pick<ActorForDashCamera, 'class'>): boolean {
-  return (DASH_CAMERA_ACTOR_CLASSES as readonly string[]).includes(actor.class);
-}
 
 /** Stable, schema-legal sensor id. It is generated once when the sensor is added. */
 export function newSensorId(type: ActorSensor['type']): string {

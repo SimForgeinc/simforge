@@ -18,8 +18,6 @@
 
 import {
   TemplateDocument,
-  AuthoredActorLimitError,
-  MAX_AUTHORED_ACTORS,
   ScenarioNotFoundError,
   WebTemplateFileStore,
   newTemplateId,
@@ -623,44 +621,66 @@ export class EditorDocument {
    * @returns The new actor ids, in input order.
    */
   add(inputs: readonly NewActor[]): string[] {
-    const nextActorCount = this.#doc.roles.length + inputs.length;
-    if (nextActorCount > MAX_AUTHORED_ACTORS) {
-      // Preflight the whole gesture so a multi-place operation cannot partially
-      // commit before the shared TemplateDocument guard rejects a later actor.
-      throw new AuthoredActorLimitError(nextActorCount);
+    const ids: string[] = [];
+    this.#transaction(() => {
+      for (const input of inputs) ids.push(this.#addActor(input));
+    });
+    return ids;
+  }
+
+  /**
+   * Place actors *and* the timeline interactions they own as one undoable
+   * gesture. Paste and duplicate are the callers: a pasted car and its timed
+   * route must appear — and undo — together, so this cannot be two gestures.
+   *
+   * Inputs must carry pre-allocated ids (via {@link allocateActorId}) so the
+   * supplied interactions can already reference their actors.
+   */
+  addWithInteractions(inputs: readonly NewActor[], interactions: readonly Interaction[]): string[] {
+    const anchorById = new Map<string, { x: number; z: number }>();
+    for (const input of inputs) {
+      if (input.id) anchorById.set(input.id, { x: input.x, z: input.z });
     }
     const ids: string[] = [];
     this.#transaction(() => {
-      for (const input of inputs) {
-        const kind = actorKindFor(input.catalogId);
-        const dims = getEntry(input.catalogId).dims;
-        const id = input.id ?? this.allocateActorId(input.catalogId);
-        if (this.#doc.role(id)) throw new Error(`actor id "${id}" already exists`);
-        this.#doc.addRole({
-          id,
-          kind: 'scene_absolute',
-          actor: {
-            class: simulationClassFor(input.catalogId),
-            catalogId: input.catalogId,
-            dims: { length: dims.l, width: dims.w, height: dims.h },
-            static: kind === 'prop' || input.static === true,
-            sensors: [],
-          },
-          pose: {
-            position: { x: q(input.x), y: q(input.y), z: q(input.z) },
-            headingRad: q(input.headingRad),
-          },
-          ...(input.label === undefined ? {} : { label: input.label }),
-          initialSpeedKph: input.static === true ? 0 : q(Math.max(0, input.initialSpeedKph ?? defaultSpeedKph(simulationClassFor(input.catalogId), input.catalogId))),
-          ...(kind === 'vehicle' ? { driverProfile: input.driverProfile ?? 'lawful' } : {}),
-          ...(input.laneRef ? { laneRef: quantizeAnchor(input.laneRef) } : {}),
-          essentiality: kind === 'prop' ? 'preferred' : 'required',
-          ...(input.bodyColor ? { extensions: { 'studio.presentation.bodyColor': input.bodyColor } } : {}),
-        });
-        ids.push(id);
+      for (const input of inputs) ids.push(this.#addActor(input));
+      for (const interaction of interactions) {
+        this.#doc.addInteraction(
+          routePlaceholderOnActor(interaction, anchorById.get(interaction.actor)),
+        );
       }
     });
     return ids;
+  }
+
+  /** Add one role inside an open transaction. Shared by `add` and `addWithInteractions`. */
+  #addActor(input: NewActor): string {
+    const kind = actorKindFor(input.catalogId);
+    const dims = getEntry(input.catalogId).dims;
+    const id = input.id ?? this.allocateActorId(input.catalogId);
+    if (this.#doc.role(id)) throw new Error(`actor id "${id}" already exists`);
+    this.#doc.addRole({
+      id,
+      kind: 'scene_absolute',
+      actor: {
+        class: simulationClassFor(input.catalogId),
+        catalogId: input.catalogId,
+        dims: { length: dims.l, width: dims.w, height: dims.h },
+        static: kind === 'prop' || input.static === true,
+        sensors: [],
+      },
+      pose: {
+        position: { x: q(input.x), y: q(input.y), z: q(input.z) },
+        headingRad: q(input.headingRad),
+      },
+      ...(input.label === undefined ? {} : { label: input.label }),
+      initialSpeedKph: input.static === true ? 0 : q(Math.max(0, input.initialSpeedKph ?? defaultSpeedKph(simulationClassFor(input.catalogId), input.catalogId))),
+      ...(kind === 'vehicle' ? { driverProfile: input.driverProfile ?? 'lawful' } : {}),
+      ...(input.laneRef ? { laneRef: quantizeAnchor(input.laneRef) } : {}),
+      essentiality: kind === 'prop' ? 'preferred' : 'required',
+      ...(input.bodyColor ? { extensions: { 'studio.presentation.bodyColor': input.bodyColor } } : {}),
+    });
+    return id;
   }
 
   /** Patch any number of actors as one gesture. */

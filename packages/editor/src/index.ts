@@ -1,5 +1,7 @@
 export * from "./authoringRuntimeWarmup";
 export * from "./controller";
+export * from "./drop-resolver";
+export * from "./marquee";
 export * from "./ghostActor";
 export * from "./document";
 export * from "./keyboard";

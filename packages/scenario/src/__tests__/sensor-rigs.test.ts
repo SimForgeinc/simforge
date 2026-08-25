@@ -31,7 +31,7 @@ describe('sensor rigs', () => {
     ]);
 
     for (const preset of BUILT_IN_SENSOR_RIGS) {
-      const actor = { class: preset.compatibleActorClasses[0]! };
+      const actor = { class: 'pedestrian' as const };
       const sensors = instantiateSensorRig(
         preset,
         actor,
@@ -40,6 +40,19 @@ describe('sensor rigs', () => {
       expect(sensors).toHaveLength(preset.sensors.length);
       expect(sensors.every((sensor) => 'position' in sensor.mount)).toBe(true);
     }
+  });
+
+  it('accepts rig templates with more than 32 sensors', () => {
+    const camera = sensorRigPreset('basic-dash-camera')!.sensors[0]!;
+    const preset = {
+      id: 'large-rig',
+      name: 'Large rig',
+      sensors: Array.from({ length: 40 }, (_, index) => ({
+        ...camera,
+        id: `camera-${index}`,
+      })),
+    };
+    expect(instantiateSensorRig(preset, { class: 'truck' })).toHaveLength(40);
   });
 
   it('round-trips every named mount on a non-reference vehicle while ignoring aim', () => {
