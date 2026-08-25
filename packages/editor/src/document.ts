@@ -637,10 +637,6 @@ export class EditorDocument {
    * supplied interactions can already reference their actors.
    */
   addWithInteractions(inputs: readonly NewActor[], interactions: readonly Interaction[]): string[] {
-    const nextActorCount = this.#doc.roles.length + inputs.length;
-    if (nextActorCount > MAX_AUTHORED_ACTORS) {
-      throw new AuthoredActorLimitError(nextActorCount);
-    }
     const anchorById = new Map<string, { x: number; z: number }>();
     for (const input of inputs) {
       if (input.id) anchorById.set(input.id, { x: input.x, z: input.z });
