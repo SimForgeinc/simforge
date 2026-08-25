@@ -167,6 +167,186 @@
       "license": "CC-BY-4.0",
       "attribution": "\"Vespa ZX 125\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
       "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_hatchback_audi_a2": {
+      "title": "Audi A2",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_AudiA2"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Audi A2\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_suv_audi_etron": {
+      "title": "Audi e-tron",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_EtronParked"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Audi e-tron\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_coupe_audi_tt": {
+      "title": "Audi TT",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_AudiTT"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Audi TT\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_sedan_chevrolet_impala": {
+      "title": "Chevrolet Impala",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_ChevroletImpala"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Chevrolet Impala\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_hatchback_citroen_c3": {
+      "title": "Citroen C3",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_Citroen_C3"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Citroen C3\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_ambulance_ford": {
+      "title": "Ford Ambulance",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_Ambulance"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Ford Ambulance\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_firetruck_actros": {
+      "title": "Mercedes Actros Firetruck",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_ActrosFiretruck"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Mercedes Actros Firetruck\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_suv_jeep_wrangler": {
+      "title": "Jeep Wrangler Rubicon",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_JeepWranglerRubicon"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Jeep Wrangler Rubicon\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_sedan_lincoln_mkz_2020": {
+      "title": "Lincoln MKZ 2020",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_Lincoln2020Parked"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Lincoln MKZ 2020\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_coupe_mercedes_c": {
+      "title": "Mercedes-Benz C-Class Coupe",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_MercedesBenzCoupeC"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Mercedes-Benz C-Class Coupe\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_coupe_mercedes_c_2020": {
+      "title": "Mercedes-Benz C-Class Coupe 2020",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_MercedesCCC"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Mercedes-Benz C-Class Coupe 2020\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_micro_microlino": {
+      "title": "Microlino",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_BMWIsetta"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Microlino\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_hatchback_mini_cooper_s": {
+      "title": "Mini Cooper S",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_MiniCooperS"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Mini Cooper S\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_hatchback_nissan_micra": {
+      "title": "Nissan Micra",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_NissanMicra"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Nissan Micra\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_hatchback_seat_leon": {
+      "title": "SEAT Leon",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_SeatLeon"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"SEAT Leon\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_hatchback_toyota_prius": {
+      "title": "Toyota Prius",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SM_ToyotaPrius_Parked"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Toyota Prius\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_motorcycle_yamaha_yzf": {
+      "title": "Yamaha YZF",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_Yamaha"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Yamaha YZF\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_bicycle_bh_crossbike": {
+      "title": "BH Crossbike",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_CrossBike"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"BH Crossbike\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_bicycle_diamondback_century": {
+      "title": "Diamondback Century",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_RoadBike"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Diamondback Century\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
+    },
+    "vehicle_bicycle_gazelle_omafiets": {
+      "title": "Gazelle Omafiets",
+      "source_packages": [
+        "Content/Carla/Static (CARLA UE5 0.10.0 cooked content): SK_LeisureBike"
+      ],
+      "license": "CC-BY-4.0",
+      "attribution": "\"Gazelle Omafiets\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+      "modifications": "UE->glTF conversion (CUE4Parse), rigid-node re-rig by bone, blueprint door/glass/emissive merge, mesh decimation (meshoptimizer), PBR re-wire (baseColor/normal/ORM), texture downscale + normal-map green-channel flip, neutral body_paint slot for tinting."
     }
   }
 }

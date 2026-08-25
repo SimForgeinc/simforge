@@ -276,12 +276,26 @@ struct TileLoad(Handle<Gltf>);
 struct SceneSpawned;
 #[derive(Component)]
 struct IdClone;
+#[derive(Component, Clone, Copy)]
+struct InstanceId(u32);
+#[derive(Component)]
+struct ActorModelRoot;
+
 
 /// One legend entry: instance-ID value -> source mesh name.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LegendEntry {
     pub id: u32,
     pub name: String,
+}
+
+/// World-space triangle snapshot for deterministic CPU lidar/radar raycasts.
+#[derive(Clone, Copy, Debug)]
+pub struct SensorTriangle {
+    pub a: [f32; 3],
+    pub b: [f32; 3],
+    pub c: [f32; 3],
+    pub instance_id: u32,
 }
 
 #[derive(Resource, Default)]
@@ -362,6 +376,8 @@ pub struct SceneApp {
     ready: bool,
     /// Scene-state actors: id -> (cuboid entity, allocated instance id).
     actors: HashMap<String, (Entity, u32)>,
+    /// Dynamic actor id -> (loaded catalog GLB root, authored scale, mesh count).
+    actor_models: HashMap<String, (Entity, f32, usize)>,
     /// Instance id -> semantic class name for dynamically spawned actors.
     actor_classes: HashMap<u32, String>,
     /// Next instance id for dynamic actors (beyond the static legend range).
@@ -488,6 +504,7 @@ impl SceneApp {
             next_camera_order: 0,
             ready: false,
             actors: HashMap::new(),
+            actor_models: HashMap::new(),
             actor_classes: HashMap::new(),
             next_instance_id: 0,
             ground: GroundField::default(),
@@ -708,10 +725,18 @@ impl SceneApp {
             rotation: Quat::from_rotation_y(yaw_rad),
             scale: Vec3::ONE,
         };
+        let model = self.actor_models.get(id).copied();
         let world = self.app.world_mut();
         if let Some((entity, _)) = self.actors.get(id) {
             if let Some(mut t) = world.get_mut::<Transform>(*entity) {
                 *t = transform;
+            }
+            if let Some((model_entity, scale, _)) = model {
+                if let Some(mut t) = world.get_mut::<Transform>(model_entity) {
+                    t.translation = transform.translation;
+                    t.rotation = transform.rotation;
+                    t.scale = Vec3::splat(scale);
+                }
             }
             return;
         }
@@ -743,6 +768,7 @@ impl SceneApp {
             Name::new(format!("actor:{id}")),
             Mesh3d(mesh_handle.clone()),
             MeshMaterial3d(mat_handle),
+            InstanceId(instance_id),
             transform,
         )).id();
         world.spawn((
@@ -755,6 +781,117 @@ impl SceneApp {
         ));
         self.actors.insert(id.to_string(), (e, instance_id));
         self.actor_classes.insert(instance_id, class.to_string());
+    }
+
+    /// Replace a spawned actor's visible cuboid with a catalog GLB while
+    /// retaining its deterministic layer-1 cuboid as the sensor/ID proxy.
+    ///
+    /// Loading is blocking because the service must not acknowledge a tick
+    /// until every modality sees the same fully-resident world.
+    pub fn attach_actor_model(
+        &mut self,
+        actor_id: &str,
+        glb_path: &std::path::Path,
+        uniform_scale: f32,
+    ) -> Result<()> {
+        let mesh_count_before = {
+            let world = self.app.world_mut();
+            let mut query = world.query::<&Mesh3d>();
+            query.iter(world).count()
+        };
+        if self.actor_models.contains_key(actor_id) {
+            return Ok(());
+        }
+        if !glb_path.is_absolute() || !glb_path.is_file() {
+            bail!("actor model GLB is not an absolute existing file: {}", glb_path.display());
+        }
+        let (cuboid, _) = self
+            .actors
+            .get(actor_id)
+            .copied()
+            .ok_or_else(|| anyhow::anyhow!("attach model before actor spawn: {actor_id}"))?;
+        let asset_path = glb_path.to_string_lossy().trim_start_matches('/').to_string();
+        let server = self.app.world().resource::<AssetServer>().clone();
+        let handle: Handle<Gltf> = server.load(asset_path);
+        let deadline = Instant::now() + Duration::from_secs(300);
+        let scene = loop {
+            self.app.update();
+            let scene = self
+                .app
+                .world()
+                .resource::<Assets<Gltf>>()
+                .get(&handle)
+                .and_then(|gltf| gltf.default_scene.clone());
+            if let Some(scene) = scene {
+                break scene;
+            }
+            if Instant::now() > deadline {
+                bail!("actor model failed to load: {}", glb_path.display());
+            }
+        };
+        let base = self
+            .app
+            .world()
+            .get::<Transform>(cuboid)
+            .copied()
+            .unwrap_or(Transform::IDENTITY);
+        let mut model_transform = base;
+        model_transform.scale = Vec3::splat(uniform_scale);
+        let model_root = self
+            .app
+            .world_mut()
+            .spawn((
+                ActorModelRoot,
+                Name::new(format!("actor-model:{actor_id}")),
+                WorldAssetRoot(scene),
+                model_transform,
+            ))
+            .id();
+        self.app.world_mut().entity_mut(cuboid).insert(Visibility::Hidden);
+        loop {
+            self.app.update();
+            let ready = {
+                let world = self.app.world();
+                match (
+                    world.get::<WorldInstance>(model_root),
+                    world.get_resource::<WorldInstanceSpawner>(),
+                ) {
+                    (Some(instance), Some(spawner)) => spawner.instance_is_ready(**instance),
+                    _ => false,
+                }
+            };
+            if ready {
+                break;
+            }
+            if Instant::now() > deadline {
+                bail!("actor model scene failed to instantiate: {}", glb_path.display());
+            }
+        }
+        let mesh_count_after = {
+            let world = self.app.world_mut();
+            let mut query = world.query::<&Mesh3d>();
+            query.iter(world).count()
+        };
+        let model_mesh_count = mesh_count_after.saturating_sub(mesh_count_before);
+        if model_mesh_count == 0 {
+            bail!("actor model instantiated without mesh nodes: {}", glb_path.display());
+        }
+        self.actor_models.insert(
+            actor_id.to_string(),
+            (model_root, uniform_scale, model_mesh_count),
+        );
+        Ok(())
+    }
+
+    pub fn actor_has_model(&self, actor_id: &str) -> bool {
+        self.actor_models.contains_key(actor_id)
+    }
+
+    pub fn actor_model_mesh_count(&self, actor_id: &str) -> usize {
+        self.actor_models
+            .get(actor_id)
+            .map(|(_, _, count)| *count)
+            .unwrap_or(0)
     }
 
     /// Remove a despawned scene-state actor (both the visible box and its
@@ -770,13 +907,77 @@ impl SceneApp {
                 .map(|(e, _)| e)
                 .collect();
             world.despawn(entity);
+            for clone in clones {
+                world.despawn(clone);
+            }
             self.actor_classes.remove(&instance);
+            if let Some((model, _, _)) = self.actor_models.remove(id) {
+                world.despawn(model);
+            }
         }
     }
 
     /// Semantic class name of a dynamic-actor instance id, if any.
     pub fn actor_instance_class(&self, instance_id: u32) -> Option<&str> {
         self.actor_classes.get(&instance_id).map(|s| s.as_str())
+    }
+
+    /// Stable instance id allocated to a dynamic actor, if it is spawned.
+    pub fn actor_instance_id(&self, actor_id: &str) -> Option<u32> {
+        self.actors.get(actor_id).map(|(_, instance_id)| *instance_id)
+    }
+
+    /// Snapshot either static map geometry or dynamic actor geometry.
+    ///
+    /// Static geometry is captured once by the long-lived service; only the
+    /// small actor snapshot is rebuilt after each applied scene tick.
+    pub fn sensor_triangles(&mut self, dynamic_actors: bool) -> Vec<SensorTriangle> {
+        let world = self.app.world_mut();
+        let mut query = world.query_filtered::<
+            (&Mesh3d, &GlobalTransform, &InstanceId, Option<&Name>),
+            Without<IdClone>,
+        >();
+        let meshes = world.resource::<Assets<Mesh>>();
+        let mut out = Vec::new();
+        for (mesh3d, transform, instance_id, name) in query.iter(world) {
+            let is_actor = name.is_some_and(|name| name.as_str().starts_with("actor:"));
+            if is_actor != dynamic_actors {
+                continue;
+            }
+            let Some(mesh) = meshes.get(&mesh3d.0) else { continue };
+            let Some(attribute) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) else { continue };
+            let bevy::mesh::VertexAttributeValues::Float32x3(vertices) = attribute else { continue };
+            let matrix = transform.to_matrix();
+            let mut push = |indices: [usize; 3]| {
+                let point = |index: usize| matrix.transform_point3(Vec3::from(vertices[index])).to_array();
+                out.push(SensorTriangle {
+                    a: point(indices[0]),
+                    b: point(indices[1]),
+                    c: point(indices[2]),
+                    instance_id: instance_id.0,
+                });
+            };
+            match mesh.indices() {
+                Some(bevy::mesh::Indices::U16(indices)) => {
+                    for tri in indices.chunks_exact(3) {
+                        push([tri[0] as usize, tri[1] as usize, tri[2] as usize]);
+                    }
+                }
+                Some(bevy::mesh::Indices::U32(indices)) => {
+                    for tri in indices.chunks_exact(3) {
+                        push([tri[0] as usize, tri[1] as usize, tri[2] as usize]);
+                    }
+                }
+                None => {
+                    for first in (0..vertices.len()).step_by(3) {
+                        if first + 2 < vertices.len() {
+                            push([first, first + 1, first + 2]);
+                        }
+                    }
+                }
+            }
+        }
+        out
     }
 
     /// Drop every registered camera group (respawn-on-view-change primitive:
@@ -881,7 +1082,8 @@ impl SceneApp {
         // Deterministic instance-ID assignment: sort by mesh name then entity
         // bits (independent of ECS iteration order), then clone each mesh onto
         // render layer 1 under an unlit RGB24-encoded ID material.
-        let mut entries: Vec<(String, u64, Handle<Mesh>, Option<Entity>, Transform)> = Vec::new();
+        let mut entries: Vec<(String, u64, Entity, Handle<Mesh>, Option<Entity>, Transform)> =
+            Vec::new();
         {
             let mut q = world.query::<(
                 Entity,
@@ -895,6 +1097,7 @@ impl SceneApp {
                     name.map(|n| n.to_string())
                         .unwrap_or_else(|| format!("unnamed_mesh_{e}")),
                     e.to_bits(),
+                    e,
                     mesh.0.clone(),
                     child_of.map(|c| c.parent()),
                     transform.copied().unwrap_or(Transform::IDENTITY),
@@ -905,12 +1108,20 @@ impl SceneApp {
 
         // Create all ID materials under one mutable borrow, then spawn the
         // clone entities once the assets borrow is released.
-        let prepared: Vec<(u32, String, Handle<Mesh>, Handle<StandardMaterial>, Option<Entity>, Transform)> = {
+        let prepared: Vec<(
+            u32,
+            String,
+            Entity,
+            Handle<Mesh>,
+            Handle<StandardMaterial>,
+            Option<Entity>,
+            Transform,
+        )> = {
             let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
             entries
                 .into_iter()
                 .enumerate()
-                .map(|(i, (name, _, mesh_h, parent, transform))| {
+                .map(|(i, (name, _, entity, mesh_h, parent, transform))| {
                     let id = (i + 1) as u32; // 0 reserved as background
                     let bytes = id.to_le_bytes();
                     let mat = materials.add(StandardMaterial {
@@ -918,12 +1129,13 @@ impl SceneApp {
                         unlit: true,
                         ..default()
                     });
-                    (id, name, mesh_h, mat, parent, transform)
+                    (id, name, entity, mesh_h, mat, parent, transform)
                 })
                 .collect()
         };
         let mut legend = Vec::with_capacity(prepared.len());
-        for (id, name, mesh_h, mat, parent, transform) in prepared {
+        for (id, name, entity, mesh_h, mat, parent, transform) in prepared {
+            world.entity_mut(entity).insert(InstanceId(id));
             let mut cmd = world.spawn((
                 IdClone,
                 Mesh3d(mesh_h),
@@ -1189,4 +1401,56 @@ fn receive_passes(
 
 fn b_key(b: &StagingBuffer) -> String {
     format!("{}:{}", if b.depth { "d" } else { "i" }, b.src_image.id())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "focused GPU integration test"]
+    fn service_actor_catalog_models_instantiate_mesh_nodes() {
+        let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let vehicle = repo.join(
+            "catalog/vehicles-carla/models/vehicle_sedan_lincoln_mkz_2020.glb",
+        );
+        let pedestrian =
+            repo.join("catalog/pedestrians-carla/models/pedestrian_0015.glb");
+        assert!(vehicle.is_file() && pedestrian.is_file());
+
+        let mut app = SceneApp::new(&Lighting::default()).unwrap();
+        app.load_tiles(&[vehicle.to_string_lossy().into_owned()])
+            .unwrap();
+        app.wait_until_ready().unwrap();
+
+        app.upsert_actor(
+            "vehicle-test",
+            "car",
+            [0.0, 0.0, 0.0],
+            0.0,
+            [4.5, 1.6, 1.8],
+            [0.5, 0.5, 0.5],
+            false,
+        );
+        app.attach_actor_model("vehicle-test", &vehicle, 1.0)
+            .unwrap();
+        app.upsert_actor(
+            "walker-test",
+            "pedestrian",
+            [8.0, 0.0, 0.0],
+            0.0,
+            [0.5, 1.8, 0.5],
+            [0.5, 0.5, 0.5],
+            false,
+        );
+        app.attach_actor_model("walker-test", &pedestrian, 1.0)
+            .unwrap();
+
+        assert!(app.actor_model_mesh_count("vehicle-test") > 1);
+        assert!(app.actor_model_mesh_count("walker-test") > 1);
+        // Bevy's async asset tasks can still hold the test-only wgpu device
+        // when the process tears down; the production service intentionally
+        // lives for the process lifetime.
+        std::mem::forget(app);
+    }
 }

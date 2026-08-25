@@ -10,7 +10,7 @@
 //! sensor-frame `{x, y, z}`, an intensity proxy, and the owning instance id.
 //! Points are emitted in strict (channel, azimuth) order for hash stability.
 
-use crate::bvh::{Hit, RaycastScene};
+use crate::bvh::{Hit, Raycast};
 use crate::taxonomy::{lidar_albedo, SemanticClass};
 use bevy::math::{Quat, Vec3};
 
@@ -59,7 +59,7 @@ fn beam_dir(azimuth_rad: f32, elevation_rad: f32) -> Vec3 {
 /// `instance_class` resolves a hit instance id to its semantic class for the
 /// intensity proxy.
 pub fn scan(
-    scene: &RaycastScene,
+    scene: &dyn Raycast,
     config: &LidarConfig,
     sensor_origin_world: Vec3,
     sensor_rot_world: Quat,

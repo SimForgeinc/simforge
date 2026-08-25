@@ -9,18 +9,26 @@
 //! `encode_jpeg`, per-camera rigid `attach` + semantic + CARLA depth
 use crate::proto::{
     decode_request, encode_frame, CameraAttach, CoverageRecord, FrameReader, FrameRecord, JpegItem,
-    RequestBody, ResponseBody, ServiceCamera, ShmInfo, WireRequest, WireResponse,
-    NATIVE_SERVICE_PROTOCOL_VERSION,
+    RequestBody, ResponseBody, ServiceCamera, ServiceLidar, ServiceRadar, ShmInfo, WireRequest,
+    WireResponse, NATIVE_SERVICE_PROTOCOL_VERSION,
 };
-use crate::scene::SceneState;
-use crate::shm::{BundleEntry, ShmRing, FORMAT_DEPTH32F, FORMAT_JPEG, FORMAT_RGBA8};
+use crate::scene::{ActorState, SceneState};
+use crate::shm::{
+    BundleEntry, ShmRing, FORMAT_DEPTH32F, FORMAT_JPEG, FORMAT_LIDAR_PLY, FORMAT_RADAR_CSV,
+    FORMAT_RGBA8,
+};
 use anyhow::{Context, Result};
-use render_core::engine::{CameraSpec, LegendEntry, Lighting, PassSet, Profile, SceneApp};
+use bevy::math::{EulerRot, Quat, Vec3};
+use render_core::engine::{
+    CameraSpec, LegendEntry, Lighting, PassSet, Profile, SceneApp, SensorTriangle,
+};
 use render_core::profiles::RenderProfileConfig;
+use render_core::vehicle_model::{VehicleModelCatalog, VehicleModelEntry};
+use sensors::bvh::{Hit, Raycast, RaycastScene, Tri};
 use std::collections::HashMap;
 use std::io::Write;
 use std::os::unix::net::{UnixListener, UnixStream};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Scene description for prewarm (subset of the batch job schema).
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -42,6 +50,16 @@ pub struct SceneSpec {
     pub far_m: f32,
     #[serde(default = "default_warmup")]
     pub warmup_frames: u32,
+    /// CarlaVehicles catalog directories. Only models referenced by scene
+    /// actors are loaded; unknown catalog ids retain the explicit cuboid
+    /// fallback.
+    #[serde(default)]
+    pub vehicle_models: Option<String>,
+    #[serde(default)]
+    pub pedestrian_models: Option<String>,
+    /// Optional actor-id -> absolute GLB override.
+    #[serde(default)]
+    pub actor_model_refs: HashMap<String, String>,
 }
 
 fn default_near() -> f32 {
@@ -123,6 +141,40 @@ struct CachedPass {
     tick_id: u64,
 }
 
+fn build_sensor_scene(triangles: Vec<SensorTriangle>) -> RaycastScene {
+    let mut scene = RaycastScene::new();
+    for triangle in triangles {
+        scene.push_tri(Tri {
+            a: Vec3::from_array(triangle.a),
+            b: Vec3::from_array(triangle.b),
+            c: Vec3::from_array(triangle.c),
+            instance_id: triangle.instance_id,
+        });
+    }
+    scene.build();
+    scene
+}
+
+struct CombinedSensorScene<'a> {
+    static_scene: &'a RaycastScene,
+    actor_scene: &'a RaycastScene,
+}
+
+impl Raycast for CombinedSensorScene<'_> {
+    fn cast(&self, origin: Vec3, direction: Vec3, max_distance: f32) -> Option<Hit> {
+        match (
+            self.static_scene.cast(origin, direction, max_distance),
+            self.actor_scene.cast(origin, direction, max_distance),
+        ) {
+            (Some(static_hit), Some(actor_hit)) if actor_hit.distance < static_hit.distance => {
+                Some(actor_hit)
+            }
+            (Some(static_hit), _) => Some(static_hit),
+            (None, actor_hit) => actor_hit,
+        }
+    }
+}
+
 /// Everything the dispatch loop owns. Bevy's App is not Send, so the whole
 /// state stays on one thread by design.
 pub struct ServiceState {
@@ -140,31 +192,66 @@ pub struct ServiceState {
     current_tick: Option<u32>,
     /// Pass payloads from the last render (V2 `encode_jpeg` source).
     cache: HashMap<String, CachedPass>,
-    /// Retained rig: last ServiceCamera spec per sensor id, registration
-    /// order (F4 `render_bundle` renders these when no cameras are given).
+    /// Retained camera rig in registration order.
     rig: Vec<ServiceCamera>,
+    /// Retained CPU sensor rigs in registration order.
+    lidars: Vec<ServiceLidar>,
+    radars: Vec<ServiceRadar>,
+    /// Static map BVH, built once after prewarm and reused for every tick.
+    static_sensor_scene: RaycastScene,
+    vehicle_models: Option<VehicleModelCatalog>,
+    pedestrian_models: Option<VehicleModelCatalog>,
+    actor_model_refs: HashMap<String, PathBuf>,
 }
 
 impl ServiceState {
-    pub fn new(app: SceneApp, profile: Profile, shm_path: String, shm: ShmRing, near_m: f32, far_m: f32) -> Self {
+    pub fn new(
+        mut app: SceneApp,
+        spec: &SceneSpec,
+        shm_path: String,
+        shm: ShmRing,
+    ) -> Result<Self> {
+        let vehicle_models = spec
+            .vehicle_models
+            .as_deref()
+            .map(|dir| VehicleModelCatalog::load(Path::new(dir)))
+            .transpose()
+            .context("load vehicle model catalog")?;
+        let pedestrian_models = spec
+            .pedestrian_models
+            .as_deref()
+            .map(|dir| VehicleModelCatalog::load(Path::new(dir)))
+            .transpose()
+            .context("load pedestrian model catalog")?;
         let legend: HashMap<u32, String> = app
             .legend()
             .into_iter()
             .map(|LegendEntry { id, name }| (id, name))
             .collect();
-        Self {
+        let static_sensor_scene = build_sensor_scene(app.sensor_triangles(false));
+        Ok(Self {
             app,
-            profile,
+            profile: spec.profile,
             shm_path,
             shm,
-            near_m,
-            far_m,
+            near_m: spec.near_m,
+            far_m: spec.far_m,
             legend,
             scene: Vec::new(),
             current_tick: None,
             cache: HashMap::new(),
             rig: Vec::new(),
-        }
+            lidars: Vec::new(),
+            radars: Vec::new(),
+            static_sensor_scene,
+            vehicle_models,
+            pedestrian_models,
+            actor_model_refs: spec
+                .actor_model_refs
+                .iter()
+                .map(|(actor, path)| (actor.clone(), PathBuf::from(path)))
+                .collect(),
+        })
     }
 }
 
@@ -260,17 +347,58 @@ fn dispatch(state: &mut ServiceState, request: WireRequest) -> WireResponse {
             state.app.clear_cameras();
             state.cache.clear();
             state.rig.clear();
+            state.lidars.clear();
+            state.radars.clear();
             WireResponse { i, body: ResponseBody::ResetCameras { ok: true } }
         }
         RequestBody::Render { tick_id, cameras, export_dir, tick_index } => {
             render_tick(state, i, tick_id, cameras, export_dir, tick_index)
         }
-        RequestBody::RenderBundle { sim_tick, cameras, tick_index, passes } => {
-            render_bundle_op(state, i, sim_tick, cameras, tick_index, passes)
+        RequestBody::RenderBundle {
+            sim_tick,
+            cameras,
+            lidars,
+            radars,
+            tick_index,
+            passes,
+        } => {
+            render_bundle_op(
+                state, i, sim_tick, cameras, lidars, radars, tick_index, passes,
+            )
         }
         RequestBody::EncodeJpeg { items } => encode_jpeg_op(state, i, items),
         RequestBody::Close => WireResponse { i, body: ResponseBody::Close { ok: true } },
     }
+}
+
+fn resolve_actor_model(state: &ServiceState, actor: &ActorState) -> Option<VehicleModelEntry> {
+    if let Some(path) = state.actor_model_refs.get(&actor.id) {
+        return Some(VehicleModelEntry {
+            glb_path: path.clone(),
+            attribution: String::new(),
+            source: "scene-spec-override".to_string(),
+            tintable: false,
+            scale_to_dims: false,
+            model_length_m: None,
+        });
+    }
+    let catalog_id = actor.catalog_id.as_deref()?;
+    if actor.actor_class.as_deref() == Some("pedestrian") {
+        let catalog = state.pedestrian_models.as_ref()?;
+        return catalog
+            .resolve(catalog_id)
+            .cloned()
+            .or_else(|| {
+                catalog
+                    .resolve_deterministic(&actor.id)
+                    .map(|(_, entry)| entry.clone())
+            });
+    }
+    state
+        .vehicle_models
+        .as_ref()?
+        .resolve(catalog_id)
+        .cloned()
 }
 
 /// Apply scene-state frame `index` to the world (spawn/update/despawn).
@@ -278,6 +406,7 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
     let frame = state
         .scene
         .get(index as usize)
+        .cloned()
         .ok_or_else(|| format!("tick_index {index} out of range (loaded {} ticks)", state.scene.len()))?;
     for actor in &frame.actors {
         match actor.kind.as_str() {
@@ -285,6 +414,7 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
             "spawn" | "update" => {
                 let class = actor.actor_class.clone().unwrap_or_else(|| "prop".into());
                 let dims = actor_dims(&class);
+                let model = resolve_actor_model(state, actor);
                 let yaw = quat_yaw(&actor.transform.rotation);
                 let mut position = actor.transform.position;
                 position[1] = actor_base_y(
@@ -301,6 +431,30 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                     class_color(&class),
                     false,
                 );
+                if let Some(model) = model {
+                    if !state.app.actor_has_model(&actor.id) {
+                        if !model.glb_path.is_file() {
+                            return Err(format!(
+                                "catalog model for {} is missing: {}",
+                                actor.id,
+                                model.glb_path.display()
+                            ));
+                        }
+                        let scale = if model.scale_to_dims {
+                            model
+                                .model_length_m
+                                .filter(|length| *length > 0.1)
+                                .map(|length| dims[0] / length as f32)
+                                .unwrap_or(1.0)
+                        } else {
+                            1.0
+                        };
+                        state
+                            .app
+                            .attach_actor_model(&actor.id, &model.glb_path, scale)
+                            .map_err(|error| format!("load actor model {}: {error:#}", actor.id))?;
+                    }
+                }
             }
             other => return Err(format!("unknown actor kind {other:?} for {}", actor.id)),
         }
@@ -347,6 +501,14 @@ fn class_color(class: &str) -> [f32; 3] {
         "motorcycle" | "cyclist" => [0.60, 0.55, 0.45],
         "pedestrian" => [0.75, 0.65, 0.55],
         _ => [0.5, 0.5, 0.5],
+    }
+}
+
+fn resolved_actor_y(position_y: f32, authored_ground_y: Option<f32>, sampled_ground_y: f32) -> f32 {
+    if position_y.abs() < 1e-4 && authored_ground_y.is_none() {
+        sampled_ground_y
+    } else {
+        position_y
     }
 }
 
@@ -401,6 +563,82 @@ fn resolve_pose(
         eye[2] + TARGET_DIST * dir[2],
     ];
     Ok((eye, target))
+}
+
+struct ResolvedSensorMount {
+    origin: Vec3,
+    rotation: Quat,
+    host_velocity: Vec3,
+}
+
+fn resolve_sensor_mount(
+    state: &ServiceState,
+    attach: &CameraAttach,
+) -> Result<ResolvedSensorMount, String> {
+    let index = state
+        .current_tick
+        .ok_or_else(|| "sensor attach requested but no scene tick applied yet".to_string())?;
+    let frame = &state.scene[index as usize];
+    let actor = frame
+        .actors
+        .iter()
+        .find(|actor| actor.id == attach.actor_id && actor.kind != "despawn")
+        .ok_or_else(|| {
+            format!(
+                "sensor attach actor {:?} not present in tick {index}",
+                attach.actor_id
+            )
+        })?;
+    let yaw = quat_yaw(&actor.transform.rotation);
+    let position = actor.transform.position;
+    let actor_y = resolved_actor_y(
+        position[1],
+        frame.ground_y,
+        state.app.ground_at(position[0], position[2]),
+    );
+    let actor_rotation = Quat::from_rotation_y(yaw);
+    // Wire mount coordinates are x-forward, y-right, z-up. The deterministic
+    // sensor model's canonical local frame is x-forward, y-up, z-left.
+    let local_offset = Vec3::new(
+        attach.offset_m[0],
+        attach.offset_m[2],
+        -attach.offset_m[1],
+    );
+    let origin = Vec3::new(position[0], actor_y, position[2])
+        + actor_rotation.mul_vec3(local_offset);
+    let mount_rotation = Quat::from_euler(
+        EulerRot::YXZ,
+        attach.yaw_deg.to_radians(),
+        attach.pitch_deg.to_radians(),
+        attach.roll_deg.to_radians(),
+    );
+    Ok(ResolvedSensorMount {
+        origin,
+        rotation: actor_rotation * mount_rotation,
+        host_velocity: Vec3::from_array(actor.velocity),
+    })
+}
+
+fn upsert_lidar_rig(state: &mut ServiceState, sensor: &ServiceLidar) {
+    match state
+        .lidars
+        .iter_mut()
+        .find(|registered| registered.sensor_id == sensor.sensor_id)
+    {
+        Some(registered) => *registered = sensor.clone(),
+        None => state.lidars.push(sensor.clone()),
+    }
+}
+
+fn upsert_radar_rig(state: &mut ServiceState, sensor: &ServiceRadar) {
+    match state
+        .radars
+        .iter_mut()
+        .find(|registered| registered.sensor_id == sensor.sensor_id)
+    {
+        Some(registered) => *registered = sensor.clone(),
+        None => state.radars.push(sensor.clone()),
+    }
 }
 
 /// Upsert a camera spec into the retained rig (registration order kept).
@@ -659,6 +897,55 @@ fn encode_jpeg_op(state: &mut ServiceState, i: u64, items: Vec<JpegItem>) -> Wir
 }
 
 /// F4: render every rig camera for one sim tick and publish an atomic frame
+fn publish_sensor_payload(
+    state: &mut ServiceState,
+    sensor_id: &str,
+    pass: &str,
+    format_tag: u32,
+    format_name: &str,
+    measurement_count: u32,
+    sim_tick: u64,
+    data: &[u8],
+    entries: &mut Vec<BundleEntry>,
+    frames: &mut Vec<FrameRecord>,
+) -> Result<(), String> {
+    let digest = crc32fast::hash(data);
+    let offset = state
+        .shm
+        .publish(
+            sensor_id,
+            pass,
+            measurement_count,
+            1,
+            format_tag,
+            sim_tick,
+            data,
+        )
+        .map_err(|error| format!("publish: {error}"))?;
+    entries.push(BundleEntry {
+        camera_id: sensor_id.to_string(),
+        pass: pass.to_string(),
+        payload_offset: offset + crate::shm::RECORD_HEADER_BYTES as u64,
+        payload_len: data.len() as u64,
+        width: measurement_count,
+        height: 1,
+        format_tag,
+        digest,
+    });
+    frames.push(FrameRecord {
+        sensor_id: sensor_id.to_string(),
+        pass: pass.to_string(),
+        offset,
+        len: data.len() as u64,
+        width: measurement_count,
+        height: 1,
+        format: format_name.to_string(),
+        tick_id: sim_tick,
+        digest: Some(format!("{digest:08x}")),
+    });
+    Ok(())
+}
+
 /// bundle (frames first, then the bundle table record, then the meta-page
 /// latest-bundle pointer flip). Cameras keep rig registration order and
 /// passes are canonical (rgb, id, depth, semantic) within each camera, so
@@ -669,6 +956,8 @@ fn render_bundle_op(
     i: u64,
     sim_tick: u64,
     cameras: Option<Vec<ServiceCamera>>,
+    lidars: Option<Vec<ServiceLidar>>,
+    radars: Option<Vec<ServiceRadar>>,
     tick_index: Option<u32>,
     passes: Option<Vec<String>>,
 ) -> WireResponse {
@@ -697,8 +986,21 @@ fn render_bundle_op(
             upsert_rig(state, cam);
         }
     }
-    if state.rig.is_empty() {
-        return WireResponse::error(i, "render_bundle: no cameras registered (send `cameras` once)");
+    if let Some(sensors) = &lidars {
+        for sensor in sensors {
+            upsert_lidar_rig(state, sensor);
+        }
+    }
+    if let Some(sensors) = &radars {
+        for sensor in sensors {
+            upsert_radar_rig(state, sensor);
+        }
+    }
+    if state.rig.is_empty() && state.lidars.is_empty() && state.radars.is_empty() {
+        return WireResponse::error(
+            i,
+            "render_bundle: no sensors registered (send `cameras`, `lidars`, or `radars` once)",
+        );
     }
     if let Some(index) = tick_index {
         if let Err(error) = apply_scene_tick(state, index) {
@@ -706,6 +1008,8 @@ fn render_bundle_op(
         }
     }
     let rig = state.rig.clone();
+    let lidar_rig = state.lidars.clone();
+    let radar_rig = state.radars.clone();
     for cam in &rig {
         ensure_camera(state, cam, want);
         let (eye, target) = match resolve_pose(state, cam) {
@@ -822,6 +1126,132 @@ fn render_bundle_op(
             });
         }
     }
+    if !lidar_rig.is_empty() || !radar_rig.is_empty() {
+        let actor_scene = build_sensor_scene(state.app.sensor_triangles(true));
+        let combined_scene = CombinedSensorScene {
+            static_scene: &state.static_sensor_scene,
+            actor_scene: &actor_scene,
+        };
+        let mut instance_velocities = HashMap::new();
+        let tick_hz = state
+            .current_tick
+            .and_then(|index| state.scene.get(index as usize))
+            .map(|frame| frame.tick_hz)
+            .filter(|tick_hz| *tick_hz > 0.0)
+            .unwrap_or(20.0);
+        if let Some(frame) = state
+            .current_tick
+            .and_then(|index| state.scene.get(index as usize))
+        {
+            for actor in &frame.actors {
+                if let Some(instance_id) = state.app.actor_instance_id(&actor.id) {
+                    instance_velocities.insert(instance_id, Vec3::from_array(actor.velocity));
+                }
+            }
+        }
+        let instance_class = |instance_id| {
+            state
+                .app
+                .actor_instance_class(instance_id)
+                .map(sensors::taxonomy::SemanticClass::from_actor_class)
+                .or_else(|| {
+                    state
+                        .legend
+                        .get(&instance_id)
+                        .map(|name| sensors::taxonomy::SemanticClass::from_mesh_name(name))
+                })
+                .unwrap_or(sensors::taxonomy::SemanticClass::Prop)
+        };
+        let mut sensor_payloads: Vec<(
+            String,
+            &'static str,
+            u32,
+            &'static str,
+            u32,
+            Vec<u8>,
+        )> = Vec::with_capacity(lidar_rig.len() + radar_rig.len());
+        for sensor in &lidar_rig {
+            let mount = match resolve_sensor_mount(state, &sensor.attach) {
+                Ok(mount) => mount,
+                Err(error) => return WireResponse::error(i, error),
+            };
+            let config = sensors::lidar::LidarConfig {
+                channels: sensor.channels,
+                rotation_frequency_hz: sensor.rotation_frequency_hz,
+                points_per_second: sensor.points_per_second,
+                vfov_deg: sensor.vertical_fov_deg,
+                hfov_deg: sensor.horizontal_fov_deg,
+                range_m: sensor.range_m,
+            };
+            let points = sensors::lidar::scan(
+                &combined_scene,
+                &config,
+                mount.origin,
+                mount.rotation,
+                &instance_class,
+            );
+            let count = points.len() as u32;
+            sensor_payloads.push((
+                sensor.sensor_id.clone(),
+                "lidar",
+                FORMAT_LIDAR_PLY,
+                "ply-ascii",
+                count,
+                sensors::formats::encode_lidar_ply(&points),
+            ));
+        }
+        for sensor in &radar_rig {
+            let mount = match resolve_sensor_mount(state, &sensor.attach) {
+                Ok(mount) => mount,
+                Err(error) => return WireResponse::error(i, error),
+            };
+            let config = sensors::radar::RadarConfig::from_budget(
+                Some(sensor.points_per_second),
+                tick_hz,
+                sensor.horizontal_fov_deg,
+                sensor.vertical_fov_deg,
+                sensor.range_m,
+            );
+            let detections = sensors::radar::scan(
+                &combined_scene,
+                &config,
+                mount.origin,
+                mount.rotation,
+                mount.host_velocity,
+                &|instance_id| {
+                    instance_velocities
+                        .get(&instance_id)
+                        .copied()
+                        .unwrap_or(Vec3::ZERO)
+                },
+            );
+            let count = detections.len() as u32;
+            sensor_payloads.push((
+                sensor.sensor_id.clone(),
+                "radar",
+                FORMAT_RADAR_CSV,
+                "radar-csv",
+                count,
+                sensors::formats::encode_radar_csv(&detections),
+            ));
+        }
+        for (sensor_id, pass, format_tag, format_name, count, data) in sensor_payloads {
+            if let Err(error) = publish_sensor_payload(
+                state,
+                &sensor_id,
+                pass,
+                format_tag,
+                format_name,
+                count,
+                sim_tick,
+                &data,
+                &mut entries,
+                &mut frames,
+            ) {
+                return WireResponse::error(i, error);
+            }
+        }
+    }
     // A bundle bigger than the ring would overwrite its own frames; refuse
     // before flipping the pointer (frames are garbage, pointer stays valid).
     if state.shm.cursor_total() - start_cursor > state.shm.usable_bytes() {
@@ -878,7 +1308,10 @@ fn async_export_pngs(dir: &str, tick_id: u64, payloads: &[(String, String, u32, 
 
 #[cfg(test)]
 mod tests {
-    use super::{actor_base_y, instance_coverage, row_stride};
+    use super::{actor_base_y, instance_coverage, row_stride, CombinedSensorScene};
+    use bevy::math::{Quat, Vec3};
+    use sensors::bvh::{RaycastScene, Tri};
+    use sensors::taxonomy::SemanticClass;
 
     #[test]
     fn coverage_counts_nonzero_rgb_and_ignores_alpha_and_padding() {
@@ -895,5 +1328,76 @@ mod tests {
         assert_eq!(actor_base_y(2.225, None, -9.7), 2.225);
         assert_eq!(actor_base_y(0.0, Some(3.5), -9.7), 3.5);
         assert_eq!(actor_base_y(0.0, None, 1.75), 1.75);
+    }
+
+    fn deterministic_sensor_run() -> Vec<(Vec<u8>, Vec<u8>)> {
+        let mut static_scene = RaycastScene::new();
+        for (a, b, c) in [
+            (
+                Vec3::new(10.0, -10.0, -10.0),
+                Vec3::new(10.0, 10.0, -10.0),
+                Vec3::new(10.0, 10.0, 10.0),
+            ),
+            (
+                Vec3::new(10.0, -10.0, -10.0),
+                Vec3::new(10.0, 10.0, 10.0),
+                Vec3::new(10.0, -10.0, 10.0),
+            ),
+        ] {
+            static_scene.push_tri(Tri { a, b, c, instance_id: 1 });
+        }
+        static_scene.build();
+        let actor_scene = RaycastScene::new();
+        let scene = CombinedSensorScene {
+            static_scene: &static_scene,
+            actor_scene: &actor_scene,
+        };
+        let lidar = sensors::lidar::LidarConfig {
+            channels: 2,
+            rotation_frequency_hz: 2.0,
+            points_per_second: 256,
+            vfov_deg: 10.0,
+            hfov_deg: 30.0,
+            range_m: 30.0,
+        };
+        let radar = sensors::radar::RadarConfig::from_budget(
+            Some(128),
+            20.0,
+            30.0,
+            10.0,
+            30.0,
+        );
+        (0..3)
+            .map(|tick| {
+                let origin = Vec3::new(tick as f32 * 0.25, 0.0, 0.0);
+                let lidar_points = sensors::lidar::scan(
+                    &scene,
+                    &lidar,
+                    origin,
+                    Quat::IDENTITY,
+                    &|_| SemanticClass::Road,
+                );
+                let radar_detections = sensors::radar::scan(
+                    &scene,
+                    &radar,
+                    origin,
+                    Quat::IDENTITY,
+                    Vec3::ZERO,
+                    &|_| Vec3::ZERO,
+                );
+                (
+                    sensors::formats::encode_lidar_ply(&lidar_points),
+                    sensors::formats::encode_radar_csv(&radar_detections),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn persistent_lidar_radar_payloads_are_bit_identical_across_three_tick_runs() {
+        let first = deterministic_sensor_run();
+        let second = deterministic_sensor_run();
+        assert_eq!(first, second);
+        assert_ne!(first[0], first[2], "fixture must exercise distinct ticks");
     }
 }

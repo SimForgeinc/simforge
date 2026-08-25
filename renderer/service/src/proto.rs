@@ -29,6 +29,8 @@ pub struct CameraAttach {
     pub yaw_deg: f32,
     #[serde(default)]
     pub pitch_deg: f32,
+    #[serde(default)]
+    pub roll_deg: f32,
     /// Aim at the attached actor origin instead of projecting the mount's
     /// yaw/pitch. Intended for trailing chase cameras; sensor mounts leave it
     /// false and retain their calibrated rigid orientation.
@@ -79,6 +81,53 @@ pub struct ServiceCamera {
     pub profile: Option<render_core::engine::Profile>,
 }
 
+/// Retained spinning lidar declaration for `render_bundle`.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceLidar {
+    pub sensor_id: String,
+    pub attach: CameraAttach,
+    #[serde(default = "default_lidar_channels")]
+    pub channels: u32,
+    #[serde(default = "default_lidar_rotation_hz")]
+    pub rotation_frequency_hz: f32,
+    #[serde(default = "default_lidar_points_per_second")]
+    pub points_per_second: u32,
+    #[serde(default = "default_lidar_horizontal_fov")]
+    pub horizontal_fov_deg: f32,
+    #[serde(default = "default_lidar_vertical_fov")]
+    pub vertical_fov_deg: f32,
+    #[serde(default = "default_lidar_range")]
+    pub range_m: f32,
+}
+
+/// Retained fixed-fan radar declaration for `render_bundle`.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceRadar {
+    pub sensor_id: String,
+    pub attach: CameraAttach,
+    #[serde(default = "default_radar_points_per_second")]
+    pub points_per_second: u32,
+    #[serde(default = "default_radar_horizontal_fov")]
+    pub horizontal_fov_deg: f32,
+    #[serde(default = "default_radar_vertical_fov")]
+    pub vertical_fov_deg: f32,
+    #[serde(default = "default_radar_range")]
+    pub range_m: f32,
+}
+
+fn default_lidar_channels() -> u32 { 128 }
+fn default_lidar_rotation_hz() -> f32 { 10.0 }
+fn default_lidar_points_per_second() -> u32 { 1_300_000 }
+fn default_lidar_horizontal_fov() -> f32 { 120.0 }
+fn default_lidar_vertical_fov() -> f32 { 25.0 }
+fn default_lidar_range() -> f32 { 200.0 }
+fn default_radar_points_per_second() -> u32 { 1_500 }
+fn default_radar_horizontal_fov() -> f32 { 30.0 }
+fn default_radar_vertical_fov() -> f32 { 30.0 }
+fn default_radar_range() -> f32 { 100.0 }
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case")]
 pub enum RequestBody {
@@ -120,6 +169,13 @@ pub enum RequestBody {
         sim_tick: u64,
         #[serde(default)]
         cameras: Option<Vec<ServiceCamera>>,
+        /// Lidar declarations upsert the retained non-camera rig. Send once,
+        /// then omit on the persistent hot loop.
+        #[serde(default)]
+        lidars: Option<Vec<ServiceLidar>>,
+        /// Radar declarations upsert the retained non-camera rig.
+        #[serde(default)]
+        radars: Option<Vec<ServiceRadar>>,
         /// Scene-state frame to apply before rendering (as in `render`).
         #[serde(default)]
         tick_index: Option<u32>,
@@ -329,5 +385,33 @@ mod tests {
         )
         .unwrap();
         assert_eq!(cinematic.profile, Some(Profile::Cinematic));
+    }
+
+    #[test]
+    fn camera_only_bundle_request_needs_no_cpu_sensor_fields() {
+        let request: RequestBody = serde_json::from_str(
+            r#"{
+                "op":"render_bundle",
+                "sim_tick":7,
+                "cameras":[{
+                    "sensorId":"front","width":64,"height":48,"fovDeg":60,
+                    "eye":[0,2,0],"target":[1,2,0]
+                }]
+            }"#,
+        )
+        .unwrap();
+        match request {
+            RequestBody::RenderBundle {
+                cameras,
+                lidars,
+                radars,
+                ..
+            } => {
+                assert_eq!(cameras.unwrap().len(), 1);
+                assert!(lidars.is_none());
+                assert!(radars.is_none());
+            }
+            _ => panic!("wrong request variant"),
+        }
     }
 }

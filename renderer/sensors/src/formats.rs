@@ -19,22 +19,20 @@ use std::fmt::Write as _;
 use std::io::Write;
 use std::path::Path;
 
-pub fn write_lidar_ply(path: &Path, points: &[LidarPoint]) -> Result<()> {
-    let mut f = std::fs::File::create(path)?;
-    writeln!(f, "ply")?;
-    writeln!(f, "format ascii 1.0")?;
-    writeln!(f, "element vertex {}", points.len())?;
-    writeln!(f, "property float x")?;
-    writeln!(f, "property float y")?;
-    writeln!(f, "property float z")?;
-    writeln!(f, "property float intensity")?;
-    writeln!(f, "property uint instance_id")?;
-    writeln!(f, "end_header")?;
-    // Buffer the body; formatting is fixed so bytes are stable.
-    let mut body = String::with_capacity(points.len() * 64);
+pub fn encode_lidar_ply(points: &[LidarPoint]) -> Vec<u8> {
+    let mut out = String::with_capacity(160 + points.len() * 64);
+    let _ = writeln!(out, "ply");
+    let _ = writeln!(out, "format ascii 1.0");
+    let _ = writeln!(out, "element vertex {}", points.len());
+    let _ = writeln!(out, "property float x");
+    let _ = writeln!(out, "property float y");
+    let _ = writeln!(out, "property float z");
+    let _ = writeln!(out, "property float intensity");
+    let _ = writeln!(out, "property uint instance_id");
+    let _ = writeln!(out, "end_header");
     for p in points {
         let _ = writeln!(
-            body,
+            out,
             "{} {} {} {} {}",
             fmt_g(p.x),
             fmt_g(p.y),
@@ -43,17 +41,20 @@ pub fn write_lidar_ply(path: &Path, points: &[LidarPoint]) -> Result<()> {
             p.instance_id
         );
     }
-    f.write_all(body.as_bytes())?;
+    out.into_bytes()
+}
+
+pub fn write_lidar_ply(path: &Path, points: &[LidarPoint]) -> Result<()> {
+    std::fs::write(path, encode_lidar_ply(points))?;
     Ok(())
 }
 
-pub fn write_radar_csv(path: &Path, detections: &[RadarDetection]) -> Result<()> {
-    let mut f = std::fs::File::create(path)?;
-    writeln!(f, "depth_m,azimuth_rad,altitude_rad,velocity_mps")?;
-    let mut body = String::with_capacity(detections.len() * 80);
+pub fn encode_radar_csv(detections: &[RadarDetection]) -> Vec<u8> {
+    let mut out = String::with_capacity(64 + detections.len() * 80);
+    let _ = writeln!(out, "depth_m,azimuth_rad,altitude_rad,velocity_mps");
     for d in detections {
         let _ = writeln!(
-            body,
+            out,
             "{},{},{},{}",
             fmt_g(d.depth),
             fmt_g(d.azimuth),
@@ -61,7 +62,11 @@ pub fn write_radar_csv(path: &Path, detections: &[RadarDetection]) -> Result<()>
             fmt_g(d.velocity)
         );
     }
-    f.write_all(body.as_bytes())?;
+    out.into_bytes()
+}
+
+pub fn write_radar_csv(path: &Path, detections: &[RadarDetection]) -> Result<()> {
+    std::fs::write(path, encode_radar_csv(detections))?;
     Ok(())
 }
 

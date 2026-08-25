@@ -16,7 +16,7 @@
 //! format parity with carla-bridge's `_write_radar_csv` lives in
 //! `formats::write_radar_csv`.
 
-use crate::bvh::RaycastScene;
+use crate::bvh::Raycast;
 use bevy::math::{Quat, Vec3};
 
 #[derive(Debug, Clone)]
@@ -62,7 +62,7 @@ pub struct RadarDetection {
 /// static geometry maps to zero. `host_velocity` is the sensor host's
 /// world-frame velocity.
 pub fn scan(
-    scene: &RaycastScene,
+    scene: &dyn Raycast,
     config: &RadarConfig,
     origin: Vec3,
     rot: Quat,

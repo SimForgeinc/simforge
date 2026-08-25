@@ -52,7 +52,7 @@ fn main() -> Result<()> {
     // large enough for many 736x416 RGBA + f32 depth records by default.
     let capacity = (shm_size_mb * 1024 * 1024) as usize;
     let shm = ShmRing::create(std::path::Path::new(&shm_path), capacity)?;
-    let state = ServiceState::new(app, spec.profile, shm_path.clone(), shm, spec.near_m, spec.far_m);
+    let state = ServiceState::new(app, &spec, shm_path.clone(), shm)?;
     serve(state, std::path::Path::new(&socket))?;
     Ok(())
 }

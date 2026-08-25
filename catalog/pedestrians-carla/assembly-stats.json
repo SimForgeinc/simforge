@@ -1,0 +1,724 @@
+{
+  "walker.pedestrian.0015": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0015",
+    "bytes": 17880708,
+    "dims_xyz_m": [
+      1.6822,
+      1.8329,
+      0.3031
+    ],
+    "display": "CARLA pedestrian 0015",
+    "file": "models/pedestrian_0015.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "b20b0654cef8256053e36cf3ac8af8da3369b61492034a459d995adebcb2b8ba",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF01_A_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0016": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0016",
+    "bytes": 17306360,
+    "dims_xyz_m": [
+      1.6822,
+      1.8329,
+      0.3031
+    ],
+    "display": "CARLA pedestrian 0016",
+    "file": "models/pedestrian_0016.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "4ad9708546817ce32355c6f8a4f455aceca5206ad5fb805e9e5bd5c983b715ae",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF01_A_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0017": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0017",
+    "bytes": 12782428,
+    "dims_xyz_m": [
+      1.6822,
+      1.845,
+      0.3192
+    ],
+    "display": "CARLA pedestrian 0017",
+    "file": "models/pedestrian_0017.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "b7056a5f931967fe13b6ba55fd227de02c0011a9a58e1adb1cf8edf9bbb07ade",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF02_A_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0018": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0018",
+    "bytes": 10996356,
+    "dims_xyz_m": [
+      1.6822,
+      1.8712,
+      0.3192
+    ],
+    "display": "CARLA pedestrian 0018",
+    "file": "models/pedestrian_0018.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 5,
+    "sha256": "d58a0f77a3616b771dffcb12c59477da610ad7ad7ec8174d3fc7c8582340de7d",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF02_B_G2",
+    "textures": 10
+  },
+  "walker.pedestrian.0019": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0019",
+    "bytes": 14740664,
+    "dims_xyz_m": [
+      1.6822,
+      1.845,
+      0.3192
+    ],
+    "display": "CARLA pedestrian 0019",
+    "file": "models/pedestrian_0019.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "14c33b4c62cc2927b7b17ca88ef1eb8c5c55c70a2ebe13d07ac15c6e2a2b91e0",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF02_C_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0020": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0020",
+    "bytes": 15822012,
+    "dims_xyz_m": [
+      1.6822,
+      1.8526,
+      0.3299
+    ],
+    "display": "CARLA pedestrian 0020",
+    "file": "models/pedestrian_0020.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 10,
+    "sha256": "0f312e95d46d7e681ab55d3bb542891f6e701ab34670a54e9593808a94636953",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF02_Cop_G2",
+    "textures": 13
+  },
+  "walker.pedestrian.0021": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0021",
+    "bytes": 14640936,
+    "dims_xyz_m": [
+      1.6822,
+      1.845,
+      0.3192
+    ],
+    "display": "CARLA pedestrian 0021",
+    "file": "models/pedestrian_0021.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "2b8a5a2092ab0ee2173a1cb0abe1940bd9fbbc389767819c7f062b8e54ceaee2",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF02_A_G2",
+    "textures": 13
+  },
+  "walker.pedestrian.0022": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0022",
+    "bytes": 13317256,
+    "dims_xyz_m": [
+      1.7752,
+      1.8616,
+      0.5743
+    ],
+    "display": "CARLA pedestrian 0022",
+    "file": "models/pedestrian_0022.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "26e571174abd0e108f3d1dec4ecde2e062b74c1e893791e32c407c00a82e01bf",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF03_A_G2",
+    "textures": 8
+  },
+  "walker.pedestrian.0023": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0023",
+    "bytes": 13317256,
+    "dims_xyz_m": [
+      1.7752,
+      1.8616,
+      0.5743
+    ],
+    "display": "CARLA pedestrian 0023",
+    "file": "models/pedestrian_0023.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "ccee4fc1492c1d6474d40c4cc36385eaad384e536548ab4f99723400b2020e9e",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF03_A_G2",
+    "textures": 8
+  },
+  "walker.pedestrian.0024": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0024",
+    "bytes": 13317256,
+    "dims_xyz_m": [
+      1.7752,
+      1.8616,
+      0.5743
+    ],
+    "display": "CARLA pedestrian 0024",
+    "file": "models/pedestrian_0024.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "06facd8503613e3fcc1c0124f445fb6cff5ea03a47254c028a49e6583146afbb",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroF03_A_G2",
+    "textures": 8
+  },
+  "walker.pedestrian.0025": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0025",
+    "bytes": 19557280,
+    "dims_xyz_m": [
+      1.7684,
+      1.8228,
+      0.3421
+    ],
+    "display": "CARLA pedestrian 0025",
+    "file": "models/pedestrian_0025.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "3e825dff7bcdf089edb60ca73d92c0cfd88392ad49c10e273087271b71b3b453",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroM01_A_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0026": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0026",
+    "bytes": 18977720,
+    "dims_xyz_m": [
+      1.7684,
+      1.8228,
+      0.3371
+    ],
+    "display": "CARLA pedestrian 0026",
+    "file": "models/pedestrian_0026.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "63073b24ede26006aec45abf234530cce85105259e4716ade98bf492407aaea3",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroM01_B_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0027": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0027",
+    "bytes": 24094624,
+    "dims_xyz_m": [
+      1.777,
+      1.8573,
+      0.429
+    ],
+    "display": "CARLA pedestrian 0027",
+    "file": "models/pedestrian_0027.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 10,
+    "sha256": "a447ef488467da6b3f28f44ce234edf789ff765ff1557dc514c6d6e19b88b604",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroM02_A_G2",
+    "textures": 13
+  },
+  "walker.pedestrian.0028": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0028",
+    "bytes": 22311604,
+    "dims_xyz_m": [
+      1.7684,
+      1.8393,
+      0.3421
+    ],
+    "display": "CARLA pedestrian 0028",
+    "file": "models/pedestrian_0028.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 8,
+    "sha256": "bd8ff1a0c5abb99e385858374f1b4379eebf7142de400ceb8fe4ca87f9ebed54",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AmerM01_A_G2",
+    "textures": 13
+  },
+  "walker.pedestrian.0029": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0029",
+    "bytes": 22311344,
+    "dims_xyz_m": [
+      1.7684,
+      1.8393,
+      0.3421
+    ],
+    "display": "CARLA pedestrian 0029",
+    "file": "models/pedestrian_0029.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "9e7da003b9e501cf00a1743b0fcf4d56aefdcc160984ecc13704fe575f64a84b",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AmerM01_A_G2",
+    "textures": 13
+  },
+  "walker.pedestrian.0030": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0030",
+    "bytes": 24361040,
+    "dims_xyz_m": [
+      1.7684,
+      1.8393,
+      0.3421
+    ],
+    "display": "CARLA pedestrian 0030",
+    "file": "models/pedestrian_0030.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "69794446c4e2923275ae513a52336262b87a5bbe12b9256d512eb950f67bc6f1",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AmerM01_A_G2",
+    "textures": 14
+  },
+  "walker.pedestrian.0031": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0031",
+    "bytes": 21646856,
+    "dims_xyz_m": [
+      1.7684,
+      1.8441,
+      0.3309
+    ],
+    "display": "CARLA pedestrian 0031",
+    "file": "models/pedestrian_0031.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 11,
+    "sha256": "ba5eb56617313b2f9711d763ae2820f72d2d35022629da874c43ea95cd0064a5",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AmerM01_Cop_G2",
+    "textures": 15
+  },
+  "walker.pedestrian.0032": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0032",
+    "bytes": 18512176,
+    "dims_xyz_m": [
+      1.6822,
+      1.836,
+      0.3179
+    ],
+    "display": "CARLA pedestrian 0032",
+    "file": "models/pedestrian_0032.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 8,
+    "sha256": "6db6240038772c758d6fa20c7e6b05b8641eb1674488ade7822bc9ce4b988bd4",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AsiaF01_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0033": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0033",
+    "bytes": 18511912,
+    "dims_xyz_m": [
+      1.6822,
+      1.836,
+      0.3179
+    ],
+    "display": "CARLA pedestrian 0033",
+    "file": "models/pedestrian_0033.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "0f658fea1ad782c1ffa561754158c2852a6680fa9038fa2878afe3f115e517d2",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AsiaF01_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0034": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0034",
+    "bytes": 20492740,
+    "dims_xyz_m": [
+      1.7684,
+      1.8588,
+      0.3371
+    ],
+    "display": "CARLA pedestrian 0034",
+    "file": "models/pedestrian_0034.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "3d597ffacd27bde326b4140fff4b6e3dbeb586c7c52c44389e2d80412bc23728",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AsiaM01_A_G2",
+    "textures": 10
+  },
+  "walker.pedestrian.0035": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0035",
+    "bytes": 20468292,
+    "dims_xyz_m": [
+      1.7684,
+      1.8588,
+      0.3313
+    ],
+    "display": "CARLA pedestrian 0035",
+    "file": "models/pedestrian_0035.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "4712856d13acea278352a82d8fc67021f7ff5082cec934f8b29e93f5bfe36fe0",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AsiaM01_B_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0036": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0036",
+    "bytes": 17449108,
+    "dims_xyz_m": [
+      1.7712,
+      1.8492,
+      0.4034
+    ],
+    "display": "CARLA pedestrian 0036",
+    "file": "models/pedestrian_0036.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "c9573c08777c4634de26d2c1051439ac78ffe222a35a5d065b50ac95fe84aedc",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AsiaM02_A_G2",
+    "textures": 9
+  },
+  "walker.pedestrian.0037": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0037",
+    "bytes": 17449428,
+    "dims_xyz_m": [
+      1.7712,
+      1.8492,
+      0.4034
+    ],
+    "display": "CARLA pedestrian 0037",
+    "file": "models/pedestrian_0037.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "7b45e9189d35d764483c8b4ea1525ef57557909731f46a6cb8a11560c3f53b0c",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AsiaM02_A_G2",
+    "textures": 9
+  },
+  "walker.pedestrian.0038": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0038",
+    "bytes": 18833632,
+    "dims_xyz_m": [
+      1.7712,
+      1.8492,
+      0.4034
+    ],
+    "display": "CARLA pedestrian 0038",
+    "file": "models/pedestrian_0038.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "f5b2a5253ed24b3289f640f24a7c30b02397351db4fd222e9d4e5b7fa9c8720c",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AsiaM02_A_G2",
+    "textures": 10
+  },
+  "walker.pedestrian.0039": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0039",
+    "bytes": 12317160,
+    "dims_xyz_m": [
+      1.7752,
+      1.8705,
+      0.4548
+    ],
+    "display": "CARLA pedestrian 0039",
+    "file": "models/pedestrian_0039.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "aecbfe718da4df1cc79dd31fb7a53322084b7020be80261e9ad247832888d4eb",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroF01_A_G2",
+    "textures": 9
+  },
+  "walker.pedestrian.0040": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0040",
+    "bytes": 12317160,
+    "dims_xyz_m": [
+      1.7752,
+      1.8705,
+      0.4548
+    ],
+    "display": "CARLA pedestrian 0040",
+    "file": "models/pedestrian_0040.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "aaa4747fc1449057430b992a03e0ca482aee61da522d059f0f157ff92cc78aa2",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroF01_A_G2",
+    "textures": 9
+  },
+  "walker.pedestrian.0041": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0041",
+    "bytes": 12317160,
+    "dims_xyz_m": [
+      1.7752,
+      1.8705,
+      0.4548
+    ],
+    "display": "CARLA pedestrian 0041",
+    "file": "models/pedestrian_0041.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "c9c8c4c191841ed3ab9b2b1ed5c800db17586b6519821805c0e6845303e387f2",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroF01_A_G2",
+    "textures": 9
+  },
+  "walker.pedestrian.0042": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0042",
+    "bytes": 13603016,
+    "dims_xyz_m": [
+      1.6822,
+      1.8328,
+      0.3055
+    ],
+    "display": "CARLA pedestrian 0042",
+    "file": "models/pedestrian_0042.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 6,
+    "sha256": "00768344e6b21067e6f26a2959173cb006ad70f4d07240c050887dd824b451fb",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroF02_A_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0043": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0043",
+    "bytes": 15815480,
+    "dims_xyz_m": [
+      1.6822,
+      1.8328,
+      0.3055
+    ],
+    "display": "CARLA pedestrian 0043",
+    "file": "models/pedestrian_0043.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 5,
+    "sha256": "9a1369b18648d0b3c824257cab9de79d8e5765ba83dd980505ae6d55741c157a",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroF02_B_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0044": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0044",
+    "bytes": 15815480,
+    "dims_xyz_m": [
+      1.6822,
+      1.8328,
+      0.3055
+    ],
+    "display": "CARLA pedestrian 0044",
+    "file": "models/pedestrian_0044.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 5,
+    "sha256": "89f247e86c3411308968756ce751de5070e476dda9390c9175c599c0c0f90582",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroF02_B_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0045": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0045",
+    "bytes": 19276964,
+    "dims_xyz_m": [
+      1.7684,
+      1.8353,
+      0.3309
+    ],
+    "display": "CARLA pedestrian 0045",
+    "file": "models/pedestrian_0045.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "74492d6d27762053ab2322b57af8f118824bbcd18e8e1194986e756a4a473f13",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroM01_A_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0046": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0046",
+    "bytes": 21685352,
+    "dims_xyz_m": [
+      1.7684,
+      1.8353,
+      0.331
+    ],
+    "display": "CARLA pedestrian 0046",
+    "file": "models/pedestrian_0046.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "c11908f69464aaa8e7c75581e941921948d7e7551e7a24b69970935e7fa35995",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroM01_B_G2",
+    "textures": 11
+  },
+  "walker.pedestrian.0047": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0047",
+    "bytes": 12855836,
+    "dims_xyz_m": [
+      1.7697,
+      1.8178,
+      0.5218
+    ],
+    "display": "CARLA pedestrian 0047",
+    "file": "models/pedestrian_0047.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "c5aa944aeeeb2ef5f6c356ff59e43fc833cac9c5717f2ee9258f92945bcea932",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroM02_A_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0048": {
+    "age": "adult",
+    "blueprint": "walker.pedestrian.0048",
+    "bytes": 14376640,
+    "dims_xyz_m": [
+      1.7697,
+      1.8178,
+      0.5218
+    ],
+    "display": "CARLA pedestrian 0048",
+    "file": "models/pedestrian_0048.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 7,
+    "sha256": "6ad82c79bdffd086ef374d2eae4c451f0b7c4909e2190304a94d0c1f88dfb996",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroM02_A_G2",
+    "textures": 14
+  },
+  "walker.pedestrian.0049": {
+    "age": "child",
+    "blueprint": "walker.pedestrian.0049",
+    "bytes": 17750140,
+    "dims_xyz_m": [
+      1.0851,
+      1.1292,
+      0.212
+    ],
+    "display": "CARLA pedestrian 0049",
+    "file": "models/pedestrian_0049.glb",
+    "gender": "female",
+    "generation": 2,
+    "materials": 8,
+    "sha256": "8d657dfaf86c9735deafd233bd48bf6e07df687e9a98d35f98fd4d669f14db17",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroG02_A_G2",
+    "textures": 12
+  },
+  "walker.pedestrian.0050": {
+    "age": "child",
+    "blueprint": "walker.pedestrian.0050",
+    "bytes": 22794668,
+    "dims_xyz_m": [
+      1.0537,
+      1.1379,
+      0.2416
+    ],
+    "display": "CARLA pedestrian 0050",
+    "file": "models/pedestrian_0050.glb",
+    "gender": "male",
+    "generation": 2,
+    "materials": 9,
+    "sha256": "d4c256bd16488685f294c5f4ae7cc60b64c23f1bd1247b4f43808000b53a050c",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_EuroB02_A_G2",
+    "textures": 15
+  },
+  "walker.pedestrian.0051": {
+    "age": "child",
+    "blueprint": "walker.pedestrian.0051",
+    "bytes": 13057140,
+    "dims_xyz_m": [
+      1.8269,
+      1.8631,
+      0.3372
+    ],
+    "display": "CARLA pedestrian 0051",
+    "file": "models/pedestrian_0051.glb",
+    "gender": "female",
+    "generation": 3,
+    "materials": 5,
+    "sha256": "a891685b1943fc5e0863e923ded113e7d62301b3780464d6981451e0411a27ad",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroG01_A_G3",
+    "textures": 10
+  },
+  "walker.pedestrian.0052": {
+    "age": "child",
+    "blueprint": "walker.pedestrian.0052",
+    "bytes": 16298740,
+    "dims_xyz_m": [
+      1.8272,
+      1.8425,
+      0.3562
+    ],
+    "display": "CARLA pedestrian 0052",
+    "file": "models/pedestrian_0052.glb",
+    "gender": "male",
+    "generation": 3,
+    "materials": 6,
+    "sha256": "daf5c112e58a2c77842eef7d1defaf18bd4174db00ca42150f1eb78a6d56a81c",
+    "skeletonPreserved": true,
+    "sourceMesh": "SK_AfroB01_A_G3",
+    "textures": 14
+  }
+}

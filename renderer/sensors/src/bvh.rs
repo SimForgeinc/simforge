@@ -52,6 +52,12 @@ pub struct Hit {
     pub normal: Vec3,
 }
 
+/// Raycast surface accepted by deterministic sensor models. A persistent
+/// service can compose a cached static BVH with a per-tick actor BVH.
+pub trait Raycast {
+    fn cast(&self, origin: Vec3, dir: Vec3, t_max: f32) -> Option<Hit>;
+}
+
 impl RaycastScene {
     pub fn new() -> Self {
         Self::default()
@@ -171,6 +177,12 @@ impl RaycastScene {
             }
         }
         best
+    }
+}
+
+impl Raycast for RaycastScene {
+    fn cast(&self, origin: Vec3, dir: Vec3, t_max: f32) -> Option<Hit> {
+        RaycastScene::cast(self, origin, dir, t_max)
     }
 }
 

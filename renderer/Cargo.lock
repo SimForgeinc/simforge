@@ -5373,11 +5373,13 @@ name = "service"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bevy",
  "crc32fast",
  "image",
  "memmap2",
  "render-core",
  "rmp-serde",
+ "sensors",
  "serde",
  "serde_json",
 ]
