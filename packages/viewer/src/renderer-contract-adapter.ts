@@ -68,6 +68,26 @@ export interface ThreeAdapterHost {
 /** CityViewer satisfies the host slice; drift breaks the build. */
 export const cityViewerAsAdapterHost = (viewer: CityViewer): ThreeAdapterHost => viewer;
 
+/**
+ * Contract camera report of a live host — the exchange format editor
+ * features (e.g. the studio high-fidelity preview request) send to
+ * out-of-process renderers. The adapter's `cameraState()` delegates here so
+ * a report captured off the raw viewer is byte-identical to one captured
+ * through the adapter.
+ */
+export function cameraStateReport(host: Pick<ThreeAdapterHost, 'camera' | 'controls'>): CameraStateReport {
+  const camera = host.camera;
+  camera.updateMatrixWorld(true);
+  camera.updateProjectionMatrix();
+  const view = host.controls.getView();
+  return {
+    pose: { position: view.position, target: view.target },
+    intrinsics: { fovYDeg: camera.fov, aspect: camera.aspect, near: camera.near, far: camera.far },
+    viewMatrix: [...camera.matrixWorldInverse.elements],
+    projectionMatrix: [...camera.projectionMatrix.elements],
+  };
+}
+
 const IGNORED_PICK_STATES: readonly string[] = ['lights.lowBeam', 'lights.emergency', 'reversing'];
 
 /**
@@ -136,16 +156,7 @@ export class ThreeRendererAdapter {
   }
 
   cameraState(): CameraStateReport {
-    const camera = this.host.camera;
-    camera.updateMatrixWorld(true);
-    camera.updateProjectionMatrix();
-    const view = this.host.controls.getView();
-    return {
-      pose: { position: view.position, target: view.target },
-      intrinsics: { fovYDeg: camera.fov, aspect: camera.aspect, near: camera.near, far: camera.far },
-      viewMatrix: [...camera.matrixWorldInverse.elements],
-      projectionMatrix: [...camera.projectionMatrix.elements],
-    };
+    return cameraStateReport(this.host);
   }
 
   // --- Actor frame path --------------------------------------------------

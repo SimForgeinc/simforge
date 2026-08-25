@@ -287,3 +287,7 @@ export function modelRunAttemptId(runId: string, attemptNumber: number): string 
 export function modelRunEventId(runId: string, ordinal: number): string {
   return `mrev_${digest(`${runId}:${ordinal}`)}`;
 }
+
+export function hifiPreviewRequestId(): string {
+  return `hprev_${randomId().slice(0, 24)}`;
+}
