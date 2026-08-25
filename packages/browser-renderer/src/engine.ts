@@ -15,6 +15,15 @@ export interface BrowserRenderEngineOptions {
   readonly chromiumExecutablePath?: string;
   readonly headless?: boolean;
   readonly engineVersion?: string;
+  /**
+   * The map manifest references its tiles relatively, and only the manifest itself is
+   * materialized as a render input. Serving the manifest from the control plane's authenticated
+   * asset root is what lets the viewer resolve and stream the city; without it a render produces
+   * actors floating in an empty void.
+   */
+  readonly apiBaseUrl?: string;
+  readonly sessionEmail?: string;
+  readonly sessionPassword?: string;
 }
 
 const CAPABILITIES: EngineCapabilityDeclaration = {
