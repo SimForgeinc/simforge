@@ -17,13 +17,18 @@ const isVendorPhoto = (name) => /^sign-_[0-9a-f-]+_front(?:_png_BaseColor|\.tga)
 const isNormal = (name) => /(?:norm|normal)(?:\.|_|$)/i.test(name);
 const isOrm = (name) => /(?:aorm|orm|spec|glossiness)(?:\.|_|$)/i.test(name);
 const entry = (file, materialClass, license = 'CC0-1.0') => ({ file, class: materialClass, scaleFactor: 1, license });
+const isPropSheet = (name) =>
+  /(?:props|signals|utilities|electric.?towers|trafficcontrol|construction|urbanprops|fence|roughmetal|metal_|metal\d|rocksset)/i.test(name);
 
 for (const image of json.images ?? []) {
   const name = image.name ?? '';
   if (isVendorPhoto(name)) continue;
   const lower = name.toLowerCase();
   let replacement;
-  if (/sign|deadend|bikelane|leftoruturn|leftturn|roadwork/.test(lower)) {
+  if (isPropSheet(name)) {
+    replacement = entry(isNormal(name) ? 'cleanroom-procedural/flat-normal.png' : isOrm(name) ? 'cleanroom-procedural/neutral-orm.png' : 'cleanroom-procedural/neutral-prop-basecolor.png', 'neutral-prop');
+    needsReplacementAsset.push(name);
+  } else if (/^sign(?:_|-)|deadend|bikelane|leftoruturn|leftturn|roadwork/.test(lower)) {
     if (/back/.test(lower)) replacement = entry('cleanroom-procedural/sign-aluminum-back.png', 'sign-back');
     else {
       const key = lower.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
