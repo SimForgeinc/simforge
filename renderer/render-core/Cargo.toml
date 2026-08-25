@@ -15,6 +15,10 @@ path = "src/bin/scen-play.rs"
 name = "native-render-job"
 path = "src/bin/native-render-job.rs"
 
+[[bin]]
+name = "parity-check"
+path = "src/bin/parity-check.rs"
+
 [dependencies]
 crossbeam-channel = "0.5"
 bevy = { version = "0.19.1", default-features = true, features = ["png", "hdr", "ktx2", "debug", "tonemapping_luts"] }
