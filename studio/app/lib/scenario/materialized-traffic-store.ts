@@ -54,6 +54,7 @@ export async function reserveMaterializedTraffic(
     operation: "materialize_traffic",
     artifactKind: "materialized-traffic",
     artifactSha256: input.sha256,
+    idempotencyKey: `materialized-traffic:${documentId}:${input.expectedVersion}:${input.sha256}`,
     requestPayload: {
       documentId,
       draftVersion: input.expectedVersion,
