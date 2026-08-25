@@ -879,7 +879,7 @@ export const simScenarioInputSchema = z
     operationalConditions: operationalConditionsSchema,
     /** Which actor the criticality metrics are reported against. */
     metricSubject: idSchema.optional(),
-    actors: z.array(actorSchema).min(1),
+    actors: z.array(actorSchema),
     interactions: z.array(interactionSchema).default([]),
     signalPrograms: z.array(signalProgramSchema).default([]),
     roadControls: z.array(roadControlSchema).default([]),

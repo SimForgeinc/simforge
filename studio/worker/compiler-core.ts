@@ -112,7 +112,7 @@ function withMapControls(input: SimScenarioInput, controls: MapControlPlan): Sim
   return { ...input, signalPrograms: [...input.signalPrograms, ...controls.signalPrograms.filter((item) => !signalIds.has(item.id))], roadControls: [...input.roadControls, ...controls.roadControls.filter((item) => !roadControlIds.has(item.id))] };
 }
 function concreteInput(template: ScenarioTemplateV2, bundle: MapBundle, ambientMode: "disabled" | "native" | "sumo"): { input: SimScenarioInput; siteId: string; materialization: unknown; ambientTraffic: AmbientTrafficProvenance } {
-  if (template.roles.length === 0 || template.roles.some((role) => role.kind !== "scene_absolute")) throw new Error("unsupported_portable_semantics");
+  if (template.roles.some((role) => role.kind !== "scene_absolute")) throw new Error("unsupported_portable_semantics");
   if (!template.sourceMap || template.sourceMap.mapId !== bundle.mapId) throw new Error("map_bound_source_mismatch");
   if (!template.anchor.pin || template.anchor.pin.mapId !== bundle.mapId) throw new Error("map_bound_pin_mismatch");
   if (template.anchor.pin.topologyDigest && template.anchor.pin.topologyDigest !== bundle.graph.topologyDigest) throw new Error("map_bound_topology_digest_mismatch");
