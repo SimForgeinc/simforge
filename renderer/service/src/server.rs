@@ -12,7 +12,7 @@ use crate::proto::{
     RequestBody, ResponseBody, ServiceCamera, ServiceLidar, ServiceRadar, ShmInfo, WireRequest,
     WireResponse, NATIVE_SERVICE_PROTOCOL_VERSION,
 };
-use crate::scene::SceneState;
+use crate::scene::{ActorState, SceneState};
 use crate::shm::{
     BundleEntry, ShmRing, FORMAT_DEPTH32F, FORMAT_JPEG, FORMAT_LIDAR_PLY, FORMAT_RADAR_CSV,
     FORMAT_RGBA8,
@@ -23,11 +23,12 @@ use render_core::engine::{
     CameraSpec, LegendEntry, Lighting, PassSet, Profile, SceneApp, SensorTriangle,
 };
 use render_core::profiles::RenderProfileConfig;
+use render_core::vehicle_model::{VehicleModelCatalog, VehicleModelEntry};
 use sensors::bvh::{Hit, Raycast, RaycastScene, Tri};
 use std::collections::HashMap;
 use std::io::Write;
 use std::os::unix::net::{UnixListener, UnixStream};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Scene description for prewarm (subset of the batch job schema).
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -49,6 +50,16 @@ pub struct SceneSpec {
     pub far_m: f32,
     #[serde(default = "default_warmup")]
     pub warmup_frames: u32,
+    /// CarlaVehicles catalog directories. Only models referenced by scene
+    /// actors are loaded; unknown catalog ids retain the explicit cuboid
+    /// fallback.
+    #[serde(default)]
+    pub vehicle_models: Option<String>,
+    #[serde(default)]
+    pub pedestrian_models: Option<String>,
+    /// Optional actor-id -> absolute GLB override.
+    #[serde(default)]
+    pub actor_model_refs: HashMap<String, String>,
 }
 
 fn default_near() -> f32 {
@@ -188,30 +199,43 @@ pub struct ServiceState {
     radars: Vec<ServiceRadar>,
     /// Static map BVH, built once after prewarm and reused for every tick.
     static_sensor_scene: RaycastScene,
+    vehicle_models: Option<VehicleModelCatalog>,
+    pedestrian_models: Option<VehicleModelCatalog>,
+    actor_model_refs: HashMap<String, PathBuf>,
 }
 
 impl ServiceState {
     pub fn new(
         mut app: SceneApp,
-        profile: Profile,
+        spec: &SceneSpec,
         shm_path: String,
         shm: ShmRing,
-        near_m: f32,
-        far_m: f32,
-    ) -> Self {
+    ) -> Result<Self> {
+        let vehicle_models = spec
+            .vehicle_models
+            .as_deref()
+            .map(|dir| VehicleModelCatalog::load(Path::new(dir)))
+            .transpose()
+            .context("load vehicle model catalog")?;
+        let pedestrian_models = spec
+            .pedestrian_models
+            .as_deref()
+            .map(|dir| VehicleModelCatalog::load(Path::new(dir)))
+            .transpose()
+            .context("load pedestrian model catalog")?;
         let legend: HashMap<u32, String> = app
             .legend()
             .into_iter()
             .map(|LegendEntry { id, name }| (id, name))
             .collect();
         let static_sensor_scene = build_sensor_scene(app.sensor_triangles(false));
-        Self {
+        Ok(Self {
             app,
-            profile,
+            profile: spec.profile,
             shm_path,
             shm,
-            near_m,
-            far_m,
+            near_m: spec.near_m,
+            far_m: spec.far_m,
             legend,
             scene: Vec::new(),
             current_tick: None,
@@ -220,7 +244,14 @@ impl ServiceState {
             lidars: Vec::new(),
             radars: Vec::new(),
             static_sensor_scene,
-        }
+            vehicle_models,
+            pedestrian_models,
+            actor_model_refs: spec
+                .actor_model_refs
+                .iter()
+                .map(|(actor, path)| (actor.clone(), PathBuf::from(path)))
+                .collect(),
+        })
     }
 }
 
@@ -340,11 +371,42 @@ fn dispatch(state: &mut ServiceState, request: WireRequest) -> WireResponse {
     }
 }
 
+fn resolve_actor_model(state: &ServiceState, actor: &ActorState) -> Option<VehicleModelEntry> {
+    if let Some(path) = state.actor_model_refs.get(&actor.id) {
+        return Some(VehicleModelEntry {
+            glb_path: path.clone(),
+            attribution: String::new(),
+            source: "scene-spec-override".to_string(),
+            tintable: false,
+            scale_to_dims: false,
+            model_length_m: None,
+        });
+    }
+    let catalog_id = actor.catalog_id.as_deref()?;
+    if actor.actor_class.as_deref() == Some("pedestrian") {
+        let catalog = state.pedestrian_models.as_ref()?;
+        return catalog
+            .resolve(catalog_id)
+            .cloned()
+            .or_else(|| {
+                catalog
+                    .resolve_deterministic(&actor.id)
+                    .map(|(_, entry)| entry.clone())
+            });
+    }
+    state
+        .vehicle_models
+        .as_ref()?
+        .resolve(catalog_id)
+        .cloned()
+}
+
 /// Apply scene-state frame `index` to the world (spawn/update/despawn).
 fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> {
     let frame = state
         .scene
         .get(index as usize)
+        .cloned()
         .ok_or_else(|| format!("tick_index {index} out of range (loaded {} ticks)", state.scene.len()))?;
     for actor in &frame.actors {
         match actor.kind.as_str() {
@@ -352,6 +414,7 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
             "spawn" | "update" => {
                 let class = actor.actor_class.clone().unwrap_or_else(|| "prop".into());
                 let dims = actor_dims(&class);
+                let model = resolve_actor_model(state, actor);
                 let yaw = quat_yaw(&actor.transform.rotation);
                 // Traces carry no height channel: snap onto the static ground
                 // field whenever the doc does not pin a ground elevation.
@@ -365,6 +428,30 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                     class_color(&class),
                     snap,
                 );
+                if let Some(model) = model {
+                    if !state.app.actor_has_model(&actor.id) {
+                        if !model.glb_path.is_file() {
+                            return Err(format!(
+                                "catalog model for {} is missing: {}",
+                                actor.id,
+                                model.glb_path.display()
+                            ));
+                        }
+                        let scale = if model.scale_to_dims {
+                            model
+                                .model_length_m
+                                .filter(|length| *length > 0.1)
+                                .map(|length| dims[0] / length as f32)
+                                .unwrap_or(1.0)
+                        } else {
+                            1.0
+                        };
+                        state
+                            .app
+                            .attach_actor_model(&actor.id, &model.glb_path, scale)
+                            .map_err(|error| format!("load actor model {}: {error:#}", actor.id))?;
+                    }
+                }
             }
             other => return Err(format!("unknown actor kind {other:?} for {}", actor.id)),
         }
