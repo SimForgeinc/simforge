@@ -34,12 +34,18 @@ render_pattern="${5:-uniscenarios-carla.*run-intent}"
 
 # pgrep -f matches full cmdlines — including every shell up the ancestry whose
 # argv carries this pattern as literal text (ssh command strings, this probe's
-# own argv). Bracket-transform the first character so the regex never matches
-# its own literal text, and additionally drop self/parent pids.
-render_pattern_safe="[${render_pattern:0:1}]${render_pattern:1}"
-live_renders="$(pgrep -f "$render_pattern_safe" | grep -vE "^($$|$PPID)\$" || true)"
+# own argv), and regex self-similarity (".*") defeats text transforms. The
+# discriminating invariant: real render subprocesses are python interpreters
+# (the bridge console script), never shells — keep only matches whose
+# /proc/<pid>/comm is python*/uniscenarios*.
+live_renders=""
+for pid in $(pgrep -f "$render_pattern" || true); do
+  case "$(cat "/proc/$pid/comm" 2>/dev/null)" in
+    python*|uniscenarios*) live_renders="$live_renders $pid" ;;
+  esac
+done
 if [ -n "$live_renders" ]; then
-  echo "skip: live render subprocess matches '$render_pattern' (pids: $(echo "$live_renders" | tr '\n' ' '))"
+  echo "skip: live render subprocess matches '$render_pattern' (pids:$live_renders)"
   exit 0
 fi
 
