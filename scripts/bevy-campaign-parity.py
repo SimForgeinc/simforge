@@ -527,21 +527,30 @@ def scorecard(args) -> None:
         manifest = load(manifest_path) if manifest_path.exists() else {}
         wall = benchmark.get("wallS"); carla = item.get("carlaA100RenderS")
         if wall: bevy_times.append(float(wall))
-        if carla: carla_times.append(float(carla))
+        if carla:
+            carla_times.append(float(carla))
         model_report = root / "bevy" / doc / "actor-visuals.json"
-        exact = None
+        exact = "unavailable"
         if model_report.exists():
-            report = load(model_report); values = report.get("actors", [])
-            exact = sum(a.get("source") == "glb" for a in values) / len(values) if values else None
-        rows.append((doc, item["mapId"], "yes" if manifest.get("complete") else "no", wall, benchmark.get("fps"),
-                     benchmark.get("gpuUtilMeanPct"), benchmark.get("vramMaxMiB"), carla, exact))
+            report = load(model_report)
+            values = report.get("actors", [])
+            exact = sum(a.get("source") == "glb" for a in values) / len(values) if values else "unavailable"
+        visual_path = root / "visual-scores" / f"{doc}.json"
+        visual = load(visual_path) if visual_path.exists() else {}
+        rows.append((
+            doc, item["mapId"], "yes" if manifest.get("complete") else "no", wall, benchmark.get("fps"),
+            benchmark.get("gpuUtilMeanPct"), benchmark.get("vramMaxMiB"), carla, exact,
+            visual.get("materials", "unreviewed"), visual.get("lighting", "unreviewed"),
+            visual.get("roadDetail", "unreviewed"), visual.get("framing", "unreviewed"),
+            visual.get("gap", "visual review pending"),
+        ))
     lines = ["# Bevy/CARLA parity scorecard", "", "Scores below are evidence-backed mechanical proxies; no unperformed human visual review is claimed.", "",
              "## Benchmark summary", "",
              f"- Bevy RTX 3080 wall time: n={len(bevy_times)}, p50={percentile(bevy_times,.5)}, p95={percentile(bevy_times,.95)} seconds.",
              f"- CARLA A100 wall time: n={len(carla_times)}, p50={percentile(carla_times,.5)}, p95={percentile(carla_times,.95)} seconds.", "",
              "## Per-document evidence", "",
-             "| doc | map | artifact parity | Bevy wall s | fps | GPU util % | VRAM MiB | CARLA A100 s | exact actor GLB ratio |",
-             "|---|---|---:|---:|---:|---:|---:|---:|---:|"]
+             "| doc | map | artifact parity | Bevy wall s | fps | GPU util % | VRAM MiB | CARLA A100 s | actor model correctness | materials | lighting | road detail | framing | worst gap |",
+             "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     for row in rows:
         lines.append("| " + " | ".join("" if v is None else f"{v:.3f}" if isinstance(v, float) else str(v) for v in row) + " |")
     incomplete = [r[0] for r in rows if r[2] != "yes"]
