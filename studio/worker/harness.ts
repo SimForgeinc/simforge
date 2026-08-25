@@ -84,6 +84,7 @@ async function main(argv: readonly string[]): Promise<void> {
   const xosc = inputs.get("scenario.xosc")!;
   const map = inputs.get("map.manifest")!;
   const playbackInput = inputs.get("playback.bundle")!;
+  const sources = prontoSources(hostActorId);
   const intent = {
     schema: "uniscenario.render-intent/v1",
     intentId: "cloud-worker-harness",
@@ -97,14 +98,14 @@ async function main(argv: readonly string[]): Promise<void> {
       openScenario: { sha256: xosc.sha256, sizeBytes: xosc.sizeBytes },
       map: { mapId, revisionId: `${mapId}-local`, sha256: map.sha256 },
     },
-    sensorHost: {
-      actorId: hostActorId,
+    sensorHosts: sources.map((source) => ({
+      sourceId: source.outputName,
+      actorId: source.actorId,
       vehicleAsset: { catalogAssetId: hostCatalogId },
-      sensorRig: { rigId: "authored", cameras: 8, lidars: 6, radars: 4 },
-    },
+    })).sort((left, right) => left.sourceId.localeCompare(right.sourceId)),
     renderSpec: {
       schema: "uniscenario.render-spec/v3",
-      sources: prontoSources(hostActorId),
+      sources,
       clip: { startSeconds: 0, endSeconds: clipEndSeconds },
       video: { width: 320, height: 180, fps: 24, container: "mp4", codec: "h264", quality: "draft" },
       artifacts: args.artifacts ? args.artifacts.split(",") : ["manifest", "video"],

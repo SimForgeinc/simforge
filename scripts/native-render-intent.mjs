@@ -253,8 +253,9 @@ const intent = {
     openScenario: { sha256: await sha256File(xoscPath), sizeBytes: (await fs.stat(xoscPath)).size },
     map: { mapId: 'yale-street', revisionId: 'yale-corpus-v1', sha256: mapSha },
   },
-  sensorHost: {
-    actorId,
+  sensorHosts: sources.map((source) => ({
+    sourceId: source.outputName,
+    actorId: source.actorId,
     vehicleAsset: {
       catalogAssetId: 'vehicle.kia.carnival',
       carlaBlueprintId: 'vehicle.kia.carnival',
@@ -268,8 +269,7 @@ const intent = {
         linuxAmd64ManifestSha256: 'baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64',
       },
     },
-    sensorRig: { rigId: 'pronto.8-camera-6-lidar-4-radar', cameras: 8, lidars: 6, radars: 4 },
-  },
+  })).sort((left, right) => left.sourceId.localeCompare(right.sourceId)),
   renderSpec: {
     schema: 'uniscenario.render-spec/v3',
     sources,

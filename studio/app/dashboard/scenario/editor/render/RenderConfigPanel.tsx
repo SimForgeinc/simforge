@@ -330,7 +330,6 @@ export function RenderConfigPanel({
     )];
   }, [currentContent, selectedSensors]);
   const selectedKinds = [...new Set(selectedModalities.flatMap((selection) => selection.modalities))];
-  const selectedHostActorCount = new Set(selectedSensors.map((option) => option.actorId)).size;
   const sensorCount = selectedModalities.reduce((total, selection) => total + selection.modalities.length, 0);
   const selectedPhysicalCounts = selectedSensors.reduce(
     (counts, option) => {
@@ -366,12 +365,6 @@ export function RenderConfigPanel({
         `The RTX 5080 worker accepts at most ${MANAGED_MAX_SENSORS} simultaneous physical sensors; this request has ${selectedSensors.length}.`,
       );
     }
-    if (backend === "carla" && selectedHostActorCount !== 1) {
-      list.push("CARLA renders capture sensors from one vehicle at a time.");
-    }
-    if (backend === "browser" && selectedHostActorCount !== 1) {
-      list.push("Browser renders capture sensors from one vehicle at a time.");
-    }
     if (estimatedGpuBytes > MANAGED_MAX_ESTIMATED_GPU_BYTES) {
       list.push("This modality mix exceeds the RTX 5080 memory profile. Lower the modality count.");
     }
@@ -387,7 +380,6 @@ export function RenderConfigPanel({
     backend,
     estimatedGpuBytes,
     outputs,
-    selectedHostActorCount,
     selectedModalities,
     selectedSensors.length,
     sensorHostAssets,

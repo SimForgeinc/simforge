@@ -3,7 +3,7 @@ import { PlaybackController } from '@simforge/playback';
 import { captureBrowserArtifacts, BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import { parseResolvedBrowserRenderRequest, type ResolvedBrowserRenderRequest } from './intent.js';
 import type { ArtifactByteSink, ArtifactIdentity } from './artifacts.js';
-import { assertBrowserSensorHost } from './sensor-host.js';
+import { assertBrowserSensorHosts } from './sensor-host.js';
 
 export interface HeadlessArtifactBridge {
   open(identity: ArtifactIdentity, mediaType: string): Promise<string>;
@@ -29,7 +29,7 @@ export const browserEngineAdapter = Object.freeze({
 });
 
 export async function renderHeadlessIntent(request: ResolvedBrowserRenderRequest, services: BrowserEngineServices): Promise<BrowserCaptureResult> {
-  assertBrowserSensorHost(request.intent.renderSpec, request.playbackBundle, request.intent.sensorHost);
+  assertBrowserSensorHosts(request.intent.renderSpec, request.playbackBundle, request.intent.sensorHosts);
   const viewer = new CityViewer(services.canvas, { antialias: false, maxPixelRatio: 1 });
   let controller: PlaybackController | null = null;
   try {

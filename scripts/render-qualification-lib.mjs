@@ -484,29 +484,25 @@ function renderSources(actorId, sensors, video) {
   });
 }
 
-function makeIntentSensorHost(actorId, host) {
-  return {
-    actorId,
-    vehicleAsset: {
-      catalogAssetId: host.assetId,
-      carlaBlueprintId: host.carlaBlueprintId,
-      carlaClassPath: host.carlaClassPath,
-      make: host.make,
-      model: host.model,
-      baseType: host.baseType,
-      sourceImage: {
-        repository: host.image.reference,
-        indexSha256: host.image.ociIndexDigest.replace(/^sha256:/, ''),
-        linuxAmd64ManifestSha256: host.image.linuxAmd64ManifestDigest.replace(/^sha256:/, ''),
-      },
-    },
-    sensorRig: {
-      rigId: 'pronto.8-camera-6-lidar-4-radar',
-      cameras: 8,
-      lidars: 6,
-      radars: 4,
+function makeIntentSensorHosts(actorId, host, sources) {
+  const vehicleAsset = {
+    catalogAssetId: host.assetId,
+    carlaBlueprintId: host.carlaBlueprintId,
+    carlaClassPath: host.carlaClassPath,
+    make: host.make,
+    model: host.model,
+    baseType: host.baseType,
+    sourceImage: {
+      repository: host.image.reference,
+      indexSha256: host.image.ociIndexDigest.replace(/^sha256:/, ''),
+      linuxAmd64ManifestSha256: host.image.linuxAmd64ManifestDigest.replace(/^sha256:/, ''),
     },
   };
+  return sources.map((source) => ({
+    sourceId: source.outputName,
+    actorId,
+    vehicleAsset,
+  })).sort((left, right) => left.sourceId.localeCompare(right.sourceId));
 }
 
 export function prepareQualificationRequests(manifest, { output } = {}) {
@@ -533,6 +529,7 @@ export function prepareQualificationRequests(manifest, { output } = {}) {
       derivationKind: 'qualification_copy',
     };
     const video = { width: p.render.width, height: p.render.height, fps: p.render.fps, container: 'mp4', codec: 'h264', quality: 'high' };
+    const sources = renderSources(actorId, rig.sensors, video);
     const intent = {
       schema: p.render.intentSchema,
       intentId: pairId,
@@ -549,10 +546,10 @@ export function prepareQualificationRequests(manifest, { output } = {}) {
           sha256: scenario.map.xodrSha256,
         },
       },
-      sensorHost: makeIntentSensorHost(actorId, p.qualificationHost),
+      sensorHosts: makeIntentSensorHosts(actorId, p.qualificationHost, sources),
       renderSpec: {
         schema: 'uniscenario.render-spec/v3',
-        sources: renderSources(actorId, rig.sensors, video),
+        sources,
         clip: { startSeconds: 0, endSeconds: scenario.durationSeconds },
         video,
         artifacts: ['video', 'manifest', 'frames', 'sensorArchive', 'trace'],
@@ -1000,7 +997,7 @@ export function comparePair(requestPair, browser, carla, { output } = {}) {
     expectationCheck('revision-identity', intent.scenarioRevision.revisionId, browserRevision, carlaRevision),
     expectationCheck('package-identity', requestPair.lineage.sourceExecutionPackageId, browserPackage, carlaPackage),
     expectationCheck('intent-identity', requestPair.browser.intentSha256, browserIntent, carlaIntent),
-    expectationCheck('kia-carnival-sensor-host-evidence', intent.sensorHost, browserHostEvidence, carlaHostEvidence),
+    expectationCheck('kia-carnival-sensor-host-evidence', intent.sensorHosts[0], browserHostEvidence, carlaHostEvidence),
     equalityCheck('actors', getPath(browser, ['actors', 'semantic.actors']), getPath(carla, ['actors', 'semantic.actors'])),
     equalityCheck('lifecycle', getPath(browser, ['lifecycle', 'semantic.lifecycle']), getPath(carla, ['lifecycle', 'semantic.lifecycle'])),
     equalityCheck('signals', getPath(browser, ['signals', 'semantic.signals']), getPath(carla, ['signals', 'semantic.signals'])),
@@ -1012,7 +1009,7 @@ export function comparePair(requestPair, browser, carla, { output } = {}) {
   const expectedSources = renderSpec.sources.map((source) => ({ role: 'sensor-output', actorId: source.actorId, sensorId: source.sensorId, modality: source.modality }));
   const browserArtifacts = artifactClosure(browser, expectedSources, expectedFrames);
   const carlaArtifacts = artifactClosure(carla, expectedSources, expectedFrames);
-  const carlaKiaEvidence = carlaKiaEvidenceCheck(carla, intent.sensorHost);
+  const carlaKiaEvidence = carlaKiaEvidenceCheck(carla, intent.sensorHosts[0]);
   const divergence = getPath(carla, ['classifiedDivergence', 'divergence']) ?? [];
   const divergenceErrors = [];
   if (!Array.isArray(divergence)) divergenceErrors.push('classified-divergence-not-an-array');
@@ -1038,7 +1035,7 @@ export function comparePair(requestPair, browser, carla, { output } = {}) {
     schema: COMPARISON_SCHEMA,
     pairId: requestPair.pairId,
     intentSha256: requestPair.browser.intentSha256,
-    sensorHost: intent.sensorHost,
+    sensorHosts: intent.sensorHosts,
     expectedSensorCount: 18,
     expectedFramesPerSensor: expectedFrames,
     checks,

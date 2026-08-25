@@ -159,7 +159,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
       const startedAt = new Date().toISOString();
       await fs.mkdir(context.workspace, { recursive: true });
       const intent: RenderIntentV1 = parseRenderIntent(context.intent);
-      const actorId = intent.sensorHost.actorId;
+      const sourceById = new Map(intent.renderSpec.sources.map((source) => [source.outputName, source]));
 
       // Verified inputs: map tiles + immutable camera schedule.
       const tileInputs = [...context.inputs.values()]
@@ -238,7 +238,9 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
       for (const artifact of results.artifacts) {
         const modality = PASS_MODALITY[artifact.pass];
         if (!modality) continue; // depth_viz stays out of archives
-        const key = `${artifact.sensorId}\u0000${modality}`;
+        const source = sourceById.get(artifact.sensorId);
+        if (!source) throw new Error(`native renderer returned unknown source ${artifact.sensorId}`);
+        const key = `${source.outputName}\u0000${modality}`;
         const group = byGroup.get(key) ?? [];
         group.push(artifact);
         byGroup.set(key, group);
@@ -246,7 +248,8 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
 
       const artifacts: RenderArtifactManifest['artifacts'] = [];
       for (const [key, group] of [...byGroup.entries()].sort((left, right) => left[0].localeCompare(right[0]))) {
-        const [sensorId, modality] = key.split('\u0000') as [string, 'rgb' | 'instance' | 'depth'];
+        const [sourceId, modality] = key.split('\u0000') as [string, 'rgb' | 'instance' | 'depth'];
+        const source = sourceById.get(sourceId)!;
         group.sort((left, right) => left.frameIndex - right.frameIndex);
         const suffix = PASS_SUFFIX[modality === 'instance' ? 'id' : modality];
         const entries: TarEntry[] = [];
@@ -257,14 +260,14 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
             data: new Uint8Array(bytes),
           });
         }
-        const archiveRelative = `sensors/${actorId}/${sensorId}/${modality}.tar`;
+        const archiveRelative = `sensors/${source.actorId}/${source.sensorId}/${modality}.tar`;
         const archivePath = path.join(context.workspace, archiveRelative);
         await fs.mkdir(path.dirname(archivePath), { recursive: true });
         const tar = createTar(entries);
         await pipeline(Readable.from([tar]), createWriteStream(archivePath, { flags: 'wx', mode: 0o644 }));
         const digest = await hashFile(archivePath);
         artifacts.push({
-          identity: { role: 'sensorArchive', actorId, sensorId, modality },
+          identity: { role: 'sensorArchive', actorId: source.actorId, sensorId: source.sensorId, modality },
           relativePath: archiveRelative,
           sha256: digest.sha256,
           sizeBytes: digest.sizeBytes,

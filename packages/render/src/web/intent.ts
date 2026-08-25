@@ -1,4 +1,4 @@
-import { parseRenderSpecV3, RenderSensorHostSchema, type RenderSensorHost, type RenderSpecV3, type ResolvedFrameSchedule } from '@simforge/scenario';
+import { parseRenderSpecV3, RenderSensorSourceHostSchema, type RenderSensorSourceHost, type RenderSpecV3, type ResolvedFrameSchedule } from '@simforge/scenario';
 import type { PlaybackBundle } from '@simforge/playback';
 
 export const RENDER_INTENT_V1_SCHEMA = 'uniscenario.render-intent/v1' as const;
@@ -15,7 +15,7 @@ export interface PortableRenderAsset {
 export interface BrowserRenderIntentV1 {
   readonly schema: typeof RENDER_INTENT_V1_SCHEMA;
   readonly engine: 'browser';
-  readonly sensorHost: RenderSensorHost;
+  readonly sensorHosts: readonly RenderSensorSourceHost[];
   readonly assets: readonly PortableRenderAsset[];
   readonly renderSpec: RenderSpecV3;
   readonly schedule: ResolvedFrameSchedule;
@@ -37,8 +37,9 @@ export function parseBrowserRenderIntent(value: unknown): BrowserRenderIntentV1 
   if (!Array.isArray(input.assets)) throw new Error('Browser render intent is missing assets.');
   const assets = input.assets.map((asset, index) => parseAsset(asset, index));
   if (new Set(assets.map((asset) => asset.assetId)).size !== assets.length) throw new Error('Browser render intent contains duplicate assetId values.');
-  const sensorHost = RenderSensorHostSchema.parse(input.sensorHost);
-  return Object.freeze({ schema: RENDER_INTENT_V1_SCHEMA, engine: 'browser', assets: Object.freeze(assets), sensorHost, renderSpec: parseRenderSpecV3(input.renderSpec), schedule: parseSchedule(input.schedule) });
+  if (!Array.isArray(input.sensorHosts)) throw new Error('Browser render intent is missing sensorHosts.');
+  const sensorHosts = input.sensorHosts.map((host) => RenderSensorSourceHostSchema.parse(host));
+  return Object.freeze({ schema: RENDER_INTENT_V1_SCHEMA, engine: 'browser', assets: Object.freeze(assets), sensorHosts: Object.freeze(sensorHosts), renderSpec: parseRenderSpecV3(input.renderSpec), schedule: parseSchedule(input.schedule) });
 }
 
 export function parseResolvedBrowserRenderRequest(value: unknown): ResolvedBrowserRenderRequest {

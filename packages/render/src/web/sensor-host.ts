@@ -1,34 +1,32 @@
 import type { PlaybackBundle } from '@simforge/playback';
-import {
-  PRONTO_CHASE_CAMERA_SENSOR_ID,
-  type RenderSensorHost,
-  type RenderSpecV3,
-} from '@simforge/scenario';
+import type { RenderSensorSourceHost, RenderSpecV3 } from '@simforge/scenario';
 
 /** Browser-side defense after portable schema validation and input materialization. */
-export function assertBrowserSensorHost(renderSpec: RenderSpecV3, bundle: PlaybackBundle, sensorHost: RenderSensorHost): void {
-  const hosts = new Set(renderSpec.sources.map((source) => source.actorId));
-  if (hosts.size !== 1 || !hosts.has(sensorHost.actorId)) {
-    throw new Error('Every browser render source must attach to the declared sensor host.');
+export function assertBrowserSensorHosts(
+  renderSpec: RenderSpecV3,
+  bundle: PlaybackBundle,
+  sensorHosts: readonly RenderSensorSourceHost[],
+): void {
+  const hostBySourceId = new Map<string, RenderSensorSourceHost>();
+  for (const host of sensorHosts) {
+    if (hostBySourceId.has(host.sourceId)) {
+      throw new Error(`Browser sensor host mapping repeats source ${host.sourceId}.`);
+    }
+    hostBySourceId.set(host.sourceId, host);
   }
-  const actor = bundle.actors.find((candidate) => candidate.id === sensorHost.actorId);
-  if (!actor) throw new Error(`Browser sensor host ${sensorHost.actorId} is absent from immutable playback metadata.`);
-  if (actor.catalogId !== sensorHost.vehicleAsset.catalogAssetId) {
-    throw new Error(`Browser sensor host ${sensorHost.actorId} expected ${sensorHost.vehicleAsset.catalogAssetId}; received ${actor.catalogId}.`);
+  if (hostBySourceId.size !== renderSpec.sources.length) {
+    throw new Error('Browser sensor host mappings must cover every render source exactly once.');
   }
-  const cameraIds = new Set(renderSpec.sources
-    .filter((source) => source.sensorId !== PRONTO_CHASE_CAMERA_SENSOR_ID
-      && source.modality !== 'lidar' && source.modality !== 'radar')
-    .map((source) => source.sensorId));
-  const lidarIds = new Set(renderSpec.sources
-    .filter((source) => source.modality === 'lidar')
-    .map((source) => source.sensorId));
-  const radarIds = new Set(renderSpec.sources
-    .filter((source) => source.modality === 'radar')
-    .map((source) => source.sensorId));
-  if (cameraIds.size !== sensorHost.sensorRig.cameras
-    || lidarIds.size !== sensorHost.sensorRig.lidars
-    || radarIds.size !== sensorHost.sensorRig.radars) {
-    throw new Error('Browser sensor counts do not match the immutable render sources.');
+  for (const source of renderSpec.sources) {
+    const host = hostBySourceId.get(source.outputName);
+    if (!host) throw new Error(`Browser render source ${source.outputName} has no sensor host mapping.`);
+    if (host.actorId !== source.actorId) {
+      throw new Error(`Browser sensor host for ${source.outputName} does not match actor ${source.actorId}.`);
+    }
+    const actor = bundle.actors.find((candidate) => candidate.id === host.actorId);
+    if (!actor) throw new Error(`Browser sensor host ${host.actorId} is absent from immutable playback metadata.`);
+    if (actor.catalogId !== host.vehicleAsset.catalogAssetId) {
+      throw new Error(`Browser sensor host ${host.actorId} expected ${host.vehicleAsset.catalogAssetId}; received ${actor.catalogId}.`);
+    }
   }
 }

@@ -12,38 +12,10 @@ const LocalRenderSpecV3Schema = z.custom<RenderSpecV3>(
 export const ScenarioRendererEngineSchema = z.enum(["browser", "carla"]);
 export type ScenarioRendererEngine = z.infer<typeof ScenarioRendererEngineSchema>;
 
-const ProntoSensorHostSchema = z.strictObject({
+const SensorSourceHostSchema = z.strictObject({
+  sourceId: PublicIdSchema,
   actorId: PublicIdSchema,
-  vehicleAsset: z.strictObject({
-    catalogAssetId: z.literal("vehicle.kia.carnival"),
-    carlaBlueprintId: z.literal("vehicle.kia.carnival"),
-    carlaClassPath: z.literal("/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C"),
-    make: z.literal("Kia"),
-    model: z.literal("Carnival"),
-    baseType: z.literal("van"),
-    sourceImage: z.strictObject({
-      repository: z.literal("ghcr.io/simforgeinc/carla-rfs-munich-belmont"),
-      indexSha256: z.literal("f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5"),
-      linuxAmd64ManifestSha256: z.literal("baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64"),
-    }),
-  }),
-  sensorRig: z.strictObject({
-    rigId: z.literal("pronto.8-camera-6-lidar-4-radar"),
-    cameras: z.literal(8),
-    lidars: z.literal(6),
-    radars: z.literal(4),
-  }),
-});
-
-const AuthoredSensorHostSchema = z.strictObject({
-  actorId: PublicIdSchema,
-  vehicleAsset: z.strictObject({ catalogAssetId: PublicIdSchema }),
-  sensorRig: z.strictObject({
-    rigId: z.literal("authored"),
-    cameras: z.number().int().nonnegative().max(1024),
-    lidars: z.number().int().nonnegative().max(1024),
-    radars: z.number().int().nonnegative().max(1024),
-  }),
+  vehicleAsset: z.object({ catalogAssetId: PublicIdSchema }).passthrough(),
 });
 
 export const ScenarioRenderIntentSchema = z.strictObject({
@@ -66,7 +38,7 @@ export const ScenarioRenderIntentSchema = z.strictObject({
       sha256: Sha256Schema,
     }),
   }),
-  sensorHost: z.union([ProntoSensorHostSchema, AuthoredSensorHostSchema]),
+  sensorHosts: z.array(SensorSourceHostSchema).min(1).max(64),
   renderSpec: LocalRenderSpecV3Schema,
   assets: z.array(z.strictObject({
     assetId: PublicIdSchema,
@@ -76,63 +48,35 @@ export const ScenarioRenderIntentSchema = z.strictObject({
   })).max(10_000),
   seed: z.number().int().nonnegative(),
 }).superRefine((intent, context) => {
-  const cameraSensors = new Set<string>();
-  const lidarSensors = new Set<string>();
-  const radarSensors = new Set<string>();
-  for (const source of intent.renderSpec.sources) {
-    if (source.actorId !== intent.sensorHost.actorId) {
-      context.addIssue({
-        code: "custom",
-        path: ["renderSpec", "sources"],
-        message: "Every render source must attach to the declared sensor host.",
-      });
-    }
-    const key = `${source.actorId}\0${source.sensorId}`;
-    if (source.modality === "lidar") lidarSensors.add(key);
-    else if (source.modality === "radar") radarSensors.add(key);
-    else cameraSensors.add(key);
-  }
-  if (intent.sensorHost.sensorRig.rigId === "authored") {
-    const counts = intent.sensorHost.sensorRig;
-    if (cameraSensors.size !== counts.cameras
-      || lidarSensors.size !== counts.lidars
-      || radarSensors.size !== counts.radars) {
-      context.addIssue({
-        code: "custom",
-        path: ["sensorHost", "sensorRig"],
-        message: "Authored sensor counts must match the selected physical sensors.",
-      });
-    }
-    return;
-  }
-  if (cameraSensors.size > 8 || lidarSensors.size > 6 || radarSensors.size > 4) {
+  const hostBySourceId = new Map(intent.sensorHosts.map((host) => [host.sourceId, host]));
+  if (hostBySourceId.size !== intent.sensorHosts.length) {
     context.addIssue({
       code: "custom",
-      path: ["sensorHost", "sensorRig"],
-      message: "Selections cannot exceed the declared 8-camera, 6-LiDAR, 4-radar Pronto rig.",
+      path: ["sensorHosts"],
+      message: "Each render source must have exactly one sensor host mapping.",
     });
   }
-  const invalidImageSource = intent.renderSpec.sources.some((source) =>
-    source.modality !== "lidar"
-    && source.modality !== "radar"
-    && (
-      source.attributes.width !== 1280
-      || source.attributes.height !== 720
-      || source.attributes.fps !== 24
-    )
-  );
-  if (invalidImageSource || (
-    intent.renderSpec.video
-    && (
-      intent.renderSpec.video.width !== 1280
-      || intent.renderSpec.video.height !== 720
-      || intent.renderSpec.video.fps !== 24
-    )
-  )) {
+  for (const source of intent.renderSpec.sources) {
+    const host = hostBySourceId.get(source.outputName);
+    if (!host) {
+      context.addIssue({
+        code: "custom",
+        path: ["sensorHosts"],
+        message: `Render source ${source.outputName} has no sensor host mapping.`,
+      });
+    } else if (host.actorId !== source.actorId) {
+      context.addIssue({
+        code: "custom",
+        path: ["sensorHosts"],
+        message: `Render source ${source.outputName} does not match its sensor host actor.`,
+      });
+    }
+  }
+  if (hostBySourceId.size !== intent.renderSpec.sources.length) {
     context.addIssue({
       code: "custom",
-      path: ["renderSpec"],
-      message: "Pronto renders require 1280x720 at 24 fps.",
+      path: ["sensorHosts"],
+      message: "Sensor host mappings must cover the selected render sources exactly.",
     });
   }
 });

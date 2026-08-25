@@ -3,7 +3,6 @@ import { createHash, randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
-  PRONTO_CHASE_CAMERA_SENSOR_ID,
   RENDER_INTENT_V1_SCHEMA,
   hashRenderIntent,
   parseRenderIntent,
@@ -58,28 +57,32 @@ function radar(sensorId: string) {
   };
 }
 
-/**
- * The exact sensorHost shape the retired Pronto lane wrote into queued
- * render_jobs rows. Those rows are immutable: this fixture must keep parsing
- * (and hashing identically) under the relaxed schema forever.
- */
-const STORED_PRONTO_SENSOR_HOST = {
-  actorId: HOST,
-  vehicleAsset: {
-    catalogAssetId: 'vehicle.kia.carnival',
-    carlaBlueprintId: 'vehicle.kia.carnival',
-    carlaClassPath: '/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C',
-    make: 'Kia',
-    model: 'Carnival',
-    baseType: 'van',
-    sourceImage: {
-      repository: 'ghcr.io/simforgeinc/carla-rfs-munich-belmont',
-      indexSha256: 'f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5',
-      linuxAmd64ManifestSha256: 'baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64',
-    },
+const HOST_ASSET = {
+  catalogAssetId: 'vehicle.kia.carnival',
+  carlaBlueprintId: 'vehicle.kia.carnival',
+  carlaClassPath: '/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C',
+  make: 'Kia',
+  model: 'Carnival',
+  baseType: 'van',
+  sourceImage: {
+    repository: 'ghcr.io/simforgeinc/carla-rfs-munich-belmont',
+    indexSha256: 'f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5',
+    linuxAmd64ManifestSha256: 'baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64',
   },
-  sensorRig: { rigId: 'pronto.8-camera-6-lidar-4-radar', cameras: 8, lidars: 6, radars: 4 },
 };
+
+function sensorHosts(sources: readonly unknown[]) {
+  return sources.map((source) => {
+    const selected = source as { actorId: string; outputName: string };
+    return {
+      sourceId: selected.outputName,
+      actorId: selected.actorId,
+      vehicleAsset: selected.actorId === HOST
+        ? HOST_ASSET
+        : { catalogAssetId: 'infrastructure.roadside-sensor' },
+    };
+  }).sort((left, right) => left.sourceId.localeCompare(right.sourceId));
+}
 
 function intent(sources: readonly unknown[]) {
   return {
@@ -95,7 +98,7 @@ function intent(sources: readonly unknown[]) {
       openScenario: { sha256: DIGEST, sizeBytes: 1024 },
       map: { mapId: 'map', revisionId: 'usmap_test', sha256: DIGEST },
     },
-    sensorHost: STORED_PRONTO_SENSOR_HOST,
+    sensorHosts: sensorHosts(sources),
     renderSpec: {
       schema: 'uniscenario.render-spec/v3',
       sources,
@@ -127,61 +130,40 @@ function nodeCanonicalJson(value: unknown): string {
     .join(',')}}`;
 }
 
-describe('stored legacy Pronto-shaped intent rows (immutable superset parse)', () => {
-  it('parses the pinned Kia sensorHost shape and preserves every provenance key', () => {
+describe('authored sensor hosts', () => {
+  it('preserves per-source catalog provenance', () => {
     const parsed = parseRenderIntent(intent(RIG));
 
-    expect(parsed.sensorHost).toEqual(STORED_PRONTO_SENSOR_HOST);
+    expect(parsed.sensorHosts).toHaveLength(18);
+    expect(parsed.sensorHosts[0]!.vehicleAsset).toEqual(HOST_ASSET);
     expect(parsed.renderSpec.sources).toHaveLength(18);
   });
 
-  it('round-trips a stored row through parse without changing its content hash', () => {
-    // Simulates a queued jsonb row: JSON round-trip, then claim-time parse.
-    const storedRow = JSON.parse(JSON.stringify(intent(RIG)));
-    const storedSha256 = createHash('sha256')
-      .update(nodeCanonicalJson(storedRow), 'utf8')
-      .digest('hex');
-
-    expect(hashRenderIntent(storedRow)).toBe(storedSha256);
-    expect(hashRenderIntent(parseRenderIntent(storedRow))).toBe(storedSha256);
-  });
-
-  it('no longer polices rig counts — count policy lives server-side, once', () => {
-    // 9/6/4 against a rig declaring 8/6/4: shape-valid, so it parses.
-    expect(parseRenderIntent(intent([...RIG, camera('pronto-cam8')])).renderSpec.sources)
-      .toHaveLength(19);
-  });
-
-  it('accepts the rig plus a trailing chase camera', () => {
-    const parsed = parseRenderIntent(intent([camera(PRONTO_CHASE_CAMERA_SENSOR_ID, 70), ...RIG]));
-
-    expect(parsed.renderSpec.sources).toHaveLength(19);
-    expect(parsed.renderSpec.sources[0]!.sensorId).toBe(PRONTO_CHASE_CAMERA_SENSOR_ID);
-  });
-});
-
-describe('authored sensor host', () => {
-  it('accepts any authored catalog vehicle', () => {
-    const value = {
-      ...intent([camera('basic-dash-camera')]),
-      sensorHost: {
-        actorId: HOST,
-        vehicleAsset: { catalogAssetId: 'vehicle.tesla.model3' },
-        sensorRig: { rigId: 'authored', cameras: 1, lidars: 0, radars: 0 },
-      },
+  it('accepts sources mounted on multiple authored actors', () => {
+    const roadside = {
+      ...camera('roadside-camera'),
+      actorId: 'roadside-unit',
+      outputName: 'roadside-unit-camera-rgb',
     };
+    const parsed = parseRenderIntent(intent([camera('ego-camera'), roadside]));
 
-    const parsed = parseRenderIntent(value);
-
-    expect(parsed.sensorHost.vehicleAsset.catalogAssetId).toBe('vehicle.tesla.model3');
-    expect(parsed.renderSpec.sources).toHaveLength(1);
+    expect(new Set(parsed.sensorHosts.map((host) => host.actorId))).toEqual(
+      new Set([HOST, 'roadside-unit']),
+    );
   });
 
-  it('rejects a source attached to an actor other than the sensor host', () => {
-    const foreign = { ...camera('other-camera'), actorId: 'other-actor', outputName: 'other' };
+  it('requires exact source coverage', () => {
+    const value = intent([camera('camera-front'), camera('camera-rear')]);
+    value.sensorHosts = value.sensorHosts.slice(1);
 
-    expect(() => parseRenderIntent(intent([...RIG, foreign])))
-      .toThrow(/every render source must attach to sensorHost.actorId/);
+    expect(() => parseRenderIntent(value)).toThrow(/has no sensor host mapping/);
+  });
+
+  it('requires each mapped actor to match its source actor', () => {
+    const value = intent([camera('camera-front')]);
+    value.sensorHosts[0] = { ...value.sensorHosts[0]!, actorId: 'other-actor' };
+
+    expect(() => parseRenderIntent(value)).toThrow(/actorId must match render source/);
   });
 
   it('rejects duplicate asset ids', () => {
@@ -204,6 +186,16 @@ describe('hashRenderIntent', () => {
     expect(hashRenderIntent(value)).toBe(
       createHash('sha256').update(nodeCanonicalJson(value), 'utf8').digest('hex'),
     );
+  });
+
+  it('is stable when equivalent sources and host mappings arrive in a different order', () => {
+    const forward = parseRenderIntent(intent(RIG));
+    const reversed = parseRenderIntent({
+      ...intent([...RIG].reverse()),
+      sensorHosts: sensorHosts(RIG).reverse(),
+    });
+
+    expect(hashRenderIntent(reversed)).toBe(hashRenderIntent(forward));
   });
 
   it('pure Sha256 matches node:crypto across chunked random payloads', () => {

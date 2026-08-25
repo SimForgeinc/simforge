@@ -13,7 +13,6 @@ import { simforgeEnv } from "@/lib/compat-env";
 const RTX5080_MAX_SIMULTANEOUS_SOURCES = 18;
 const RTX5080_USABLE_GPU_BYTES = 15_000 * 1024 * 1024;
 const RENDER_INTENT_CONTRACT = "uniscenario.render-intent/v1";
-const PRONTO_SENSOR_HOST_ASSET_ID = "vehicle.kia.carnival";
 
 type ImmutableLineageRow = {
   revision_id: string;
@@ -119,7 +118,7 @@ function enforceRtx5080Admission(resources: RenderResourceRequestV2) {
   }
 }
 
-function selectedSensorHost(input: SubmitScenarioRenderIntent, lineage: ImmutableLineageRow) {
+function selectedSensorHosts(input: SubmitScenarioRenderIntent, lineage: ImmutableLineageRow) {
   const content = typeof lineage.canonical_content === "string"
     ? JSON.parse(lineage.canonical_content) as Record<string, unknown>
     : lineage.canonical_content;
@@ -130,10 +129,7 @@ function selectedSensorHost(input: SubmitScenarioRenderIntent, lineage: Immutabl
   );
   const foundActorIds = new Set<string>();
   const foundSourceKeys = new Set<string>();
-  const catalogIds = new Set<string>();
-  const cameraIds = new Set<string>();
-  const lidarIds = new Set<string>();
-  const radarIds = new Set<string>();
+  const catalogIdByActor = new Map<string, string>();
   for (const role of roles) {
     if (!role || typeof role !== "object") continue;
     const value = role as {
@@ -145,7 +141,7 @@ function selectedSensorHost(input: SubmitScenarioRenderIntent, lineage: Immutabl
       throw new Error(`render_sensor_host_asset_missing:${value.id}`);
     }
     foundActorIds.add(value.id);
-    catalogIds.add(value.actor.catalogId);
+    catalogIdByActor.set(value.id, value.actor.catalogId);
     for (const authoredSensor of value.actor.sensors ?? []) {
       if (!authoredSensor || typeof authoredSensor !== "object") continue;
       const sensor = authoredSensor as {
@@ -167,27 +163,17 @@ function selectedSensorHost(input: SubmitScenarioRenderIntent, lineage: Immutabl
           throw new Error(`render_sensor_source_mismatch:${value.id}:${sensor.id}`);
         }
         foundSourceKeys.add(`${value.id}\0${sensor.id}\0${selected.modality}`);
-        if (sensor.type === "dash_camera") cameraIds.add(sensor.id);
-        else if (sensor.type === "lidar") lidarIds.add(sensor.id);
-        else if (sensor.type === "radar") radarIds.add(sensor.id);
       }
     }
   }
   if (foundActorIds.size !== selectedActorIds.size || foundSourceKeys.size !== selectedSourceKeys.size) {
     throw new Error("render_sensor_host_asset_lineage_incomplete");
   }
-  if (foundActorIds.size !== 1 || catalogIds.size !== 1) {
-    throw new Error("render_sensor_host_must_be_one_catalog_vehicle");
-  }
-  const actorId = [...foundActorIds][0]!;
-  const catalogAssetId = [...catalogIds][0]!;
-  return {
-    actorId,
-    catalogAssetId,
-    cameras: cameraIds.size,
-    lidars: lidarIds.size,
-    radars: radarIds.size,
-  };
+  return input.renderSpec.sources.map((source) => ({
+    sourceId: source.outputName,
+    actorId: source.actorId,
+    vehicleAsset: { catalogAssetId: catalogIdByActor.get(source.actorId)! },
+  })).sort((left, right) => left.sourceId.localeCompare(right.sourceId));
 }
 
 function buildIntent(input: SubmitScenarioRenderIntent, lineage: ImmutableLineageRow): ScenarioRenderIntent {
@@ -202,11 +188,7 @@ function buildIntent(input: SubmitScenarioRenderIntent, lineage: ImmutableLineag
   ) {
     throw new Error("pronto_render_must_cover_full_clip");
   }
-  const sensorHost = selectedSensorHost(input, lineage);
-  const isManagedPronto = sensorHost.catalogAssetId === PRONTO_SENSOR_HOST_ASSET_ID
-    && sensorHost.cameras === 8
-    && sensorHost.lidars === 6
-    && sensorHost.radars === 4;
+  const sensorHosts = selectedSensorHosts(input, lineage);
   if (
     input.engine === "carla"
     && input.renderSpec.video
@@ -235,39 +217,7 @@ function buildIntent(input: SubmitScenarioRenderIntent, lineage: ImmutableLineag
         sha256: lineage.map_sha256,
       },
     },
-    sensorHost: isManagedPronto
-      ? {
-        actorId: sensorHost.actorId,
-        vehicleAsset: {
-          catalogAssetId: "vehicle.kia.carnival",
-          carlaBlueprintId: "vehicle.kia.carnival",
-          carlaClassPath: "/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C",
-          make: "Kia",
-          model: "Carnival",
-          baseType: "van",
-          sourceImage: {
-            repository: "ghcr.io/simforgeinc/carla-rfs-munich-belmont",
-            indexSha256: "f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5",
-            linuxAmd64ManifestSha256: "baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64",
-          },
-        },
-        sensorRig: {
-          rigId: "pronto.8-camera-6-lidar-4-radar",
-          cameras: 8,
-          lidars: 6,
-          radars: 4,
-        },
-      }
-      : {
-        actorId: sensorHost.actorId,
-        vehicleAsset: { catalogAssetId: sensorHost.catalogAssetId },
-        sensorRig: {
-          rigId: "authored",
-          cameras: sensorHost.cameras,
-          lidars: sensorHost.lidars,
-          radars: sensorHost.radars,
-        },
-      },
+    sensorHosts,
     renderSpec: input.renderSpec,
     assets: [
       {

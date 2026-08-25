@@ -49,11 +49,11 @@ describe('browser render intent adapter', () => {
         openScenario: { sha256: 'c'.repeat(64), sizeBytes: 1 },
         map: { mapId: 'map-1', revisionId: 'map-revision-1', sha256: 'd'.repeat(64) },
       },
-      sensorHost: {
+      sensorHosts: [{
+        sourceId: 'ego-camera-front-rgb',
         actorId: 'ego',
         vehicleAsset: { catalogAssetId: 'vehicle.generic.sedan' },
-        sensorRig: { rigId: 'authored', cameras: 1, lidars: 0, radars: 0 },
-      },
+      }],
       renderSpec: {
         schema: 'uniscenario.render-spec/v3',
         sources: [{

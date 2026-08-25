@@ -332,7 +332,7 @@ export function resolveBrowserRenderIntent(value: unknown): BrowserRenderIntentV
   return parseBrowserRenderIntent({
     schema: RENDER_INTENT_V1_SCHEMA,
     engine: 'browser',
-    sensorHost: portable.sensorHost,
+    sensorHosts: portable.sensorHosts,
     assets: portable.assets,
     renderSpec: portable.renderSpec,
     schedule: {
