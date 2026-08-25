@@ -55,7 +55,7 @@ fn default_warmup() -> u32 {
 /// registered BEFORE the readiness barrier, which is also the documented
 /// SceneApp contract.
 pub fn prewarm(spec: &SceneSpec) -> Result<SceneApp> {
-    let mut app = SceneApp::new(&spec.lighting);
+    let mut app = SceneApp::new(&spec.lighting)?;
     app.load_tiles(&spec.glbs)?;
     // Warm shaders with a throwaway camera so the first real request does not
     // pay pipeline compilation. Registered pre-readiness per SceneApp rules.

@@ -28,6 +28,11 @@ import {
   getGLTFLoader,
 } from './gltf';
 import { createSun } from './environment';
+import {
+  VIEWER_ENVIRONMENT_INTENSITY,
+  VIEWER_EXPOSURE,
+  VIEWER_SUN_INTENSITY,
+} from './lighting-calibration';
 import { LuminaireLightingController, type LuminaireLightingStats } from './luminaire-lighting';
 import { GroundIndex, type GroundIndexOptions } from './ground-index';
 import { isLowFidelityHiddenHelper, keepInRoadsOnly } from './roads-only';
@@ -116,12 +121,13 @@ const DEFAULTS = {
   uploadPixelsPerFrame: 4.2e6,
   /**
    * Sun vs sky balance. The lightmap only removes *direct* light, so a
-   * sky-dominant balance makes the baked shadows invisible; 5.0 / 0.6 is where
-   * the path-traced shadows read at street level without crushing the ambient.
+   * sky-dominant balance makes the baked shadows invisible. Values come from
+   * the shared lighting spec (docs/lighting-calibration.md, §Three-viewer
+   * working units).
    */
-  sunIntensity: 5,
-  environmentIntensity: 0.6,
-  exposure: 1,
+  sunIntensity: VIEWER_SUN_INTENSITY,
+  environmentIntensity: VIEWER_ENVIRONMENT_INTENSITY,
+  exposure: VIEWER_EXPOSURE,
   vegetationMaxDistance: 260,
   shadowAtlasCellSize: 512,
   shadowStrength: 1,

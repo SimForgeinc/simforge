@@ -163,7 +163,7 @@ pub fn run_job(job: &RenderJob) -> Result<RenderResults> {
     }
 
     let t_start = Instant::now();
-    let mut app = SceneApp::new(&job.lighting);
+    let mut app = SceneApp::new(&job.lighting)?;
     app.load_tiles(&job.glbs)?;
     let mut sensors: Vec<&String> = geoms.keys().collect();
     sensors.sort(); // deterministic camera order -> deterministic entity order

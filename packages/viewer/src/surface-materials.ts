@@ -35,7 +35,16 @@ export interface MaterialPack {
   classes: Readonly<Record<Exclude<SurfaceClass, 'marking' | 'unknown'>, {
     tint: number;
     tintMix: number;
+    /** Target perceptual roughness the class blends toward (never a floor). */
     roughness: number;
+    /**
+     * 0..1 weight pulling the authored roughness toward `roughness`. 0 keeps
+     * the authored material untouched; 1 replaces it outright. See
+     * docs/lighting-calibration.md §Materials — the old hard
+     * `max(authored, target)` floor flattened every classified surface to
+     * >=0.91 and is deliberately gone.
+     */
+    roughnessMix: number;
     metresPerCell: number;
     variation: number;
   }>>;
@@ -56,10 +65,10 @@ export const BUILTIN_SURFACE_MATERIAL_PACK: MaterialPack = {
     externalAssets: [],
   },
   classes: {
-    asphalt: { tint: 0x34383b, tintMix: 0.18, roughness: 0.96, metresPerCell: 0.42, variation: 0.075 },
-    grass: { tint: 0x557846, tintMix: 0.20, roughness: 0.99, metresPerCell: 0.24, variation: 0.16 },
-    concrete: { tint: 0xb7b3a8, tintMix: 0.12, roughness: 0.91, metresPerCell: 0.72, variation: 0.055 },
-    curb: { tint: 0xc3c0b7, tintMix: 0.15, roughness: 0.93, metresPerCell: 0.36, variation: 0.045 },
+    asphalt: { tint: 0x34383b, tintMix: 0.18, roughness: 0.96, roughnessMix: 0.5, metresPerCell: 0.42, variation: 0.075 },
+    grass: { tint: 0x557846, tintMix: 0.20, roughness: 0.99, roughnessMix: 0.6, metresPerCell: 0.24, variation: 0.16 },
+    concrete: { tint: 0xb7b3a8, tintMix: 0.12, roughness: 0.91, roughnessMix: 0.4, metresPerCell: 0.72, variation: 0.055 },
+    curb: { tint: 0xc3c0b7, tintMix: 0.15, roughness: 0.93, roughnessMix: 0.45, metresPerCell: 0.36, variation: 0.045 },
   },
 };
 
@@ -522,7 +531,13 @@ export class SurfaceMaterialRegistry {
         const mix = profile === 'presentation' ? Math.min(0.32, style.tintMix * 1.35) : style.tintMix;
         material.color.lerp(new Color(style.tint), mix);
       }
-      material.roughness = Math.max(material.roughness ?? 0, style.roughness);
+      // Blend toward the class target instead of flooring at it: the authored
+      // material keeps its character (docs/lighting-calibration.md §Materials).
+      const authoredRoughness = material.roughness ?? style.roughness;
+      material.roughness = authoredRoughness
+        + (style.roughness - authoredRoughness) * clampUnit(style.roughnessMix);
+      // Dielectric guard, not a look: asphalt/grass/concrete/curb are never
+      // metals; authored metalness above this is a classification artefact.
       material.metalness = Math.min(material.metalness ?? 0, 0.04);
       procedural = {
         cellSize: style.metresPerCell,

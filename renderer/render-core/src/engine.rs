@@ -13,14 +13,21 @@
 //! MSAA Off, no temporal effects, deterministic instance-ID assignment
 //! (meshes sorted by name then entity bits), fixed clear color, single
 //! blocking readback per rendered frame.
+//!
+//! Lighting/profile routing: the scene is lit by the WSB4 lighting ladder
+//! (`crate::lighting::spawn_lighting` — IBL sky, physical sun via the shared
+//! spec docs/lighting-calibration.md) and every RGB camera gets its render
+//! profile from `crate::profiles::RenderProfile::apply` (fixed EV100,
+//! AgX cinematic stack, GTAO at rung ≥ 3). Temporal effects (TAA, motion
+//! blur, auto-exposure) stay disabled: the host-driven single-step loop
+//! renders exactly one frame per update.
 use anyhow::{bail, Result};
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera::RenderTarget;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::gltf::Gltf;
-use bevy::light::cascade::CascadeShadowConfigBuilder;
-use bevy::light::{DirectionalLight, DirectionalLightShadowMap, GlobalAmbientLight};
+use bevy::light::DirectionalLightShadowMap;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::render::camera::ExtractedCamera;
@@ -35,6 +42,9 @@ use bevy::render::view::ViewDepthTexture;
 use bevy::render::{Extract, Render, RenderApp, RenderSystems};
 use bevy::window::ExitCondition;
 use bevy::world_serialization::{WorldAssetRoot, WorldInstance, WorldInstanceSpawner};
+use crate::lighting::{self, LightingRung};
+use crate::profiles::{CinematicFx, RenderProfile};
+use crate::weather::Weather;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -53,25 +63,40 @@ pub enum Profile {
 }
 
 impl Profile {
-    fn tonemapping(self) -> Tonemapping {
+    fn render_profile(self) -> RenderProfile {
         match self {
-            Profile::Sensor => Tonemapping::None,
-            Profile::Cinematic => Tonemapping::AgX,
+            Profile::Sensor => RenderProfile::Sensor,
+            Profile::Cinematic => RenderProfile::Cinematic,
         }
     }
 }
 
-/// Sun + ambient lighting configuration (spike-calibrated yale-street values).
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+/// Scene lighting configuration, resolved through the shared lighting spec
+/// (docs/lighting-calibration.md) at rung ≥ 2. `sun_lux`/`ambient` are the
+/// spike-calibrated legacy values consumed only at rung < 2.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Lighting {
     #[serde(default = "default_sun_elev")]
     pub sun_elev_deg: f32,
     #[serde(default = "default_sun_azim")]
     pub sun_azim_deg: f32,
+    /// Legacy spike sun illuminance; used only at rung < 2.
     #[serde(default = "default_lux")]
     pub sun_lux: f32,
+    /// Legacy spike flat ambient; used only at rung 0.
     #[serde(default = "default_ambient")]
     pub ambient: f32,
+    /// Lighting-ladder rung (crate::lighting): 0 spike baseline, 1 IBL,
+    /// 2 physical sun/EV100, 3 +GTAO/contact shadows, 4 +PCSS.
+    #[serde(default = "default_rung")]
+    pub rung: u8,
+    /// Weather state feeding the `LightingPlan` (sun/sky scaling + EV100).
+    #[serde(default)]
+    pub weather: Weather,
+    /// Equirectangular HDRI for the sky/IBL. `None` generates the
+    /// deterministic analytic sky (`lighting::synthetic_sky_cubemap`).
+    #[serde(default)]
+    pub sky_hdr: Option<String>,
 }
 
 fn default_sun_elev() -> f32 {
@@ -86,6 +111,9 @@ fn default_lux() -> f32 {
 fn default_ambient() -> f32 {
     1.2
 }
+fn default_rung() -> u8 {
+    3
+}
 
 impl Default for Lighting {
     fn default() -> Self {
@@ -94,6 +122,9 @@ impl Default for Lighting {
             sun_azim_deg: default_sun_azim(),
             sun_lux: default_lux(),
             ambient: default_ambient(),
+            rung: default_rung(),
+            weather: Weather::default(),
+            sky_hdr: None,
         }
     }
 }
@@ -337,20 +368,29 @@ pub struct SceneApp {
     next_instance_id: u32,
     /// Coarse ground-height field (min vertex y per cell), built at readiness.
     ground: GroundField,
+    /// Sky cubemap spawned by the lighting ladder (rung ≥ 1), attached as a
+    /// `Skybox` to every RGB camera.
+    sky: Option<Handle<Image>>,
+    /// Skybox brightness from the resolved `LightingPlan`.
+    skybox_brightness: f32,
+    /// Fixed EV100 from the resolved `LightingPlan` (spec §Exposure).
+    ev100_fixed: f32,
+    rung: LightingRung,
 }
 
 impl SceneApp {
     /// Build the headless app with lights and render-world plumbing.
-    pub fn new(lighting: &Lighting) -> Self {
+    ///
+    /// Fails when the lighting ladder cannot be built (e.g. an unreadable
+    /// `sky_hdr`).
+    pub fn new(lighting: &Lighting) -> Result<Self> {
         std::env::set_var("BEVY_ASSET_ROOT", "/");
         let (tx, rx) = crossbeam_channel::unbounded::<SentPass>();
         let mut app = App::new();
+        let rung = LightingRung(lighting.rung);
+        let plan = lighting.weather.lighting_plan(None, lighting.sun_elev_deg);
+        let sun_dir = sun_direction(lighting.sun_elev_deg, lighting.sun_azim_deg);
         app.insert_resource(ClearColor(Color::srgb(0.53, 0.74, 0.92)))
-            .insert_resource(GlobalAmbientLight {
-                color: Color::srgb(1.0, 0.98, 0.94),
-                brightness: lighting.ambient,
-                affects_lightmapped_meshes: true,
-            })
             .insert_resource(DirectionalLightShadowMap { size: 2048 })
             .insert_resource(Legend::default())
             .add_plugins((
@@ -378,26 +418,28 @@ impl SceneApp {
             ))
             .add_systems(Update, spawn_loaded_tiles)
             .insert_resource(MainReceiver(rx.clone()));
-        // placeholder
 
-        app.world_mut().spawn((
-            DirectionalLight {
-                illuminance: lighting.sun_lux,
-                shadow_maps_enabled: true,
-                ..default()
-            },
-            CascadeShadowConfigBuilder {
-                minimum_distance: 1.0,
-                maximum_distance: 400.0,
-                num_cascades: 4,
-                ..default()
-            }
-            .build(),
-            Transform::IDENTITY.looking_to(
-                sun_direction(lighting.sun_elev_deg, lighting.sun_azim_deg),
-                Vec3::Y,
-            ),
-        ));
+        // WSB4 lighting ladder (shared spec: docs/lighting-calibration.md).
+        // Spawned through Commands so the exact same `spawn_lighting` path
+        // serves the CLI, the job runner and the service.
+        let sky = {
+            let world = app.world_mut();
+            let sky = world.resource_scope(|world, mut images: Mut<Assets<Image>>| {
+                let mut commands = world.commands();
+                lighting::spawn_lighting(
+                    &mut commands,
+                    &mut images,
+                    rung,
+                    &plan,
+                    sun_dir,
+                    400.0,
+                    lighting.sky_hdr.as_deref(),
+                    (lighting.sun_lux, lighting.ambient),
+                )
+            })?;
+            world.flush();
+            sky
+        };
 
         let render_app = app.get_sub_app_mut(RenderApp).unwrap();
         render_app
@@ -417,7 +459,7 @@ impl SceneApp {
         }
         app.finish();
         app.cleanup();
-        Self {
+        Ok(Self {
             app,
             receiver: rx,
             groups: Vec::new(),
@@ -427,7 +469,13 @@ impl SceneApp {
             actor_classes: HashMap::new(),
             next_instance_id: 0,
             ground: GroundField::default(),
-        }
+            sky,
+            skybox_brightness: plan.skybox_brightness,
+            ev100_fixed: plan.ev100_fixed.unwrap_or_else(|| {
+                lighting.weather.sensor_ev100(lighting.sun_elev_deg)
+            }),
+            rung,
+        })
     }
 
 
@@ -475,13 +523,45 @@ impl SceneApp {
                 ..default()
             }),
             Msaa::Off,
-            profile.tonemapping(),
             Camera { order: self.next_camera_order, ..default() },
             Transform::IDENTITY,
             RenderTarget::Image(rgb_image.into()),
         ));
         let rgb_entity = e.id();
         self.next_camera_order += 10;
+
+        // Full WSB4 render profile on the RGB view (tonemap, fixed EV100,
+        // skybox, cinematic stack) + GTAO/contact shadows at rung ≥ 3. The
+        // instance-ID view below stays bare. Temporal/frame-dependent effects
+        // (TAA, motion blur, DoF) are held off — the host-driven loop renders
+        // single frames and must stay hash-stable — and the lens-character
+        // effects (chromatic aberration, bloom) are neutralised: job/service
+        // frames feed training and review, not stills grading.
+        {
+            let world = self.app.world_mut();
+            let mut commands = world.commands();
+            profile.render_profile().apply(
+                &mut commands,
+                rgb_entity,
+                self.ev100_fixed,
+                self.sky.clone(),
+                self.skybox_brightness,
+                false, // ssr
+                false, // taa
+                0.0,   // grain: CPU-readback concern of the CLI, not the engine
+                CinematicFx {
+                    chromatic_aberration: 0.0,
+                    dof_enabled: false,
+                    motion_shutter_angle: 0.0,
+                    bloom_intensity: 0.0,
+                    ..CinematicFx::default()
+                },
+            );
+            if self.rung.ao_contact() {
+                lighting::apply_camera_ao(&mut commands, rgb_entity);
+            }
+        }
+        self.app.world_mut().flush();
 
         self.app.world_mut().spawn(ReadbackTarget {
             key: format!("{}:rgb", spec.sensor_id),
