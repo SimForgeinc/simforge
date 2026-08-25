@@ -18,6 +18,7 @@ from pathlib import Path
 import re
 import shutil
 import statistics
+import socket
 import subprocess
 import sys
 import time
@@ -430,16 +431,127 @@ def relocated_job(job: dict, job_path: Path) -> dict:
     root = Path(os.environ.get("SIMFORGE_BEVY_CAMPAIGN_ROOT", REMOTE_ROOT))
     moved = dict(job)
     moved["jobDir"] = str(job_path.parent)
-    moved["corpusGlbs"] = []
-    for value in job["corpusGlbs"]:
-        path = Path(value)
-        if ".corpus" not in path.parts:
-            moved["corpusGlbs"].append(value)
-            continue
-        corpus_index = path.parts.index(".corpus")
-        moved["corpusGlbs"].append(str(root / "corpus" / Path(*path.parts[corpus_index + 1:])))
+    def relocate(values: list[str]) -> list[str]:
+        resolved = []
+        for value in values:
+            path = Path(value)
+            if ".corpus" not in path.parts:
+                resolved.append(value)
+                continue
+            corpus_index = path.parts.index(".corpus")
+            resolved.append(str(root / "corpus" / Path(*path.parts[corpus_index + 1:])))
+        return resolved
+    moved["corpusGlbs"] = relocate(job["corpusGlbs"])
+    moved["vegGlbs"] = relocate(job.get("vegGlbs", []))
+    moved["vegSidecars"] = relocate(job.get("vegSidecars", []))
     moved["vehicleModels"] = str(root / "catalog" / "vehicles-carla")
     return moved
+
+def service_cameras(job: dict) -> list[dict]:
+    cameras = []
+    for sensor in job["sensors"]:
+        if sensor["type"] != "dash_camera":
+            continue
+        mount = sensor["mount"]
+        position = mount["position"]
+        rotation = mount.get("rotation", {})
+        chase = sensor["id"] == "chase-cam-trailing"
+        cameras.append({
+            "sensorId": sensor["id"], "width": job["width"], "height": job["height"],
+            "fovDeg": sensor["camera"]["verticalFovDeg"], "eye": [0, 0, 0], "target": [1, 0, 0],
+            "profile": "cinematic" if chase else "sensor",
+            "attach": {
+                "actorId": "ego",
+                "offsetM": [position["x"], position.get("z", 0), position["y"]],
+                "yawDeg": math.degrees(rotation.get("yawRad", 0)),
+                "pitchDeg": math.degrees(rotation.get("pitchRad", 0)),
+                "lookAtActor": chase,
+            },
+        })
+    return cameras
+
+
+def render_service(args) -> None:
+    client_root = Path(args.client_root)
+    sys.path.insert(0, str(client_root))
+    from simforge_native.client import NativeRenderClient
+
+    job_path = Path(args.job)
+    job = relocated_job(load(job_path), job_path)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    frame_count = min(job["frameCount"], args.ticks) if args.ticks else job["frameCount"]
+    scene = {
+        "glbs": job["corpusGlbs"], "vegGlbs": job.get("vegGlbs", []), "profile": "sensor",
+        "profileConfig": {"cinematic": {"taa": True, "ssr": True, "ssao": True, "ssaoUltra": True}},
+        "nearM": 0.05, "farM": 1000, "warmupFrames": 20,
+    }
+    scene_path, socket_path, shm_path = out / "service-scene.json", out / "renderer.sock", out / "frames.shm"
+    dump(scene_path, scene)
+    socket_path.unlink(missing_ok=True)
+    shm_path.unlink(missing_ok=True)
+    service = subprocess.Popen([
+        args.binary, "--scene", str(scene_path), "--socket", str(socket_path),
+        "--shm", str(shm_path), "--shm-size-mb", "512",
+    ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    deadline = time.time() + 300
+    while not socket_path.exists() and service.poll() is None and time.time() < deadline:
+        time.sleep(0.1)
+    if not socket_path.exists():
+        raise RuntimeError("native-render-service did not become ready")
+    client = NativeRenderClient(str(socket_path))
+    states = load(Path(job["jobDir"]) / "scene-states.json")[:frame_count]
+    response = client.load_scene_state(states)
+    if not response.get("ok"):
+        raise RuntimeError(f"load_scene_state failed: {response}")
+    cameras = service_cameras(job)
+    encoders = {}
+    for camera in cameras:
+        path = out / f"{camera['sensorId']}.mp4"
+        encoders[camera["sensorId"]] = subprocess.Popen([
+            "ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgba",
+            "-s", f"{job['width']}x{job['height']}", "-r", str(job["fps"]), "-i", "pipe:0",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart", str(path),
+        ], stdin=subprocess.PIPE)
+    samples, server_ms = [], []
+    started = time.time()
+    try:
+        for tick in range(frame_count):
+            response = client.render_bundle(tick, cameras if tick == 0 else None, tick_index=tick, passes=["rgb"])
+            if not response.get("ok"):
+                raise RuntimeError(f"render_bundle tick {tick} failed: {response}")
+            server_ms.append(float(response["server_ms"]))
+            for frame in response["frames"]:
+                if frame["pass"] != "rgb":
+                    continue
+                encoders[frame["sensorId"]].stdin.write(client.read_record(frame))
+            if tick % 12 == 0:
+                sample = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used", "--format=csv,noheader,nounits"],
+                                        text=True, capture_output=True)
+                if sample.returncode == 0:
+                    samples.append([int(v.strip()) for v in sample.stdout.strip().split(",")])
+    finally:
+        for encoder in encoders.values():
+            if encoder.stdin:
+                encoder.stdin.close()
+            encoder.wait()
+        client.close()
+        service.wait(timeout=30)
+        log = service.stdout.read() if service.stdout else ""
+        (out / "renderer.log").write_text(log)
+    wall = time.time() - started
+    benchmark = {
+        "docId": job["docId"], "wallS": wall, "fps": frame_count / wall,
+        "serverFrameMsMean": statistics.fmean(server_ms), "serverFrameMsP95": percentile(server_ms, .95),
+        "gpuUtilMeanPct": statistics.fmean(s[0] for s in samples) if samples else None,
+        "gpuUtilMaxPct": max((s[0] for s in samples), default=None),
+        "vramMaxMiB": max((s[1] for s in samples), default=None),
+        "coverage": video_coverage(out / "chase-cam-trailing.mp4"),
+    }
+    dump(out / "benchmark.json", benchmark)
+    print(json.dumps(benchmark))
+
 
 def render_playback(args) -> None:
     job_path = Path(args.job)
@@ -608,6 +720,7 @@ def parser() -> argparse.ArgumentParser:
     q = sub.add_parser("prepare"); q.add_argument("--campaign", required=True); q.add_argument("--repo", required=True); q.add_argument("--out", required=True); q.set_defaults(func=prepare)
     q = sub.add_parser("assemble"); q.add_argument("--job", required=True); q.add_argument("--raw", required=True); q.add_argument("--out", required=True); q.set_defaults(func=assemble)
     q = sub.add_parser("render-playback"); q.add_argument("--job", required=True); q.add_argument("--binary", required=True); q.add_argument("--out", required=True); q.add_argument("--ticks", type=int); q.set_defaults(func=render_playback)
+    q = sub.add_parser("render-service"); q.add_argument("--job", required=True); q.add_argument("--binary", required=True); q.add_argument("--client-root", required=True); q.add_argument("--out", required=True); q.add_argument("--ticks", type=int); q.set_defaults(func=render_service)
     q = sub.add_parser("render-shard"); q.add_argument("--shard", required=True); q.add_argument("--jobs", required=True); q.add_argument("--binary", required=True); q.add_argument("--out", required=True); q.set_defaults(func=render_shard)
     q = sub.add_parser("deploy"); q.add_argument("--repo", required=True); q.add_argument("--parity", required=True); q.add_argument("--binary", required=True); q.add_argument("--host"); q.set_defaults(func=deploy)
     q = sub.add_parser("fleet"); q.add_argument("--parity", required=True); q.add_argument("--host"); q.set_defaults(func=fleet)
