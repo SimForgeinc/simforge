@@ -8,7 +8,18 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./metadata": {
+        "types": "./dist/metadata.d.ts",
+        "default": "./dist/metadata.js"
+      },
+      "./catalog.json": "./catalog.json"
+    }
   },
   "license": "Apache-2.0",
   "type": "module",
@@ -16,10 +27,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./metadata": {
+      "development": "./src/metadata.ts",
       "types": "./dist/metadata.d.ts",
       "default": "./dist/metadata.js"
     },

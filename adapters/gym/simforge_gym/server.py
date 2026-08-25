@@ -21,7 +21,7 @@ from typing import Any, Mapping, Sequence
 from .protocol import FrameReader, ProtocolError, ServerError, encode_frame
 
 #: Where the repo-local server lives relative to this wheel's checkout.
-_REPO_SERVER_DIST = Path(__file__).resolve().parents[3] / "packages" / "rl-env" / "dist" / "env-server.js"
+_REPO_SERVER_DIST = Path(__file__).resolve().parents[3] / "packages" / "training-env" / "dist" / "env-server.js"
 
 
 def resolve_server_command(server_command: Sequence[str] | None = None) -> tuple[str, ...]:
@@ -38,8 +38,9 @@ def resolve_server_command(server_command: Sequence[str] | None = None) -> tuple
     if _REPO_SERVER_DIST.exists():
         return ("node", str(_REPO_SERVER_DIST))
     raise RuntimeError(
-        "no simforge-env-server found: install @simforge/training-env "
-        "(pnpm --filter @simforge/training-env build) or pass server_command"
+        f"simforge env-server build missing at {_REPO_SERVER_DIST}; "
+        "run `pnpm --filter @simforge/training-env build` from the repository root, "
+        "install @simforge/training-env, or pass server_command"
     )
 
 
