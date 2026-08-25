@@ -1,0 +1,408 @@
+import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListPartsCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+  UploadPartCommand,
+} from '@aws-sdk/client-s3';
+import { createReadStream } from 'node:fs';
+import { copyFile, link, mkdir, open, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve, sep } from 'node:path';
+import { Readable } from 'node:stream';
+
+export interface PutOptions {
+  ifAbsent?: boolean;
+}
+
+export interface MultipartOptions {
+  resumeFile?: string;
+  partBytes?: number;
+}
+
+export interface RegistryBackend {
+  readonly url: string;
+  get(key: string): Promise<Uint8Array>;
+  getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array>;
+  exists(key: string): Promise<boolean>;
+  list(prefix: string): Promise<string[]>;
+  put(key: string, bytes: Uint8Array, options?: PutOptions): Promise<void>;
+  putFile(key: string, sourcePath: string, options?: PutOptions & MultipartOptions): Promise<void>;
+}
+
+function safeFilePath(root: string, key: string): string {
+  const target = resolve(root, key);
+  const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`;
+  if (target !== root && !target.startsWith(rootPrefix)) throw new Error(`registry key escapes root: ${key}`);
+  return target;
+}
+
+async function writeAtomic(target: string, bytes: Uint8Array, ifAbsent: boolean): Promise<void> {
+  await mkdir(dirname(target), { recursive: true });
+  if (ifAbsent) {
+    const handle = await open(target, 'wx');
+    try {
+      await handle.writeFile(bytes);
+    } finally {
+      await handle.close();
+    }
+    return;
+  }
+  const temporary = `${target}.tmp-${process.pid}-${Date.now()}`;
+  await writeFile(temporary, bytes);
+  await rename(temporary, target);
+}
+
+export class FileRegistryBackend implements RegistryBackend {
+  readonly url: string;
+  readonly root: string;
+
+  constructor(url: string) {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'file:') throw new Error(`expected file:// registry URL, got ${url}`);
+    this.root = resolve(decodeURIComponent(parsed.pathname));
+    this.url = `file://${this.root}`;
+  }
+
+  async get(key: string): Promise<Uint8Array> {
+    return readFile(safeFilePath(this.root, key));
+  }
+
+  async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
+    if (!Number.isSafeInteger(start) || start < 0) throw new Error(`invalid range start: ${start}`);
+    const target = safeFilePath(this.root, key);
+    const info = await stat(target);
+    const end = endInclusive ?? info.size - 1;
+    if (!Number.isSafeInteger(end) || end < start) throw new Error(`invalid range end: ${end}`);
+    const length = Math.min(end, info.size - 1) - start + 1;
+    if (length <= 0) return new Uint8Array();
+    const handle = await open(target, 'r');
+    try {
+      const bytes = Buffer.allocUnsafe(length);
+      const { bytesRead } = await handle.read(bytes, 0, length, start);
+      return bytes.subarray(0, bytesRead);
+    } finally {
+      await handle.close();
+    }
+  }
+
+  async list(prefix: string): Promise<string[]> {
+    const base = safeFilePath(this.root, prefix);
+    const keys: string[] = [];
+    const visit = async (directory: string): Promise<void> => {
+      let entries;
+      try {
+        entries = await readdir(directory, { withFileTypes: true });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+        throw error;
+      }
+      for (const entry of entries) {
+        const path = join(directory, entry.name);
+        if (entry.isDirectory()) {
+          await visit(path);
+        } else if (entry.isFile()) {
+          keys.push(path.slice(this.root.length + 1).split(sep).join('/'));
+        }
+      }
+    };
+    await visit(base);
+    return keys.sort();
+  }
+
+  async exists(key: string): Promise<boolean> {
+    try {
+      await stat(safeFilePath(this.root, key));
+      return true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+      throw error;
+    }
+  }
+
+  async put(key: string, bytes: Uint8Array, options: PutOptions = {}): Promise<void> {
+    await writeAtomic(safeFilePath(this.root, key), bytes, options.ifAbsent ?? false);
+  }
+
+  async putFile(key: string, sourcePath: string, options: PutOptions & MultipartOptions = {}): Promise<void> {
+    const target = safeFilePath(this.root, key);
+    await mkdir(dirname(target), { recursive: true });
+    if (options.ifAbsent && (await this.exists(key))) throw new Error(`registry object already exists: ${key}`);
+    const temporary = `${target}.tmp-${process.pid}-${Date.now()}`;
+    try {
+      await link(sourcePath, temporary);
+    } catch (error) {
+      if (!['EXDEV', 'EPERM', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+      await copyFile(sourcePath, temporary);
+    }
+    try {
+      if (options.ifAbsent && (await this.exists(key))) throw new Error(`registry object already exists: ${key}`);
+      await rename(temporary, target);
+    } catch (error) {
+      await unlink(temporary).catch(() => undefined);
+      throw error;
+    }
+  }
+}
+
+interface MultipartResumeState {
+  bucket: string;
+  key: string;
+  sourcePath: string;
+  sourceBytes: number;
+  sourceMtimeMs: number;
+  uploadId: string;
+  partBytes: number;
+}
+
+async function bodyBytes(body: unknown): Promise<Uint8Array> {
+  if (body instanceof Uint8Array) return body;
+  if (body instanceof Readable) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of body) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    return Buffer.concat(chunks);
+  }
+  if (body !== null && typeof body === 'object' && 'transformToByteArray' in body) {
+    return (body as { transformToByteArray(): Promise<Uint8Array> }).transformToByteArray();
+  }
+  throw new Error('S3 returned an unreadable response body');
+}
+
+export class S3RegistryBackend implements RegistryBackend {
+  readonly url: string;
+  readonly bucket: string;
+  readonly prefix: string;
+  readonly client: S3Client;
+
+  constructor(url: string, client = new S3Client({})) {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 's3:') throw new Error(`expected s3:// registry URL, got ${url}`);
+    this.bucket = parsed.hostname;
+    if (this.bucket.length === 0) throw new Error(`S3 registry URL has no bucket: ${url}`);
+    this.prefix = parsed.pathname.replace(/^\/+|\/+$/g, '');
+    this.url = `s3://${this.bucket}${this.prefix.length > 0 ? `/${this.prefix}` : ''}`;
+    this.client = client;
+  }
+
+  private objectKey(key: string): string {
+    return this.prefix.length > 0 ? `${this.prefix}/${key}` : key;
+  }
+
+  async get(key: string): Promise<Uint8Array> {
+    const response = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: this.objectKey(key) }));
+    return bodyBytes(response.Body);
+  }
+
+  async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
+    const range = `bytes=${start}-${endInclusive ?? ''}`;
+    const response = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: this.objectKey(key), Range: range }),
+    );
+    return bodyBytes(response.Body);
+  }
+
+  async exists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: this.objectKey(key) }));
+      return true;
+    } catch (error) {
+      const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+      if (status === 404) return false;
+      throw error;
+    }
+  }
+
+  async list(prefix: string): Promise<string[]> {
+    const keys: string[] = [];
+    let continuationToken: string | undefined;
+    do {
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: this.objectKey(prefix),
+          ContinuationToken: continuationToken,
+        }),
+      );
+      for (const object of response.Contents ?? []) {
+        if (object.Key === undefined) continue;
+        keys.push(this.prefix.length > 0 ? object.Key.slice(this.prefix.length + 1) : object.Key);
+      }
+      continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (continuationToken !== undefined);
+    return keys.sort();
+  }
+
+  async put(key: string, bytes: Uint8Array, options: PutOptions = {}): Promise<void> {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: this.objectKey(key),
+        Body: bytes,
+        ...(options.ifAbsent ? { IfNoneMatch: '*' } : {}),
+      }),
+    );
+  }
+
+  async putFile(key: string, sourcePath: string, options: PutOptions & MultipartOptions = {}): Promise<void> {
+    if (options.ifAbsent && (await this.exists(key))) throw new Error(`registry object already exists: ${key}`);
+    const source = await stat(sourcePath);
+    if (source.size === 0) {
+      await this.put(key, new Uint8Array(), { ifAbsent: options.ifAbsent });
+      if (options.resumeFile !== undefined) await unlink(options.resumeFile).catch(() => undefined);
+      return;
+    }
+    const partBytes = Math.max(options.partBytes ?? 64 * 1024 * 1024, 5 * 1024 * 1024);
+    const objectKey = this.objectKey(key);
+    let state: MultipartResumeState | undefined;
+    if (options.resumeFile !== undefined) {
+      try {
+        state = JSON.parse(await readFile(options.resumeFile, 'utf8')) as MultipartResumeState;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+      if (
+        state !== undefined &&
+        (state.bucket !== this.bucket ||
+          state.key !== objectKey ||
+          state.sourcePath !== resolve(sourcePath) ||
+          state.sourceBytes !== source.size ||
+          state.sourceMtimeMs !== source.mtimeMs ||
+          state.partBytes !== partBytes)
+      ) {
+        await this.client.send(
+          new AbortMultipartUploadCommand({ Bucket: this.bucket, Key: state.key, UploadId: state.uploadId }),
+        );
+        state = undefined;
+      }
+    }
+    if (state === undefined) {
+      const created = await this.client.send(
+        new CreateMultipartUploadCommand({ Bucket: this.bucket, Key: objectKey }),
+      );
+      if (created.UploadId === undefined) throw new Error('S3 did not return a multipart upload id');
+      state = {
+        bucket: this.bucket,
+        key: objectKey,
+        sourcePath: resolve(sourcePath),
+        sourceBytes: source.size,
+        sourceMtimeMs: source.mtimeMs,
+        uploadId: created.UploadId,
+        partBytes,
+      };
+      if (options.resumeFile !== undefined) {
+        await mkdir(dirname(options.resumeFile), { recursive: true });
+        await writeFile(options.resumeFile, JSON.stringify(state));
+      }
+    }
+    const completed = new Map<number, string>();
+    let partNumberMarker: string | undefined;
+    do {
+      const listed = await this.client.send(
+        new ListPartsCommand({
+          Bucket: this.bucket,
+          Key: objectKey,
+          UploadId: state.uploadId,
+          PartNumberMarker: partNumberMarker,
+        }),
+      );
+      for (const part of listed.Parts ?? []) {
+        if (part.PartNumber !== undefined && part.ETag !== undefined) {
+          completed.set(part.PartNumber, part.ETag);
+        }
+      }
+      partNumberMarker = listed.IsTruncated ? listed.NextPartNumberMarker : undefined;
+    } while (partNumberMarker !== undefined);
+    const partCount = Math.ceil(source.size / partBytes);
+    for (let partNumber = 1; partNumber <= partCount; partNumber += 1) {
+      if (completed.has(partNumber)) continue;
+      const start = (partNumber - 1) * partBytes;
+      const end = Math.min(source.size - 1, start + partBytes - 1);
+      const uploaded = await this.client.send(
+        new UploadPartCommand({
+          Bucket: this.bucket,
+          Key: objectKey,
+          UploadId: state.uploadId,
+          PartNumber: partNumber,
+          Body: createReadStream(sourcePath, { start, end }),
+          ContentLength: end - start + 1,
+        }),
+      );
+      if (uploaded.ETag === undefined) throw new Error(`S3 did not return an ETag for part ${partNumber}`);
+      completed.set(partNumber, uploaded.ETag);
+    }
+    await this.client.send(
+      new CompleteMultipartUploadCommand({
+        Bucket: this.bucket,
+        Key: objectKey,
+        UploadId: state.uploadId,
+        MultipartUpload: {
+          Parts: [...completed.entries()]
+            .sort(([left], [right]) => (left ?? 0) - (right ?? 0))
+            .map(([PartNumber, ETag]) => ({ PartNumber, ETag })),
+        },
+      }),
+    );
+    if (options.resumeFile !== undefined) await unlink(options.resumeFile).catch(() => undefined);
+  }
+}
+
+export class HttpRegistryBackend implements RegistryBackend {
+  readonly url: string;
+
+  constructor(url: string) {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error(`expected HTTP registry URL, got ${url}`);
+    }
+    this.url = url.replace(/\/+$/, '');
+  }
+
+  private objectUrl(key: string): string {
+    return `${this.url}/${key.split('/').map(encodeURIComponent).join('/')}`;
+  }
+
+  async get(key: string): Promise<Uint8Array> {
+    const response = await fetch(this.objectUrl(key));
+    if (!response.ok) throw new Error(`registry GET ${key} failed: HTTP ${response.status}`);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
+    const response = await fetch(this.objectUrl(key), {
+      headers: { Range: `bytes=${start}-${endInclusive ?? ''}` },
+    });
+    if (!response.ok) throw new Error(`registry ranged GET ${key} failed: HTTP ${response.status}`);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  async exists(key: string): Promise<boolean> {
+    const response = await fetch(this.objectUrl(key), { method: 'HEAD' });
+    if (response.status === 404) return false;
+    if (!response.ok) throw new Error(`registry HEAD ${key} failed: HTTP ${response.status}`);
+    return true;
+  }
+
+  async list(_prefix: string): Promise<string[]> {
+    throw new Error('HTTP registries cannot enumerate derived closures; provide tool fingerprints');
+  }
+
+  async put(_key: string, _bytes: Uint8Array, _options: PutOptions = {}): Promise<void> {
+    throw new Error('HTTP registries are read-only');
+  }
+
+  async putFile(_key: string, _sourcePath: string, _options: PutOptions & MultipartOptions = {}): Promise<void> {
+    throw new Error('HTTP registries are read-only');
+  }
+}
+
+
+export function createRegistryBackend(url: string): RegistryBackend {
+  if (url.startsWith('file://')) return new FileRegistryBackend(url);
+  if (url.startsWith('s3://')) return new S3RegistryBackend(url);
+  if (url.startsWith('https://') || url.startsWith('http://')) return new HttpRegistryBackend(url);
+  throw new Error(`unsupported registry URL: ${url}`);
+}
