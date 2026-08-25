@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Error && error.message === "uniscenario_workspace_limit_reached") {
       return NextResponse.json(
-        { error: "workspace_job_limit_reached", billingMode: "free", estimatedCost: 0 },
+        { error: "local_job_limit_reached" },
         { status: 429, headers: { "retry-after": "30" } },
       );
     }
