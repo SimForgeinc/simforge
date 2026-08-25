@@ -194,6 +194,25 @@ class NativeRenderClient:
         items: [{"sensorId": ..., "pass": "rgb", "quality": 70}]"""
         return self._rpc({"i": self._next(), "op": "encode_jpeg", "items": items})
 
+    def render_bundle(self, sim_tick: int, cameras: list[dict] | None = None,
+                      tick_index: int | None = None, passes: list[str] | None = None) -> dict:
+        """F4: render every rig camera and publish one atomic frame bundle.
+
+        `cameras` upserts the retained rig (send once, then omit on the hot
+        loop); `passes` defaults to ["rgb"] server-side and is frozen per
+        camera at first registration (reset_cameras to change). The response
+        carries per-frame records with crc32 `digest` plus the bundle
+        record's `bundle_offset`/`bundle_len`.
+        """
+        req = {"i": self._next(), "op": "render_bundle", "sim_tick": sim_tick}
+        if cameras is not None:
+            req["cameras"] = cameras
+        if tick_index is not None:
+            req["tick_index"] = tick_index
+        if passes is not None:
+            req["passes"] = passes
+        return self._rpc(req)
+
     def read_record(self, frame: dict) -> memoryview:
         """Raw payload bytes (row-padded) of one returned FrameRecord."""
         offset = frame["offset"] + 128
@@ -242,3 +261,31 @@ class NativeRenderClient:
                 view = np.frombuffer(self.shm, dtype=np.uint8, count=frame["len"], offset=offset + 128)
             obs.setdefault(frame["sensorId"], {})[frame["pass"]] = view
         return obs, response["server_ms"]
+
+    def step_bundle(self, sim_tick: int, cameras: list[dict] | None = None,
+                    tick_index: int | None = None, passes: list[str] | None = None) -> tuple[dict, dict]:
+        """render_bundle + zero-copy views: returns (observations, response).
+
+        Push-mode twin of `bundles.BundleRingReader` (which pulls the same
+        bundles from the ring without the RPC socket). Observation views use
+        the same strided zero-copy mapping as `step()`.
+        """
+        response = self.render_bundle(sim_tick, cameras, tick_index=tick_index, passes=passes)
+        assert response["ok"], response
+        obs: dict = {}
+        for frame in response["frames"]:
+            offset = frame["offset"]
+            w, h = frame["width"], frame["height"]
+            fmt = frame["format"]
+            if fmt == "depth32f":
+                stride = self._stride(w, 4)
+                arr = np.frombuffer(self.shm, dtype="<f4", count=stride * h // 4, offset=offset + 128)
+                view = arr.reshape(h, stride // 4)[:, :w]
+            elif fmt in ("rgba8", "carla-depth-bgra"):
+                stride = self._stride(w, 4)
+                arr = np.frombuffer(self.shm, dtype=np.uint8, count=stride * h, offset=offset + 128)
+                view = arr.reshape(h, stride)[:, : w * 4].reshape(h, w, 4)
+            else:
+                view = np.frombuffer(self.shm, dtype=np.uint8, count=frame["len"], offset=offset + 128)
+            obs.setdefault(frame["sensorId"], {})[frame["pass"]] = view
+        return obs, response

@@ -99,6 +99,24 @@ pub enum RequestBody {
     /// V2: JPEG-encode cached pass payloads from the last rendered tick and
     /// publish the results into the shm ring as `jpeg` records.
     EncodeJpeg { items: Vec<JpegItem> },
+    /// F4: render every rig camera for one sim tick and publish an atomic
+    /// frame bundle (per-camera frames + one bundle table record + the
+    /// meta-page latest-bundle pointer). `cameras`, when present, upserts the
+    /// retained rig (registration order preserved); when absent, the rig from
+    /// previous `render_bundle`/`render` calls is reused. `passes` defaults
+    /// to `["rgb"]` and is frozen per camera at first registration
+    /// (`reset_cameras` to change).
+    RenderBundle {
+        sim_tick: u64,
+        #[serde(default)]
+        cameras: Option<Vec<ServiceCamera>>,
+        /// Scene-state frame to apply before rendering (as in `render`).
+        #[serde(default)]
+        tick_index: Option<u32>,
+        /// Subset of `rgb | id | depth | semantic`.
+        #[serde(default)]
+        passes: Option<Vec<String>>,
+    },
     Close,
 }
 
@@ -150,6 +168,19 @@ pub enum ResponseBody {
         /// Server-side encode+publish wall time, milliseconds.
         server_ms: f64,
     },
+    /// F4: atomic frame bundle published.
+    RenderBundle {
+        ok: bool,
+        sim_tick: u64,
+        /// Physical offset of the bundle RECORD header in the shm file.
+        bundle_offset: u64,
+        /// Bundle table payload length.
+        bundle_len: u64,
+        /// One record per published frame, digests populated.
+        frames: Vec<FrameRecord>,
+        /// Server-side render+publish wall time, milliseconds.
+        server_ms: f64,
+    },
     Render {
         ok: bool,
         tick_id: u64,
@@ -199,6 +230,11 @@ pub struct FrameRecord {
     /// Depth32Float), or `jpeg` (V2 EncodeJpeg output; 1 byte per pixel).
     pub format: String,
     pub tick_id: u64,
+    /// F4 (`render_bundle` only): CRC32 (IEEE) of the payload bytes as
+    /// 8-char lowercase hex. Absent on V1/V2 `render`/`encode_jpeg` frames,
+    /// keeping those responses byte-identical.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
 }
 
 /* --------------------------------------------------------------- framing */

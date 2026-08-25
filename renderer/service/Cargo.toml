@@ -10,6 +10,7 @@ path = "src/bin/native-render-service.rs"
 [dependencies]
 render-core = { path = "../render-core" }
 anyhow = "1"
+crc32fast = "1"
 image = "0.25"
 memmap2 = "0.9"
 rmp-serde = "1.3"

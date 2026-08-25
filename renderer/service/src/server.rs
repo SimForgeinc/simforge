@@ -13,7 +13,7 @@ use crate::proto::{
     NATIVE_SERVICE_PROTOCOL_VERSION,
 };
 use crate::scene::SceneState;
-use crate::shm::{ShmRing, FORMAT_DEPTH32F, FORMAT_JPEG, FORMAT_RGBA8};
+use crate::shm::{BundleEntry, ShmRing, FORMAT_DEPTH32F, FORMAT_JPEG, FORMAT_RGBA8};
 use anyhow::{Context, Result};
 use render_core::engine::{CameraSpec, LegendEntry, Lighting, PassSet, Profile, SceneApp};
 use std::collections::HashMap;
@@ -109,6 +109,9 @@ pub struct ServiceState {
     current_tick: Option<u32>,
     /// Pass payloads from the last render (V2 `encode_jpeg` source).
     cache: HashMap<String, CachedPass>,
+    /// Retained rig: last ServiceCamera spec per sensor id, registration
+    /// order (F4 `render_bundle` renders these when no cameras are given).
+    rig: Vec<ServiceCamera>,
 }
 
 impl ServiceState {
@@ -129,6 +132,7 @@ impl ServiceState {
             scene: Vec::new(),
             current_tick: None,
             cache: HashMap::new(),
+            rig: Vec::new(),
         }
     }
 }
@@ -224,10 +228,14 @@ fn dispatch(state: &mut ServiceState, request: WireRequest) -> WireResponse {
         RequestBody::ResetCameras => {
             state.app.clear_cameras();
             state.cache.clear();
+            state.rig.clear();
             WireResponse { i, body: ResponseBody::ResetCameras { ok: true } }
         }
         RequestBody::Render { tick_id, cameras, export_dir, tick_index } => {
             render_tick(state, i, tick_id, cameras, export_dir, tick_index)
+        }
+        RequestBody::RenderBundle { sim_tick, cameras, tick_index, passes } => {
+            render_bundle_op(state, i, sim_tick, cameras, tick_index, passes)
         }
         RequestBody::EncodeJpeg { items } => encode_jpeg_op(state, i, items),
         RequestBody::Close => WireResponse { i, body: ResponseBody::Close { ok: true } },
@@ -343,7 +351,15 @@ fn resolve_pose(
     Ok((eye, target))
 }
 
-fn ensure_camera(state: &mut ServiceState, cam: &ServiceCamera) -> bool {
+/// Upsert a camera spec into the retained rig (registration order kept).
+fn upsert_rig(state: &mut ServiceState, cam: &ServiceCamera) {
+    match state.rig.iter_mut().find(|c| c.sensor_id == cam.sensor_id) {
+        Some(slot) => *slot = cam.clone(),
+        None => state.rig.push(cam.clone()),
+    }
+}
+
+fn ensure_camera(state: &mut ServiceState, cam: &ServiceCamera, passes: PassSet) -> bool {
     if state.app.cameras().any(|c| c.sensor_id == cam.sensor_id) {
         return false;
     }
@@ -355,7 +371,7 @@ fn ensure_camera(state: &mut ServiceState, cam: &ServiceCamera) -> bool {
             fov_y_deg: cam.fov_deg,
             near: state.near_m,
             far: state.far_m,
-            passes: PassSet { rgb: true, id: true, depth: true },
+            passes,
         },
         state.profile,
     );
@@ -378,7 +394,8 @@ fn render_tick(
     }
     let mut any_new_camera = false;
     for cam in &cameras {
-        any_new_camera |= ensure_camera(state, cam);
+        upsert_rig(state, cam);
+        any_new_camera |= ensure_camera(state, cam, PassSet { rgb: true, id: true, depth: true });
         let (eye, target) = match resolve_pose(state, cam) {
             Ok(pose) => pose,
             Err(error) => return WireResponse::error(i, error),
@@ -432,6 +449,7 @@ fn render_tick(
                         height: cam.height,
                         format: format_name.to_string(),
                         tick_id,
+                        digest: None,
                     });
                     Ok(())
                 }
@@ -567,12 +585,205 @@ fn encode_jpeg_op(state: &mut ServiceState, i: u64, items: Vec<JpegItem>) -> Wir
                 height: h,
                 format: "jpeg".into(),
                 tick_id,
+                digest: None,
             }),
             Err(error) => return WireResponse::error(i, format!("publish: {error}")),
         }
     }
     let server_ms = t0.elapsed().as_secs_f64() * 1000.0;
     WireResponse { i, body: ResponseBody::EncodeJpeg { ok: true, tick_id: state.cache.values().next().map(|c| c.tick_id).unwrap_or(0), frames, server_ms } }
+}
+
+/// F4: render every rig camera for one sim tick and publish an atomic frame
+/// bundle (frames first, then the bundle table record, then the meta-page
+/// latest-bundle pointer flip). Cameras keep rig registration order and
+/// passes are canonical (rgb, id, depth, semantic) within each camera, so
+/// ring layout and per-frame digests are deterministic for a deterministic
+/// renderer.
+fn render_bundle_op(
+    state: &mut ServiceState,
+    i: u64,
+    sim_tick: u64,
+    cameras: Option<Vec<ServiceCamera>>,
+    tick_index: Option<u32>,
+    passes: Option<Vec<String>>,
+) -> WireResponse {
+    let t0 = std::time::Instant::now();
+    // Requested pass set. Default rgb-only: the policy hot loop. The GPU
+    // pass set is frozen per camera at first registration (`reset_cameras`
+    // to change), matching existing V2 semantics.
+    let requested = passes.unwrap_or_else(|| vec!["rgb".to_string()]);
+    let mut want = PassSet { rgb: false, id: false, depth: false };
+    let mut want_semantic = false;
+    for pass in &requested {
+        match pass.as_str() {
+            "rgb" => want.rgb = true,
+            "id" => want.id = true,
+            "depth" => want.depth = true,
+            "semantic" => want_semantic = true,
+            other => return WireResponse::error(i, format!("unknown bundle pass {other:?}")),
+        }
+    }
+    let want_id_output = want.id;
+    if want_semantic {
+        want.id = true; // semantic derives from the instance-ID pass
+    }
+    if let Some(cams) = &cameras {
+        for cam in cams {
+            upsert_rig(state, cam);
+        }
+    }
+    if state.rig.is_empty() {
+        return WireResponse::error(i, "render_bundle: no cameras registered (send `cameras` once)");
+    }
+    if let Some(index) = tick_index {
+        if let Err(error) = apply_scene_tick(state, index) {
+            return WireResponse::error(i, error);
+        }
+    }
+    let rig = state.rig.clone();
+    for cam in &rig {
+        ensure_camera(state, cam, want);
+        let (eye, target) = match resolve_pose(state, cam) {
+            Ok(pose) => pose,
+            Err(error) => return WireResponse::error(i, error),
+        };
+        if let Err(error) = state.app.set_pose(&cam.sensor_id, &eye, &target) {
+            return WireResponse::error(i, format!("set pose: {error:#}"));
+        }
+    }
+    // Same double-render flush as `render`: readback lags one render_once.
+    if let Err(error) = state.app.render_once() {
+        return WireResponse::error(i, format!("render (flush): {error:#}"));
+    }
+    let outputs = match state.app.render_once() {
+        Ok(outputs) => outputs,
+        Err(error) => return WireResponse::error(i, format!("render: {error:#}")),
+    };
+
+    let start_cursor = state.shm.cursor_total();
+    let mut frames: Vec<FrameRecord> = Vec::new();
+    let mut entries: Vec<BundleEntry> = Vec::new();
+    for cam in &rig {
+        let stride = row_stride(cam.width, 4);
+        // (pass, format_tag, format_name, payload) in canonical order. A
+        // requested pass missing from render output is a hard error: bundles
+        // are all-or-nothing.
+        let mut planned: Vec<(&str, u32, &str, Vec<u8>)> = Vec::new();
+        let missing = |pass: &str| {
+            format!(
+                "render_bundle: pass {pass:?} missing for {} (registered without it? reset_cameras and re-register)",
+                cam.sensor_id
+            )
+        };
+        if want.rgb {
+            match outputs.get(&format!("{}:rgb", cam.sensor_id)) {
+                Some(data) => planned.push(("rgb", FORMAT_RGBA8, "rgba8", data.clone())),
+                None => return WireResponse::error(i, missing("rgb")),
+            }
+        }
+        if want_id_output {
+            match outputs.get(&format!("{}:id", cam.sensor_id)) {
+                Some(data) => planned.push(("id", FORMAT_RGBA8, "rgba8", data.clone())),
+                None => return WireResponse::error(i, missing("id")),
+            }
+        }
+        if want.depth {
+            let carla = cam.depth_encoding.as_deref() == Some("carla");
+            match outputs.get(&format!("{}:depth", cam.sensor_id)) {
+                Some(data) => {
+                    let out = if carla {
+                        crate::carla::depth_to_carla(data, cam.width, cam.height, stride, state.near_m, state.far_m)
+                    } else {
+                        data.clone()
+                    };
+                    planned.push((
+                        "depth",
+                        FORMAT_DEPTH32F,
+                        if carla { "carla-depth-bgra" } else { "depth32f" },
+                        out,
+                    ));
+                }
+                None => return WireResponse::error(i, missing("depth")),
+            }
+        }
+        if want_semantic {
+            let Some(id_data) = outputs.get(&format!("{}:id", cam.sensor_id)) else {
+                return WireResponse::error(i, missing("semantic (id source)"));
+            };
+            let legend = &state.legend;
+            let app = &state.app;
+            let out = crate::carla::semantic_from_ids(id_data, cam.width, cam.height, stride, |id| {
+                if let Some(class) = app.actor_instance_class(id) {
+                    return crate::carla::actor_class_of(class);
+                }
+                legend.get(&id).map(|n| crate::carla::static_class_of(n)).unwrap_or(0)
+            });
+            planned.push(("semantic", FORMAT_RGBA8, "rgba8", out));
+        }
+        for (pass, format_tag, format_name, data) in planned {
+            let digest = crc32fast::hash(&data);
+            let offset = match state.shm.publish(
+                &cam.sensor_id,
+                pass,
+                cam.width,
+                cam.height,
+                format_tag,
+                sim_tick,
+                &data,
+            ) {
+                Ok(offset) => offset,
+                Err(error) => return WireResponse::error(i, format!("publish: {error}")),
+            };
+            entries.push(BundleEntry {
+                camera_id: cam.sensor_id.clone(),
+                pass: pass.to_string(),
+                payload_offset: offset + crate::shm::RECORD_HEADER_BYTES as u64,
+                payload_len: data.len() as u64,
+                width: cam.width,
+                height: cam.height,
+                format_tag,
+                digest,
+            });
+            frames.push(FrameRecord {
+                sensor_id: cam.sensor_id.clone(),
+                pass: pass.to_string(),
+                offset,
+                len: data.len() as u64,
+                width: cam.width,
+                height: cam.height,
+                format: format_name.to_string(),
+                tick_id: sim_tick,
+                digest: Some(format!("{digest:08x}")),
+            });
+        }
+    }
+    // A bundle bigger than the ring would overwrite its own frames; refuse
+    // before flipping the pointer (frames are garbage, pointer stays valid).
+    if state.shm.cursor_total() - start_cursor > state.shm.usable_bytes() {
+        return WireResponse::error(
+            i,
+            format!(
+                "render_bundle: bundle ({} bytes) exceeds ring capacity ({} usable); raise --shm-size-mb",
+                state.shm.cursor_total() - start_cursor,
+                state.shm.usable_bytes()
+            ),
+        );
+    }
+    match state.shm.publish_bundle(sim_tick, start_cursor, &entries) {
+        Ok((bundle_offset, bundle_len)) => WireResponse {
+            i,
+            body: ResponseBody::RenderBundle {
+                ok: true,
+                sim_tick,
+                bundle_offset,
+                bundle_len,
+                frames,
+                server_ms: t0.elapsed().as_secs_f64() * 1000.0,
+            },
+        },
+        Err(error) => WireResponse::error(i, format!("publish bundle: {error}")),
+    }
 }
 
 /// PNG demotion: encoding happens off the critical path after the response.

@@ -5352,6 +5352,7 @@ name = "service"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "crc32fast",
  "image",
  "memmap2",
  "render-core",
