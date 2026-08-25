@@ -285,7 +285,7 @@ export function MapGalleryPageClient({
     setCreating(true);
     try {
       const response = await fetch(
-        `/api/uniscenario/maps/${encodeURIComponent(entry.map.mapVersionId)}/documents/default`,
+        `/api/simforge/maps/${encodeURIComponent(entry.map.mapVersionId)}/documents/default`,
         {
           method: "POST",
           headers: {

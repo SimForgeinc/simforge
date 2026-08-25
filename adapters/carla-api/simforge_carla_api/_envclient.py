@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import msgpack
+from ._compat_env import simforge_env
 
 ENV_SERVER_PROTOCOL_VERSION = 1
 
@@ -39,7 +40,7 @@ class ServerError(RuntimeError):
 def resolve_server_command(server_command=None) -> tuple[str, ...]:
     if server_command is not None:
         return tuple(server_command)
-    override = os.environ.get("UNISCENARIO_ENV_SERVER")
+    override = simforge_env("ENV_SERVER")
     if override:
         return tuple(override.split(" "))
     installed = shutil.which("simforge-env-server")
@@ -51,7 +52,7 @@ def resolve_server_command(server_command=None) -> tuple[str, ...]:
         return ("node", str(_MAIN_SERVER_DIST))
     raise RuntimeError(
         "no simforge-env-server found: install @simforge/training-env "
-        "(pnpm --filter @simforge/training-env build), set UNISCENARIO_ENV_SERVER, "
+        "(pnpm --filter @simforge/training-env build), set SIMFORGE_ENV_SERVER, "
         "or pass server_command"
     )
 
@@ -81,10 +82,10 @@ class EnvServerClient:
     def __init__(self, episodes_spec: str | None = None, *, decision_hz: int | None = None,
                  clip_seconds: float | None = None, max_decisions: int | None = None,
                  server_command=None) -> None:
-        spec = episodes_spec or os.environ.get("UNISCENARIO_EPISODES")
+        spec = episodes_spec or simforge_env("EPISODES")
         if not spec:
             raise RuntimeError(
-                "no episode spec: set UNISCENARIO_EPISODES or pass episodes_spec="
+                "no episode spec: set SIMFORGE_EPISODES or pass episodes_spec="
             )
         flags = ["--episodes", str(Path(spec).resolve())]
         if decision_hz is not None:

@@ -46,10 +46,10 @@ export async function getDatasetBatchProgress(workspaceId: string, datasetId: st
             COUNT(*) FILTER (WHERE rj.job_state = 'succeeded')::int AS completed,
             COUNT(*) FILTER (WHERE rj.job_state = 'failed')::int AS failed,
             COUNT(*) FILTER (WHERE rj.job_state IN ('queued', 'leased', 'running'))::int AS running
-       FROM uniscenario.render_jobs rj
-       JOIN uniscenario.revisions rev
+       FROM simforge.render_jobs rj
+       JOIN simforge.revisions rev
          ON rev.id = rj.revision_id AND rev.workspace_id = rj.workspace_id
-       JOIN uniscenario.documents doc
+       JOIN simforge.documents doc
          ON doc.id = rev.document_id AND doc.workspace_id = rev.workspace_id
       WHERE doc.workspace_id = :workspace_id AND doc.dataset_id = :dataset_id
         AND doc.deleted_at IS NULL AND rj.job_mode IN ('interaction_2d', 'full_render')`,
@@ -76,16 +76,16 @@ export async function getDatasetCompileReadiness(
     `SELECT doc.id, doc.title AS display_name,
        EXISTS (
          SELECT 1
-           FROM uniscenario.revisions rev
-           JOIN uniscenario.render_jobs rj
+           FROM simforge.revisions rev
+           JOIN simforge.render_jobs rj
              ON rj.revision_id = rev.id AND rj.workspace_id = rev.workspace_id
           WHERE rev.document_id = doc.id AND rev.workspace_id = doc.workspace_id
             AND rj.job_state = 'succeeded'
             AND rj.job_mode IN ('interaction_2d', 'full_render')
             AND EXISTS (
               SELECT 1
-                FROM uniscenario.artifact_links link
-                JOIN uniscenario.artifacts artifact ON artifact.id = link.artifact_id
+                FROM simforge.artifact_links link
+                JOIN simforge.artifacts artifact ON artifact.id = link.artifact_id
                WHERE link.render_job_id = rj.id
                  AND artifact.workspace_id = rj.workspace_id
                  AND artifact.artifact_state = 'available'
@@ -99,21 +99,21 @@ export async function getDatasetCompileReadiness(
        ) AS has_render,
        EXISTS (
          SELECT 1
-           FROM uniscenario.revisions rev
-           JOIN uniscenario.render_jobs rj
+           FROM simforge.revisions rev
+           JOIN simforge.render_jobs rj
              ON rj.revision_id = rev.id AND rj.workspace_id = rev.workspace_id
           WHERE rev.document_id = doc.id AND rev.workspace_id = doc.workspace_id
             AND rj.job_state = 'succeeded' AND rj.job_mode = 'cosmos_augment'
        ) AS has_cosmos,
        EXISTS (
          SELECT 1
-           FROM uniscenario.revisions rev
-           JOIN uniscenario.render_jobs rj
+           FROM simforge.revisions rev
+           JOIN simforge.render_jobs rj
              ON rj.revision_id = rev.id AND rj.workspace_id = rev.workspace_id
           WHERE rev.document_id = doc.id AND rev.workspace_id = doc.workspace_id
             AND rj.job_state = 'succeeded' AND rj.job_mode = 'vlm_annotate'
        ) AS has_vlm
-     FROM uniscenario.documents doc
+     FROM simforge.documents doc
      WHERE doc.workspace_id = :workspace_id AND doc.dataset_id = :dataset_id
        AND doc.deleted_at IS NULL
      ORDER BY doc.dataset_sort_order, doc.updated_at DESC, doc.id
@@ -150,16 +150,16 @@ export async function listSimulationsForDataset(
             COALESCE(rj.failure_detail->>'message', rj.failure_code) AS error_message,
             NULL::int AS queue_position, rj.created_at::text AS created_at,
             rj.started_at::text AS started_at, rj.completed_at::text AS finished_at,
-            (SELECT COUNT(*)::int FROM uniscenario.artifact_links l
-              JOIN uniscenario.artifacts a ON a.id = l.artifact_id
+            (SELECT COUNT(*)::int FROM simforge.artifact_links l
+              JOIN simforge.artifacts a ON a.id = l.artifact_id
              WHERE l.render_job_id = rj.id AND a.artifact_state = 'available'
                AND a.deleted_at IS NULL) AS artifact_count
-       FROM uniscenario.render_jobs rj
-       JOIN uniscenario.revisions rev
+       FROM simforge.render_jobs rj
+       JOIN simforge.revisions rev
          ON rev.id = rj.revision_id AND rev.workspace_id = rj.workspace_id
-       JOIN uniscenario.documents doc
+       JOIN simforge.documents doc
          ON doc.id = rev.document_id AND doc.workspace_id = rev.workspace_id
-       LEFT JOIN uniscenario.map_versions mv ON mv.id = rev.map_version_id
+       LEFT JOIN simforge.map_versions mv ON mv.id = rev.map_version_id
       WHERE doc.workspace_id = :workspace_id AND doc.dataset_id = :dataset_id
         AND doc.deleted_at IS NULL AND rj.job_mode IN ('interaction_2d', 'full_render')
       ORDER BY rj.created_at DESC, rj.id DESC`,
@@ -187,8 +187,8 @@ export async function listSimulationsForDataset(
               THEN (a.metadata->>'frameIndex')::int ELSE NULL END AS frame_index,
             a.metadata->>'sequenceId' AS sequence_id,
             COALESCE((a.metadata->>'isRaw')::boolean, TRUE) AS is_raw
-       FROM uniscenario.artifact_links l
-       JOIN uniscenario.artifacts a ON a.id = l.artifact_id
+       FROM simforge.artifact_links l
+       JOIN simforge.artifacts a ON a.id = l.artifact_id
       WHERE a.workspace_id = :workspace_id AND l.render_job_id IN (${ids.join(", ")})
         AND a.artifact_state = 'available' AND a.deleted_at IS NULL
         ${mode === "recordings" ? "AND (a.media_type LIKE 'video/%' OR LOWER(a.storage_key) ~ '\\.(mp4|webm)$')" : ""}

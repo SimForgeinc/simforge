@@ -12,9 +12,10 @@ import {
   createLocalArtifactProducer,
   finalizeLocalArtifactProducer,
 } from "./jobs/local-artifact-producer-store";
+import { simforgeEnv } from "@/lib/compat-env";
+import { COMPRESSED_PLAYBACK_MEDIA_TYPE } from "./stored-wire-compat";
 
 const KIND = "browser-simulation-preview-v1";
-const MEDIA_TYPE = "application/vnd.simforge.uniscenario-playback+json+gzip";
 class StaleSimulationPreviewCompletion extends Error {}
 
 type PreviewArtifactMetadata = { contentSha256: string; mapVersionId: string };
@@ -32,7 +33,7 @@ function parseArtifactMetadata(value: unknown): PreviewArtifactMetadata | null {
     : null;
 }
 
-function artifactBucket() { return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts"; }
+function artifactBucket() { return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts"; }
 type Identity = { expectedVersion: number; sha256: string; sizeBytes: number };
 
 export async function reserveSimulationPreview(context: AppContext, documentId: string, input: Identity) {
@@ -41,7 +42,7 @@ export async function reserveSimulationPreview(context: AppContext, documentId: 
     content_sha256: string;
     map_version_id: string | null;
   }>(
-    `SELECT dr.draft_version,dr.content_sha256,dr.map_version_id FROM uniscenario.documents d JOIN uniscenario.drafts dr ON dr.document_id=d.id AND dr.workspace_id=d.workspace_id WHERE d.id=:document_id AND d.workspace_id=:workspace_id AND d.deleted_at IS NULL LIMIT 1`,
+    `SELECT dr.draft_version,dr.content_sha256,dr.map_version_id FROM simforge.documents d JOIN simforge.drafts dr ON dr.document_id=d.id AND dr.workspace_id=d.workspace_id WHERE d.id=:document_id AND d.workspace_id=:workspace_id AND d.deleted_at IS NULL LIMIT 1`,
     { document_id: documentId, workspace_id: context.workspaceId },
   );
   const doc = docs[0];
@@ -96,12 +97,12 @@ export async function reserveSimulationPreview(context: AppContext, documentId: 
     // handing it to the live producer job is both legal and correct. `metadata`
     // is outside that freeze, which is what lets completion identify the
     // reservation currently claiming these bytes.
-    `INSERT INTO uniscenario.artifacts (id,workspace_id,artifact_kind,media_type,storage_bucket,storage_key,sha256,byte_length,artifact_state,metadata,created_by_user_id,producer_job_family,producer_job_id,provenance) VALUES (:id,:workspace_id,:kind,:media_type,:bucket,:key,:sha256,:size_bytes,'pending',CAST(:metadata AS jsonb),:user_id,'artifact_postprocess',:producer_job_id,CAST(:provenance AS jsonb)) ON CONFLICT (workspace_id,sha256,artifact_kind) WHERE artifact_state IN ('pending','available') AND deleted_at IS NULL DO UPDATE SET metadata=EXCLUDED.metadata,producer_job_id=CASE WHEN uniscenario.artifacts.artifact_state='pending' THEN EXCLUDED.producer_job_id ELSE uniscenario.artifacts.producer_job_id END,provenance=CASE WHEN uniscenario.artifacts.artifact_state='pending' THEN EXCLUDED.provenance ELSE uniscenario.artifacts.provenance END RETURNING id,artifact_state,storage_bucket,storage_key`,
+    `INSERT INTO simforge.artifacts (id,workspace_id,artifact_kind,media_type,storage_bucket,storage_key,sha256,byte_length,artifact_state,metadata,created_by_user_id,producer_job_family,producer_job_id,provenance) VALUES (:id,:workspace_id,:kind,:media_type,:bucket,:key,:sha256,:size_bytes,'pending',CAST(:metadata AS jsonb),:user_id,'artifact_postprocess',:producer_job_id,CAST(:provenance AS jsonb)) ON CONFLICT (workspace_id,sha256,artifact_kind) WHERE artifact_state IN ('pending','available') AND deleted_at IS NULL DO UPDATE SET metadata=EXCLUDED.metadata,producer_job_id=CASE WHEN simforge.artifacts.artifact_state='pending' THEN EXCLUDED.producer_job_id ELSE simforge.artifacts.producer_job_id END,provenance=CASE WHEN simforge.artifacts.artifact_state='pending' THEN EXCLUDED.provenance ELSE simforge.artifacts.provenance END RETURNING id,artifact_state,storage_bucket,storage_key`,
     {
       id: artifactId,
       workspace_id: context.workspaceId,
       kind: KIND,
-      media_type: MEDIA_TYPE,
+      media_type: COMPRESSED_PLAYBACK_MEDIA_TYPE,
       bucket,
       key,
       sha256: input.sha256,
@@ -133,8 +134,8 @@ export async function reserveSimulationPreview(context: AppContext, documentId: 
     uploadUrl:
       row.artifact_state === "available"
         ? null
-        : await getPresignedPutUrl(row.storage_key, MEDIA_TYPE, row.storage_bucket, 900, input.sha256),
-    headers: checksumBoundPutRequiredHeaders(MEDIA_TYPE, input.sha256),
+        : await getPresignedPutUrl(row.storage_key, COMPRESSED_PLAYBACK_MEDIA_TYPE, row.storage_bucket, 900, input.sha256),
+    headers: checksumBoundPutRequiredHeaders(COMPRESSED_PLAYBACK_MEDIA_TYPE, input.sha256),
   };
 }
 
@@ -150,7 +151,7 @@ export async function completeSimulationPreview(
     byte_length: number;
     metadata?: unknown;
   }>(
-    `SELECT storage_bucket,storage_key,sha256,byte_length,metadata FROM uniscenario.artifacts
+    `SELECT storage_bucket,storage_key,sha256,byte_length,metadata FROM simforge.artifacts
       WHERE id=:artifact_id AND workspace_id=:workspace_id AND artifact_kind=:kind
         AND artifact_state IN ('pending','available')
         AND metadata->>'documentId' = :document_id
@@ -198,7 +199,7 @@ export async function completeSimulationPreview(
         const metadata = parseArtifactMetadata(row.metadata);
         if (metadata) {
           await tx.execute(
-            `INSERT INTO uniscenario.simulation_previews (document_id,workspace_id,source_draft_version,source_content_sha256,map_version_id,artifact_id,created_by_user_id) VALUES (:document_id,:workspace_id,:version,:content_sha256,:map_version_id,:artifact_id,:user_id) ON CONFLICT (document_id) DO UPDATE SET source_draft_version=EXCLUDED.source_draft_version,source_content_sha256=EXCLUDED.source_content_sha256,map_version_id=EXCLUDED.map_version_id,artifact_id=EXCLUDED.artifact_id,created_by_user_id=EXCLUDED.created_by_user_id,created_at=NOW()`,
+            `INSERT INTO simforge.simulation_previews (document_id,workspace_id,source_draft_version,source_content_sha256,map_version_id,artifact_id,created_by_user_id) VALUES (:document_id,:workspace_id,:version,:content_sha256,:map_version_id,:artifact_id,:user_id) ON CONFLICT (document_id) DO UPDATE SET source_draft_version=EXCLUDED.source_draft_version,source_content_sha256=EXCLUDED.source_content_sha256,map_version_id=EXCLUDED.map_version_id,artifact_id=EXCLUDED.artifact_id,created_by_user_id=EXCLUDED.created_by_user_id,created_at=NOW()`,
             {
               document_id: documentId,
               workspace_id: context.workspaceId,
@@ -217,7 +218,7 @@ export async function completeSimulationPreview(
         content_sha256: string;
         map_version_id: string | null;
       }>(
-        `SELECT dr.draft_version,dr.content_sha256,dr.map_version_id FROM uniscenario.documents d JOIN uniscenario.drafts dr ON dr.document_id=d.id AND dr.workspace_id=d.workspace_id WHERE d.id=:document_id AND d.workspace_id=:workspace_id AND d.deleted_at IS NULL FOR UPDATE`,
+        `SELECT dr.draft_version,dr.content_sha256,dr.map_version_id FROM simforge.documents d JOIN simforge.drafts dr ON dr.document_id=d.id AND dr.workspace_id=d.workspace_id WHERE d.id=:document_id AND d.workspace_id=:workspace_id AND d.deleted_at IS NULL FOR UPDATE`,
         { document_id: documentId, workspace_id: context.workspaceId },
       );
       const doc = docs[0];
@@ -225,11 +226,11 @@ export async function completeSimulationPreview(
         throw new StaleSimulationPreviewCompletion();
       }
       await tx.execute(
-        `UPDATE uniscenario.artifacts SET artifact_state='available',verified_at=NOW() WHERE id=:artifact_id AND workspace_id=:workspace_id`,
+        `UPDATE simforge.artifacts SET artifact_state='available',verified_at=NOW() WHERE id=:artifact_id AND workspace_id=:workspace_id`,
         { artifact_id: input.artifactId, workspace_id: context.workspaceId },
       );
       await tx.execute(
-        `INSERT INTO uniscenario.simulation_previews (document_id,workspace_id,source_draft_version,source_content_sha256,map_version_id,artifact_id,created_by_user_id) VALUES (:document_id,:workspace_id,:version,:content_sha256,:map_version_id,:artifact_id,:user_id) ON CONFLICT (document_id) DO UPDATE SET source_draft_version=EXCLUDED.source_draft_version,source_content_sha256=EXCLUDED.source_content_sha256,map_version_id=EXCLUDED.map_version_id,artifact_id=EXCLUDED.artifact_id,created_by_user_id=EXCLUDED.created_by_user_id,created_at=NOW()`,
+        `INSERT INTO simforge.simulation_previews (document_id,workspace_id,source_draft_version,source_content_sha256,map_version_id,artifact_id,created_by_user_id) VALUES (:document_id,:workspace_id,:version,:content_sha256,:map_version_id,:artifact_id,:user_id) ON CONFLICT (document_id) DO UPDATE SET source_draft_version=EXCLUDED.source_draft_version,source_content_sha256=EXCLUDED.source_content_sha256,map_version_id=EXCLUDED.map_version_id,artifact_id=EXCLUDED.artifact_id,created_by_user_id=EXCLUDED.created_by_user_id,created_at=NOW()`,
         {
           document_id: documentId,
           workspace_id: context.workspaceId,
@@ -262,7 +263,7 @@ export async function getCurrentSimulationPreview(
     storage_key: string;
     created_at: string;
   }>(
-    `SELECT p.artifact_id,p.source_draft_version,a.sha256,a.byte_length,a.media_type,a.storage_bucket,a.storage_key,p.created_at::text created_at FROM uniscenario.simulation_previews p JOIN uniscenario.documents d ON d.id=p.document_id AND d.workspace_id=p.workspace_id JOIN uniscenario.drafts dr ON dr.document_id=d.id AND dr.workspace_id=d.workspace_id JOIN uniscenario.artifacts a ON a.id=p.artifact_id AND a.workspace_id=p.workspace_id WHERE p.document_id=:document_id AND p.workspace_id=:workspace_id AND d.deleted_at IS NULL AND a.artifact_state='available' AND p.source_draft_version=dr.draft_version AND p.source_content_sha256=dr.content_sha256 AND p.map_version_id=dr.map_version_id LIMIT 1`,
+    `SELECT p.artifact_id,p.source_draft_version,a.sha256,a.byte_length,a.media_type,a.storage_bucket,a.storage_key,p.created_at::text created_at FROM simforge.simulation_previews p JOIN simforge.documents d ON d.id=p.document_id AND d.workspace_id=p.workspace_id JOIN simforge.drafts dr ON dr.document_id=d.id AND dr.workspace_id=d.workspace_id JOIN simforge.artifacts a ON a.id=p.artifact_id AND a.workspace_id=p.workspace_id WHERE p.document_id=:document_id AND p.workspace_id=:workspace_id AND d.deleted_at IS NULL AND a.artifact_state='available' AND p.source_draft_version=dr.draft_version AND p.source_content_sha256=dr.content_sha256 AND p.map_version_id=dr.map_version_id LIMIT 1`,
     { document_id: documentId, workspace_id: context.workspaceId },
   );
   const row = rows[0];

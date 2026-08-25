@@ -44,7 +44,7 @@ export async function listBrowserRecordingsClient(input: {
   if (input.limit) query.set("limit", String(input.limit));
   const suffix = query.size > 0 ? `?${query.toString()}` : "";
   const response = await requestJson<{ recordings: BrowserRecordingSummaryDto[] }>(
-    `/api/uniscenario/recordings${suffix}`,
+    `/api/simforge/recordings${suffix}`,
     { signal: input.signal },
   );
   return response.recordings;
@@ -56,7 +56,7 @@ export function getBrowserRecordingClient(
   signal?: AbortSignal,
 ) {
   return requestJson<BrowserRecordingDetailDto>(
-    `/api/uniscenario/recordings/${encodeURIComponent(recordingId)}`,
+    `/api/simforge/recordings/${encodeURIComponent(recordingId)}`,
     { signal },
   );
 }
@@ -66,7 +66,7 @@ export function getBrowserRecordingRevisionInputClient(
   signal?: AbortSignal,
 ) {
   return requestJson<BrowserRecordingRevisionInput>(
-    `/api/uniscenario/revisions/${encodeURIComponent(revisionId)}/recording-input`,
+    `/api/simforge/revisions/${encodeURIComponent(revisionId)}/recording-input`,
     { signal },
   );
 }

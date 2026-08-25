@@ -44,7 +44,7 @@ function isEditableTarget(target: EventTarget | null) {
 async function fetchQueuePage(cursor?: string | null) {
   const params = new URLSearchParams({ limit: String(SCENARIO_REVIEW_QUEUE_PAGE_SIZE) });
   if (cursor) params.set("cursor", cursor);
-  const response = await fetch(`/api/uniscenario/review-queue?${params}`, { cache: "no-store" });
+  const response = await fetch(`/api/simforge/review-queue?${params}`, { cache: "no-store" });
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
   if (!response.ok) throw new Error(body?.error ?? "Failed to load the review queue.");
   return ScenarioReviewQueuePageSchema.parse(body);
@@ -127,7 +127,7 @@ export function ScenarioReviewQueue() {
 
       try {
         const response = await fetch(
-          `/api/uniscenario/documents/${encodeURIComponent(documentId)}/rating`,
+          `/api/simforge/documents/${encodeURIComponent(documentId)}/rating`,
           {
             method: "PUT",
             headers: { "content-type": "application/json" },
@@ -287,7 +287,7 @@ export function ScenarioReviewQueue() {
                       eyebrow={item.datasetName ?? "Dataset"}
                       videoUrl={
                         item.previewArtifactId
-                          ? `/api/uniscenario/artifacts/${encodeURIComponent(item.previewArtifactId)}`
+                          ? `/api/simforge/artifacts/${encodeURIComponent(item.previewArtifactId)}`
                           : null
                       }
                       emptyLabel={

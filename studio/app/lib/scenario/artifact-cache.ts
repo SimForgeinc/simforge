@@ -31,7 +31,7 @@ import { availableStorageBytes } from "@/app/lib/maps/frontend/map-asset-cache";
 
 const CACHE_NAME = "simforge-scenario-artifacts-v1";
 /** Synthetic origin path; never fetched, it only names the entry by digest. */
-const CONTENT_PREFIX = "/api/uniscenario/artifact-cache/sha256/";
+const CONTENT_PREFIX = "/api/simforge/artifact-cache/sha256/";
 const SHA256 = /^[a-f0-9]{64}$/;
 /** Below this, leave the remaining quota to the map assets the viewer needs. */
 const MIN_FREE_BYTES_TO_CACHE = 64 * 1024 * 1024;

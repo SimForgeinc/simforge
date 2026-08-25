@@ -59,11 +59,11 @@ export type PublishedMapIntel = {
 export type PublishUploadedMapVersionInput = {
   /**
    * The draft these artifacts came from. It becomes their producer identity:
-   * `uniscenario.artifacts` requires every row to name either an immutable
+   * `simforge.artifacts` requires every row to name either an immutable
    * revision or an operational producer job, and a published map has neither a
    * revision nor any of the compile/validate/render/postprocess jobs, so
    * `20260819110000_map_publication_artifact_producer.sql` adds a
-   * `map_publication` family that resolves against `uniscenario.map_upload_drafts`
+   * `map_publication` family that resolves against `simforge.map_upload_drafts`
    * — and this is the id it resolves by.
    */
   draftId: string;
@@ -95,7 +95,7 @@ const MAP_UPLOAD_PRODUCER_FAMILY = "map_publication";
 function producerProvenance(draftId: string) {
   // The producer id is the draft id itself, because
   // uniscenario_artifacts_producer_resolvable resolves `map_publication` against
-  // uniscenario.map_upload_drafts by exact id and workspace.
+  // simforge.map_upload_drafts by exact id and workspace.
   const producerJobId = draftId;
   // Keys are the SQL parameter names, not camelCase: these objects are spread
   // straight into the Data API binding, which resolves `:producer_job_family`
@@ -168,7 +168,7 @@ export async function publishUploadedMapVersion(
     if (!source) throw new Error(`source_map_asset_not_found:${input.sourceMapAssetId}`);
 
     const catalog = await tx.queryOne<IdRow>(
-      `SELECT id FROM uniscenario.asset_catalog_versions
+      `SELECT id FROM simforge.asset_catalog_versions
        WHERE id = :asset_catalog_version_id AND status = 'active'
          AND (workspace_id IS NULL OR workspace_id = :workspace_id) LIMIT 1`,
       {
@@ -182,7 +182,7 @@ export async function publishUploadedMapVersion(
 
     const proposedThumbnailId = thumbnailArtifactId(input.workspaceId, input.thumbnail.sha256);
     await tx.execute(
-      `INSERT INTO uniscenario.artifacts (
+      `INSERT INTO simforge.artifacts (
          id, workspace_id, artifact_kind, media_type, storage_bucket, storage_key,
          sha256, byte_length, artifact_state, metadata, verified_at,
          producer_job_family, producer_job_id, provenance
@@ -210,7 +210,7 @@ export async function publishUploadedMapVersion(
     );
     const thumbnailArtifact = await tx.queryOne<IdRow>(
       `SELECT id
-       FROM uniscenario.artifacts
+       FROM simforge.artifacts
        WHERE workspace_id = :workspace_id
          AND artifact_kind = :artifact_kind
          AND sha256 = :sha256
@@ -235,7 +235,7 @@ export async function publishUploadedMapVersion(
     for (const member of plan.members) {
       if (!member.artifactKind || !member.artifactId) continue;
       await tx.execute(
-        `INSERT INTO uniscenario.artifacts (
+        `INSERT INTO simforge.artifacts (
            id, workspace_id, artifact_kind, media_type, storage_bucket, storage_key,
            sha256, byte_length, artifact_state, metadata, verified_at,
            producer_job_family, producer_job_id, provenance
@@ -261,7 +261,7 @@ export async function publishUploadedMapVersion(
           ...producer,
         },
       );
-      // `uniscenario.artifacts` declares UNIQUE (workspace_id, sha256,
+      // `simforge.artifacts` declares UNIQUE (workspace_id, sha256,
       // artifact_kind): within a workspace the bytes are the identity, and the
       // stored bucket/key is simply where a copy of them lives. So the insert
       // above may legitimately have done nothing because an earlier publish
@@ -270,7 +270,7 @@ export async function publishUploadedMapVersion(
       // reuse that row; matching on bucket/key instead would report a conflict
       // for bytes the workspace already owns.
       const exact = await tx.queryRows<IdRow>(
-        `SELECT id FROM uniscenario.artifacts
+        `SELECT id FROM simforge.artifacts
          WHERE workspace_id = :workspace_id AND artifact_kind = :artifact_kind
            AND sha256 = :sha256 AND byte_length = :byte_length AND artifact_state = 'available'`,
         {
@@ -340,7 +340,7 @@ export async function publishUploadedMapVersion(
     };
 
     await tx.execute(
-      `INSERT INTO uniscenario.map_versions (
+      `INSERT INTO simforge.map_versions (
          id, workspace_id, source_map_id, source_map_asset_id, derivative_release_id,
          label, locality, browser_manifest_url, topology_artifact_url,
          xodr_artifact_id, xodr_sha256, coordinate_system_id, coordinate_system_sha256,
@@ -381,7 +381,7 @@ export async function publishUploadedMapVersion(
       },
     );
     const exactMap = await tx.queryRows<IdRow>(
-      `SELECT id FROM uniscenario.map_versions
+      `SELECT id FROM simforge.map_versions
        WHERE id = :id AND workspace_id = :workspace_id
          AND source_map_id = :source_map_id AND source_map_asset_id = :source_map_asset_id
          AND derivative_release_id = :derivative_release_id AND xodr_sha256 = :xodr_sha256
@@ -403,7 +403,7 @@ export async function publishUploadedMapVersion(
     if (exactMap.length !== 1) throw new Error("map_version_identity_conflict");
 
     const thumbnailBound = await tx.queryRows<IdRow>(
-      `UPDATE uniscenario.map_versions
+      `UPDATE simforge.map_versions
        SET thumbnail_artifact_id = :thumbnail_artifact_id
        WHERE id = :map_version_id AND workspace_id = :workspace_id
          AND source_map_asset_id = :source_map_asset_id
@@ -418,7 +418,7 @@ export async function publishUploadedMapVersion(
     if (thumbnailBound.length !== 1) throw new Error("map_thumbnail_binding_failed");
 
     await tx.batchExecute(
-      `INSERT INTO uniscenario.browser_asset_blobs (
+      `INSERT INTO simforge.browser_asset_blobs (
          id, storage_bucket, storage_key, object_version_id, sha256, byte_length,
          media_type, verification_state, verified_at
        ) VALUES (
@@ -444,7 +444,7 @@ export async function publishUploadedMapVersion(
     );
 
     await tx.execute(
-      `INSERT INTO uniscenario.browser_asset_sets (
+      `INSERT INTO simforge.browser_asset_sets (
          id, workspace_id, map_version_id, contract_version, closure_sha256,
          object_count, byte_length, asset_set_state, verified_at
        ) VALUES (
@@ -462,7 +462,7 @@ export async function publishUploadedMapVersion(
       },
     );
     await tx.batchExecute(
-      `INSERT INTO uniscenario.browser_asset_members (asset_set_id, relative_path, blob_id, role, required)
+      `INSERT INTO simforge.browser_asset_members (asset_set_id, relative_path, blob_id, role, required)
        VALUES (:asset_set_id, :relative_path, :blob_id, :role, :required)
        ON CONFLICT (asset_set_id, relative_path) DO NOTHING`,
       plan.members.map((member) => ({
@@ -476,8 +476,8 @@ export async function publishUploadedMapVersion(
 
     const counts = await tx.queryOne<ClosureCountRow>(
       `SELECT COUNT(*)::int AS object_count, COALESCE(SUM(b.byte_length), 0)::bigint AS byte_length
-       FROM uniscenario.browser_asset_members m
-       JOIN uniscenario.browser_asset_blobs b ON b.id = m.blob_id AND b.verification_state = 'verified'
+       FROM simforge.browser_asset_members m
+       JOIN simforge.browser_asset_blobs b ON b.id = m.blob_id AND b.verification_state = 'verified'
        WHERE m.asset_set_id = :asset_set_id`,
       { asset_set_id: plan.id },
     );
@@ -489,7 +489,7 @@ export async function publishUploadedMapVersion(
     }
 
     const bound = await tx.queryRows<IdRow>(
-      `UPDATE uniscenario.map_versions SET browser_asset_set_id = :asset_set_id
+      `UPDATE simforge.map_versions SET browser_asset_set_id = :asset_set_id
        WHERE id = :map_version_id AND workspace_id = :workspace_id
          AND (browser_asset_set_id IS NULL OR browser_asset_set_id = :asset_set_id)
        RETURNING id`,

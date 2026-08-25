@@ -61,7 +61,7 @@ export async function createPostprocessJobForActor(actor: PostprocessActor, inpu
 
   return withTransaction(async (tx) => {
     const existing = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.render_jobs
+      `SELECT id FROM simforge.render_jobs
         WHERE workspace_id = :workspace_id AND idempotency_key = :idempotency_key
         LIMIT 1`,
       {
@@ -79,7 +79,7 @@ export async function createPostprocessJobForActor(actor: PostprocessActor, inpu
       execution_package_id: string;
     }>(
       `SELECT rj.id, rj.revision_id, rj.execution_package_id
-         FROM uniscenario.render_jobs rj
+         FROM simforge.render_jobs rj
         WHERE rj.workspace_id = :workspace_id
           AND rj.id = :parent_id
           AND rj.job_state = 'succeeded'
@@ -90,8 +90,8 @@ export async function createPostprocessJobForActor(actor: PostprocessActor, inpu
 
     const source = await tx.queryOne<{ id: string }>(
       `SELECT a.id
-         FROM uniscenario.artifact_links al
-         JOIN uniscenario.artifacts a
+         FROM simforge.artifact_links al
+         JOIN simforge.artifacts a
            ON a.id = al.artifact_id AND a.workspace_id = al.workspace_id
         WHERE al.workspace_id = :workspace_id
           AND al.render_job_id = :parent_id
@@ -109,7 +109,7 @@ export async function createPostprocessJobForActor(actor: PostprocessActor, inpu
 
     const jobId = scenarioId("usrj");
     const row = await tx.queryOne<{ id: string }>(
-      `INSERT INTO uniscenario.render_jobs (
+      `INSERT INTO simforge.render_jobs (
          id, workspace_id, revision_id, execution_package_id,
          render_spec, render_spec_sha256, request_contract_version,
          job_mode, billing_mode, estimated_cost_cents,
@@ -121,10 +121,10 @@ export async function createPostprocessJobForActor(actor: PostprocessActor, inpu
          :job_mode, 'free', 0,
          :priority, :idempotency_key, :user_id,
          rj.id, a.id, :model_family, CAST(:model_config AS jsonb), :model_config_sha256
-       FROM uniscenario.render_jobs rj
-       JOIN uniscenario.artifact_links al
+       FROM simforge.render_jobs rj
+       JOIN simforge.artifact_links al
          ON al.render_job_id = rj.id AND al.workspace_id = rj.workspace_id
-       JOIN uniscenario.artifacts a
+       JOIN simforge.artifacts a
          ON a.id = al.artifact_id AND a.workspace_id = al.workspace_id
        WHERE rj.workspace_id = :workspace_id
          AND rj.id = :parent_id

@@ -153,13 +153,13 @@ export function isScenarioParityEvidenceAccepted(
   return evidence.execution.mode === "native-physics" && evidence.verdict === "pass";
 }
 
-export const UNISCENARIO_RTX3080_HARDWARE_PROFILE = "rtx3080-10gb-v1" as const;
-export const UNISCENARIO_LOCAL_RTX5080_HARDWARE_PROFILE =
+export const SIMFORGE_RTX3080_HARDWARE_PROFILE = "rtx3080-10gb-v1" as const;
+export const SIMFORGE_LOCAL_RTX5080_HARDWARE_PROFILE =
   "rtx5080-16gb-local-v1" as const;
 
 export const ScenarioRenderHardwareProfileSchema = z.enum([
-  UNISCENARIO_RTX3080_HARDWARE_PROFILE,
-  UNISCENARIO_LOCAL_RTX5080_HARDWARE_PROFILE,
+  SIMFORGE_RTX3080_HARDWARE_PROFILE,
+  SIMFORGE_LOCAL_RTX5080_HARDWARE_PROFILE,
 ]);
 export type ScenarioRenderHardwareProfile = z.infer<
   typeof ScenarioRenderHardwareProfileSchema

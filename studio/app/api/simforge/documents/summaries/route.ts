@@ -12,7 +12,7 @@ import {
  *
  * Backed by `listScenarioDocumentSummaries`, which never selects `canonical_content` — see the
  * comment on `DOCUMENT_SUMMARY_SELECT`. The editor's full-document read stays on
- * `/api/uniscenario/documents`.
+ * `/api/simforge/documents`.
  */
 export async function GET(request: Request) {
   const auth = await requireScenarioContext();

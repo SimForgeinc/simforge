@@ -9,7 +9,7 @@ import {
  * Every artifact in the workspace reachable from a render job (manifest #146, the artifacts workspace).
  *
  * PLACED UNDER `render-jobs/` ON PURPOSE, and it is worth saying why so it can be moved deliberately
- * rather than by accident. `app/api/uniscenario/artifacts/` already exists and belongs to the upload
+ * rather than by accident. `app/api/simforge/artifacts/` already exists and belongs to the upload
  * and finalisation surface; this is a render-scoped browse read that joins through `artifact_links` to
  * `render_jobs` and filters on render visibility. Putting it there would mix a browse view into an
  * upload API and would cross a directory this lane does not own. If the artifacts route owner would

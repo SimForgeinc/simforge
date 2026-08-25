@@ -16,7 +16,18 @@
 
 import { z } from 'zod';
 
-export const SCENE_STATE_VERSION = 'scene-state.v1';
+export const CANONICAL_SCENE_STATE_VERSION = 'simforge.scene-state.v1' as const;
+export const LEGACY_SCENE_STATE_VERSION = 'scene-state.v1' as const;
+/**
+ * Digest-preserving emission switch. Keep false until stored recordings and
+ * renderers are deliberately re-canonicalized in one coordinated release.
+ */
+export const EMIT_CANONICAL_SCENE_STATE_VERSION = false;
+export const SCENE_STATE_VERSION = (
+  EMIT_CANONICAL_SCENE_STATE_VERSION
+    ? CANONICAL_SCENE_STATE_VERSION
+    : LEGACY_SCENE_STATE_VERSION
+) as typeof CANONICAL_SCENE_STATE_VERSION | typeof LEGACY_SCENE_STATE_VERSION;
 
 /** Render profiles; part of the render intent (WSB4 owns `cinematic`). */
 export const renderProfileSchema = z.enum(['sensor', 'cinematic']);
@@ -96,7 +107,10 @@ export const frameSchema = z.object({
 export type SceneFrame = z.infer<typeof frameSchema>;
 
 export const sceneStateSchema = z.object({
-  version: z.literal(SCENE_STATE_VERSION),
+  version: z.union([
+    z.literal(CANONICAL_SCENE_STATE_VERSION),
+    z.literal(LEGACY_SCENE_STATE_VERSION),
+  ]),
   mapId: z.string().min(1),
   frame: z.literal('scene-yup'),
   dt: z.number().finite().positive(),

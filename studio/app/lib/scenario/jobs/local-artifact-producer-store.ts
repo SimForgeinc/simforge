@@ -52,7 +52,7 @@ export async function createLocalArtifactProducer(
     : input.initialPhase ?? "producing_artifact";
   const progress = input.completed ? 1 : input.initialProgress ?? 0;
   const row = await withScenarioJobTransaction(id, (tx) => tx.queryOne<{ id: string }>(
-    `INSERT INTO uniscenario.artifact_postprocess_jobs (
+    `INSERT INTO simforge.artifact_postprocess_jobs (
        id, workspace_id, revision_id, postprocess_kind, state, phase, progress,
        requested_by_user_id, idempotency_key, correlation_id, request_payload,
        request_payload_sha256, result_payload, attempt_count, max_attempts,
@@ -98,7 +98,7 @@ export async function createLocalArtifactProducer(
   ));
   if (row) return row.id;
   const existing = await queryOne<{ id: string }>(
-    `SELECT id FROM uniscenario.artifact_postprocess_jobs
+    `SELECT id FROM simforge.artifact_postprocess_jobs
       WHERE workspace_id = :workspace_id AND postprocess_kind = :operation
         AND idempotency_key = :idempotency_key LIMIT 1`,
     {
@@ -139,7 +139,7 @@ export async function finalizeLocalArtifactProducerSet(
              AS item(artifact_id TEXT, artifact_role TEXT)
        ), linked AS (
          SELECT link.artifact_id, link.artifact_role
-           FROM uniscenario.operational_job_artifact_links link
+           FROM simforge.operational_job_artifact_links link
           WHERE link.workspace_id = :workspace_id
             AND link.job_family = 'artifact_postprocess'
             AND link.job_id = :producer_job_id AND link.attempt_id IS NULL
@@ -150,7 +150,7 @@ export async function finalizeLocalArtifactProducerSet(
               NOT EXISTS (SELECT * FROM declared EXCEPT SELECT * FROM linked)
                 AND NOT EXISTS (SELECT * FROM linked EXCEPT SELECT * FROM declared)
                 AS closure_matches
-         FROM uniscenario.artifact_postprocess_jobs job
+         FROM simforge.artifact_postprocess_jobs job
         WHERE job.id = :producer_job_id AND job.workspace_id = :workspace_id
           AND job.postprocess_kind = 'browser_threejs_recording'
           AND (
@@ -186,9 +186,9 @@ export async function finalizeLocalArtifactProducerSet(
     }
     const artifactIds = [...new Set(input.artifacts.map((artifact) => artifact.artifactId))];
     const published = await tx.queryRows<{ id: string }>(
-      `UPDATE uniscenario.artifacts artifact
+      `UPDATE simforge.artifacts artifact
           SET artifact_state = 'available', verified_at = COALESCE(verified_at, NOW())
-         FROM uniscenario.operational_job_artifact_links link
+         FROM simforge.operational_job_artifact_links link
         WHERE link.workspace_id = :workspace_id
           AND link.job_family = 'artifact_postprocess'
           AND link.job_id = :producer_job_id AND link.attempt_id IS NULL
@@ -204,7 +204,7 @@ export async function finalizeLocalArtifactProducerSet(
     );
     if (published.length !== artifactIds.length) return false;
     const row = await tx.queryOne<{ id: string }>(
-      `UPDATE uniscenario.artifact_postprocess_jobs
+      `UPDATE simforge.artifact_postprocess_jobs
           SET state = 'succeeded', phase = 'finalized', progress = 1,
               progress_payload = '{}'::jsonb,
               result_payload = CAST(:result_payload AS jsonb),
@@ -234,8 +234,8 @@ export async function finalizeLocalArtifactProducer(
   const finalize = async (tx: JobTransaction) => {
     const producer = await tx.queryOne<{ id: string }>(
       `SELECT job.id
-         FROM uniscenario.artifacts artifact
-         JOIN uniscenario.artifact_postprocess_jobs job
+         FROM simforge.artifacts artifact
+         JOIN simforge.artifact_postprocess_jobs job
            ON job.id = artifact.producer_job_id AND job.workspace_id = artifact.workspace_id
         WHERE artifact.id = :artifact_id AND artifact.workspace_id = :workspace_id
           AND artifact.producer_job_family = 'artifact_postprocess'
@@ -257,8 +257,8 @@ export async function finalizeLocalArtifactProducer(
                 'artifactId', artifact.id, 'artifactKind', artifact.artifact_kind,
                 'sha256', artifact.sha256, 'provenance', artifact.provenance
               ) AS result_matches
-         FROM uniscenario.artifacts artifact
-         JOIN uniscenario.artifact_postprocess_jobs job
+         FROM simforge.artifacts artifact
+         JOIN simforge.artifact_postprocess_jobs job
            ON job.id = artifact.producer_job_id AND job.workspace_id = artifact.workspace_id
         WHERE artifact.id = :artifact_id AND artifact.workspace_id = :workspace_id
           AND job.id = :producer_job_id
@@ -287,14 +287,14 @@ export async function finalizeLocalArtifactProducer(
       return false;
     }
     const row = await tx.queryOne<{ id: string }>(
-      `UPDATE uniscenario.artifact_postprocess_jobs job
+      `UPDATE simforge.artifact_postprocess_jobs job
           SET state = 'succeeded', phase = 'finalized', progress = 1,
               result_payload = jsonb_build_object(
                 'artifactId', artifact.id, 'artifactKind', artifact.artifact_kind,
                 'sha256', artifact.sha256, 'provenance', artifact.provenance
               ),
               completed_at = COALESCE(job.completed_at, NOW()), updated_at = NOW()
-         FROM uniscenario.artifacts artifact
+         FROM simforge.artifacts artifact
         WHERE artifact.id = :artifact_id AND artifact.workspace_id = :workspace_id
           AND job.id = :producer_job_id AND job.id = artifact.producer_job_id
           AND job.workspace_id = artifact.workspace_id
@@ -306,7 +306,7 @@ export async function finalizeLocalArtifactProducer(
           AND job.cancel_requested_at IS NULL
           AND (
             artifact.producer_attempt_id IS NULL OR EXISTS (
-              SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+              SELECT 1 FROM simforge.cpu_job_attempts attempt
                WHERE attempt.id = artifact.producer_attempt_id
                  AND attempt.workspace_id = artifact.workspace_id
                  AND attempt.job_family = 'artifact_postprocess'

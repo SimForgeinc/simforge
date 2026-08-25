@@ -6,7 +6,7 @@
  */
 
 import type { RenderArtifactIdentity, RenderProgressRecord, ScenarioRendererEngine } from "../render-wire-contracts";
-/** Job states the worker control plane advances. Mirrors `uniscenario.render_jobs.job_state`. */
+/** Job states the worker control plane advances. Mirrors `simforge.render_jobs.job_state`. */
 export type ScenarioRenderJobState =
   | "queued"
   | "leased"
@@ -15,7 +15,7 @@ export type ScenarioRenderJobState =
   | "failed"
   | "cancelled";
 
-/** `uniscenario.render_jobs.job_mode`. The last two are postprocess modes from 20260805016000. */
+/** `simforge.render_jobs.job_mode`. The last two are postprocess modes from 20260805016000. */
 export type ScenarioRenderJobMode =
   | "interaction_2d"
   | "full_render"

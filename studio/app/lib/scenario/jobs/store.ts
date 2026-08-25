@@ -58,7 +58,7 @@ export async function listOperationalJobs(
   } = {},
 ) {
   const rows = await queryRows<JobRow>(
-    `SELECT ${COLUMNS} FROM uniscenario.operational_jobs
+    `SELECT ${COLUMNS} FROM simforge.operational_jobs
       WHERE workspace_id = :workspace_id
         ${input.family ? "AND job_family = :job_family" : ""}
         ${input.revisionId ? "AND revision_id = :revision_id" : ""}
@@ -78,7 +78,7 @@ export async function getOperationalJob(
   jobId: string,
 ) {
   const rows = await queryRows<JobRow>(
-    `SELECT ${COLUMNS} FROM uniscenario.operational_jobs
+    `SELECT ${COLUMNS} FROM simforge.operational_jobs
       WHERE workspace_id = :workspace_id AND id = :job_id LIMIT 1`,
     { workspace_id: context.workspaceId, job_id: jobId },
   );
@@ -97,7 +97,7 @@ export async function cancelOperationalJobWithResult(
   options: CancellationOptions = {},
 ) {
   const current = await queryRows<{ job_family: ScenarioJobFamily }>(
-    `SELECT job_family FROM uniscenario.operational_jobs
+    `SELECT job_family FROM simforge.operational_jobs
       WHERE workspace_id = :workspace_id AND id = :job_id
         ${options.family ? "AND job_family = :job_family" : ""}
       LIMIT 1`,
@@ -118,7 +118,7 @@ export async function cancelOperationalJobWithResult(
 
     if (family === "openscenario_compile") {
       const job = await tx.queryOne<{ id: string }>(
-        `UPDATE uniscenario.exports
+        `UPDATE simforge.exports
          SET cancel_requested_at = COALESCE(cancel_requested_at, NOW()),
              export_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
              error_code = COALESCE(error_code, 'cancelled'),
@@ -131,7 +131,7 @@ export async function cancelOperationalJobWithResult(
       changed = Boolean(job);
       if (changed) {
         const activeAttempt = await tx.queryOne<{ id: string }>(
-          `UPDATE uniscenario.export_attempts
+          `UPDATE simforge.export_attempts
               SET attempt_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
                   failure_code = 'cancelled', failure_detail = CAST(:detail AS jsonb)
             WHERE workspace_id = :workspace_id AND export_id = :job_id
@@ -143,7 +143,7 @@ export async function cancelOperationalJobWithResult(
       }
     } else if (family === "openscenario_validate") {
       const job = await tx.queryOne<{ id: string }>(
-        `UPDATE uniscenario.validation_runs
+        `UPDATE simforge.validation_runs
          SET cancel_requested_at = COALESCE(cancel_requested_at, NOW()),
              validation_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
              failure_code = COALESCE(failure_code, 'cancelled'),
@@ -156,7 +156,7 @@ export async function cancelOperationalJobWithResult(
       changed = Boolean(job);
       if (changed) {
         const activeAttempt = await tx.queryOne<{ id: string }>(
-          `UPDATE uniscenario.cpu_job_attempts
+          `UPDATE simforge.cpu_job_attempts
               SET attempt_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
                   failure_code = 'cancelled', failure_detail = CAST(:detail AS jsonb)
             WHERE workspace_id = :workspace_id AND job_family = 'openscenario_validate'
@@ -173,10 +173,10 @@ export async function cancelOperationalJobWithResult(
         postprocess_kind: string | null;
       }>(
         `WITH current AS (
-           SELECT id FROM uniscenario.artifact_postprocess_jobs
+           SELECT id FROM simforge.artifact_postprocess_jobs
             WHERE workspace_id = :workspace_id AND id = :job_id FOR UPDATE
          ), updated AS (
-           UPDATE uniscenario.artifact_postprocess_jobs job
+           UPDATE simforge.artifact_postprocess_jobs job
               SET cancel_requested_at = COALESCE(job.cancel_requested_at, NOW()),
                   cancel_reason = COALESCE(job.cancel_reason, :reason),
                   state = 'cancelled', phase = 'cancelled',
@@ -218,7 +218,7 @@ export async function cancelOperationalJobWithResult(
           { workspace_id: context.workspaceId, job_id: jobId },
         );
         const activeAttempt = await tx.queryOne<{ id: string }>(
-          `UPDATE uniscenario.cpu_job_attempts
+          `UPDATE simforge.cpu_job_attempts
               SET attempt_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
                   failure_code = 'cancelled',
                   failure_detail = CAST(:detail AS jsonb)
@@ -231,7 +231,7 @@ export async function cancelOperationalJobWithResult(
         activeAttemptId = activeAttempt?.id ?? null;
       } else if (!canonical?.canonical_exists) {
         const compatibility = await tx.queryOne<{ id: string }>(
-          `UPDATE uniscenario.render_jobs
+          `UPDATE simforge.render_jobs
            SET cancel_requested_at = COALESCE(cancel_requested_at, NOW()),
                job_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
                failure_code = COALESCE(failure_code, 'cancelled'),
@@ -245,7 +245,7 @@ export async function cancelOperationalJobWithResult(
         changed = Boolean(compatibility);
         if (changed) {
           const activeAttempt = await tx.queryOne<{ id: string }>(
-            `UPDATE uniscenario.cpu_job_attempts
+            `UPDATE simforge.cpu_job_attempts
                 SET attempt_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
                     failure_code = 'cancelled', failure_detail = CAST(:detail AS jsonb)
               WHERE workspace_id = :workspace_id AND job_family = 'artifact_postprocess'
@@ -258,7 +258,7 @@ export async function cancelOperationalJobWithResult(
       }
     } else {
       const job = await tx.queryOne<{ id: string }>(
-        `UPDATE uniscenario.render_jobs
+        `UPDATE simforge.render_jobs
          SET cancel_requested_at = COALESCE(cancel_requested_at, NOW()),
              job_state = 'cancelled', completed_at = COALESCE(completed_at, NOW()),
              failure_code = COALESCE(failure_code, 'cancelled'),
@@ -271,12 +271,12 @@ export async function cancelOperationalJobWithResult(
       changed = Boolean(job);
       if (changed) {
         await tx.execute(
-          `UPDATE uniscenario.worker_leases SET lease_state = 'revoked', released_at = COALESCE(released_at, NOW())
+          `UPDATE simforge.worker_leases SET lease_state = 'revoked', released_at = COALESCE(released_at, NOW())
             WHERE render_job_id = :job_id AND lease_state = 'active'`,
           { job_id: jobId },
         );
         const activeAttempt = await tx.queryOne<{ id: string }>(
-          `UPDATE uniscenario.render_attempts
+          `UPDATE simforge.render_attempts
               SET attempt_state = 'cancelled', completed_at = COALESCE(completed_at, NOW())
             WHERE workspace_id = :workspace_id AND render_job_id = :job_id
               AND attempt_state IN ('leased', 'running')
@@ -285,7 +285,7 @@ export async function cancelOperationalJobWithResult(
         );
         activeAttemptId = activeAttempt?.id ?? null;
         await tx.execute(
-          `UPDATE uniscenario.artifact_uploads SET upload_state = 'cancelled'
+          `UPDATE simforge.artifact_uploads SET upload_state = 'cancelled'
             WHERE workspace_id = :workspace_id AND render_job_id = :job_id
               AND upload_state = 'reserved'`,
           { workspace_id: context.workspaceId, job_id: jobId },
@@ -296,13 +296,13 @@ export async function cancelOperationalJobWithResult(
     if (!changed) return false;
     if (family === "openscenario_render") {
       await tx.execute(
-        `INSERT INTO uniscenario.job_events (
+        `INSERT INTO simforge.job_events (
            id, workspace_id, render_job_id, render_attempt_id, event_ordinal,
            worker_sequence, event_type, event_payload, occurred_at
          ) SELECT 'usje_' || substr(md5(:workspace_id || ':' || :job_id || ':cancelled'), 1, 24),
                   :workspace_id, :job_id, :attempt_id, COALESCE(MAX(event_ordinal), 0) + 1,
                   NULL, 'cancelled', CAST(:event_payload AS jsonb), NOW()
-             FROM uniscenario.job_events WHERE render_job_id = :job_id
+             FROM simforge.job_events WHERE render_job_id = :job_id
          ON CONFLICT (id) DO NOTHING`,
         {
           workspace_id: context.workspaceId,
@@ -313,13 +313,13 @@ export async function cancelOperationalJobWithResult(
       );
     } else {
       await tx.execute(
-        `INSERT INTO uniscenario.operational_job_events (
+        `INSERT INTO simforge.operational_job_events (
            id, workspace_id, job_family, job_id, attempt_id,
            event_ordinal, event_type, event_payload
          ) SELECT 'usoe_' || substr(md5(:workspace_id || ':' || :job_family || ':' || :job_id || ':cancelled'), 1, 24),
                   :workspace_id, :job_family, :job_id, :attempt_id,
                   COALESCE(MAX(event_ordinal), 0) + 1, 'cancelled', CAST(:event_payload AS jsonb)
-             FROM uniscenario.operational_job_events
+             FROM simforge.operational_job_events
             WHERE workspace_id = :workspace_id AND job_family = :job_family AND job_id = :job_id
          ON CONFLICT (id) DO NOTHING`,
         {

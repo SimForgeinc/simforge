@@ -34,6 +34,7 @@ import {
 import type { MapClosureMember } from "@/app/lib/map-ingest/server/storage";
 import { planUploadedMapClosure } from "@/app/lib/map-ingest/server/closure";
 import { publishUploadedMapVersion } from "@/app/lib/map-ingest/server/publication";
+import { simforgeEnv } from "@/lib/compat-env";
 
 export const maxDuration = 300;
 
@@ -224,8 +225,8 @@ export async function POST(
       ),
       generatedMember(colliders.artifact.relativePath, "application/json", colliders.artifact.bytes),
     ].sort((left, right) => left.relativePath.localeCompare(right.relativePath));
-    const artifactBucket = process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim();
-    if (!artifactBucket) throw new Error("UNISCENARIO_ARTIFACT_BUCKET is required.");
+    const artifactBucket = simforgeEnv("ARTIFACT_BUCKET")?.trim();
+    if (!artifactBucket) throw new Error("SIMFORGE_ARTIFACT_BUCKET is required.");
 
     // The authored bytes are promoted into the immutable artifact bucket rather
     // than referenced where the browser staged them. `map-uploads/` is a staging
@@ -263,7 +264,7 @@ export async function POST(
 
     const binding = await queryOne<PublicationBindingRow>(
       `SELECT id AS derivative_release_id, asset_catalog_version_id
-       FROM uniscenario.editor_asset_releases
+       FROM simforge.editor_asset_releases
        WHERE workspace_id = :workspace_id AND release_state = 'active'
        LIMIT 1`,
       { workspace_id: draft.workspaceId },

@@ -17,7 +17,7 @@ import {
  * access pattern, different file.
  *
  * NOT CACHED, and do not add `"use cache"` to it. Render jobs advance
- * `uniscenario.document_review_state_v` from the worker control plane while an operator is looking
+ * `simforge.document_review_state_v` from the worker control plane while an operator is looking
  * at the list, which makes this the background-writer case in the rule at the top of §2.5: a read
  * whose freshness requirement is set by a background writer is dynamic however cacheable its shape
  * looks. A cached queue would keep handing out documents that were rated seconds ago.
@@ -147,7 +147,7 @@ export async function listScenarioReviewQueue(
        dr.summary_content_tags,
        v.rating_count,
        v.review_state,
-       (SELECT r.score FROM uniscenario.document_ratings r
+       (SELECT r.score FROM simforge.document_ratings r
          WHERE r.workspace_id = d.workspace_id AND r.document_id = d.id
            AND r.rater_user_id = :user_id
          LIMIT 1)          AS viewer_score,
@@ -155,29 +155,29 @@ export async function listScenarioReviewQueue(
        rj.id               AS render_job_id,
        rj.job_state        AS render_state,
        va.id               AS preview_artifact_id
-     FROM uniscenario.documents d
-     JOIN uniscenario.document_review_state_v v
+     FROM simforge.documents d
+     JOIN simforge.document_review_state_v v
        ON v.workspace_id = d.workspace_id AND v.document_id = d.id
-     JOIN uniscenario.datasets ds
+     JOIN simforge.datasets ds
        ON ds.id = d.dataset_id AND ds.workspace_id = d.workspace_id
-     LEFT JOIN uniscenario.map_versions mv
+     LEFT JOIN simforge.map_versions mv
        ON mv.id = d.map_version_id
      -- The revision the reviewer is judging carries the classification summary. LEFT, because a
      -- document with no revision yet is still pending and must not vanish from the queue.
-     LEFT JOIN uniscenario.revisions dr
+     LEFT JOIN simforge.revisions dr
        ON dr.id = d.latest_revision_id AND dr.workspace_id = d.workspace_id
      -- Most recent render of the revision the reviewer will judge, so the queue can say which
      -- render was watched rather than implying the document as a whole was.
      LEFT JOIN LATERAL (
        SELECT j.id, j.job_state
-       FROM uniscenario.render_jobs j
+       FROM simforge.render_jobs j
        WHERE j.workspace_id = d.workspace_id AND j.revision_id = d.latest_revision_id
        ORDER BY j.created_at DESC, j.id DESC
        LIMIT 1
      ) rj ON TRUE
      LEFT JOIN LATERAL (
        SELECT a.id
-       FROM uniscenario.artifacts a
+       FROM simforge.artifacts a
        WHERE a.workspace_id = d.workspace_id
          AND a.revision_id = d.latest_revision_id
          AND a.artifact_kind = 'video'

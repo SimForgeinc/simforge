@@ -13,8 +13,8 @@ async function readScenarioMapThumbnail(
     media_type: string;
   }>(
     `SELECT a.storage_bucket, a.storage_key, a.sha256, a.byte_length, a.media_type
-     FROM uniscenario.map_versions mv
-     JOIN uniscenario.artifacts a ON a.id = mv.thumbnail_artifact_id
+     FROM simforge.map_versions mv
+     JOIN simforge.artifacts a ON a.id = mv.thumbnail_artifact_id
        AND a.workspace_id = mv.workspace_id
        AND a.artifact_kind = 'map-thumbnail-v2'
        AND a.artifact_state = 'available'

@@ -58,12 +58,12 @@ export async function inspectCompletedExport(
        ep.id AS execution_package_id, ep.manifest_sha256, ep.xsd_sha256,
        ep.capability_profile, ep.xosc_artifact_id, xa.sha256 AS xosc_sha256,
        ma.storage_bucket AS manifest_bucket, ma.storage_key AS manifest_key
-     FROM uniscenario.exports e
-     JOIN uniscenario.execution_packages ep
+     FROM simforge.exports e
+     JOIN simforge.execution_packages ep
        ON ep.id = e.execution_package_id AND ep.workspace_id = e.workspace_id
-     JOIN uniscenario.artifacts xa
+     JOIN simforge.artifacts xa
        ON xa.id = ep.xosc_artifact_id AND xa.workspace_id = e.workspace_id
-     JOIN uniscenario.artifacts ma
+     JOIN simforge.artifacts ma
        ON ma.id = ep.package_artifact_id AND ma.workspace_id = e.workspace_id
      WHERE e.workspace_id = :workspace_id AND e.id = :export_id
        AND e.export_state = 'succeeded'
@@ -91,7 +91,7 @@ export async function inspectCompletedExport(
   // them first, so the lookup must bind to the manifest's sha256 within the
   // workspace rather than to this export's revision.
   const artifact = (await queryRows<ArtifactRow>(
-    `SELECT storage_bucket, storage_key FROM uniscenario.artifacts
+    `SELECT storage_bucket, storage_key FROM simforge.artifacts
      WHERE workspace_id = :workspace_id
        AND artifact_kind = 'compiler-capability-report' AND sha256 = :sha256
        AND artifact_state = 'available' LIMIT 1`,

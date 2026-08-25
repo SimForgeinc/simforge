@@ -67,8 +67,19 @@ for (const [schema, id] of NAMED_DEFS) {
   if (!z.globalRegistry.get(schema)) z.globalRegistry.add(schema, { id });
 }
 
-/** Base URL every v2 `$id` hangs off. */
-export const V2_SCHEMA_BASE = 'https://schemas.uniscenarios.dev';
+export const CANONICAL_V2_SCHEMA_BASE = 'https://schemas.simforge.dev';
+export const LEGACY_V2_SCHEMA_BASE = 'https://schemas.uniscenarios.dev';
+/** Digest-preserving writer switch; committed generated schemas stay legacy until cutover. */
+export const EMIT_CANONICAL_V2_SCHEMA_IDS = false;
+/** Base URL every emitted v2 `$id` hangs off. */
+export const V2_SCHEMA_BASE = EMIT_CANONICAL_V2_SCHEMA_IDS
+  ? CANONICAL_V2_SCHEMA_BASE
+  : LEGACY_V2_SCHEMA_BASE;
+
+export function isAcceptedV2SchemaId(value: string): boolean {
+  return value.startsWith(`${CANONICAL_V2_SCHEMA_BASE}/`)
+    || value.startsWith(`${LEGACY_V2_SCHEMA_BASE}/`);
+}
 
 /** Committed path of the whole-template schema. */
 export const TEMPLATE_JSON_SCHEMA_PATH = 'schema/scenario-template.v2.schema.json';

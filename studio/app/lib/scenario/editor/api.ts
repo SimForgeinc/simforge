@@ -56,7 +56,7 @@ function unwrapList<T>(value: T[] | { items?: T[]; documents?: T[]; maps?: T[]; 
 
 export async function listScenarioMaps(signal?: AbortSignal): Promise<ScenarioMapEntry[]> {
   const response = await request<ScenarioMapDescriptorDto[] | { maps?: ScenarioMapDescriptorDto[] }>(
-    "/api/uniscenario/maps",
+    "/api/simforge/maps",
     { signal },
   );
   return unwrapList(response).map((map) => ({
@@ -84,7 +84,7 @@ export async function listScenarioMaps(signal?: AbortSignal): Promise<ScenarioMa
 
 export async function listScenarioDocuments(datasetId: string, signal?: AbortSignal): Promise<ScenarioDocumentRecord[]> {
   const response = await request<ScenarioDocumentRecord[] | { items?: ScenarioDocumentRecord[]; documents?: ScenarioDocumentRecord[] }>(
-    `/api/uniscenario/documents?datasetId=${encodeURIComponent(datasetId)}`,
+    `/api/simforge/documents?datasetId=${encodeURIComponent(datasetId)}`,
     { signal },
   );
   return unwrapList(response);
@@ -103,7 +103,7 @@ export function createScenarioDocument(
    * be the one racing an unload. */
   options: { keepalive?: boolean } = {},
 ): Promise<ScenarioDocumentRecord> {
-  return request("/api/uniscenario/documents", {
+  return request("/api/simforge/documents", {
     method: "POST",
     body: JSON.stringify(input),
     keepalive: options.keepalive,
@@ -124,7 +124,7 @@ export function saveScenarioDocument(
    */
   options: { keepalive?: boolean } = {},
 ): Promise<ScenarioDocumentRecord> {
-  return request(`/api/uniscenario/documents/${encodeURIComponent(document.id)}`, {
+  return request(`/api/simforge/documents/${encodeURIComponent(document.id)}`, {
     method: "PATCH",
     body: JSON.stringify({ expectedVersion: document.draftVersion, title, content, authoringQualityId }),
     keepalive: options.keepalive,
@@ -142,7 +142,7 @@ export function createScenarioRevision(
   if (!evidence) {
     return Promise.reject(new Error("This explicit export requires traffic evidence prepared for the current saved draft; ordinary preview playback does not persist evidence."));
   }
-  return request(`/api/uniscenario/documents/${encodeURIComponent(document.id)}/revisions`, {
+  return request(`/api/simforge/documents/${encodeURIComponent(document.id)}/revisions`, {
     method: "POST",
     body: JSON.stringify({
       expectedVersion: document.draftVersion,
@@ -173,7 +173,7 @@ export async function uploadScenarioMaterializedTraffic(
     mapVersionId: envelope.artifact.map.versionId,
   };
   const reservation = await request<MaterializedTrafficReservation>(
-    `/api/uniscenario/documents/${encodeURIComponent(document.id)}/materialized-traffic/reserve`,
+    `/api/simforge/documents/${encodeURIComponent(document.id)}/materialized-traffic/reserve`,
     { method: "POST", body: JSON.stringify({ expectedVersion: document.draftVersion, ...identity }), signal: options.signal },
   );
   if (reservation.uploadRequired) {
@@ -190,7 +190,7 @@ export async function uploadScenarioMaterializedTraffic(
     if (!uploaded.ok) throw new Error(`Materialized traffic upload failed (${uploaded.status})`);
   }
   return request<ScenarioMaterializedTrafficReference>(
-    `/api/uniscenario/documents/${encodeURIComponent(document.id)}/materialized-traffic/complete`,
+    `/api/simforge/documents/${encodeURIComponent(document.id)}/materialized-traffic/complete`,
     { method: "POST", body: JSON.stringify({ artifactId: reservation.artifactId, ...identity }), signal: options.signal },
   );
 }
@@ -211,7 +211,7 @@ export async function uploadAndConsumeScenarioMaterializedTraffic(
 }> {
   const reference = await uploadScenarioMaterializedTraffic(document, envelope, options);
   const descriptor = await request<ScenarioArtifactDto>(
-    `/api/uniscenario/artifacts/${encodeURIComponent(reference.artifactId)}?download=1`,
+    `/api/simforge/artifacts/${encodeURIComponent(reference.artifactId)}?download=1`,
     { signal: options.signal },
   );
   if (descriptor.id !== reference.artifactId || descriptor.sha256 !== reference.sha256
@@ -263,7 +263,7 @@ export async function ensureScenarioRevision(input: {
 }): Promise<CreateScenarioRevisionResultDto> {
   const document = input.expectedDraftVersion == null
     ? await request<ScenarioDocumentRecord>(
-        `/api/uniscenario/documents/${encodeURIComponent(input.documentId)}`,
+        `/api/simforge/documents/${encodeURIComponent(input.documentId)}`,
         { signal: input.signal },
       )
     : null;
@@ -273,7 +273,7 @@ export async function ensureScenarioRevision(input: {
   }
 
   const response = await request<{ revisions: ScenarioRevisionDto[] }>(
-    `/api/uniscenario/documents/${encodeURIComponent(input.documentId)}/revisions`,
+    `/api/simforge/documents/${encodeURIComponent(input.documentId)}/revisions`,
     { signal: input.signal },
   );
   const existing = response.revisions.find(
@@ -290,7 +290,7 @@ export async function ensureScenarioRevision(input: {
     throw new Error("Preparing a new revision requires explicit traffic evidence for this saved draft; opening render history and ordinary playback never create it.");
   }
   const retrySuffix = existing ? `:retry:${existing.export.id}` : "";
-  return request(`/api/uniscenario/documents/${encodeURIComponent(input.documentId)}/revisions`, {
+  return request(`/api/simforge/documents/${encodeURIComponent(input.documentId)}/revisions`, {
     method: "POST",
     body: JSON.stringify({
       expectedVersion: expectedDraftVersion,
@@ -310,7 +310,7 @@ export async function waitForRevisionExport(
   const intervalMs = options.intervalMs ?? 1_000;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const response = await request<ScenarioExportDto[] | { exports?: ScenarioExportDto[] }>(
-      `/api/uniscenario/exports?revisionId=${encodeURIComponent(revisionId)}`,
+      `/api/simforge/exports?revisionId=${encodeURIComponent(revisionId)}`,
     );
     const result = unwrapList(response).find((item) => item.id === exportId);
     if (!result) throw new Error("The revision export is no longer available");
@@ -326,7 +326,7 @@ export async function waitForRevisionExport(
 
 export async function downloadExportArtifact(artifactId: string): Promise<void> {
   const artifact = await request<ScenarioArtifactDto>(
-    `/api/uniscenario/artifacts/${encodeURIComponent(artifactId)}?download=1`,
+    `/api/simforge/artifacts/${encodeURIComponent(artifactId)}?download=1`,
   );
   const anchor = window.document.createElement("a");
   anchor.href = artifact.downloadUrl;
@@ -336,7 +336,7 @@ export async function downloadExportArtifact(artifactId: string): Promise<void> 
 
 export async function openScenarioArtifact(artifactId: string): Promise<void> {
   const artifact = await request<ScenarioArtifactDto>(
-    `/api/uniscenario/artifacts/${encodeURIComponent(artifactId)}`,
+    `/api/simforge/artifacts/${encodeURIComponent(artifactId)}`,
   );
   const anchor = window.document.createElement("a");
   anchor.href = artifact.downloadUrl;
@@ -354,7 +354,7 @@ export function submitRevisionJob(
   if (mode === "full_render" && !renderSpec) {
     throw new Error("Full renders require an explicit sensor specification.");
   }
-  return request("/api/uniscenario/render-jobs", {
+  return request("/api/simforge/render-jobs", {
     method: "POST",
     body: JSON.stringify({
       revisionId,
@@ -372,16 +372,16 @@ export function renderRevision(revisionId: string, executionPackageId: string, r
 }
 
 export async function listScenarioRenderJobs(): Promise<ScenarioRenderJobDto[]> {
-  const result = await request<{ renderJobs: ScenarioRenderJobDto[] }>("/api/uniscenario/render-jobs");
+  const result = await request<{ renderJobs: ScenarioRenderJobDto[] }>("/api/simforge/render-jobs");
   return result.renderJobs;
 }
 
 export async function cancelScenarioRenderJob(id: string): Promise<ScenarioRenderJobDto> {
-  return request(`/api/uniscenario/render-jobs/${encodeURIComponent(id)}`, { method: "DELETE" });
+  return request(`/api/simforge/render-jobs/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export function getScenarioJobProvenance(id: string): Promise<ScenarioJobProvenanceDto> {
-  return request(`/api/uniscenario/render-jobs/${encodeURIComponent(id)}/provenance`);
+  return request(`/api/simforge/render-jobs/${encodeURIComponent(id)}/provenance`);
 }
 
 export { SCENARIO_SCHEMA_VERSION };

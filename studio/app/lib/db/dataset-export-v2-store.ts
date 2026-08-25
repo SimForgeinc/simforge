@@ -221,7 +221,7 @@ const SELECT_EXPORT_JOB = `
     scope_json::text AS scope_json, requested_outputs::text AS requested_outputs_json,
     default_publication_id, created_at::text AS created_at, updated_at::text AS updated_at,
     started_at::text AS started_at, completed_at::text AS finished_at
-  FROM uniscenario.artifact_postprocess_jobs
+  FROM simforge.artifact_postprocess_jobs
 `;
 
 export async function createDatasetExportJobV2(input: {
@@ -253,7 +253,7 @@ export async function createDatasetExportJobV2(input: {
   const admittedId = await withTransaction(async (tx) => {
     const existing = input.idempotencyKey
       ? await tx.queryOne<{ id: string }>(
-          `SELECT id FROM uniscenario.artifact_postprocess_jobs
+          `SELECT id FROM simforge.artifact_postprocess_jobs
            WHERE workspace_id = :workspace_id AND postprocess_kind = 'dataset_export'
              AND idempotency_key = :idempotency_key
            LIMIT 1 FOR UPDATE`,
@@ -263,7 +263,7 @@ export async function createDatasetExportJobV2(input: {
     if (existing) return existing.id;
     const inserted = await tx.queryOne<{ id: string }>(
       `
-        INSERT INTO uniscenario.artifact_postprocess_jobs (
+        INSERT INTO simforge.artifact_postprocess_jobs (
           id, workspace_id, postprocess_kind, state, phase,
           requested_by_user_id, idempotency_key, correlation_id, request_payload,
           dataset_id, dataset_snapshot_id, pipeline_run_id, format, recipe, scope_json, requested_outputs,

@@ -15,6 +15,7 @@ import subprocess  # noqa: S404 - deliberate managed renderer invocation
 import sys
 from pathlib import Path
 from typing import Protocol
+from ._compat_env import simforge_env
 
 
 class FrameSource(Protocol):
@@ -65,7 +66,7 @@ class BrowserClipFrameSource:
         self.fps = fps
         self.width = width
         self.height = height
-        self.studio_url = studio_url or os.environ.get("UNISCENARIO_STUDIO_URL", "http://localhost:5199/")
+        self.studio_url = studio_url or simforge_env("STUDIO_URL", "http://localhost:5199/")
         self._frames: list[Path] = []
         self._times: list[float] = []
         self._started = False

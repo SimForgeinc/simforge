@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { AssetUrlServiceError, normalizeAssetKey } from "@/app/lib/assets/asset-url-service";
 import { SUMO_RUNTIME_VERSION } from "@/app/lib/scenario/sumo-runtime";
 import { requireScenarioContext } from "@/app/lib/scenario/http";
+import { simforgeEnv } from "@/lib/compat-env";
 
 type Context = { params: Promise<{ assetPath: string[] }> };
 
@@ -17,7 +18,7 @@ const ASSET_MEDIA_TYPES = {
 } as const;
 
 function artifactBucket() {
-  return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts";
+  return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts";
 }
 
 function requestedRange(request: NextRequest) {

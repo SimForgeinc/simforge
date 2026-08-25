@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .._compat_env import simforge_env
 import hashlib
 import os
 import subprocess
@@ -18,9 +19,9 @@ def validate_xosc14(xml_bytes: bytes, xsd_path: Path) -> dict[str, object]:
     xsd_digest = hashlib.sha256(xsd_path.read_bytes()).hexdigest()
     if xsd_digest != OFFICIAL_XSD_SHA256:
         raise ContractError(f"official XSD digest mismatch: expected {OFFICIAL_XSD_SHA256}, got {xsd_digest}")
-    timeout_seconds = float(os.environ.get("UNISCENARIO_XML_VALIDATION_TIMEOUT_S", "10"))
+    timeout_seconds = float(simforge_env("XML_VALIDATION_TIMEOUT_S", "10"))
     if not 0 < timeout_seconds <= 60:
-        raise ContractError("UNISCENARIO_XML_VALIDATION_TIMEOUT_S must be in (0, 60]")
+        raise ContractError("SIMFORGE_XML_VALIDATION_TIMEOUT_S must be in (0, 60]")
     try:
         result = subprocess.run(
             ["xmllint", "--nonet", "--noout", "--schema", str(xsd_path), "-"],

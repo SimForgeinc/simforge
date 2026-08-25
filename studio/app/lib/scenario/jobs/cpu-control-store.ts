@@ -27,6 +27,8 @@ import {
   withScenarioJobTransaction,
   type JobTransaction,
 } from "./lifecycle-lock";
+import { simforgeEnv } from "@/lib/compat-env";
+import { PLAYBACK_MEDIA_TYPE } from "../stored-wire-compat";
 
 type CpuAttemptFamily = Exclude<ScenarioJobFamily, "openscenario_compile">;
 
@@ -103,20 +105,20 @@ type BrowserAssetMember = {
   byte_length: number;
 };
 
-function artifactBucket() { return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts"; }
+function artifactBucket() { return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts"; }
 
 async function browserClaimPayload(source: BrowserRenderSource) {
   const members = await queryRows<BrowserAssetMember>(
     `SELECT member.relative_path, blob.storage_bucket, blob.storage_key,
             blob.sha256, blob.byte_length
-       FROM uniscenario.map_versions map
-       JOIN uniscenario.browser_asset_sets asset_set
+       FROM simforge.map_versions map
+       JOIN simforge.browser_asset_sets asset_set
          ON asset_set.id = map.browser_asset_set_id
         AND asset_set.map_version_id = map.id
         AND asset_set.asset_set_state = 'available'
-       JOIN uniscenario.browser_asset_members member
+       JOIN simforge.browser_asset_members member
          ON member.asset_set_id = asset_set.id
-       JOIN uniscenario.browser_asset_blobs blob
+       JOIN simforge.browser_asset_blobs blob
          ON blob.id = member.blob_id AND blob.verification_state = 'verified'
       WHERE map.id = :map_version_id
       ORDER BY member.relative_path`,
@@ -193,7 +195,7 @@ async function browserClaimPayload(source: BrowserRenderSource) {
       artifactBucket(),
       playbackKey,
       playbackBytes,
-      "application/vnd.uniscenarios.playback+json",
+      PLAYBACK_MEDIA_TYPE,
     );
   }
 
@@ -369,12 +371,12 @@ async function insertCpuEvent(
   input: { workspaceId: string; jobFamily: ScenarioJobFamily; jobId: string; attemptId?: string | null; type: string; payload?: Record<string, unknown> },
 ) {
   await tx.execute(
-    `INSERT INTO uniscenario.operational_job_events (
+    `INSERT INTO simforge.operational_job_events (
          id, workspace_id, job_family, job_id, attempt_id, event_ordinal, event_type, event_payload
        ) VALUES (
          :id, :workspace_id, :job_family, :job_id, :attempt_id,
          (SELECT COALESCE(MAX(event_ordinal), 0) + 1
-            FROM uniscenario.operational_job_events
+            FROM simforge.operational_job_events
            WHERE job_family = :job_family AND job_id = :job_id),
          :event_type, CAST(:event_payload AS jsonb)
        )`,
@@ -393,36 +395,36 @@ async function insertCpuEvent(
 async function expireCpuAttempts() {
   const candidates = await queryRows<{ job_family: CpuAttemptFamily; job_id: string }>(
     `SELECT 'openscenario_validate'::text AS job_family, job.id AS job_id
-       FROM uniscenario.validation_runs job
+       FROM simforge.validation_runs job
       WHERE job.validation_state = 'running' AND (
-        EXISTS (SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+        EXISTS (SELECT 1 FROM simforge.cpu_job_attempts attempt
                  WHERE attempt.job_family = 'openscenario_validate' AND attempt.job_id = job.id
                    AND attempt.attempt_state = 'active' AND attempt.expires_at <= NOW())
-        OR NOT EXISTS (SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+        OR NOT EXISTS (SELECT 1 FROM simforge.cpu_job_attempts attempt
                        WHERE attempt.job_family = 'openscenario_validate' AND attempt.job_id = job.id
                          AND attempt.attempt_state = 'active')
       )
       UNION ALL
      SELECT 'artifact_postprocess'::text, job.id
-       FROM uniscenario.render_jobs job
+       FROM simforge.render_jobs job
       WHERE job.job_state IN ('leased', 'running')
         AND job.job_mode IN ('cosmos_augment', 'vlm_annotate') AND (
-          EXISTS (SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+          EXISTS (SELECT 1 FROM simforge.cpu_job_attempts attempt
                    WHERE attempt.job_family = 'artifact_postprocess' AND attempt.job_id = job.id
                      AND attempt.attempt_state = 'active' AND attempt.expires_at <= NOW())
-          OR NOT EXISTS (SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+          OR NOT EXISTS (SELECT 1 FROM simforge.cpu_job_attempts attempt
                          WHERE attempt.job_family = 'artifact_postprocess' AND attempt.job_id = job.id
                            AND attempt.attempt_state = 'active')
         )
       UNION ALL
      SELECT 'openscenario_render'::text, job.id
-       FROM uniscenario.render_jobs job
+       FROM simforge.render_jobs job
       WHERE job.job_state IN ('leased', 'running')
         AND job.job_mode = 'browser_render' AND (
-          EXISTS (SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+          EXISTS (SELECT 1 FROM simforge.cpu_job_attempts attempt
                    WHERE attempt.job_family = 'openscenario_render' AND attempt.job_id = job.id
                      AND attempt.attempt_state = 'active' AND attempt.expires_at <= NOW())
-          OR NOT EXISTS (SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+          OR NOT EXISTS (SELECT 1 FROM simforge.cpu_job_attempts attempt
                          WHERE attempt.job_family = 'openscenario_render' AND attempt.job_id = job.id
                            AND attempt.attempt_state = 'active')
         )
@@ -441,7 +443,7 @@ async function expireCpuAttempts() {
           ? "AND job.job_mode = 'browser_render'"
           : "";
       const expiredAttempt = await tx.queryOne<{ id: string }>(
-        `UPDATE uniscenario.cpu_job_attempts attempt
+        `UPDATE simforge.cpu_job_attempts attempt
             SET attempt_state = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE 'expired' END,
                 completed_at = NOW(),
                 failure_code = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE attempt.failure_code END
@@ -474,7 +476,7 @@ async function expireCpuAttempts() {
             WHERE job.id = :job_id AND job.${stateColumn} IN ${activeStates}
               ${modeFilter}
               AND NOT EXISTS (
-                SELECT 1 FROM uniscenario.cpu_job_attempts attempt
+                SELECT 1 FROM simforge.cpu_job_attempts attempt
                  WHERE attempt.job_family = :job_family AND attempt.job_id = job.id
                    AND attempt.attempt_state = 'active'
               )
@@ -521,14 +523,14 @@ async function claimValidationOrPostprocess(input: {
     legs.push(
       `SELECT 'openscenario_validate'::text AS job_family, v.id AS job_id,
               v.workspace_id, v.revision_id, v.priority::int, v.created_at::text
-         FROM uniscenario.validation_runs v
+         FROM simforge.validation_runs v
         WHERE v.validation_state = 'queued' AND v.cancel_requested_at IS NULL
           AND v.attempt_count < v.max_attempts
           AND EXISTS (
-            SELECT 1 FROM uniscenario.exports e
-            JOIN uniscenario.execution_packages ep
+            SELECT 1 FROM simforge.exports e
+            JOIN simforge.execution_packages ep
               ON ep.id = e.execution_package_id AND ep.workspace_id = e.workspace_id
-            JOIN uniscenario.artifacts a
+            JOIN simforge.artifacts a
               ON a.id = ep.xosc_artifact_id AND a.workspace_id = ep.workspace_id
             WHERE e.workspace_id = v.workspace_id AND e.revision_id = v.revision_id
               AND e.export_state = 'succeeded' AND a.artifact_state = 'available'
@@ -539,7 +541,7 @@ async function claimValidationOrPostprocess(input: {
     legs.push(
       `SELECT 'openscenario_render'::text AS job_family, j.id AS job_id,
               j.workspace_id, j.revision_id, j.priority::int, j.created_at::text
-         FROM uniscenario.render_jobs j
+         FROM simforge.render_jobs j
         WHERE j.job_state = 'queued' AND j.cancel_requested_at IS NULL
           AND j.attempt_count < j.max_attempts
           AND j.job_mode = 'browser_render'`,
@@ -551,7 +553,7 @@ async function claimValidationOrPostprocess(input: {
     legs.push(
       `SELECT 'artifact_postprocess'::text AS job_family, j.id AS job_id,
               j.workspace_id, j.revision_id, j.priority::int, j.created_at::text
-         FROM uniscenario.render_jobs j
+         FROM simforge.render_jobs j
         WHERE j.job_state = 'queued' AND j.cancel_requested_at IS NULL
           AND j.attempt_count < j.max_attempts
           AND j.job_mode IN ('cosmos_augment', 'vlm_annotate')`,
@@ -595,27 +597,27 @@ async function claimValidationOrPostprocess(input: {
                 xosc.sha256 AS xosc_sha256, xosc.byte_length AS xosc_size,
                 preview.storage_bucket AS preview_bucket, preview.storage_key AS preview_key,
                 preview.sha256 AS preview_sha256, preview.byte_length AS preview_size
-           FROM uniscenario.render_jobs j
-           JOIN uniscenario.revisions r
+           FROM simforge.render_jobs j
+           JOIN simforge.revisions r
              ON r.id = j.revision_id AND r.workspace_id = j.workspace_id
-           JOIN uniscenario.documents d
+           JOIN simforge.documents d
              ON d.id = r.document_id AND d.workspace_id = r.workspace_id
             AND d.deleted_at IS NULL
-           JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
-           JOIN uniscenario.artifacts xodr
+           JOIN simforge.map_versions mv ON mv.id = r.map_version_id
+           JOIN simforge.artifacts xodr
              ON xodr.id = mv.xodr_artifact_id AND xodr.artifact_state = 'available'
-           JOIN uniscenario.execution_packages ep
+           JOIN simforge.execution_packages ep
              ON ep.id = j.execution_package_id AND ep.workspace_id = j.workspace_id
-           JOIN uniscenario.artifacts xosc
+           JOIN simforge.artifacts xosc
              ON xosc.id = ep.xosc_artifact_id AND xosc.workspace_id = ep.workspace_id
             AND xosc.artifact_state = 'available'
-           JOIN uniscenario.simulation_previews simulation
+           JOIN simforge.simulation_previews simulation
              ON simulation.document_id = r.document_id
             AND simulation.workspace_id = r.workspace_id
             AND simulation.source_draft_version = r.source_draft_version
             AND simulation.source_content_sha256 = r.content_sha256
             AND simulation.map_version_id = r.map_version_id
-           JOIN uniscenario.artifacts preview
+           JOIN simforge.artifacts preview
              ON preview.id = simulation.artifact_id
             AND preview.workspace_id = simulation.workspace_id
             AND preview.artifact_state = 'available'
@@ -627,7 +629,7 @@ async function claimValidationOrPostprocess(input: {
       );
       if (!source) return null;
       await tx.execute(
-        `UPDATE uniscenario.render_jobs
+        `UPDATE simforge.render_jobs
             SET job_state = 'running', attempt_count = attempt_count + 1,
                 started_at = COALESCE(started_at, NOW()), updated_at = NOW(),
                 failure_code = NULL, failure_detail = NULL
@@ -644,22 +646,22 @@ async function claimValidationOrPostprocess(input: {
                 xodr.id AS xodr_artifact_id, xodr.storage_bucket AS xodr_storage_bucket,
                 xodr.storage_key AS xodr_storage_key, xodr.media_type AS xodr_media_type,
                 xodr.sha256 AS xodr_sha256, xodr.byte_length AS xodr_byte_length
-           FROM uniscenario.validation_runs v
+           FROM simforge.validation_runs v
            JOIN LATERAL (
-             SELECT e.execution_package_id FROM uniscenario.exports e
+             SELECT e.execution_package_id FROM simforge.exports e
               WHERE e.workspace_id = v.workspace_id AND e.revision_id = v.revision_id
                 AND e.export_state = 'succeeded' AND e.execution_package_id IS NOT NULL
               ORDER BY e.completed_at DESC, e.id DESC LIMIT 1
            ) latest ON TRUE
-           JOIN uniscenario.execution_packages ep
+           JOIN simforge.execution_packages ep
              ON ep.id = latest.execution_package_id AND ep.workspace_id = v.workspace_id
-           JOIN uniscenario.artifacts a
+           JOIN simforge.artifacts a
              ON a.id = ep.xosc_artifact_id AND a.workspace_id = ep.workspace_id
             AND a.artifact_state = 'available'
-           JOIN uniscenario.revisions r
+           JOIN simforge.revisions r
              ON r.id = v.revision_id AND r.workspace_id = v.workspace_id
-           LEFT JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
-           LEFT JOIN uniscenario.artifacts xodr
+           LEFT JOIN simforge.map_versions mv ON mv.id = r.map_version_id
+           LEFT JOIN simforge.artifacts xodr
              ON xodr.id = mv.xodr_artifact_id AND xodr.artifact_state = 'available'
           WHERE v.id = :job_id AND v.validation_state = 'queued'
             AND v.cancel_requested_at IS NULL AND v.attempt_count < v.max_attempts
@@ -668,7 +670,7 @@ async function claimValidationOrPostprocess(input: {
       );
       if (!source) return null;
       await tx.execute(
-        `UPDATE uniscenario.validation_runs
+        `UPDATE simforge.validation_runs
             SET validation_state = 'running', attempt_count = attempt_count + 1,
                 started_at = COALESCE(started_at, NOW()), updated_at = NOW(),
                 failure_code = NULL, failure_detail = NULL
@@ -683,8 +685,8 @@ async function claimValidationOrPostprocess(input: {
                 j.model_config::text, j.model_config_sha256,
                 a.storage_bucket, a.storage_key, a.media_type,
                 a.sha256 AS artifact_sha256, a.byte_length, j.attempt_count
-           FROM uniscenario.render_jobs j
-           JOIN uniscenario.artifacts a
+           FROM simforge.render_jobs j
+           JOIN simforge.artifacts a
              ON a.id = j.source_artifact_id AND a.workspace_id = j.workspace_id
             AND a.artifact_state = 'available' AND a.deleted_at IS NULL
           WHERE j.id = :job_id AND j.job_state = 'queued' AND j.cancel_requested_at IS NULL
@@ -695,7 +697,7 @@ async function claimValidationOrPostprocess(input: {
       );
       if (!source) return null;
       await tx.execute(
-        `UPDATE uniscenario.render_jobs
+        `UPDATE simforge.render_jobs
             SET job_state = 'running', attempt_count = attempt_count + 1,
                 started_at = COALESCE(started_at, NOW()), updated_at = NOW(),
                 failure_code = NULL, failure_detail = NULL
@@ -704,7 +706,7 @@ async function claimValidationOrPostprocess(input: {
       );
     }
     await tx.execute(
-      `INSERT INTO uniscenario.cpu_job_attempts (
+      `INSERT INTO simforge.cpu_job_attempts (
          id, workspace_id, job_family, job_id, attempt_number, worker_id,
          fence_token_sha256, expires_at
        ) VALUES (
@@ -832,23 +834,23 @@ async function activeCpuAttempt(jobId: string, attemptId: string, fenceToken: st
     workspace_id: string;
     job_family: CpuAttemptFamily;
   }>(
-    `SELECT attempt.workspace_id, attempt.job_family FROM uniscenario.cpu_job_attempts attempt
+    `SELECT attempt.workspace_id, attempt.job_family FROM simforge.cpu_job_attempts attempt
       WHERE attempt.id = :attempt_id AND attempt.job_id = :job_id
         AND attempt.attempt_state = 'active' AND attempt.expires_at > NOW()
         AND attempt.fence_token_sha256 = :fence_token_sha256
         AND (
           (attempt.job_family = 'openscenario_validate' AND EXISTS (
-            SELECT 1 FROM uniscenario.validation_runs job
+            SELECT 1 FROM simforge.validation_runs job
              WHERE job.id = attempt.job_id AND job.validation_state = 'running'
                AND job.cancel_requested_at IS NULL
           ))
           OR (attempt.job_family = 'artifact_postprocess' AND EXISTS (
-            SELECT 1 FROM uniscenario.render_jobs job
+            SELECT 1 FROM simforge.render_jobs job
              WHERE job.id = attempt.job_id AND job.job_state = 'running'
                AND job.cancel_requested_at IS NULL
           ))
           OR (attempt.job_family = 'openscenario_render' AND EXISTS (
-            SELECT 1 FROM uniscenario.render_jobs job
+            SELECT 1 FROM simforge.render_jobs job
              WHERE job.id = attempt.job_id AND job.job_state = 'running'
                AND job.job_mode = 'browser_render'
                AND job.cancel_requested_at IS NULL
@@ -879,7 +881,7 @@ export async function heartbeatCpuJob(
     if (!heartbeat) return null;
     const state = await queryRows<{ cancel_requested: boolean }>(
       `SELECT cancel_requested_at IS NOT NULL AS cancel_requested
-         FROM uniscenario.exports WHERE id = :job_id LIMIT 1`,
+         FROM simforge.exports WHERE id = :job_id LIMIT 1`,
       { job_id: jobId },
     );
     return {
@@ -889,7 +891,7 @@ export async function heartbeatCpuJob(
   }
   return withScenarioJobTransaction(jobId, async (tx) => {
     const rows = await tx.queryRows<{ expires_at: string; workspace_id: string }>(
-      `UPDATE uniscenario.cpu_job_attempts SET heartbeat_at = NOW(),
+      `UPDATE simforge.cpu_job_attempts SET heartbeat_at = NOW(),
          progress = GREATEST(progress, :progress),
          expires_at = NOW() + (:lease_seconds * INTERVAL '1 second')
        WHERE id = :attempt_id AND job_id = :job_id AND job_family = :job_family
@@ -897,15 +899,15 @@ export async function heartbeatCpuJob(
          AND fence_token_sha256 = :fence_token_sha256
          AND (
            (:job_family = 'openscenario_validate' AND EXISTS (
-             SELECT 1 FROM uniscenario.validation_runs job
+             SELECT 1 FROM simforge.validation_runs job
               WHERE job.id = :job_id AND job.cancel_requested_at IS NULL
                 AND job.validation_state = 'running'
            )) OR (:job_family = 'artifact_postprocess' AND EXISTS (
-             SELECT 1 FROM uniscenario.render_jobs job
+             SELECT 1 FROM simforge.render_jobs job
               WHERE job.id = :job_id AND job.cancel_requested_at IS NULL
                 AND job.job_state = 'running'
            )) OR (:job_family = 'openscenario_render' AND EXISTS (
-             SELECT 1 FROM uniscenario.render_jobs job
+             SELECT 1 FROM simforge.render_jobs job
               WHERE job.id = :job_id AND job.cancel_requested_at IS NULL
                 AND job.job_state = 'running' AND job.job_mode = 'browser_render'
            ))
@@ -965,7 +967,7 @@ export async function reserveCpuJobOutputs(
     const owner = await tx.queryOne<{ workspace_id: string; revision_id: string }>(
       `SELECT job.workspace_id, job.revision_id
          FROM scenario.${table} job
-         JOIN uniscenario.cpu_job_attempts attempt
+         JOIN simforge.cpu_job_attempts attempt
            ON attempt.job_id = job.id AND attempt.job_family = :job_family
         WHERE job.id = :job_id AND job.${stateColumn} = 'running'
           AND job.cancel_requested_at IS NULL
@@ -992,7 +994,7 @@ export async function reserveCpuJobOutputs(
         storage_bucket: string;
         storage_key: string;
       }>(
-        `INSERT INTO uniscenario.artifacts (
+        `INSERT INTO simforge.artifacts (
          id, workspace_id, revision_id, artifact_kind, media_type, storage_bucket, storage_key,
          sha256, byte_length, artifact_state, metadata, producer_job_family, producer_job_id,
          producer_attempt_id, provenance
@@ -1029,7 +1031,7 @@ export async function reserveCpuJobOutputs(
       const row = rows[0];
       if (!row) throw new Error("cpu_job_artifact_reservation_failed");
       await tx.execute(
-        `INSERT INTO uniscenario.operational_job_artifact_links (
+        `INSERT INTO simforge.operational_job_artifact_links (
          id, workspace_id, artifact_id, job_family, job_id, attempt_id, relationship
        ) VALUES (
          :id, :workspace_id, :artifact_id, :job_family, :job_id, :attempt_id, :relationship
@@ -1112,8 +1114,8 @@ export async function completeCpuJob(
       byte_length: number;
     }>(
       `SELECT a.id, a.artifact_kind, a.storage_bucket, a.storage_key, a.sha256, a.byte_length
-         FROM uniscenario.operational_job_artifact_links l
-         JOIN uniscenario.artifacts a ON a.id = l.artifact_id AND a.workspace_id = l.workspace_id
+         FROM simforge.operational_job_artifact_links l
+         JOIN simforge.artifacts a ON a.id = l.artifact_id AND a.workspace_id = l.workspace_id
         WHERE l.job_family = :job_family AND l.job_id = :job_id
           AND l.attempt_id = :attempt_id
           AND a.id = ANY(string_to_array(:artifact_ids, ','))`,
@@ -1139,7 +1141,7 @@ export async function completeCpuJob(
   }
   const result = await withScenarioJobTransaction(jobId, async (tx) => {
     const locked = await tx.queryOne<{ workspace_id: string }>(
-      `SELECT workspace_id FROM uniscenario.cpu_job_attempts
+      `SELECT workspace_id FROM simforge.cpu_job_attempts
         WHERE id = :attempt_id AND job_id = :job_id AND job_family = :job_family
           AND attempt_state = 'active' AND expires_at > NOW()
           AND fence_token_sha256 = :fence_token_sha256 FOR UPDATE`,
@@ -1152,7 +1154,7 @@ export async function completeCpuJob(
     );
     if (!locked) return null;
     await tx.execute(
-      `UPDATE uniscenario.artifacts SET artifact_state = 'available', verified_at = NOW(),
+      `UPDATE simforge.artifacts SET artifact_state = 'available', verified_at = NOW(),
          provenance = provenance || CAST(:provenance AS jsonb)
        WHERE id = ANY(string_to_array(:artifact_ids, ','))`,
       {
@@ -1173,7 +1175,7 @@ export async function completeCpuJob(
         throw new Error("validation_completion_invalid");
       }
       await tx.execute(
-        `UPDATE uniscenario.validation_runs
+        `UPDATE simforge.validation_runs
             SET validation_state = :state, report_artifact_id = :artifact_id,
                 summary = CAST(:summary AS jsonb), progress = 1,
                 failure_code = CASE WHEN :state = 'failed' THEN 'validation_failed' ELSE NULL END,
@@ -1197,8 +1199,8 @@ export async function completeCpuJob(
         `SELECT recording.id,
                 recording.request_payload->'renderSpec'->'artifacts' ? 'video'
                   AS requires_video
-           FROM uniscenario.artifact_postprocess_jobs recording
-           JOIN uniscenario.render_jobs job
+           FROM simforge.artifact_postprocess_jobs recording
+           JOIN simforge.render_jobs job
              ON job.id = :job_id AND job.workspace_id = recording.workspace_id
           WHERE recording.id = :recording_job_id
             AND recording.workspace_id = :workspace_id
@@ -1216,8 +1218,8 @@ export async function completeCpuJob(
       if (!recording) throw new Error("browser_render_recording_not_eligible");
       const recordingArtifacts = await tx.queryRows<{ artifact_id: string; artifact_role: string }>(
         `SELECT link.artifact_id, link.artifact_role
-           FROM uniscenario.operational_job_artifact_links link
-           JOIN uniscenario.artifacts a
+           FROM simforge.operational_job_artifact_links link
+           JOIN simforge.artifacts a
              ON a.id = link.artifact_id AND a.workspace_id = link.workspace_id
             AND a.artifact_state = 'available' AND a.deleted_at IS NULL
           WHERE link.workspace_id = :workspace_id
@@ -1233,7 +1235,7 @@ export async function completeCpuJob(
       }
       for (const artifact of recordingArtifacts) {
         await tx.execute(
-          `INSERT INTO uniscenario.artifact_links (
+          `INSERT INTO simforge.artifact_links (
              id, workspace_id, artifact_id, render_job_id, relationship
            ) VALUES (:id, :workspace_id, :artifact_id, :job_id, 'job_level')
            ON CONFLICT DO NOTHING`,
@@ -1246,7 +1248,7 @@ export async function completeCpuJob(
         );
       }
       await tx.execute(
-        `UPDATE uniscenario.render_jobs
+        `UPDATE simforge.render_jobs
             SET job_state = 'succeeded', progress = 1,
                 origin_recording_job_id = CASE
                   WHEN request_contract_version = 'uniscenario.render-intent/v1' THEN NULL
@@ -1261,7 +1263,7 @@ export async function completeCpuJob(
     } else {
       for (const artifact of input.artifacts) {
         await tx.execute(
-          `INSERT INTO uniscenario.artifact_links (
+          `INSERT INTO simforge.artifact_links (
              id, workspace_id, artifact_id, render_job_id, relationship
            ) VALUES (:id, :workspace_id, :artifact_id, :job_id, 'output')
            ON CONFLICT DO NOTHING`,
@@ -1274,13 +1276,13 @@ export async function completeCpuJob(
         );
       }
       await tx.execute(
-        `UPDATE uniscenario.render_jobs SET job_state = 'succeeded', progress = 1,
+        `UPDATE simforge.render_jobs SET job_state = 'succeeded', progress = 1,
            completed_at = NOW(), updated_at = NOW() WHERE id = :job_id`,
         { job_id: jobId },
       );
     }
     await tx.execute(
-      `UPDATE uniscenario.cpu_job_attempts SET attempt_state = 'succeeded', progress = 1,
+      `UPDATE simforge.cpu_job_attempts SET attempt_state = 'succeeded', progress = 1,
          completed_at = NOW() WHERE id = :attempt_id`,
       { attempt_id: input.attemptId },
     );
@@ -1322,7 +1324,7 @@ export async function failCpuJob(
     }
     return withScenarioJobTransaction(jobId, async (tx) => {
       const attempt = await tx.queryOne<{ workspace_id: string }>(
-        `SELECT workspace_id FROM uniscenario.cpu_job_attempts
+        `SELECT workspace_id FROM simforge.cpu_job_attempts
           WHERE id = :attempt_id AND job_id = :job_id AND job_family = :job_family
             AND attempt_state = 'active' AND expires_at > NOW()
             AND fence_token_sha256 = :fence_token_sha256 FOR UPDATE`,
@@ -1335,19 +1337,19 @@ export async function failCpuJob(
       );
       if (!attempt) return null;
       await tx.execute(
-        `UPDATE uniscenario.cpu_job_attempts SET attempt_state = 'cancelled', completed_at = NOW(),
+        `UPDATE simforge.cpu_job_attempts SET attempt_state = 'cancelled', completed_at = NOW(),
            failure_code = 'cancelled' WHERE id = :attempt_id`,
         { attempt_id: input.attemptId },
       );
       if (input.jobFamily === "openscenario_validate") {
         await tx.execute(
-          `UPDATE uniscenario.validation_runs SET validation_state = 'cancelled', completed_at = NOW(),
+          `UPDATE simforge.validation_runs SET validation_state = 'cancelled', completed_at = NOW(),
              updated_at = NOW(), failure_code = 'cancelled' WHERE id = :job_id`,
           { job_id: jobId },
         );
       } else {
         await tx.execute(
-          `UPDATE uniscenario.render_jobs SET job_state = 'cancelled', completed_at = NOW(),
+          `UPDATE simforge.render_jobs SET job_state = 'cancelled', completed_at = NOW(),
              updated_at = NOW(), failure_code = 'cancelled' WHERE id = :job_id`,
           { job_id: jobId },
         );
@@ -1369,7 +1371,7 @@ export async function failCpuJob(
   if (input.jobFamily === "openscenario_compile") return failCompilerExport(jobId, input);
   const result = await withScenarioJobTransaction(jobId, async (tx) => {
     const attempt = await tx.queryOne<{ workspace_id: string }>(
-      `SELECT workspace_id FROM uniscenario.cpu_job_attempts
+      `SELECT workspace_id FROM simforge.cpu_job_attempts
         WHERE id = :attempt_id AND job_id = :job_id AND job_family = :job_family
           AND attempt_state = 'active' AND expires_at > NOW()
           AND fence_token_sha256 = :fence_token_sha256 FOR UPDATE`,
@@ -1392,7 +1394,7 @@ export async function failCpuJob(
     );
     if (!current) return null;
     await tx.execute(
-      `UPDATE uniscenario.cpu_job_attempts SET attempt_state = :attempt_state, completed_at = NOW(),
+      `UPDATE simforge.cpu_job_attempts SET attempt_state = :attempt_state, completed_at = NOW(),
          failure_code = :code, failure_detail = CAST(:detail AS jsonb) WHERE id = :attempt_id`,
       {
         attempt_id: input.attemptId,
@@ -1449,8 +1451,8 @@ export async function recordCpuJobEvent(
   return withScenarioJobTransaction(jobId, async (tx) => {
     const owner = input.jobFamily === "openscenario_compile"
       ? await tx.queryOne<{ workspace_id: string }>(
-          `SELECT e.workspace_id FROM uniscenario.exports e
-            JOIN uniscenario.export_attempts a ON a.export_id = e.id
+          `SELECT e.workspace_id FROM simforge.exports e
+            JOIN simforge.export_attempts a ON a.export_id = e.id
            WHERE e.id = :job_id AND e.export_state = 'running' AND e.cancel_requested_at IS NULL
              AND a.id = :attempt_id AND a.attempt_state = 'active'
              AND a.expires_at > NOW() AND a.fence_token_sha256 = :fence_token_sha256`,
@@ -1462,22 +1464,22 @@ export async function recordCpuJobEvent(
         )
       : await tx.queryOne<{ workspace_id: string; job_family: CpuAttemptFamily }>(
           `SELECT attempt.workspace_id, attempt.job_family
-             FROM uniscenario.cpu_job_attempts attempt
+             FROM simforge.cpu_job_attempts attempt
             WHERE attempt.id = :attempt_id AND attempt.job_id = :job_id
               AND attempt.job_family = :job_family AND attempt.attempt_state = 'active'
               AND attempt.expires_at > NOW()
               AND attempt.fence_token_sha256 = :fence_token_sha256
               AND (
                 (:job_family = 'openscenario_validate' AND EXISTS (
-                  SELECT 1 FROM uniscenario.validation_runs job
+                  SELECT 1 FROM simforge.validation_runs job
                    WHERE job.id = attempt.job_id AND job.validation_state = 'running'
                      AND job.cancel_requested_at IS NULL
                 )) OR (:job_family = 'artifact_postprocess' AND EXISTS (
-                  SELECT 1 FROM uniscenario.render_jobs job
+                  SELECT 1 FROM simforge.render_jobs job
                    WHERE job.id = attempt.job_id AND job.job_state = 'running'
                      AND job.cancel_requested_at IS NULL
                 )) OR (:job_family = 'openscenario_render' AND EXISTS (
-                  SELECT 1 FROM uniscenario.render_jobs job
+                  SELECT 1 FROM simforge.render_jobs job
                    WHERE job.id = attempt.job_id AND job.job_state = 'running'
                      AND job.job_mode = 'browser_render'
                      AND job.cancel_requested_at IS NULL

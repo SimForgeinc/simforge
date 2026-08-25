@@ -11,10 +11,11 @@ import {
   createLocalArtifactProducer,
   finalizeLocalArtifactProducer,
 } from "./jobs/local-artifact-producer-store";
+import { simforgeEnv } from "@/lib/compat-env";
+import { MATERIALIZED_TRAFFIC_MEDIA_TYPE } from "./stored-wire-compat";
 
-const MEDIA_TYPE = "application/vnd.uniscenarios.materialized-traffic+json";
 
-function artifactBucket() { return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts"; }
+function artifactBucket() { return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts"; }
 
 export async function reserveMaterializedTraffic(
   context: AppContext,
@@ -30,9 +31,9 @@ export async function reserveMaterializedTraffic(
     source_map_asset_id: string | null;
   }>(
     `SELECT d.workspace_id, dr.draft_version, dr.map_version_id, mv.source_map_asset_id
-     FROM uniscenario.documents d JOIN uniscenario.drafts dr
+     FROM simforge.documents d JOIN simforge.drafts dr
        ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
-     JOIN uniscenario.map_versions mv ON mv.id = dr.map_version_id
+     JOIN simforge.map_versions mv ON mv.id = dr.map_version_id
      WHERE d.id = :document_id AND d.workspace_id = :workspace_id AND d.deleted_at IS NULL LIMIT 1`,
     { document_id: documentId, workspace_id: context.workspaceId },
   );
@@ -76,7 +77,7 @@ export async function reserveMaterializedTraffic(
     // Same disease and cure as `reserveSimulationPreview`. `artifact_state` is
     // deliberately not reset: uploaded bytes stay uploaded, so `uploadRequired`
     // can skip the redundant PUT.
-    `INSERT INTO uniscenario.artifacts (
+    `INSERT INTO simforge.artifacts (
        id, workspace_id, artifact_kind, media_type, storage_bucket, storage_key,
        sha256, byte_length, artifact_state, metadata,
        producer_job_family, producer_job_id, provenance
@@ -88,15 +89,15 @@ export async function reserveMaterializedTraffic(
      WHERE artifact_state IN ('pending', 'available') AND deleted_at IS NULL
      DO UPDATE SET
        metadata = EXCLUDED.metadata,
-       producer_job_id = CASE WHEN uniscenario.artifacts.artifact_state = 'pending'
-         THEN EXCLUDED.producer_job_id ELSE uniscenario.artifacts.producer_job_id END,
-       provenance = CASE WHEN uniscenario.artifacts.artifact_state = 'pending'
-         THEN EXCLUDED.provenance ELSE uniscenario.artifacts.provenance END
+       producer_job_id = CASE WHEN simforge.artifacts.artifact_state = 'pending'
+         THEN EXCLUDED.producer_job_id ELSE simforge.artifacts.producer_job_id END,
+       provenance = CASE WHEN simforge.artifacts.artifact_state = 'pending'
+         THEN EXCLUDED.provenance ELSE simforge.artifacts.provenance END
      RETURNING id, artifact_state, storage_bucket, storage_key`,
     {
       id: artifactId,
       workspace_id: context.workspaceId,
-      media_type: MEDIA_TYPE,
+      media_type: MATERIALIZED_TRAFFIC_MEDIA_TYPE,
       bucket,
       storage_key: key,
       sha256: input.sha256,
@@ -128,8 +129,8 @@ export async function reserveMaterializedTraffic(
     uploadUrl:
       row.artifact_state === "available"
         ? null
-        : await getPresignedPutUrl(row.storage_key, MEDIA_TYPE, row.storage_bucket, 900, input.sha256),
-    headers: checksumBoundPutRequiredHeaders(MEDIA_TYPE, input.sha256),
+        : await getPresignedPutUrl(row.storage_key, MATERIALIZED_TRAFFIC_MEDIA_TYPE, row.storage_bucket, 900, input.sha256),
+    headers: checksumBoundPutRequiredHeaders(MATERIALIZED_TRAFFIC_MEDIA_TYPE, input.sha256),
   };
 }
 
@@ -144,7 +145,7 @@ export async function completeMaterializedTraffic(
     sha256: string;
     byte_length: number;
   }>(
-    `SELECT storage_bucket, storage_key, sha256, byte_length FROM uniscenario.artifacts
+    `SELECT storage_bucket, storage_key, sha256, byte_length FROM simforge.artifacts
      WHERE id = :artifact_id AND workspace_id = :workspace_id
        AND artifact_kind = 'materialized-traffic' AND artifact_state IN ('pending', 'available')
        AND metadata->>'documentId' = :document_id
@@ -173,7 +174,7 @@ export async function completeMaterializedTraffic(
     );
     if (!finalization) return false;
     await tx.execute(
-      `UPDATE uniscenario.artifacts SET artifact_state = 'available', verified_at = NOW()
+      `UPDATE simforge.artifacts SET artifact_state = 'available', verified_at = NOW()
        WHERE id = :artifact_id AND workspace_id = :workspace_id
          AND artifact_state IN ('pending', 'available')`,
       { artifact_id: input.artifactId, workspace_id: context.workspaceId },

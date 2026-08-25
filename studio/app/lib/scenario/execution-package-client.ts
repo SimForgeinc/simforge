@@ -68,7 +68,7 @@ export async function getExecutionPackageMembersClient(
   signal?: AbortSignal,
 ): Promise<readonly VerifiedExecutionPackageMember[]> {
   const response = await fetch(
-    `/api/uniscenario/execution-packages/${encodeURIComponent(executionPackageId)}/members`,
+    `/api/simforge/execution-packages/${encodeURIComponent(executionPackageId)}/members`,
     { cache: "no-store", signal },
   );
   if (!response.ok) {

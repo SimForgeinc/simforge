@@ -3,7 +3,7 @@ import type { ScenarioMapEntry } from '@simforge/editor';
 import { playbackMapEntry } from './maps';
 
 function descriptor(overrides: Partial<ScenarioMapEntry> = {}): ScenarioMapEntry {
-  const root = '/api/uniscenario/maps/usmv_1/browser-assets';
+  const root = '/api/simforge/maps/usmv_1/browser-assets';
   return {
     id: 'usmv_1', versionId: 'usmv_1', mapVersionId: 'usmv_1',
     sourceMapId: 'easterbrook-discovery-school_20260410-191436',
@@ -27,20 +27,20 @@ describe('SimCloud playback map adapter', () => {
     expect(map).toMatchObject({
       id: 'usmv_1', mapVersionId: 'usmv_1',
       sourceMapId: 'easterbrook-discovery-school_20260410-191436',
-      manifest: '/api/uniscenario/maps/usmv_1/browser-assets/3d/manifest.json',
-      xodr: '/api/uniscenario/maps/usmv_1/browser-assets/map.xodr',
-      topology: '/api/uniscenario/maps/usmv_1/browser-assets/topology-index.json.gz',
-      derivedTopology: '/api/uniscenario/maps/usmv_1/browser-assets/derived/topology-derived.json.gz',
-      locations: '/api/uniscenario/maps/usmv_1/browser-assets/derived/locations.json.gz',
-      signals: '/api/uniscenario/maps/usmv_1/browser-assets/signals.geojson.gz',
-      sumoManifest: '/api/uniscenario/maps/usmv_1/browser-assets/derived/sumo/sumo-network-manifest.json',
+      manifest: '/api/simforge/maps/usmv_1/browser-assets/3d/manifest.json',
+      xodr: '/api/simforge/maps/usmv_1/browser-assets/map.xodr',
+      topology: '/api/simforge/maps/usmv_1/browser-assets/topology-index.json.gz',
+      derivedTopology: '/api/simforge/maps/usmv_1/browser-assets/derived/topology-derived.json.gz',
+      locations: '/api/simforge/maps/usmv_1/browser-assets/derived/locations.json.gz',
+      signals: '/api/simforge/maps/usmv_1/browser-assets/signals.geojson.gz',
+      sumoManifest: '/api/simforge/maps/usmv_1/browser-assets/derived/sumo/sumo-network-manifest.json',
     });
     expect(map.id).not.toBe(map.sourceMapId);
   });
 
   it('rejects an inferred or mismatched manifest/root contract', () => {
     expect(() => playbackMapEntry(descriptor({
-      browserManifestUrl: '/api/uniscenario/maps/usmv_1/browser-assets/manifest.json',
+      browserManifestUrl: '/api/simforge/maps/usmv_1/browser-assets/manifest.json',
     }))).toThrow('browser manifest outside its declared asset root');
     expect(() => playbackMapEntry(descriptor({ id: 'source-slug' })))
       .toThrow('inconsistent runtime identity');

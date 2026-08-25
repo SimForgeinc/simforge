@@ -3,7 +3,7 @@
 const CACHE_NAME = "simforge-map-assets-v4";
 const INDEX_KEY = "simforge-map-assets-index-v4";
 const LEGACY_CACHES = ["simcloud-glb-v1", "simforge-profile-maps-v2", "simforge-map-assets-v3"];
-const CONTENT_PREFIX = "/api/uniscenario/map-cache/sha256/";
+const CONTENT_PREFIX = "/api/simforge/map-cache/sha256/";
 const SHA256 = /^[a-f0-9]{64}$/;
 
 type CacheIndex = {
@@ -221,7 +221,7 @@ function isMapAssetRequest(input: RequestInfo | URL, init?: RequestInit) {
   const url = new URL(raw, window.location.origin);
   if (url.origin !== window.location.origin) return false;
   if (/^\/api\/scenario\/maps\/[^/]+\/browser-assets\//.test(url.pathname)
-    || url.pathname.startsWith("/api/uniscenario/sumo-runtime/")) {
+    || url.pathname.startsWith("/api/simforge/sumo-runtime/")) {
     return true;
   }
   // Digital-twin panel assets (map-assets detail page). Unlike the

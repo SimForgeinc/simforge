@@ -71,7 +71,7 @@ const MAP_UPLOAD_DRAFT_SELECT = `
     map_version_id,
     created_at::text AS created_at,
     updated_at::text AS updated_at
-  FROM uniscenario.map_upload_drafts
+  FROM simforge.map_upload_drafts
 `;
 
 function draftFromRow(row: MapUploadDraftRow): MapUploadDraft {
@@ -149,7 +149,7 @@ export async function createMapUploadDraft(
   const digest = deriveDraftDigest(input.workspaceId, input.xodr.sha256, input.layers);
   const id = `usmapdraft_${digest.slice(0, 32)}`;
   await execute(
-    `INSERT INTO uniscenario.map_upload_drafts (
+    `INSERT INTO simforge.map_upload_drafts (
        id, workspace_id, created_by_user_id, label, locality, carla_map_name,
        source_map_id, xodr_sha256, xodr_byte_length, thumbnail_sha256,
        thumbnail_byte_length, layers, preflight
@@ -193,7 +193,7 @@ export async function markMapUploadDraftPublishing(
   workspaceId: string,
 ): Promise<boolean> {
   const rows = await queryRows<{ id: string }>(
-    `UPDATE uniscenario.map_upload_drafts
+    `UPDATE simforge.map_upload_drafts
      SET draft_state = 'publishing', failure_reason = NULL, updated_at = NOW()
      WHERE id = :id
        AND workspace_id = :workspace_id
@@ -210,7 +210,7 @@ export async function markMapUploadDraftPublished(
   mapVersionId: string,
 ): Promise<void> {
   await execute(
-    `UPDATE uniscenario.map_upload_drafts
+    `UPDATE simforge.map_upload_drafts
      SET draft_state = 'published', map_version_id = :map_version_id,
          failure_reason = NULL, updated_at = NOW()
      WHERE id = :id AND workspace_id = :workspace_id`,
@@ -224,7 +224,7 @@ export async function markMapUploadDraftFailed(
   reason: string,
 ): Promise<void> {
   await execute(
-    `UPDATE uniscenario.map_upload_drafts
+    `UPDATE simforge.map_upload_drafts
      SET draft_state = 'failed', failure_reason = :failure_reason, updated_at = NOW()
      WHERE id = :id AND workspace_id = :workspace_id AND draft_state <> 'published'`,
     { id, workspace_id: workspaceId, failure_reason: reason },

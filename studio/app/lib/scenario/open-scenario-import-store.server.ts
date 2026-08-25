@@ -5,12 +5,13 @@ import { putS3Object } from "@/app/lib/s3/s3-put-object";
 import { sha256, scenarioId } from "./core";
 import { createLocalArtifactProducer } from "./jobs/local-artifact-producer-store";
 import { withScenarioJobTransaction } from "./jobs/lifecycle-lock";
+import { simforgeEnv } from "@/lib/compat-env";
 
 const ARTIFACT_KIND = "source-openscenario";
 
 function artifactBucket() {
   return (
-    process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() ||
+    simforgeEnv("ARTIFACT_BUCKET")?.trim() ||
     process.env.S3_BUCKET?.trim() ||
     "local-artifacts"
   );
@@ -52,8 +53,8 @@ async function publishOpenScenarioImportArtifact(input: {
                 'sha256', artifact.sha256, 'provenance', artifact.provenance
               ) AS result_matches,
               artifact.id AS artifact_id, artifact.artifact_state
-         FROM uniscenario.artifact_postprocess_jobs job
-         LEFT JOIN uniscenario.artifacts artifact
+         FROM simforge.artifact_postprocess_jobs job
+         LEFT JOIN simforge.artifacts artifact
            ON artifact.workspace_id = job.workspace_id
           AND artifact.producer_job_family = 'artifact_postprocess'
           AND artifact.producer_job_id = job.id
@@ -77,7 +78,7 @@ async function publishOpenScenarioImportArtifact(input: {
       return tx.queryOne<ArtifactRow>(
         `SELECT id, artifact_state, sha256, byte_length, media_type,
                 producer_job_id, storage_bucket, storage_key
-           FROM uniscenario.artifacts
+           FROM simforge.artifacts
           WHERE id = :artifact_id AND workspace_id = :workspace_id
             AND producer_job_family = 'artifact_postprocess'
             AND producer_job_id = :producer_job_id
@@ -94,7 +95,7 @@ async function publishOpenScenarioImportArtifact(input: {
     }
     if (producer.state !== "running" || producer.cancel_requested_at) {
       await tx.execute(
-        `UPDATE uniscenario.artifacts
+        `UPDATE simforge.artifacts
             SET artifact_state = 'quarantined'
           WHERE workspace_id = :workspace_id
             AND producer_job_family = 'artifact_postprocess'
@@ -114,7 +115,7 @@ async function publishOpenScenarioImportArtifact(input: {
     const attemptId = scenarioId("usppat");
     const fenceToken = randomBytes(32).toString("hex");
     const attempt = await tx.queryOne<{ id: string }>(
-      `INSERT INTO uniscenario.cpu_job_attempts (
+      `INSERT INTO simforge.cpu_job_attempts (
          id, workspace_id, job_family, job_id, attempt_number, worker_id,
          fence_token_sha256, attempt_state, expires_at
        ) VALUES (
@@ -122,7 +123,7 @@ async function publishOpenScenarioImportArtifact(input: {
          'local:openscenario_import', :fence_token_sha256, 'active', NOW() + INTERVAL '15 minutes'
        )
        ON CONFLICT (job_family, job_id, attempt_number) DO UPDATE SET
-         id = uniscenario.cpu_job_attempts.id
+         id = simforge.cpu_job_attempts.id
        RETURNING id`,
       {
         id: attemptId,
@@ -142,7 +143,7 @@ async function publishOpenScenarioImportArtifact(input: {
       sourceSha256: input.sha256,
     };
     const artifact = await tx.queryOne<ArtifactRow>(
-      `INSERT INTO uniscenario.artifacts (
+      `INSERT INTO simforge.artifacts (
          id, workspace_id, revision_id, artifact_kind, media_type,
          storage_bucket, storage_key, sha256, byte_length, artifact_state,
          metadata, created_by_user_id, verification_method, verification_sha256,
@@ -159,10 +160,10 @@ async function publishOpenScenarioImportArtifact(input: {
          artifact_state = 'pending', verified_at = NULL,
          producer_attempt_id = EXCLUDED.producer_attempt_id,
          provenance = EXCLUDED.provenance
-       WHERE uniscenario.artifacts.producer_job_family = 'artifact_postprocess'
-         AND uniscenario.artifacts.producer_job_id = EXCLUDED.producer_job_id
-         AND uniscenario.artifacts.storage_bucket = EXCLUDED.storage_bucket
-         AND uniscenario.artifacts.storage_key = EXCLUDED.storage_key
+       WHERE simforge.artifacts.producer_job_family = 'artifact_postprocess'
+         AND simforge.artifacts.producer_job_id = EXCLUDED.producer_job_id
+         AND simforge.artifacts.storage_bucket = EXCLUDED.storage_bucket
+         AND simforge.artifacts.storage_key = EXCLUDED.storage_key
        RETURNING id, artifact_state, sha256, byte_length, media_type,
          producer_job_id, storage_bucket, storage_key`,
       {
@@ -188,7 +189,7 @@ async function publishOpenScenarioImportArtifact(input: {
       throw new Error("xosc_source_artifact_identity_conflict");
     }
     await tx.execute(
-      `INSERT INTO uniscenario.operational_job_artifact_links (
+      `INSERT INTO simforge.operational_job_artifact_links (
          id, workspace_id, artifact_id, job_family, job_id, attempt_id, relationship
        ) VALUES (
          :id, :workspace_id, :artifact_id, 'artifact_postprocess', :job_id, :attempt_id, 'output'
@@ -202,20 +203,20 @@ async function publishOpenScenarioImportArtifact(input: {
       },
     );
     const finalized = await tx.queryOne<{ id: string }>(
-      `UPDATE uniscenario.artifact_postprocess_jobs job
+      `UPDATE simforge.artifact_postprocess_jobs job
           SET state = 'succeeded', phase = 'finalized', progress = 1,
               result_payload = jsonb_build_object(
                 'artifactId', artifact.id, 'artifactKind', artifact.artifact_kind,
                 'sha256', artifact.sha256, 'provenance', artifact.provenance
               ), completed_at = NOW(), updated_at = NOW()
-         FROM uniscenario.artifacts artifact
+         FROM simforge.artifacts artifact
         WHERE job.id = :job_id AND job.workspace_id = :workspace_id
           AND artifact.id = :artifact_id AND artifact.workspace_id = job.workspace_id
           AND artifact.producer_job_id = job.id
           AND artifact.producer_attempt_id = :attempt_id
           AND job.state = 'running' AND job.cancel_requested_at IS NULL
           AND EXISTS (
-            SELECT 1 FROM uniscenario.cpu_job_attempts active
+            SELECT 1 FROM simforge.cpu_job_attempts active
              WHERE active.id = :attempt_id AND active.job_id = job.id
                AND active.job_family = 'artifact_postprocess'
                AND active.attempt_state = 'active' AND active.expires_at > NOW()
@@ -230,13 +231,13 @@ async function publishOpenScenarioImportArtifact(input: {
     );
     if (!finalized) throw new Error("xosc_source_producer_finalize_failed");
     await tx.execute(
-      `UPDATE uniscenario.cpu_job_attempts
+      `UPDATE simforge.cpu_job_attempts
           SET attempt_state = 'succeeded', progress = 1, completed_at = NOW()
         WHERE id = :attempt_id AND attempt_state = 'active'`,
       { attempt_id: attempt.id },
     );
     const available = await tx.queryOne<ArtifactRow>(
-      `UPDATE uniscenario.artifacts
+      `UPDATE simforge.artifacts
           SET artifact_state = 'available', verified_at = NOW()
         WHERE id = :artifact_id AND workspace_id = :workspace_id
           AND producer_job_id = :producer_job_id AND producer_attempt_id = :attempt_id
@@ -274,7 +275,7 @@ export async function storeOpenScenarioSourceArtifact(
   const existing = await queryRows<ArtifactRow>(
     `SELECT artifact.id, artifact.artifact_state, artifact.sha256, artifact.byte_length,
        artifact.media_type, artifact.producer_job_id, artifact.storage_bucket, artifact.storage_key
-     FROM uniscenario.artifacts artifact
+     FROM simforge.artifacts artifact
      WHERE artifact.workspace_id = :workspace_id AND artifact.sha256 = :sha256
        AND artifact.artifact_kind = :artifact_kind AND artifact.deleted_at IS NULL
      LIMIT 1`,

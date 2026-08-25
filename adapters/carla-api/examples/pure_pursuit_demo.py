@@ -13,7 +13,7 @@ Exercises the V3 facade extensions end to end on a real env-server session:
 
 Run:  .venv/bin/python examples/pure_pursuit_demo.py [max-decisions]
 Prereqs: adapters/carla-api venv; a richmond instance in the catalog
-(UNISCENARIO_INSTANCE_DIRS or the local w0 pool).
+(SIMFORGE_INSTANCE_DIRS or the local w0 pool).
 """
 
 from __future__ import annotations

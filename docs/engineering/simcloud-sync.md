@@ -97,31 +97,43 @@ JSON object rather than parse this table.
 - [ ] Keep Python adapters distinct: `carla-api` is the `import carla` facade
       over SimForge; `carla-exec` runs scenarios in real CARLA.
 
-## Frozen wire contract: no changes
+## Wire migration contract
 
-- [ ] Keep Postgres schemas and tables under `uniscenario.*` byte-compatible.
-- [ ] Keep HTTP routes under `/api/uniscenario/**` unchanged.
-- [ ] Keep `uniscenario.*` identifiers embedded in scenario documents
-      unchanged.
-- [ ] Keep the `scene-state.v1` document id and serialization contract
-      unchanged.
-- [ ] Keep environment variable names consumed by the live worker unchanged,
-      including `UNISCENARIO_RENDER_WORKER_TOKEN`.
-- [ ] Treat any proposed rename in this list as a separate wire migration and
-      reject it from this mechanical synchronization.
+Engine code now uses SimForge names canonically while preserving every stored
+or deployed value through an explicit compatibility boundary:
 
-Use the following extended-regexp as the frozen-contract tripwire:
+- [ ] PGlite owns tables and functions under `simforge.*`. The final migration
+      renames the historical schema and creates automatically updatable
+      `uniscenario.*` compatibility views. Historical migration files and
+      filenames remain immutable.
+- [ ] New clients call `/api/simforge/**`. Next.js rewrites the deprecated
+      `/api/uniscenario/**` prefix to the same handler tree, so both paths have
+      identical authorization, status, headers, and bodies.
+- [ ] Runtime configuration reads `SIMFORGE_*` first. The corresponding
+      `UNISCENARIO_*` variable is accepted only as a fallback and produces one
+      process-level deprecation warning.
+- [ ] Parsers accept both SimForge and legacy stored-document identifiers,
+      including artifact schema ids, JSON Schema `$id` values, media types, and
+      `scene-state.v1`.
+- [ ] Writers still emit legacy stored-document identifiers. The
+      `EMIT_CANONICAL_*` constants are the deliberate one-line cutover switches
+      and MUST remain `false` until a coordinated digest migration; changing
+      them changes canonical document bytes and therefore recording/render
+      replay digests.
+
+Run the executable tripwire rather than maintaining another grep allowlist:
 
 ```sh
-FROZEN_CONTRACT='uniscenario\.[[:alnum:]_./-]+|schemas\.uniscenarios\.dev|/api/uniscenario(/|[^[:alnum:]_-]|$)|scene-state\.v1|UNISCENARIO_RENDER_WORKER_TOKEN'
-git grep -n -E "$FROZEN_CONTRACT"
-git diff -U0 "$PRE_SYNC_REVISION" -- . | grep -E "^[+-][^+-].*($FROZEN_CONTRACT)"
+node scripts/verify-wire-migration.mjs
 ```
 
-The first command inventories the retained wire identifiers. The second must
-print nothing: a changed line containing any frozen identifier is outside this
-mechanical sync and requires a separate wire migration. In addition, run
-`git grep -n -E '@uniscenarios/'`; it must print nothing after import rewriting.
+The verifier rejects live SQL using the old schema, old HTTP callers outside
+the rewrite, and direct legacy environment reads outside the compatibility
+helpers. It also proves that the database, route, environment, stored-document,
+JSON-Schema, and media-type compatibility classes are all represented and that
+every emission switch remains off. Tests, documentation, committed fixtures,
+and immutable historical migrations are inventory evidence rather than new
+code.
 
 ## Verification and commit boundary
 

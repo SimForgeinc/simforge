@@ -8,6 +8,7 @@ import {
   type SubmitScenarioRenderIntent,
   type ScenarioRenderIntent,
 } from "./render-wire-contracts";
+import { simforgeEnv } from "@/lib/compat-env";
 
 const RTX5080_MAX_SIMULTANEOUS_SOURCES = 18;
 const RTX5080_USABLE_GPU_BYTES = 15_000 * 1024 * 1024;
@@ -301,7 +302,7 @@ export async function createRenderIntentJob(
       `SELECT id, revision_id, execution_package_id, job_mode, job_state, progress,
               intent_sha256, renderer_engine, render_spec_sha256,
               created_at::text AS created_at, updated_at::text AS updated_at
-         FROM uniscenario.render_jobs
+         FROM simforge.render_jobs
         WHERE workspace_id = :workspace_id AND idempotency_key = :idempotency_key
         LIMIT 1`,
       { workspace_id: context.workspaceId, idempotency_key: input.idempotencyKey },
@@ -318,11 +319,11 @@ export async function createRenderIntentJob(
     const counts = await tx.queryOne<{ active_count: number; queued_count: number }>(
       `SELECT COUNT(*) FILTER (WHERE job_state IN ('leased', 'running'))::int AS active_count,
               COUNT(*) FILTER (WHERE job_state = 'queued')::int AS queued_count
-         FROM uniscenario.render_jobs WHERE workspace_id = :workspace_id`,
+         FROM simforge.render_jobs WHERE workspace_id = :workspace_id`,
       { workspace_id: context.workspaceId },
     );
-    const activeLimit = Math.max(1, Number(process.env.UNISCENARIO_WORKSPACE_CONCURRENCY_LIMIT ?? 2));
-    const queueLimit = Math.max(activeLimit, Number(process.env.UNISCENARIO_WORKSPACE_QUEUE_LIMIT ?? 20));
+    const activeLimit = Math.max(1, Number(simforgeEnv("WORKSPACE_CONCURRENCY_LIMIT") ?? 2));
+    const queueLimit = Math.max(activeLimit, Number(simforgeEnv("WORKSPACE_QUEUE_LIMIT") ?? 20));
     if (Number(counts?.active_count ?? 0) >= activeLimit || Number(counts?.queued_count ?? 0) >= queueLimit) {
       throw new Error("uniscenario_workspace_limit_reached");
     }
@@ -337,18 +338,18 @@ export async function createRenderIntentJob(
               catalog_artifact.id AS catalog_artifact_id,
               catalog_artifact.sha256 AS catalog_sha256,
               catalog_artifact.byte_length AS catalog_size
-         FROM uniscenario.revisions r
-         JOIN uniscenario.execution_packages ep
+         FROM simforge.revisions r
+         JOIN simforge.execution_packages ep
            ON ep.revision_id = r.id AND ep.workspace_id = r.workspace_id
-         JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
-         JOIN uniscenario.artifacts xosc
+         JOIN simforge.map_versions mv ON mv.id = r.map_version_id
+         JOIN simforge.artifacts xosc
            ON xosc.id = ep.xosc_artifact_id AND xosc.workspace_id = ep.workspace_id
           AND xosc.artifact_state = 'available'
-         JOIN uniscenario.artifacts xodr
+         JOIN simforge.artifacts xodr
            ON xodr.id = ep.xodr_artifact_id AND xodr.artifact_state = 'available'
-         JOIN uniscenario.asset_catalog_versions catalog
+         JOIN simforge.asset_catalog_versions catalog
            ON catalog.id = ep.asset_catalog_version_id
-         JOIN uniscenario.artifacts catalog_artifact
+         JOIN simforge.artifacts catalog_artifact
            ON catalog_artifact.id = catalog.manifest_artifact_id
           AND catalog_artifact.artifact_state = 'available'
         WHERE r.workspace_id = :workspace_id AND r.id = :revision_id
@@ -373,7 +374,7 @@ export async function createRenderIntentJob(
       sourceInputDigest: lineage.source_input_digest,
     });
     const rows = await tx.queryRows<InsertedJob>(
-      `INSERT INTO uniscenario.render_jobs (
+      `INSERT INTO simforge.render_jobs (
          id, workspace_id, revision_id, execution_package_id, execution_package_control_sha256,
          render_spec, render_spec_sha256, render_intent, intent_sha256, renderer_engine,
          parity_thresholds, resource_request, request_contract_version,

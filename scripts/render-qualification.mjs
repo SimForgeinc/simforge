@@ -17,7 +17,7 @@ function usage() {
 
 Commands:
   inventory --output inventory.json
-    Read current nondeleted scenarios from UNISCENARIO_DEV_DATABASE_URL using a
+    Read current nondeleted scenarios from SIMFORGE_DEV_DATABASE_URL using a
     read-only transaction. Generic DATABASE_URL is ignored by design.
 
   select --inventory inventory.json --output qualification.json [--count 5]

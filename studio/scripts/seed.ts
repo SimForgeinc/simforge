@@ -79,7 +79,7 @@ async function seedPublicationBinding(): Promise<void> {
   const releaseManifestSha256 = sha256(`dev-assets-publication\0${catalogMetadata.checksumSha256Hex}`);
   await withTransaction(async (tx) => {
     await tx.execute(
-      `INSERT INTO uniscenario.map_upload_drafts (
+      `INSERT INTO simforge.map_upload_drafts (
          id, workspace_id, created_by_user_id, label, locality, source_map_id,
          xodr_sha256, xodr_byte_length, thumbnail_sha256, thumbnail_byte_length,
          layers, preflight, draft_state
@@ -95,7 +95,7 @@ async function seedPublicationBinding(): Promise<void> {
       },
     );
     await tx.execute(
-      `INSERT INTO uniscenario.artifacts (
+      `INSERT INTO simforge.artifacts (
          id, workspace_id, artifact_kind, media_type, storage_bucket, storage_key,
          sha256, byte_length, artifact_state, created_by_user_id, verified_at,
          verification_method, verification_sha256, producer_job_family, producer_job_id, provenance
@@ -121,7 +121,7 @@ async function seedPublicationBinding(): Promise<void> {
       },
     );
     await tx.execute(
-      `INSERT INTO uniscenario.asset_catalog_versions (
+      `INSERT INTO simforge.asset_catalog_versions (
          id, workspace_id, manifest_artifact_id, manifest_sha256, source_inventory_sha256,
          pipeline_version, toolchain, provenance, status
        ) VALUES (
@@ -138,7 +138,7 @@ async function seedPublicationBinding(): Promise<void> {
       },
     );
     await tx.execute(
-      `INSERT INTO uniscenario.editor_asset_releases (
+      `INSERT INTO simforge.editor_asset_releases (
          id, workspace_id, manifest_sha256, source_inventory_sha256,
          asset_catalog_version_id, source_environment, manifest, release_state, activated_at
        ) VALUES (
@@ -198,7 +198,7 @@ export async function seed(): Promise<void> {
     );
   }
   const maps = await queryRows<{ id: string; label: string }>(
-    "SELECT id, label FROM uniscenario.map_versions WHERE retired_at IS NULL ORDER BY label",
+    "SELECT id, label FROM simforge.map_versions WHERE retired_at IS NULL ORDER BY label",
   );
   console.log(`seed complete: ${maps.length} map_versions`);
   for (const map of maps) console.log(`  ${map.id} ${map.label}`);

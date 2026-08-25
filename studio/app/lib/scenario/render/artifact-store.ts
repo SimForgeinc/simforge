@@ -42,10 +42,10 @@ const ARTIFACT_SELECT = `
              THEN ra.attempt_state = 'succeeded'
            ELSE TRUE
          END AS attempt_lineage_valid
-    FROM uniscenario.artifact_links al
-    JOIN uniscenario.artifacts a
+    FROM simforge.artifact_links al
+    JOIN simforge.artifacts a
       ON a.id = al.artifact_id AND a.workspace_id = al.workspace_id
-    LEFT JOIN uniscenario.render_attempts ra
+    LEFT JOIN simforge.render_attempts ra
       ON ra.id = al.render_attempt_id
      AND ra.workspace_id = al.workspace_id
      AND ra.render_job_id = al.render_job_id`;
@@ -131,7 +131,7 @@ export async function listWorkspaceRenderArtifacts(
 ) {
   const rows = await queryRows<ArtifactRow & { render_job_id: string }>(
     `${ARTIFACT_SELECT}
-      JOIN uniscenario.render_jobs rj
+      JOIN simforge.render_jobs rj
         ON rj.id = al.render_job_id AND rj.workspace_id = al.workspace_id
       WHERE al.workspace_id = :workspace_id
         AND a.deleted_at IS NULL
@@ -189,7 +189,7 @@ async function artifactStorageKeysFor(context: AppContext, artifactIds: string[]
   if (artifactIds.length === 0) return new Map<string, { bucket: string; key: string }>();
   const rows = await queryRows<{ id: string; storage_bucket: string; storage_key: string }>(
     `SELECT id, storage_bucket, storage_key
-       FROM uniscenario.artifacts
+       FROM simforge.artifacts
       WHERE workspace_id = :workspace_id
         AND deleted_at IS NULL
         AND id = ANY(string_to_array(:artifact_ids, ','))`,

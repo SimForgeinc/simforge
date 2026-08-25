@@ -10,6 +10,7 @@ import {
 import { putS3Object } from "@/app/lib/s3/s3-put-object";
 import { verifyUploadedObject } from "@/app/lib/asset-gallery/storage";
 import type { UploadedObjectVerification } from "@/app/lib/asset-gallery/storage";
+import { simforgeEnv } from "@/lib/compat-env";
 
 export type MapUploadMember = {
   path: string;
@@ -67,7 +68,7 @@ export async function presignMapUploads(
 }
 
 function artifactBucket(): string {
-  return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts";
+  return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts";
 }
 
 /**

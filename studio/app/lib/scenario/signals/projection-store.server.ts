@@ -79,14 +79,14 @@ async function readSignalArtifactRow(mapVersionId: string) {
        ta.storage_bucket AS topology_bucket, ta.storage_key AS topology_key,
        sa.storage_bucket AS signals_bucket, sa.storage_key AS signals_key,
        da.storage_bucket AS derived_bucket, da.storage_key AS derived_key
-     FROM uniscenario.map_versions mv
-     JOIN uniscenario.artifacts xa ON xa.id = mv.xodr_artifact_id
+     FROM simforge.map_versions mv
+     JOIN simforge.artifacts xa ON xa.id = mv.xodr_artifact_id
        AND xa.workspace_id = mv.workspace_id AND xa.artifact_state = 'available'
-     JOIN uniscenario.artifacts ta ON ta.id = mv.topology_artifact_id
+     JOIN simforge.artifacts ta ON ta.id = mv.topology_artifact_id
        AND ta.workspace_id = mv.workspace_id AND ta.artifact_state = 'available'
-     JOIN uniscenario.artifacts sa ON sa.id = mv.signals_artifact_id
+     JOIN simforge.artifacts sa ON sa.id = mv.signals_artifact_id
        AND sa.workspace_id = mv.workspace_id AND sa.artifact_state = 'available'
-     LEFT JOIN uniscenario.artifacts da ON da.id = mv.derived_topology_artifact_id
+     LEFT JOIN simforge.artifacts da ON da.id = mv.derived_topology_artifact_id
        AND da.workspace_id = mv.workspace_id AND da.artifact_state = 'available'
      WHERE mv.id = :map_version_id
        AND mv.retired_at IS NULL

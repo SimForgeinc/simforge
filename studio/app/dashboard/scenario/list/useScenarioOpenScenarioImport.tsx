@@ -40,7 +40,7 @@ async function submit(file: File, datasetId: string, mode: "analyze" | "create",
   form.set("datasetId", datasetId);
   form.set("mode", mode);
   if (mapVersionId) form.set("mapVersionId", mapVersionId);
-  const response = await fetch("/api/uniscenario/imports/openscenario", { method: "POST", body: form, cache: "no-store" });
+  const response = await fetch("/api/simforge/imports/openscenario", { method: "POST", body: form, cache: "no-store" });
   const body = (await response.json().catch(() => ({}))) as ImportResponse;
   if (!response.ok) throw new Error(body.message ?? body.error ?? `OpenSCENARIO import failed (${response.status}).`);
   return body;

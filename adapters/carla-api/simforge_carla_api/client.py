@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ._compat_env import simforge_env
 import gzip
 import json
 import os
@@ -81,14 +82,14 @@ class Client:
     """Connects (and lazily spawns) the env-server backing this "CARLA server".
 
     ``host``/``port`` are accepted for API compatibility and unused: the
-    transport is a stdio subprocess unless ``UNISCENARIO_ENV_SERVER`` names an
+    transport is a stdio subprocess unless ``SIMFORGE_ENV_SERVER`` names an
     explicit command. Configuration comes from:
 
-    - ``UNISCENARIO_EPISODES`` — episode spec path (or ``episodes_spec=``);
-    - ``UNISCENARIO_DEV_ASSETS`` — dev-assets root for map artifacts;
-    - ``UNISCENARIO_STUDIO_URL`` — Studio viewer for the browser frame source;
-    - ``UNISCENARIO_FRAMES`` — ``off`` disables camera frames entirely;
-    - ``UNISCENARIO_FRAME_CACHE`` — directory caching rendered clips.
+    - ``SIMFORGE_EPISODES`` — episode spec path (or ``episodes_spec=``);
+    - ``SIMFORGE_DEV_ASSETS`` — dev-assets root for map artifacts;
+    - ``SIMFORGE_STUDIO_URL`` — Studio viewer for the browser frame source;
+    - ``SIMFORGE_FRAMES`` — ``off`` disables camera frames entirely;
+    - ``SIMFORGE_FRAME_CACHE`` — directory caching rendered clips.
     """
 
     def __init__(self, host: str = "localhost", port: int = 2000, *,
@@ -97,14 +98,14 @@ class Client:
                  worker_threads: int = 0) -> None:
         self._host, self._port = host, port
         self._session = session
-        self._episodes_spec = episodes_spec or os.environ.get("UNISCENARIO_EPISODES")
+        self._episodes_spec = episodes_spec or simforge_env("EPISODES")
         self._clip_seconds = clip_seconds
         self._max_decisions = max_decisions
         self._connection: EnvServerClient | None = None
         self._world = None
         self._lane_graphs: dict[str, LaneGraphLite] = {}
         self._scenario: ScenarioInfo | None = None
-        self._dev_assets_root = os.environ.get("UNISCENARIO_DEV_ASSETS")
+        self._dev_assets_root = simforge_env("DEV_ASSETS")
         #: One TrafficManager handle per client (carla semantics).
         self._traffic_manager = None
 
@@ -153,7 +154,7 @@ class Client:
         - The map comes from the dev-assets inventory; its pinned identity
           is ``{mapId, xodrSha256}`` (world.get_map().digest).
         - The session is born from a real scenario-instance for that map,
-          resolved through the instance catalog (UNISCENARIO_INSTANCE_DIRS
+          resolved through the instance catalog (SIMFORGE_INSTANCE_DIRS
           may add pools).
         - ``weather`` ('clear'|'rain'|'overcast' or WeatherParameters/dict)
           and ``traffic`` ('light'|'moderate'|'heavy') are baked into the
@@ -218,22 +219,22 @@ class Client:
     def load_scenario(self, session: int) -> ScenarioInfo:
         if self._scenario is None:
             if not self._episodes_spec:
-                raise RuntimeError("no episode spec configured (UNISCENARIO_EPISODES)")
+                raise RuntimeError("no episode spec configured (SIMFORGE_EPISODES)")
             self._scenario = load_scenario_info(self._episodes_spec, session)
         return self._scenario
 
     def load_lane_graph(self, map_id: str) -> LaneGraphLite:
         graph = self._lane_graphs.get(map_id)
         if graph is None:
-            graph = LaneGraphLite(load_topology_index(find_dev_assets(os.environ.get("UNISCENARIO_DEV_ASSETS")), map_id))
+            graph = LaneGraphLite(load_topology_index(find_dev_assets(simforge_env("DEV_ASSETS")), map_id))
             self._lane_graphs[map_id] = graph
         return graph
 
     def create_frame_source(self, scenario: ScenarioInfo):
-        mode = os.environ.get("UNISCENARIO_FRAMES", "browser").lower()
+        mode = simforge_env("FRAMES", "browser").lower()
         if mode == "off" or scenario.trace_path is None:
             return NullFrameSource()
-        cache = os.environ.get("UNISCENARIO_FRAME_CACHE") or "/tmp/simforge-carla-api-frames"
+        cache = simforge_env("FRAME_CACHE") or "/tmp/simforge-carla-api-frames"
         workdir = Path(cache) / Path(scenario.instance_path).stem
         return BrowserClipFrameSource(
             scenario.instance_path, scenario.trace_path, str(workdir),

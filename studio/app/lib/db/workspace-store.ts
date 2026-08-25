@@ -241,7 +241,7 @@ export async function softDeleteWorkspace(
   if (ws.type === "personal") throw new Error("Cannot delete personal workspace");
 
   const inFlight = await queryOne<{ cnt: number }>(
-    `SELECT COUNT(*)::int AS cnt FROM uniscenario.operational_jobs
+    `SELECT COUNT(*)::int AS cnt FROM simforge.operational_jobs
      WHERE workspace_id = :workspaceId AND status IN ('queued', 'running')`,
     { workspaceId },
   );
@@ -789,7 +789,7 @@ export async function reconcileWorkspaceUsageReservations(
             bl.reserved_cents,
             oj.state AS job_status
        FROM billing_ledger bl
-       LEFT JOIN uniscenario.operational_jobs oj
+       LEFT JOIN simforge.operational_jobs oj
          ON oj.workspace_id = bl.workspace_id
         AND oj.job_family = bl.job_family
         AND oj.id = bl.job_id

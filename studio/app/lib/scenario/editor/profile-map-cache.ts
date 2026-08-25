@@ -96,7 +96,7 @@ function planCacheRequest(map: ScenarioMapOption, profile: RenderingPreference):
   const key = [PROFILE_MAP_PLAN_SCHEMA, profile, map.mapVersionId, closure]
     .map((part) => encodeURIComponent(String(part)))
     .join("/");
-  return cacheRequest(`${window.location.origin}/api/uniscenario/profile-map-plan-cache/${key}`);
+  return cacheRequest(`${window.location.origin}/api/simforge/profile-map-plan-cache/${key}`);
 }
 
 function isCachedProfileMapAssets(
@@ -218,7 +218,7 @@ async function resolveBatchDownloadUrls(
   });
   if (requested.length === 0) return new Map();
   try {
-    const response = await fetch("/api/uniscenario/maps/cache-download-urls", {
+    const response = await fetch("/api/simforge/maps/cache-download-urls", {
       method: "POST",
       credentials: "same-origin",
       headers: { "content-type": "application/json" },
@@ -461,7 +461,7 @@ export async function createProfileMapPlan(
   profile: RenderingPreference,
   signal: AbortSignal,
 ): Promise<ProfileMapPlan> {
-  const inventoryResponse = await fetch("/api/uniscenario/maps/cache-plan", { signal });
+  const inventoryResponse = await fetch("/api/simforge/maps/cache-plan", { signal });
   if (!inventoryResponse.ok) {
     throw new Error(`Map cache inventory could not be loaded (${inventoryResponse.status}).`);
   }
@@ -472,7 +472,7 @@ export async function createProfileMapPlan(
     for (const asset of map.assets) {
       verified.set(
         new URL(
-          `/api/uniscenario/maps/${encodeURIComponent(map.mapVersionId)}/browser-assets/${asset.relativePath}`,
+          `/api/simforge/maps/${encodeURIComponent(map.mapVersionId)}/browser-assets/${asset.relativePath}`,
           window.location.origin,
         ).href,
         { sha256: asset.sha256, byteLength: asset.byteLength },
@@ -496,7 +496,7 @@ export async function createProfileMapPlan(
     for (const asset of inventoryMap?.assets ?? []) {
       if (!asset.relativePath.startsWith("derived/sumo/")) continue;
       verifiedDiscovered.push({
-        url: `/api/uniscenario/maps/${encodeURIComponent(map.mapVersionId)}/browser-assets/${asset.relativePath}`,
+        url: `/api/simforge/maps/${encodeURIComponent(map.mapVersionId)}/browser-assets/${asset.relativePath}`,
         bytes: asset.byteLength,
         sha256: asset.sha256,
         mapVersionId: map.mapVersionId,

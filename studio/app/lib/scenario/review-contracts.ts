@@ -26,7 +26,7 @@ export const ScenarioReviewQueueItemSchema = z.object({
    * `primary_maneuver_category`, `alpamayo_causal_category`, `failure_mode_target`). Those are NOT
    * portable: they are defined in `packages/shared/src/scenario-intention.ts`, which is v1's model,
    * and `scenario` carries no intention metadata at all. `summary_archetype` and
-   * `summary_content_tags` on `uniscenario.revisions` are v2's equivalents, so the queue shows those
+   * `summary_content_tags` on `simforge.revisions` are v2's equivalents, so the queue shows those
    * instead — a reviewer still needs to know what kind of scenario they are judging.
    */
   description: z.string().nullable(),
@@ -43,7 +43,7 @@ export const ScenarioReviewQueueItemSchema = z.object({
   ratingCount: z.number().int().min(0),
 
   /**
-   * Computed by Postgres in `uniscenario.document_review_state_v`, never in TypeScript.
+   * Computed by Postgres in `simforge.document_review_state_v`, never in TypeScript.
    *
    * DO NOT derive this client-side from a minimum score. The view's `CASE` tests
    * `COUNT(r.id) = 0 THEN 'pending'` first and only then `MIN(r.score) < 4`, and SQL's `NULL < 4`
@@ -65,7 +65,7 @@ export const ScenarioReviewQueueItemSchema = z.object({
 
   /**
    * `artifacts.id` for the render's `artifact_kind = 'video'`, or null when the render has not
-   * produced one. The client streams it from `/api/uniscenario/artifacts/{id}`, which is
+   * produced one. The client streams it from `/api/simforge/artifacts/{id}`, which is
    * authenticated and sets `private, no-store`. Deliberately NOT a presigned URL: §2.5 RULE 3 —
    * presigned URLs must never travel through anything cacheable, and this payload is a wire
    * response that a CDN could otherwise hold.

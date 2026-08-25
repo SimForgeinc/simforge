@@ -12,9 +12,20 @@ import { z } from 'zod';
 
 import { ScenarioV1ObjectSchema, SCENARIO_VERSION } from './schema/v1.js';
 
-/** Canonical `$id` for the emitted schema. */
-export const JSON_SCHEMA_ID =
+export const CANONICAL_JSON_SCHEMA_ID =
+  'https://schemas.simforge.dev/scenario.v1.schema.json';
+export const LEGACY_JSON_SCHEMA_ID =
   'https://schemas.uniscenarios.dev/scenario.v1.schema.json';
+/** Digest-preserving writer switch; keep false until stored-document cutover. */
+export const EMIT_CANONICAL_JSON_SCHEMA_ID = false;
+/** `$id` emitted into generated schema documents. */
+export const JSON_SCHEMA_ID = EMIT_CANONICAL_JSON_SCHEMA_ID
+  ? CANONICAL_JSON_SCHEMA_ID
+  : LEGACY_JSON_SCHEMA_ID;
+
+export function isAcceptedJsonSchemaId(value: string): boolean {
+  return value === CANONICAL_JSON_SCHEMA_ID || value === LEGACY_JSON_SCHEMA_ID;
+}
 
 /** Where the generated file lives, relative to the package root. */
 export const JSON_SCHEMA_PATH = 'schema/scenario.v1.schema.json';

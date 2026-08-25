@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { simforgeEnv } from "@/lib/compat-env";
 
 import { OptimizeMapVersionInputSchema } from "@/app/lib/map-ingest/contracts";
 import { planUploadedMapClosure } from "@/app/lib/map-ingest/server/closure";
@@ -79,7 +80,7 @@ export async function POST(
 
     const release = await queryOne<ReleaseRow>(
       `SELECT id AS derivative_release_id
-         FROM uniscenario.editor_asset_releases
+         FROM simforge.editor_asset_releases
         WHERE workspace_id = :workspace_id AND release_state = 'active'
         LIMIT 1`,
       { workspace_id: context.workspaceId },
@@ -90,8 +91,8 @@ export async function POST(
       );
     }
 
-    const artifactBucket = process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim();
-    if (!artifactBucket) throw new Error("UNISCENARIO_ARTIFACT_BUCKET is required.");
+    const artifactBucket = simforgeEnv("ARTIFACT_BUCKET")?.trim();
+    if (!artifactBucket) throw new Error("SIMFORGE_ARTIFACT_BUCKET is required.");
     const closureMembers = members.map((member) => ({
       relativePath: member.relativePath,
       sha256: member.sha256,
