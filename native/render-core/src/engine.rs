@@ -378,7 +378,6 @@ impl SceneApp {
 
     /// Register a camera group (RGB target + optional ID camera + depth copy).
     pub fn add_camera(&mut self, spec: CameraSpec, profile: Profile) {
-        assert!(!self.ready, "cameras must be added before rendering starts");
 
         let rgb_image = {
             let mut images = self.app.world_mut().resource_mut::<Assets<Image>>();
