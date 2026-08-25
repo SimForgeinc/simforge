@@ -416,17 +416,20 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                 let dims = actor_dims(&class);
                 let model = resolve_actor_model(state, actor);
                 let yaw = quat_yaw(&actor.transform.rotation);
-                // Traces carry no height channel: snap onto the static ground
-                // field whenever the doc does not pin a ground elevation.
-                let snap = actor.transform.position[1].abs() < 1e-4 && frame.ground_y.is_none();
+                let mut position = actor.transform.position;
+                position[1] = actor_base_y(
+                    position[1],
+                    frame.ground_y,
+                    state.app.ground_at(position[0], position[2]),
+                );
                 state.app.upsert_actor(
                     &actor.id,
                     &class,
-                    actor.transform.position,
+                    position,
                     yaw,
                     dims,
                     class_color(&class),
-                    snap,
+                    false,
                 );
                 if let Some(model) = model {
                     if !state.app.actor_has_model(&actor.id) {
@@ -458,6 +461,17 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
     }
     state.current_tick = Some(index);
     Ok(())
+}
+
+/// Height precedence for authored scene state. Non-zero actor Y is canonical;
+/// frame `groundY` is the explicit fallback for legacy zero-height traces;
+/// mesh sampling is only the last resort when neither is authored.
+fn actor_base_y(authored_y: f32, frame_ground_y: Option<f32>, sampled_y: f32) -> f32 {
+    if authored_y.abs() >= 1e-4 {
+        authored_y
+    } else {
+        frame_ground_y.unwrap_or(sampled_y)
+    }
 }
 
 fn quat_yaw(q: &[f32; 4]) -> f32 {
@@ -518,7 +532,7 @@ fn resolve_pose(
         .ok_or_else(|| format!("attach actor {:?} not present in tick {index}", attach.actor_id))?;
     let yaw = quat_yaw(&actor.transform.rotation);
     let pos = actor.transform.position;
-    let actor_y = resolved_actor_y(
+    let base_y = actor_base_y(
         pos[1],
         frame.ground_y,
         state.app.ground_at(pos[0], pos[2]),
@@ -528,11 +542,11 @@ fn resolve_pose(
     let off = attach.offset_m;
     let eye = [
         pos[0] + cy * off[0] + sy * off[1],
-        actor_y + off[2],
+        base_y + off[2],
         pos[2] - sy * off[0] + cy * off[1],
     ];
     if attach.look_at_actor {
-        return Ok((eye, [pos[0], actor_y + 1.0, pos[2]]));
+        return Ok((eye, [pos[0], base_y + 1.0, pos[2]]));
     }
     // CARLA yaw is left-handed (clockwise from above); Uni yaw is CCW, so a
     // CARLA-relative mount yaw subtracts. Pitch passes through (negative =
@@ -1295,7 +1309,7 @@ fn async_export_pngs(dir: &str, tick_id: u64, payloads: &[(String, String, u32, 
 
 #[cfg(test)]
 mod tests {
-    use super::{instance_coverage, resolved_actor_y, row_stride, CombinedSensorScene};
+    use super::{actor_base_y, instance_coverage, row_stride, CombinedSensorScene};
     use bevy::math::{Quat, Vec3};
     use sensors::bvh::{RaycastScene, Tri};
     use sensors::taxonomy::SemanticClass;
@@ -1311,14 +1325,10 @@ mod tests {
     }
 
     #[test]
-    fn authored_actor_height_is_not_replaced_by_ground_sample() {
-        assert_eq!(resolved_actor_y(14.25, None, -3.0), 14.25);
-        assert_eq!(resolved_actor_y(14.25, Some(2.0), -3.0), 14.25);
-    }
-
-    #[test]
-    fn groundless_actor_uses_ground_sample() {
-        assert_eq!(resolved_actor_y(0.0, None, 7.5), 7.5);
+    fn authored_actor_height_precedes_mesh_ground() {
+        assert_eq!(actor_base_y(2.225, None, -9.7), 2.225);
+        assert_eq!(actor_base_y(0.0, Some(3.5), -9.7), 3.5);
+        assert_eq!(actor_base_y(0.0, None, 1.75), 1.75);
     }
 
     fn deterministic_sensor_run() -> Vec<(Vec<u8>, Vec<u8>)> {
