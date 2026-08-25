@@ -89,10 +89,10 @@ function summarizePolicies(
     policies.push({
       policyId,
       episodes: episodes.length,
-      meanScore: episodes.reduce((sum, e) => sum + e.score, 0) / episodes.length,
+      meanScore: episodes.reduce((sum, e) => sum + e.drivingScore, 0) / episodes.length,
       meanRouteCompletion:
         episodes.reduce((sum, e) => sum + e.routeCompletion, 0) / episodes.length,
-      infractionEpisodes: episodes.filter((e) => e.score < 1).length,
+      infractionEpisodes: episodes.filter((e) => e.drivingScore < 1).length,
       lastCompletedAt:
         episodes.map((e) => e.completedAt).sort((a, b) => b.localeCompare(a))[0] ?? null,
       modelVersionId: digest ? (versionIdByDigest[digest] ?? null) : null,
@@ -233,7 +233,7 @@ export async function getPolicyDetail(
       seed: line.seed,
       completedAt: line.completedAt,
       score,
-      ledgerScore: line.score,
+      ledgerScore: line.drivingScore,
       ledgerRouteCompletion: line.routeCompletion,
     });
   }
@@ -406,9 +406,9 @@ export async function comparePolicies(
       seed: Number(seedText),
       aEpisodeId: cell.a?.episodeId ?? null,
       bEpisodeId: cell.b?.episodeId ?? null,
-      aScore: cell.a?.score ?? null,
-      bScore: cell.b?.score ?? null,
-      scoreDelta: cell.a && cell.b ? cell.b.score - cell.a.score : null,
+      aScore: cell.a?.drivingScore ?? null,
+      bScore: cell.b?.drivingScore ?? null,
+      scoreDelta: cell.a && cell.b ? cell.b.drivingScore - cell.a.drivingScore : null,
       divergenceStep: divergence?.step ?? null,
       divergenceTS: divergence?.tS ?? null,
     });

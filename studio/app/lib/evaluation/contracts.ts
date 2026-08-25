@@ -22,27 +22,20 @@ export const EVAL_PROVENANCE_SCHEMA = "simforge.eval-provenance/v1";
 export const EVAL_REPORT_SCHEMA = "simforge.eval-report/v1";
 
 /** One ledger.jsonl line: a completed episode. */
-const EvalLedgerLineRawSchema = z
+export const EvalLedgerLineSchema = z
   .object({
     episodeId: z.string().min(1),
     scenarioId: z.string().min(1),
     policyId: z.string().min(1),
     seed: z.number().int().nonnegative(),
     status: z.string().min(1),
-    /** Early runners wrote `score`; mini-w3 onward writes `drivingScore`. */
-    score: z.number().optional(),
-    drivingScore: z.number().optional(),
+    drivingScore: z.number(),
     routeCompletion: z.number(),
     traceSha256: z.string().min(1).optional(),
     episodeDigest: z.string().min(1).optional(),
     completedAt: z.string().min(1),
   })
   .passthrough();
-
-export const EvalLedgerLineSchema = EvalLedgerLineRawSchema.refine(
-  (line) => line.score !== undefined || line.drivingScore !== undefined,
-  { message: "ledger line needs score or drivingScore" },
-).transform((line) => ({ ...line, score: line.score ?? line.drivingScore ?? 0 }));
 export type EvalLedgerLine = z.infer<typeof EvalLedgerLineSchema>;
 
 /** campaign.json is runner-owned; we read only what the dashboard needs. */
