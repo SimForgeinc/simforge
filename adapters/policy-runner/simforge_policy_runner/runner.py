@@ -45,6 +45,21 @@ def _state_vector(frame: Mapping[str, Any]) -> np.ndarray | None:
     return np.frombuffer(packed, dtype="<f8")
 
 
+def _sv_values(frame: Mapping[str, Any]) -> list[float] | None:
+    """Decoded state vector as plain floats (JSON round-trips exactly)."""
+    vector = _state_vector(frame)
+    if vector is None:
+        return None
+    return [float(v) for v in vector]
+
+
+def _reward_terms(frame: Mapping[str, Any]) -> list[float] | None:
+    terms = frame.get("terms")
+    if terms is None:
+        return None
+    return [float(v) for v in terms]
+
+
 def _percentiles(samples: list[float]) -> dict[str, float]:
     if not samples:
         return {"p50": 0.0, "p95": 0.0, "max": 0.0}
@@ -59,7 +74,9 @@ def _percentiles(samples: list[float]) -> dict[str, float]:
 @dataclass
 class EpisodeSummary:
     policy: str
+    policy_checkpoint: str
     seed: int | str
+    session: int
     steps: int
     deadline_misses: int
     episode_digest: str
@@ -89,23 +106,22 @@ def run_episode(
     frame: Mapping[str, Any] = reset["ob"]
 
     chain = hashlib.sha256()
-    chain.update(
-        _canonical(
-            {
-                "reset": {
-                    "seed": seed,
-                    "t": frame["t"],
-                    "sv_sha256": hashlib.sha256(frame["sv"]).hexdigest() if frame.get("sv") else None,
-                    "objs": frame["objs"],
-                    "deadline_ms": deadline_ms,
-                    "fallback": fallback,
-                    "policy": policy.name,
-                }
-            }
-        )
-    )
+    reset_record = {
+        "reset": {
+            "seed": seed,
+            "session": session,
+            "t": frame["t"],
+            "sv_sha256": hashlib.sha256(frame["sv"]).hexdigest() if frame.get("sv") else None,
+            "sv": _sv_values(frame),
+            "objs": frame["objs"],
+            "deadline_ms": deadline_ms,
+            "fallback": fallback,
+            "policy": policy.name,
+        }
+    }
+    chain.update(_canonical(reset_record))
 
-    lines: list[str] = []
+    lines: list[str] = [json.dumps({**reset_record, "digest": chain.hexdigest()}, sort_keys=True)]
     infer_samples: list[float] = []
     roundtrip_samples: list[float] = []
     cross_track_samples: list[float] = []
@@ -153,6 +169,8 @@ def run_episode(
             "term": frame["term"],
             "trunc": frame["trunc"],
             "sv_sha256": hashlib.sha256(frame["sv"]).hexdigest() if frame.get("sv") else None,
+            "sv": _sv_values(frame),
+            "terms": _reward_terms(frame),
             "objs": frame["objs"],
         }
         chain.update(_canonical(deterministic))
@@ -171,7 +189,9 @@ def run_episode(
 
     summary = EpisodeSummary(
         policy=policy.name,
+        policy_checkpoint=policy.checkpoint_digest,
         seed=seed,
+        session=session,
         steps=steps_done,
         deadline_misses=misses,
         episode_digest=chain.hexdigest(),

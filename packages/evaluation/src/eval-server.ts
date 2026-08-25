@@ -22,6 +22,7 @@
 import path from 'node:path';
 import { rm } from 'node:fs/promises';
 import { loadSuiteFile, sessionForEntry } from './catalog.js';
+import { collisionFromReward, goalFromReward } from './scoring.js';
 import { resolveRlRuntime } from './runtime.js';
 import type { SuiteEntry } from './suite.js';
 import type { StepResult } from './rl-bridge-types.js';
@@ -147,10 +148,9 @@ class PolicyEvalServer {
       }
       throw error;
     }
-    this.lastCollision[i] =
-      'collision' in result.info.rewardTerms ||
-      (result.terminated && result.reward <= -1 && !('goal' in result.info.rewardTerms));
-    this.lastGoal[i] = Boolean(result.info.rewardTerms.goal);
+    const view = { terminated: result.terminated, reward: result.reward, rewardTerms: result.info.rewardTerms };
+    this.lastCollision[i] = collisionFromReward(view);
+    this.lastGoal[i] = goalFromReward(view);
     const doc = {
       ...this.runtime.encodeStepResult({
         observation: (result as unknown as { observation: unknown }).observation,

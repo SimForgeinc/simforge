@@ -24,9 +24,12 @@ python -m simforge_policy_runner \
     --out /tmp/trace.jsonl
 ```
 
-Prints the episode summary (digest, steps, misses, infer/roundtrip
-percentiles) as JSON; the trace file carries one record per decision plus a
-final summary line.
+Prints the episode summary (digest, steps, misses, checkpoint digest,
+infer/roundtrip percentiles) as JSON; the trace file carries a `reset`
+record, one record per decision (with the decoded `sv` state vector and the
+`terms` reward breakdown for downstream scoring — see
+`packages/evaluation` `scoring.ts`), and a final summary line. `--session`
+selects the env session (scenario instance) inside the spec.
 
 `--policy trajectory` drives the ego with *scripted* ego-frame S-curve
 trajectories replanned at 0.5 Hz against 10 Hz decisions (the Alpamayo

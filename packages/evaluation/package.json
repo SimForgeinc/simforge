@@ -17,7 +17,8 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "simforge-evaluation-build-suite": "./dist/build-suite-cli.js",
-    "simforge-evaluation-server": "./dist/eval-server.js"
+    "simforge-evaluation-server": "./dist/eval-server.js",
+    "simforge-eval-campaign": "./dist/campaign-cli.js"
   },
   "exports": {
     ".": {
@@ -29,7 +30,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/build-suite-cli.ts src/eval-server.ts src/examiner/extractor/cli.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "build": "tsup src/index.ts src/build-suite-cli.ts src/eval-server.ts src/campaign-cli.ts src/examiner/extractor/cli.ts --format esm --dts --sourcemap --clean --out-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
