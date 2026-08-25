@@ -116,6 +116,53 @@ run digests are identical, and replay-asserts run 1's bag.
   `~/simforge-assets/map-bundles`). Repo tests skip these maps when the
   artifacts are absent; so does this config.
 
+## Autoware vehicle interface (W2)
+
+`simforge_ros2_bridge/autoware_bridge.py` extends the MVP node (subclass;
+the Ackermann path is untouched) with the Autoware component contract so a
+**stock Autoware Core control node** closes the loop. Integration level:
+**controller-only** — the binary Jazzy deb `autoware_simple_pure_pursuit`
+(from `ros-jazzy-autoware-core-control`, Autoware Core 1.8) consumes the
+bridge's kinematic state + trajectory and publishes
+`autoware_control_msgs/Control`; no perception, localization, or planning
+stack runs. Objects are injected ground truth; the route (mission) is
+authored by the bridge.
+
+Additional topics (all sim-time stamped, bagged):
+
+| dir | topic | type |
+|---|---|---|
+| out | `/localization/kinematic_state` | `nav_msgs/Odometry` |
+| out | `/vehicle/status/velocity_status` | `autoware_vehicle_msgs/VelocityReport` |
+| out | `/vehicle/status/steering_status` | `autoware_vehicle_msgs/SteeringReport` (tire angle = last applied engine steer) |
+| out | `/vehicle/status/gear_status` | `autoware_vehicle_msgs/GearReport` (DRIVE) |
+| out | `/perception/object_recognition/objects` | `autoware_perception_msgs/PredictedObjects` — ground-truth actors from the env-server **truth stream** (`subscribe` op), ego filtered, one constant-velocity predicted path each |
+| out | `/planning/trajectory` | `autoware_planning_msgs/Trajectory` — authored route: straight, one lane-change turn, straight, stop ramp (re-published every decision so a relaunched Autoware re-syncs; bagged once) |
+| in | `/control/trajectory_follower/control_cmd` | `autoware_control_msgs/Control` — converted 1:1 (rad, m/s, m/s²) to the MVP's Ackermann form and fed through the unchanged lockstep + passthrough mapping; the raw message is bagged at its decision instant |
+
+Install (on top of the runtime install below):
+
+```bash
+sudo apt install --no-install-recommends \
+  ros-jazzy-autoware-core-control ros-jazzy-autoware-control-msgs \
+  ros-jazzy-autoware-vehicle-msgs ros-jazzy-autoware-perception-msgs \
+  ros-jazzy-autoware-planning-msgs ros-jazzy-autoware-vehicle-info-utils \
+  ros-jazzy-autoware-sample-vehicle-description ros-jazzy-autoware-global-parameter-loader
+```
+
+`scripts/autoware_episode.sh [RUN_DIR]` is the W2 end-to-end test: a healthy
+episode, a **kill + relaunch of the Autoware node mid-episode** (bridge rides
+`timeout_policy: hold`; outage visible as `timeouts` in the meta), and a
+fresh episode after the relaunch cycle. Every run is bag-verified,
+replay-asserted, and drive-checked (`scripts/check_autoware_drive.py`: lane
+change completed, forward progress, Autoware commands consumed, ground-truth
+objects present). Episode spec:
+`config/episodes/autoware-lanechange.episodes.json` (regenerate with
+`pnpm exec tsx adapters/ros2-bridge/scripts/gen_autoware_episode.ts <out>`) —
+the synthetic fixture plus one parked ground-truth vehicle in the start lane
+that the authored route lane-changes around.
+
+
 ## Runtime install (Ubuntu 24.04)
 
 ROS 2 **Jazzy** (LTS) from the official apt repo — the boring path:
@@ -128,4 +175,5 @@ sudo dpkg -i /tmp/ros2-apt-source.deb && sudo apt update
 sudo apt install ros-jazzy-ros-base ros-jazzy-ackermann-msgs ros-jazzy-rosbag2
 ```
 
-Non-goals here (later waves): Autoware attachment (W2), sensor topics (W3).
+Non-goals here (later waves): full Autoware planning stack on a lanelet2 map,
+sensor topics (W3).
