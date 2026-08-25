@@ -101,6 +101,11 @@ pub struct PlaybackArgs {
     /// procedural primitive parts.
     #[arg(long)]
     pub vehicle_models: Option<PathBuf>,
+    /// Pedestrians-carla models directory. Exact `walker.pedestrian.*` ids
+    /// resolve directly; generic pedestrian actors receive a stable model
+    /// selected from the catalog by actor id.
+    #[arg(long)]
+    pub pedestrian_models: Option<PathBuf>,
     /// JSON `{ "<actorId>": {headlights?, emergency?, indicator?,
     /// reversing?} }` — the parity fixture's `renderCues` shape.
     #[arg(long)]
@@ -223,6 +228,9 @@ struct VehicleModels {
     /// Entries resolved in `run()` before the app boots.
     pending: Vec<(String, VehicleModelEntry)>,
     recipes: HashMap<String, ModelRecipe>,
+    /// Actor id -> recipe key. Needed when a generic pedestrian catalog id is
+    /// deterministically assigned one of the concrete walker blueprints.
+    assignments: HashMap<String, String>,
     ready: bool,
 }
 
@@ -324,25 +332,54 @@ pub fn run(mut args: PlaybackArgs) -> Result<()> {
         None => HashMap::new(),
     };
 
-    // Resolve vehicles-carla models for the catalog ids in this document.
+    // Resolve concrete actor recipes. Vehicles use exact catalog-id mappings;
+    // generic pedestrians are distributed stably across the walker library.
     let mut pending_models: Vec<(String, VehicleModelEntry)> = Vec::new();
+    let mut model_assignments = HashMap::new();
+    let mut seen_recipes = HashSet::new();
     if let Some(dir) = &args.vehicle_models {
         let catalog = VehicleModelCatalog::load(dir)?;
-        let mut seen = HashSet::new();
         for desc in &doc.actors {
-            if !is_vehicle_class(&desc.actor_class) || !seen.insert(desc.catalog_id.clone()) {
+            if !is_vehicle_class(&desc.actor_class) {
                 continue;
             }
             if let Some(entry) = catalog.resolve(&desc.catalog_id) {
-                if entry.glb_path.is_file() {
+                model_assignments.insert(desc.id.clone(), desc.catalog_id.clone());
+                if seen_recipes.insert(desc.catalog_id.clone()) && entry.glb_path.is_file() {
                     pending_models.push((desc.catalog_id.clone(), entry.clone()));
-                } else {
+                } else if !entry.glb_path.is_file() {
                     eprintln!(
                         "vehicle model for {} missing on disk: {} (primitive fallback)",
                         desc.catalog_id,
                         entry.glb_path.display()
                     );
                 }
+            }
+        }
+    }
+    if let Some(dir) = &args.pedestrian_models {
+        let catalog = VehicleModelCatalog::load(dir)?;
+        for desc in &doc.actors {
+            if desc.actor_class != "pedestrian" {
+                continue;
+            }
+            let resolved = catalog
+                .resolve(&desc.catalog_id)
+                .map(|entry| (desc.catalog_id.as_str(), entry))
+                .or_else(|| catalog.resolve_deterministic(&desc.id));
+            let Some((recipe_key, entry)) = resolved else {
+                continue;
+            };
+            let recipe_key = recipe_key.to_string();
+            model_assignments.insert(desc.id.clone(), recipe_key.clone());
+            if seen_recipes.insert(recipe_key.clone()) && entry.glb_path.is_file() {
+                pending_models.push((recipe_key, entry.clone()));
+            } else if !entry.glb_path.is_file() {
+                eprintln!(
+                    "pedestrian model for {} missing on disk: {} (primitive fallback)",
+                    desc.id,
+                    entry.glb_path.display()
+                );
             }
         }
     }
@@ -405,6 +442,7 @@ pub fn run(mut args: PlaybackArgs) -> Result<()> {
         .insert_resource(VisualTick::default())
         .insert_resource(VehicleModels {
             pending: pending_models,
+            assignments: model_assignments,
             ..default()
         })
         .insert_resource(CameraPose {
@@ -1076,8 +1114,13 @@ fn spawn_actor_if_needed(
 
     let mut used_meshes: HashSet<AssetId<Mesh>> = HashSet::new();
 
-    if let Some(recipe) = models.recipes.get(&desc.catalog_id) {
-        // --- vehicles-carla GLB path: shared mesh/material handles --------
+    let recipe_key = models
+        .assignments
+        .get(&desc.id)
+        .map(String::as_str)
+        .unwrap_or(&desc.catalog_id);
+    if let Some(recipe) = models.recipes.get(recipe_key) {
+        // --- catalog GLB path: shared mesh/material handles ---------------
         let scale = if recipe.scale_to_dims {
             match (recipe.model_length_m, desc.dims) {
                 (Some(ml), Some(d)) if ml > 0.1 => (d.l / ml) as f32,

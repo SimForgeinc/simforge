@@ -35,10 +35,12 @@ pub struct VehicleModelEntry {
     pub model_length_m: Option<f64>,
 }
 
-/// Catalog-id keyed model table.
+/// Catalog-id keyed model table. The sorted fallback list supports stable
+/// per-actor assignment for generic pedestrian catalog ids.
 #[derive(Debug, Default, Clone)]
 pub struct VehicleModelCatalog {
     by_catalog_id: HashMap<String, VehicleModelEntry>,
+    fallback: Vec<(String, VehicleModelEntry)>,
 }
 
 /// Built-in catalog-id -> manifest-key assignments, used when the
@@ -79,6 +81,21 @@ impl VehicleModelCatalog {
 
     pub fn resolve(&self, catalog_id: &str) -> Option<&VehicleModelEntry> {
         self.by_catalog_id.get(catalog_id)
+    }
+
+    /// Select one entry deterministically for an actor whose generic catalog id
+    /// has no exact blueprint model. Uses a process-independent FNV-1a hash.
+    pub fn resolve_deterministic(&self, actor_id: &str) -> Option<(&str, &VehicleModelEntry)> {
+        if self.fallback.is_empty() {
+            return None;
+        }
+        let hash = actor_id
+            .bytes()
+            .fold(0xcbf29ce484222325_u64, |hash, byte| {
+                (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
+            });
+        let (catalog_id, entry) = &self.fallback[hash as usize % self.fallback.len()];
+        Some((catalog_id.as_str(), entry))
     }
 
     pub fn is_empty(&self) -> bool {
@@ -146,7 +163,15 @@ impl VehicleModelCatalog {
                 },
             );
         }
-        Ok(Self { by_catalog_id })
+        let mut fallback: Vec<_> = by_catalog_id
+            .iter()
+            .map(|(id, entry)| (id.clone(), entry.clone()))
+            .collect();
+        fallback.sort_by(|a, b| a.0.cmp(&b.0));
+        Ok(Self {
+            by_catalog_id,
+            fallback,
+        })
     }
 
     /// `manifest.json` fallback: map catalog ids through the built-in
@@ -200,7 +225,15 @@ impl VehicleModelCatalog {
                 },
             );
         }
-        Ok(Self { by_catalog_id })
+        let mut fallback: Vec<_> = by_catalog_id
+            .iter()
+            .map(|(id, entry)| (id.clone(), entry.clone()))
+            .collect();
+        fallback.sort_by(|a, b| a.0.cmp(&b.0));
+        Ok(Self {
+            by_catalog_id,
+            fallback,
+        })
     }
 }
 

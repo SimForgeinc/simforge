@@ -1,0 +1,423 @@
+{
+  "entries": {
+    "walker.pedestrian.0015": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0015\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0015.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0016": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0016\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0016.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0017": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0017\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0017.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0018": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0018\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0018.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0019": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0019\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0019.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0020": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0020\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0020.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0021": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0021\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0021.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0022": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0022\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0022.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0023": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0023\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0023.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0024": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0024\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0024.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0025": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0025\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0025.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0026": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0026\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0026.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0027": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0027\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0027.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0028": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0028\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0028.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0029": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0029\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0029.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0030": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0030\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0030.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0031": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0031\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0031.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0032": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0032\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0032.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0033": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0033\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0033.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0034": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0034\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0034.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0035": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0035\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0035.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0036": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0036\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0036.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0037": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0037\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0037.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0038": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0038\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0038.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0039": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0039\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0039.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0040": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0040\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0040.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0041": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0041\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0041.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0042": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0042\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0042.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0043": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0043\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0043.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0044": {
+      "age": "adult",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0044\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0044.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0045": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0045\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0045.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0046": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0046\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0046.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0047": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0047\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0047.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0048": {
+      "age": "adult",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0048\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0048.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0049": {
+      "age": "child",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0049\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0049.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0050": {
+      "age": "child",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0050\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0050.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0051": {
+      "age": "child",
+      "gender": "female",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0051\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0051.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    },
+    "walker.pedestrian.0052": {
+      "age": "child",
+      "gender": "male",
+      "model": {
+        "attribution": "\"CARLA pedestrian 0052\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+        "glbPath": "catalog/pedestrians-carla/models/pedestrian_0052.glb",
+        "source": "carla-0.10.0-ue5"
+      },
+      "scaleToDims": false,
+      "tintable": false
+    }
+  },
+  "version": 1
+}

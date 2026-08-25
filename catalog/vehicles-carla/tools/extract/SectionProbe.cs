@@ -28,6 +28,32 @@ public static class SectionProbe
         Console.WriteLine("bp not found");
     }
 
+    public static void DumpBps(string contentDir, string outDir, string targetsFile)
+    {
+        var targets = new HashSet<string>(
+            File.ReadAllLines(targetsFile).Select(line => line.Trim()).Where(line => line.Length > 0),
+            StringComparer.OrdinalIgnoreCase);
+        var provider = new DefaultFileProvider(contentDir, SearchOption.AllDirectories,
+            new VersionContainer(EGame.GAME_UE5_5));
+        provider.Initialize();
+        provider.PostMount();
+        Directory.CreateDirectory(outDir);
+        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in provider.Files.Values)
+        {
+            if (!file.Extension.Equals("uasset", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!targets.Contains(file.NameWithoutExtension)) continue;
+            var pkg = provider.LoadPackage(file);
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(pkg.GetExports(), Newtonsoft.Json.Formatting.Indented);
+            var outFile = Path.Combine(outDir, $"{file.NameWithoutExtension}.json");
+            File.WriteAllText(outFile, json);
+            found.Add(file.NameWithoutExtension);
+            Console.WriteLine($"dumped {file.Path} -> {outFile} ({json.Length} chars)");
+        }
+        foreach (var target in targets.Except(found))
+            Console.WriteLine($"bp not found: {target}");
+    }
+
     public static void Run(string contentDir, string meshName)
     {
         var provider = new DefaultFileProvider(contentDir, SearchOption.AllDirectories,

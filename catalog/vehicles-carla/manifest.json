@@ -994,6 +994,1065 @@
       ],
       "size_bytes": 6654312,
       "sha256": "ec5ac959bb9244ba712a78f0ddaef74bfb5fb8d618136a758ae0583dd3608dc1"
+    },
+    "vehicle_hatchback_audi_a2": {
+      "file": "models/vehicle_hatchback_audi_a2.glb",
+      "family": "hatchback",
+      "display": "Audi A2",
+      "carla_blueprint": "vehicle.audi.a2",
+      "tintable": true,
+      "dims_lwh_m": [
+        3.71,
+        1.79,
+        1.55
+      ],
+      "bbox": {
+        "min": [
+          -1.853,
+          0.009,
+          -0.894
+        ],
+        "max": [
+          1.852,
+          1.556,
+          0.894
+        ]
+      },
+      "tris": 26749,
+      "verts": 26722,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "plasticgrey_inst",
+        "audi_a2_front_lights",
+        "glass",
+        "audi_a2_back_lights",
+        "body_paint",
+        "brushed_aluminium_black_inst",
+        "polished_aluminium_white",
+        "black",
+        "plasticgrey",
+        "aluminium",
+        "license_plate",
+        "rubber",
+        "audi_a2_cover_wheel",
+        "plasti_cb_lack"
+      ],
+      "textures": [
+        "T_AudiA2_FrontLights_d 1024x1024",
+        "T_AudiA2_FrontLights_n 1024x1024",
+        "T_AudiA2_BackLights_d 1024x768",
+        "T_AudiA2_BackLights_n 1024x768",
+        "T_LicensePlate_d 512x512",
+        "T_AudiA2_CoverWheel_d 640x480",
+        "T_AudiA2_CoverWheel_n 640x480"
+      ],
+      "size_bytes": 2932408,
+      "sha256": "9df04306dcaa61974120d1d6de074b7e674bebcdc3b05c21fb0b521951238c4c"
+    },
+    "vehicle_suv_audi_etron": {
+      "file": "models/vehicle_suv_audi_etron.glb",
+      "family": "suv",
+      "display": "Audi e-tron",
+      "carla_blueprint": "vehicle.audi.etron",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.86,
+        2.03,
+        1.65
+      ],
+      "bbox": {
+        "min": [
+          -2.431,
+          -0.004,
+          -0.996
+        ],
+        "max": [
+          2.424,
+          1.645,
+          1.037
+        ]
+      },
+      "tris": 23145,
+      "verts": 20738,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "glass",
+        "interior_etron",
+        "body_paint",
+        "license_plate",
+        "wheels_etron",
+        "glass"
+      ],
+      "textures": [
+        "T_AudiETron_Details_D 1024x1024",
+        "T_AudiETron_Details_N 1024x1024",
+        "T_AudiETron_Details_ORM 1024x1024",
+        "T_AudiETron_Bodywork_N 1024x1024",
+        "T_AudiETron_Bodywork_ORM 1024x1024",
+        "T_LicensePlate_d 512x512",
+        "T_AudiETron_Wheels_D 1024x1024",
+        "T_AudiETron_Wheels_N 1024x1024",
+        "T_AudiETron_Wheels_ORM 1024x1024"
+      ],
+      "size_bytes": 5902500,
+      "sha256": "0fcf11bf5eebb74912ba2f8433b5509d161a6f9700e4477506320633ef4d9859"
+    },
+    "vehicle_coupe_audi_tt": {
+      "file": "models/vehicle_coupe_audi_tt.glb",
+      "family": "coupe",
+      "display": "Audi TT",
+      "carla_blueprint": "vehicle.audi.tt",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.18,
+        1.99,
+        1.39
+      ],
+      "bbox": {
+        "min": [
+          -2.091,
+          0.0,
+          -0.997
+        ],
+        "max": [
+          2.09,
+          1.385,
+          0.997
+        ]
+      },
+      "tris": 20761,
+      "verts": 17046,
+      "nodes": [
+        "body",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "glass",
+        "audi_tt_wheels",
+        "rubber_inst",
+        "body_paint",
+        "polished_aluminium_white_inst",
+        "license_plate",
+        "glass",
+        "audi_tt_light_textures"
+      ],
+      "textures": [
+        "T_AudiTT_Wheels_d 1024x1024",
+        "T_AudiTT_Wheels_n 1024x1024",
+        "T_AudiTT_Wheels_orm 1024x1024",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 2702528,
+      "sha256": "2859e7ae360be1996e199acb8a38e2e5c131bdc27055cb5c7e467904f1f386a5"
+    },
+    "vehicle_sedan_chevrolet_impala": {
+      "file": "models/vehicle_sedan_chevrolet_impala.glb",
+      "family": "sedan",
+      "display": "Chevrolet Impala",
+      "carla_blueprint": "vehicle.chevrolet.impala",
+      "tintable": true,
+      "dims_lwh_m": [
+        5.36,
+        2.03,
+        1.41
+      ],
+      "bbox": {
+        "min": [
+          -2.679,
+          -0.004,
+          -1.015
+        ],
+        "max": [
+          2.679,
+          1.407,
+          1.018
+        ]
+      },
+      "tris": 15682,
+      "verts": 14762,
+      "nodes": [
+        "body",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "glass",
+        "chevrolet_impala_interior",
+        "polished_aluminium_white_inst",
+        "glass",
+        "license_plate",
+        "body_paint",
+        "chevrolet_impala_light_texture",
+        "chevrolet_impala_wheels"
+      ],
+      "textures": [
+        "T_LicensePlate_d 512x512",
+        "T_ChevroletImpala_Wheels_d 1024x1024",
+        "T_ChevroletImpala_Wheels_n 1024x1024",
+        "T_ChevroletImpala_Wheels_orm 1024x1024"
+      ],
+      "size_bytes": 2516996,
+      "sha256": "46f70ab9110425a0dbcecc341b81fc491feeb3d7f802aa36df57d0fdc12ad491"
+    },
+    "vehicle_hatchback_citroen_c3": {
+      "file": "models/vehicle_hatchback_citroen_c3.glb",
+      "family": "hatchback",
+      "display": "Citroen C3",
+      "carla_blueprint": "vehicle.citroen.c3",
+      "tintable": true,
+      "dims_lwh_m": [
+        3.99,
+        1.85,
+        1.62
+      ],
+      "bbox": {
+        "min": [
+          -1.994,
+          -0.047,
+          -0.923
+        ],
+        "max": [
+          1.994,
+          1.57,
+          0.928
+        ]
+      },
+      "tris": 22827,
+      "verts": 25619,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "glass",
+        "plasti_cb_lack",
+        "body_paint",
+        "polished_aluminium_white_inst",
+        "citroen_lights_back",
+        "rubber",
+        "rubber_inst",
+        "citroen_cover_wheel",
+        "vh_car_citroen_c3_lights_front_mat_base_color_mat",
+        "license_plate"
+      ],
+      "textures": [
+        "T_Noise_N 1024x1024",
+        "Vh_Car_CitroenC3_LightsBackMat_BaseColor 1024x768",
+        "Vh_Car_CitroenC3_LightsBackMat_Normal 1024x768",
+        "Vh_Car_CitroenC3_CoverWheelMat_BaseColor 640x640",
+        "Vh_Car_CitroenC3_CoverWheelMat_Normal 640x640",
+        "Vh_Car_CitroenC3_LightsFrontMat_BaseColor 1024x1024",
+        "Vh_Car_CitroenC3_LightsFrontMat_Normal 1024x1024",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 4682120,
+      "sha256": "75dc515f15f1f86932ba03990eb22bdc39506023d10f12fcc12c667bf80c7777"
+    },
+    "vehicle_ambulance_ford": {
+      "file": "models/vehicle_ambulance_ford.glb",
+      "family": "ambulance",
+      "display": "Ford Ambulance",
+      "carla_blueprint": "vehicle.ford.ambulance",
+      "tintable": false,
+      "dims_lwh_m": [
+        6.36,
+        2.62,
+        2.43
+      ],
+      "bbox": {
+        "min": [
+          -3.47,
+          0.0,
+          -1.307
+        ],
+        "max": [
+          2.886,
+          2.431,
+          1.309
+        ]
+      },
+      "tris": 122794,
+      "verts": 95404,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "ambulance_details3",
+        "ambulance_details01",
+        "ambulance_details02",
+        "body_livery",
+        "none",
+        "ambulance_emissive",
+        "ambulance_emissive_sirens",
+        "ambulance_glass_emissive_ext_backup",
+        "glass",
+        "glass",
+        "glass",
+        "ambulance_glass_emissive_int",
+        "glass"
+      ],
+      "textures": [
+        "T_Ambulance_Details03_d 1024x1024",
+        "T_Ambulance_Details03_n 1024x1024",
+        "T_Ambulance_Details03_orm 1024x1024",
+        "T_Ambulance_Details01_d 1024x1024",
+        "T_Ambulance_Details01_n 1024x1024",
+        "T_Ambulance_Details01_orm 1024x1024",
+        "T_Ambulance_Details02_d 1024x1024",
+        "T_Ambulance_Details02_n 1024x1024",
+        "T_Ambulance_Details02_orm 1024x1024",
+        "T_Ambulance_Bodywork_d 2048x2048",
+        "T_Blinker_d 32x64"
+      ],
+      "size_bytes": 15244764,
+      "sha256": "64566ed8a709afd21c5e7d8ca089c509446633606eb562193cc1b92be74831d8"
+    },
+    "vehicle_firetruck_actros": {
+      "file": "models/vehicle_firetruck_actros.glb",
+      "family": "firetruck",
+      "display": "Mercedes Actros Firetruck",
+      "carla_blueprint": "vehicle.carlamotors.firetruck",
+      "tintable": false,
+      "dims_lwh_m": [
+        8.58,
+        3.38,
+        3.83
+      ],
+      "bbox": {
+        "min": [
+          -4.487,
+          0.0,
+          -1.691
+        ],
+        "max": [
+          4.092,
+          3.827,
+          1.69
+        ]
+      },
+      "tris": 178306,
+      "verts": 157004,
+      "nodes": [
+        "body",
+        "door_fl",
+        "door_fr",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "actros_firetruck_details03",
+        "body_livery",
+        "actros_firetruck_details02",
+        "actros_firetruck_details01",
+        "glass",
+        "glass",
+        "glass",
+        "actros_firetruck_emissive_blue_sirens",
+        "glass",
+        "actros_firetruck_emissive",
+        "actros_firetruck_emissive_red_sirens"
+      ],
+      "textures": [
+        "T_ActrosFiretruck_Details03_d 1024x1024",
+        "T_ActrosFiretruck_Details03_n 1024x1024",
+        "T_ActrosFiretruck_Details03_orm 1024x1024",
+        "T_ActrosFiretruck_Bodtwork_d 2048x2048",
+        "T_ActrosFiretruck_Details02_d 1024x1024",
+        "T_ActrosFiretruck_Details02_n 1024x1024",
+        "T_ActrosFiretruck_Details02_orm 1024x1024",
+        "T_ActrosFiretruck_Details01_d 1024x1024",
+        "T_ActrosFiretruck_Details01_n 1024x1024",
+        "T_ActrosFiretruck_Details01_orm 1024x1024",
+        "T_Blinker_d 32x64"
+      ],
+      "size_bytes": 14816204,
+      "sha256": "741ee999b05a12283f25ea46f646c71dff2195a34a936cfb9a716b4045c70c1d"
+    },
+    "vehicle_suv_jeep_wrangler": {
+      "file": "models/vehicle_suv_jeep_wrangler.glb",
+      "family": "suv",
+      "display": "Jeep Wrangler Rubicon",
+      "carla_blueprint": "vehicle.jeep.wrangler_rubicon",
+      "tintable": true,
+      "dims_lwh_m": [
+        3.87,
+        1.91,
+        1.88
+      ],
+      "bbox": {
+        "min": [
+          -1.933,
+          -0.007,
+          -0.952
+        ],
+        "max": [
+          1.933,
+          1.871,
+          0.954
+        ]
+      },
+      "tris": 19453,
+      "verts": 15512,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "body_paint",
+        "plasti_cb_lack",
+        "polished_aluminium_white_inst",
+        "glass",
+        "jeep_wrangler_rubicon_wheels_mat",
+        "rubber_inst",
+        "orange_metal",
+        "jeep_wrangler_rubicon_hub_cap_mat",
+        "rubber",
+        "body_paint",
+        "jeep_wrangler_rubicon_bumper_mat",
+        "license_plate"
+      ],
+      "textures": [
+        "MI_Plastic_Matte_Grey_Normal 1024x1024",
+        "MI_Plastic_Matte_Grey_ORM 1024x1024",
+        "MI_Tire_BaseColor 1024x1024",
+        "MI_Tire_ORM 1024x1024",
+        "T_White_D 512x512",
+        "MI_Metal_BaseColor 1024x1024",
+        "MI_Metal_Normal 1024x1024",
+        "MI_Metal_ORM 1024x1024",
+        "T_Noise_N 1024x1024",
+        "MI_Plastic_Matte_Black_BaseColor 1024x1024",
+        "MI_Plastic_Matte_Black_Normal 1024x1024",
+        "MI_Plastic_Matte_Black_ORM 1024x1024",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 6251524,
+      "sha256": "897ad79a7bb413a3d604d19afa4cbadc40ded774656be4dd8c3c0155a916fa86"
+    },
+    "vehicle_sedan_lincoln_mkz_2020": {
+      "file": "models/vehicle_sedan_lincoln_mkz_2020.glb",
+      "family": "sedan",
+      "display": "Lincoln MKZ 2020",
+      "carla_blueprint": "vehicle.lincoln.mkz_2020",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.89,
+        2.23,
+        1.52
+      ],
+      "bbox": {
+        "min": [
+          -2.452,
+          0.004,
+          -1.115
+        ],
+        "max": [
+          2.44,
+          1.525,
+          1.115
+        ]
+      },
+      "tris": 77659,
+      "verts": 55321,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "vehicle_lights_lincoln2020",
+        "body_paint",
+        "license_plate_lincoln2020",
+        "interior_lincoln2020",
+        "glass"
+      ],
+      "textures": [
+        "T_LicensePlate_d 512x512",
+        "M_Interior_Lincoln_d 1024x1024",
+        "M_Interior_Lincoln_n 1024x1024",
+        "M_Interior_Lincoln_ormh 1024x1024"
+      ],
+      "size_bytes": 6570164,
+      "sha256": "1859187aa9ba0c703d60261b8a285b69bac2f7a0d0ba87e8c368ce4125a2d149"
+    },
+    "vehicle_coupe_mercedes_c": {
+      "file": "models/vehicle_coupe_mercedes_c.glb",
+      "family": "coupe",
+      "display": "Mercedes-Benz C-Class Coupe",
+      "carla_blueprint": "vehicle.mercedes.coupe",
+      "tintable": true,
+      "dims_lwh_m": [
+        5.03,
+        2.15,
+        1.64
+      ],
+      "bbox": {
+        "min": [
+          -2.459,
+          -0.023,
+          -1.076
+        ],
+        "max": [
+          2.567,
+          1.612,
+          1.076
+        ]
+      },
+      "tris": 19973,
+      "verts": 23592,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "body_paint",
+        "polished_aluminium_white_inst",
+        "plasticgrey_inst",
+        "mercedes_baez_coupe_cover_wheel_mat",
+        "rubber_inst",
+        "glass",
+        "lights_front",
+        "back_ground_grill_mat",
+        "lights_back",
+        "license_plate",
+        "mercedes_top"
+      ],
+      "textures": [
+        "T_Noise_N 1024x1024",
+        "Vh_Car_MercedesBenzCoupe_CoverWheelMat_BaseColor 1024x640",
+        "Vh_Car_MercedesBenzCoupe_CoverWheelMat_Normal 1024x640",
+        "Vh_Car_MercedesBenzCoupe_LightFrontMat_BaseColor 1000x665",
+        "Vh_Car_MercedesBenzCoupe_BackgroungGrillMat_BaseColor 1024x1024",
+        "Vh_Car_MercedesBenzCoupe_BackgroungGrillMat_Normal 1024x1024",
+        "Vh_Car_MercedesBenzCoupe_BackgroungGrillMat_ORM 1024x1024",
+        "Vh_Car_MercedesBenzCoupe_LightBackMat_BaseColor 1024x680",
+        "Vh_Car_MercedesBenzCoupe_LightBackMat_Normal 1024x680",
+        "T_LicensePlate_d 512x512",
+        "Vh_Car_MercedesBenzCoupe_MercedesTopMat_BaseColor 496x491"
+      ],
+      "size_bytes": 5474608,
+      "sha256": "01a052f7b45d1915864c8ce514e4176f0965939c4750e9175e39595cc29d43bd"
+    },
+    "vehicle_coupe_mercedes_c_2020": {
+      "file": "models/vehicle_coupe_mercedes_c_2020.glb",
+      "family": "coupe",
+      "display": "Mercedes-Benz C-Class Coupe 2020",
+      "carla_blueprint": "vehicle.mercedes.coupe_2020",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.67,
+        1.81,
+        1.44
+      ],
+      "bbox": {
+        "min": [
+          -2.339,
+          -0.001,
+          -0.906
+        ],
+        "max": [
+          2.334,
+          1.441,
+          0.906
+        ]
+      },
+      "tris": 93112,
+      "verts": 66661,
+      "nodes": [
+        "body",
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr"
+      ],
+      "materials": [
+        "body_paint",
+        "mercedes_ccc_interior",
+        "license_plate"
+      ],
+      "textures": [
+        "T_MercedesCCC_Interior_d 1024x1024",
+        "T_MercedesCCC_Interior_n 1024x1024",
+        "T_MercedesCCC_Interior_ormh 1024x1024",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 7029108,
+      "sha256": "0c1fcace7b41a6d244eb14e35a4283c46e6be50b8a78798485d61d0b783722af"
+    },
+    "vehicle_micro_microlino": {
+      "file": "models/vehicle_micro_microlino.glb",
+      "family": "micro",
+      "display": "Microlino",
+      "carla_blueprint": "vehicle.micro.microlino",
+      "tintable": true,
+      "dims_lwh_m": [
+        2.21,
+        1.48,
+        1.38
+      ],
+      "bbox": {
+        "min": [
+          -1.078,
+          -0.014,
+          -0.74
+        ],
+        "max": [
+          1.129,
+          1.365,
+          0.74
+        ]
+      },
+      "tris": 12076,
+      "verts": 8974,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "body_paint",
+        "white",
+        "none",
+        "polished_aluminium_white_inst",
+        "body_wstatic_mesh3",
+        "plasticgrey_inst",
+        "glass",
+        "rubber_inst",
+        "license_plate"
+      ],
+      "textures": [
+        "T_Noise_N 1024x1024",
+        "T_Noise_D 1024x1024",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 3130952,
+      "sha256": "8272c54b350345d42817fbb7d2b3c240fe0b96b48eab6775847eb2da6f122cea"
+    },
+    "vehicle_hatchback_mini_cooper_s": {
+      "file": "models/vehicle_hatchback_mini_cooper_s.glb",
+      "family": "hatchback",
+      "display": "Mini Cooper S",
+      "carla_blueprint": "vehicle.mini.cooper_s",
+      "tintable": true,
+      "dims_lwh_m": [
+        3.81,
+        1.97,
+        1.48
+      ],
+      "bbox": {
+        "min": [
+          -1.889,
+          -0.045,
+          -0.985
+        ],
+        "max": [
+          1.917,
+          1.431,
+          0.985
+        ]
+      },
+      "tris": 28668,
+      "verts": 34203,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "plasti_cb_lack",
+        "body_paint",
+        "polished_aluminium_white_inst",
+        "vh_car_mini_cooper_s_cover_wheel_mat_base_color_mat",
+        "rubber_inst",
+        "license_plate",
+        "plasticgrey_inst",
+        "glass",
+        "body_paint",
+        "white",
+        "black",
+        "vh_car_mini_cooper_s_light_back_mat_base_color_mat",
+        "vh_car_lights_normal_mat",
+        "brushed_aluminium_black_inst",
+        "glass"
+      ],
+      "textures": [
+        "Vh_Car_MiniCooperS_CoverWheelMat_BaseColor 640x480",
+        "Vh_Car_MiniCooperS_CoverWheelMat_Normal 640x480",
+        "T_LicensePlate_d 512x512",
+        "T_Noise_N 1024x1024",
+        "Vh_Car_MiniCooperS_LightBackMat_BaseColor 1024x680",
+        "Vh_Car_MiniCooperS_LightBackMat_Normal 1024x680",
+        "Vh_Car_Lights_BaseColor 1024x1024",
+        "Vh_Car_Lights_Normal 1024x1024"
+      ],
+      "size_bytes": 4916096,
+      "sha256": "28d59ded215a1481e989590962c6261b4cccb86c46036b32ce7f07ce09363ad4"
+    },
+    "vehicle_hatchback_nissan_micra": {
+      "file": "models/vehicle_hatchback_nissan_micra.glb",
+      "family": "hatchback",
+      "display": "Nissan Micra",
+      "carla_blueprint": "vehicle.nissan.micra",
+      "tintable": true,
+      "dims_lwh_m": [
+        3.63,
+        1.85,
+        1.5
+      ],
+      "bbox": {
+        "min": [
+          -1.817,
+          0.03,
+          -0.985
+        ],
+        "max": [
+          1.817,
+          1.532,
+          0.861
+        ]
+      },
+      "tris": 15803,
+      "verts": 10884,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "nissan_details",
+        "license_plate",
+        "body_paint",
+        "glass",
+        "nissan_interior",
+        "nissan_wheels"
+      ],
+      "textures": [
+        "T_NissanMicra_Detail_d 1024x1024",
+        "T_NissanMicra_Detail_n 1024x1024",
+        "T_NissanMicra_Detail_orm 1024x1024",
+        "T_LicensePlate_d 512x512",
+        "T_NissanMicra_BodyWork_n 1024x1024",
+        "T_NissanMicra_Interior_d 1024x1024",
+        "T_NissanMicra_Interior_n 1024x1024",
+        "T_NissanMicra_Interior_orm 1024x1024",
+        "T_NissanMicra_Wheel_d 1024x1024",
+        "T_NissanMicra_Wheel_n 1024x1024",
+        "T_NissanMicra_Wheel_orm 1024x1024"
+      ],
+      "size_bytes": 6211544,
+      "sha256": "04e600bd925298ef98d6dc96d6480ba1886c6c6b61a7d9d86c81a27e7f5c0ce3"
+    },
+    "vehicle_hatchback_seat_leon": {
+      "file": "models/vehicle_hatchback_seat_leon.glb",
+      "family": "hatchback",
+      "display": "SEAT Leon",
+      "carla_blueprint": "vehicle.seat.leon",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.19,
+        1.82,
+        1.47
+      ],
+      "bbox": {
+        "min": [
+          -2.097,
+          0.003,
+          -0.91
+        ],
+        "max": [
+          2.096,
+          1.477,
+          0.907
+        ]
+      },
+      "tris": 25261,
+      "verts": 19055,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "body_paint",
+        "polished_aluminium_white_inst",
+        "glass",
+        "rubber_inst",
+        "vh_car_seat_leon_light_front_mat_base_color_mat",
+        "rubber",
+        "vh_car_seat_leon_cover_wheel_mat_base_color_mat",
+        "plasti_cb_lack",
+        "license_plate",
+        "vh_car_seat_leon_light_back_mat_base_color_mat",
+        "vh_car_seat_leon_grill_mat_base_color_mat"
+      ],
+      "textures": [
+        "T_Noise_N 1024x1024",
+        "Vh_Car_SeatLeon_LightFrontMat_BaseColor 720x660",
+        "Vh_Car_SeatLeon_LightFrontMat_Normal 720x660",
+        "Vh_Car_SeatLeon_CoverWheelMat_BaseColor 926x615",
+        "Vh_Car_SeatLeon_CoverWheelMat_Normal 926x615",
+        "T_LicensePlate_d 512x512",
+        "Vh_Car_SeatLeon_LightBackMat_BaseColor 479x491",
+        "Vh_Car_SeatLeon_LightBackMat_Normal 479x491",
+        "Vh_Car_SeatLeon_GrillMat_BaseColor 1024x1024",
+        "Vh_Car_SeatLeon_GrillMat_Normal 1024x1024",
+        "Vh_Car_SeatLeon_GrillMat_ORM 1024x1024"
+      ],
+      "size_bytes": 5519960,
+      "sha256": "d0be6b03177a65553686b3bbe8647965d51a592872a48de001c73165b767e1bf"
+    },
+    "vehicle_hatchback_toyota_prius": {
+      "file": "models/vehicle_hatchback_toyota_prius.glb",
+      "family": "hatchback",
+      "display": "Toyota Prius",
+      "carla_blueprint": "vehicle.toyota.prius",
+      "tintable": true,
+      "dims_lwh_m": [
+        4.51,
+        2.01,
+        1.52
+      ],
+      "bbox": {
+        "min": [
+          -2.287,
+          -0.037,
+          -1.003
+        ],
+        "max": [
+          2.227,
+          1.487,
+          1.003
+        ]
+      },
+      "tris": 26787,
+      "verts": 28386,
+      "nodes": [
+        "body"
+      ],
+      "materials": [
+        "rubber",
+        "blue",
+        "polished_aluminium_black_inst",
+        "brushed_aluminium_white_inst",
+        "toyota_prius_wheels_cover",
+        "body_paint",
+        "glass",
+        "rubber_inst",
+        "polished_aluminium_white_inst",
+        "toyota_prius_orange_metal",
+        "glass",
+        "toyota_prius_front_light",
+        "aluminium_2",
+        "toyota_prius_rear_light",
+        "polished_aluminium_white",
+        "license_plate"
+      ],
+      "textures": [
+        "T_ToyotaPrius_WheelsCover_d 1024x680",
+        "T_ToyotaPrius_WheelsCover_n 1024x680",
+        "T_ToyotaPrius_FrontLight_d 980x653",
+        "T_ToyotaPrius_FrontLight_n 980x653",
+        "T_ToyotaPrius_RearLight_d 1024x1024",
+        "T_ToyotaPrius_RearLight_n 1024x1024",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 3465648,
+      "sha256": "27197e6597f5c2c0a0d0a7cd06b37fa1f3fc6fe3b4b75b5e51687d648a53f536"
+    },
+    "vehicle_motorcycle_yamaha_yzf": {
+      "file": "models/vehicle_motorcycle_yamaha_yzf.glb",
+      "family": "motorcycle",
+      "display": "Yamaha YZF",
+      "carla_blueprint": "vehicle.yamaha.yzf",
+      "tintable": true,
+      "dims_lwh_m": [
+        2.21,
+        0.87,
+        1.25
+      ],
+      "bbox": {
+        "min": [
+          -1.109,
+          0.024,
+          -0.434
+        ],
+        "max": [
+          1.1,
+          1.275,
+          0.434
+        ]
+      },
+      "tris": 11491,
+      "verts": 10334,
+      "nodes": [
+        "body",
+        "handlebar",
+        "wheel_f",
+        "wheel_r"
+      ],
+      "materials": [
+        "body_paint",
+        "yamaha_details",
+        "yamaha_glass_emissive",
+        "license_plate"
+      ],
+      "textures": [
+        "T_Yamaha_Details_d 1024x1024",
+        "T_Yamaha_Details_n 1024x1024",
+        "T_Yamaha_Details_orm 1024x1024",
+        "T_LicensePlate_d 512x512"
+      ],
+      "size_bytes": 1677712,
+      "sha256": "848aada2c4af70832d45caee40a186e71b676f1a25b08bd7547034f0c4d718e6"
+    },
+    "vehicle_bicycle_bh_crossbike": {
+      "file": "models/vehicle_bicycle_bh_crossbike.glb",
+      "family": "bicycle",
+      "display": "BH Crossbike",
+      "carla_blueprint": "vehicle.bh.crossbike",
+      "tintable": true,
+      "dims_lwh_m": [
+        1.49,
+        0.86,
+        1.09
+      ],
+      "bbox": {
+        "min": [
+          -0.743,
+          0.001,
+          -0.43
+        ],
+        "max": [
+          0.744,
+          1.095,
+          0.429
+        ]
+      },
+      "tris": 5468,
+      "verts": 5292,
+      "nodes": [
+        "body",
+        "handlebar",
+        "left_pedal_geo",
+        "pedals_geo",
+        "right_pedal_geo",
+        "wheel_f",
+        "wheel_r"
+      ],
+      "materials": [
+        "cross_bike_metal",
+        "cross_bike_seat",
+        "body_paint",
+        "cross_bike_wheels"
+      ],
+      "textures": [
+        "T_CrossBike_Metal_d 1024x1024",
+        "T_CrossBike_Metal_n 1024x1024",
+        "T_CrossBike_Metal_orm 1024x1024",
+        "T_CrossBike_Seat_d 1024x1024",
+        "T_CrossBike_Seat_n 1024x1024",
+        "T_CrossBike_Seat_orm 1024x1024",
+        "T_CrossBike_Wheels_d 1024x1024",
+        "T_CrossBike_Wheels_n 1024x1024",
+        "T_CrossBike_Wheels_orm 1024x1024"
+      ],
+      "size_bytes": 6930652,
+      "sha256": "df70d5fe5e163a774be617a8eeeb3ac040fa356919b84278208b513a7f153329"
+    },
+    "vehicle_bicycle_diamondback_century": {
+      "file": "models/vehicle_bicycle_diamondback_century.glb",
+      "family": "bicycle",
+      "display": "Diamondback Century",
+      "carla_blueprint": "vehicle.diamondback.century",
+      "tintable": true,
+      "dims_lwh_m": [
+        1.64,
+        0.37,
+        1.07
+      ],
+      "bbox": {
+        "min": [
+          -0.821,
+          0.013,
+          -0.186
+        ],
+        "max": [
+          0.821,
+          1.08,
+          0.186
+        ]
+      },
+      "tris": 3968,
+      "verts": 2972,
+      "nodes": [
+        "body",
+        "handlebar",
+        "left_pedal_geo",
+        "pedals_geo",
+        "right_pedal_geo",
+        "wheel_f",
+        "wheel_r"
+      ],
+      "materials": [
+        "body_paint",
+        "road_bike_wheels"
+      ],
+      "textures": [
+        "T_RoadBike_Wheels_d 1024x1024",
+        "T_RoadBike_Wheels_n 1024x1024",
+        "T_RoadBike_Wheels_orm 1024x1024"
+      ],
+      "size_bytes": 2568396,
+      "sha256": "671bde1d075ea622c39549a76b0f9ec75c7fa6a83ee59a67ca7500b5264ba032"
+    },
+    "vehicle_bicycle_gazelle_omafiets": {
+      "file": "models/vehicle_bicycle_gazelle_omafiets.glb",
+      "family": "bicycle",
+      "display": "Gazelle Omafiets",
+      "carla_blueprint": "vehicle.gazelle.omafiets",
+      "tintable": true,
+      "dims_lwh_m": [
+        1.83,
+        0.33,
+        1.22
+      ],
+      "bbox": {
+        "min": [
+          -0.933,
+          0.017,
+          -0.158
+        ],
+        "max": [
+          0.902,
+          1.236,
+          0.171
+        ]
+      },
+      "tris": 15880,
+      "verts": 19912,
+      "nodes": [
+        "body",
+        "handlebar",
+        "left_pedal_geo",
+        "pedals_geo",
+        "right_pedal_geo",
+        "wheel_f",
+        "wheel_r"
+      ],
+      "materials": [
+        "aluminium",
+        "white",
+        "black",
+        "body_paint",
+        "plasti_cb_lack"
+      ],
+      "textures": [],
+      "size_bytes": 1163920,
+      "sha256": "8c07c8fcee87fb3b0acf622cc790f92cfcd848d5b72269d757fe6b2d27d494a2"
     }
   }
 }
