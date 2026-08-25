@@ -28,6 +28,7 @@ import { z } from 'zod';
 import { ACTOR_KINDS, type LaneGraph, type SimScenarioInput } from '@simforge/engine';
 
 import type { EnvServer, WireRequest } from './env-server.js';
+import type { TruthSubscription } from './truth-stream.js';
 import {
   WorldSession,
   type AdvanceResult,
@@ -179,6 +180,17 @@ export class WorldRegistry {
     const entry = this.requireWorld(worldId);
     this.requireMember(entry, worldId, clientId);
     return entry.world.exportLog();
+  }
+
+  /** Subscribe a world member to future atomic truth frames. */
+  subscribeTruth(
+    worldId: string,
+    clientId: string,
+    options: { readonly capacity?: number } = {},
+  ): TruthSubscription {
+    const entry = this.requireWorld(worldId);
+    this.requireMember(entry, worldId, clientId);
+    return entry.world.subscribeTruth(options);
   }
 
   private requireWorld(worldId: string): WorldEntry {

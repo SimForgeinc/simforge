@@ -66,7 +66,11 @@ import {
   type SimScenarioInput,
   type TickObserver,
 } from '@simforge/engine';
-
+import {
+  WorldTruthPublisher,
+  type TruthActorCatalogEntry,
+  type TruthSubscription,
+} from './truth-stream.js';
 /** Version tag of the session-log artifact; bumped on any breaking change. */
 export const WORLD_SESSION_LOG_VERSION = 1;
 
@@ -225,6 +229,9 @@ export class WorldSession {
   private pendingEvents: SimEvent[] = [];
   private readonly entries: WorldLogEntry[] = [];
   private digestHex: string;
+  /** Pull-based truth fan-out; never calls consumer code from the tick path. */
+  private readonly truthPublisher = new WorldTruthPublisher();
+  private actorCatalog = new Map<string, TruthActorCatalogEntry>();
 
   readonly baseInputHash: string;
 
@@ -233,6 +240,7 @@ export class WorldSession {
     this.horizonSeconds = options.horizonSeconds ?? 120;
     this.input = normalizeSimScenarioInput({ ...options.input, clipSeconds: this.horizonSeconds });
     this.baseInputHash = contentHash(this.input);
+    this.refreshActorCatalog();
     this.digestHex = sha256(`world-session.v${WORLD_SESSION_LOG_VERSION}:${this.baseInputHash}`);
 
     const errors = checkFeasibility(this.input, this.graph).filter((i) => i.severity === 'error');
@@ -276,14 +284,25 @@ export class WorldSession {
     return undefined;
   };
 
-  /** Chained frame digest over every live tick at tS >= 0. */
+  /** Chained digest and atomic truth publication for every live tick. */
   private readonly onTick: TickObserver = (obs) => {
     if (obs.tS < -EPS_S) return;
     const rows = obs.actors
       .map((a) => [a.id, a.x, a.y, a.headingRad, a.speedMps, a.present ? 1 : 0, a.s] as const)
       .sort((r, q) => (r[0] < q[0] ? -1 : r[0] > q[0] ? 1 : 0));
     this.digestHex = sha256(this.digestHex + canonicalJson([obs.tickIndex, obs.tS, rows]));
+    this.truthPublisher.publish(obs, this.sim.signalBook(), this.actorCatalog, this.input.dt);
   };
+
+  private refreshActorCatalog(): void {
+    this.actorCatalog = new Map(this.input.actors.map((actor) => [
+      actor.id,
+      {
+        kind: actor.kind,
+        dims: actor.dims ?? DEFAULT_ACTOR_DIMS[actor.kind],
+      },
+    ]));
+  }
 
   /**
    * Rebuild the engine from the (new) canonical input and re-advance to the
@@ -320,6 +339,14 @@ export class WorldSession {
 
   digest(): string {
     return this.digestHex;
+  }
+
+  /**
+   * Subscribe to future committed ticks. The pull queue is bounded and uses
+   * drop-oldest, so a consumer can never stall world advancement.
+   */
+  subscribeTruth(options: { readonly capacity?: number } = {}): TruthSubscription {
+    return this.truthPublisher.subscribe(options.capacity);
   }
 
   snapshot(): WorldSnapshot {
@@ -521,8 +548,10 @@ export class WorldSession {
     );
     if (bad) return { ok: false, error: `batch rejected by feasibility: ${bad.code} at ${bad.path}` };
 
-    // Commit: swap the canonical input and rebuild at the boundary.
+    // Commit: swap the canonical input and its static truth catalog together,
+    // then rebuild at the boundary.
     this.input = candidate;
+    this.refreshActorCatalog();
     this.actorCounter = actorCounter;
     this.existCounter = existCounter;
     this.rebuild(touched, boundaryTS);
