@@ -437,12 +437,16 @@ function sha256(data: Uint8Array): string {
 }
 /**
  * Decode meshopt + dequantize + WebP→PNG for one GLB. Returns #converted
- * textures. Material texture slots — baseColor, normal, occlusion,
+ * textures and #pruned degenerate (zero-vertex) primitives. Material texture
+ * slots — baseColor, normal, occlusion,
  * metallicRoughness (packed ORM: R=AO, G=roughness, B=metallic) — pass
  * through untouched; only image payloads and geometry encodings change.
  * Exported for the ORM-preservation contract test.
  */
-export async function decodeGlb(input: Buffer, io: NodeIO): Promise<{ doc: Document; converted: number }> {
+export async function decodeGlb(
+  input: Buffer,
+  io: NodeIO,
+): Promise<{ doc: Document; converted: number; prunedPrimitives: number }> {
   const doc = await io.readBinary(input);
   await doc.transform(dequantize());
   // Buffers are decoded; drop the compression extension so the writer emits
@@ -450,6 +454,23 @@ export async function decodeGlb(input: Buffer, io: NodeIO): Promise<{ doc: Docum
   // of EXT_meshopt_compression output here).
   for (const ext of doc.getRoot().listExtensionsUsed()) {
     if (ext.extensionName === 'EXT_meshopt_compression') ext.dispose();
+  }
+
+  // Published tiles can carry degenerate primitives whose POSITION accessor has
+  // count 0; their undefined bounds serialize as `min:[null,null,null]`, which
+  // glTF forbids (accessor.count must be >= 1) and which Bevy's loader rejects,
+  // failing the whole scene. An empty primitive draws nothing, so dropping it is
+  // lossless. Meshes left with no primitives are dropped too.
+  let prunedPrimitives = 0;
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      const position = primitive.getAttribute('POSITION');
+      if (position !== null && position.getCount() > 0) continue;
+      mesh.removePrimitive(primitive);
+      primitive.dispose();
+      prunedPrimitives += 1;
+    }
+    if (mesh.listPrimitives().length === 0) mesh.dispose();
   }
 
   let converted = 0;
@@ -462,7 +483,7 @@ export async function decodeGlb(input: Buffer, io: NodeIO): Promise<{ doc: Docum
     texture.setMimeType('image/png');
     converted += 1;
   }
-  return { doc, converted };
+  return { doc, converted, prunedPrimitives };
 }
 
 /**
