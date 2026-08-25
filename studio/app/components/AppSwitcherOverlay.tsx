@@ -2,15 +2,11 @@
 
 import Link from "next/link";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { FlaskConical, HardDrive, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { RefObject } from "react";
 import { AppSwitcherArt } from "@/app/components/AppSwitcherArt";
 import { SkyCloudBackdrop } from "@/app/components/SkyCloudBackdrop";
 import { DASHBOARD_APPS } from "@/app/lib/dashboard-nav";
-import {
-  setExperimentalFeaturesEnabled,
-  useExperimentalFeaturesEnabled,
-} from "@/app/lib/experimental-features";
 import { cn } from "@/app/lib/utils";
 
 export function AppSwitcherOverlay({
@@ -24,7 +20,6 @@ export function AppSwitcherOverlay({
   pathname: string;
   triggerRef: RefObject<HTMLButtonElement | null>;
 }) {
-  const experimentalEnabled = useExperimentalFeaturesEnabled();
   const close = () => onOpenChange(false);
 
   return (
@@ -180,33 +175,6 @@ export function AppSwitcherOverlay({
               })}
             </div>
 
-            <div
-              className="grid grid-cols-2 gap-1 self-end rounded-xl border border-white/[0.07] bg-white/[0.025] p-1"
-              data-testid="app-switcher-footer"
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  setExperimentalFeaturesEnabled(!experimentalEnabled)
-                }
-                aria-label={`${experimentalEnabled ? "Disable" : "Enable"} experimental features`}
-                aria-pressed={experimentalEnabled}
-                data-testid="experimental-features-toggle"
-                className={cn(
-                  "flex min-h-12 items-center justify-center gap-2 rounded-lg px-3 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E8E044]",
-                  experimentalEnabled
-                    ? "bg-[#E8E044]/10 text-[#E8E044]"
-                    : "text-white/45 hover:bg-white/[0.05] hover:text-white",
-                )}
-              >
-                <FlaskConical className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>Experimental {experimentalEnabled ? "on" : "off"}</span>
-              </button>
-              <div className="flex min-h-12 items-center justify-center gap-2 rounded-lg px-3 text-[10px] font-medium text-white/45">
-                <HardDrive className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>Local data</span>
-              </div>
-            </div>
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

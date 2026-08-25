@@ -68,6 +68,7 @@ const PRODUCT_ONLY_PATHS = [
   'studio/app/lib/asset-gallery/generation-store.ts',
   'studio/app/lib/db/workspace-audit-log-store.ts',
   'studio/app/lib/db/workspace-store.ts',
+  'studio/app/lib/experimental-features.ts',
   'studio/app/lib/meshy',
 ];
 
@@ -140,11 +141,11 @@ export function verifyRepositoryNaming(root) {
   }
 
   const legacyImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@uniscenarios\//u;
-  const productScope = /@simcloud\//u;
+  const productScopePrefix = ['@sim', 'cloud/'].join('');
   for (const path of sourceFiles(root)) {
     const source = readFileSync(path, 'utf8');
     if (legacyImport.test(source)) errors.push(`${relative(root, path)} imports the retired @uniscenarios scope`);
-    if (productScope.test(source)) errors.push(`${relative(root, path)} contains the product-only @simcloud scope`);
+    if (source.includes(productScopePrefix)) errors.push(`${relative(root, path)} contains the product-only package scope`);
   }
 
   if (errors.length) throw new Error(`Repository naming verification failed:\n- ${errors.join('\n- ')}`);

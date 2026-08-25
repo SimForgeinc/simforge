@@ -32,7 +32,6 @@ import type {
 import { TopBarActionsPortal } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";
 import { EmptyState } from "@/app/components/ui/empty-state";
-import { useExperimentalFeaturesEnabled } from "@/app/lib/experimental-features";
 import { cn } from "@/app/lib/utils";
 import type { ScenarioMapOption } from "@/app/dashboard/scenario/list/document-map-groups";
 import { ScenarioMapPickerDialog } from "@/app/dashboard/scenario/list/ScenarioMapPickerDialog";
@@ -186,7 +185,6 @@ export function MapGalleryPageClient({
   maps: ScenarioMapDescriptorDto[];
 }) {
   const router = useRouter();
-  const experimentalEnabled = useExperimentalFeaturesEnabled();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [creating, setCreating] = useState(false);
   const [map2DOpen, setMap2DOpen] = useState(false);
@@ -253,19 +251,19 @@ export function MapGalleryPageClient({
   if (entries.length === 0) {
     return (
       <>
-        {experimentalEnabled ? <AddMapTopBarAction /> : null}
+        <AddMapTopBarAction />
         <EmptyState
           icon={<MapPin className="size-7" />}
           title="No maps yet"
           description="Upload your first map to explore it in 3D and create simulation scenarios."
-          action={experimentalEnabled ? (
+          action={
             <Button asChild>
               <Link href="/dashboard/map-assets/new">
                 <Plus className="mr-1.5 size-4" />
                 Add map
               </Link>
             </Button>
-          ) : undefined}
+          }
           className="h-full"
         />
       </>
@@ -310,7 +308,7 @@ export function MapGalleryPageClient({
 
   return (
     <>
-      {experimentalEnabled ? <AddMapTopBarAction /> : null}
+      <AddMapTopBarAction />
       <main className="relative h-full min-h-[32rem] overflow-hidden bg-[#07100d] text-white">
         <div className="absolute inset-0">
           <MapGalleryWorldPreview
