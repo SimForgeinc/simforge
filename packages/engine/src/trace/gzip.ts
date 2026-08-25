@@ -16,7 +16,6 @@ async function loadNodeZlib() {
   return import(/* webpackIgnore: true */ specifier);
 }
 
-
 /** Canonical, quantised JSON bytes for a trace. */
 export function serializeTrace(trace: SimTrace): Uint8Array {
   return new TextEncoder().encode(canonicalJson(quantizeTrace(trace)));
