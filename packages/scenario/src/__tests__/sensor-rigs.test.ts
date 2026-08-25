@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ALPAMAYO_CAMERA_INDEX,
+  ALPAMAYO_RENDER_HEIGHT,
+  ALPAMAYO_RENDER_WIDTH,
   BUILT_IN_SENSOR_RIGS,
   SENSOR_MOUNT_PRESETS,
+  buildAlpamayoRigPreset,
   instantiateSensorRig,
   matchSensorMountPreset,
   resolveSensorMountPreset,
+  sensorRigPreset,
 } from '../schema/v2/sensor-rigs.js';
 
 const bus = {
@@ -21,6 +26,8 @@ describe('sensor rigs', () => {
       'waymo-5th-gen',
       'nvidia-sdg-av',
       'alpamayo-pai',
+      'alpamayo-2cam',
+      'alpamayo-4cam',
     ]);
 
     for (const preset of BUILT_IN_SENSOR_RIGS) {
@@ -51,5 +58,59 @@ describe('sensor rigs', () => {
       position: { x: 1.234, y: 2.345, z: 0.456 },
       rotation: { yawRad: 0, pitchRad: 0, rollRad: 0 },
     }, bus)).toBeUndefined();
+  });
+});
+
+describe('alpamayo model-input rigs', () => {
+  const expectedAspect = ALPAMAYO_RENDER_WIDTH / ALPAMAYO_RENDER_HEIGHT;
+
+  it('authors the 2-cam profile as model camera indices [1, 6]', () => {
+    const preset = sensorRigPreset('alpamayo-2cam');
+    expect(preset).toBeDefined();
+    expect(preset!.sensors.map((sensor) => sensor.id)).toEqual([
+      'camera_front_wide_120fov',
+      'camera_front_tele_30fov',
+    ]);
+    expect(preset!.sensors.map(
+      (sensor) => ALPAMAYO_CAMERA_INDEX[sensor.id as keyof typeof ALPAMAYO_CAMERA_INDEX],
+    )).toEqual([1, 6]);
+  });
+
+  it('authors the 4-cam profile as the dataset-default indices [0, 1, 2, 6]', () => {
+    const preset = sensorRigPreset('alpamayo-4cam');
+    expect(preset).toBeDefined();
+    expect(preset!.sensors.map(
+      (sensor) => ALPAMAYO_CAMERA_INDEX[sensor.id as keyof typeof ALPAMAYO_CAMERA_INDEX],
+    )).toEqual([0, 1, 2, 6]);
+  });
+
+  it('keeps every camera at the model-native aspect with its rig horizontal FoV', () => {
+    for (const id of ['alpamayo-2cam', 'alpamayo-4cam'] as const) {
+      for (const sensor of sensorRigPreset(id)!.sensors) {
+        expect(sensor.type).toBe('dash_camera');
+        if (sensor.type !== 'dash_camera') continue;
+        expect(sensor.camera.aspectRatio).toBeCloseTo(expectedAspect, 6);
+        expect(sensor.camera.horizontalFovDeg)
+          .toBe(sensor.id === 'camera_front_tele_30fov' ? 30 : 120);
+      }
+    }
+  });
+
+  it('sorts builder camera order by model index regardless of input order', () => {
+    const preset = buildAlpamayoRigPreset('alpamayo-test', 'Test', [
+      'camera_front_tele_30fov',
+      'camera_cross_right_120fov',
+      'camera_front_wide_120fov',
+    ]);
+    expect(preset.sensors.map((sensor) => sensor.id)).toEqual([
+      'camera_front_wide_120fov',
+      'camera_cross_right_120fov',
+      'camera_front_tele_30fov',
+    ]);
+  });
+
+  it('rejects camera names without an authored template', () => {
+    expect(() => buildAlpamayoRigPreset('alpamayo-bad', 'Bad', ['camera_rear_left_70fov']))
+      .toThrow(/no authored Alpamayo camera template/);
   });
 });

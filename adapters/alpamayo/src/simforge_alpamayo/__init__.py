@@ -16,11 +16,20 @@ try:  # pragma: no cover - trivial import plumbing
 except ModuleNotFoundError:  # pragma: no cover
     if _VENDOR_SRC.is_dir():
         sys.path.insert(0, str(_VENDOR_SRC))
-    else:
+    # else: tolerated — bridge.py/protocol.py are usable without the vendored
+    # inference code (and without torch); engine.py calls require_vendored()
+    # before its lazy `alpamayo1_5` imports for the actionable error.
+
+
+def require_vendored() -> None:
+    """Fail with setup guidance when the vendored inference code is absent."""
+    try:
+        import alpamayo1_5  # noqa: F401
+    except ModuleNotFoundError:
         raise ModuleNotFoundError(
             f"alpamayo1_5 not importable and vendor dir missing: {_VENDOR_SRC}. "
             "Run scripts/setup.sh first."
-        )
+        ) from None
 
 PINS = {
     "model_repo": "nvidia/Alpamayo-1.5-10B",

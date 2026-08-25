@@ -125,6 +125,9 @@ class AlpamayoEngine:
             ],
         )
 
+        from simforge_alpamayo import require_vendored
+
+        require_vendored()
         from alpamayo1_5.config import Alpamayo1_5Config
         from alpamayo1_5.models.alpamayo1_5 import Alpamayo1_5
         from transformers import AutoProcessor
