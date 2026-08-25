@@ -23,7 +23,7 @@ import { scenarioListCache } from "./scenarioListCache";
 import { rememberScenarioSelection } from "./scenarioViewState";
 import { reconcileTemplateMapIdentity } from "@/app/lib/scenario/map-identity";
 import {
-  localSceneMinutes,
+  FRESH_SCENARIO_MINUTES,
   withSceneMinutes,
 } from "@/app/dashboard/scenario/editor/scene-time";
 
@@ -135,7 +135,7 @@ export function useScenarioDocumentActions({
         template.setClip(undefined, 0);
         const content = {
           ...template.data,
-          environment: withSceneMinutes(template.data.environment, localSceneMinutes()),
+          environment: withSceneMinutes(template.data.environment, FRESH_SCENARIO_MINUTES),
         };
         const created = await api.createDocument({
           title: template.data.meta.name,

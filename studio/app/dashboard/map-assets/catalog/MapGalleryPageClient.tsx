@@ -41,7 +41,6 @@ import {
   type ScenarioWorldTarget,
 } from "@/app/dashboard/scenario/scene/ScenarioWorldHost";
 import { useIdleStreetTour } from "@/app/dashboard/scenario/scene/useIdleStreetTour";
-import { localSceneMinutes } from "@/app/dashboard/scenario/editor/scene-time";
 import { getCardStats } from "./map-card-data";
 import { MapGallerySumoTraffic } from "./MapGallerySumoTraffic";
 
@@ -284,12 +283,7 @@ export function MapGalleryPageClient({
     try {
       const response = await fetch(
         `/api/simforge/maps/${encodeURIComponent(entry.map.mapVersionId)}/documents/default`,
-        {
-          method: "POST",
-          headers: {
-            "x-simforge-local-minutes": String(localSceneMinutes()),
-          },
-        },
+        { method: "POST" },
       );
       const payload = (await response.json().catch(() => null)) as
         | { document?: ScenarioDocumentDto; error?: string }
