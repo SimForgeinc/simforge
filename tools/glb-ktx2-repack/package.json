@@ -1,0 +1,16 @@
+{
+  "name": "@simforge/glb-ktx2-repack",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Image-only WebP->KTX2 repacker for production GLB tiles; geometry/meshopt bytes stay identical.",
+  "bin": {
+    "glb-ktx2-repack": "bin/glb-ktx2-repack.mjs"
+  },
+  "scripts": {
+    "test": "node --test 'test/*.test.mjs'"
+  },
+  "dependencies": {
+    "sharp": "0.34.5"
+  }
+}
