@@ -7,6 +7,7 @@ import type {
   TrafficStepRequest,
   TrafficStepResult,
 } from './protocol';
+declare const process: { readonly env: { readonly NODE_ENV?: string } };
 
 interface PendingRequest {
   readonly resolve: (value: SumoWorkerResponse) => void;

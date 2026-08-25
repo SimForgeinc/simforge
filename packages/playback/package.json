@@ -54,7 +54,7 @@
     "vitest": "^3.0.0"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/traffic/index.ts src/traffic-provider/sumoWasmWorker.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   }
