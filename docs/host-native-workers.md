@@ -150,4 +150,7 @@ RPC liveness. Remedy: `docker restart uniscenarios-carla-server-<lane>`
 (workers stay up and reconnect per job; observed twice on a100-1, 23:11Z and
 00:39Z 2026-08-24/25). Next cycle: replace the server healthcheck with a
 `uniscenarios-carla probe-ticks` RPC liveness check, or add a scheduled
-restart at a quiet window.
+restart at a quiet window. An idle-gated implementation ships in
+`native/server-health-probe.sh` (skips when the lane gpu.lock is held;
+restarts the server container on probe-ticks failure) — wire per lane as a
+systemd timer next cycle.
