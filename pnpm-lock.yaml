@@ -648,6 +648,12 @@ importers:
         specifier: 6.0.2
         version: 6.0.2
 
+  tools/glb-ktx2-repack:
+    dependencies:
+      sharp:
+        specifier: 0.34.5
+        version: 0.34.5
+
 packages:
 
   '@alloc/quick-lru@5.2.0':

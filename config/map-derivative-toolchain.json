@@ -20,6 +20,21 @@
         "libraries": {
           "lib/libktx.4.4.2.dylib": "bd26f0747b7a800384b7b3c9221dafeb3943ef565a560ab98238cade597c0947"
         }
+      },
+      "linux-x86_64": {
+        "archive": "KTX-Software-4.4.2-Linux-x86_64.tar.bz2",
+        "archiveUrl": "https://github.com/KhronosGroup/KTX-Software/releases/download/v4.4.2/KTX-Software-4.4.2-Linux-x86_64.tar.bz2",
+        "archiveSha256": "a8781bad05f9624edbf910b7f258cd0a4ba7d3e63b49ecc0a0ab440bf6a0a245",
+        "installDirectory": "ktx-software/4.4.2-linux-x86_64",
+        "executables": {
+          "ktx": "2028e023a18e827e66362a9e184052f40192566b10f92655a337e2eb8ea0829b",
+          "toktx": "2a11939550fcc2d9b324c66d08f756ce3f512c8a02f6f5b03885e1a8b28f67f4",
+          "ktxinfo": "7994cd887ae3759a7ed385d57b483fa0952cec693bb6c664ef26732f80ca4d60",
+          "ktx2check": "96f377b2602c0e7762522414b49576d6a797cbad47976ca733905558eee1cda7"
+        },
+        "libraries": {
+          "lib/libktx.so.4.4.2": "0792dd32ce7d2a101d614a3d1dc1f2b4297869d9cab5d7f0bb4fee304c4c9bcc"
+        }
       }
     }
   },

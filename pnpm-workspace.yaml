@@ -3,6 +3,7 @@ packages:
   - packages/*
   - services/*
   - studio
+  - tools/*
 allowBuilds:
   esbuild: true
   sharp: true
