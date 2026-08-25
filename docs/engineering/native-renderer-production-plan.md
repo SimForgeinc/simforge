@@ -107,7 +107,7 @@ environment light, so shadowed pixels got a constant gray. Ladder, in order:
 | UE5 | Bevy | Status |
 |---|---|---|
 | Lumen GI | IBL; optional Solari | Partial: IBL baseline; Solari exceeds the 3080/full-rig budget |
-| VSM + SMRT | 4 cascades + PCSS + contact shadows | Enabled at lighting rung 4 |
+| VSM + SMRT | 4 cascades + PCSS + contact shadows | Mixed job/service: deterministic hard cascades + cinematic contact shadows; standalone cinematic CLI: rung-4 PCSS |
 | TSR/TAA | TAA | Enabled for cinematic cameras only |
 | Auto exposure | AutoExposure | Fixed calibrated EV retained to keep host-stepped output stable |
 | Bloom/DoF/motion blur/color grading | built in | Configurable per cinematic profile |
@@ -134,6 +134,13 @@ and service `ServiceCamera` also accept `profile: "sensor" | "cinematic"`;
 omission inherits the job/service profile. This is how the eight Pronto
 cameras stay on the deterministic sensor path while one chase camera uses the
 advanced cinematic pipeline in the same render tick.
+
+The reusable job/service engine deliberately caps scene lighting at rung 3:
+Bevy 0.19 PCSS and screen-space AO/contact sampling changed sensor RGB hashes
+between identical fresh-process replays. Sensor cameras therefore use hard
+cascades with no stochastic screen-space pass. Cinematic cameras retain Ultra
+GTAO, contact shadows, TAA and SSR. Rung-4 PCSS remains available to the
+standalone cinematic CLI where no sensor hash contract applies.
 
 Static map GLBs go in `glbs`; vegetation prototype GLBs go in `vegGlbs` and
 must retain their sibling `.instances.json` files. Loading prototype GLBs as
