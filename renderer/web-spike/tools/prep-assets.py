@@ -92,6 +92,14 @@ def cmd_bc7(args):
         bv["byteLength"] = len(payload)
         out += payload
     js["buffers"][0]["byteLength"] = len(out)
+    # Some corpus exporters emit null POSITION bounds for empty accessors. That is
+    # invalid glTF and serde correctly rejects it; discard only those unusable bounds
+    # while preserving the empty accessor so the prepared gate asset remains loadable.
+    for accessor in js.get("accessors", []):
+        for key in ("min", "max"):
+            values = accessor.get(key)
+            if values is not None and any(not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+                del accessor[key]
     write_glb(args.output, js, out)
     print(f"{args.output}: {len(replaced)} images -> BC7, {Path(args.output).stat().st_size} bytes")
 
