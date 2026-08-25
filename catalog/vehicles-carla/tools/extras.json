@@ -1,0 +1,1677 @@
+{
+ "truck_carlacola": [
+  {
+   "mesh": "SM_CarlaCola_Door_FL",
+   "socket": "Door_L",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_CarlaCola_Door_FR",
+   "socket": "Door_R",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    1.3522406
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    -1.3522399999999999
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    1.3522406
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    -1.3522399999999999
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    1.3522406
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    -1.3522399999999999
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    1.3522406
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_EuropeanHGV_Door_FR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -3.6172635000000004,
+    -1.849863,
+    -1.3522399999999999
+   ],
+   "overrides": []
+  }
+ ],
+ "sedan_dodge_charger": [
+  {
+   "mesh": "SM_DodgeCharger_Door_FL",
+   "socket": "Door_FL",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FR",
+   "socket": "Door_FR",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RL",
+   "socket": "Door_RL",
+   "t": [
+    0.002,
+    0.0,
+    0.0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RR",
+   "socket": "Door_RR",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    -0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.20009182,
+    -0.78321594,
+    0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.20209183,
+    -0.78321594,
+    -0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    -0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0.20009182,
+    -0.78321594,
+    0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0.20209183,
+    -0.78321594,
+    -0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    -0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RL_Glass_Int1",
+   "socket": null,
+   "t": [
+    0.20009182,
+    -0.78321594,
+    0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RR_Glass_Int1",
+   "socket": null,
+   "t": [
+    0.20209183,
+    -0.78321594,
+    -0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_FR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.9707094,
+    -0.7411266999999999,
+    -0.9334677000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RL_Glass_Int2",
+   "socket": null,
+   "t": [
+    0.20009182,
+    -0.78321594,
+    0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Door_RR_Glass_Int2",
+   "socket": null,
+   "t": [
+    0.20209183,
+    -0.78321594,
+    -0.9022986000000001
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeCharger_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    "MI_DodgeChargerCop_Emissive"
+   ]
+  }
+ ],
+ "police_dodge_charger": [
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FL",
+   "socket": "Door_FL",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    null
+   ]
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FR",
+   "socket": "Door_FR",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    null
+   ]
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RL",
+   "socket": "Door_RL",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    null,
+    null
+   ]
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RR",
+   "socket": "Door_RR",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    null,
+    null
+   ]
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    0.931546
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    -0.92975494
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.20176283000000003,
+    -0.7829027000000001,
+    0.9022787
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.20176283000000003,
+    -0.7829027000000001,
+    -0.9022787
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    0.931546
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    -0.92975494
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0.20176283000000003,
+    -0.7829027000000001,
+    0.9022787
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    0.931546
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    -0.92975494
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RL_Glass_Int1",
+   "socket": null,
+   "t": [
+    0.20176283000000003,
+    -0.7829027000000001,
+    0.9022787
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RR_Glass_Int1",
+   "socket": null,
+   "t": [
+    0.20176283000000003,
+    -0.7829027000000001,
+    -0.9022787
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RR_Glass_Int1",
+   "socket": null,
+   "t": [
+    0.20176283000000003,
+    -0.7829027000000001,
+    -0.9022787
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    0.931546
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_FR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.9668634,
+    -0.8080016999999999,
+    -0.92975494
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Door_RL_Glass_Int2",
+   "socket": null,
+   "t": [
+    0.20176283000000003,
+    -0.7829027000000001,
+    0.9022787
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_DodgeChargerCop_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  }
+ ],
+ "sedan_ford_crown": [
+  {
+   "mesh": "SM_FordCrown02_Door_FL",
+   "socket": "Door_Front_Left",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FR",
+   "socket": "Door_Front_Right",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RL",
+   "socket": "Door_Rear_Left",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RR",
+   "socket": "Door_Rear_Right",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.0229,
+    -0.87399,
+    0.82979
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.0229,
+    -0.87399,
+    0.82979
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.0229,
+    -0.87399,
+    0.82979
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.0229,
+    -0.87399,
+    0.82979
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    -0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    -0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    -0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_FR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -1.137243,
+    -0.8717610000000001,
+    -0.834634
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.022904968,
+    -0.873989,
+    -0.829789
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.022904968,
+    -0.873989,
+    -0.829789
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.022904968,
+    -0.873989,
+    -0.829789
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Door_RR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.022904968,
+    -0.873989,
+    -0.829789
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown02_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_FordCrown01_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  }
+ ],
+ "sedan_lincoln_mkz": [
+  {
+   "mesh": "SM_LincolnMKZ_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.95953064,
+    -0.87399,
+    0.8741021000000001
+   ],
+   "overrides": [
+    "MI_LincolnMKZ_Glass_Ext"
+   ]
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Door_RL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.15953773000000002,
+    -0.9042851000000001,
+    0.8969478599999999
+   ],
+   "overrides": [
+    "MI_LincolnMKZ_Glass_Ext"
+   ]
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.95953064,
+    -0.873989,
+    -0.88020966
+   ],
+   "overrides": [
+    "MI_LincolnMKZ_Glass_Ext"
+   ]
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Door_RR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.15953276000000002,
+    -0.8814220400000001,
+    -0.8950440999999999
+   ],
+   "overrides": [
+    "MI_LincolnMKZ_Glass_Ext"
+   ]
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    "MI_LincolnMKZ_Glass_Ext",
+    "MI_LincolnMKZ_Glass_Ext"
+   ]
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Door_RL",
+   "socket": "Door_Rear_Left",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Door_RR",
+   "socket": "Door_Rear_Right",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Door_FL",
+   "socket": "Door_Front_Left",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Door_FR",
+   "socket": "Door_Front_Right",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_LincolnMKZ_Emissive",
+   "socket": null,
+   "t": [
+    3.0517578000000003e-07,
+    0.0,
+    0.0
+   ],
+   "overrides": [
+    "MI_LincolnMKZ_Emissive"
+   ]
+  }
+ ],
+ "van_mercedes_sprinter": [
+  {
+   "mesh": "SM_MercedesSprinter_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    0.9563806
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    0.9563806
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    0.9563806
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    0.9563806
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    -0.95721794
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    -0.95721794
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    -0.95721794
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -1.6826495000000001,
+    -1.07713356,
+    -0.95721794
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    "MI_MercedesSprinter_Glass_Ext",
+    "MI_MercedesSprinter_Glass_Ext"
+   ]
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    "MI_MercedesSprinter_Glass_Ext"
+   ]
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    "MI_MercedesSprinter_Glass_Parked",
+    "MI_MercedesSprinter_Glass_Int"
+   ]
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FL",
+   "socket": "Door_L",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Door_FR",
+   "socket": "Door_R",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MercedesSprinter_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": [
+    "MI_MercedesSprinter_Emissive"
+   ]
+  }
+ ],
+ "hatchback_mini_cooper": [
+  {
+   "mesh": "SM_MiniCooper_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    -1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    -1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    -1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -0.75476425,
+    -0.8748822,
+    -1.0196538
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FL",
+   "socket": "Door_L",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Door_FR",
+   "socket": "Door_R",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MiniCooper_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  }
+ ],
+ "bus_mitsubishi_fusorosa": [
+  {
+   "mesh": "SM_MitsubishiFusoRosa_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MitsubishiFusoRosa_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MitsubishiFusoRosa_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MitsubishiFusoRosa_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_MitsubishiFusoRosa_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  }
+ ],
+ "coupe_ford_mustang": [
+  {
+   "mesh": "SM_Mustang_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  }
+ ],
+ "suv_nissan_patrol": [
+  {
+   "mesh": "SM_NissanPatrol_Door_FL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    -1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RL_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.06611106,
+    -1.131296,
+    1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RR_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0.066110983,
+    -1.131296,
+    -1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    -1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RL_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0.06611106,
+    -1.131296,
+    1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RR_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0.066110983,
+    -1.131296,
+    -1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FL_Glass_Int1",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FR_Glass_Int1",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    -1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RL_Glass_Int1",
+   "socket": null,
+   "t": [
+    0.06611106,
+    -1.131296,
+    1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RR_Glass_Int1",
+   "socket": null,
+   "t": [
+    0.066110983,
+    -1.131296,
+    -1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FL_Glass_Int2",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FR_Glass_Int2",
+   "socket": null,
+   "t": [
+    -1.1422794,
+    -1.13206635,
+    -1.05170746
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RL_Glass_Int2",
+   "socket": null,
+   "t": [
+    0.06611106,
+    -1.131296,
+    1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RR_Glass_Int2",
+   "socket": null,
+   "t": [
+    0.066110983,
+    -1.131296,
+    -1.054562
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FL_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FL",
+   "socket": "Door_FL",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FR_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_FR",
+   "socket": "Door_FR",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RL",
+   "socket": "Door_RL",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Door_RR",
+   "socket": "Door_RR",
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Glass_Ext1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Glass_Ext2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Glass_Int1",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Glass_Int2",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  },
+  {
+   "mesh": "SM_NissanPatrol_Emissive",
+   "socket": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "overrides": []
+  }
+ ]
+}

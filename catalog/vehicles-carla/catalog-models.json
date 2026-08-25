@@ -1,0 +1,210 @@
+{
+  "comment": "Merge into packages/asset-catalog/catalog.json per PATCH-NOTES.md. Keys are existing catalog ids.",
+  "entries": {
+    "vehicle.sedan": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_sedan_lincoln_mkz.glb",
+        "attribution": "\"Lincoln MKZ 2017\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.hatchback": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_hatchback_mini_cooper.glb",
+        "attribution": "\"Mini Cooper S 2021\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.suv": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_suv_nissan_patrol.glb",
+        "attribution": "\"Nissan Patrol 2021\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.pickup": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_pickup_tesla_cybertruck.glb",
+        "attribution": "\"Tesla Cybertruck\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "scaleToDims": true
+    },
+    "vehicle.van": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_van_mercedes_sprinter.glb",
+        "attribution": "\"Mercedes Sprinter\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.delivery_van": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_van_mercedes_sprinter.glb",
+        "attribution": "\"Mercedes Sprinter\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.minivan": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_minivan_bmw_gran_tourer.glb",
+        "attribution": "\"BMW Gran Tourer\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.kia.carnival": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_minivan_bmw_gran_tourer.glb",
+        "attribution": "\"BMW Gran Tourer\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true,
+      "note": "closest available MPV silhouette; the Kia Carnival source asset is not CARLA CC-BY content"
+    },
+    "vehicle.box_truck": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_truck_carlacola.glb",
+        "attribution": "\"CarlaCola box truck\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.semi_truck": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_truck_european_hgv.glb",
+        "attribution": "\"European HGV tractor\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": false,
+      "note": "tractor unit only; catalog dims include a trailer \u2014 scale by width/height, not length"
+    },
+    "vehicle.bus": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_bus_mitsubishi_fusorosa.glb",
+        "attribution": "\"Mitsubishi Fuso Rosa\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "scaleToDims": true,
+      "note": "minibus stand-in for a 12m transit bus"
+    },
+    "vehicle.shuttle_bus": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_bus_mitsubishi_fusorosa.glb",
+        "attribution": "\"Mitsubishi Fuso Rosa\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "scaleToDims": true
+    },
+    "vehicle.motorcycle": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_motorcycle_harley.glb",
+        "attribution": "\"Harley-Davidson Low Rider\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.tesla_model_3": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_sedan_tesla_model3.glb",
+        "attribution": "\"Tesla Model 3\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "scaleToDims": true
+    },
+    "vehicle.ford_mustang": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_coupe_ford_mustang.glb",
+        "attribution": "\"Ford Mustang\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true
+    },
+    "vehicle.taxi": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_sedan_ford_crown.glb",
+        "attribution": "\"Ford Crown (taxi)\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "scaleToDims": true
+    },
+    "vehicle.police_cruiser": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_police_dodge_charger.glb",
+        "attribution": "\"Dodge Charger Police 2020\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "scaleToDims": true
+    },
+    "vehicle.honda_civic": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_sedan_dodge_charger.glb",
+        "attribution": "\"Dodge Charger 2020\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true,
+      "note": "visual stand-in (no Civic in CARLA content); tintable sedan"
+    },
+    "vehicle.toyota_camry": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_sedan_lincoln_mkz.glb",
+        "attribution": "\"Lincoln MKZ 2017\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": true,
+      "scaleToDims": true,
+      "note": "visual stand-in; tintable sedan"
+    }
+  },
+  "extras": {
+    "vehicle_van_volkswagen_t2": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_van_volkswagen_t2.glb",
+        "attribution": "\"Volkswagen T2\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "note": "classic van, no catalog id yet"
+    },
+    "vehicle_motorcycle_kawasaki_ninja": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_motorcycle_kawasaki_ninja.glb",
+        "attribution": "\"Kawasaki Ninja\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "note": "sport bike variant"
+    },
+    "vehicle_scooter_vespa": {
+      "model": {
+        "glbPath": "catalog/vehicles-carla/models/vehicle_scooter_vespa.glb",
+        "attribution": "\"Vespa ZX 125\" vehicle model \u00a9 CARLA Simulator contributors (carla.org), licensed CC BY 4.0; converted to glTF for SimForge.",
+        "source": "carla-0.10.0-ue5"
+      },
+      "tintable": false,
+      "note": "scooter variant"
+    }
+  }
+}
