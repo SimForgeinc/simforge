@@ -374,6 +374,12 @@ pub fn run(mut args: PlaybackArgs) -> Result<()> {
                     exit_condition: ExitCondition::DontExit,
                     ..default()
                 })
+                // Playback is a finite headless process. Compile synchronously so no
+                // pipeline task can outlive the wgpu device during process teardown.
+                .set(bevy::render::RenderPlugin {
+                    synchronous_pipeline_compilation: true,
+                    ..default()
+                })
                 .disable::<bevy::winit::WinitPlugin>()
                 .disable::<bevy::audio::AudioPlugin>()
                 .set(LogPlugin {
