@@ -54,6 +54,7 @@ export async function reserveMaterializedTraffic(
     operation: "materialize_traffic",
     artifactKind: "materialized-traffic",
     artifactSha256: input.sha256,
+    idempotencyKey: `materialized-traffic:${documentId}:${input.expectedVersion}:${input.sha256}`,
     requestPayload: {
       documentId,
       draftVersion: input.expectedVersion,
@@ -144,8 +145,9 @@ export async function completeMaterializedTraffic(
     storage_key: string;
     sha256: string;
     byte_length: number;
+    artifact_state: string;
   }>(
-    `SELECT storage_bucket, storage_key, sha256, byte_length FROM simforge.artifacts
+    `SELECT storage_bucket, storage_key, sha256, byte_length, artifact_state FROM simforge.artifacts
      WHERE id = :artifact_id AND workspace_id = :workspace_id
        AND artifact_kind = 'materialized-traffic' AND artifact_state IN ('pending', 'available')
        AND metadata->>'documentId' = :document_id
@@ -167,6 +169,7 @@ export async function completeMaterializedTraffic(
   const checksum = head.checksumSha256 ? Buffer.from(head.checksumSha256, "base64").toString("hex") : null;
   if (head.contentLength !== input.sizeBytes || checksum !== input.sha256)
     throw new Error("materialized_traffic_upload_mismatch");
+  if (row.artifact_state === "available") return input;
   const finalized = await withTransaction(async (tx) => {
     const finalization = await finalizeLocalArtifactProducer(
       { workspaceId: context.workspaceId, artifactId: input.artifactId },

@@ -1543,6 +1543,7 @@ class Materializer {
   }
 
   private buildReferenceRoute(): void {
+    if (this.template.roles.length === 0) return;
     if (this.template.roles.every((role) => role.kind === 'scene_absolute')) {
       const first = this.template.roles[0];
       if (!first || first.kind !== 'scene_absolute') {
@@ -1628,7 +1629,7 @@ class Materializer {
       const actor = this.buildActor(role, binding);
       if (actor) this.actors.push(actor);
     }
-    if (this.actors.length === 0) {
+    if (this.template.roles.length > 0 && this.actors.length === 0) {
       throw new CliError('no_actors', 'no role produced an actor at this site', {
         path: 'roles',
         exitCode: 2,

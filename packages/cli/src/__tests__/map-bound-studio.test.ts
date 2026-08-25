@@ -11,6 +11,23 @@ function xy(point: { x: number; y: number } | readonly [number, number]): { x: n
 }
 
 describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${studioMapAssets.missingReason}`, () => {
+  it('materializes a browser-created fresh scenario with no actors', async () => {
+    const bundle = await loadMap('belmont-research-center');
+    const document = TemplateDocument.create({
+      name: 'Fresh Belmont scenario',
+      sourceMap: { mapId: bundle.mapId, mapName: 'Belmont Research Center' },
+      anchor: { features: [], pin: { mapId: bundle.mapId } },
+    });
+    document.setClip(undefined, 0);
+
+    const product = materializeMapBound(document.toJSON(), bundle);
+
+    expect(product.manifest.feasible).toBe(true);
+    expect(product.manifest.replayKey.siteId).toBe(`studio:${bundle.mapId}`);
+    expect(product.input.actors).toEqual([]);
+    expect(product.input.clipSeconds).toBe(20);
+  }, 30_000);
+
   it('compiles the actor-owned initial lanePath and exact 30 mph profile without timeline indirection', async () => {
     const bundle = await loadMap('yale-street');
     const actorId = 'vehicle-random-turns';

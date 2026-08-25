@@ -19,14 +19,43 @@ export function materializeMapBound(
   if (template.anchor.pin?.mapId !== bundle.mapId) {
     throw new CliError('map_pin_mismatch', `scenario is pinned to ${template.anchor.pin?.mapId ?? 'no map'}, not ${bundle.mapId}`, { path: 'anchor.pin.mapId' });
   }
-  if (template.roles.length === 0 || template.roles.some((role) => role.kind !== 'scene_absolute')) {
-    throw new CliError('map_bound_roles_required', 'map-bound materialization requires one or more scene_absolute roles and cannot mix portable roles', { path: 'roles' });
+  if (template.roles.some((role) => role.kind !== 'scene_absolute')) {
+    throw new CliError('map_bound_roles_required', 'map-bound materialization cannot mix portable roles', { path: 'roles' });
   }
   return materialize(template, bundle, syntheticStudioSite(template, bundle), options);
 }
 
 function syntheticStudioSite(template: ScenarioTemplateV2, bundle: MapBundle): MatchedSite {
   const first = template.roles[0]!;
+  if (!first) {
+    return {
+      siteId: `studio:${bundle.mapId}`,
+      mapId: bundle.mapId,
+      topologyDigest: bundle.index.topologyDigest,
+      matchSemanticsVersion: MATCH_SEMANTICS_VERSION,
+      anchorId: template.anchor.id ?? template.meta.name,
+      score: 1,
+      frame: {
+        origin: { anchorFeatureId: 'studio-map-bound', kind: 'corridor', mapFeatureId: `map:${bundle.mapId}` },
+        entryLaneRsl: 'studio:empty',
+        referencePath: [],
+        sOfLane: {},
+        sRange: [0, 0],
+        lateralLanes: {},
+        opposingLanes: [],
+        handedness: 'right',
+        mirrored: false,
+        runwayUpstreamM: 0,
+        runwayDownstreamM: 0,
+      },
+      clauses: [],
+      bindings: [],
+      featureMatches: {},
+      degradation: { verdict: 'exact', score: 1, repairs: [], failedRequiredClauses: [], summary: 'empty map-bound Studio scene', intentPreserved: true },
+      matchedReasons: ['anchor.pin.mapId', 'empty-scene'],
+      alternateFrames: 0,
+    };
+  }
   if (first.kind !== 'scene_absolute') throw new Error('unreachable');
   const firstLane = first.laneRef
     ? `${first.laneRef.roadId}:${first.laneRef.section}:${first.laneRef.laneId}`
