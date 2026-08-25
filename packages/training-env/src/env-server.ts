@@ -65,6 +65,7 @@ import {
 import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@simforge/compiler/node';
 
 import { EnvSession } from './session.js';
+import { registerPolicySession } from './policy-session.js';
 import {
   SubscriberQueue,
   TruthStreamBuilder,
@@ -398,6 +399,26 @@ export interface WireResponse {
 /** Request envelope; op-specific fields stay loosely typed by design. */
 const requestEnvelopeSchema = z.looseObject({ i: z.number().int().nonnegative().default(0), op: z.string() });
 
+/** Core dispatch ops; extension registration cannot shadow these. */
+const CORE_OPS: Record<string, true> = {
+  hello: true,
+  ping: true,
+  reset: true,
+  step: true,
+  reset_all: true,
+  batch_step: true,
+  subscribe: true,
+  unsubscribe: true,
+  close: true,
+};
+
+/**
+ * Extension op handler: returns the `r` payload; throws become `{ok: 0}`
+ * replies. Registered by feature modules for namespaced ops (`policy.*`,
+ * `world.*`) — the additive seam that keeps this file's core dispatch fixed.
+ */
+export type ExtensionOpHandler = (request: WireRequest, connectionId: number | null) => unknown;
+
 /**
  * The in-process server core: N sessions, synchronous deterministic
  * dispatch. Transport-agnostic — socket and stdio frontends attach below.
@@ -413,6 +434,8 @@ export class EnvServer {
   /** Per-session scene metadata for the truth stream. */
   private readonly truthMeta: SceneStateMeta[];
   private nextConnectionId = 1;
+  /** Namespaced extension ops ({@link ExtensionOpHandler}); consulted after the core switch. */
+  private readonly extensions = new Map<string, ExtensionOpHandler>();
 
   constructor(options: EnvServerOptions) {
     this.decisionHz = options.decisionHz ?? options.episode?.decisionHz ?? DEFAULT_DECISION_HZ;
@@ -573,12 +596,25 @@ export class EnvServer {
         }
         case 'close':
           return { i: id, ok: 1, r: { bye: true } };
-        default:
+        default: {
+          const extension = request.op === undefined ? undefined : this.extensions.get(request.op);
+          if (extension) return { i: id, ok: 1, r: extension(request, connectionId) };
           throw new Error(`unknown op ${String(request.op)}`);
+        }
       }
     } catch (error) {
       return { i: id, ok: 0, e: error instanceof Error ? error.message : String(error) };
     }
+  }
+
+  /**
+   * Register a namespaced extension op (e.g. `policy.act`, `world.spawn`).
+   * Core ops cannot be shadowed and double registration is refused.
+   */
+  registerOp(op: string, handler: ExtensionOpHandler): void {
+    if (CORE_OPS[op]) throw new Error(`op ${op} is a core op`);
+    if (this.extensions.has(op)) throw new Error(`op ${op} already registered`);
+    this.extensions.set(op, handler);
   }
 
   /** True when the request terminates the serving loop. */
@@ -746,6 +782,10 @@ export async function main(argv: readonly string[]): Promise<void> {
     },
     ...(flags.decisionHz === undefined ? {} : { decisionHz: flags.decisionHz }),
   });
+
+  // policy_step ops (policy.*) ride the same wire. The import cycle with
+  // policy-session.ts is benign: registration runs from main(), after init.
+  registerPolicySession(server);
 
   if (flags.socket) {
     await new Promise<void>((resolve, reject) => {

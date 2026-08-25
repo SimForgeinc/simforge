@@ -46,3 +46,34 @@ export type {
   PerceivedObject,
   RewardConfig,
 } from './types.js';
+
+export {
+  FALLBACK_POLICIES,
+  POLICY_STEP_PROTOCOL_VERSION,
+  ZERO_CONTROL,
+  decodeDeadlineReport,
+  decodeFrameBundleRef,
+  decodePolicyAction,
+  encodeDeadlineReport,
+  encodeFrameBundleRef,
+  encodePolicyAction,
+  resolveDeadline,
+  toEnvAction,
+} from './policy-step.js';
+export type {
+  ActionControl,
+  ActionTrajectory,
+  DeadlineReport,
+  Envelope,
+  FallbackPolicy,
+  FrameBundleCamera,
+  FrameBundleRef,
+  PolicyAction,
+  PolicyHello,
+  ResponseEnvelope,
+  TrajectoryPoint,
+  WirePolicyAction,
+} from './policy-step.js';
+
+export { registerPolicySession } from './policy-session.js';
+export type { FrameBundleProvider, PolicySessionOptions } from './policy-session.js';
