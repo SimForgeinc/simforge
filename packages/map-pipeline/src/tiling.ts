@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 import { hashTree, sha256 } from './closure.js';
 
 const execFileAsync = promisify(execFile);
-export const FBX_TILER_REVISION = 2;
+export const FBX_TILER_REVISION = 3;
 
 export interface GridDefinition {
   originX: number;
@@ -99,6 +99,11 @@ export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResul
     '--output', outputDir,
     '--cell-size', String(cellSize),
   ], { maxBuffer: 16 * 1024 * 1024 });
+  try {
+    await access(path.join(outputDir, 'inventory.json'));
+  } catch {
+    throw new Error(`Blender tiler exited without producing inventory.json for ${sourceDir}`);
+  }
   const outputDigest = await hashTree(outputDir);
   const receipt = { schema: 'simforge.map-pipeline-stage.v1', stage: 'fbx-to-tiles', inputDigest, toolFingerprint, outputDigest };
   await writeFile(receiptPath, `${JSON.stringify(receipt)}\n`);

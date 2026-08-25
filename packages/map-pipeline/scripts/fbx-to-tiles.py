@@ -52,6 +52,8 @@ def normalize_source_images(output):
     converted_dir = os.path.join(output, '.converted-textures')
     replacements = {}
     for image in sorted(list(bpy.data.images), key=lambda value: value.name):
+        if not image.has_data or image.size[0] <= 0 or image.size[1] <= 0:
+            continue
         source_path = bpy.path.abspath(image.filepath) if image.filepath else ''
         if os.path.splitext(source_path)[1].lower() not in ('.exr', '.tga'):
             continue
@@ -73,11 +75,11 @@ def normalize_source_images(output):
                 node.image = replacements[node.image]
     return converted_dir
 
-
 def world_bounds(obj):
     corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
-    return ([min(value[i] for value in corners) for i in range(3)],
-            [max(value[i] for value in corners) for i in range(3)])
+    transformed = [Vector((value.x, value.z, -value.y)) for value in corners]
+    return ([min(value[i] for value in transformed) for i in range(3)],
+            [max(value[i] for value in transformed) for i in range(3)])
 
 
 def classify(obj):

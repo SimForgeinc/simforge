@@ -62,7 +62,7 @@ describe('FBX tiling and closure assembly', () => {
       '3d/manifest.json',
       '3d/semantics.json',
       '3d/tiles/road.glb',
-      '3d/tiles/tile_0_0.lod0.glb',
+      '3d/tiles/tile_0_1.lod0.glb',
     ]));
     expect(memberPaths.some((member) => /^3d\/tiles\/tile_\d+_\d+\.lod0\.glb$/.test(member))).toBe(true);
     expect(memberPaths.some((member) => /^3d\/tiles\/veg_\d+_\d+\.lod0\.glb$/.test(member))).toBe(true);
