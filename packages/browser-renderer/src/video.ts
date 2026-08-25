@@ -32,6 +32,13 @@ export class StreamingSensorVideoEncoder {
   private closed = false;
   /** Reused RGBA scratch for depth visualization; cameras encode their readback buffer directly. */
   private depthRgba: Uint8Array | null = null;
+  /**
+   * Rolling per-tick lidar buckets spanning one full revolution. A tick only
+   * captures the sector the beam swept during that tick, so drawing a single
+   * bucket produces a strobing partial pinwheel; frame N draws the revolution
+   * that ENDS at frame N, keeping the newest sector on the camera timeline.
+   */
+  private readonly lidarRevolution: (readonly LidarPoint[])[] = [];
 
   private constructor(
     readonly pass: BrowserRenderPass,
@@ -111,7 +118,12 @@ export class StreamingSensorVideoEncoder {
     const { pass } = this;
     if (pass.modality === 'lidar' || pass.modality === 'radar') {
       if (!captured.structured || !this.context || !this.canvas) throw new Error(`Sensor video pass ${pass.sensorId} is missing its structured capture.`);
-      if (pass.modality === 'lidar') drawLidar(this.context, pass, captured.structured as readonly LidarPoint[], timing);
+      if (pass.modality === 'lidar') {
+        this.lidarRevolution.push(captured.structured as readonly LidarPoint[]);
+        const window = Math.max(1, Math.ceil(this.config.fps / Math.max(1e-6, pass.rotationFrequencyHz)));
+        if (this.lidarRevolution.length > window) this.lidarRevolution.splice(0, this.lidarRevolution.length - window);
+        drawLidar(this.context, pass, this.lidarRevolution, timing);
+      }
       else drawRadar(this.context, pass, captured.structured as readonly RadarDetection[], timing);
       return new VideoFrame(this.canvas, init);
     }
@@ -154,15 +166,25 @@ export class StreamingSensorVideoEncoder {
   }
 }
 
-function drawLidar(context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, pass: Extract<ActiveSensorPass, { modality: 'lidar' }>, points: readonly LidarPoint[], timing: FixedStepCaptureFrame): void {
-  const width = context.canvas.width; const height = context.canvas.height; const range = Math.min(pass.rangeM, 80);
-  background(context, width, height); const scale = Math.min(width / (range * 2.35), height / (range * 0.82));
-  for (const point of points) {
-    const distance = Math.hypot(point.x, point.y, point.z); if (point.x < 0 || distance > range) continue;
-    const perspective = 1 / (1 + point.x / Math.max(1, range * 1.4)); const x = width / 2 - point.z * scale * perspective; const y = height * 0.82 - point.x * scale * 0.58 - point.y * scale;
-    context.fillStyle = `hsla(${190 - 145 * Math.min(1, distance / range)},92%,62%,${0.45 + point.intensity * 0.5})`; context.fillRect(x - 1, y - 1, 2, 2);
+/**
+ * Top-down 360° view of one full revolution of per-tick sweep buckets — the
+ * same projection the CARLA lane's sensor videos use, so a lidar clip reads
+ * the same in either engine. Forward is up; the newest bucket carries the
+ * current camera frame's sim time.
+ */
+function drawLidar(context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, pass: Extract<ActiveSensorPass, { modality: 'lidar' }>, revolution: readonly (readonly LidarPoint[])[], timing: FixedStepCaptureFrame): void {
+  const width = context.canvas.width; const height = context.canvas.height; const range = Math.min(pass.rangeM, 60);
+  background(context, width, height); const scale = Math.min(width / (range * 2.2), height / (range * 2.2));
+  let drawn = 0;
+  for (const bucket of revolution) {
+    for (const point of bucket) {
+      const distance = Math.hypot(point.x, point.z); if (distance > range) continue;
+      const x = width / 2 + point.z * scale; const y = height / 2 - point.x * scale;
+      context.fillStyle = `hsla(${190 - 145 * Math.min(1, distance / range)},92%,62%,${0.75 + point.intensity * 0.25})`; context.fillRect(x - 2, y - 2, 4, 4);
+      drawn += 1;
+    }
   }
-  header(context, 'LiDAR · 3D POINT CLOUD', pass.sensorId, timing, `${points.length} points · ${range.toFixed(0)} m view`);
+  header(context, 'LiDAR · TOP-DOWN SWEEP', pass.sensorId, timing, `${drawn} returns · full sweep · ${range.toFixed(0)} m view`);
 }
 
 function drawRadar(context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, pass: Extract<ActiveSensorPass, { modality: 'radar' }>, detections: readonly RadarDetection[], timing: FixedStepCaptureFrame): void {

@@ -298,30 +298,80 @@ VISUAL_MAX_NEAR_BLACK_FRACTION = 0.98
 VISUAL_MAX_NEAR_WHITE_FRACTION = 0.98
 
 
-#: Frames a camera's encoder queue may hold before the render fails closed.
-#: The queue exists so a stalled ffmpeg process throttles its own writer
-#: thread instead of the CARLA tick loop; overflow means encoding cannot keep
-#: up with capture and the render is not real-time recoverable.
-CAMERA_ENCODER_QUEUE_FRAMES = 4
+#: Frames a camera's bounded encoder queue may hold before the capture path
+#: blocks. The bound keeps encoder memory finite (one 1280x720 BGRA frame is
+#: ~3.7 MiB, so at most ~30 MiB per camera); it is an elastic burst budget,
+#: not an instant failure line.
+CAMERA_ENCODER_QUEUE_FRAMES = 8
+
+#: How long a camera encoder may make ZERO drain progress while its queue is
+#: full before the render fails closed. The gate is progress-aware: any frame
+#: consumed by the writer restarts the window, so a slow-but-alive encoder
+#: merely throttles the (synchronous, deterministic) capture loop to encode
+#: speed and only costs wall time; a wedged writer/ffmpeg still fails the
+#: render within this window.
+#:
+#: Sizing is empirical (simforge1, 12x720p streams inside the runtime image):
+#: - healthy loaded host: 179 fps/stream drain, max submit stall 19 ms;
+#: - concurrent direct-IO write storm on the filesystem holding /scratch
+#:   (docker bakes, sibling renders): ffmpeg's mp4 output write blocks under
+#:   writeback throttling, it stops reading stdin, and zero-drain stalls of
+#:   13 s to >30 s were measured. The encoder is starved, not broken: the
+#:   stall clears when the storm passes. 180 s rides out storms with >6x
+#:   headroom while a genuinely wedged encoder still fails the attempt well
+#:   inside its lease budget. Encode throughput itself is never the gate
+#:   (~90x margin over capture demand with 2-thread x264), so a healthy
+#:   render pays nothing for the larger window.
+CAMERA_ENCODER_STALL_DEADLINE_S = 180.0
+
+
+#: Per-actor residual budgets an actor must stay inside for
+#: `STABILITY_CONSECUTIVE_TICKS` consecutive ticks before spawn settle and
+#: post-reset are considered converged. All velocities are rad/s / m/s as
+#: named (`_wait_for_native_stability` converts CARLA's deg/s angular
+#: readback); drift metrics are per-tick transform deltas. 0.02 rad/s
+#: (~1.15 deg/s) sits ~40x above the measured Chaos parked-vehicle jitter
+#: ceiling (5.2e-4 rad/s across the rc.63 fleet) and ~13x below the smallest
+#: genuinely unsettled reading observed (0.26 rad/s, a vibrating overlap
+#: spawn), which the drift gates also catch independently.
+STABILITY_THRESHOLDS: Mapping[str, float] = {
+    "linearMps": 0.02,
+    "verticalMps": 0.01,
+    "angularRadps": 0.02,
+    "horizontalDriftM": 0.001,
+    "verticalDriftM": 0.001,
+    "yawDriftDeg": 0.02,
+}
+
+#: Consecutive in-budget ticks required to declare native stability.
+STABILITY_CONSECUTIVE_TICKS = 5
 
 
 def _presentation_video_codec_args() -> list[str]:
-    """Encoder selection shared by every per-camera stream (h264 mp4 output)."""
+    """Encoder selection shared by every per-camera stream (h264 mp4 output).
+
+    Software x264 is pinned to 2 threads: auto-threading allocates ~1.5x the
+    128 host cores PER encoder, and a multi-camera render fleet was observed
+    running thousands of mostly-idle x264 threads, causing multi-second
+    scheduler convoys that starved encoder writer threads into backpressure
+    failures. Real demand is ~2 fps per 720p camera; two threads are ample.
+    """
     encoder = os.environ.get("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
     if encoder not in {"software", "nvidia"}:
         raise RuntimeError("UNISCENARIO_PRESENTATION_VIDEO_ENCODER must be software or nvidia")
     if encoder == "nvidia":
         return ["-c:v", "h264_nvenc", "-preset", "p5", "-cq", "17", "-profile:v", "high"]
-    return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-profile:v", "high", "-level:v", "4.2"]
+    return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-profile:v", "high", "-level:v", "4.2", "-threads", "2"]
 
 
 class _CameraStreamEncoder:
     """One rawvideo->h264 ffmpeg pipe per camera, fed off the capture path.
 
     Camera frames never touch disk: the writer thread applies the CARLA color
-    conversion and pipes raw BGRA into ffmpeg. The queue is bounded and
-    non-blocking so encoder backpressure can never stall the CARLA tick loop —
-    overflow fails the render instead.
+    conversion and pipes raw BGRA into ffmpeg. The queue is bounded so encoder
+    memory stays finite; when it fills, the capture path blocks briefly to let
+    the writer drain a burst, and the render fails closed only when the queue
+    stays full past the stall deadline (a genuine sustained overrun).
     """
 
     _CLOSE = object()
@@ -331,6 +381,8 @@ class _CameraStreamEncoder:
         self.destination = destination
         self.converter = converter
         self.error: BaseException | None = None
+        self.stall_deadline_s = CAMERA_ENCODER_STALL_DEADLINE_S
+        self.consumed = 0
         self.queue: queue.Queue[Any] = queue.Queue(maxsize=CAMERA_ENCODER_QUEUE_FRAMES)
         self.process = subprocess.Popen([
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -349,6 +401,7 @@ class _CameraStreamEncoder:
         try:
             while True:
                 item = self.queue.get()
+                self.consumed += 1
                 if item is self._CLOSE:
                     return
                 if self.converter is not None:
@@ -360,13 +413,32 @@ class _CameraStreamEncoder:
     def submit(self, data: Any) -> None:
         if self.error is not None:
             raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
-        try:
-            self.queue.put_nowait(data)
-        except queue.Full as exc:
-            raise ContractError(
-                f"camera stream encoder {self.sensor_key} exceeded its "
-                f"{CAMERA_ENCODER_QUEUE_FRAMES}-frame backpressure budget"
-            ) from exc
+        # Full queue: block the capture path until the writer frees a slot.
+        # The stall window restarts on any drain progress, so a slow encoder
+        # throttles capture instead of failing the render; only a writer that
+        # consumes NOTHING for the whole window (wedged ffmpeg, dead thread)
+        # fails closed.
+        window_started = monotonic()
+        consumed_at_window_start = self.consumed
+        while True:
+            try:
+                self.queue.put(data, timeout=min(1.0, self.stall_deadline_s))
+                return
+            except queue.Full as exc:
+                if self.error is not None:
+                    # A dead writer never drains; surface its failure, not
+                    # the backpressure symptom it caused.
+                    raise RuntimeError(f"camera stream encoder {self.sensor_key} failed: {self.error}") from self.error
+                if self.consumed != consumed_at_window_start:
+                    window_started = monotonic()
+                    consumed_at_window_start = self.consumed
+                    continue
+                if monotonic() - window_started >= self.stall_deadline_s:
+                    raise ContractError(
+                        f"camera stream encoder {self.sensor_key} exceeded its "
+                        f"{CAMERA_ENCODER_QUEUE_FRAMES}-frame backpressure budget "
+                        f"with no drain progress for {self.stall_deadline_s:g}s"
+                    ) from exc
 
     def close(self, timeout_s: float = 300.0) -> None:
         try:
@@ -1250,13 +1322,8 @@ class CarlaBackend:
         return {
             "schema": "uniscenario.native-stability/v1",
             "thresholds": {
-                "linearMps": 0.02,
-                "verticalMps": 0.01,
-                "angularRadps": 0.02,
-                "horizontalDriftM": 0.001,
-                "verticalDriftM": 0.001,
-                "yawDriftDeg": 0.02,
-                "consecutiveTicks": 5,
+                **STABILITY_THRESHOLDS,
+                "consecutiveTicks": STABILITY_CONSECUTIVE_TICKS,
             },
             "initialVelocityMps": {
                 actor_id: first_frame.actors[actor_id].speed_mps for actor_id in sorted(self.actors)
@@ -1272,6 +1339,9 @@ class CarlaBackend:
         previous = {actor_id: actor.get_transform() for actor_id, actor in self.actors.items()}
         consecutive = 0
         residuals: dict[str, dict[str, float]] = {}
+        blocked_ticks: dict[str, dict[str, int]] = {}
+        peak_residuals: dict[str, dict[str, float]] = {}
+        unfrozen_statics: set[str] = set()
         for tick in range(1, maximum_ticks + 1):
             check()
             self.world.tick()
@@ -1293,7 +1363,14 @@ class CarlaBackend:
                 angular = actor.get_angular_velocity()
                 prior = previous[actor_id]
                 linear_speed = sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2)
-                angular_speed = sqrt(angular.x ** 2 + angular.y ** 2 + angular.z ** 2)
+                # carla.Actor.get_angular_velocity() reports deg/s (only the
+                # ActorSnapshot accessor is rad/s). Convert before gating so
+                # the published angularRadps threshold really means rad/s.
+                # Comparing raw deg/s against 0.02 gated at ~3.5e-4 rad/s —
+                # inside the Chaos solver's parked-vehicle jitter band
+                # (0.0066-0.0299 deg/s measured fleet-wide on rc.63) — so
+                # settled scenes almost never held five consecutive ticks.
+                angular_speed = radians(sqrt(angular.x ** 2 + angular.y ** 2 + angular.z ** 2))
                 horizontal_drift = sqrt(
                     (transform.location.x - prior.location.x) ** 2
                     + (transform.location.y - prior.location.y) ** 2
@@ -1308,16 +1385,21 @@ class CarlaBackend:
                     "verticalDriftM": vertical_drift,
                     "yawDriftDeg": yaw_drift,
                 }
-                actor_stable = not (
-                    linear_speed > 0.02
-                    or abs(velocity.z) > 0.01
-                    or angular_speed > 0.02
-                    or horizontal_drift > 0.001
-                    or vertical_drift > 0.001
-                    or yaw_drift > 0.02
-                )
-                if not actor_stable:
+                exceeded = [
+                    metric
+                    for metric, value in residuals[actor_id].items()
+                    if value > STABILITY_THRESHOLDS[metric]
+                ]
+                peaks = peak_residuals.setdefault(actor_id, {})
+                for metric, value in residuals[actor_id].items():
+                    if value > peaks.get(metric, 0.0):
+                        peaks[metric] = value
+                actor_stable = not exceeded
+                if exceeded:
                     stable = False
+                    counts = blocked_ticks.setdefault(actor_id, {})
+                    for metric in exceeded:
+                        counts[metric] = counts.get(metric, 0) + 1
                 if (
                     actor_stable
                     and tick >= minimum_ticks
@@ -1343,10 +1425,31 @@ class CarlaBackend:
             unfrozen_statics = (static_actor_ids & set(self.actors)) - self.frozen_static_actor_ids
             converged = stable and not unfrozen_statics and tick >= minimum_ticks
             consecutive = consecutive + 1 if converged else 0
-            if consecutive >= 5:
-                return {"phase": phase, "ticks": tick, "residuals": residuals}
+            if consecutive >= STABILITY_CONSECUTIVE_TICKS:
+                return {
+                    "phase": phase,
+                    "ticks": tick,
+                    "residuals": residuals,
+                    "blockedTicks": blocked_ticks,
+                }
+        # The final tick's residuals alone routinely look settled (rc.63 field
+        # failures reported all-zero drift): the actual blockers are the ticks
+        # that kept resetting the consecutive-stability counter. Name them.
+        blockers = {
+            actor_id: {
+                metric: {
+                    "ticksOverThreshold": count,
+                    "peak": peak_residuals.get(actor_id, {}).get(metric),
+                    "threshold": STABILITY_THRESHOLDS[metric],
+                }
+                for metric, count in sorted(counts.items())
+            }
+            for actor_id, counts in sorted(blocked_ticks.items())
+        }
         raise RuntimeError(
             f"native actor stability did not converge during {phase} after {maximum_ticks} ticks: {residuals}"
+            f"; blocking residuals (ticks over threshold, peak): {blockers}"
+            f"; statics never frozen: {sorted(unfrozen_statics)}"
         )
 
     def _vehicle_longitudinal_control(self, actor_id: str, target_speed: float, speed: float) -> tuple[float, float]:
@@ -1526,7 +1629,21 @@ class CarlaBackend:
                 self.carla.Rotation(pitch=t["pitch"], yaw=-t["yaw"], roll=t["roll"]),
             )
             parent = self.actors.get(requested.actor_id) if requested.actor_id is not None else None
-            sensor_actor = self.world.spawn_actor(blueprint, transform, attach_to=parent)
+            if parent is not None and requested.sensor_id == PRONTO_CHASE_CAMERA_SENSOR_ID:
+                # The presentation chase camera replicates the SimCloud v1
+                # worker's trailing view, which attached via SpringArmGhost so
+                # the follow framing stays damped and never rigidly inherits
+                # the subject's pitch/roll. Measurement-rig sensors stay rigid.
+                attachment_types = getattr(self.carla, "AttachmentType", None)
+                spring_arm_ghost = getattr(attachment_types, "SpringArmGhost", None) if attachment_types is not None else None
+                if spring_arm_ghost is not None:
+                    sensor_actor = self.world.spawn_actor(
+                        blueprint, transform, attach_to=parent, attachment_type=spring_arm_ghost,
+                    )
+                else:
+                    sensor_actor = self.world.spawn_actor(blueprint, transform, attach_to=parent)
+            else:
+                sensor_actor = self.world.spawn_actor(blueprint, transform, attach_to=parent)
             if sensor_actor is None:
                 raise RuntimeError(f"CARLA failed to spawn native sensor {key}")
             observed_sensor_type = str(getattr(sensor_actor, "type_id", ""))

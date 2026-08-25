@@ -1,0 +1,39 @@
+{
+  "workerId": "uniscenario-carla-simforge1-staged",
+  "instanceId": "simforge1-carla-0000000000000000000000000000000000000000-staged",
+  "engine": {
+    "id": "carla",
+    "options": {
+      "binary": "/usr/local/bin/uniscenarios-carla"
+    }
+  },
+  "control": {
+    "kind": "module",
+    "module": "file:///config/simcloud-control-adapter.mjs",
+    "options": {
+      "baseUrl": "https://dev.simforge.ai",
+      "workerId": "uniscenario-carla-simforge1-staged",
+      "tokenEnv": "UNISCENARIO_RENDER_WORKER_TOKEN"
+    }
+  },
+  "labels": {
+    "imageDigest": "sha256:<digest of the baked chassis image this container runs>",
+    "hardwareProfile": "a100-sxm4-40gb-v1",
+    "gpuModel": "NVIDIA-A100-SXM4-40GB",
+    "gpuMemoryMiB": "40960",
+    "sourceRevision": "<staged source commit sha>",
+    "stagedLane": "true"
+  },
+  "validationLane": {
+    "fenceCapability": "artifact.frames",
+    "maxWidth": 320,
+    "maxHeight": 240,
+    "engineVersion": "<staged source commit sha>"
+  },
+  "scratchDir": "/scratch",
+  "cacheDir": "/cache",
+  "gpuLockPath": "/run/uniscenarios/gpu.lock",
+  "pollIntervalMs": 2000,
+  "retries": { "maxAttempts": 4, "initialDelayMs": 500, "maxDelayMs": 10000 },
+  "health": { "host": "0.0.0.0", "port": 18090 }
+}
