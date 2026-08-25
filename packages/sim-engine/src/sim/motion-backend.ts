@@ -19,6 +19,15 @@ export interface MotionIntent {
    * received is erased on the next substep.
    */
   readonly downed?: boolean;
+  /**
+   * Direct actuator request. When present, `DynamicV1Backend` skips its
+   * setpoint controller (`controlFor`) and applies this control verbatim,
+   * clamped to the unit range. Steer still passes through the profile's
+   * clamp, rate limit and first-order lag, and the implied longitudinal
+   * acceleration stays inside the profile's jerk limit, so a passthrough
+   * caller inherits the same physical envelope as a setpoint caller.
+   */
+  readonly control?: VehicleControl;
 }
 
 /** Normalised actuator requests. */

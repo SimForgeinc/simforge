@@ -130,7 +130,19 @@ export type { PlacementRouteOptions, RouteLeg, RoutePose, RouteBuildError, Seede
 /* ------------------------------------------------------------------ engine */
 export { createFixedStepSimulation, runSimulation } from './sim/engine.js';
 export type { StaticColliderClass, StaticMapCollider } from './sim/static-colliders.js';
-export type { FixedStepSimulationProgress, FixedStepSimulationSession, RunOptions, SimResult } from './sim/engine.js';
+export type {
+  ActionHook,
+  ActionHookContext,
+  ActionOverride,
+  AdvanceOptions,
+  FixedStepSimulationProgress,
+  FixedStepSimulationSession,
+  RunOptions,
+  SessionActorSnapshot,
+  SessionPairMinima,
+  SimResult,
+  SimulationSnapshot,
+} from './sim/engine.js';
 export { evaluateCondition } from './sim/triggers.js';
 export type { ConditionContext } from './sim/triggers.js';
 export { buildOccluders, hasLineOfSight, blockingOccluder } from './sim/visibility.js';
@@ -368,7 +380,7 @@ export {
   PHYSICS_VALIDATION_CONTRACT_VERSION,
   PHYSICS_VALIDATION_GATES,
   report as physicsValidationReport,
-  validateCollisionOnset,
+  validateGoldenReference,
   validateDeterminism as validatePhysicsDeterminism,
   validateFrictionCircle,
   validatePerformance as validatePhysicsPerformance,
@@ -382,6 +394,11 @@ export type {
   ValidationReport as PhysicsValidationReport,
   VehicleObservation,
 } from './validation/physics.js';
+export {
+  validateGoldenManeuvers,
+  type GoldenManeuverFixture,
+  type GoldenManeuverReference,
+} from './validation/golden-maneuvers.js';
 
 /* --------------------------------------------------------- ambient traffic */
 export {

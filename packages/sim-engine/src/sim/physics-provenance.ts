@@ -10,11 +10,15 @@ export function actorPhysicsBackend(
   actor: { readonly kind: ActorKind; readonly static: boolean; readonly tags: readonly string[] },
   physics: Pick<ResolvedPhysicsConfig, 'mode'>,
 ): ActorPhysicsBackendProvenance {
-  void physics;
   if (actor.static || actor.kind === 'static_object') {
     return { mode: 'fixed-static-v1', reason: 'static-actor', profile: 'fixed-static' };
   }
-  return { mode: 'dynamic-v1', reason: 'selected', profile: actor.kind };
+  // The classifier must never claim more fidelity than the engine executes:
+  // an explicit `kinematic-v1` selection runs the route choreography, so it
+  // is reported as a selected kinematic backend.
+  return physics.mode === 'kinematic-v1'
+    ? { mode: 'kinematic-v1', reason: 'selected', profile: actor.kind }
+    : { mode: 'dynamic-v1', reason: 'selected', profile: actor.kind };
 }
 
 export function actorPhysicsBackends(

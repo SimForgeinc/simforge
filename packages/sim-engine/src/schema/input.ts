@@ -847,14 +847,17 @@ export interface ResolvedPhysicsConfig {
   readonly vehicleProfiles?: PhysicsConfig['vehicleProfiles'];
 }
 
-/** Resolve the current simulation default without mutating hash-covered input. */
+/**
+ * Resolve the effective physics configuration without mutating hash-covered
+ * input. An explicit selection — `kinematic-v1` or `dynamic-v1` — is honored
+ * exactly, per the truth contract in `docs/physics-validation.md`: a trace for
+ * an explicitly selected mode must match that mode, so no resolution step may
+ * silently relabel it. Omitted physics resolves to the current default
+ * (`dynamic-v1`); immutable legacy traces are instead replayed under their
+ * recorded header by the evidence validator (`legacy-kinematic`).
+ */
 export function resolvePhysicsConfig(input: Pick<SimScenarioInput, 'physics'>): ResolvedPhysicsConfig {
-  // Editable inputs from releases before 0.4 may still carry an explicit
-  // kinematic pin. New simulation always migrates that document to the native
-  // dynamic solver; immutable recorded traces retain their original header.
-  return input.physics?.mode === 'dynamic-v1'
-    ? input.physics
-    : { ...input.physics, mode: DEFAULT_MOTION_PHYSICS_MODE };
+  return input.physics ?? { mode: DEFAULT_MOTION_PHYSICS_MODE };
 }
 
 /* ------------------------------------------------------------- the document */

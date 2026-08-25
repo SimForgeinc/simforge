@@ -106,6 +106,41 @@ export function validateReferenceValue(gate: 'acceleration' | 'coast' | 'braking
   return finding(`reference.${gate}`, relativeError <= PHYSICS_VALIDATION_GATES.referenceRelativeTolerance, relativeError, PHYSICS_VALIDATION_GATES.referenceRelativeTolerance, `${measured} vs declared reference ${reference}`);
 }
 
+/**
+ * Compare one measured maneuver figure against an external, cited reference
+ * carried by `fixtures/physics/golden-maneuvers.v1.json`. Either a relative
+ * band (`comparison: 'within'`, default) or a hard ceiling
+ * (`comparison: 'at-most'`) is enforced; the reference itself always comes
+ * from published data, never from the implementation under test.
+ */
+export function validateGoldenReference(
+  gate: string,
+  measured: number,
+  reference: {
+    readonly value: number;
+    readonly tolerancePercent?: number;
+    readonly comparison?: 'within' | 'at-most';
+  },
+): ValidationFinding {
+  const comparison = reference.comparison ?? 'within';
+  const tolerancePercent = reference.tolerancePercent ?? 10;
+  const limit = comparison === 'at-most'
+    ? reference.value
+    : (tolerancePercent / 100) * reference.value;
+  const pass = comparison === 'at-most'
+    ? measured <= reference.value
+    : Math.abs(measured - reference.value) <= limit;
+  return finding(
+    gate,
+    pass,
+    measured,
+    limit,
+    comparison === 'at-most'
+      ? `measured ${measured.toFixed(3)} must be ≤ cited reference ${reference.value}`
+      : `measured ${measured.toFixed(3)} vs cited reference ${reference.value} ±${tolerancePercent}%`,
+  );
+}
+
 export interface FrictionObservation {
   readonly mu: number;
   readonly normalForceN: number;
