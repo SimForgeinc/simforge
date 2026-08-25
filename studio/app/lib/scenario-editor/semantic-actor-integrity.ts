@@ -4,7 +4,7 @@ import {
   SemanticActorAuthoringSchema,
   type RuntimeTopologyProvenance,
   type ScenarioEditorActorDraft,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { semanticActorOutputHash } from "./semantic-actor-binding";
 
 export type SemanticActorIntegrityCode =

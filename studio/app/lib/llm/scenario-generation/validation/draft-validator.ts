@@ -18,13 +18,13 @@ import type {
   ScenarioValidationReport,
   ValidationCheck,
   ValidationActorDiagnostic,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   fromPreviewFrames,
   lintActorTracks,
   plannedSubjectActor,
   SCENARIO_VALIDATION_ENGINE,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   simulate,
   pairKey,

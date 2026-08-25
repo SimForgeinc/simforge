@@ -12,7 +12,7 @@ import {
 } from "@/app/lib/scenario/carla-compatibility";
 import type { SumoExternalActorView } from "@/app/lib/scenario/ambient/useSumoTraffic";
 import { planParkedCars, type ParkedCarPlan, type ParkingExclusion } from "./fill";
-import type { ParkedCar } from "@/app/lib/simcloud-shared/parked-cars";
+import type { ParkedCar } from "@/app/lib/studio-shared/parked-cars";
 import type { ParkedCarsSettings } from "./extension";
 import type { ParkingStall, ParkingStallArtifact } from "./stalls";
 
@@ -190,7 +190,7 @@ export function parkedCarViews(
   return cars.map((car) => ({
     id: car.id,
     // Every car came from PARKABLE_MODELS, whose ids are catalog ids; the shared
-    // type widens it to string only to keep `@simcloud/shared` free of
+    // type widens it to string only to keep `@simforge/studio-shared` free of
     // `@simforge/*`.
     catalogId: car.catalogId as CatalogId,
     x: car.x,

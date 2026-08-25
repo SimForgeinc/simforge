@@ -29,14 +29,14 @@
       "@/*": [
         "./*"
       ],
-      "@simcloud/shared": [
-        "./app/lib/simcloud-shared/index.ts"
+      "@simforge/studio-shared": [
+        "./app/lib/studio-shared/index.ts"
       ],
-      "@simcloud/shared/scenario-render-control": [
-        "./app/lib/simcloud-shared/scenario-render-control.ts"
+      "@simforge/studio-shared/scenario-render-control": [
+        "./app/lib/studio-shared/scenario-render-control.ts"
       ],
-      "@simcloud/shared/*": [
-        "./app/lib/simcloud-shared/*"
+      "@simforge/studio-shared/*": [
+        "./app/lib/studio-shared/*"
       ]
     }
   },
@@ -55,7 +55,7 @@
     "**/*.test.tsx",
     "**/__tests__/**",
     "**/*.cli.ts",
-    "app/lib/simcloud-shared/auth",
-    "app/lib/simcloud-shared/bin"
+    "app/lib/studio-shared/auth",
+    "app/lib/studio-shared/bin"
   ]
 }

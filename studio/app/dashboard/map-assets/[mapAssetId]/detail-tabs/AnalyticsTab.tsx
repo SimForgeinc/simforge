@@ -5,7 +5,7 @@ import type {
   CandidateLocation,
   MapAsset,
   MapAssetEnrichmentSnapshot,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { ThreeDStats as ThreeDStatsResponse } from "@/app/lib/3d-manifest-stats";
 import type { ViewMode } from "../MapDetailHeader";
 import { MapStatsDisplay } from "@/app/dashboard/map-assets/map-detail-sections/MapStatsDisplay";

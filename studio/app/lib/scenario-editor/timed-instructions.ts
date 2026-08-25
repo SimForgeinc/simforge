@@ -8,8 +8,8 @@ import type {
   TimedInstructionManifestRow,
   TimedInstructionResolvedPlan,
   TimedInstructions,
-} from "@simcloud/shared";
-import { TimedInstructionsSchema } from "@simcloud/shared";
+} from "@simforge/studio-shared";
+import { TimedInstructionsSchema } from "@simforge/studio-shared";
 import type {
   RuntimeMapResponse,
   RuntimeRoadSegment,

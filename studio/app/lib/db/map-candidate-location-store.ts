@@ -1,4 +1,4 @@
-import type { CandidateLocation, CandidateLocationSource, CandidateLocationRegion, CandidateLocationEvidence } from "@simcloud/shared";
+import type { CandidateLocation, CandidateLocationSource, CandidateLocationRegion, CandidateLocationEvidence } from "@simforge/studio-shared";
 import { batchExecute, execute, queryRows } from "./data-api";
 import { parseJson as sharedParseJson, parseJsonArray as sharedParseJsonArray } from "./json-helpers";
 

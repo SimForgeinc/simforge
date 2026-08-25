@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { JunctionMovementBinding, RuntimeTopologyFamily } from "@simcloud/shared";
+import type { JunctionMovementBinding, RuntimeTopologyFamily } from "@simforge/studio-shared";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";
 import {
   getRuntimeBoundMapTopology,

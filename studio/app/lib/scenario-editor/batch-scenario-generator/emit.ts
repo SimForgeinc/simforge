@@ -3,7 +3,7 @@ import type {
   ScenarioEditorRoadAnchor,
   TimedInstructionIntent,
   TimedInstructionPrimitiveId,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import type { ParkingLaneRef } from "@/app/lib/maps/topology/parking-lanes";
 import type { NormalizedScenarioDraft } from "../draft-normalization";

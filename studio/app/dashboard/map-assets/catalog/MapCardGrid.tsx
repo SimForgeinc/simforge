@@ -1,6 +1,6 @@
 "use client";
 
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import { MapCard } from "./MapCard";
 
 interface MapCardGridProps {

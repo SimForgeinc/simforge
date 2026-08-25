@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { MapAssetArtifactType } from "@simcloud/shared";
+import type { MapAssetArtifactType } from "@simforge/studio-shared";
 import { MapAssetIdParams, MediaUploadUrlsBody, MediaUploadUrlsResponse } from "@/app/lib/api-schemas";
 void MapAssetIdParams; void MediaUploadUrlsBody; void MediaUploadUrlsResponse;
 

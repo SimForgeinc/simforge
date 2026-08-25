@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GalleryAssetIdSchema } from "@/app/lib/asset-gallery/contracts";
-import { countScenariosUsingGalleryAsset } from "@/app/lib/asset-gallery/generation-store";
-import { getGalleryAsset } from "@/app/lib/asset-gallery/store";
+import {
+  countScenariosUsingGalleryAsset,
+  getGalleryAsset,
+} from "@/app/lib/asset-gallery/store";
 import { requireRouteSession } from "@/app/lib/auth/route-session";
 
 type AssetUsageRouteContext = { params: Promise<{ assetId: string }> };
 
-/**
- * How many scenarios depend on this asset.
- *
- * Deleting a gallery asset is open to any signed-in user, but scenarios bind to
- * its catalog id, so a delete can break somebody else's work. This answers "how
- * much" immediately before that decision.
- *
- * It is a separate endpoint rather than a field on `GalleryAssetSummary`
- * deliberately: the count requires scanning stored scenario documents, and a
- * gallery page renders 24 summaries per request while needing the count for at
- * most the one asset somebody is about to delete. Putting it on the summary
- * would pay that cost 24 times per page for information almost never read.
- */
+/** Return how many local scenarios depend on this asset. */
 export async function GET(request: NextRequest, { params }: AssetUsageRouteContext) {
   const auth = await requireRouteSession(request);
   if (!auth.ok) return auth.response;

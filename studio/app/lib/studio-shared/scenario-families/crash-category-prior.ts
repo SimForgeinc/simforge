@@ -11,12 +11,9 @@
  * hand-written half: the map-side predicate that decides which shared
  * categories a candidate location belongs to, given its tags + kind.
  *
- * It is deliberately the mirror of the corpus-side predicate
- * (`corpusCategoriesForRow` in @simcloud/incident-datasets); the two sides
- * bridge the crash corpus and the candidate-location index through the same
- * coarse shared category vocabulary (plan §A.2). The category set + each
- * category's map-side anchor here are the exact A.2 contract — keep this and
- * the plan's §A.2 table in sync if either changes.
+ * It mirrors the corpus-side classifier so the crash corpus and candidate
+ * location index share one coarse category vocabulary.
+ * Keep the shared category table in sync if either side changes.
  *
  * IMPORTANT: this is crash COMPOSITION, not crash RATE (no exposure
  * denominator). It is a soft ranking signal for scenario family selection

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { RuntimeTopologyFamilySchema } from "@simcloud/shared";
+import { RuntimeTopologyFamilySchema } from "@simforge/studio-shared";
 import { getCurrentSession } from "@/app/lib/auth/session";
 import {
   readAcceptedSemanticGraphPublication,

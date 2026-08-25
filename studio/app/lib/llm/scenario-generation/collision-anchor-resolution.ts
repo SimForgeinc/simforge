@@ -2,7 +2,7 @@ import type {
   CollisionAnchorStrategy,
   ScenarioEditorActorDraft,
   ScenarioEditorRoadAnchor,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type {
   GeometryLaneSample,
   GeometryReport,

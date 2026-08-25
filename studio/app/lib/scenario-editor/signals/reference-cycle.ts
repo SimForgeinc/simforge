@@ -37,7 +37,7 @@ import {
   type JunctionMovementBinding,
   type SignalPhaseInterval,
   type SignalPhaseProgram,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 /** The three numbers an author types. Seconds. */
 export type ReferenceCycleTiming = {

@@ -1,7 +1,7 @@
 import "server-only";
 
 import Flatbush from "flatbush";
-import type { MapSearchIndex, MapSearchIndexObject } from "@simcloud/shared";
+import type { MapSearchIndex, MapSearchIndexObject } from "@simforge/studio-shared";
 
 /**
  * In-memory spatial index over the `search_index.json` canonical objects.

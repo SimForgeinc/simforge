@@ -47,7 +47,7 @@ import "server-only";
 import type {
   ScenarioEditorActorDraft,
   ScenarioEditorRoadAnchor,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { RuntimeMapResponse } from "@/app/lib/runtime/runtime-types";
 import { ScenarioDraftBridgeError } from "@/app/lib/scenario-editor/draft-generator";
 import { worldAnchorAtFraction } from "@/app/lib/scenario-editor/batch-scenario-generator/routing";

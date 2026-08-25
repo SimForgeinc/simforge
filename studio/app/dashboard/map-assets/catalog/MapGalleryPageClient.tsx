@@ -24,7 +24,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import type {
   ScenarioDocumentDto,
   ScenarioMapDescriptorDto,

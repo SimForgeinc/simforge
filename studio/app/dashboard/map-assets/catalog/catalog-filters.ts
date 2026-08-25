@@ -1,5 +1,5 @@
-import type { MapAsset } from "@simcloud/shared";
-import { MAP_ASSET_DESCRIPTOR_TAGS } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
+import { MAP_ASSET_DESCRIPTOR_TAGS } from "@simforge/studio-shared";
 
 export type CatalogView = "grid" | "map";
 export type CatalogSort = "date" | "name" | "mileage";

@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import type { ScenarioEditorActorDraft } from "@simcloud/shared";
+import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
 import type { BridgedMapBundle, MapLocation } from "@/app/lib/editor-map/types";
 import type { EditorToolId as SharedEditorToolId } from "@/app/lib/editor-tools/types";
 import type {

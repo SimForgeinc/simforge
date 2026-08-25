@@ -8,51 +8,10 @@ import { useTopBarSlotContext } from "@/app/components/TopBarSlot";
 import { activeNavItem } from "@/app/lib/dashboard-nav";
 import { cn } from "@/app/lib/utils";
 
-type WorkspaceInfo = {
-  id: string;
-  type: string;
-  name: string;
-};
-
-type AppTopBarProps = {
-  accountEmail: string;
-  creditsBalance: number | null;
-  pendingCreditsCents: number;
-  workspaces: WorkspaceInfo[];
-  activeWorkspaceId: string;
-};
-
-function formatCreditsCompact(value: number | null): string {
-  if (value === null) return "—";
-  return `$${(value / 100).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function formatCreditsWithPending(
-  creditsBalance: number | null,
-  pendingCreditsCents: number,
-) {
-  const settled = formatCreditsCompact(creditsBalance);
-  if (pendingCreditsCents <= 0) return settled;
-  return `${settled} (${formatCreditsCompact(pendingCreditsCents)})`;
-}
-
-export function AppTopBar({
-  accountEmail,
-  creditsBalance,
-  pendingCreditsCents,
-  workspaces,
-  activeWorkspaceId,
-}: AppTopBarProps) {
+export function AppTopBar() {
   const pathname = usePathname();
   const switcherTriggerRef = useRef<HTMLButtonElement>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [displayCreditsBalance, setDisplayCreditsBalance] =
-    useState(creditsBalance);
-  const [displayPendingCreditsCents, setDisplayPendingCreditsCents] =
-    useState(pendingCreditsCents);
   const [hasMounted, setHasMounted] = useState(false);
 
   const slotCtx = useTopBarSlotContext();
@@ -74,41 +33,6 @@ export function AppTopBar({
     setHasMounted(true);
   }, []);
 
-  useEffect(() => {
-    setDisplayCreditsBalance(creditsBalance);
-    setDisplayPendingCreditsCents(pendingCreditsCents);
-  }, [creditsBalance, pendingCreditsCents]);
-
-  useEffect(() => {
-    if (!switcherOpen) return;
-    let cancelled = false;
-
-    async function refreshCreditsBalance() {
-      try {
-        const response = await fetch("/api/billing/balance", {
-          cache: "no-store",
-        });
-        if (!response.ok) return;
-        const payload = (await response.json().catch(() => null)) as {
-          creditsBalance?: unknown;
-          pendingCreditsCents?: unknown;
-        } | null;
-        if (!cancelled && typeof payload?.creditsBalance === "number") {
-          setDisplayCreditsBalance(payload.creditsBalance);
-        }
-        if (!cancelled && typeof payload?.pendingCreditsCents === "number") {
-          setDisplayPendingCreditsCents(payload.pendingCreditsCents);
-        }
-      } catch {
-        // Keep the server-rendered balance if the refresh is unavailable.
-      }
-    }
-
-    void refreshCreditsBalance();
-    return () => {
-      cancelled = true;
-    };
-  }, [switcherOpen]);
 
 
   return (
@@ -192,13 +116,6 @@ export function AppTopBar({
         open={switcherOpen}
         onOpenChange={setSwitcherOpen}
         pathname={pathname}
-        accountEmail={accountEmail}
-        creditsLabel={formatCreditsWithPending(
-          displayCreditsBalance,
-          displayPendingCreditsCents,
-        )}
-        workspaces={workspaces}
-        activeWorkspaceId={activeWorkspaceId}
         triggerRef={switcherTriggerRef}
       />
     </>

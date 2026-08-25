@@ -27,8 +27,7 @@ export const MAP_SEARCH_INDEX_VERSION = 1;
 /**
  * Road hierarchy vocabulary — the OSM `highway=*` classes as carried on
  * Overture `transportation/segment.class`, restricted to the drivable set the
- * enrichment query ingests. Ordered most→least major; keep in sync with
- * `INCLUDED_ROAD_CLASSES` in `@simcloud/enrichment`.
+ * enrichment query ingests. Ordered most→least major.
  */
 export const OSM_ROAD_CLASSES = [
   "motorway",

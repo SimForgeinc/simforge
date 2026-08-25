@@ -28,7 +28,7 @@
 import {
   ScenarioEditorActorDraftSchema,
   ScenarioEditorSimulationConfigSchema,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)

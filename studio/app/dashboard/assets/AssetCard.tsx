@@ -1,21 +1,12 @@
 "use client";
 
-import { ArrowUpRight, Sparkles, User } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { CarlaCompatibilityPill } from "@/app/components/CarlaCompatibilityPill";
 import { Badge } from "@/app/components/ui/badge";
 import type { GalleryAssetSummary } from "@/app/lib/asset-gallery/contracts";
 import { GALLERY_UPLOAD_CARLA_COMPATIBILITY } from "./gallery-filters";
 
-/**
- * One tile in the public catalog.
- *
- * The whole tile is the button rather than a link: opening an asset raises a
- * drawer over the grid instead of navigating, so there is no URL to put in an
- * anchor and a link would lie about where Enter goes. Its accessible name comes
- * from the text it already renders — title, class, author, triangle count — so
- * the thumbnail stays `alt=""` instead of repeating the title to a screen
- * reader that is about to hear it anyway.
- */
+/** One tile in the local model catalog. */
 export function AssetCard({
   asset,
   onSelect,
@@ -72,12 +63,8 @@ export function AssetCard({
             {asset.actorClass.replaceAll("_", " ")}
           </span>
         </div>
-        <div className="mt-auto flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex min-w-0 items-center gap-1.5">
-            <User aria-hidden="true" className="size-3 shrink-0" />
-            <span className="truncate">{asset.createdByName ?? "SimForge user"}</span>
-          </span>
-          <span className="shrink-0 font-mono tabular-nums">
+        <div className="mt-auto text-right text-xs text-muted-foreground">
+          <span className="font-mono tabular-nums">
             {asset.triangleCount.toLocaleString()} tris
           </span>
         </div>

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { EnrichmentJob, EnrichmentJobType } from "@simcloud/shared";
+import type { EnrichmentJob, EnrichmentJobType } from "@simforge/studio-shared";
 
 export interface EnqueueEnrichmentJobInput {
   mapAssetId: string;

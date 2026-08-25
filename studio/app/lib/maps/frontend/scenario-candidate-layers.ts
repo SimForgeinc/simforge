@@ -14,7 +14,7 @@
  * through `queryRenderedFeatures`.
  */
 
-import type { CandidateLocation } from "@simcloud/shared";
+import type { CandidateLocation } from "@simforge/studio-shared";
 import { buildScenarioFamilyGroups } from "@/app/lib/scenario-intelligence-ui";
 import {
   candidateRegionToGeometry,

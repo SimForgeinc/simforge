@@ -1,4 +1,4 @@
-import type { Scenario, ScenarioStatus } from "@simcloud/shared";
+import type { Scenario, ScenarioStatus } from "@simforge/studio-shared";
 import { cache } from "react";
 import { getCurrentSession } from "./auth/session";
 import { getAppContext } from "./db/app-context";

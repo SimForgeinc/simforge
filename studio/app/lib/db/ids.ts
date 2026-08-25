@@ -4,44 +4,6 @@ function digest(input: string) {
   return createHash("sha256").update(input).digest("hex").slice(0, 24);
 }
 
-export function userIdForSub(sub: string) {
-  return sub;
-}
-
-export function workspaceIdForSub(sub: string) {
-  return `ws_${digest(`personal:${sub}`)}`;
-}
-
-export function workspaceSlugForSub(sub: string) {
-  return `personal-${digest(sub).slice(0, 12)}`;
-}
-
-export const SIMFORGE_CANONICAL_WORKSPACE_ID = "ws_simforge_ai";
-export const SIMFORGE_CANONICAL_ORGANIZATION_ID = "org_ws_simforge_ai";
-export const SIMFORGE_CANONICAL_WORKSPACE_SLUG = "simforge-ai";
-export const SIMFORGE_CANONICAL_ORGANIZATION_SLUG = "simforge";
-
-export function organizationIdForWorkspace(workspaceId: string) {
-  return `org_${workspaceId}`;
-}
-
-export function workspaceIdForOrganizationId(organizationId: string | null | undefined) {
-  const trimmed = organizationId?.trim();
-  if (!trimmed?.startsWith("org_ws_")) return null;
-  return trimmed.slice("org_".length);
-}
-
-export function personalOrganizationIdForSub(sub: string) {
-  return organizationIdForWorkspace(workspaceIdForSub(sub));
-}
-
-export function organizationMemberId(organizationId: string, userId: string) {
-  return `mem_${digest(`${organizationId}:${userId}`)}`;
-}
-
-export function invitationTokenId(invitationId: string) {
-  return invitationId;
-}
 
 export function scenarioRowId(workspaceId: string, scenarioId: string) {
   return `scn_${digest(`${workspaceId}:${scenarioId}`)}`;
@@ -118,13 +80,6 @@ export function simulationFrameSampleRowId(
   return `sfs_${digest(`${workspaceId}:${simulationSequenceId}:${frameIndex}`)}`;
 }
 
-export function marketplacePurchaseRowId(
-  workspaceId: string,
-  itemType: string,
-  itemKey: string,
-) {
-  return `mkt_${digest(`${workspaceId}:${itemType}:${itemKey}`)}`;
-}
 
 // --- Non-deterministic IDs for user-created entities ---
 
@@ -132,21 +87,6 @@ function randomId(): string {
   return randomUUID().replace(/-/g, "");
 }
 
-export function teamWorkspaceId(): string {
-  return `ws_${randomId().slice(0, 24)}`;
-}
-
-export function projectId(): string {
-  return `proj_${randomId().slice(0, 24)}`;
-}
-
-export function invitationId(): string {
-  return `inv_${randomId().slice(0, 24)}`;
-}
-
-export function inviteToken(): string {
-  return randomUUID().replace(/-/g, "");
-}
 
 export function datasetId(): string {
   return `ds_${randomId().slice(0, 24)}`;
@@ -168,9 +108,6 @@ export function sdgVariantOutputId(): string {
   return `sdgv_${randomId().slice(0, 24)}`;
 }
 
-export function marketplaceTemplateId(): string {
-  return `mktpl_${randomId().slice(0, 24)}`;
-}
 
 export function datasetScenarioId(): string {
   return `dsc_${randomId().slice(0, 24)}`;

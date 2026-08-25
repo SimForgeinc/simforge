@@ -16,7 +16,7 @@
  * make "add a control" a thing you could not safely try.
  */
 
-import type { JunctionMovementBinding, JunctionSignalPlan } from "@simcloud/shared";
+import type { JunctionMovementBinding, JunctionSignalPlan } from "@simforge/studio-shared";
 import { mapDefaultPlanWithMovements } from "@/app/lib/scenario-editor/signals/signal-plan-model";
 import { withTimelineMode } from "@/app/lib/scenario-editor/signal-timeline-model";
 import { isJunctionControlled } from "./intersection-candidates";

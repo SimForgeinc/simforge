@@ -463,19 +463,13 @@ export async function deleteGalleryAsset(
 }
 
 /**
- * Rename an asset in place, keeping its catalog id and every scenario binding.
- *
- * The title is the only thing an author can correct after publishing: a model's
- * geometry, dims and catalog id are what scenarios bind to, but its name is
- * routinely whatever the source file was called - `Meshy_AI_Silver_Autonomous_
- * Min_0820200054_texture` - and that is what every gallery tile and readiness
- * warning then says. Rename remains author/admin-only even though community deletion is open.
+ * Rename a locally owned asset in place, keeping its catalog id and every
+ * scenario binding.
  */
 export async function renameGalleryAsset(
   assetId: string,
   title: string,
   requesterUserId: string,
-  platformAdmin: boolean,
 ): Promise<"renamed" | "forbidden" | "not_found"> {
   const asset = await queryOne<{ created_by_user_id: string; status: string }>(
     `SELECT created_by_user_id, status
@@ -484,7 +478,7 @@ export async function renameGalleryAsset(
     { asset_id: assetId },
   );
   if (!asset || asset.status === "removed") return "not_found";
-  if (asset.created_by_user_id !== requesterUserId && !platformAdmin) return "forbidden";
+  if (asset.created_by_user_id !== requesterUserId) return "forbidden";
 
   await execute(
     `UPDATE asset_gallery.assets SET title = :title, updated_at = NOW()
@@ -503,4 +497,24 @@ export async function countRecentUploadsByUser(userId: string): Promise<number> 
     { user_id: userId },
   );
   return row?.upload_count ?? 0;
+}
+
+export async function countScenariosUsingGalleryAsset(catalogSlug: string): Promise<number> {
+  const row = await queryOne<{ scenario_count: number }>(
+    `SELECT COUNT(*)::int AS scenario_count
+     FROM uniscenario.documents d
+     JOIN uniscenario.drafts dr
+       ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
+     WHERE d.deleted_at IS NULL
+       AND EXISTS (
+         SELECT 1
+         FROM jsonb_path_query(
+           dr.canonical_content,
+           '$.** ? (@.type() == "string")'
+         ) AS matched(value)
+         WHERE matched.value #>> '{}' LIKE :catalog_version_pattern
+       )`,
+    { catalog_version_pattern: `${catalogSlug}.v%` },
+  );
+  return row?.scenario_count ?? 0;
 }

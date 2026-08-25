@@ -30,7 +30,6 @@ export function GalleryAssetPanel({
   onRemember: (catalogId: CatalogId) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [mine, setMine] = useState(false);
   const [items, setItems] = useState<GalleryAssetSummary[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,7 +50,6 @@ export function GalleryAssetPanel({
     setError(null);
     const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
     if (debouncedQuery) params.set("q", debouncedQuery);
-    if (mine) params.set("mine", "1");
     void fetch(`/api/asset-gallery?${params}`, { signal: abort.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Could not load gallery assets (${response.status}).`);
@@ -77,7 +75,7 @@ export function GalleryAssetPanel({
         if (!abort.signal.aborted) setLoading(false);
       });
     return () => abort.abort();
-  }, [debouncedQuery, mine]);
+  }, [debouncedQuery]);
 
   const visibleItems = useMemo(() => {
     const seen = new Set<string>();
@@ -95,7 +93,6 @@ export function GalleryAssetPanel({
     try {
       const params = new URLSearchParams({ cursor: nextCursor, limit: String(PAGE_SIZE) });
       if (debouncedQuery) params.set("q", debouncedQuery);
-      if (mine) params.set("mine", "1");
       const response = await fetch(`/api/asset-gallery?${params}`);
       if (!response.ok) throw new Error(`Could not load gallery assets (${response.status}).`);
       const page = (await response.json()) as {
@@ -153,15 +150,6 @@ export function GalleryAssetPanel({
       <p className="text-[9px] leading-relaxed text-white/45">
         Gallery models render in the browser and browser-recorded renders, not in CARLA.
       </p>
-      <button
-        className="h-8 w-full cursor-not-allowed rounded-md border border-white/10 bg-white/[0.03] px-2.5 text-left text-[9px] text-white/35"
-        data-testid="gallery-meshy-disabled"
-        disabled
-        title="Meshy generation is unavailable in local mode."
-        type="button"
-      >
-        Generate 3D model · unavailable in local mode
-      </button>
       <input
         aria-label="Search asset gallery"
         className="h-8 w-full rounded-md border border-white/15 bg-black/25 px-2.5 text-[11px] text-white outline-none placeholder:text-white/35 focus:border-white/30"
@@ -170,23 +158,6 @@ export function GalleryAssetPanel({
         value={query}
         onChange={(event) => setQuery(event.currentTarget.value)}
       />
-      <div aria-label="Gallery ownership" className="flex gap-1" role="group">
-        {([false, true] as const).map((owned) => (
-          <button
-            aria-pressed={mine === owned}
-            className={`rounded-full border px-2.5 py-1 text-[9px] ${
-              mine === owned
-                ? "border-[#d56d27] bg-[#5a3521] text-[#ffd2b2]"
-                : "border-white/10 bg-white/[0.04] text-white/55"
-            }`}
-            key={String(owned)}
-            type="button"
-            onClick={() => setMine(owned)}
-          >
-            {owned ? "Mine" : "All"}
-          </button>
-        ))}
-      </div>
 
       {visibleItems.length ? (
         <div className="grid grid-cols-2 gap-2">

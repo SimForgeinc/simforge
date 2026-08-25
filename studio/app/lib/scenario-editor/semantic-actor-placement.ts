@@ -5,7 +5,7 @@ import {
   withBaseAction,
   type ScenarioEditorActorDraft,
   type SemanticActorIntent,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { SemanticFeatureSelection } from "@/app/lib/editor-map/semantic-overlay";
 import {
   buildActorLabel,

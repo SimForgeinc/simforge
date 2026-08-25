@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { Marker, useMap } from "react-map-gl/maplibre";
-import type { JunctionSignalPlan } from "@simcloud/shared";
+import type { JunctionSignalPlan } from "@simforge/studio-shared";
 import {
   useActorsStore,
   useSelectionStore,

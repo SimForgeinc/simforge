@@ -33,9 +33,6 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [actorClass, setActorClass] = useState<GalleryActorClass | "all">("all");
   const [carla, setCarla] = useState<GalleryCarlaFilter>("all");
-  // Defaults to the whole library: this page's job is to show what the
-  // community made, and a personal shelf is the narrower question.
-  const [mine, setMine] = useState(false);
   const [sort, setSort] = useState<GallerySort>("newest");
   const [section, setSection] = useState<GallerySection>("models");
   const [selected, setSelected] = useState<GalleryAssetSummary | null>(null);
@@ -74,7 +71,6 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
     const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
     if (debouncedQuery) params.set("q", debouncedQuery);
     if (actorClass !== "all") params.set("actorClass", actorClass);
-    if (mine) params.set("mine", "1");
     void fetch(`/api/asset-gallery?${params}`, { cache: "no-store", signal: abort.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("The asset gallery could not be loaded.");
@@ -92,7 +88,7 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
         if (!abort.signal.aborted) setReloading(false);
       });
     return () => abort.abort();
-  }, [debouncedQuery, actorClass, mine]);
+  }, [debouncedQuery, actorClass]);
 
   const loadMore = async () => {
     if (!nextCursor || appending) return;
@@ -102,7 +98,6 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
       const params = new URLSearchParams({ limit: String(PAGE_SIZE), cursor: nextCursor });
       if (debouncedQuery) params.set("q", debouncedQuery);
       if (actorClass !== "all") params.set("actorClass", actorClass);
-      if (mine) params.set("mine", "1");
       const response = await fetch(`/api/asset-gallery?${params}`, { cache: "no-store" });
       if (!response.ok) throw new Error("The asset gallery could not be loaded.");
       const page = (await response.json()) as GalleryPage;
@@ -120,13 +115,12 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
     [items, carla, sort],
   );
 
-  const filtered = trimmedQuery !== "" || actorClass !== "all" || carla !== "all" || mine;
+  const filtered = trimmedQuery !== "" || actorClass !== "all" || carla !== "all";
 
   const clearFilters = () => {
     setQuery("");
     setActorClass("all");
     setCarla("all");
-    setMine(false);
   };
 
   const publish = (asset: GalleryAssetSummary) => {
@@ -145,9 +139,7 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
         }}
       />
 
-      {/* Title search, actor class, CARLA compatibility, ownership and sort are
-          all model-catalog concepts. The map catalog is small, global and has
-          none of them, so the controls go away rather than sitting there inert. */}
+      {/* Model-only catalog controls are hidden for the compact map catalog. */}
       {section === "models" ? (
         <div className="sticky top-0 z-20 border-b border-border bg-background/85 px-5 backdrop-blur-sm sm:px-8">
           <AssetGalleryToolbar
@@ -157,8 +149,6 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
             onActorClassChange={setActorClass}
             carla={carla}
             onCarlaChange={setCarla}
-            mine={mine}
-            onMineChange={setMine}
             sort={sort}
             onSortChange={setSort}
             resultCount={visibleItems.length}
@@ -209,23 +199,18 @@ export function AssetGalleryClient({ initialPage }: { initialPage: GalleryPage }
                 <EmptyState
                   icon={<Boxes className="size-7" />}
                   title="The library is empty"
-                  description="Nobody has published a model yet. Upload a GLB you already have to add it to the local library."
+                  description="Import a GLB model to add it to the local library."
                   action={
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <Button type="button" disabled title="Meshy generation is unavailable in local mode">
-                        Generate asset · In development
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setUploadKind("model");
-                          setUploadOpen(true);
-                        }}
-                      >
-                        Upload a model
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setUploadKind("model");
+                        setUploadOpen(true);
+                      }}
+                    >
+                      Import a model
+                    </Button>
                   }
                   className="rounded-lg border border-dashed border-border"
                 />

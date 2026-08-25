@@ -2,7 +2,7 @@ import {
   SIMULATION_DEFAULTS,
   TARGET_COLLISION_TIME_S,
   type CollisionFamilyId,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import type { GeometryReport } from "@/app/lib/maps/search/server/inspect-location-geometry";
 import {
   loadCollisionLaneGraph,

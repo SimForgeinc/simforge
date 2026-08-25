@@ -23,7 +23,7 @@
  * polyline/speed, or the solved hold is physically infeasible inside the
  * scenario horizon.
  */
-import type { ScenarioEditorActorDraft } from "@simcloud/shared";
+import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
 
 interface Vec2 {
   x: number;

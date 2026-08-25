@@ -16,7 +16,7 @@
  * geometry. Maps whose bundle omits z (all zeros) can never trip the gate —
  * naturally inert on flat/legacy bundles.
  */
-import type { Vec2 } from "@simcloud/shared";
+import type { Vec2 } from "@simforge/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/llm/scenario-generation/runtime-road-snap";
 
 /** The site rejects when another road within radius is more than this far ABOVE it. */

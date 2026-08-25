@@ -2,7 +2,7 @@
 
 import { ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import type { CandidateLocation } from "@simcloud/shared";
+import type { CandidateLocation } from "@simforge/studio-shared";
 import { CandidateLocationCard } from "./CandidateLocationCard";
 
 /** Props for the CandidateLocationsSection component. */

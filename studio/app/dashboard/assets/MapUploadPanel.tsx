@@ -276,9 +276,9 @@ export function MapUploadPanel({
           <div className="rounded-xl border border-amber-300/25 bg-amber-300/[0.05] p-4">
             <p className="text-sm font-semibold text-amber-100">Browser-only map version</p>
             <p className="mt-1 text-xs leading-5 text-amber-100/70">
-              No cooked CARLA map is bound to this version, so managed CARLA renders will refuse it. Scenarios author
-              and render in the browser. To enable managed renders, cook a CARLA map, then publish again with its name
-              in the CARLA map name field.
+              No cooked CARLA map is bound to this version, so CARLA renders will refuse it. Scenarios author
+              and render in the browser. To enable local CARLA renders, cook a CARLA map, then publish again
+              with its name in the CARLA map name field.
             </p>
           </div>
         ) : null}
@@ -417,7 +417,7 @@ export function MapUploadPanel({
           />
           <p id={carlaHelpId} className="mt-1.5 text-xs leading-5 text-white/40">
             Fill this in only when a cooked CARLA map of the same road network already exists. Leave it empty and the
-            map version is browser-only: you can author and render scenarios in the browser, but managed CARLA renders
+            map version is browser-only: you can author and render scenarios in the browser, but local CARLA renders
             are not available for it.
           </p>
         </div>

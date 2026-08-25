@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import {
   acceptedSemanticGraphPublicationKey,
   readAcceptedSemanticGraphPublicationManifest,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Box, Loader2 } from "lucide-react";
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import type { FocusTarget } from "@/app/components/city-viewer/geo-utils";
 import type {
   ProximityArrow3D,

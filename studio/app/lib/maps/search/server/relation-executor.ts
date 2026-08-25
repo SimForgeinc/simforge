@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { MapSearchIndex } from "@simcloud/shared";
+import type { MapSearchIndex } from "@simforge/studio-shared";
 import aliasSpec from "../map-search-aliases.json";
 import type { MapSearchDocument, SearchObjectFamily } from "../map-search-corpus";
 import { normalizeForSearch } from "../map-search-corpus";

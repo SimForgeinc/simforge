@@ -1,4 +1,4 @@
-import type { TimedInstructionPrimitiveId } from "@simcloud/shared";
+import type { TimedInstructionPrimitiveId } from "@simforge/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import type { JunctionControl } from "./signals-source";
 

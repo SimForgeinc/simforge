@@ -19,7 +19,7 @@ import {
   type SemanticActorAuthoring,
   type SemanticActorIntent,
   type SemanticMapGraph,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { semanticMovementRuntimeLaneSet } from "@/app/lib/maps/topology/semantic-movement";
 
 export type SemanticBindingFailureStatus = "ambiguous" | "unbound" | "stale";

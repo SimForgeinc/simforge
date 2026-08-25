@@ -19,7 +19,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { MapPlaceContext } from "@simcloud/shared";
+import type { MapPlaceContext } from "@simforge/studio-shared";
 
 // ---------------------------------------------------------------------------
 // Tuning constants

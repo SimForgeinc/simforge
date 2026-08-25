@@ -372,8 +372,8 @@ export function readGlbMetadata(bytes: Uint8Array): GlbMetadata {
   });
 
   return {
-    // glTF is Y-up and SimForge actors face +X. These dimensions are metres only
-    // because the Meshy request enables auto_size; a generic GLB has no unit.
+    // glTF is Y-up and SimForge actors face +X. Imported dimensions are
+    // interpreted as metres; generic GLB files do not encode a unit.
     dims: { l: sizeX, w: sizeZ, h: sizeY },
     bounds,
     triangleCount: triangleCountFor(document),

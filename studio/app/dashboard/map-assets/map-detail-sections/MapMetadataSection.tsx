@@ -4,7 +4,7 @@ import { ChevronRight, Check, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
 import { cn } from "@/app/lib/utils";
-import type { MapAsset, MapAssetEnrichmentSnapshot } from "@simcloud/shared";
+import type { MapAsset, MapAssetEnrichmentSnapshot } from "@simforge/studio-shared";
 
 /** Props for the MapMetadataSection component. */
 type MapMetadataSectionProps = {

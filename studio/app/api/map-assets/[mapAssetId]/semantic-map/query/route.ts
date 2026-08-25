@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SemanticSiteQuerySchema } from "@simcloud/shared";
+import { SemanticSiteQuerySchema } from "@simforge/studio-shared";
 import { getCurrentSession } from "@/app/lib/auth/session";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";
 import {

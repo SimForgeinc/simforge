@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 
-import { buildStaticSemantics } from "@simcloud/shared/map-ingest/static-semantics";
+import { buildStaticSemantics } from "@simforge/studio-shared/map-ingest/static-semantics";
 
 import type { Manifest as CityManifestDocument } from "@/app/components/city-viewer/types";
 import type { MapLayerId } from "@/app/lib/map-ingest/contracts";

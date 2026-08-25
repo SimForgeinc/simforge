@@ -56,6 +56,21 @@ const REMOVED_PATHS = [
   'packages/examiner',
 ];
 
+const PRODUCT_ONLY_PATHS = [
+  'studio/app/api/billing',
+  'studio/app/api/asset-gallery/generations',
+  'studio/app/components/WorkspaceSwitcher.tsx',
+  'studio/app/lib/admin',
+  'studio/app/lib/auth/capabilities.ts',
+  'studio/app/lib/asset-gallery/generation-contracts.ts',
+  'studio/app/lib/asset-gallery/generation-runner.ts',
+  'studio/app/lib/asset-gallery/generation-storage.ts',
+  'studio/app/lib/asset-gallery/generation-store.ts',
+  'studio/app/lib/db/workspace-audit-log-store.ts',
+  'studio/app/lib/db/workspace-store.ts',
+  'studio/app/lib/meshy',
+];
+
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -103,6 +118,9 @@ export function verifyRepositoryNaming(root) {
   for (const path of REMOVED_PATHS) {
     if (existsSync(join(root, path))) errors.push(`${path} must not exist`);
   }
+  for (const path of PRODUCT_ONLY_PATHS) {
+    if (existsSync(join(root, path))) errors.push(`${path} is product-only and must not exist`);
+  }
   if (!existsSync(join(root, 'renderer', 'Cargo.toml'))) errors.push('renderer/Cargo.toml must exist');
 
   const cli = readJson(join(root, 'packages/cli/package.json'));
@@ -122,9 +140,11 @@ export function verifyRepositoryNaming(root) {
   }
 
   const legacyImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@uniscenarios\//u;
+  const productScope = /@simcloud\//u;
   for (const path of sourceFiles(root)) {
     const source = readFileSync(path, 'utf8');
     if (legacyImport.test(source)) errors.push(`${relative(root, path)} imports the retired @uniscenarios scope`);
+    if (productScope.test(source)) errors.push(`${relative(root, path)} contains the product-only @simcloud scope`);
   }
 
   if (errors.length) throw new Error(`Repository naming verification failed:\n- ${errors.join('\n- ')}`);

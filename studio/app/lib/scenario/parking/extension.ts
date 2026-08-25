@@ -14,9 +14,9 @@ import {
   bakedParkedCarsFromExtensions,
   PARKED_CARS_EXTENSION_KEY,
   type ParkedCar,
-} from "@/app/lib/simcloud-shared/parked-cars";
+} from "@/app/lib/studio-shared/parked-cars";
 
-// The key, the baked-car type, and the reader live in `@simcloud/shared` because
+// The key, the baked-car type, and the reader live in `@simforge/studio-shared` because
 // the compiler service needs the identical implementation — see that module.
 export { PARKED_CARS_EXTENSION_KEY };
 export type { ParkedCar };

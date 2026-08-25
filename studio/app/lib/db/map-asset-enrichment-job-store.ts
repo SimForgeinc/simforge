@@ -5,7 +5,7 @@
  * inserted by the Next.js API when enqueuing, and transitioned to running /
  * succeeded / failed / timeout by the Lambda worker itself.
  */
-import type { EnrichmentJob, EnrichmentJobStatus, EnrichmentJobType } from "@simcloud/shared";
+import type { EnrichmentJob, EnrichmentJobStatus, EnrichmentJobType } from "@simforge/studio-shared";
 import { execute, queryOne, queryRows } from "./data-api";
 import { parseJson as sharedParseJson } from "./json-helpers";
 

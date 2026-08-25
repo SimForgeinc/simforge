@@ -6,7 +6,7 @@ import { matchAnchorReport, normalizeDerivedMapIndex } from '@simforge/compiler'
 import { exportOpenScenarioXml14 } from '@simforge/openscenario';
 import { AsamExportError } from '@simforge/openscenario';
 import { adaptTemplate, buildMapControlPlan, materializationSemanticLosses, materialize, materializeMapBound, parseMapSignalCatalog, topologyWithMapSpeedLimits, type MapBundle, type MapControlPlan } from '@simforge/compiler';
-import { withParkedCarActors } from "@/app/lib/simcloud-shared/parked-cars";
+import { withParkedCarActors } from "@/app/lib/studio-shared/parked-cars";
 import { parkedCarsFromExtensions } from '@/app/lib/scenario/parking/extension';
 import {
   buildLaneGraph,

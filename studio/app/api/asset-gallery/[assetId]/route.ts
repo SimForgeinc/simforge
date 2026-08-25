@@ -8,7 +8,6 @@ import {
   getGalleryAsset,
   renameGalleryAsset,
 } from "@/app/lib/asset-gallery/store";
-import { hasCapability, resolveAdminAccess } from "@/app/lib/auth/capabilities";
 import { requireRouteSession } from "@/app/lib/auth/route-session";
 import { readJson, requireScenarioMutationOrigin } from "@/app/lib/scenario/http";
 
@@ -67,12 +66,10 @@ export async function PATCH(request: NextRequest, { params }: AssetRouteContext)
     );
   }
 
-  const adminAccess = await resolveAdminAccess(auth.session);
   const result = await renameGalleryAsset(
     id.data,
     parsed.data.title,
     auth.session.sub,
-    hasCapability(adminAccess, "admin:access"),
   );
   if (result === "not_found") {
     return auth.apply(NextResponse.json({ error: "gallery_asset_not_found" }, { status: 404 }));

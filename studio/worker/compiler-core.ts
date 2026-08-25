@@ -29,7 +29,7 @@ import {
   type TopologyIndex,
 } from "@simforge/engine";
 
-import { bakedParkedCarsFromExtensions, withParkedCarActors } from "../app/lib/simcloud-shared/parked-cars.js";
+import { bakedParkedCarsFromExtensions, withParkedCarActors } from "../app/lib/studio-shared/parked-cars.js";
 import { buildXodrElevationResolver } from "./xodr-elevation.js";
 
 export const COMPILER_VERSION = "uniscenario-compiler@2.0.0";

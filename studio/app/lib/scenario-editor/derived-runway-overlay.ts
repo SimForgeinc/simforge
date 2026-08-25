@@ -1,4 +1,4 @@
-import type { MapAsset } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
 
 /**

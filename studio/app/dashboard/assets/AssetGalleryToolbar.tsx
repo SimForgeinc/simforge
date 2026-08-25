@@ -13,7 +13,6 @@ import { Input } from "@/app/components/ui/input";
 import { SelectMenu } from "@/app/components/ui/select-menu";
 import { Toolbar, ToolbarGroup } from "@/app/components/ui/toolbar";
 import type { GalleryActorClass } from "@/app/lib/asset-gallery/contracts";
-import { AssetGallerySegmented } from "./AssetGallerySegmented";
 import {
   GALLERY_ACTOR_CLASS_OPTIONS,
   GALLERY_CARLA_FILTER_OPTIONS,
@@ -23,10 +22,6 @@ import {
   type GallerySort,
 } from "./gallery-filters";
 
-const OWNERSHIP_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "mine", label: "Mine" },
-] as const;
 
 export function AssetGalleryToolbar({
   query,
@@ -35,8 +30,6 @@ export function AssetGalleryToolbar({
   onActorClassChange,
   carla,
   onCarlaChange,
-  mine,
-  onMineChange,
   sort,
   onSortChange,
   resultCount,
@@ -49,8 +42,6 @@ export function AssetGalleryToolbar({
   onActorClassChange: (actorClass: GalleryActorClass | "all") => void;
   carla: GalleryCarlaFilter;
   onCarlaChange: (carla: GalleryCarlaFilter) => void;
-  mine: boolean;
-  onMineChange: (mine: boolean) => void;
   sort: GallerySort;
   onSortChange: (sort: GallerySort) => void;
   resultCount: number;
@@ -108,12 +99,6 @@ export function AssetGalleryToolbar({
         options={GALLERY_CARLA_FILTER_OPTIONS}
         label="Filter by CARLA compatibility"
         className="h-9 text-xs sm:w-40"
-      />
-      <AssetGallerySegmented
-        label="Ownership filter"
-        value={mine ? "mine" : "all"}
-        options={OWNERSHIP_OPTIONS}
-        onChange={(value) => onMineChange(value === "mine")}
       />
 
       <ToolbarGroup className="ml-auto">

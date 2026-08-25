@@ -11,7 +11,7 @@ import {
   ScenarioRenderWorkerIdentitySchema,
   type ScenarioParityEvidenceV1,
   type ScenarioRenderResourceRequest,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 export const SCENARIO_SCHEMA_VERSION = String(SCENARIO_TEMPLATE_VERSION);
 export const OPENSCENARIO_NATIVE_PROFILE = "ASAM OpenSCENARIO XML 1.4";

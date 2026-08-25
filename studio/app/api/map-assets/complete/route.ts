@@ -4,7 +4,7 @@ import {
   type MapAsset,
   type MapAssetArtifact,
   type MapPlaceContext,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { upsertMapAsset } from "@/app/lib/db/map-asset-store";
 import { computeMapMetadataBundle, mergeMapTags } from "@/app/lib/maps/metadata/compute-map-metadata";
 import { fetchRequiredMapArtifactTextsFromKeys } from "@/app/lib/maps/metadata/fetch-map-artifacts-by-keys";

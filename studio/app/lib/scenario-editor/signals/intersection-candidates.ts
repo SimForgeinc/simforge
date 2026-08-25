@@ -23,7 +23,7 @@
  * `bearing + 180`, which is the convention `MovementDiagram` already draws with.
  */
 
-import { compassLabel, type JunctionSignalPlan } from "@simcloud/shared";
+import { compassLabel, type JunctionSignalPlan } from "@simforge/studio-shared";
 import {
   headRuntimePoint,
   type Map3DSignalHeadSource,

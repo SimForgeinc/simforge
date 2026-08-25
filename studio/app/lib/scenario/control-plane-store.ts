@@ -51,7 +51,7 @@ import {
   type ScenarioParityEvidenceV1,
   type ScenarioRenderResourceRequest,
   type ScenarioRenderWorkerIdentity,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 type RenderSpec = z.infer<typeof ScenarioRenderSpecSchema>;
 const INTERACTION_RENDER_SPEC = {

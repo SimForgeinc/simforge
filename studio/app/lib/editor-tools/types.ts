@@ -8,7 +8,7 @@ import type {
   ManageSelectedRoadsInput,
   ManageSelectedRoadsResult,
 } from "@/app/lib/editor-tools/selected-road-tool";
-import type { ScenarioEditorActorDraft } from "@simcloud/shared";
+import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
 
 export const EDITOR_TOOL_IDS = [
   "get_location_catalog",

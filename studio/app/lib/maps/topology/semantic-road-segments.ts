@@ -1,8 +1,8 @@
 import type {
   RuntimeBoundMapTopologyIndex,
   SemanticMapGraph,
-} from "@simcloud/shared";
-import { laneTravelIncreasesS, travelOrderedPolyline } from "@simcloud/shared";
+} from "@simforge/studio-shared";
+import { laneTravelIncreasesS, travelOrderedPolyline } from "@simforge/studio-shared";
 import type {
   RuntimeRoadSegment,
   RuntimeWaypointRef,
@@ -75,7 +75,7 @@ function slicePolyline(
  *
  * The direction comes from the index, where it was resolved from CARLA's
  * waypoint yaw — not from the lane-id sign, which is a convention OpenDRIVE
- * does not guarantee. See `@simcloud/shared` `lane-travel.ts`.
+ * does not guarantee. See `@simforge/studio-shared` `lane-travel.ts`.
  */
 function topologyTravelPolyline(
   topology: RuntimeBoundMapTopologyIndex,

@@ -4,7 +4,7 @@ import type {
   SemanticSiteQueryResult,
   SceneFormation,
   SceneFormationSolution,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { lngLatToRuntimePoint, runtimePointToLngLat } from "./coordinates";
 import type { GeoJsonFeature, GeoJsonFeatureCollection } from "./types";
 

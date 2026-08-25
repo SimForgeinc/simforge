@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SemanticMapOverlaySchema,
   type SemanticMapOverlay,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import {
   constrainSemanticOverlayViewport,
   type SemanticOverlayViewport,

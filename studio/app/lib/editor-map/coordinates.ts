@@ -1,5 +1,5 @@
-import type { MapAsset } from "@simcloud/shared";
-import { MapProjection } from "@simcloud/shared";
+import type { MapAsset } from "@simforge/studio-shared";
+import { MapProjection } from "@simforge/studio-shared";
 import {
   editorLocalPointToRuntimePoint,
   runtimePointToEditorLocalPoint,

@@ -1,6 +1,6 @@
 "use client";
 
-import type { MapOverlayLayerId } from "@simcloud/shared";
+import type { MapOverlayLayerId } from "@simforge/studio-shared";
 import { OVERLAY_STYLES } from "@/app/components/map-assets-map/map-layer-constants";
 import {
   RUNTIME_LANE_TYPES,

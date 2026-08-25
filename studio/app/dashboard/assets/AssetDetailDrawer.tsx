@@ -158,8 +158,7 @@ export function AssetDetailDrawer({
             <SheetHeader>
               <SheetTitle className="pr-8 text-2xl">{asset.title}</SheetTitle>
               <SheetDescription>
-                Uploaded by {asset.createdByName ?? "SimForge user"} ·{" "}
-                {new Date(asset.createdAt).toLocaleDateString()} · version {asset.version}
+                Imported {new Date(asset.createdAt).toLocaleDateString()} · version {asset.version}
               </SheetDescription>
             </SheetHeader>
 
@@ -274,7 +273,7 @@ export function AssetDetailDrawer({
                   className="rounded-lg border border-destructive/50 bg-destructive/10 p-3"
                 >
                   <p id="asset-delete-heading" className="text-sm font-semibold">
-                    Remove “{asset.title}” from the public gallery?
+                    Remove “{asset.title}” from the local library?
                   </p>
 
                   {usage.phase === "loading" ? (
@@ -295,10 +294,6 @@ export function AssetDetailDrawer({
                     </p>
                   )}
 
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    The gallery is community-moderated: anyone signed in can remove an asset, and the removal is
-                    recorded against your account.
-                  </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button type="button" size="sm" variant="destructive" disabled={deleting} onClick={() => void deleteAsset()}>

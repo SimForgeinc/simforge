@@ -7,7 +7,7 @@ import {
   type RenderOutputProfile,
   type RenderOutputSpec,
   type SensorOutputModality,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 
 export type ScenarioSetupRenderConfig = {
   renderOutputProfile: RenderOutputProfile;

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import {
   deriveXodrSignalGroups,
   type XodrJunctionSignalGroup,
-} from "@simcloud/shared";
+} from "@simforge/studio-shared";
 import { getMapArtifactLocation } from "@/app/lib/db/map-asset-store";
 import { getRuntimeMapArtifactVersion } from "@/app/lib/editor-map/runtime-map-artifacts";
 import { readRuntimeTopologyBundleInput } from "@/app/lib/editor-map/runtime-topology-bundle";
