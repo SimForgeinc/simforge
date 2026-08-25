@@ -17,14 +17,18 @@
  * no randomness — so two identical runs produce byte-identical streams.
  */
 
+import { decode, encode } from '@msgpack/msgpack';
+
 import type {
+  ActorKind,
+  Dims,
   EngineTickObservation,
   SessionActorSnapshot,
   SignalBook,
   SignalSnapshot,
 } from '@simforge/engine';
 
-import { yawToQuaternion } from '@simforge/engine/scene-state';
+import { yawToQuaternion, type ActorClass, type SceneFrame } from '@simforge/engine/scene-state';
 
 /** Static per-session metadata stamped onto every tick: the map identity pair
  * the V5 digest rule requires ({mapId, xodrSha256}) plus the engine step the
@@ -169,5 +173,224 @@ export class SubscriberQueue {
 
   get depth(): number {
     return this.pending.length;
+  }
+}
+
+/* ------------------------------------------------ world-session truth v1 */
+
+/** Static actor identity carried beside the frozen scene-state.v1 frame. */
+export interface TruthActor {
+  readonly id: string;
+  readonly class: ActorClass;
+  readonly dims: { readonly l: number; readonly w: number; readonly h: number };
+  /** XODR-local world-plane acceleration in m/s². */
+  readonly accel: { readonly ax: number; readonly ay: number };
+}
+
+/**
+ * Frozen world-session truth contract. One complete value is encoded into one
+ * msgpack payload and one length-prefixed transport frame.
+ */
+export interface TruthFrame {
+  readonly tick: number;
+  readonly timeSec: number;
+  readonly scene: SceneFrame;
+  readonly signals: readonly SignalSnapshot[];
+  readonly actors: readonly TruthActor[];
+}
+
+export interface TruthActorCatalogEntry {
+  readonly kind: ActorKind;
+  readonly dims: Dims;
+}
+
+export interface TruthSubscriptionStats {
+  readonly queued: number;
+  /** Cumulative frames discarded from this subscription by drop-oldest. */
+  readonly dropped: number;
+}
+
+/** Default bounded frame count for one world-session subscriber. */
+export const WORLD_TRUTH_QUEUE_CAPACITY = 256;
+
+const ACTOR_CLASS_BY_KIND: Readonly<Record<ActorKind, ActorClass>> = {
+  vehicle: 'car',
+  car: 'car',
+  truck: 'truck',
+  bus: 'bus',
+  van: 'car',
+  motorcycle: 'motorcycle',
+  bicycle: 'bicycle',
+  pedestrian: 'pedestrian',
+  scooter: 'motorcycle',
+  sidewalk_robot: 'prop',
+  drone: 'prop',
+  animal: 'prop',
+  static_object: 'prop',
+};
+
+/** Encode one TruthFrame as `u32le byteLength || msgpack(TruthFrame)`. */
+export function encodeTruthFrame(frame: TruthFrame): Uint8Array {
+  const payload = encode(frame);
+  const framed = Buffer.allocUnsafe(4 + payload.byteLength);
+  framed.writeUInt32LE(payload.byteLength, 0);
+  framed.set(payload, 4);
+  return framed;
+}
+
+/**
+ * Incremental client-side decoder for the public truth-stream framing. It
+ * accepts arbitrary transport chunks and returns every complete TruthFrame.
+ */
+export class TruthStreamClient {
+  private buffered: Buffer<ArrayBufferLike> = Buffer.alloc(0);
+
+  push(chunk: Uint8Array): TruthFrame[] {
+    const incoming = Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    this.buffered = this.buffered.length === 0 ? incoming : Buffer.concat([this.buffered, incoming]);
+    const frames: TruthFrame[] = [];
+    for (;;) {
+      if (this.buffered.length < 4) return frames;
+      const length = this.buffered.readUInt32LE(0);
+      if (length > 64 * 1024 * 1024) throw new Error(`truth frame of ${length} bytes exceeds 64 MiB`);
+      if (this.buffered.length < length + 4) return frames;
+      frames.push(decode(this.buffered.subarray(4, length + 4)) as TruthFrame);
+      this.buffered = this.buffered.subarray(length + 4);
+    }
+  }
+}
+
+/**
+ * One pull-based subscriber. Publishing only enqueues already-encoded bytes;
+ * it never invokes consumer code on the engine tick path.
+ */
+export class TruthSubscription {
+  private readonly pending: Uint8Array[] = [];
+  private droppedTotal = 0;
+  private active = true;
+
+  constructor(
+    readonly capacity: number,
+    private readonly closeSubscription: () => void,
+  ) {
+    if (!Number.isInteger(capacity) || capacity <= 0) {
+      throw new Error(`truth subscription capacity must be a positive integer, got ${String(capacity)}`);
+    }
+  }
+
+  /** Internal publisher seam; the byte array is immutable and shared. */
+  enqueue(frame: Uint8Array): void {
+    if (!this.active) return;
+    if (this.pending.length >= this.capacity) {
+      this.pending.shift();
+      this.droppedTotal += 1;
+    }
+    this.pending.push(frame);
+  }
+
+  /** Pull the oldest complete length-prefixed msgpack frame, or null. */
+  read(): Uint8Array | null {
+    return this.pending.shift() ?? null;
+  }
+
+  /** Pull every currently queued frame in tick order. */
+  drain(): Uint8Array[] {
+    return this.pending.splice(0);
+  }
+
+  stats(): TruthSubscriptionStats {
+    return { queued: this.pending.length, dropped: this.droppedTotal };
+  }
+
+  unsubscribe(): void {
+    if (!this.active) return;
+    this.active = false;
+    this.pending.length = 0;
+    this.closeSubscription();
+  }
+}
+
+/**
+ * Per-world fan-out. A tick is composed and encoded once, then the same
+ * immutable framed bytes are enqueued for every subscriber.
+ */
+export class WorldTruthPublisher {
+  private readonly subscribers = new Set<TruthSubscription>();
+  private readonly prevPresent = new Map<string, boolean>();
+  private readonly prevVelocity = new Map<string, { x: number; y: number }>();
+
+  subscribe(capacity: number = WORLD_TRUTH_QUEUE_CAPACITY): TruthSubscription {
+    if (this.subscribers.size === 0) {
+      this.prevPresent.clear();
+      this.prevVelocity.clear();
+    }
+    let subscription!: TruthSubscription;
+    subscription = new TruthSubscription(capacity, () => this.subscribers.delete(subscription));
+    this.subscribers.add(subscription);
+    return subscription;
+  }
+
+  get subscriberCount(): number {
+    return this.subscribers.size;
+  }
+
+  publish(
+    obs: EngineTickObservation,
+    book: SignalBook,
+    catalog: ReadonlyMap<string, TruthActorCatalogEntry>,
+    dtS: number,
+  ): void {
+    if (this.subscribers.size === 0) return;
+
+    const sceneActors: LiveActorRecord[] = [];
+    const actors: TruthActor[] = [];
+    for (const actor of obs.actors) {
+      const wasPresent = this.prevPresent.get(actor.id) === true;
+      this.prevPresent.set(actor.id, actor.present);
+      let kind: LiveActorRecord['kind'];
+      if (actor.present && !wasPresent) kind = 'spawn';
+      else if (!actor.present && wasPresent) kind = 'despawn';
+      else if (!actor.present) continue;
+      else kind = 'update';
+
+      const vx = actor.speedMps * Math.cos(actor.headingRad);
+      const vy = actor.speedMps * Math.sin(actor.headingRad);
+      const previousVelocity = this.prevVelocity.get(actor.id);
+      const ax = kind === 'spawn' || !previousVelocity ? 0 : (vx - previousVelocity.x) / dtS;
+      const ay = kind === 'spawn' || !previousVelocity ? 0 : (vy - previousVelocity.y) / dtS;
+      if (kind === 'despawn') this.prevVelocity.delete(actor.id);
+      else this.prevVelocity.set(actor.id, { x: vx, y: vy });
+
+      const meta = catalog.get(actor.id);
+      if (!meta) throw new Error(`truth stream has no actor catalog entry for ${actor.id}`);
+      const acceleration: [number, number, number] = [q(ax), 0, q(-ay)];
+      sceneActors.push({
+        id: actor.id,
+        kind,
+        position: [q(actor.x), 0, q(-actor.y)],
+        rotation: yawToQuaternion(actor.headingRad).map(q) as [number, number, number, number],
+        yawRad: q(actor.headingRad),
+        velocity: [q(vx), 0, q(-vy)],
+        acceleration,
+      });
+      actors.push({
+        id: actor.id,
+        class: ACTOR_CLASS_BY_KIND[meta.kind],
+        dims: { l: meta.dims.l, w: meta.dims.w, h: meta.dims.h },
+        accel: { ax: q(ax), ay: q(ay) },
+      });
+    }
+
+    const tick = obs.tickIndex;
+    const timeSec = q(obs.tS);
+    const truth: TruthFrame = {
+      tick,
+      timeSec,
+      scene: { tick, t: timeSec, actors: sceneActors },
+      signals: book.snapshotsAt(obs.tS, dtS),
+      actors,
+    };
+    const framed = encodeTruthFrame(truth);
+    for (const subscriber of this.subscribers) subscriber.enqueue(framed);
   }
 }

@@ -96,3 +96,15 @@ export type {
 
 export { WorldRegistry, registerWorldOps } from './session-registry.js';
 export type { QueuedCommandResult, SessionRole, WorldAdvanceResult, WorldEpisode } from './session-registry.js';
+
+export {
+  encodeTruthFrame,
+  TruthStreamClient,
+  TruthSubscription,
+  WORLD_TRUTH_QUEUE_CAPACITY,
+} from './truth-stream.js';
+export type {
+  TruthActor,
+  TruthFrame,
+  TruthSubscriptionStats,
+} from './truth-stream.js';
