@@ -1,7 +1,8 @@
-<img width="914" height="170" alt="Screenshot 2026-08-24 at 11 09 40 PM" src="https://github.com/user-attachments/assets/4982be0b-7d7b-45ec-9310-da9c8ace9c5f" />
+
 
 
 # SimForge
+<img width="914" height="170" alt="Screenshot 2026-08-24 at 11 09 40 PM" src="https://github.com/user-attachments/assets/4982be0b-7d7b-45ec-9310-da9c8ace9c5f" />
 
 SimForge is an open-source ML training environment for autonomous systems and a
 CARLA competitor. It provides deterministic scenario authoring, simulation,
