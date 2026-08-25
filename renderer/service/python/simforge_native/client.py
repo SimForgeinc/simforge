@@ -15,7 +15,6 @@ import os
 import socket
 import struct
 
-import numpy as np
 
 
 # ------------------------------------------------------------- msgpack subset
@@ -246,6 +245,7 @@ class NativeRenderClient:
         rgb/id/semantic are (H, W, 4) uint8; depth32f is (H, W) float32;
         carla-depth-bgra and jpeg payloads stay raw byte arrays.
         """
+        import numpy as np
         response = self.render(tick_id, cameras, tick_index=tick_index)
         assert response["ok"], response
         obs: dict = {}
@@ -274,6 +274,7 @@ class NativeRenderClient:
         bundles from the ring without the RPC socket). Observation views use
         the same strided zero-copy mapping as `step()`.
         """
+        import numpy as np
         response = self.render_bundle(sim_tick, cameras, tick_index=tick_index, passes=passes)
         assert response["ok"], response
         obs: dict = {}
