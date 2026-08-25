@@ -227,6 +227,12 @@ pub fn run_capture(args: CaptureArgs) -> Result<()> {
             DefaultPlugins
                 .set(bevy::asset::AssetPlugin { file_path: "/".into(), ..default() })
                 .set(WindowPlugin { primary_window: None, exit_condition: ExitCondition::DontExit, ..default() })
+                // The process exits immediately after one fixed-step capture. Keep pipeline
+                // compilation synchronous so no task can outlive the wgpu device during teardown.
+                .set(bevy::render::RenderPlugin {
+                    synchronous_pipeline_compilation: true,
+                    ..default()
+                })
                 .disable::<bevy::winit::WinitPlugin>()
                 .disable::<bevy::audio::AudioPlugin>()
                 .set(LogPlugin {
