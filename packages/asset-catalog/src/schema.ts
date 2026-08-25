@@ -64,6 +64,7 @@ const catalogEntrySchema = z.object({
   defaultParams: z.record(z.string(), paramValueSchema),
   legacyAliasOf: z.string().regex(/^[a-z_]+(?:\.[a-z0-9_]+)+$/).optional(),
   animation: animationProfileSchema.optional(),
+  model: externalModelSchema.optional(),
 });
 
 const externalCatalogEntrySchema = z.strictObject({

@@ -111,12 +111,14 @@ def main(models_dir, out_dir):
             'vehicle.van': centry('vehicle_van_mercedes_sprinter'),
             'vehicle.delivery_van': centry('vehicle_van_mercedes_sprinter'),
             'vehicle.minivan': centry('vehicle_minivan_bmw_gran_tourer'),
-            'vehicle.kia.carnival': centry('vehicle_minivan_bmw_gran_tourer', note='closest available MPV silhouette; the Kia Carnival source asset is not CARLA CC-BY content'),
+            'vehicle.kia.carnival': centry('vehicle_minivan_bmw_gran_tourer', note='closest available CC-BY MPV silhouette; the packaged Kia Carnival has a separate non-CARLA license'),
             'vehicle.box_truck': centry('vehicle_truck_carlacola'),
             'vehicle.semi_truck': centry('vehicle_truck_european_hgv', note='tractor unit only; catalog dims include a trailer — scale by width/height, not length', scale=False),
             'vehicle.bus': centry('vehicle_bus_mitsubishi_fusorosa', note='minibus stand-in for a 12m transit bus'),
             'vehicle.shuttle_bus': centry('vehicle_bus_mitsubishi_fusorosa'),
             'vehicle.motorcycle': centry('vehicle_motorcycle_harley'),
+            'vehicle.bicycle': centry('vehicle_bicycle_bh_crossbike'),
+            'vehicle.ambulance': centry('vehicle_ambulance_ford'),
             'vehicle.tesla_model_3': centry('vehicle_sedan_tesla_model3'),
             'vehicle.ford_mustang': centry('vehicle_coupe_ford_mustang'),
             'vehicle.taxi': centry('vehicle_sedan_ford_crown'),
@@ -133,6 +135,26 @@ def main(models_dir, out_dir):
                               ('vehicle_motorcycle_kawasaki_ninja', 'sport bike variant'),
                               ('vehicle_scooter_vespa', 'scooter variant')]
         }}
+    # Every CARLA blueprint id resolves directly, in addition to SimForge's
+    # coarser authoring catalog ids above.
+    for spec in assemble.VEHICLES:
+        vid = f"vehicle_{spec['id']}"
+        sidecar['entries'][spec['bp']] = centry(vid)
+    server_aliases = {
+        'vehicle.ambulance.ford': 'vehicle_ambulance_ford',
+        'vehicle.carlacola.actors': 'vehicle_truck_carlacola',
+        'vehicle.dodge.charger': 'vehicle_sedan_dodge_charger',
+        'vehicle.dodgecop.charger': 'vehicle_police_dodge_charger',
+        'vehicle.firetruck.actors': 'vehicle_firetruck_actros',
+        'vehicle.fuso.mitsubishi': 'vehicle_bus_mitsubishi_fusorosa',
+        'vehicle.lincoln.mkz': 'vehicle_sedan_lincoln_mkz',
+        'vehicle.mini.cooper': 'vehicle_hatchback_mini_cooper',
+        'vehicle.nissan.patrol': 'vehicle_suv_nissan_patrol',
+        'vehicle.sprinter.mercedes': 'vehicle_van_mercedes_sprinter',
+        'vehicle.taxi.ford': 'vehicle_sedan_ford_crown',
+    }
+    for blueprint, vid in server_aliases.items():
+        sidecar['entries'][blueprint] = centry(vid)
 
     json.dump(manifest, open(os.path.join(out_dir, 'manifest.json'), 'w'), indent=2)
     json.dump(attribution, open(os.path.join(out_dir, 'ATTRIBUTION.json'), 'w'), indent=2)

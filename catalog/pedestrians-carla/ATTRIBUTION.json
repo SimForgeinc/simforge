@@ -1,0 +1,577 @@
+{
+  "assets": [
+    {
+      "attribution": "\"CARLA pedestrian 0015\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0015.glb",
+      "id": "walker.pedestrian.0015",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0016\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0016.glb",
+      "id": "walker.pedestrian.0016",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0017\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0017.glb",
+      "id": "walker.pedestrian.0017",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0018\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0018.glb",
+      "id": "walker.pedestrian.0018",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF02_B_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0019\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0019.glb",
+      "id": "walker.pedestrian.0019",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF02_C_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0020\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0020.glb",
+      "id": "walker.pedestrian.0020",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF02_Cop_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0021\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0021.glb",
+      "id": "walker.pedestrian.0021",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0022\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0022.glb",
+      "id": "walker.pedestrian.0022",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF03_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0023\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0023.glb",
+      "id": "walker.pedestrian.0023",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF03_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0024\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0024.glb",
+      "id": "walker.pedestrian.0024",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroF03_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0025\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0025.glb",
+      "id": "walker.pedestrian.0025",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroM01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0026\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0026.glb",
+      "id": "walker.pedestrian.0026",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroM01_B_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0027\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0027.glb",
+      "id": "walker.pedestrian.0027",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroM02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0028\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0028.glb",
+      "id": "walker.pedestrian.0028",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AmerM01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0029\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0029.glb",
+      "id": "walker.pedestrian.0029",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AmerM01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0030\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0030.glb",
+      "id": "walker.pedestrian.0030",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AmerM01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0031\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0031.glb",
+      "id": "walker.pedestrian.0031",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AmerM01_Cop_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0032\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0032.glb",
+      "id": "walker.pedestrian.0032",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AsiaF01_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0033\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0033.glb",
+      "id": "walker.pedestrian.0033",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AsiaF01_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0034\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0034.glb",
+      "id": "walker.pedestrian.0034",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AsiaM01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0035\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0035.glb",
+      "id": "walker.pedestrian.0035",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AsiaM01_B_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0036\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0036.glb",
+      "id": "walker.pedestrian.0036",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AsiaM02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0037\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0037.glb",
+      "id": "walker.pedestrian.0037",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AsiaM02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0038\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0038.glb",
+      "id": "walker.pedestrian.0038",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AsiaM02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0039\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0039.glb",
+      "id": "walker.pedestrian.0039",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroF01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0040\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0040.glb",
+      "id": "walker.pedestrian.0040",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroF01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0041\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0041.glb",
+      "id": "walker.pedestrian.0041",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroF01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0042\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0042.glb",
+      "id": "walker.pedestrian.0042",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroF02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0043\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0043.glb",
+      "id": "walker.pedestrian.0043",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroF02_B_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0044\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0044.glb",
+      "id": "walker.pedestrian.0044",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroF02_B_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0045\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0045.glb",
+      "id": "walker.pedestrian.0045",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroM01_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0046\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0046.glb",
+      "id": "walker.pedestrian.0046",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroM01_B_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0047\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0047.glb",
+      "id": "walker.pedestrian.0047",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroM02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0048\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0048.glb",
+      "id": "walker.pedestrian.0048",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroM02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0049\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0049.glb",
+      "id": "walker.pedestrian.0049",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroG02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0050\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0050.glb",
+      "id": "walker.pedestrian.0050",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_EuroB02_A_G2"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0051\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0051.glb",
+      "id": "walker.pedestrian.0051",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroG01_A_G3"
+    },
+    {
+      "attribution": "\"CARLA pedestrian 0052\" pedestrian model \u00a9 CARLA Simulator contributors (carla.org), CC BY 4.0; converted to glTF for SimForge.",
+      "file": "models/pedestrian_0052.glb",
+      "id": "walker.pedestrian.0052",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "modifications": [
+        "exported from Unreal Engine cooked skeletal mesh",
+        "converted to self-contained glTF 2.0 binary",
+        "material textures embedded and PBR channels normalized",
+        "skeleton and bind pose preserved"
+      ],
+      "source": "CARLA 0.10.0 UE5 cooked content",
+      "sourceMesh": "SK_AfroB01_A_G3"
+    }
+  ],
+  "catalog": "CARLA pedestrians for SimForge",
+  "license": "CC-BY-4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/"
+}
