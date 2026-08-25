@@ -2,7 +2,7 @@
  * Derivative release ids for published map versions.
  *
  * A map version's id is `usmap_` + sha256(workspaceId, sourceMapId, releaseId),
- * and `uniscenario.map_versions` is unique on
+ * and `simforge.map_versions` is unique on
  * `(workspace_id, source_map_asset_id, derivative_release_id)`. Binding the
  * release to nothing but the workspace's active editor asset release therefore
  * makes a map's *content* unable to change: republishing the same map with a

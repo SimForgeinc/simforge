@@ -42,7 +42,7 @@ export function useNearViewport<T extends HTMLElement>() {
 /**
  * The preview media URL for one artifact id, or null.
  *
- * Resolves through `/api/uniscenario/artifacts/[artifactId]`, which already signs one artifact per
+ * Resolves through `/api/simforge/artifacts/[artifactId]`, which already signs one artifact per
  * request under the workspace predicate and sets `private, no-store`. Returning null on any failure
  * is deliberate: a tile whose preview cannot be signed must fall back to its placeholder, not surface
  * an error — the render itself is fine, and the author has a details tab for real problems.
@@ -56,7 +56,7 @@ export function useArtifactPreviewUrl(artifactId: string | null, enabled: boolea
       return;
     }
     const controller = new AbortController();
-    void fetch(`/api/uniscenario/artifacts/${encodeURIComponent(artifactId)}`, {
+    void fetch(`/api/simforge/artifacts/${encodeURIComponent(artifactId)}`, {
       signal: controller.signal,
     })
       .then((response) => (response.ok ? (response.json() as Promise<ScenarioArtifactDto>) : null))

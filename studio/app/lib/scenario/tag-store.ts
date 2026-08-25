@@ -14,12 +14,12 @@ type TagRow = {
 };
 
 const TAG_SELECT = `SELECT t.id, t.workspace_id, t.slug, t.label, t.color, t.is_system_default,
-    (SELECT COUNT(*)::int FROM uniscenario.document_tags dt
-       JOIN uniscenario.documents doc
+    (SELECT COUNT(*)::int FROM simforge.document_tags dt
+       JOIN simforge.documents doc
          ON doc.id = dt.document_id AND doc.workspace_id = dt.workspace_id
        WHERE dt.workspace_id = t.workspace_id AND dt.tag_id = t.id
          AND doc.deleted_at IS NULL) AS document_count
-  FROM uniscenario.tags t`;
+  FROM simforge.tags t`;
 
 function tagDto(row: TagRow): ScenarioTagDto {
   return {
@@ -82,7 +82,7 @@ export async function createScenarioTag(
   if (!slug) return { kind: "slug_conflict" };
   return withTransaction(async (tx) => {
     const revived = await tx.queryRows<{ id: string }>(
-      `UPDATE uniscenario.tags
+      `UPDATE simforge.tags
        SET label = :label, color = :color, deleted_at = NULL, updated_by_user_id = :user_id,
            updated_at = NOW()
        WHERE workspace_id = :workspace_id AND slug = :slug AND deleted_at IS NOT NULL
@@ -98,7 +98,7 @@ export async function createScenarioTag(
     const tagId = revived[0]?.id ?? scenarioId("ustag");
     if (revived.length === 0) {
       const inserted = await tx.queryRows<{ id: string }>(
-        `INSERT INTO uniscenario.tags (
+        `INSERT INTO simforge.tags (
            id, workspace_id, slug, label, color, created_by_user_id, updated_by_user_id
          ) VALUES (:id, :workspace_id, :slug, :label, :color, :user_id, :user_id)
          ON CONFLICT (workspace_id, slug) DO NOTHING
@@ -137,7 +137,7 @@ export async function updateScenarioTag(
 ): Promise<ScenarioTagWriteResult> {
   if (input.label !== undefined) {
     const clash = await queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.tags
+      `SELECT id FROM simforge.tags
        WHERE workspace_id = :workspace_id AND deleted_at IS NULL AND id <> :tag_id
          AND LOWER(BTRIM(label)) = LOWER(BTRIM(:label))
        LIMIT 1`,
@@ -146,7 +146,7 @@ export async function updateScenarioTag(
     if (clash) return { kind: "slug_conflict" };
   }
   const updated = await queryRows<{ id: string }>(
-    `UPDATE uniscenario.tags
+    `UPDATE simforge.tags
      SET label = COALESCE(:label, label),
          color = CASE WHEN :color_provided THEN :color ELSE color END,
          updated_by_user_id = :user_id,
@@ -180,7 +180,7 @@ export async function updateScenarioTag(
 export async function deleteScenarioTag(context: AppContext, tagId: string) {
   return withTransaction(async (tx) => {
     const rows = await tx.queryRows<{ id: string }>(
-      `UPDATE uniscenario.tags
+      `UPDATE simforge.tags
        SET deleted_at = NOW(), updated_by_user_id = :user_id, updated_at = NOW()
        WHERE workspace_id = :workspace_id AND id = :tag_id AND deleted_at IS NULL
        RETURNING id`,
@@ -188,7 +188,7 @@ export async function deleteScenarioTag(context: AppContext, tagId: string) {
     );
     if (rows.length === 0) return { kind: "not_found" as const };
     await tx.execute(
-      `DELETE FROM uniscenario.document_tags
+      `DELETE FROM simforge.document_tags
        WHERE workspace_id = :workspace_id AND tag_id = :tag_id`,
       { workspace_id: context.workspaceId, tag_id: tagId },
     );
@@ -211,7 +211,7 @@ export async function setScenarioDocumentTags(
 ): Promise<{ kind: "ok"; tags: ScenarioTagDto[] } | { kind: "not_found" }> {
   return withTransaction(async (tx) => {
     const document = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.documents
+      `SELECT id FROM simforge.documents
        WHERE workspace_id = :workspace_id AND id = :document_id AND deleted_at IS NULL
        LIMIT 1`,
       { workspace_id: context.workspaceId, document_id: documentId },
@@ -219,17 +219,17 @@ export async function setScenarioDocumentTags(
     if (!document) return { kind: "not_found" as const };
 
     await tx.execute(
-      `DELETE FROM uniscenario.document_tags
+      `DELETE FROM simforge.document_tags
        WHERE workspace_id = :workspace_id AND document_id = :document_id`,
       { workspace_id: context.workspaceId, document_id: documentId },
     );
     if (tagIds.length > 0) {
       await tx.execute(
-        `INSERT INTO uniscenario.document_tags (
+        `INSERT INTO simforge.document_tags (
            workspace_id, document_id, tag_id, assigned_by_user_id
          )
          SELECT t.workspace_id, :document_id, t.id, :user_id
-         FROM uniscenario.tags t
+         FROM simforge.tags t
          WHERE t.workspace_id = :workspace_id AND t.deleted_at IS NULL
            AND t.id = ANY(CAST(:tag_ids AS text[]))
          ON CONFLICT (document_id, tag_id) DO NOTHING`,
@@ -247,7 +247,7 @@ export async function setScenarioDocumentTags(
       `${TAG_SELECT}
        WHERE t.workspace_id = :workspace_id AND t.deleted_at IS NULL
          AND EXISTS (
-           SELECT 1 FROM uniscenario.document_tags dt
+           SELECT 1 FROM simforge.document_tags dt
            WHERE dt.workspace_id = t.workspace_id AND dt.tag_id = t.id
              AND dt.document_id = :document_id
          )

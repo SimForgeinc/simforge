@@ -306,7 +306,7 @@ export async function publishDevAssetMap({
     ],
   });
   await execute(
-    `INSERT INTO uniscenario.map_upload_drafts (
+    `INSERT INTO simforge.map_upload_drafts (
        id, workspace_id, created_by_user_id, label, locality, carla_map_name,
        source_map_id, xodr_sha256, xodr_byte_length, thumbnail_sha256,
        thumbnail_byte_length, layers, preflight, draft_state
@@ -397,7 +397,7 @@ export async function publishDevAssetMap({
     triangleCount: manifest.scene?.totalTriangles ?? 0,
   });
   await execute(
-    `UPDATE uniscenario.map_upload_drafts
+    `UPDATE simforge.map_upload_drafts
      SET draft_state = 'published', map_version_id = :map_version_id, updated_at = NOW()
      WHERE id = :id`,
     { id: draftId, map_version_id: result.mapVersionId },

@@ -42,8 +42,8 @@ export async function getScenarioRecordingRevisionInput(
        revision.content_sha256, revision.map_version_id,
        revision.canonical_content::text AS canonical_content,
        revision.created_at::text AS created_at
-     FROM uniscenario.revisions revision
-     JOIN uniscenario.documents document
+     FROM simforge.revisions revision
+     JOIN simforge.documents document
        ON document.id = revision.document_id
       AND document.workspace_id = revision.workspace_id
      WHERE revision.id = :revision_id

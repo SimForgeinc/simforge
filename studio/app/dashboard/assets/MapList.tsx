@@ -31,7 +31,7 @@ export function MapList({
     setError(null);
     void (async () => {
       try {
-        const response = await fetch("/api/uniscenario/maps", {
+        const response = await fetch("/api/simforge/maps", {
           cache: "no-store",
           signal: abort.signal,
         });

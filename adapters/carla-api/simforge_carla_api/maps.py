@@ -20,6 +20,7 @@ import os
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
+from ._compat_env import simforge_env
 
 
 @dataclass(frozen=True)
@@ -80,11 +81,11 @@ def read_map_digest(map_name: str, dev_assets_root: str | None = None) -> dict:
 def instance_search_roots(extra: list[str] | None = None) -> list[Path]:
     """Where to look for scenario-instance JSONs, priority order.
 
-    ``UNISCENARIO_INSTANCE_DIRS`` (colon-separated) first, then the repo's
+    ``SIMFORGE_INSTANCE_DIRS`` (colon-separated) first, then the repo's
     committed examples/fixtures, then the local machine's w0 instance pool.
     """
     roots: list[Path] = []
-    env = os.environ.get("UNISCENARIO_INSTANCE_DIRS")
+    env = simforge_env("INSTANCE_DIRS")
     if env:
         roots.extend(Path(p) for p in env.split(":") if p)
     repo = Path(__file__).resolve().parents[3]
@@ -184,7 +185,7 @@ def build_episode_spec(map_id: str, *, weather_patch: dict | None = None,
         raise RuntimeError(
             f"no scenario instance available for map {info.map_id!r}; "
             f"catalog: { {k: len(v) for k, v in catalog.items()} } — point "
-            f"UNISCENARIO_INSTANCE_DIRS at a pool of instances")
+            f"SIMFORGE_INSTANCE_DIRS at a pool of instances")
     topology = next((c for c in (info.path / "browser" / "topology-index.json.gz",
                                  info.path / "topology-index.json.gz") if c.exists()), None)
     if topology is None:

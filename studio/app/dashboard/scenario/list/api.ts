@@ -178,7 +178,7 @@ export async function listDatasets(signal?: AbortSignal) {
   const body = await sharedRead(
     DATASET_READ_KEY,
     0,
-    () => request<{ datasets: ScenarioDatasetDto[] }>("/api/uniscenario/datasets"),
+    () => request<{ datasets: ScenarioDatasetDto[] }>("/api/simforge/datasets"),
     signal,
   );
   return body.datasets;
@@ -190,7 +190,7 @@ export function createDataset(input: {
 }) {
   return invalidateAfter(
     DATASET_READ_KEY,
-    request<ScenarioDatasetDto>("/api/uniscenario/datasets", {
+    request<ScenarioDatasetDto>("/api/simforge/datasets", {
       method: "POST",
       body: JSON.stringify(input),
     }),
@@ -204,7 +204,7 @@ export function updateDataset(
   return invalidateAfter(
     DATASET_READ_KEY,
     request<ScenarioDatasetDto>(
-      `/api/uniscenario/datasets/${encodeURIComponent(datasetId)}`,
+      `/api/simforge/datasets/${encodeURIComponent(datasetId)}`,
       { method: "PATCH", body: JSON.stringify(input) },
     ),
   );
@@ -214,7 +214,7 @@ export function deleteDataset(datasetId: string) {
   return invalidateAfter(
     DATASET_READ_KEY,
     request<{ ok: true; deletedDocumentCount: number }>(
-      `/api/uniscenario/datasets/${encodeURIComponent(datasetId)}`,
+      `/api/simforge/datasets/${encodeURIComponent(datasetId)}`,
       { method: "DELETE" },
     ),
   );
@@ -222,7 +222,7 @@ export function deleteDataset(datasetId: string) {
 
 export function getDatasetReadiness(datasetId: string, signal?: AbortSignal) {
   return request<ScenarioDatasetReadinessDto>(
-    `/api/uniscenario/datasets/${encodeURIComponent(datasetId)}/readiness`,
+    `/api/simforge/datasets/${encodeURIComponent(datasetId)}/readiness`,
     { signal },
   );
 }
@@ -239,20 +239,20 @@ export function listDocumentSummaries(
   });
   if (input.cursor) query.set("cursor", input.cursor);
   return request<ScenarioDocumentSummaryPageDto>(
-    `/api/uniscenario/documents/summaries?${query}`,
+    `/api/simforge/documents/summaries?${query}`,
     { signal },
   );
 }
 
 export function getDocument(documentId: string, signal?: AbortSignal) {
   return request<ScenarioDocumentDto>(
-    `/api/uniscenario/documents/${encodeURIComponent(documentId)}`,
+    `/api/simforge/documents/${encodeURIComponent(documentId)}`,
     { signal },
   );
 }
 
 export async function getSimulationPreview(documentId: string, signal?: AbortSignal) {
-  const response = await fetch(`/api/uniscenario/documents/${encodeURIComponent(documentId)}/simulation-preview`, { cache: "no-store", signal });
+  const response = await fetch(`/api/simforge/documents/${encodeURIComponent(documentId)}/simulation-preview`, { cache: "no-store", signal });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Saved simulation lookup failed (${response.status}).`);
   return response.json() as Promise<ScenarioSimulationPreviewDto>;
@@ -260,9 +260,9 @@ export async function getSimulationPreview(documentId: string, signal?: AbortSig
 type SimulationPreviewReservation = { artifactId: string; uploadRequired: boolean; uploadUrl: string | null; headers: Record<string, string> };
 export async function saveSimulationPreview(document: Pick<ScenarioDocumentDto, "id" | "draftVersion">, bytes: Uint8Array, sha256: string, signal?: AbortSignal) {
   const identity = { expectedVersion: document.draftVersion, sha256, sizeBytes: bytes.byteLength };
-  const reservation = await request<SimulationPreviewReservation>(`/api/uniscenario/documents/${encodeURIComponent(document.id)}/simulation-preview`, { method: "POST", body: JSON.stringify(identity), signal });
+  const reservation = await request<SimulationPreviewReservation>(`/api/simforge/documents/${encodeURIComponent(document.id)}/simulation-preview`, { method: "POST", body: JSON.stringify(identity), signal });
   if (reservation.uploadRequired) { if (!reservation.uploadUrl) throw new Error("Saved simulation reservation has no upload URL"); const uploaded = await fetch(reservation.uploadUrl, { method: "PUT", headers: reservation.headers, body: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, signal }); if (!uploaded.ok) throw new Error(`Saved simulation upload failed (${uploaded.status})`); }
-  await request<{ ok: true }>(`/api/uniscenario/documents/${encodeURIComponent(document.id)}/simulation-preview/complete`, { method: "POST", body: JSON.stringify({ ...identity, artifactId: reservation.artifactId }), signal });
+  await request<{ ok: true }>(`/api/simforge/documents/${encodeURIComponent(document.id)}/simulation-preview/complete`, { method: "POST", body: JSON.stringify({ ...identity, artifactId: reservation.artifactId }), signal });
 }
 
 export function createDocument(input: {
@@ -274,7 +274,7 @@ export function createDocument(input: {
   datasetId: string;
   authoringQualityId: string;
 }) {
-  return request<ScenarioDocumentDto>("/api/uniscenario/documents", {
+  return request<ScenarioDocumentDto>("/api/simforge/documents", {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -293,7 +293,7 @@ export function updateDocument(
   input: { expectedVersion: number; title?: string; description?: string },
 ) {
   return request<ScenarioDocumentDto>(
-    `/api/uniscenario/documents/${encodeURIComponent(documentId)}`,
+    `/api/simforge/documents/${encodeURIComponent(documentId)}`,
     { method: "PATCH", body: JSON.stringify(input) },
   );
 }
@@ -303,14 +303,14 @@ export function duplicateDocument(
   input: { title?: string; datasetId?: string } = {},
 ) {
   return request<ScenarioDocumentDto>(
-    `/api/uniscenario/documents/${encodeURIComponent(documentId)}/duplicate`,
+    `/api/simforge/documents/${encodeURIComponent(documentId)}/duplicate`,
     { method: "POST", body: JSON.stringify(input) },
   );
 }
 
 export function deleteDocument(documentId: string) {
   return request<{ ok: true }>(
-    `/api/uniscenario/documents/${encodeURIComponent(documentId)}`,
+    `/api/simforge/documents/${encodeURIComponent(documentId)}`,
     {
       method: "DELETE",
     },
@@ -323,7 +323,7 @@ export async function listTags(signal?: AbortSignal) {
   const body = await sharedRead(
     TAG_READ_KEY,
     0,
-    () => request<{ tags: ScenarioTagDto[] }>("/api/uniscenario/tags"),
+    () => request<{ tags: ScenarioTagDto[] }>("/api/simforge/tags"),
     signal,
   );
   return body.tags;
@@ -332,7 +332,7 @@ export async function listTags(signal?: AbortSignal) {
 export function createTag(input: { label: string; color?: string | null }) {
   return invalidateAfter(
     TAG_READ_KEY,
-    request<ScenarioTagDto>("/api/uniscenario/tags", {
+    request<ScenarioTagDto>("/api/simforge/tags", {
       method: "POST",
       body: JSON.stringify(input),
     }),
@@ -346,7 +346,7 @@ export function updateTag(
   return invalidateAfter(
     TAG_READ_KEY,
     request<ScenarioTagDto>(
-      `/api/uniscenario/tags/${encodeURIComponent(tagId)}`,
+      `/api/simforge/tags/${encodeURIComponent(tagId)}`,
       {
         method: "PATCH",
         body: JSON.stringify(input),
@@ -359,7 +359,7 @@ export function deleteTag(tagId: string) {
   return invalidateAfter(
     TAG_READ_KEY,
     request<{ ok: true }>(
-      `/api/uniscenario/tags/${encodeURIComponent(tagId)}`,
+      `/api/simforge/tags/${encodeURIComponent(tagId)}`,
       {
         method: "DELETE",
       },
@@ -369,7 +369,7 @@ export function deleteTag(tagId: string) {
 
 export async function setDocumentTags(documentId: string, tagIds: string[]) {
   const body = await request<{ tags: ScenarioTagDto[] }>(
-    `/api/uniscenario/documents/${encodeURIComponent(documentId)}/tags`,
+    `/api/simforge/documents/${encodeURIComponent(documentId)}/tags`,
     { method: "PUT", body: JSON.stringify({ tagIds }) },
   );
   return body.tags;
@@ -382,7 +382,7 @@ export async function listRatingAggregates(
   signal?: AbortSignal,
 ) {
   const body = await request<{ aggregates: ScenarioRatingAggregateDto[] }>(
-    "/api/uniscenario/documents/ratings/batch",
+    "/api/simforge/documents/ratings/batch",
     { method: "POST", body: JSON.stringify({ documentIds }), signal },
   );
   return body.aggregates;
@@ -398,7 +398,7 @@ export async function setDocumentRating(
 ) {
   const body = await request<{
     aggregate: ScenarioRatingAggregateDto | null;
-  }>(`/api/uniscenario/documents/${encodeURIComponent(documentId)}/rating`, {
+  }>(`/api/simforge/documents/${encodeURIComponent(documentId)}/rating`, {
     method: "PUT",
     body: JSON.stringify({ reviewedVia: "browser", ...input }),
   });
@@ -408,7 +408,7 @@ export async function setDocumentRating(
 export async function clearDocumentRating(documentId: string) {
   const body = await request<{
     aggregate: ScenarioRatingAggregateDto | null;
-  }>(`/api/uniscenario/documents/${encodeURIComponent(documentId)}/rating`, {
+  }>(`/api/simforge/documents/${encodeURIComponent(documentId)}/rating`, {
     method: "DELETE",
   });
   return body.aggregate;
@@ -456,7 +456,7 @@ export async function listMapOptions(
         locationsUrl: string | null;
         sumoNetworkUrl: string | null;
       }>;
-    }>("/api/uniscenario/maps");
+    }>("/api/simforge/maps");
     return body.maps.map((entry) => ({
       id: entry.mapVersionId,
       versionId: entry.mapVersionId,

@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
+import { simforgeEnv } from "../lib/compat-env";
 
 import type { RenderInputFile } from "@simforge/render";
 
@@ -41,13 +42,13 @@ export class CpuJobsClient {
     workerId = `local-render-${process.pid}`,
     private readonly requestTimeoutMs = 30_000,
   ) {
-    if (!token) throw new Error("UNISCENARIO_RENDER_WORKER_TOKEN is required.");
+    if (!token) throw new Error("SIMFORGE_RENDER_WORKER_TOKEN is required.");
     this.workerId = workerId;
   }
 
   async claim(signal: AbortSignal, leaseSeconds = 300): Promise<CpuJobClaim | null> {
     const response = await this.request(
-      "/api/uniscenario/internal/cpu-jobs/claim",
+      "/api/simforge/internal/cpu-jobs/claim",
       { workerId: this.workerId, leaseSeconds, families: [JOB_FAMILY] },
       signal,
       true,
@@ -62,7 +63,7 @@ export class CpuJobsClient {
     leaseSeconds = 300,
   ): Promise<{ cancelRequested: boolean; leaseExpiresAt: string }> {
     const body = object(await this.request(
-      `/api/uniscenario/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/heartbeat`,
+      `/api/simforge/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/heartbeat`,
       { ...fence(claim), leaseSeconds, progress },
       signal,
     ));
@@ -79,7 +80,7 @@ export class CpuJobsClient {
     signal: AbortSignal,
   ): Promise<void> {
     await this.request(
-      `/api/uniscenario/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/events`,
+      `/api/simforge/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/events`,
       { ...fence(claim), type, payload },
       signal,
     );
@@ -91,7 +92,7 @@ export class CpuJobsClient {
     signal: AbortSignal,
   ): Promise<ReservedRecording> {
     const body = object(await this.request(
-      "/api/uniscenario/recordings",
+      "/api/simforge/recordings",
       {
         recording: claim.payload.recording,
         artifacts: artifacts.map((artifact) => ({
@@ -142,7 +143,7 @@ export class CpuJobsClient {
   ): Promise<void> {
     const progress = 0.95 + (0.04 * uploadedArtifacts / Math.max(1, totalArtifacts));
     await this.request(
-      `/api/uniscenario/recordings/${encodeURIComponent(recordingId)}`,
+      `/api/simforge/recordings/${encodeURIComponent(recordingId)}`,
       {
         phase: "uploading",
         progress,
@@ -170,14 +171,14 @@ export class CpuJobsClient {
       sizeBytes: artifact.sizeBytes,
     }));
     await this.request(
-      `/api/uniscenario/recordings/${encodeURIComponent(recordingId)}`,
+      `/api/simforge/recordings/${encodeURIComponent(recordingId)}`,
       { artifacts: completedArtifacts, summary: {} },
       signal,
       false,
       "PATCH",
     );
     await this.request(
-      `/api/uniscenario/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/complete`,
+      `/api/simforge/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/complete`,
       {
         ...fence(claim),
         artifacts: completedArtifacts.map(({ artifactId, role, sha256, sizeBytes }) => ({
@@ -199,7 +200,7 @@ export class CpuJobsClient {
     signal: AbortSignal,
   ): Promise<void> {
     await this.request(
-      `/api/uniscenario/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/fail`,
+      `/api/simforge/internal/cpu-jobs/${encodeURIComponent(claim.jobId)}/fail`,
       { ...fence(claim), code, detail },
       signal,
     );
@@ -418,7 +419,7 @@ function stringRecord(value: unknown): Readonly<Record<string, string>> {
  * loopback; all non-local-object URLs remain byte-for-byte unchanged.
  */
 function workerObjectUrl(value: string): string {
-  const override = process.env.UNISCENARIO_WORKER_OBJECT_BASE_URL?.trim();
+  const override = simforgeEnv("WORKER_OBJECT_BASE_URL")?.trim();
   if (!override) return value;
   const source = new URL(value);
   if (!source.pathname.startsWith("/api/local-objects/")) return value;

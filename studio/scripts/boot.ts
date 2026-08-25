@@ -1,6 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { migrate } from "./migrate";
 import { seed } from "./seed";
+import { simforgeEnv } from "../lib/compat-env";
 
 await migrate();
 await seed();
@@ -21,8 +22,8 @@ if (withWorker) {
     stdio: "inherit",
     env: {
       ...process.env,
-      UNISCENARIO_API_BASE_URL:
-        process.env.UNISCENARIO_API_BASE_URL ?? `http://127.0.0.1:${port}`,
+      SIMFORGE_API_BASE_URL:
+        simforgeEnv("API_BASE_URL") ?? `http://127.0.0.1:${port}`,
     },
   });
   children.push(worker);

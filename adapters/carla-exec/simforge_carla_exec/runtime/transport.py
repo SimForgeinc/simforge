@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .._compat_env import simforge_env
 
 import json
 import io
@@ -22,7 +23,7 @@ def _is_s3_host(host: str) -> bool:
     ) and (".s3." in host or ".s3-" in host or host.startswith("s3.") or host.startswith("s3-"))
 
 
-def _trusted_artifact_url(url: str, configured_hosts_env: str) -> None:
+def _trusted_artifact_url(url: str, configured_hosts_name: str) -> None:
     try:
         parsed = urlsplit(url)
         host = (parsed.hostname or "").lower().rstrip(".")
@@ -30,13 +31,13 @@ def _trusted_artifact_url(url: str, configured_hosts_env: str) -> None:
         raise ValueError("artifact URL is malformed") from exc
     configured = {
         item.strip().lower().rstrip(".")
-        for item in os.environ.get(configured_hosts_env, "").split(",")
+        for item in (simforge_env(configured_hosts_name, "") or "").split(",")
         if item.strip()
     }
     if parsed.scheme != "https" or not host or parsed.username or parsed.password or parsed.fragment:
         raise ValueError("artifact URL must be an HTTPS URL without credentials or fragments")
     if host not in configured and not _is_s3_host(host):
-        raise ValueError(f"artifact URL host is not allowed by {configured_hosts_env}")
+        raise ValueError(f"artifact URL host is not allowed by SIMFORGE_{configured_hosts_name}")
 
 
 def _verify_response_url(response: Any, original_url: str, configured_hosts_env: str) -> None:
@@ -134,11 +135,11 @@ def download(
     deadline_monotonic: Callable[[], float] | None = None,
     abort: Callable[[], None] | None = None,
 ) -> bytes:
-    _trusted_artifact_url(url, "UNISCENARIO_ASSET_DOWNLOAD_HOSTS")
+    _trusted_artifact_url(url, "ASSET_DOWNLOAD_HOSTS")
     def operation() -> bytes:
         request = urllib.request.Request(url, headers={"Accept-Encoding": "identity"})
-        with _open_artifact(request, _remaining_timeout(deadline_monotonic, 120), "UNISCENARIO_ASSET_DOWNLOAD_HOSTS") as response:
-            _verify_response_url(response, url, "UNISCENARIO_ASSET_DOWNLOAD_HOSTS")
+        with _open_artifact(request, _remaining_timeout(deadline_monotonic, 120), "ASSET_DOWNLOAD_HOSTS") as response:
+            _verify_response_url(response, url, "ASSET_DOWNLOAD_HOSTS")
             chunks: list[bytes] = []
             size = 0
             while size <= maximum:
@@ -182,7 +183,7 @@ def upload(
     deadline_monotonic: Callable[[], float] | None = None,
     abort: Callable[[], None] | None = None,
 ) -> None:
-    _trusted_artifact_url(url, "UNISCENARIO_ARTIFACT_UPLOAD_HOSTS")
+    _trusted_artifact_url(url, "ARTIFACT_UPLOAD_HOSTS")
     def operation() -> None:
         request_headers = dict(headers or {})
         if not any(name.lower() == "content-type" for name in request_headers):
@@ -194,8 +195,8 @@ def upload(
             reader = _DeadlineReader(source, deadline_monotonic, abort)
             request = urllib.request.Request(url, data=reader, method="PUT", headers=request_headers)
             try:
-                with _open_artifact(request, _remaining_timeout(deadline_monotonic, 300), "UNISCENARIO_ARTIFACT_UPLOAD_HOSTS") as response:
-                    _verify_response_url(response, url, "UNISCENARIO_ARTIFACT_UPLOAD_HOSTS")
+                with _open_artifact(request, _remaining_timeout(deadline_monotonic, 300), "ARTIFACT_UPLOAD_HOSTS") as response:
+                    _verify_response_url(response, url, "ARTIFACT_UPLOAD_HOSTS")
                     if not 200 <= response.status < 300:
                         raise RuntimeError(f"artifact upload failed with HTTP {response.status}")
             except urllib.error.HTTPError as exc:

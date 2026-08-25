@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Deprecated wire alias: pre-SimForge clients are forwarded to the single canonical handler tree.
+  async rewrites() {
+    return [
+      {
+        source: "/api/uniscenario/:path*",
+        destination: "/api/simforge/:path*",
+      },
+    ];
+  },
   allowedDevOrigins: [
     "127.0.0.1",
     "100.72.252.40",

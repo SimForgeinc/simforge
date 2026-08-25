@@ -40,33 +40,33 @@ const DATASET_SELECT = `SELECT d.id, d.workspace_id, d.name, d.description,
   d.created_at::text AS created_at, d.updated_at::text AS updated_at,
   COALESCE(NULLIF(BTRIM(author.name), ''), NULLIF(BTRIM(author.email), '')) AS created_by_user_name,
   COALESCE(NULLIF(BTRIM(editor.name), ''), NULLIF(BTRIM(editor.email), '')) AS updated_by_user_name,
-  (SELECT COUNT(*)::int FROM uniscenario.dataset_items di
+  (SELECT COUNT(*)::int FROM simforge.dataset_items di
      WHERE di.workspace_id = d.workspace_id AND di.dataset_id = d.id) AS item_count,
-  (SELECT COUNT(*)::int FROM uniscenario.documents doc
+  (SELECT COUNT(*)::int FROM simforge.documents doc
      WHERE doc.workspace_id = d.workspace_id AND doc.dataset_id = d.id
        AND doc.deleted_at IS NULL) AS document_count,
-  (SELECT COUNT(*)::int FROM uniscenario.render_jobs rj
-     JOIN uniscenario.revisions rev
+  (SELECT COUNT(*)::int FROM simforge.render_jobs rj
+     JOIN simforge.revisions rev
        ON rev.id = rj.revision_id AND rev.workspace_id = rj.workspace_id
-     JOIN uniscenario.documents doc
+     JOIN simforge.documents doc
        ON doc.id = rev.document_id AND doc.workspace_id = rev.workspace_id
      WHERE doc.workspace_id = d.workspace_id AND doc.dataset_id = d.id
        AND doc.deleted_at IS NULL) AS render_submitted_count,
-  (SELECT COUNT(*)::int FROM uniscenario.render_jobs rj
-     JOIN uniscenario.revisions rev
+  (SELECT COUNT(*)::int FROM simforge.render_jobs rj
+     JOIN simforge.revisions rev
        ON rev.id = rj.revision_id AND rev.workspace_id = rj.workspace_id
-     JOIN uniscenario.documents doc
+     JOIN simforge.documents doc
        ON doc.id = rev.document_id AND doc.workspace_id = rev.workspace_id
      WHERE doc.workspace_id = d.workspace_id AND doc.dataset_id = d.id
        AND doc.deleted_at IS NULL AND rj.job_state = 'succeeded') AS render_completed_count,
-  (SELECT COUNT(*)::int FROM uniscenario.exports ex
-     JOIN uniscenario.revisions rev
+  (SELECT COUNT(*)::int FROM simforge.exports ex
+     JOIN simforge.revisions rev
        ON rev.id = ex.revision_id AND rev.workspace_id = ex.workspace_id
-     JOIN uniscenario.documents doc
+     JOIN simforge.documents doc
        ON doc.id = rev.document_id AND doc.workspace_id = rev.workspace_id
      WHERE doc.workspace_id = d.workspace_id AND doc.dataset_id = d.id
        AND doc.deleted_at IS NULL AND ex.export_state = 'succeeded') AS export_completed_count
-  FROM uniscenario.datasets d
+  FROM simforge.datasets d
   LEFT JOIN public.ba_user author ON author.id = d.created_by_user_id
   LEFT JOIN public.ba_user editor ON editor.id = d.updated_by_user_id`;
 
@@ -133,7 +133,7 @@ export async function ensureDefaultScenarioDataset(context: AppContext) {
     });
 
     const current = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.datasets
+      `SELECT id FROM simforge.datasets
        WHERE workspace_id = :workspace_id AND is_default = TRUE AND deleted_at IS NULL
        LIMIT 1`,
       { workspace_id: context.workspaceId },
@@ -141,14 +141,14 @@ export async function ensureDefaultScenarioDataset(context: AppContext) {
     if (current) return current.id;
 
     const named = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.datasets
+      `SELECT id FROM simforge.datasets
        WHERE workspace_id = :workspace_id AND name = :name
        LIMIT 1`,
       { workspace_id: context.workspaceId, name: DEFAULT_SCENARIO_DATASET_NAME },
     );
     if (named) {
       await tx.execute(
-        `UPDATE uniscenario.datasets
+        `UPDATE simforge.datasets
          SET description = COALESCE(description, :description),
              is_default = TRUE,
              deleted_at = NULL,
@@ -168,7 +168,7 @@ export async function ensureDefaultScenarioDataset(context: AppContext) {
 
     const id = scenarioId("usds");
     await tx.execute(
-      `INSERT INTO uniscenario.datasets (
+      `INSERT INTO simforge.datasets (
          id, workspace_id, name, description, is_default,
          created_by_user_id, updated_by_user_id
        ) VALUES (
@@ -215,7 +215,7 @@ export async function createScenarioDataset(
   // this code would have to pattern-match. Note the constraint is not partial, so a soft-deleted
   // dataset still holds its name.
   const inserted = await queryRows<{ id: string }>(
-    `INSERT INTO uniscenario.datasets (
+    `INSERT INTO simforge.datasets (
        id, workspace_id, name, description, created_by_user_id, updated_by_user_id
      ) VALUES (:id, :workspace_id, :name, :description, :user_id, :user_id)
      ON CONFLICT (workspace_id, name) DO NOTHING
@@ -241,7 +241,7 @@ export async function updateScenarioDataset(
 ): Promise<ScenarioDatasetWriteResult> {
   if (input.name !== undefined) {
     const clash = await queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.datasets
+      `SELECT id FROM simforge.datasets
        WHERE workspace_id = :workspace_id AND name = :name AND id <> :dataset_id
        LIMIT 1`,
       { workspace_id: context.workspaceId, name: input.name, dataset_id: datasetId },
@@ -249,7 +249,7 @@ export async function updateScenarioDataset(
     if (clash) return { kind: "name_conflict" };
   }
   const updated = await queryRows<{ id: string }>(
-    `UPDATE uniscenario.datasets
+    `UPDATE simforge.datasets
      SET name = COALESCE(:name, name),
          description = CASE WHEN :description_provided THEN :description ELSE description END,
          updated_by_user_id = :user_id,
@@ -274,7 +274,7 @@ export async function updateScenarioDataset(
 /**
  * Soft-delete a dataset and its documents in ONE transaction.
  *
- * `uniscenario.documents.dataset_id` is `ON DELETE RESTRICT`, and v2 soft-deletes rather than
+ * `simforge.documents.dataset_id` is `ON DELETE RESTRICT`, and v2 soft-deletes rather than
  * hard-deletes (§6.7.5), so leaving child documents live would strand them: unreachable through
  * any dataset list, yet still counted by any query that does not filter on the parent. Both
  * writes must land together or neither does.
@@ -282,7 +282,7 @@ export async function updateScenarioDataset(
 export async function softDeleteScenarioDataset(context: AppContext, datasetId: string) {
   return withTransaction(async (tx) => {
     const rows = await tx.queryRows<{ id: string }>(
-      `UPDATE uniscenario.datasets
+      `UPDATE simforge.datasets
        SET deleted_at = NOW(), deleted_by_user_id = :user_id, updated_by_user_id = :user_id,
            updated_at = NOW()
        WHERE workspace_id = :workspace_id AND id = :dataset_id AND deleted_at IS NULL
@@ -291,7 +291,7 @@ export async function softDeleteScenarioDataset(context: AppContext, datasetId: 
     );
     if (rows.length === 0) return { kind: "not_found" as const };
     const documents = await tx.queryRows<{ id: string }>(
-      `UPDATE uniscenario.documents
+      `UPDATE simforge.documents
        SET deleted_at = NOW(), deleted_by_user_id = :user_id, updated_by_user_id = :user_id,
            updated_at = NOW()
        WHERE workspace_id = :workspace_id AND dataset_id = :dataset_id AND deleted_at IS NULL
@@ -311,7 +311,7 @@ export async function getScenarioDatasetReadiness(
   datasetId: string,
 ): Promise<ScenarioDatasetReadinessDto | null> {
   const dataset = await queryOne<{ id: string }>(
-    `SELECT id FROM uniscenario.datasets
+    `SELECT id FROM simforge.datasets
      WHERE workspace_id = :workspace_id AND id = :dataset_id AND deleted_at IS NULL
      LIMIT 1`,
     { workspace_id: context.workspaceId, dataset_id: datasetId },
@@ -334,13 +334,13 @@ export async function addScenarioDatasetItem(
   input: { revisionId: string; renderJobId?: string | null; metadata?: Record<string, unknown> },
 ) {
   const rows = await queryRows<{ id: string }>(
-    `INSERT INTO uniscenario.dataset_items (
+    `INSERT INTO simforge.dataset_items (
        id, workspace_id, dataset_id, revision_id, render_job_id, metadata, created_by_user_id
      )
      SELECT :id, d.workspace_id, d.id, r.id, j.id, CAST(:metadata AS jsonb), :user_id
-     FROM uniscenario.datasets d
-     JOIN uniscenario.revisions r ON r.workspace_id = d.workspace_id AND r.id = :revision_id
-     LEFT JOIN uniscenario.render_jobs j
+     FROM simforge.datasets d
+     JOIN simforge.revisions r ON r.workspace_id = d.workspace_id AND r.id = :revision_id
+     LEFT JOIN simforge.render_jobs j
        ON j.workspace_id = d.workspace_id AND j.id = :render_job_id AND j.revision_id = r.id
      WHERE d.workspace_id = :workspace_id AND d.id = :dataset_id AND d.deleted_at IS NULL
        -- PGlite: untyped parameter in IS NOT NULL
@@ -412,7 +412,7 @@ export async function resolveScenarioDatasetAccess(
   const row = await queryOne<DatasetAccessRow>(
     `SELECT d.id, d.workspace_id, d.visibility, d.is_system_managed,
        w.auth_organization_id AS organization_id
-     FROM uniscenario.datasets d
+     FROM simforge.datasets d
      JOIN public.workspaces w ON w.id = d.workspace_id
      WHERE d.id = :dataset_id AND d.deleted_at IS NULL
      LIMIT 1`,
@@ -460,7 +460,7 @@ export async function resolveScenarioDocumentDatasetAccess(
   documentId: string,
 ): Promise<ScenarioDatasetAccess | null> {
   const row = await queryOne<{ dataset_id: string }>(
-    `SELECT dataset_id FROM uniscenario.documents
+    `SELECT dataset_id FROM simforge.documents
      WHERE id = :document_id AND deleted_at IS NULL
      LIMIT 1`,
     { document_id: documentId },
@@ -476,8 +476,8 @@ export async function resolveScenarioRevisionDatasetAccess(
 ): Promise<ScenarioDatasetAccess | null> {
   const row = await queryOne<{ dataset_id: string }>(
     `SELECT doc.dataset_id
-     FROM uniscenario.revisions rev
-     JOIN uniscenario.documents doc
+     FROM simforge.revisions rev
+     JOIN simforge.documents doc
        ON doc.id = rev.document_id AND doc.workspace_id = rev.workspace_id
      WHERE rev.id = :revision_id AND doc.deleted_at IS NULL
      LIMIT 1`,
@@ -494,10 +494,10 @@ export async function resolveScenarioRenderJobDatasetAccess(
 ): Promise<ScenarioDatasetAccess | null> {
   const row = await queryOne<{ dataset_id: string }>(
     `SELECT doc.dataset_id
-     FROM uniscenario.render_jobs rj
-     JOIN uniscenario.revisions rev
+     FROM simforge.render_jobs rj
+     JOIN simforge.revisions rev
        ON rev.id = rj.revision_id AND rev.workspace_id = rj.workspace_id
-     JOIN uniscenario.documents doc
+     JOIN simforge.documents doc
        ON doc.id = rev.document_id AND doc.workspace_id = rev.workspace_id
      WHERE rj.id = :render_job_id AND doc.deleted_at IS NULL
      LIMIT 1`,

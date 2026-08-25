@@ -10,7 +10,7 @@ import {
 } from "@/app/lib/local-belmont-override";
 import { S3_BUCKET } from "@/app/lib/s3/s3-config";
 import { headS3ObjectInfo } from "@/app/lib/s3/s3-get-object";
-import { browserAssetRedirectCacheControl } from "@/app/api/uniscenario/maps/[mapVersionId]/browser-assets/[...assetPath]/route";
+import { browserAssetRedirectCacheControl } from "@/app/api/simforge/maps/[mapVersionId]/browser-assets/[...assetPath]/route";
 
 type RouteContext = { params: Promise<{ mapAssetId: string; path: string[] }> };
 

@@ -56,7 +56,7 @@ function readSignalProjection(mapVersionId: string) {
   if (existing) return existing;
   const pending = (async () => {
     const response = await fetch(
-      `/api/uniscenario/maps/${encodeURIComponent(mapVersionId)}/signal-control`,
+      `/api/simforge/maps/${encodeURIComponent(mapVersionId)}/signal-control`,
     );
     if (response.status === 404) return null;
     if (!response.ok) {

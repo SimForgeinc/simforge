@@ -14,6 +14,7 @@ import {
   withScenarioJobTransaction,
   type JobTransaction,
 } from "./jobs/lifecycle-lock";
+import { simforgeEnv } from "@/lib/compat-env";
 
 const OUTPUT_KIND = {
   xosc: "compiled-xosc",
@@ -100,7 +101,7 @@ function validateCompilerArtifactClosure(rows: CompilerArtifactRow[], declaredAr
   return byKind;
 }
 
-function artifactBucket() { return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts"; }
+function artifactBucket() { return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts"; }
 
 async function insertCompilerEvent(
   tx: JobTransaction,
@@ -113,12 +114,12 @@ async function insertCompilerEvent(
   },
 ) {
   await tx.execute(
-    `INSERT INTO uniscenario.operational_job_events (
+    `INSERT INTO simforge.operational_job_events (
        id, workspace_id, job_family, job_id, attempt_id,
        event_ordinal, event_type, event_payload
      ) SELECT :id, :workspace_id, 'openscenario_compile', :job_id, :attempt_id,
               COALESCE(MAX(event_ordinal), 0) + 1, :event_type, CAST(:payload AS jsonb)
-         FROM uniscenario.operational_job_events
+         FROM simforge.operational_job_events
         WHERE job_family = 'openscenario_compile' AND job_id = :job_id`,
     {
       id: scenarioId("usoe"),
@@ -133,14 +134,14 @@ async function insertCompilerEvent(
 
 async function expireCompilerAttempts() {
   const candidates = await queryRows<{ id: string }>(
-    `SELECT e.id FROM uniscenario.exports e
+    `SELECT e.id FROM simforge.exports e
       WHERE e.export_state = 'running' AND (
         EXISTS (
-          SELECT 1 FROM uniscenario.export_attempts attempt
+          SELECT 1 FROM simforge.export_attempts attempt
            WHERE attempt.export_id = e.id AND attempt.attempt_state = 'active'
              AND attempt.expires_at <= NOW()
         ) OR NOT EXISTS (
-          SELECT 1 FROM uniscenario.export_attempts attempt
+          SELECT 1 FROM simforge.export_attempts attempt
            WHERE attempt.export_id = e.id AND attempt.attempt_state = 'active'
         )
       ) ORDER BY e.updated_at, e.id LIMIT 100`,
@@ -148,11 +149,11 @@ async function expireCompilerAttempts() {
   for (const candidate of candidates) {
     await withScenarioJobTransaction(candidate.id, async (tx) => {
       const expiredAttempt = await tx.queryOne<{ id: string }>(
-        `UPDATE uniscenario.export_attempts attempt
+        `UPDATE simforge.export_attempts attempt
          SET attempt_state = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE 'expired' END,
              completed_at = NOW(),
              failure_code = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE failure_code END
-         FROM uniscenario.exports job
+         FROM simforge.exports job
          WHERE job.id = :export_id AND attempt.export_id = job.id AND attempt.attempt_state = 'active'
            AND attempt.expires_at <= NOW()
          RETURNING attempt.id`,
@@ -163,7 +164,7 @@ async function expireCompilerAttempts() {
         workspace_id: string;
         state: "queued" | "failed" | "cancelled";
       }>(
-        `UPDATE uniscenario.exports e SET
+        `UPDATE simforge.exports e SET
            export_state = CASE
              WHEN e.cancel_requested_at IS NOT NULL THEN 'cancelled'
              WHEN e.attempt_count < e.max_attempts THEN 'queued'
@@ -180,7 +181,7 @@ async function expireCompilerAttempts() {
            END,
            updated_at = NOW()
          WHERE e.id = :export_id AND e.export_state = 'running' AND NOT EXISTS (
-           SELECT 1 FROM uniscenario.export_attempts a
+           SELECT 1 FROM simforge.export_attempts a
            WHERE a.export_id = e.id AND a.attempt_state = 'active'
          )
          RETURNING e.id, e.workspace_id, e.export_state AS state`,
@@ -218,14 +219,14 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
   await expireCompilerAttempts();
   const candidates = await queryRows<{ id: string }>(
     `SELECT e.id
-       FROM uniscenario.exports e
-       JOIN uniscenario.revisions r ON r.id = e.revision_id AND r.workspace_id = e.workspace_id
-       JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
+       FROM simforge.exports e
+       JOIN simforge.revisions r ON r.id = e.revision_id AND r.workspace_id = e.workspace_id
+       JOIN simforge.map_versions mv ON mv.id = r.map_version_id
        JOIN public.map_assets ma ON ma.id = mv.source_map_asset_id
-       JOIN uniscenario.asset_catalog_versions acv
+       JOIN simforge.asset_catalog_versions acv
          ON acv.id = mv.asset_catalog_version_id
         AND (acv.workspace_id IS NULL OR acv.workspace_id = mv.workspace_id)
-       JOIN uniscenario.artifacts ta ON ta.id = e.materialized_traffic_artifact_id
+       JOIN simforge.artifacts ta ON ta.id = e.materialized_traffic_artifact_id
          AND ta.workspace_id = e.workspace_id AND ta.artifact_state = 'available'
       WHERE e.export_state = 'queued' AND e.cancel_requested_at IS NULL
         AND e.attempt_count < e.max_attempts
@@ -275,14 +276,14 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
          e.materialized_traffic_artifact_id, e.materialized_traffic_sha256,
          e.materialized_traffic_size_bytes, e.materialized_traffic_source_input_digest,
          ta.storage_bucket AS traffic_bucket, ta.storage_key AS traffic_key, e.attempt_count
-       FROM uniscenario.exports e
-       JOIN uniscenario.revisions r ON r.id = e.revision_id AND r.workspace_id = e.workspace_id
-       JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
+       FROM simforge.exports e
+       JOIN simforge.revisions r ON r.id = e.revision_id AND r.workspace_id = e.workspace_id
+       JOIN simforge.map_versions mv ON mv.id = r.map_version_id
        JOIN public.map_assets ma ON ma.id = mv.source_map_asset_id
-       JOIN uniscenario.asset_catalog_versions acv
+       JOIN simforge.asset_catalog_versions acv
          ON acv.id = mv.asset_catalog_version_id
         AND (acv.workspace_id IS NULL OR acv.workspace_id = mv.workspace_id)
-       JOIN uniscenario.artifacts ta ON ta.id = e.materialized_traffic_artifact_id
+       JOIN simforge.artifacts ta ON ta.id = e.materialized_traffic_artifact_id
          AND ta.workspace_id = e.workspace_id AND ta.artifact_state = 'available'
        WHERE e.id = :export_id AND e.export_state = 'queued' AND e.cancel_requested_at IS NULL
          AND e.attempt_count < e.max_attempts
@@ -315,7 +316,7 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
     );
     if (!expiry) throw new Error("Unable to compute compiler lease expiry.");
     await tx.execute(
-      `INSERT INTO uniscenario.export_attempts (
+      `INSERT INTO simforge.export_attempts (
          id, workspace_id, export_id, attempt_number, worker_id, fence_token_sha256, expires_at
        ) VALUES (
          :id, :workspace_id, :export_id, :attempt_number, :worker_id, :fence_token_sha256,
@@ -332,7 +333,7 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
       },
     );
     const advanced = await tx.queryOne<{ id: string }>(
-      `UPDATE uniscenario.exports SET export_state = 'running', attempt_count = attempt_count + 1,
+      `UPDATE simforge.exports SET export_state = 'running', attempt_count = attempt_count + 1,
          started_at = COALESCE(started_at, NOW()), updated_at = NOW(), error_code = NULL, error_detail = NULL
        WHERE id = :export_id AND export_state = 'queued' AND cancel_requested_at IS NULL
        RETURNING id`,
@@ -360,14 +361,14 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
   const artifacts = await queryRows<MapArtifactRow>(
     `SELECT a.id, a.artifact_kind, a.media_type, a.storage_bucket, a.storage_key,
        a.sha256, a.byte_length
-     FROM uniscenario.map_versions mv
-     JOIN uniscenario.asset_catalog_versions acv
+     FROM simforge.map_versions mv
+     JOIN simforge.asset_catalog_versions acv
        ON acv.id = mv.asset_catalog_version_id AND acv.workspace_id = mv.workspace_id
      CROSS JOIN LATERAL unnest(ARRAY[
        mv.xodr_artifact_id, mv.topology_artifact_id, mv.derived_topology_artifact_id,
        mv.locations_artifact_id, mv.signals_artifact_id, acv.manifest_artifact_id
      ]) WITH ORDINALITY AS ids(artifact_id, ordinal)
-     JOIN uniscenario.artifacts a ON a.id = ids.artifact_id
+     JOIN simforge.artifacts a ON a.id = ids.artifact_id
        AND a.workspace_id = mv.workspace_id AND a.artifact_state = 'available'
      WHERE mv.id = :map_version_id
      ORDER BY ids.ordinal`,
@@ -474,8 +475,8 @@ export async function claimCompilerExport(input: { workerId: string; leaseSecond
 
 async function activeAttempt(exportId: string, attemptId: string, fenceToken: string) {
   const rows = await queryRows<{ id: string }>(
-    `SELECT attempt.id FROM uniscenario.export_attempts attempt
-       JOIN uniscenario.exports job ON job.id = attempt.export_id
+    `SELECT attempt.id FROM simforge.export_attempts attempt
+       JOIN simforge.exports job ON job.id = attempt.export_id
      WHERE attempt.id = :attempt_id AND attempt.export_id = :export_id
        AND attempt.attempt_state = 'active' AND attempt.expires_at > NOW()
        AND attempt.fence_token_sha256 = :fence_token_sha256
@@ -492,9 +493,9 @@ async function activeAttempt(exportId: string, attemptId: string, fenceToken: st
 export async function heartbeatCompilerExport(exportId: string, input: { attemptId: string; fenceToken: string; leaseSeconds: number }) {
   return withScenarioJobTransaction(exportId, async (tx) => {
     const rows = await tx.queryRows<{ expires_at: string }>(
-      `UPDATE uniscenario.export_attempts attempt SET heartbeat_at = NOW(),
+      `UPDATE simforge.export_attempts attempt SET heartbeat_at = NOW(),
          expires_at = NOW() + (:lease_seconds * INTERVAL '1 second')
-       FROM uniscenario.exports job
+       FROM simforge.exports job
        WHERE attempt.id = :attempt_id AND attempt.export_id = :export_id
          AND attempt.attempt_state = 'active' AND attempt.expires_at > NOW()
          AND attempt.fence_token_sha256 = :fence_token_sha256
@@ -532,8 +533,8 @@ export async function reserveCompilerOutputs(
   const reserved = await withScenarioJobTransaction(exportId, async (tx) => {
     const owner = await tx.queryOne<{ workspace_id: string; revision_id: string }>(
       `SELECT job.workspace_id, job.revision_id
-         FROM uniscenario.exports job
-         JOIN uniscenario.export_attempts attempt ON attempt.export_id = job.id
+         FROM simforge.exports job
+         JOIN simforge.export_attempts attempt ON attempt.export_id = job.id
         WHERE job.id = :export_id AND job.export_state = 'running'
           AND job.cancel_requested_at IS NULL
           AND attempt.id = :attempt_id AND attempt.attempt_state = 'active'
@@ -559,7 +560,7 @@ export async function reserveCompilerOutputs(
         storage_bucket: string;
         storage_key: string;
       }>(
-        `INSERT INTO uniscenario.artifacts (
+        `INSERT INTO simforge.artifacts (
          id, workspace_id, revision_id, artifact_kind, media_type, storage_bucket,
          storage_key, sha256, byte_length, artifact_state, metadata,
          producer_job_family, producer_job_id, producer_attempt_id, provenance
@@ -595,7 +596,7 @@ export async function reserveCompilerOutputs(
       const row = rows[0];
       if (!row) throw new Error("Compiler artifact reservation failed.");
       await tx.execute(
-        `INSERT INTO uniscenario.operational_job_artifact_links (
+        `INSERT INTO simforge.operational_job_artifact_links (
          id, workspace_id, artifact_id, job_family, job_id, attempt_id, relationship
        ) VALUES (
          :id, :workspace_id, :artifact_id, 'openscenario_compile', :job_id, :attempt_id,
@@ -639,10 +640,10 @@ export async function completeCompilerExport(
   if (!(await activeAttempt(exportId, input.attemptId, input.fenceToken))) return null;
   const rows = await queryRows<CompilerArtifactRow>(
     `SELECT a.id, a.artifact_kind, a.storage_bucket, a.storage_key, a.sha256, a.byte_length
-     FROM uniscenario.operational_job_artifact_links l
-     JOIN uniscenario.artifacts a
+     FROM simforge.operational_job_artifact_links l
+     JOIN simforge.artifacts a
        ON a.id = l.artifact_id AND a.workspace_id = l.workspace_id
-     JOIN uniscenario.exports e
+     JOIN simforge.exports e
        ON e.id = l.job_id AND e.workspace_id = l.workspace_id
      WHERE l.job_family = 'openscenario_compile'
        AND l.job_id = :export_id
@@ -689,10 +690,10 @@ export async function completeCompilerExport(
          e.ambient_config_sha256, e.ambient_result_sha256,
          e.materialized_traffic_artifact_id, e.materialized_traffic_sha256,
          e.materialized_traffic_source_input_digest
-       FROM uniscenario.exports e JOIN uniscenario.revisions r
+       FROM simforge.exports e JOIN simforge.revisions r
          ON r.id = e.revision_id AND r.workspace_id = e.workspace_id
-       JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
-       JOIN uniscenario.export_attempts a ON a.export_id = e.id
+       JOIN simforge.map_versions mv ON mv.id = r.map_version_id
+       JOIN simforge.export_attempts a ON a.export_id = e.id
        WHERE e.id = :export_id AND e.export_state = 'running' AND a.id = :attempt_id
          AND a.attempt_state = 'active' AND a.expires_at > NOW()
          AND e.cancel_requested_at IS NULL
@@ -707,8 +708,8 @@ export async function completeCompilerExport(
     if (!locked) return null;
     const lockedArtifacts = await tx.queryRows<CompilerArtifactRow>(
       `SELECT a.id, a.artifact_kind, a.storage_bucket, a.storage_key, a.sha256, a.byte_length
-       FROM uniscenario.operational_job_artifact_links l
-       JOIN uniscenario.artifacts a
+       FROM simforge.operational_job_artifact_links l
+       JOIN simforge.artifacts a
          ON a.id = l.artifact_id AND a.workspace_id = l.workspace_id
        WHERE l.job_family = 'openscenario_compile'
          AND l.job_id = :export_id
@@ -737,10 +738,10 @@ export async function completeCompilerExport(
       throw new Error("materialized_traffic_source_input_digest_mismatch");
     }
     await tx.execute(
-      `UPDATE uniscenario.artifacts a SET artifact_state = 'available', verified_at = NOW()
+      `UPDATE simforge.artifacts a SET artifact_state = 'available', verified_at = NOW()
        WHERE a.id = ANY(string_to_array(:artifact_ids, ','))
          AND EXISTS (
-           SELECT 1 FROM uniscenario.operational_job_artifact_links l
+           SELECT 1 FROM simforge.operational_job_artifact_links l
            WHERE l.artifact_id = a.id AND l.workspace_id = a.workspace_id
              AND l.job_family = 'openscenario_compile'
              AND l.job_id = :export_id AND l.attempt_id = :attempt_id
@@ -752,7 +753,7 @@ export async function completeCompilerExport(
       },
     );
     const insertedPackage = await tx.queryOne<{ id: string }>(
-      `INSERT INTO uniscenario.execution_packages AS existing (
+      `INSERT INTO simforge.execution_packages AS existing (
          id, workspace_id, revision_id, xosc_artifact_id, xodr_artifact_id,
          asset_catalog_version_id, package_artifact_id,
          manifest_sha256, xsd_sha256, ambient_mode, ambient_runtime_version,
@@ -801,7 +802,7 @@ export async function completeCompilerExport(
     );
     if (!insertedPackage) throw new Error("execution_package_finalize_failed");
     await tx.execute(
-      `UPDATE uniscenario.exports SET export_state = 'succeeded', progress = 1, artifact_id = :artifact_id,
+      `UPDATE simforge.exports SET export_state = 'succeeded', progress = 1, artifact_id = :artifact_id,
          execution_package_id = :package_id, completed_at = NOW(), updated_at = NOW()
        WHERE id = :export_id`,
       {
@@ -811,7 +812,7 @@ export async function completeCompilerExport(
       },
     );
     await tx.execute(
-      `UPDATE uniscenario.export_attempts SET attempt_state = 'succeeded', completed_at = NOW()
+      `UPDATE simforge.export_attempts SET attempt_state = 'succeeded', completed_at = NOW()
        WHERE id = :attempt_id`,
       { attempt_id: input.attemptId },
     );
@@ -842,7 +843,7 @@ export async function failCompilerExport(
   return withScenarioJobTransaction(exportId, async (tx) => {
     const current = await tx.queryOne<{ retry: boolean; workspace_id: string }>(
       `SELECT (e.attempt_count < e.max_attempts) AS retry, e.workspace_id
-       FROM uniscenario.exports e JOIN uniscenario.export_attempts a ON a.export_id = e.id
+       FROM simforge.exports e JOIN simforge.export_attempts a ON a.export_id = e.id
        WHERE e.id = :export_id AND a.id = :attempt_id AND a.attempt_state = 'active'
          AND a.expires_at > NOW()
          AND e.cancel_requested_at IS NULL
@@ -855,12 +856,12 @@ export async function failCompilerExport(
     );
     if (!current) return null;
     await tx.execute(
-      `UPDATE uniscenario.export_attempts SET attempt_state = 'failed', completed_at = NOW(),
+      `UPDATE simforge.export_attempts SET attempt_state = 'failed', completed_at = NOW(),
          failure_code = :code, failure_detail = CAST(:detail AS jsonb) WHERE id = :attempt_id`,
       { attempt_id: input.attemptId, code: input.code, detail: input.detail },
     );
     await tx.execute(
-      `UPDATE uniscenario.exports SET export_state = :state, error_code = :code,
+      `UPDATE simforge.exports SET export_state = :state, error_code = :code,
          error_detail = CAST(:detail AS jsonb), completed_at = CASE WHEN :retry THEN NULL ELSE NOW() END,
          updated_at = NOW() WHERE id = :export_id`,
       {
@@ -888,8 +889,8 @@ export async function cancelCompilerExport(
 ) {
   return withScenarioJobTransaction(exportId, async (tx) => {
     const attempt = await tx.queryOne<{ workspace_id: string }>(
-      `SELECT e.workspace_id FROM uniscenario.exports e
-        JOIN uniscenario.export_attempts a ON a.export_id = e.id
+      `SELECT e.workspace_id FROM simforge.exports e
+        JOIN simforge.export_attempts a ON a.export_id = e.id
        WHERE e.id = :job_id AND a.id = :attempt_id AND a.attempt_state = 'active'
          AND a.expires_at > NOW() AND a.fence_token_sha256 = :fence_token_sha256
        FOR UPDATE OF e, a`,
@@ -901,12 +902,12 @@ export async function cancelCompilerExport(
     );
     if (!attempt) return null;
     await tx.execute(
-      `UPDATE uniscenario.export_attempts SET attempt_state = 'cancelled', completed_at = NOW(),
+      `UPDATE simforge.export_attempts SET attempt_state = 'cancelled', completed_at = NOW(),
          failure_code = 'cancelled' WHERE id = :attempt_id`,
       { attempt_id: input.attemptId },
     );
     await tx.execute(
-      `UPDATE uniscenario.exports SET export_state = 'cancelled', completed_at = NOW(),
+      `UPDATE simforge.exports SET export_state = 'cancelled', completed_at = NOW(),
          updated_at = NOW(), error_code = 'cancelled' WHERE id = :job_id`,
       { job_id: exportId },
     );

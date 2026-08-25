@@ -82,11 +82,11 @@ export type DerivedTopologyConflicts = {
 };
 
 export type ReadEditorSignalControlInput = {
-  /** `uniscenario.map_versions.id`. */
+  /** `simforge.map_versions.id`. */
   readonly mapVersionId: string;
   /** The compiler's map id, i.e. what `MapSignalPlan.binding.mapId` must equal. */
   readonly mapId: string;
-  /** `uniscenario.map_versions.xodr_sha256`, echoed into the projection. */
+  /** `simforge.map_versions.xodr_sha256`, echoed into the projection. */
   readonly xodrSha256: string;
   /** The map version's XODR text. */
   readonly xodr: string;

@@ -2,6 +2,7 @@ import { homedir, hostname } from "node:os";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { simforgeEnv } from "../lib/compat-env";
 
 import type { RenderProgressRecord } from "@simforge/render";
 
@@ -17,8 +18,8 @@ export type LocalWorkerHandle = {
 
 export function startLocalWorker(baseUrl: string | URL): LocalWorkerHandle {
   const controller = new AbortController();
-  const token = process.env.UNISCENARIO_RENDER_WORKER_TOKEN?.trim() || "simforge-local-worker";
-  const workerId = process.env.UNISCENARIO_RENDER_WORKER_ID?.trim()
+  const token = simforgeEnv("RENDER_WORKER_TOKEN")?.trim() || "simforge-local-worker";
+  const workerId = simforgeEnv("RENDER_WORKER_ID")?.trim()
     || `local-${hostname().replace(/[^A-Za-z0-9._:-]/g, "-")}-${process.pid}`;
   const client = new CpuJobsClient(new URL(baseUrl), token, workerId);
   const done = Promise.all([
@@ -59,7 +60,7 @@ async function runClaimLoop(client: CpuJobsClient, signal: AbortSignal): Promise
 }
 
 async function runClaim(client: CpuJobsClient, claim: CpuJobClaim, workerSignal: AbortSignal): Promise<void> {
-  const root = process.env.UNISCENARIO_LOCAL_WORKER_ROOT?.trim()
+  const root = simforgeEnv("LOCAL_WORKER_ROOT")?.trim()
     || join(homedir(), ".simforge", "cloud", "worker");
   const workspace = join(root, `${claim.jobId}-${claim.attemptId}`);
   await rm(workspace, { recursive: true, force: true });
@@ -193,7 +194,7 @@ function delay(milliseconds: number, signal: AbortSignal): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const baseUrl = process.env.UNISCENARIO_API_BASE_URL?.trim() || "http://127.0.0.1:5199";
+  const baseUrl = simforgeEnv("API_BASE_URL")?.trim() || "http://127.0.0.1:5199";
   process.stdout.write(`${JSON.stringify({
     component: "simforge-local-render-worker",
     event: "worker.started",

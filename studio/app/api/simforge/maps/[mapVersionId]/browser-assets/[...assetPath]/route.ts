@@ -9,6 +9,7 @@ import {
   type ScenarioMapBrowserAsset,
 } from "@/app/lib/scenario/document-store";
 import { requireScenarioContext } from "@/app/lib/scenario/http";
+import { simforgeEnv } from "@/lib/compat-env";
 
 type Context = {
   params: Promise<{ mapVersionId: string; assetPath: string[] }>;
@@ -35,7 +36,7 @@ function developmentAssetCacheControl(nodeEnv = process.env.NODE_ENV) {
 }
 
 function maxAssetBytes() {
-  const value = Number(process.env.UNISCENARIO_BROWSER_ASSET_MAX_BYTES ?? DEFAULT_MAX_ASSET_BYTES);
+  const value = Number(simforgeEnv("BROWSER_ASSET_MAX_BYTES") ?? DEFAULT_MAX_ASSET_BYTES);
   return Number.isSafeInteger(value) && value > 0 ? value : DEFAULT_MAX_ASSET_BYTES;
 }
 

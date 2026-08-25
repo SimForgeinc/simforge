@@ -44,17 +44,17 @@ const GALLERY_SELECT = `
          rj.parent_render_job_id, rj.model_family,
          r.document_id, r.content_sha256, r.source_draft_version,
          (rj.progress * 100.0) AS progress_percent,
-         (SELECT count(*) FROM uniscenario.artifact_links al
+         (SELECT count(*) FROM simforge.artifact_links al
            WHERE al.workspace_id = rj.workspace_id AND al.render_job_id = rj.id) AS artifact_count,
          preview.artifact_id AS preview_artifact_id,
          preview.media_type AS preview_media_type
-    FROM uniscenario.render_jobs rj
-    JOIN uniscenario.revisions r
+    FROM simforge.render_jobs rj
+    JOIN simforge.revisions r
       ON r.id = rj.revision_id AND r.workspace_id = rj.workspace_id
     LEFT JOIN LATERAL (
       SELECT a.id AS artifact_id, a.media_type
-        FROM uniscenario.artifact_links al
-        JOIN uniscenario.artifacts a
+        FROM simforge.artifact_links al
+        JOIN simforge.artifacts a
           ON a.id = al.artifact_id AND a.workspace_id = al.workspace_id
        WHERE al.workspace_id = rj.workspace_id
          AND al.render_job_id = rj.id
@@ -243,7 +243,7 @@ export async function setRenderJobHidden(
   hidden: boolean,
 ) {
   const row = await queryOne<{ id: string; hidden_at: string | null; hidden_by_user_id: string | null }>(
-    `UPDATE uniscenario.render_jobs
+    `UPDATE simforge.render_jobs
         SET hidden_at = CASE WHEN :hidden THEN COALESCE(hidden_at, NOW()) ELSE NULL END,
             hidden_by_user_id = CASE WHEN :hidden THEN COALESCE(hidden_by_user_id, :user_id) ELSE NULL END,
             updated_at = NOW()
@@ -273,7 +273,7 @@ export async function setRenderJobHidden(
 export async function countHiddenRenderJobs(context: AppContext, revisionId?: string | null) {
   const row = await queryOne<{ hidden_count: number | string }>(
     `SELECT count(*) AS hidden_count
-       FROM uniscenario.render_jobs
+       FROM simforge.render_jobs
       WHERE workspace_id = :workspace_id
         AND hidden_at IS NOT NULL
         AND (CAST(:revision_id AS text) IS NULL OR revision_id = :revision_id)`,
@@ -295,8 +295,8 @@ export async function countHiddenRenderJobsForDocument(
 ) {
   const row = await queryOne<{ hidden_count: number | string }>(
     `SELECT count(*) AS hidden_count
-       FROM uniscenario.render_jobs rj
-       JOIN uniscenario.revisions r
+       FROM simforge.render_jobs rj
+       JOIN simforge.revisions r
          ON r.id = rj.revision_id AND r.workspace_id = rj.workspace_id
       WHERE rj.workspace_id = :workspace_id
         AND rj.hidden_at IS NOT NULL

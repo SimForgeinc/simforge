@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ._compat_env import simforge_env
 import argparse
 import hashlib
 import json
@@ -510,7 +511,7 @@ def _validate_pronto_sensor_selection(
             raise ContractError(
                 "CARLA review mode requires exactly one camera, one LiDAR, and one radar on sensorHost.actorId"
             )
-    elif os.environ.get("UNISCENARIO_SDG_EXPANSION") == "1":
+    elif simforge_env("SDG_EXPANSION") == "1":
         rgb_ids = {sensor.sensor_id for sensor in sensors if sensor.modality == "rgb"}
         derived = {
             name: tuple(name.split("__"))
@@ -635,7 +636,7 @@ def _intent_lease(
         _validate_pronto_sensor_selection(
             parsed_spec.sensors,
             host_actor_id,
-            representative=os.environ.get("UNISCENARIO_RENDER_SMOKE") == "1",
+            representative=simforge_env("RENDER_SMOKE") == "1",
         )
     xosc_path = inputs.get("scenario.xosc")
     if xosc_path is None:

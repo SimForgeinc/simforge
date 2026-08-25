@@ -75,16 +75,16 @@ export async function upsertScenarioDocumentRating(
   },
 ) {
   const rows = await queryRows<RatingRow>(
-    `INSERT INTO uniscenario.document_ratings (
+    `INSERT INTO simforge.document_ratings (
        id, workspace_id, document_id, revision_id, render_job_id, rater_user_id,
        score, comment, reviewed_via
      )
      SELECT :id, d.workspace_id, d.id, rev.id, rj.id, :user_id,
        :score, :comment, :reviewed_via
-     FROM uniscenario.documents d
-     LEFT JOIN uniscenario.revisions rev
+     FROM simforge.documents d
+     LEFT JOIN simforge.revisions rev
        ON rev.workspace_id = d.workspace_id AND rev.document_id = d.id AND rev.id = :revision_id
-     LEFT JOIN uniscenario.render_jobs rj
+     LEFT JOIN simforge.render_jobs rj
        ON rj.workspace_id = d.workspace_id AND rj.id = :render_job_id
      WHERE d.workspace_id = :workspace_id AND d.id = :document_id AND d.deleted_at IS NULL
        -- PGlite: untyped parameter in IS NOT NULL
@@ -119,7 +119,7 @@ export async function deleteScenarioDocumentRating(
   documentId: string,
 ) {
   const rows = await queryRows<{ document_id: string }>(
-    `DELETE FROM uniscenario.document_ratings
+    `DELETE FROM simforge.document_ratings
      WHERE workspace_id = :workspace_id AND document_id = :document_id
        AND rater_user_id = :user_id
      RETURNING document_id`,
@@ -144,7 +144,7 @@ export async function getScenarioRatingAggregate(
 /**
  * Batch aggregate for the list view, so N rows cost one query rather than N.
  *
- * Reads `uniscenario.document_review_state_v`, which carries v1's exact semantics: zero ratings is
+ * Reads `simforge.document_review_state_v`, which carries v1's exact semantics: zero ratings is
  * pending, any single score below four rejects, otherwise accepted.
  */
 export async function listScenarioRatingAggregates(
@@ -171,8 +171,8 @@ export async function listScenarioRatingAggregates(
 
 const AGGREGATE_SELECT = `SELECT v.document_id, v.rating_count, v.average_score,
     v.minimum_score, v.review_state,
-    (SELECT r.score FROM uniscenario.document_ratings r
+    (SELECT r.score FROM simforge.document_ratings r
       WHERE r.workspace_id = v.workspace_id AND r.document_id = v.document_id
         AND r.rater_user_id = :user_id
       LIMIT 1) AS viewer_score
-  FROM uniscenario.document_review_state_v v`;
+  FROM simforge.document_review_state_v v`;

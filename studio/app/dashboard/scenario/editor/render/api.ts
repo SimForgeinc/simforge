@@ -52,7 +52,7 @@ export type WorkspaceArtifact = ScenarioRenderArtifactDto & { renderJobId: strin
 /** Either shape. Components that only display metadata accept both. */
 export type DisplayArtifact = PresignedArtifact | ArtifactMetadata | WorkspaceArtifact;
 
-const BASE = "/api/uniscenario/render-jobs";
+const BASE = "/api/simforge/render-jobs";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -199,7 +199,7 @@ export function prepareOpenScenarioExport(
   idempotencyKey: string,
   signal?: AbortSignal,
 ): Promise<ScenarioExportDto> {
-  return request("/api/uniscenario/exports", {
+  return request("/api/simforge/exports", {
     method: "POST",
     body: JSON.stringify({ revisionId, idempotencyKey }),
     signal,
@@ -211,7 +211,7 @@ export async function listOpenScenarioExports(
   signal?: AbortSignal,
 ): Promise<ScenarioExportDto[]> {
   const result = await request<{ exports: ScenarioExportDto[] }>(
-    `/api/uniscenario/exports?revisionId=${encodeURIComponent(revisionId)}`,
+    `/api/simforge/exports?revisionId=${encodeURIComponent(revisionId)}`,
     { signal },
   );
   return result.exports;
@@ -221,17 +221,17 @@ export function fetchOpenScenarioExport(
   exportId: string,
   signal?: AbortSignal,
 ): Promise<ScenarioExportDto> {
-  return request(`/api/uniscenario/exports/${encodeURIComponent(exportId)}`, { signal });
+  return request(`/api/simforge/exports/${encodeURIComponent(exportId)}`, { signal });
 }
 
 export function inspectOpenScenarioExport(
   exportId: string,
   signal?: AbortSignal,
 ): Promise<ScenarioExportInspectionDto> {
-  return request(`/api/uniscenario/exports/${encodeURIComponent(exportId)}/inspection`, { signal });
+  return request(`/api/simforge/exports/${encodeURIComponent(exportId)}/inspection`, { signal });
 }
 
-/** One `uniscenario.validation_runs` row, as returned by `/api/uniscenario/validation-runs`. */
+/** One `simforge.validation_runs` row, as returned by `/api/simforge/validation-runs`. */
 export type ScenarioValidationRunDto = {
   id: string;
   revision_id: string;
@@ -251,7 +251,7 @@ export async function listValidationRuns(
   signal?: AbortSignal,
 ): Promise<ScenarioValidationRunDto[]> {
   const body = await request<{ validationRuns: ScenarioValidationRunDto[] }>(
-    `/api/uniscenario/validation-runs?revisionId=${encodeURIComponent(revisionId)}`,
+    `/api/simforge/validation-runs?revisionId=${encodeURIComponent(revisionId)}`,
     { signal },
   );
   return body.validationRuns;
@@ -266,7 +266,7 @@ export function createValidationRun(
   },
   signal?: AbortSignal,
 ): Promise<ScenarioValidationRunDto> {
-  return request("/api/uniscenario/validation-runs", {
+  return request("/api/simforge/validation-runs", {
     method: "POST",
     body: JSON.stringify(input),
     signal,

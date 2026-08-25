@@ -115,7 +115,7 @@ export function groupDocumentsByMap(
       thumbnailUrl: descriptor?.thumbnailUrl
         ?? document.mapThumbnailUrl
         ?? (mapVersionId && document.mapThumbnailUrl === undefined
-          ? `/api/uniscenario/maps/${encodeURIComponent(mapVersionId)}/thumbnail`
+          ? `/api/simforge/maps/${encodeURIComponent(mapVersionId)}/thumbnail`
           : null),
     });
   }

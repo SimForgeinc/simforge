@@ -44,14 +44,15 @@ import {
   SCENARIO_PARITY_EVIDENCE_VERSION,
   SCENARIO_NATIVE_PHYSICS_ACCEPTANCE_LIMITS,
   SCENARIO_RENDER_RESOURCE_REQUEST_VERSION,
-  UNISCENARIO_LOCAL_RTX5080_HARDWARE_PROFILE,
-  UNISCENARIO_RTX3080_HARDWARE_PROFILE,
+  SIMFORGE_LOCAL_RTX5080_HARDWARE_PROFILE,
+  SIMFORGE_RTX3080_HARDWARE_PROFILE,
   ScenarioParityEvidenceV1Schema,
   ScenarioRenderResourceRequestSchema,
   type ScenarioParityEvidenceV1,
   type ScenarioRenderResourceRequest,
   type ScenarioRenderWorkerIdentity,
 } from "@simcloud/shared";
+import { simforgeEnv } from "@/lib/compat-env";
 
 type RenderSpec = z.infer<typeof ScenarioRenderSpecSchema>;
 const INTERACTION_RENDER_SPEC = {
@@ -126,17 +127,17 @@ export function parseStoredRenderSpec(
 }
 
 function artifactBucket() {
-  return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts";
+  return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts";
 }
 
 function apiBaseUrl() {
-  return (process.env.UNISCENARIO_API_BASE_URL?.trim() || "http://127.0.0.1:5199")
+  return (simforgeEnv("API_BASE_URL")?.trim() || "http://127.0.0.1:5199")
     .replace(/\/$/, "");
 }
 
 export function authorizeScenarioWorker(request: Request) {
   const expected =
-    process.env.UNISCENARIO_RENDER_WORKER_TOKEN?.trim() || "simforge-local-worker";
+    simforgeEnv("RENDER_WORKER_TOKEN")?.trim() || "simforge-local-worker";
   const provided = request.headers
     .get("authorization")
     ?.match(/^Bearer\s+(.+)$/i)?.[1]
@@ -245,12 +246,12 @@ export function workerRegistrationCompatibilityError(
   }
   const hardwareProfile = input.capabilities.hardwareProfile;
   if (
-    hardwareProfile !== UNISCENARIO_RTX3080_HARDWARE_PROFILE &&
-    hardwareProfile !== UNISCENARIO_LOCAL_RTX5080_HARDWARE_PROFILE
+    hardwareProfile !== SIMFORGE_RTX3080_HARDWARE_PROFILE &&
+    hardwareProfile !== SIMFORGE_LOCAL_RTX5080_HARDWARE_PROFILE
   ) {
     return "worker_hardware_profile_incompatible";
   }
-  const localProfile = hardwareProfile === UNISCENARIO_LOCAL_RTX5080_HARDWARE_PROFILE;
+  const localProfile = hardwareProfile === SIMFORGE_LOCAL_RTX5080_HARDWARE_PROFILE;
   if (localProfile !== (input.workerNodeId === LOCAL_RENDER_WORKER_NODE_ID)) {
     return "worker_local_node_identity_mismatch";
   }
@@ -280,11 +281,11 @@ export function workerRegistrationCompatibilityError(
 export async function getScenarioControlPlaneHealth(workerNodeId?: string | null) {
   const environment = runtimeEnvironment();
   const apiUrl =
-    process.env.UNISCENARIO_API_BASE_URL?.trim() || "http://127.0.0.1:5199";
+    simforgeEnv("API_BASE_URL")?.trim() || "http://127.0.0.1:5199";
   const bucket =
-    process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts";
+    simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts";
   const compilerVersion =
-    process.env.UNISCENARIO_COMPILER_VERSION?.trim() || "uniscenario-compiler@2.0.0";
+    simforgeEnv("COMPILER_VERSION")?.trim() || "uniscenario-compiler@2.0.0";
   const configurationReady = Boolean(apiUrl && bucket && compilerVersion);
   const rows = await queryRows<{
     worker_nodes_ready: boolean;
@@ -293,11 +294,11 @@ export async function getScenarioControlPlaneHealth(workerNodeId?: string | null
     worker_registered: boolean;
   }>(
     `SELECT
-       to_regclass('uniscenario.worker_nodes') IS NOT NULL AS worker_nodes_ready,
-       to_regclass('uniscenario.render_jobs') IS NOT NULL AS render_jobs_ready,
-       to_regclass('uniscenario.exports') IS NOT NULL AS exports_ready,
+       to_regclass('simforge.worker_nodes') IS NOT NULL AS worker_nodes_ready,
+       to_regclass('simforge.render_jobs') IS NOT NULL AS render_jobs_ready,
+       to_regclass('simforge.exports') IS NOT NULL AS exports_ready,
        CASE WHEN :worker_node_id = '' THEN true ELSE EXISTS (
-         SELECT 1 FROM uniscenario.worker_nodes w
+         SELECT 1 FROM simforge.worker_nodes w
          WHERE w.id = :worker_node_id AND w.environment = :environment
            AND w.registration_state = 'active'
            AND w.last_heartbeat_at >= NOW() - INTERVAL '90 seconds'
@@ -379,7 +380,7 @@ export async function listExports(context: AppContext, revisionId?: string | nul
     `SELECT id, revision_id, export_format, export_state, artifact_id, execution_package_id, compiler_version,
        error_code, error_detail, created_at::text AS created_at,
        started_at::text AS started_at, completed_at::text AS completed_at
-     FROM uniscenario.exports
+     FROM simforge.exports
      WHERE workspace_id = :workspace_id
        ${revisionId ? "AND revision_id = :revision_id" : ""}
      ORDER BY created_at DESC, id LIMIT 100`,
@@ -400,9 +401,9 @@ export async function createExport(
   },
 ) {
   const id = scenarioId("usexp");
-  const compilerVersion = process.env.UNISCENARIO_COMPILER_VERSION?.trim() || "uniscenario-compiler@2.0.0";
+  const compilerVersion = simforgeEnv("COMPILER_VERSION")?.trim() || "uniscenario-compiler@2.0.0";
   const rows = await queryRows<ExportRow>(
-    `INSERT INTO uniscenario.exports (
+    `INSERT INTO simforge.exports (
        id, workspace_id, revision_id, export_format, compiler_version, idempotency_key,
        requested_by_user_id,
        ambient_mode, ambient_runtime_version, ambient_sumo_version, ambient_network_sha256,
@@ -416,8 +417,8 @@ export async function createExport(
        r.ambient_seed, r.ambient_config, r.ambient_config_sha256, r.ambient_result_sha256,
        r.materialized_traffic_artifact_id, r.materialized_traffic_sha256,
        r.materialized_traffic_size_bytes, r.materialized_traffic_source_input_digest
-     FROM uniscenario.revisions r
-     JOIN uniscenario.artifacts traffic
+     FROM simforge.revisions r
+     JOIN simforge.artifacts traffic
        ON traffic.id = r.materialized_traffic_artifact_id
       AND traffic.workspace_id = r.workspace_id
       AND traffic.artifact_kind = 'materialized-traffic'
@@ -450,7 +451,7 @@ export async function getExport(context: AppContext, exportId: string) {
        execution_package_id, compiler_version, error_code, error_detail,
        created_at::text AS created_at, started_at::text AS started_at,
        completed_at::text AS completed_at
-     FROM uniscenario.exports
+     FROM simforge.exports
      WHERE workspace_id = :workspace_id AND id = :export_id
      LIMIT 1`,
     { workspace_id: context.workspaceId, export_id: exportId },
@@ -477,15 +478,15 @@ export async function listValidationRuns(context: AppContext, revisionId?: strin
     `SELECT v.id, v.revision_id, v.validator_kind, v.validator_version, v.validation_state,
        v.report_artifact_id,
        (SELECT l.artifact_id
-          FROM uniscenario.operational_job_artifact_links l
-          JOIN uniscenario.artifacts ta
+          FROM simforge.operational_job_artifact_links l
+          JOIN simforge.artifacts ta
             ON ta.id = l.artifact_id AND ta.artifact_kind = 'state-trace'
            AND ta.artifact_state = 'available'
          WHERE l.job_id = v.id AND l.job_family = 'openscenario_validate'
          ORDER BY l.id DESC LIMIT 1) AS trace_artifact_id,
        v.summary, v.created_at::text AS created_at,
        v.started_at::text AS started_at, v.completed_at::text AS completed_at
-     FROM uniscenario.validation_runs v
+     FROM simforge.validation_runs v
      WHERE v.workspace_id = :workspace_id
        ${revisionId ? "AND v.revision_id = :revision_id" : ""}
      ORDER BY v.created_at DESC, v.id LIMIT 100`,
@@ -506,13 +507,13 @@ export async function createValidationRun(
   },
 ) {
   const rows = await queryRows<ValidationRow>(
-    `INSERT INTO uniscenario.validation_runs (
+    `INSERT INTO simforge.validation_runs (
        id, workspace_id, revision_id, validator_kind, validator_version, idempotency_key,
        requested_by_user_id
      )
      SELECT :id, r.workspace_id, r.id, :validator_kind, :validator_version, :idempotency_key,
        :requested_by_user_id
-     FROM uniscenario.revisions r
+     FROM simforge.revisions r
      WHERE r.workspace_id = :workspace_id AND r.id = :revision_id
      ON CONFLICT (workspace_id, revision_id, validator_kind, idempotency_key)
      DO UPDATE SET idempotency_key = EXCLUDED.idempotency_key
@@ -771,7 +772,7 @@ export async function createRenderJob(
       workspace_id: context.workspaceId,
     });
     const existing = await tx.queryOne<RenderJobRow>(
-      `SELECT ${RENDER_JOB_COLUMNS} FROM uniscenario.render_jobs
+      `SELECT ${RENDER_JOB_COLUMNS} FROM simforge.render_jobs
        WHERE workspace_id = :workspace_id AND idempotency_key = :idempotency_key LIMIT 1`,
       {
         workspace_id: context.workspaceId,
@@ -787,7 +788,7 @@ export async function createRenderJob(
     if (input.originRecordingJobId) {
       const recording = await tx.queryOne<{ id: string }>(
         `SELECT id
-           FROM uniscenario.artifact_postprocess_jobs
+           FROM simforge.artifact_postprocess_jobs
           WHERE id = :origin_recording_job_id
             AND workspace_id = :workspace_id
             AND revision_id = :revision_id
@@ -812,7 +813,7 @@ export async function createRenderJob(
       // uniscenario_render_jobs_render_profile_scope_fence in the database -- so this check being
       // skipped or raced cannot let a cross-tenant reference through.
       const profile = await tx.queryOne<{ id: string }>(
-        `SELECT id FROM uniscenario.render_profiles
+        `SELECT id FROM simforge.render_profiles
           WHERE id = :render_profile_id
             AND (workspace_id IS NULL OR workspace_id = :workspace_id)
           LIMIT 1`,
@@ -829,11 +830,11 @@ export async function createRenderJob(
     }>(
       `SELECT COUNT(*) FILTER (WHERE job_state IN ('leased', 'running'))::int AS active_count,
          COUNT(*) FILTER (WHERE job_state = 'queued')::int AS queued_count
-       FROM uniscenario.render_jobs WHERE workspace_id = :workspace_id`,
+       FROM simforge.render_jobs WHERE workspace_id = :workspace_id`,
       { workspace_id: context.workspaceId },
     );
-    const activeLimit = Math.max(1, Number(process.env.UNISCENARIO_WORKSPACE_CONCURRENCY_LIMIT ?? 2));
-    const queueLimit = Math.max(activeLimit, Number(process.env.UNISCENARIO_WORKSPACE_QUEUE_LIMIT ?? 20));
+    const activeLimit = Math.max(1, Number(simforgeEnv("WORKSPACE_CONCURRENCY_LIMIT") ?? 2));
+    const queueLimit = Math.max(activeLimit, Number(simforgeEnv("WORKSPACE_QUEUE_LIMIT") ?? 20));
     if (Number(active?.active_count ?? 0) >= activeLimit || Number(active?.queued_count ?? 0) >= queueLimit) {
       throw new Error("uniscenario_workspace_limit_reached");
     }
@@ -855,31 +856,31 @@ export async function createRenderJob(
          ep.ambient_config_sha256, ep.ambient_result_sha256, ep.materialized_traffic_sha256,
          ta.byte_length AS traffic_size,
          (r.canonical_content #>> '{choreography,clipSeconds}')::double precision AS scenario_duration_s
-       FROM uniscenario.revisions r
-       JOIN uniscenario.execution_packages ep
+       FROM simforge.revisions r
+       JOIN simforge.execution_packages ep
          ON ep.revision_id = r.id AND ep.workspace_id = r.workspace_id
-       LEFT JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
+       LEFT JOIN simforge.map_versions mv ON mv.id = r.map_version_id
        LEFT JOIN public.map_assets ma ON ma.id = mv.source_map_asset_id
-       JOIN uniscenario.artifacts xa
+       JOIN simforge.artifacts xa
          ON xa.id = ep.xosc_artifact_id AND xa.workspace_id = ep.workspace_id
         AND xa.artifact_state = 'available'
        -- The revision's pinned map version may live in the platform maps workspace; its xodr
        -- (and the catalog that workspace owns) are shared infrastructure, so accept exactly
        -- that artifact across the boundary. Anything else stays workspace-fenced.
-       JOIN uniscenario.artifacts da
+       JOIN simforge.artifacts da
          ON da.id = ep.xodr_artifact_id AND da.artifact_state = 'available'
         AND (da.workspace_id = ep.workspace_id
           OR (da.id = mv.xodr_artifact_id AND da.workspace_id = mv.workspace_id))
-       JOIN uniscenario.asset_catalog_versions acv
+       JOIN simforge.asset_catalog_versions acv
          ON acv.id = ep.asset_catalog_version_id AND acv.status = 'active'
         AND (acv.workspace_id IS NULL OR acv.workspace_id = ep.workspace_id
           OR acv.workspace_id = mv.workspace_id)
-       JOIN uniscenario.artifacts ca
+       JOIN simforge.artifacts ca
          ON ca.id = acv.manifest_artifact_id AND ca.artifact_state = 'available'
-       JOIN uniscenario.artifacts pa
+       JOIN simforge.artifacts pa
          ON pa.id = ep.package_artifact_id AND pa.workspace_id = ep.workspace_id
         AND pa.artifact_state = 'available' AND pa.sha256 = ep.manifest_sha256
-       JOIN uniscenario.artifacts ta
+       JOIN simforge.artifacts ta
          ON ta.id = ep.materialized_traffic_artifact_id AND ta.workspace_id = ep.workspace_id
         AND ta.artifact_state = 'available' AND ta.sha256 = ep.materialized_traffic_sha256
        WHERE r.workspace_id = :workspace_id AND r.id = :revision_id
@@ -912,7 +913,7 @@ export async function createRenderJob(
       executionPackageControlValue(packageSource, jobMode, storedSpec, resourceRequest),
     );
     return tx.queryRows<RenderJobRow>(
-      `INSERT INTO uniscenario.render_jobs (
+      `INSERT INTO simforge.render_jobs (
        id, workspace_id, revision_id, execution_package_id, execution_package_control_sha256,
        origin_recording_job_id, render_profile_id,
        render_spec, render_spec_sha256, parity_thresholds, resource_request, request_contract_version,
@@ -924,13 +925,13 @@ export async function createRenderJob(
        CAST(:render_spec AS jsonb), :render_spec_sha256, CAST(:parity_thresholds AS jsonb),
        CAST(:resource_request AS jsonb),
        :contract_version, :job_mode, 'free', 0, :priority, :idempotency_key, :user_id
-     FROM uniscenario.revisions r
-     JOIN uniscenario.execution_packages ep
+     FROM simforge.revisions r
+     JOIN simforge.execution_packages ep
        ON ep.revision_id = r.id AND ep.workspace_id = r.workspace_id
-     LEFT JOIN uniscenario.render_profiles rp
+     LEFT JOIN simforge.render_profiles rp
        ON rp.id = :render_profile_id
       AND (rp.workspace_id IS NULL OR rp.workspace_id = r.workspace_id)
-     LEFT JOIN uniscenario.artifact_postprocess_jobs recording
+     LEFT JOIN simforge.artifact_postprocess_jobs recording
        ON recording.id = :origin_recording_job_id
       AND recording.workspace_id = r.workspace_id
       AND recording.revision_id = r.id
@@ -1071,36 +1072,36 @@ export async function getExecutionPackageMembers(
        s.sha256 AS signals_sha256, s.byte_length AS signals_byte_length, s.media_type AS signals_media_type,
        ca.storage_bucket AS catalog_bucket, ca.storage_key AS catalog_key,
        ca.sha256 AS catalog_sha256, ca.byte_length AS catalog_byte_length, ca.media_type AS catalog_media_type
-     FROM uniscenario.execution_packages ep
-     JOIN uniscenario.revisions r
+     FROM simforge.execution_packages ep
+     JOIN simforge.revisions r
        ON r.id = ep.revision_id AND r.workspace_id = ep.workspace_id
-     LEFT JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
-     LEFT JOIN uniscenario.artifacts xa
+     LEFT JOIN simforge.map_versions mv ON mv.id = r.map_version_id
+     LEFT JOIN simforge.artifacts xa
        ON xa.id = ep.xosc_artifact_id AND xa.workspace_id = ep.workspace_id
       AND xa.artifact_state = 'available'
-     LEFT JOIN uniscenario.artifacts pa
+     LEFT JOIN simforge.artifacts pa
        ON pa.id = ep.package_artifact_id AND pa.workspace_id = ep.workspace_id
       AND pa.artifact_state = 'available' AND pa.sha256 = ep.manifest_sha256
-     LEFT JOIN uniscenario.artifacts da
+     LEFT JOIN simforge.artifacts da
        ON da.id = ep.xodr_artifact_id AND da.artifact_state = 'available'
       AND (da.workspace_id = ep.workspace_id
         OR (da.id = mv.xodr_artifact_id AND da.workspace_id = mv.workspace_id))
-     LEFT JOIN uniscenario.asset_catalog_versions acv
+     LEFT JOIN simforge.asset_catalog_versions acv
        ON acv.id = ep.asset_catalog_version_id AND acv.status = 'active'
       AND (acv.workspace_id IS NULL OR acv.workspace_id = ep.workspace_id
         OR acv.workspace_id = mv.workspace_id)
-     LEFT JOIN uniscenario.artifacts ca
+     LEFT JOIN simforge.artifacts ca
        ON ca.id = acv.manifest_artifact_id AND ca.artifact_state = 'available'
-     LEFT JOIN uniscenario.artifacts t
+     LEFT JOIN simforge.artifacts t
        ON t.id = mv.topology_artifact_id AND t.workspace_id = mv.workspace_id
       AND t.artifact_state = 'available'
-     LEFT JOIN uniscenario.artifacts dt
+     LEFT JOIN simforge.artifacts dt
        ON dt.id = mv.derived_topology_artifact_id AND dt.workspace_id = mv.workspace_id
       AND dt.artifact_state = 'available'
-     LEFT JOIN uniscenario.artifacts l
+     LEFT JOIN simforge.artifacts l
        ON l.id = mv.locations_artifact_id AND l.workspace_id = mv.workspace_id
       AND l.artifact_state = 'available'
-     LEFT JOIN uniscenario.artifacts s
+     LEFT JOIN simforge.artifacts s
        ON s.id = mv.signals_artifact_id AND s.workspace_id = mv.workspace_id
       AND s.artifact_state = 'available'
      WHERE ep.id = :execution_package_id AND ep.workspace_id = :workspace_id
@@ -1141,7 +1142,7 @@ export async function getExecutionPackageMembers(
 
 export async function listRenderJobs(context: AppContext, limit = 50) {
   const rows = await queryRows<RenderJobRow>(
-    `SELECT ${RENDER_JOB_COLUMNS} FROM uniscenario.render_jobs
+    `SELECT ${RENDER_JOB_COLUMNS} FROM simforge.render_jobs
      WHERE workspace_id = :workspace_id ORDER BY created_at DESC, id LIMIT :row_limit`,
     {
       workspace_id: context.workspaceId,
@@ -1153,7 +1154,7 @@ export async function listRenderJobs(context: AppContext, limit = 50) {
 
 export async function getRenderJob(context: AppContext, jobId: string) {
   const rows = await queryRows<RenderJobRow>(
-    `SELECT ${RENDER_JOB_COLUMNS} FROM uniscenario.render_jobs
+    `SELECT ${RENDER_JOB_COLUMNS} FROM simforge.render_jobs
      WHERE workspace_id = :workspace_id AND id = :job_id LIMIT 1`,
     { workspace_id: context.workspaceId, job_id: jobId },
   );
@@ -1204,19 +1205,19 @@ export async function getRenderJobProvenance(
        ep.ambient_sumo_version, ep.ambient_network_sha256, ep.ambient_seed,
        ep.ambient_config, ep.ambient_config_sha256, ep.ambient_result_sha256,
        ep.materialized_traffic_sha256, r.capability_report
-     FROM uniscenario.render_jobs j
-     JOIN uniscenario.revisions r ON r.id = j.revision_id AND r.workspace_id = j.workspace_id
-     JOIN uniscenario.execution_packages ep ON ep.id = j.execution_package_id AND ep.workspace_id = j.workspace_id
-     JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
-     JOIN uniscenario.artifacts xa ON xa.id = ep.xosc_artifact_id
-     JOIN uniscenario.artifacts da ON da.id = ep.xodr_artifact_id
-     JOIN uniscenario.asset_catalog_versions acv
+     FROM simforge.render_jobs j
+     JOIN simforge.revisions r ON r.id = j.revision_id AND r.workspace_id = j.workspace_id
+     JOIN simforge.execution_packages ep ON ep.id = j.execution_package_id AND ep.workspace_id = j.workspace_id
+     JOIN simforge.map_versions mv ON mv.id = r.map_version_id
+     JOIN simforge.artifacts xa ON xa.id = ep.xosc_artifact_id
+     JOIN simforge.artifacts da ON da.id = ep.xodr_artifact_id
+     JOIN simforge.asset_catalog_versions acv
        ON acv.id = ep.asset_catalog_version_id
       AND acv.status = 'active'
       AND (acv.workspace_id IS NULL OR acv.workspace_id = j.workspace_id)
-     JOIN uniscenario.artifacts ca ON ca.id = acv.manifest_artifact_id
+     JOIN simforge.artifacts ca ON ca.id = acv.manifest_artifact_id
      LEFT JOIN LATERAL (
-       SELECT validation_state FROM uniscenario.validation_runs
+       SELECT validation_state FROM simforge.validation_runs
        WHERE workspace_id = j.workspace_id AND revision_id = j.revision_id
        ORDER BY created_at DESC LIMIT 1
      ) vr ON TRUE
@@ -1236,7 +1237,7 @@ export async function getRenderJobProvenance(
     }>(
       `SELECT a.id, a.artifact_kind, a.sha256, a.byte_length, a.media_type,
          a.metadata::text AS metadata
-       FROM uniscenario.artifact_links l JOIN uniscenario.artifacts a ON a.id = l.artifact_id
+       FROM simforge.artifact_links l JOIN simforge.artifacts a ON a.id = l.artifact_id
        WHERE l.workspace_id = :workspace_id AND l.render_job_id = :job_id AND a.artifact_state = 'available'
        ORDER BY a.created_at, a.id`,
       { workspace_id: context.workspaceId, job_id: jobId },
@@ -1248,7 +1249,7 @@ export async function getRenderJobProvenance(
       event_payload: string | Record<string, unknown>;
     }>(
       `SELECT event_ordinal, event_type, occurred_at::text AS occurred_at, event_payload
-       FROM uniscenario.job_events WHERE workspace_id = :workspace_id AND render_job_id = :job_id
+       FROM simforge.job_events WHERE workspace_id = :workspace_id AND render_job_id = :job_id
        ORDER BY event_ordinal LIMIT 500`,
       { workspace_id: context.workspaceId, job_id: jobId },
     ),
@@ -1330,7 +1331,7 @@ export async function registerWorker(input: {
   const compatibilityError = workerRegistrationCompatibilityError(input);
   if (compatibilityError) throw new Error(compatibilityError);
   const rows = await queryRows<{ id: string; registration_state: "active" | "draining" | "disabled" }>(
-    `INSERT INTO uniscenario.worker_nodes (
+    `INSERT INTO simforge.worker_nodes (
        id, environment, worker_version, image_digest, hardware_profile, capabilities, metadata,
        registration_state
      ) VALUES (
@@ -1345,11 +1346,11 @@ export async function registerWorker(input: {
        capabilities = EXCLUDED.capabilities,
        metadata = EXCLUDED.metadata,
        registration_state = CASE
-         WHEN uniscenario.worker_nodes.registration_state IN ('active', 'draining')
-          AND uniscenario.worker_nodes.approved_worker_version = EXCLUDED.worker_version
-          AND uniscenario.worker_nodes.approved_image_digest = EXCLUDED.image_digest
-          AND uniscenario.worker_nodes.approved_hardware_profile = EXCLUDED.hardware_profile
-         THEN uniscenario.worker_nodes.registration_state
+         WHEN simforge.worker_nodes.registration_state IN ('active', 'draining')
+          AND simforge.worker_nodes.approved_worker_version = EXCLUDED.worker_version
+          AND simforge.worker_nodes.approved_image_digest = EXCLUDED.image_digest
+          AND simforge.worker_nodes.approved_hardware_profile = EXCLUDED.hardware_profile
+         THEN simforge.worker_nodes.registration_state
          ELSE 'disabled'
        END,
        last_heartbeat_at = NOW()
@@ -1373,7 +1374,7 @@ export async function heartbeatIdleRenderWorker(
   identity: ScenarioRenderWorkerIdentity,
 ) {
   const rows = await queryRows<{ registration_state: "active" | "draining" }>(
-    `UPDATE uniscenario.worker_nodes
+    `UPDATE simforge.worker_nodes
         SET last_heartbeat_at = NOW(), last_idle_heartbeat_at = NOW()
       WHERE id = :worker_node_id AND environment = :environment
         AND registration_state IN ('active', 'draining')
@@ -1411,7 +1412,7 @@ export async function setRenderWorkerState(
       capabilities: string | Record<string, unknown>;
     }>(
       `SELECT id, environment, worker_version, image_digest, hardware_profile, capabilities
-         FROM uniscenario.worker_nodes WHERE id = :worker_node_id FOR UPDATE`,
+         FROM simforge.worker_nodes WHERE id = :worker_node_id FOR UPDATE`,
       { worker_node_id: workerNodeId },
     );
     if (!worker || worker.environment !== runtimeEnvironment()) return null;
@@ -1425,7 +1426,7 @@ export async function setRenderWorkerState(
       });
       if (compatibilityError) throw new Error(compatibilityError);
       const activated = await tx.queryOne<{ id: string }>(
-        `UPDATE uniscenario.worker_nodes
+        `UPDATE simforge.worker_nodes
             SET registration_state = 'active',
                 approved_worker_version = worker_version,
                 approved_image_digest = image_digest,
@@ -1458,7 +1459,7 @@ export async function setRenderWorkerState(
     }
     if (input.state === "disabled") {
       const activeLease = await tx.queryOne<{ id: string }>(
-        `SELECT id FROM uniscenario.worker_leases
+        `SELECT id FROM simforge.worker_leases
           WHERE worker_node_id = :worker_node_id AND lease_state = 'active'
           LIMIT 1 FOR SHARE`,
         { worker_node_id: workerNodeId },
@@ -1466,7 +1467,7 @@ export async function setRenderWorkerState(
       if (activeLease) throw new Error("worker_has_active_lease");
     }
     await tx.execute(
-      `UPDATE uniscenario.worker_nodes
+      `UPDATE simforge.worker_nodes
           SET registration_state = :registration_state, state_changed_at = NOW(),
               metadata = metadata || jsonb_build_object(
                 'lastStateReason', :reason,
@@ -1485,7 +1486,7 @@ export async function provisionRenderWorkerCredential(
 ) {
   return withTransaction(async (tx) => {
     const worker = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.worker_nodes
+      `SELECT id FROM simforge.worker_nodes
         WHERE id = :worker_node_id AND environment = :environment
           AND (
             (hardware_profile = 'rtx3080-10gb-v1'
@@ -1501,20 +1502,20 @@ export async function provisionRenderWorkerCredential(
     );
     if (!worker) return null;
     const activeLease = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.worker_leases
+      `SELECT id FROM simforge.worker_leases
         WHERE worker_node_id = :worker_node_id AND lease_state = 'active'
         LIMIT 1 FOR SHARE`,
       { worker_node_id: workerNodeId },
     );
     if (activeLease) throw new Error("worker_has_active_lease");
     await tx.execute(
-      `UPDATE uniscenario.render_worker_credentials
+      `UPDATE simforge.render_worker_credentials
           SET credential_state = 'revoked', revoked_at = NOW()
         WHERE worker_node_id = :worker_node_id AND credential_state = 'active'`,
       { worker_node_id: workerNodeId },
     );
     await tx.execute(
-      `INSERT INTO uniscenario.render_worker_credentials (
+      `INSERT INTO simforge.render_worker_credentials (
          id, worker_node_id, token_sha256, reason
        ) VALUES (:id, :worker_node_id, :token_sha256, :reason)`,
       {
@@ -1534,14 +1535,14 @@ export async function revokeRenderWorkerCredential(
 ) {
   return withTransaction(async (tx) => {
     const activeLease = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.worker_leases
+      `SELECT id FROM simforge.worker_leases
         WHERE worker_node_id = :worker_node_id AND lease_state = 'active'
         LIMIT 1 FOR SHARE`,
       { worker_node_id: workerNodeId },
     );
     if (activeLease) throw new Error("worker_has_active_lease");
     const rows = await tx.queryRows<{ id: string }>(
-      `UPDATE uniscenario.render_worker_credentials
+      `UPDATE simforge.render_worker_credentials
           SET credential_state = 'revoked', revoked_at = NOW(), reason = :reason
         WHERE worker_node_id = :worker_node_id AND credential_state = 'active'
         RETURNING id`,
@@ -1702,13 +1703,13 @@ function outputReservations(row: LeaseSourceRow, attemptId: string, expiresAt: s
 
 async function reapExpiredRenderJobs() {
   const candidates = await queryRows<{ id: string }>(
-    `SELECT job.id FROM uniscenario.render_jobs job
+    `SELECT job.id FROM simforge.render_jobs job
       WHERE job.job_state IN ('leased', 'running')
         AND job.job_mode IN ('interaction_2d', 'full_render') AND (
-          EXISTS (SELECT 1 FROM uniscenario.worker_leases lease
+          EXISTS (SELECT 1 FROM simforge.worker_leases lease
                    WHERE lease.render_job_id = job.id AND lease.lease_state = 'active'
                      AND lease.expires_at <= NOW())
-          OR NOT EXISTS (SELECT 1 FROM uniscenario.worker_leases lease
+          OR NOT EXISTS (SELECT 1 FROM simforge.worker_leases lease
                          WHERE lease.render_job_id = job.id AND lease.lease_state = 'active')
         )
       ORDER BY job.updated_at, job.id LIMIT 100`,
@@ -1716,32 +1717,32 @@ async function reapExpiredRenderJobs() {
   for (const candidate of candidates) {
     await withScenarioJobTransaction(candidate.id, async (tx) => {
       await tx.execute(
-        `UPDATE uniscenario.worker_leases lease
+        `UPDATE simforge.worker_leases lease
             SET lease_state = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'revoked' ELSE 'expired' END,
                 released_at = NOW()
-           FROM uniscenario.render_jobs job
+           FROM simforge.render_jobs job
           WHERE job.id = :job_id AND lease.render_job_id = job.id
             AND lease.lease_state = 'active' AND lease.expires_at <= NOW()`,
         { job_id: candidate.id },
       );
       const expiredAttempt = await tx.queryOne<{ id: string }>(
-        `UPDATE uniscenario.render_attempts attempt
+        `UPDATE simforge.render_attempts attempt
             SET attempt_state = CASE WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE 'expired' END,
                 completed_at = NOW()
-           FROM uniscenario.render_jobs job
+           FROM simforge.render_jobs job
           WHERE job.id = :job_id AND attempt.render_job_id = job.id
             AND attempt.attempt_state IN ('leased', 'running')
             AND NOT EXISTS (
-              SELECT 1 FROM uniscenario.worker_leases lease
+              SELECT 1 FROM simforge.worker_leases lease
                WHERE lease.render_attempt_id = attempt.id AND lease.lease_state = 'active'
             )
           RETURNING attempt.id`,
         { job_id: candidate.id },
       );
       await tx.execute(
-        `UPDATE uniscenario.artifact_uploads upload
+        `UPDATE simforge.artifact_uploads upload
             SET upload_state = 'cancelled'
-           FROM uniscenario.render_jobs job
+           FROM simforge.render_jobs job
           WHERE job.id = :job_id AND upload.render_job_id = job.id
             AND upload.upload_state = 'reserved'`,
         { job_id: candidate.id },
@@ -1751,7 +1752,7 @@ async function reapExpiredRenderJobs() {
         workspace_id: string;
         state: "queued" | "failed" | "cancelled";
       }>(
-        `UPDATE uniscenario.render_jobs job
+        `UPDATE simforge.render_jobs job
               SET job_state = CASE
                     WHEN job.cancel_requested_at IS NOT NULL THEN 'cancelled'
                     WHEN job.attempt_count < job.max_attempts THEN 'queued'
@@ -1769,7 +1770,7 @@ async function reapExpiredRenderJobs() {
             WHERE job.id = :job_id AND job.job_state IN ('leased', 'running')
               AND job.job_mode IN ('interaction_2d', 'full_render')
               AND NOT EXISTS (
-                SELECT 1 FROM uniscenario.worker_leases lease
+                SELECT 1 FROM simforge.worker_leases lease
                  WHERE lease.render_job_id = job.id AND lease.lease_state = 'active'
               )
           RETURNING job.id, job.workspace_id, job.job_state AS state`,
@@ -1810,7 +1811,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
   // acquired lease refreshed the node, so a healthy empty worker became
   // unhealthy after ninety seconds.
   await queryRows(
-    `UPDATE uniscenario.worker_nodes
+    `UPDATE simforge.worker_nodes
         SET last_heartbeat_at = NOW(), last_idle_heartbeat_at = NOW()
       WHERE id = :worker_node_id AND environment = :environment
         AND registration_state = 'active'
@@ -1822,38 +1823,38 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
   );
   const candidates = await queryRows<{ id: string }>(
     `SELECT job.id
-       FROM uniscenario.render_jobs job
-       JOIN uniscenario.revisions revision
+       FROM simforge.render_jobs job
+       JOIN simforge.revisions revision
          ON revision.id = job.revision_id AND revision.workspace_id = job.workspace_id
-       JOIN uniscenario.execution_packages ep
+       JOIN simforge.execution_packages ep
          ON ep.id = job.execution_package_id AND ep.workspace_id = job.workspace_id
-       LEFT JOIN uniscenario.map_versions mv ON mv.id = revision.map_version_id
-       JOIN uniscenario.artifacts xosc
+       LEFT JOIN simforge.map_versions mv ON mv.id = revision.map_version_id
+       JOIN simforge.artifacts xosc
          ON xosc.id = ep.xosc_artifact_id AND xosc.workspace_id = ep.workspace_id
         AND xosc.artifact_state = 'available'
        -- Same cross-workspace allowance as createRenderJob: only the pinned map version's
        -- own xodr/catalog may come from the platform maps workspace.
-       JOIN uniscenario.artifacts xodr
+       JOIN simforge.artifacts xodr
          ON xodr.id = ep.xodr_artifact_id AND xodr.artifact_state = 'available'
         AND (xodr.workspace_id = ep.workspace_id
           OR (xodr.id = mv.xodr_artifact_id AND xodr.workspace_id = mv.workspace_id))
-       JOIN uniscenario.asset_catalog_versions catalog
+       JOIN simforge.asset_catalog_versions catalog
          ON catalog.id = ep.asset_catalog_version_id AND catalog.status = 'active'
         AND (catalog.workspace_id IS NULL OR catalog.workspace_id = job.workspace_id
           OR catalog.workspace_id = mv.workspace_id)
-       JOIN uniscenario.artifacts catalog_artifact
+       JOIN simforge.artifacts catalog_artifact
          ON catalog_artifact.id = catalog.manifest_artifact_id
         AND catalog_artifact.artifact_state = 'available'
-       JOIN uniscenario.artifacts package_artifact
+       JOIN simforge.artifacts package_artifact
          ON package_artifact.id = ep.package_artifact_id
         AND package_artifact.workspace_id = job.workspace_id
         AND package_artifact.artifact_state = 'available'
         AND package_artifact.sha256 = ep.manifest_sha256
-       JOIN uniscenario.artifacts traffic
+       JOIN simforge.artifacts traffic
          ON traffic.id = ep.materialized_traffic_artifact_id
         AND traffic.workspace_id = ep.workspace_id
         AND traffic.artifact_state = 'available'
-       JOIN uniscenario.worker_nodes worker ON worker.id = :worker_node_id
+       JOIN simforge.worker_nodes worker ON worker.id = :worker_node_id
       WHERE job.job_state = 'queued' AND job.cancel_requested_at IS NULL
         AND job.job_mode IN ('interaction_2d', 'full_render')
         AND job.attempt_count < job.max_attempts
@@ -1918,7 +1919,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
         AND (job.resource_request->>'pixelsPerFrame')::bigint
           <= (worker.capabilities->'limits'->>'maxPixelsPerFrame')::bigint
         AND NOT EXISTS (
-          SELECT 1 FROM uniscenario.worker_leases node_lease
+          SELECT 1 FROM simforge.worker_leases node_lease
            WHERE node_lease.worker_node_id = worker.id AND node_lease.lease_state = 'active'
         )
       ORDER BY job.priority DESC, job.created_at, job.id LIMIT 16`,
@@ -1941,7 +1942,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
       runtime_version: string;
       image_digest: string;
     }>(
-      `UPDATE uniscenario.worker_nodes SET last_heartbeat_at = NOW()
+      `UPDATE simforge.worker_nodes SET last_heartbeat_at = NOW()
        WHERE id = :worker_node_id AND registration_state = 'active'
          AND environment = :environment
          AND worker_version ~ '^[a-f0-9]{40}$'
@@ -1970,8 +1971,8 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
          AND capabilities->'outputs' = '["video","trace","manifest","annotations"]'::jsonb
          AND capabilities->'limits' = '{"maxDurationS":120,"maxSensors":4,"maxCaptureFrames":14400,"maxActors":256,"maxActorFrameStates":2000000,"maxSensorPixels":450000000,"maxOutputBytes":2147483648,"maxCameraWidth":1920,"maxCameraHeight":1080,"maxPixelsPerFrame":8294400}'::jsonb
          AND NOT EXISTS (
-           SELECT 1 FROM uniscenario.worker_leases active
-            WHERE active.worker_node_id = uniscenario.worker_nodes.id
+           SELECT 1 FROM simforge.worker_leases active
+            WHERE active.worker_node_id = simforge.worker_nodes.id
               AND active.lease_state = 'active'
          )
        RETURNING id, capabilities->>'capabilityProfile' AS worker_class,
@@ -2008,32 +2009,32 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
          ep.ambient_config_sha256, ep.ambient_result_sha256, ep.materialized_traffic_sha256,
          ta.storage_bucket AS traffic_bucket, ta.storage_key AS traffic_key,
          ta.byte_length AS traffic_size
-       FROM uniscenario.render_jobs j
-       JOIN uniscenario.revisions r ON r.id = j.revision_id AND r.workspace_id = j.workspace_id
-       JOIN uniscenario.execution_packages ep
+       FROM simforge.render_jobs j
+       JOIN simforge.revisions r ON r.id = j.revision_id AND r.workspace_id = j.workspace_id
+       JOIN simforge.execution_packages ep
          ON ep.id = j.execution_package_id AND ep.workspace_id = j.workspace_id
-       LEFT JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
+       LEFT JOIN simforge.map_versions mv ON mv.id = r.map_version_id
        LEFT JOIN public.map_assets ma ON ma.id = mv.source_map_asset_id
-       JOIN uniscenario.artifacts xa
+       JOIN simforge.artifacts xa
          ON xa.id = ep.xosc_artifact_id AND xa.workspace_id = ep.workspace_id
         AND xa.artifact_state = 'available'
        -- Same cross-workspace allowance as createRenderJob: only the pinned map version's
        -- own xodr/catalog may come from the platform maps workspace.
-       JOIN uniscenario.artifacts da
+       JOIN simforge.artifacts da
          ON da.id = ep.xodr_artifact_id AND da.artifact_state = 'available'
         AND (da.workspace_id = ep.workspace_id
           OR (da.id = mv.xodr_artifact_id AND da.workspace_id = mv.workspace_id))
-       JOIN uniscenario.asset_catalog_versions acv
+       JOIN simforge.asset_catalog_versions acv
          ON acv.id = ep.asset_catalog_version_id
         AND acv.status = 'active'
         AND (acv.workspace_id IS NULL OR acv.workspace_id = j.workspace_id
           OR acv.workspace_id = mv.workspace_id)
-       JOIN uniscenario.artifacts ca
+       JOIN simforge.artifacts ca
          ON ca.id = acv.manifest_artifact_id AND ca.artifact_state = 'available'
-       JOIN uniscenario.artifacts pa
+       JOIN simforge.artifacts pa
          ON pa.id = ep.package_artifact_id AND pa.workspace_id = j.workspace_id
         AND pa.artifact_state = 'available' AND pa.sha256 = ep.manifest_sha256
-       JOIN uniscenario.artifacts ta
+       JOIN simforge.artifacts ta
          ON ta.id = ep.materialized_traffic_artifact_id AND ta.workspace_id = ep.workspace_id
         AND ta.artifact_state = 'available'
        WHERE j.id = :job_id AND j.job_state = 'queued' AND j.cancel_requested_at IS NULL
@@ -2044,7 +2045,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
          AND j.attempt_count < j.max_attempts
          AND j.request_contract_version = :request_contract_version
          AND EXISTS (
-           SELECT 1 FROM uniscenario.worker_nodes w
+           SELECT 1 FROM simforge.worker_nodes w
            WHERE w.id = :worker_node_id
              AND w.capabilities->'modes' ? j.job_mode
              AND w.capabilities->'trafficModes' ? ep.ambient_mode
@@ -2089,7 +2090,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
              AND (j.resource_request->>'maxCameraHeight')::bigint <= (w.capabilities->'limits'->>'maxCameraHeight')::bigint
              AND (j.resource_request->>'pixelsPerFrame')::bigint <= (w.capabilities->'limits'->>'maxPixelsPerFrame')::bigint
              AND NOT EXISTS (
-               SELECT 1 FROM uniscenario.worker_leases active
+               SELECT 1 FROM simforge.worker_leases active
                 WHERE active.worker_node_id = w.id AND active.lease_state = 'active'
              )
          )
@@ -2123,7 +2124,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
     );
     if (!expiry) throw new Error("Unable to compute lease expiration.");
     await tx.execute(
-      `INSERT INTO uniscenario.render_attempts (
+      `INSERT INTO simforge.render_attempts (
          id, workspace_id, render_job_id, attempt_number, worker_node_id,
          execution_package_id, execution_package_control_sha256,
          worker_class, runtime_version, image_digest
@@ -2146,7 +2147,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
       },
     );
     await tx.execute(
-      `INSERT INTO uniscenario.worker_leases (
+      `INSERT INTO simforge.worker_leases (
          id, render_job_id, render_attempt_id, worker_node_id,
          lease_token_sha256, expires_at
        ) VALUES (
@@ -2163,7 +2164,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
       },
     );
     const advancedJob = await tx.queryOne<{ id: string }>(
-      `UPDATE uniscenario.render_jobs
+      `UPDATE simforge.render_jobs
        SET job_state = 'leased', attempt_count = :attempt_number, updated_at = NOW()
        WHERE id = :job_id AND workspace_id = :workspace_id
          AND execution_package_id = :execution_package_id
@@ -2183,7 +2184,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
     const reservations = outputReservations(row, attemptId, expiry.expires_at);
     for (const reservation of reservations) {
       await tx.execute(
-        `INSERT INTO uniscenario.artifact_uploads (
+        `INSERT INTO simforge.artifact_uploads (
            id, workspace_id, revision_id, render_job_id, render_attempt_id,
            artifact_kind, media_type, storage_bucket, storage_key, expires_at
          ) VALUES (
@@ -2247,7 +2248,7 @@ export async function leaseRenderJob(input: { workerNodeId: string; leaseSeconds
         {
           uploadId: reservation.id,
           uploadUrl: await getPresignedPutUrl(reservation.key, reservation.mediaType, reservation.bucket, expiresIn),
-          artifactUrl: `${apiBaseUrl()}/api/uniscenario/artifact-uploads/${reservation.id}`,
+          artifactUrl: `${apiBaseUrl()}/api/simforge/artifact-uploads/${reservation.id}`,
           headers: { "content-type": reservation.mediaType },
         },
       ]),
@@ -2360,11 +2361,11 @@ async function activeLease(
        worker.hardware_profile, j.resource_request,
        j.job_state, j.attempt_count, j.max_attempts,
        j.cancel_requested_at::text AS cancel_requested_at
-     FROM uniscenario.worker_leases l
-     JOIN uniscenario.render_attempts a ON a.id = l.render_attempt_id
-     JOIN uniscenario.render_jobs j ON j.id = l.render_job_id
-     JOIN uniscenario.worker_nodes worker ON worker.id = l.worker_node_id
-     JOIN uniscenario.execution_packages ep
+     FROM simforge.worker_leases l
+     JOIN simforge.render_attempts a ON a.id = l.render_attempt_id
+     JOIN simforge.render_jobs j ON j.id = l.render_job_id
+     JOIN simforge.worker_nodes worker ON worker.id = l.worker_node_id
+     JOIN simforge.execution_packages ep
        ON ep.id = j.execution_package_id AND ep.workspace_id = j.workspace_id
      WHERE l.render_job_id = :job_id AND a.attempt_number = :attempt
        AND l.worker_node_id = :worker_node_id
@@ -2390,9 +2391,9 @@ export async function heartbeatLease(
   if (!lease) return null;
   return withScenarioJobTransaction(jobId, async (tx) => {
     const rows = await tx.queryRows<{ expires_at: string }>(
-      `UPDATE uniscenario.worker_leases lease
+      `UPDATE simforge.worker_leases lease
        SET heartbeat_at = NOW(), expires_at = GREATEST(expires_at, NOW() + INTERVAL '60 seconds')
-       FROM uniscenario.render_jobs job
+       FROM simforge.render_jobs job
        WHERE lease.id = :lease_id AND lease.render_job_id = job.id
          AND lease.lease_state = 'active' AND lease.expires_at > NOW()
          AND job.id = :job_id AND job.cancel_requested_at IS NULL
@@ -2402,18 +2403,18 @@ export async function heartbeatLease(
     );
     if (!rows[0]) return null;
     await tx.execute(
-      `UPDATE uniscenario.worker_nodes SET last_heartbeat_at = NOW() WHERE id = :worker_node_id`,
+      `UPDATE simforge.worker_nodes SET last_heartbeat_at = NOW() WHERE id = :worker_node_id`,
       { worker_node_id: lease.worker_node_id },
     );
     await tx.execute(
-      `UPDATE uniscenario.artifact_uploads
+      `UPDATE simforge.artifact_uploads
        SET expires_at = CAST(:expires_at AS timestamptz)
        WHERE render_attempt_id = :attempt_id AND upload_state = 'reserved'`,
       { attempt_id: lease.render_attempt_id, expires_at: rows[0].expires_at },
     );
     if (input.progress !== undefined) {
       await tx.execute(
-        `UPDATE uniscenario.render_jobs SET progress = GREATEST(progress, :progress), updated_at = NOW()
+        `UPDATE simforge.render_jobs SET progress = GREATEST(progress, :progress), updated_at = NOW()
          WHERE id = :job_id AND cancel_requested_at IS NULL
            AND job_state IN ('leased', 'running')`,
         { job_id: jobId, progress: input.progress },
@@ -2444,9 +2445,9 @@ export async function bindArtifactUpload(
   if (!lease || lease.cancel_requested_at) return null;
   const reservation = await withScenarioJobTransaction(jobId, async (tx) => {
     const locked = await tx.queryOne<{ id: string }>(
-      `SELECT l.id FROM uniscenario.worker_leases l
-       JOIN uniscenario.render_attempts a ON a.id = l.render_attempt_id
-       JOIN uniscenario.render_jobs job ON job.id = l.render_job_id
+      `SELECT l.id FROM simforge.worker_leases l
+       JOIN simforge.render_attempts a ON a.id = l.render_attempt_id
+       JOIN simforge.render_jobs job ON job.id = l.render_job_id
        WHERE l.id = :lease_id AND a.attempt_number = :attempt
          AND l.lease_token_sha256 = :lease_token_sha256
          AND l.lease_state = 'active' AND l.expires_at > NOW()
@@ -2472,8 +2473,8 @@ export async function bindArtifactUpload(
     }>(
       `SELECT u.id, u.artifact_kind, u.media_type, u.storage_bucket, u.storage_key,
          u.expected_sha256, u.expected_byte_length
-       FROM uniscenario.artifact_uploads u
-       JOIN uniscenario.render_jobs j ON j.id = u.render_job_id
+       FROM simforge.artifact_uploads u
+       JOIN simforge.render_jobs j ON j.id = u.render_job_id
        WHERE u.id = :upload_id AND u.workspace_id = :workspace_id
          AND u.render_job_id = :job_id AND u.render_attempt_id = :attempt_id
          AND u.upload_state = 'reserved' AND u.expires_at > NOW()
@@ -2496,7 +2497,7 @@ export async function bindArtifactUpload(
       throw new Error("artifact_binding_conflict");
     }
     await tx.execute(
-      `UPDATE uniscenario.artifact_uploads
+      `UPDATE simforge.artifact_uploads
        SET expected_sha256 = :sha256, expected_byte_length = :size_bytes,
          bound_at = COALESCE(bound_at, NOW())
        WHERE id = :upload_id`,
@@ -2518,7 +2519,7 @@ export async function bindArtifactUpload(
       input.sha256,
     ),
     requiredHeaders: checksumBoundPutRequiredHeaders(input.mediaType, input.sha256),
-    artifactUrl: `${apiBaseUrl()}/api/uniscenario/artifact-uploads/${uploadId}`,
+    artifactUrl: `${apiBaseUrl()}/api/simforge/artifact-uploads/${uploadId}`,
   };
 }
 
@@ -2538,25 +2539,25 @@ export async function appendJobEvent(
   if (!lease) return null;
   const accepted = await withScenarioJobTransaction(jobId, async (tx) => {
     const recorded = await tx.queryOne<{ id: string }>(
-      `INSERT INTO uniscenario.job_events (
+      `INSERT INTO simforge.job_events (
          id, workspace_id, render_job_id, render_attempt_id,
          event_ordinal, worker_sequence, event_type, event_payload, occurred_at
        )
        SELECT :id, :workspace_id, :job_id, :attempt_id,
               (SELECT COALESCE(MAX(event_ordinal), 0) + 1
-                 FROM uniscenario.job_events WHERE render_job_id = :job_id),
+                 FROM simforge.job_events WHERE render_job_id = :job_id),
               :sequence, :event_type, CAST(:payload AS jsonb), CAST(:occurred_at AS timestamptz)
-         FROM uniscenario.worker_leases active
-         JOIN uniscenario.render_jobs job ON job.id = active.render_job_id
+         FROM simforge.worker_leases active
+         JOIN simforge.render_jobs job ON job.id = active.render_job_id
         WHERE active.id = :lease_id AND active.render_job_id = :job_id
           AND active.lease_state = 'active' AND active.expires_at > NOW()
           AND job.cancel_requested_at IS NULL AND job.job_state IN ('leased', 'running')
        ON CONFLICT (render_attempt_id, worker_sequence)
          WHERE render_attempt_id IS NOT NULL AND worker_sequence IS NOT NULL
-       DO UPDATE SET id = uniscenario.job_events.id
-         WHERE uniscenario.job_events.event_type = EXCLUDED.event_type
-           AND uniscenario.job_events.event_payload = EXCLUDED.event_payload
-           AND uniscenario.job_events.occurred_at = EXCLUDED.occurred_at
+       DO UPDATE SET id = simforge.job_events.id
+         WHERE simforge.job_events.event_type = EXCLUDED.event_type
+           AND simforge.job_events.event_payload = EXCLUDED.event_payload
+           AND simforge.job_events.occurred_at = EXCLUDED.occurred_at
        RETURNING id`,
       {
         id: scenarioId("usevt"),
@@ -2573,13 +2574,13 @@ export async function appendJobEvent(
     if (!recorded) return false;
     if (input.type === "render_started" || input.type === "interaction_started") {
       await tx.execute(
-        `UPDATE uniscenario.render_jobs SET job_state = 'running',
+        `UPDATE simforge.render_jobs SET job_state = 'running',
            started_at = COALESCE(started_at, NOW()), updated_at = NOW()
          WHERE id = :job_id AND job_state = 'leased'`,
         { job_id: jobId },
       );
       await tx.execute(
-        `UPDATE uniscenario.render_attempts SET attempt_state = 'running',
+        `UPDATE simforge.render_attempts SET attempt_state = 'running',
            started_at = COALESCE(started_at, NOW()) WHERE id = :attempt_id`,
         { attempt_id: lease.render_attempt_id },
       );
@@ -2600,13 +2601,13 @@ async function insertRenderLifecycleEvent(
   },
 ) {
   await tx.execute(
-    `INSERT INTO uniscenario.job_events (
+    `INSERT INTO simforge.job_events (
        id, workspace_id, render_job_id, render_attempt_id,
        event_ordinal, worker_sequence, event_type, event_payload, occurred_at
      ) VALUES (
        :id, :workspace_id, :job_id, :attempt_id,
        (SELECT COALESCE(MAX(event_ordinal), 0) + 1
-          FROM uniscenario.job_events WHERE render_job_id = :job_id),
+          FROM simforge.job_events WHERE render_job_id = :job_id),
        NULL, :event_type, CAST(:payload AS jsonb), NOW()
      )`,
     {
@@ -2679,7 +2680,7 @@ const DEFAULT_LEGACY_CHECKSUM_MAX_BYTES = 256 * 1024 * 1024;
 const DEFAULT_LEGACY_CHECKSUM_TIMEOUT_MS = 60_000;
 
 function boundedPositiveEnv(name: string, fallback: number, ceiling: number) {
-  const parsed = Number(process.env[name] ?? fallback);
+  const parsed = Number(simforgeEnv(name) ?? fallback);
   return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= ceiling ? parsed : fallback;
 }
 
@@ -2695,7 +2696,7 @@ function legacyChecksumBackfillRequired(artifact: StoredArtifact) {
 }
 
 function uploadIdFromArtifactUrl(artifactUrl: string) {
-  const prefix = `${apiBaseUrl()}/api/uniscenario/artifact-uploads/`;
+  const prefix = `${apiBaseUrl()}/api/simforge/artifact-uploads/`;
   if (!artifactUrl.startsWith(prefix)) return null;
   const id = artifactUrl.slice(prefix.length);
   return /^[A-Za-z0-9_-]+$/.test(id) ? id : null;
@@ -2743,8 +2744,8 @@ async function verifyCompletionArtifacts(
          c.byte_length AS canonical_byte_length, c.verified_at::text AS canonical_verified_at,
          c.verification_method AS canonical_verification_method,
          c.verification_sha256 AS canonical_verification_sha256
-       FROM uniscenario.artifact_uploads u
-       LEFT JOIN uniscenario.artifacts c
+       FROM simforge.artifact_uploads u
+       LEFT JOIN simforge.artifacts c
          ON c.workspace_id = u.workspace_id AND c.sha256 = u.expected_sha256
         AND c.artifact_kind = u.artifact_kind AND c.deleted_at IS NULL
        WHERE u.id = :id AND u.workspace_id = :workspace_id AND u.render_attempt_id = :attempt_id
@@ -2824,7 +2825,7 @@ async function verifyCanonicalArtifact(
     return "s3_checksum_sha256";
   } else {
     const maximumBytes = boundedPositiveEnv(
-      "UNISCENARIO_LEGACY_CHECKSUM_MAX_BYTES",
+      "LEGACY_CHECKSUM_MAX_BYTES",
       DEFAULT_LEGACY_CHECKSUM_MAX_BYTES,
       1024 * 1024 * 1024,
     );
@@ -2835,7 +2836,7 @@ async function verifyCanonicalArtifact(
         declaredSizeBytes: declared.sizeBytes,
         maximumBytes,
         maximumDurationMs: boundedPositiveEnv(
-          "UNISCENARIO_LEGACY_CHECKSUM_TIMEOUT_MS",
+          "LEGACY_CHECKSUM_TIMEOUT_MS",
           DEFAULT_LEGACY_CHECKSUM_TIMEOUT_MS,
           120_000,
         ),
@@ -2872,7 +2873,7 @@ async function preverifyCanonicalArtifacts(artifacts: VerifiedCompletionArtifact
     if (canonical.verification_sha256 !== declared.sha256 || !canonical.verification_method || !canonical.verified_at) {
       const method = await verifyCanonicalArtifact(canonical, declared);
       await queryRows(
-        `UPDATE uniscenario.artifacts
+        `UPDATE simforge.artifacts
          SET verification_method = :verification_method,
            verification_sha256 = :verification_sha256,
            verified_at = COALESCE(verified_at, NOW())
@@ -2900,18 +2901,18 @@ export async function drainArtifactCleanupOutbox(ids?: string[], excludeIds: str
   const rows =
     (await queryRows<CleanupRow>(
       `SELECT o.id, o.storage_bucket, o.storage_key
-     FROM uniscenario.artifact_cleanup_outbox o
-     JOIN uniscenario.artifact_uploads u
+     FROM simforge.artifact_cleanup_outbox o
+     JOIN simforge.artifact_uploads u
        ON u.id = o.artifact_upload_id AND u.workspace_id = o.workspace_id
       AND u.render_job_id = o.render_job_id AND u.render_attempt_id = o.render_attempt_id
       AND u.storage_bucket = o.storage_bucket AND u.storage_key = o.storage_key
       AND u.upload_state = 'uploaded' AND u.completed_artifact_id IS NOT NULL
-     JOIN uniscenario.artifacts canonical ON canonical.id = u.completed_artifact_id
+     JOIN simforge.artifacts canonical ON canonical.id = u.completed_artifact_id
       AND canonical.workspace_id = o.workspace_id
       AND (canonical.storage_bucket <> o.storage_bucket OR canonical.storage_key <> o.storage_key)
      WHERE o.cleanup_state = 'pending'
        AND NOT EXISTS (
-         SELECT 1 FROM uniscenario.artifacts referenced
+         SELECT 1 FROM simforge.artifacts referenced
          WHERE referenced.storage_bucket = o.storage_bucket
            AND referenced.storage_key = o.storage_key
            AND referenced.deleted_at IS NULL
@@ -2928,18 +2929,18 @@ export async function drainArtifactCleanupOutbox(ids?: string[], excludeIds: str
   for (const row of rows) {
     const stillSafe = await queryRows<{ id: string }>(
       `SELECT o.id /* cleanup_revalidation */
-       FROM uniscenario.artifact_cleanup_outbox o
-       JOIN uniscenario.artifact_uploads u
+       FROM simforge.artifact_cleanup_outbox o
+       JOIN simforge.artifact_uploads u
          ON u.id = o.artifact_upload_id AND u.workspace_id = o.workspace_id
         AND u.render_job_id = o.render_job_id AND u.render_attempt_id = o.render_attempt_id
         AND u.storage_bucket = o.storage_bucket AND u.storage_key = o.storage_key
         AND u.upload_state = 'uploaded' AND u.completed_artifact_id IS NOT NULL
-       JOIN uniscenario.artifacts canonical ON canonical.id = u.completed_artifact_id
+       JOIN simforge.artifacts canonical ON canonical.id = u.completed_artifact_id
         AND canonical.workspace_id = o.workspace_id
         AND (canonical.storage_bucket <> o.storage_bucket OR canonical.storage_key <> o.storage_key)
        WHERE o.id = :id AND o.cleanup_state = 'pending'
          AND NOT EXISTS (
-           SELECT 1 FROM uniscenario.artifacts referenced
+           SELECT 1 FROM simforge.artifacts referenced
            WHERE referenced.storage_bucket = o.storage_bucket
              AND referenced.storage_key = o.storage_key
              AND referenced.deleted_at IS NULL
@@ -2950,14 +2951,14 @@ export async function drainArtifactCleanupOutbox(ids?: string[], excludeIds: str
     try {
       deleted += await deleteS3Keys([row.storage_key], row.storage_bucket);
       await queryRows(
-        `UPDATE uniscenario.artifact_cleanup_outbox
+        `UPDATE simforge.artifact_cleanup_outbox
          SET cleanup_state = 'deleted', completed_at = NOW(), last_error_code = NULL
          WHERE id = :id AND cleanup_state = 'pending' RETURNING id`,
         { id: row.id },
       );
     } catch (error) {
       await queryRows(
-        `UPDATE uniscenario.artifact_cleanup_outbox
+        `UPDATE simforge.artifact_cleanup_outbox
          SET attempts = attempts + 1, last_attempt_at = NOW(),
            last_error_code = :error_code
          WHERE id = :id AND cleanup_state = 'pending' RETURNING id`,
@@ -3040,7 +3041,7 @@ export async function completeRenderJob(
     throw new Error("render_output_resource_limit_exceeded");
   }
   const reservedKinds = await queryRows<{ artifact_kind: string }>(
-    `SELECT artifact_kind FROM uniscenario.artifact_uploads
+    `SELECT artifact_kind FROM simforge.artifact_uploads
       WHERE render_attempt_id = :attempt_id ORDER BY artifact_kind`,
     { attempt_id: lease.render_attempt_id },
   );
@@ -3057,8 +3058,8 @@ export async function completeRenderJob(
   const preverifiedCanonicalArtifacts = await preverifyCanonicalArtifacts(artifacts);
   const committed = await withScenarioJobTransaction(jobId, async (tx) => {
     const locked = await tx.queryOne<{ id: string }>(
-      `SELECT l.id FROM uniscenario.worker_leases l
-       JOIN uniscenario.render_attempts a ON a.id = l.render_attempt_id
+      `SELECT l.id FROM simforge.worker_leases l
+       JOIN simforge.render_attempts a ON a.id = l.render_attempt_id
        WHERE l.id = :lease_id AND a.attempt_number = :attempt
          AND l.lease_token_sha256 = :lease_token_sha256
          AND l.lease_state = 'active' AND l.expires_at > NOW()
@@ -3079,7 +3080,7 @@ export async function completeRenderJob(
       // takes the unique-index row lock, so simultaneous completions converge
       // on one canonical artifact instead of turning a valid retry into a 409.
       const row = await tx.queryOne<StoredArtifact>(
-        `INSERT INTO uniscenario.artifacts (
+        `INSERT INTO simforge.artifacts (
            id, workspace_id, revision_id, artifact_kind, media_type,
            storage_bucket, storage_key, sha256, byte_length, artifact_state,
            metadata, verified_at, verification_method, verification_sha256,
@@ -3134,7 +3135,7 @@ export async function completeRenderJob(
         keys.push(artifact.key);
         redundantUploads.set(artifact.bucket, keys);
         await tx.execute(
-          `INSERT INTO uniscenario.artifact_cleanup_outbox (
+          `INSERT INTO simforge.artifact_cleanup_outbox (
              id, workspace_id, render_job_id, render_attempt_id,
              artifact_upload_id, storage_bucket, storage_key
            ) VALUES (
@@ -3155,13 +3156,13 @@ export async function completeRenderJob(
       }
       artifactIds.push(row.id);
       await tx.execute(
-        `UPDATE uniscenario.artifact_uploads
+        `UPDATE simforge.artifact_uploads
          SET upload_state = 'uploaded', completed_artifact_id = :artifact_id, completed_at = NOW()
          WHERE id = :upload_id AND upload_state = 'reserved'`,
         { upload_id: artifact.uploadId, artifact_id: row.id },
       );
       await tx.execute(
-        `INSERT INTO uniscenario.artifact_links (
+        `INSERT INTO simforge.artifact_links (
            id, workspace_id, artifact_id, render_job_id, render_attempt_id, relationship
          ) VALUES (
            :id, :workspace_id, :artifact_id, :job_id, :attempt_id, 'render_output'
@@ -3185,7 +3186,7 @@ export async function completeRenderJob(
       divergences: evidence.divergences,
     };
     await tx.execute(
-      `UPDATE uniscenario.render_attempts
+      `UPDATE simforge.render_attempts
        SET attempt_state = :attempt_state, completed_at = NOW(),
          metrics = CAST(:metrics AS jsonb),
          parity_evidence_schema = :parity_evidence_schema,
@@ -3212,12 +3213,12 @@ export async function completeRenderJob(
       },
     );
     await tx.execute(
-      `UPDATE uniscenario.worker_leases
+      `UPDATE simforge.worker_leases
        SET lease_state = 'released', released_at = NOW() WHERE id = :lease_id`,
       { lease_id: lease.lease_id },
     );
     await tx.execute(
-      `UPDATE uniscenario.render_jobs
+      `UPDATE simforge.render_jobs
        SET job_state = :job_state, progress = 1, completed_at = NOW(), updated_at = NOW(),
          failure_code = :failure_code, failure_detail = CAST(:failure_detail AS jsonb),
          parity_result = CAST(:parity AS jsonb), worker_attestation = CAST(:attestation AS jsonb),
@@ -3273,7 +3274,7 @@ export async function completeRenderJob(
   const cleanupRows =
     (cleanupIds.length
       ? await queryRows<CleanupRow>(
-          `SELECT id, storage_bucket, storage_key FROM uniscenario.artifact_cleanup_outbox
+          `SELECT id, storage_bucket, storage_key FROM simforge.artifact_cleanup_outbox
        WHERE cleanup_state = 'pending' AND workspace_id = :workspace_id`,
           { workspace_id: lease.workspace_id },
         )
@@ -3316,7 +3317,7 @@ export async function failRenderJob(
   if (!lease) return null;
   return withScenarioJobTransaction(jobId, async (tx) => {
     const locked = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.worker_leases
+      `SELECT id FROM simforge.worker_leases
        WHERE id = :lease_id AND lease_token_sha256 = :lease_token_sha256
          AND lease_state = 'active' AND expires_at > NOW()
        FOR UPDATE`,
@@ -3329,7 +3330,7 @@ export async function failRenderJob(
     const cancelled = input.error.code === "CancellationRequested" && Boolean(lease.cancel_requested_at);
     const retry = !cancelled && input.error.retryable && Number(lease.attempt_count) < Number(lease.max_attempts);
     await tx.execute(
-      `UPDATE uniscenario.render_attempts
+      `UPDATE simforge.render_attempts
        SET attempt_state = :attempt_state, completed_at = NOW(),
          metrics = CAST(:metrics AS jsonb)
        WHERE id = :attempt_id`,
@@ -3340,17 +3341,17 @@ export async function failRenderJob(
       },
     );
     await tx.execute(
-      `UPDATE uniscenario.worker_leases
+      `UPDATE simforge.worker_leases
        SET lease_state = 'released', released_at = NOW() WHERE id = :lease_id`,
       { lease_id: lease.lease_id },
     );
     await tx.execute(
-      `UPDATE uniscenario.artifact_uploads SET upload_state = 'cancelled'
+      `UPDATE simforge.artifact_uploads SET upload_state = 'cancelled'
        WHERE render_attempt_id = :attempt_id AND upload_state = 'reserved'`,
       { attempt_id: lease.render_attempt_id },
     );
     await tx.execute(
-      `UPDATE uniscenario.render_jobs
+      `UPDATE simforge.render_jobs
        SET job_state = :job_state, completed_at = CASE WHEN :retry THEN NULL ELSE NOW() END,
          updated_at = NOW(), failure_code = :failure_code,
          failure_detail = CAST(:failure_detail AS jsonb)
@@ -3405,7 +3406,7 @@ export async function getArtifactUpload(context: AppContext, uploadId: string) {
   }>(
     `SELECT id, artifact_kind, media_type, upload_state, completed_artifact_id,
        expires_at::text AS expires_at
-     FROM uniscenario.artifact_uploads
+     FROM simforge.artifact_uploads
      WHERE id = :id AND workspace_id = :workspace_id LIMIT 1`,
     { id: uploadId, workspace_id: context.workspaceId },
   );
@@ -3431,7 +3432,7 @@ export async function getFinalizedArtifact(
   }>(
     `SELECT id, revision_id, artifact_kind, media_type, storage_bucket, storage_key,
        sha256, byte_length, metadata::text AS metadata, created_at::text AS created_at
-     FROM uniscenario.artifacts
+     FROM simforge.artifacts
      WHERE workspace_id = :workspace_id AND id = :artifact_id
        AND artifact_state = 'available' AND deleted_at IS NULL
      LIMIT 1`,

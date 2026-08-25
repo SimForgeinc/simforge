@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .._compat_env import simforge_env
 import hashlib
 import json
 import math
@@ -41,12 +42,12 @@ def _configured_max_sensor_pixels() -> int:
     Pronto intent (~3.98e9). It bounds compute and temporary-disk pressure, not
     memory: camera frames stream straight into their per-camera ffmpeg encoder
     and never land on disk; lidar/radar data lands per frame.
-    Fail-closed above the bound; override via UNISCENARIO_MAX_SENSOR_PIXELS."""
-    raw = os.environ.get("UNISCENARIO_MAX_SENSOR_PIXELS", "").strip()
+    Fail-closed above the bound; override via SIMFORGE_MAX_SENSOR_PIXELS."""
+    raw = simforge_env("MAX_SENSOR_PIXELS", "").strip()
     if not raw:
         return 6_000_000_000
     if not raw.isdigit() or int(raw) <= 0:
-        raise ContractError("UNISCENARIO_MAX_SENSOR_PIXELS must be a positive integer")
+        raise ContractError("SIMFORGE_MAX_SENSOR_PIXELS must be a positive integer")
     return int(raw)
 
 

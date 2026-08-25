@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .._compat_env import simforge_env
 import shutil
 
 import hashlib
@@ -1442,7 +1443,7 @@ def execute_lease(
             add_artifact(make_artifact("trace", trace_body, "application/gzip", lease.artifact_uploads.get("trace"), {"format": "json", "contentEncoding": "gzip"}))
         if "video" in lease.render_spec.outputs:
             check_abort("collect_camera_videos", len(plan.frames), len(plan.frames))
-            video_encoder = os.environ.get("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
+            video_encoder = simforge_env("PRESENTATION_VIDEO_ENCODER", "software")
             camera_sensors = [
                 sensor for sensor in lease.render_spec.sensors
                 if sensor.modality in CAMERA_MODALITIES

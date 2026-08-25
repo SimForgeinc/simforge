@@ -8,12 +8,12 @@
  *
  * The shape of an optimize pass, and why it is a new version rather than an edit:
  * a published closure is immutable — its digest is what the editor caches by, and
- * `browser_asset_set_id` binds once. `uniscenario.map_versions` is unique on
+ * `browser_asset_set_id` binds once. `simforge.map_versions` is unique on
  * `(workspace_id, source_map_asset_id, derivative_release_id)` precisely so an
  * optimized rebuild can be published *alongside* the original instead of
  * repointing it, and the editor's descriptor query already prefers the newest
  * publication per source map. Scenarios are unaffected because
- * `uniscenario.documents.map_version_id` pins the exact version they were
+ * `simforge.documents.map_version_id` pins the exact version they were
  * authored against.
  *
  * An optimize pass may only add or replace files under `3d/variants/`. It must
@@ -147,13 +147,13 @@ export async function loadOptimizationSource(
             thumb.storage_bucket AS thumbnail_bucket, thumb.storage_key AS thumbnail_key,
             thumb.sha256 AS thumbnail_sha256, thumb.byte_length AS thumbnail_byte_length,
             thumb.media_type AS thumbnail_media_type
-       FROM uniscenario.map_versions mv
-       JOIN uniscenario.browser_asset_sets bs
+       FROM simforge.map_versions mv
+       JOIN simforge.browser_asset_sets bs
          ON bs.id = mv.browser_asset_set_id AND bs.asset_set_state = 'available'
-       LEFT JOIN uniscenario.map_upload_drafts d
+       LEFT JOIN simforge.map_upload_drafts d
          ON d.map_version_id = mv.id AND d.workspace_id = mv.workspace_id
        LEFT JOIN public.map_assets ma ON ma.id = mv.source_map_asset_id
-       LEFT JOIN uniscenario.artifacts thumb ON thumb.id = mv.thumbnail_artifact_id
+       LEFT JOIN simforge.artifacts thumb ON thumb.id = mv.thumbnail_artifact_id
       WHERE mv.id = :map_version_id AND mv.workspace_id = :workspace_id
         AND mv.retired_at IS NULL
       LIMIT 1`,
@@ -165,7 +165,7 @@ export async function loadOptimizationSource(
   }
   if (!row.draft_id) {
     // Every artifact needs a `map_publication` producer that resolves against
-    // uniscenario.map_upload_drafts. A version published by the operator seed
+    // simforge.map_upload_drafts. A version published by the operator seed
     // script has no draft, so it cannot be optimized through this route until
     // that path gets a producer of its own.
     throw new OptimizationSourceError(
@@ -180,9 +180,9 @@ export async function loadOptimizationSource(
 
   const members = await queryRows<MemberRow>(
     `SELECT bm.relative_path, bb.sha256, bb.byte_length, bb.media_type, bm.required
-       FROM uniscenario.browser_asset_members bm
-       JOIN uniscenario.browser_asset_sets bs ON bs.id = bm.asset_set_id
-       JOIN uniscenario.browser_asset_blobs bb ON bb.id = bm.blob_id
+       FROM simforge.browser_asset_members bm
+       JOIN simforge.browser_asset_sets bs ON bs.id = bm.asset_set_id
+       JOIN simforge.browser_asset_blobs bb ON bb.id = bm.blob_id
       WHERE bs.map_version_id = :map_version_id AND bs.asset_set_state = 'available'
         AND bb.verification_state = 'verified'
       ORDER BY bm.relative_path`,

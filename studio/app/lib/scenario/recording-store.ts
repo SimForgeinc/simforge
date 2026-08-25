@@ -45,6 +45,7 @@ import {
   type ReserveBrowserRecordingArtifactsInput,
   type UpdateBrowserRecordingProgressInput,
 } from "./recording-contracts";
+import { simforgeEnv } from "@/lib/compat-env";
 
 const RECORDING_SESSION_TTL_SECONDS = 20 * 60;
 const SUPPORTED_V3_ARTIFACTS = new Set([
@@ -220,7 +221,7 @@ function recordingInputMatchesFrozenRevision(
   return true;
 }
 
-function artifactBucket() { return process.env.UNISCENARIO_ARTIFACT_BUCKET?.trim() || "local-artifacts"; }
+function artifactBucket() { return simforgeEnv("ARTIFACT_BUCKET")?.trim() || "local-artifacts"; }
 
 type RecordingRow = {
   id: string;
@@ -331,14 +332,14 @@ async function insertRecordingEvent(
   },
 ) {
   await tx.execute(
-    `INSERT INTO uniscenario.operational_job_events (
+    `INSERT INTO simforge.operational_job_events (
        id, workspace_id, job_family, job_id, attempt_id,
        event_ordinal, event_type, event_payload
      ) VALUES (
        :id, :workspace_id, 'artifact_postprocess', :job_id, NULL,
        COALESCE((
          SELECT MAX(event_ordinal) + 1
-           FROM uniscenario.operational_job_events
+           FROM simforge.operational_job_events
           WHERE job_family = 'artifact_postprocess' AND job_id = :job_id
        ), 1), :event_type, CAST(:event_payload AS jsonb)
      )`,
@@ -358,9 +359,9 @@ async function quarantinePendingArtifacts(
   recordingId: string,
 ) {
   await tx.execute(
-    `UPDATE uniscenario.artifacts artifact
+    `UPDATE simforge.artifacts artifact
         SET artifact_state = 'quarantined'
-       FROM uniscenario.operational_job_artifact_links link
+       FROM simforge.operational_job_artifact_links link
       WHERE link.workspace_id = :workspace_id
         AND link.job_family = 'artifact_postprocess' AND link.job_id = :job_id
         AND link.artifact_id = artifact.id AND link.workspace_id = artifact.workspace_id
@@ -376,7 +377,7 @@ async function expireRecordingIfAbandoned(
 ) {
   return withScenarioJobTransaction(recordingId, async (tx) => {
     const expired = await tx.queryOne<{ id: string }>(
-      `UPDATE uniscenario.artifact_postprocess_jobs
+      `UPDATE simforge.artifact_postprocess_jobs
           SET state = 'failed', phase = 'abandoned',
               failure_code = 'recording_session_expired',
               failure_detail = jsonb_build_object(
@@ -403,7 +404,7 @@ async function expireRecordingIfAbandoned(
 
 async function expireAbandonedRecordingBatch(workspaceId: string) {
   const rows = await queryRows<{ id: string }>(
-    `SELECT id FROM uniscenario.artifact_postprocess_jobs
+    `SELECT id FROM simforge.artifact_postprocess_jobs
       WHERE workspace_id = :workspace_id
         AND postprocess_kind = 'browser_threejs_recording'
         AND state = 'running' AND expires_at <= NOW()
@@ -419,7 +420,7 @@ async function readRecordingRow(
 ) {
   const rows = await queryRows<RecordingRow>(
     `SELECT ${RECORDING_COLUMNS}
-       FROM uniscenario.artifact_postprocess_jobs job
+       FROM simforge.artifact_postprocess_jobs job
       WHERE job.id = :job_id AND job.workspace_id = :workspace_id
         AND job.postprocess_kind = 'browser_threejs_recording'
       LIMIT 1`,
@@ -440,8 +441,8 @@ async function readRecordingArtifacts(
             artifact.artifact_state, artifact.storage_bucket, artifact.storage_key,
             artifact.producer_job_id,
             artifact.producer_job_id <> :job_id AS reused
-       FROM uniscenario.operational_job_artifact_links link
-       JOIN uniscenario.artifacts artifact
+       FROM simforge.operational_job_artifact_links link
+       JOIN simforge.artifacts artifact
          ON artifact.id = link.artifact_id AND artifact.workspace_id = link.workspace_id
       WHERE link.workspace_id = :workspace_id
         AND link.job_family = 'artifact_postprocess' AND link.job_id = :job_id
@@ -465,11 +466,11 @@ export async function createBrowserRecording(
        revision.canonical_content::text AS canonical_content,
        revision.map_version_id, map_version.source_map_asset_id AS map_id,
        map_version.xodr_sha256
-       FROM uniscenario.revisions revision
-       JOIN uniscenario.documents document
+       FROM simforge.revisions revision
+       JOIN simforge.documents document
          ON document.id = revision.document_id
         AND document.workspace_id = revision.workspace_id
-       JOIN uniscenario.map_versions map_version
+       JOIN simforge.map_versions map_version
          ON map_version.id = revision.map_version_id
       WHERE revision.id = :revision_id AND revision.workspace_id = :workspace_id
         AND revision.document_id = :document_id AND document.deleted_at IS NULL
@@ -518,7 +519,7 @@ export async function createBrowserRecording(
   });
   const admitted = await queryRows<{ request_payload_sha256: string }>(
     `SELECT request_payload_sha256
-       FROM uniscenario.artifact_postprocess_jobs
+       FROM simforge.artifact_postprocess_jobs
       WHERE id = :job_id AND workspace_id = :workspace_id
         AND postprocess_kind = 'browser_threejs_recording' LIMIT 1`,
     { job_id: id, workspace_id: context.workspaceId },
@@ -536,7 +537,7 @@ export async function listBrowserRecordings(
   await expireAbandonedRecordingBatch(context.workspaceId);
   const rows = await queryRows<RecordingRow>(
     `SELECT ${RECORDING_COLUMNS}
-       FROM uniscenario.artifact_postprocess_jobs job
+       FROM simforge.artifact_postprocess_jobs job
       WHERE job.workspace_id = :workspace_id
         AND job.postprocess_kind = 'browser_threejs_recording'
         ${input.revisionId ? "AND job.revision_id = :revision_id" : ""}
@@ -578,7 +579,7 @@ export async function updateBrowserRecordingProgress(
   const updated = await withScenarioJobTransaction(recordingId, async (tx) => {
     const current = await tx.queryOne<{ phase: string; progress: number }>(
       `SELECT phase, progress
-         FROM uniscenario.artifact_postprocess_jobs
+         FROM simforge.artifact_postprocess_jobs
         WHERE id = :job_id AND workspace_id = :workspace_id
           AND postprocess_kind = 'browser_threejs_recording'
           AND state = 'running' AND cancel_requested_at IS NULL
@@ -590,7 +591,7 @@ export async function updateBrowserRecordingProgress(
     const nextOrder = PHASE_ORDER.get(input.phase) ?? -1;
     if (nextOrder < currentOrder || input.progress < Number(current.progress)) return false;
     const row = await tx.queryOne<{ id: string }>(
-      `UPDATE uniscenario.artifact_postprocess_jobs
+      `UPDATE simforge.artifact_postprocess_jobs
           SET phase = :phase, progress = :progress,
               progress_payload = CAST(:progress_payload AS jsonb),
               client_heartbeat_at = NOW(),
@@ -635,7 +636,7 @@ export async function reserveBrowserRecordingArtifacts(
       request_payload_sha256: string;
     }>(
       `SELECT revision_id, request_payload, request_payload_sha256
-         FROM uniscenario.artifact_postprocess_jobs
+         FROM simforge.artifact_postprocess_jobs
         WHERE id = :job_id AND workspace_id = :workspace_id
           AND postprocess_kind = 'browser_threejs_recording'
           AND state = 'running' AND cancel_requested_at IS NULL
@@ -672,8 +673,8 @@ export async function reserveBrowserRecordingArtifacts(
                 artifact.artifact_state, artifact.storage_bucket, artifact.storage_key,
                 artifact.producer_job_id,
                 artifact.producer_job_id <> :job_id AS reused
-           FROM uniscenario.operational_job_artifact_links link
-           JOIN uniscenario.artifacts artifact
+           FROM simforge.operational_job_artifact_links link
+           JOIN simforge.artifacts artifact
              ON artifact.id = link.artifact_id AND artifact.workspace_id = link.workspace_id
           WHERE link.workspace_id = :workspace_id
             AND link.job_family = 'artifact_postprocess' AND link.job_id = :job_id
@@ -758,7 +759,7 @@ export async function reserveBrowserRecordingArtifacts(
                 artifact_kind, media_type, sha256, byte_length, artifact_state,
                 storage_bucket, storage_key, producer_job_id, deleted_at::text,
                 producer_job_id <> :job_id AS reused
-           FROM uniscenario.artifacts
+           FROM simforge.artifacts
           WHERE workspace_id = :workspace_id AND sha256 = :sha256
             AND artifact_kind = :artifact_kind AND deleted_at IS NULL
             AND (
@@ -772,7 +773,7 @@ export async function reserveBrowserRecordingArtifacts(
       let inserted: ArtifactRow | null = null;
       try {
         inserted = existingDigest ? null : await tx.queryOne<ArtifactRow>(
-          `INSERT INTO uniscenario.artifacts (
+          `INSERT INTO simforge.artifacts (
              id, workspace_id, revision_id, artifact_kind, media_type,
              storage_bucket, storage_key, sha256, byte_length, artifact_state,
              metadata, created_by_user_id, producer_job_family, producer_job_id, provenance
@@ -815,7 +816,7 @@ export async function reserveBrowserRecordingArtifacts(
         );
       }
       await tx.execute(
-        `INSERT INTO uniscenario.operational_job_artifact_links (
+        `INSERT INTO simforge.operational_job_artifact_links (
            id, workspace_id, artifact_id, job_family, job_id,
            attempt_id, relationship, artifact_role,
            artifact_sensor_actor_id, artifact_sensor_id, artifact_sensor_modality
@@ -847,7 +848,7 @@ export async function reserveBrowserRecordingArtifacts(
       });
     }
     await tx.execute(
-      `UPDATE uniscenario.artifact_postprocess_jobs
+      `UPDATE simforge.artifact_postprocess_jobs
           SET phase = 'uploading', progress = GREATEST(progress, 0.9),
               client_heartbeat_at = NOW(),
               expires_at = NOW() + (:session_ttl * INTERVAL '1 second'),
@@ -1015,7 +1016,7 @@ export async function cancelBrowserRecording(
   await expireRecordingIfAbandoned(context.workspaceId, recordingId);
   const found = await withScenarioJobTransaction(recordingId, async (tx) => {
     const current = await tx.queryOne<{ state: string }>(
-      `SELECT state FROM uniscenario.artifact_postprocess_jobs
+      `SELECT state FROM simforge.artifact_postprocess_jobs
         WHERE id = :job_id AND workspace_id = :workspace_id
           AND postprocess_kind = 'browser_threejs_recording' FOR UPDATE`,
       { workspace_id: context.workspaceId, job_id: recordingId },
@@ -1023,7 +1024,7 @@ export async function cancelBrowserRecording(
     if (!current) return false;
     if (["succeeded", "failed", "cancelled"].includes(current.state)) return true;
     await tx.execute(
-      `UPDATE uniscenario.artifact_postprocess_jobs
+      `UPDATE simforge.artifact_postprocess_jobs
           SET state = 'cancelled', phase = 'cancelled',
               cancel_requested_at = COALESCE(cancel_requested_at, NOW()),
               cancel_reason = COALESCE(cancel_reason, :reason),
@@ -1056,7 +1057,7 @@ export async function failBrowserRecording(
   await expireRecordingIfAbandoned(context.workspaceId, recordingId);
   const found = await withScenarioJobTransaction(recordingId, async (tx) => {
     const current = await tx.queryOne<{ state: string }>(
-      `SELECT state FROM uniscenario.artifact_postprocess_jobs
+      `SELECT state FROM simforge.artifact_postprocess_jobs
         WHERE id = :job_id AND workspace_id = :workspace_id
           AND postprocess_kind = 'browser_threejs_recording' FOR UPDATE`,
       { workspace_id: context.workspaceId, job_id: recordingId },
@@ -1064,7 +1065,7 @@ export async function failBrowserRecording(
     if (!current) return false;
     if (["succeeded", "failed", "cancelled"].includes(current.state)) return true;
     await tx.execute(
-      `UPDATE uniscenario.artifact_postprocess_jobs
+      `UPDATE simforge.artifact_postprocess_jobs
           SET state = 'failed', phase = 'failed', failure_code = :failure_code,
               failure_detail = CAST(:failure_detail AS jsonb),
               completed_at = COALESCE(completed_at, NOW()), updated_at = NOW()

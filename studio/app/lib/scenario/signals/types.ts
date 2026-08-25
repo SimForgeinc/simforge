@@ -13,7 +13,7 @@
  * with no compiled semantic graph, and a per-process cache keyed on a hand-bumped
  * derivation version.
  *
- * v2 deletes the premise. `uniscenario.map_versions` carries `xodr_artifact_id`,
+ * v2 deletes the premise. `simforge.map_versions` carries `xodr_artifact_id`,
  * `xodr_sha256`, `topology_artifact_url`, `signals_artifact_id` and
  * `coordinate_system_sha256` **on one row**, under
  * `UNIQUE (workspace_id, xodr_sha256, coordinate_system_sha256)`. A map version
@@ -237,7 +237,7 @@ export const EDITOR_SIGNAL_PROJECTION_VERSION = "uniscenario.editor-signal-contr
  */
 export type EditorSignalControlProjection = {
   readonly schemaVersion: typeof EDITOR_SIGNAL_PROJECTION_VERSION;
-  /** `uniscenario.map_versions.id` — the stable v2 handle. */
+  /** `simforge.map_versions.id` — the stable v2 handle. */
   readonly mapVersionId: string;
   /** The compiler's `mapId`, i.e. what `MapSignalPlan.binding.mapId` must equal. */
   readonly mapId: string;

@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import { hostname } from "node:os";
 import { setTimeout as wait } from "node:timers/promises";
+import { simforgeEnv } from "../lib/compat-env";
 
 import { COMPILER_VERSION, compileClaim, type CompileResult, type CompilerArtifact, type CompilerArtifactKind, type CompilerClaim } from "./compiler-core.js";
 
@@ -30,17 +31,17 @@ class CompilerClient {
   }
 
   async claim(signal: AbortSignal): Promise<CompilerClaim | null> {
-    const value = await this.post("/api/uniscenario/internal/exports/claim", { workerId: this.workerId, leaseSeconds: LEASE_SECONDS }, signal, true);
+    const value = await this.post("/api/simforge/internal/exports/claim", { workerId: this.workerId, leaseSeconds: LEASE_SECONDS }, signal, true);
     if (!value) return null;
     return parseClaim(value);
   }
 
   async heartbeat(claim: CompilerClaim, signal: AbortSignal): Promise<void> {
-    await this.post(`/api/uniscenario/internal/exports/${encodeURIComponent(claim.exportId)}/heartbeat`, fence(claim, { leaseSeconds: LEASE_SECONDS }), signal);
+    await this.post(`/api/simforge/internal/exports/${encodeURIComponent(claim.exportId)}/heartbeat`, fence(claim, { leaseSeconds: LEASE_SECONDS }), signal);
   }
 
   async reserve(claim: CompilerClaim, artifacts: readonly CompilerArtifact[], signal: AbortSignal): Promise<Reservation[]> {
-    const value = await this.post(`/api/uniscenario/internal/exports/${encodeURIComponent(claim.exportId)}/reserve`, fence(claim, {
+    const value = await this.post(`/api/simforge/internal/exports/${encodeURIComponent(claim.exportId)}/reserve`, fence(claim, {
       artifacts: artifacts.map((item) => ({ kind: item.kind, mediaType: item.mediaType, sha256: item.sha256, sizeBytes: item.bytes.byteLength })),
     }), signal);
     const rows = value?.artifacts;
@@ -71,7 +72,7 @@ class CompilerClient {
 
   async complete(claim: CompilerClaim, result: CompileResult, reservations: readonly Reservation[], signal: AbortSignal): Promise<void> {
     const byKind = new Map(reservations.map((item) => [item.kind, item]));
-    await this.post(`/api/uniscenario/internal/exports/${encodeURIComponent(claim.exportId)}/complete`, fence(claim, {
+    await this.post(`/api/simforge/internal/exports/${encodeURIComponent(claim.exportId)}/complete`, fence(claim, {
       artifacts: result.artifacts.map((item) => ({ id: byKind.get(item.kind)?.id, kind: item.kind, sha256: item.sha256, sizeBytes: item.bytes.byteLength })),
       manifestSha256: result.manifestSha256,
       xsdSha256: result.xsdSha256,
@@ -82,7 +83,7 @@ class CompilerClient {
   async fail(claim: CompilerClaim, error: unknown): Promise<void> {
     const message = error instanceof Error ? error.message : String(error);
     const code = /^[a-z0-9_:-]+$/i.test(message) ? message.slice(0, 100) : "compiler_failed";
-    await this.post(`/api/uniscenario/internal/exports/${encodeURIComponent(claim.exportId)}/fail`, fence(claim, {
+    await this.post(`/api/simforge/internal/exports/${encodeURIComponent(claim.exportId)}/fail`, fence(claim, {
       code,
       detail: { category: error instanceof Error ? error.name : "UnknownError", message: message.slice(0, 2_000) },
     }), AbortSignal.timeout(30_000));
@@ -90,7 +91,7 @@ class CompilerClient {
 }
 
 export async function runCompilerLoop(baseUrl: string | URL, token: string, signal: AbortSignal): Promise<void> {
-  const workerId = process.env.UNISCENARIO_COMPILER_WORKER_ID?.trim() || `local-compiler-${hostname().replace(/[^A-Za-z0-9._:-]/g, "-")}-${process.pid}`;
+  const workerId = simforgeEnv("COMPILER_WORKER_ID")?.trim() || `local-compiler-${hostname().replace(/[^A-Za-z0-9._:-]/g, "-")}-${process.pid}`;
   const client = new CompilerClient(new URL(baseUrl), token, workerId);
   const xsdPath = createRequire(import.meta.url).resolve("@simforge/openscenario/schema/OpenSCENARIO.xsd");
   process.stdout.write(`${JSON.stringify({ component: "simforge-local-compiler", event: "worker.started", workerId, compilerVersion: COMPILER_VERSION })}\n`);

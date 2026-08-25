@@ -23,9 +23,23 @@ import {
   type SensorMount,
 } from './schema/v2/sensors.js';
 
-export const RENDER_SPEC_V2_SCHEMA = 'uniscenario.render-spec/v2' as const;
-export const RESOLVED_CAPTURE_MANIFEST_V1_SCHEMA = 'uniscenario.capture-manifest/v1' as const;
-export const RENDER_SPEC_V3_SCHEMA = 'uniscenario.render-spec/v3' as const;
+export const CANONICAL_RENDER_SPEC_V2_SCHEMA = 'simforge.render-spec/v2' as const;
+export const LEGACY_RENDER_SPEC_V2_SCHEMA = 'uniscenario.render-spec/v2' as const;
+export const CANONICAL_CAPTURE_MANIFEST_V1_SCHEMA = 'simforge.capture-manifest/v1' as const;
+export const LEGACY_CAPTURE_MANIFEST_V1_SCHEMA = 'uniscenario.capture-manifest/v1' as const;
+export const CANONICAL_RENDER_SPEC_V3_SCHEMA = 'simforge.render-spec/v3' as const;
+export const LEGACY_RENDER_SPEC_V3_SCHEMA = 'uniscenario.render-spec/v3' as const;
+/** Digest-preserving writer switch; keep false until canonical-document cutover. */
+export const EMIT_CANONICAL_RENDER_SCHEMAS = false;
+export const RENDER_SPEC_V2_SCHEMA = (
+  EMIT_CANONICAL_RENDER_SCHEMAS ? CANONICAL_RENDER_SPEC_V2_SCHEMA : LEGACY_RENDER_SPEC_V2_SCHEMA
+) as typeof CANONICAL_RENDER_SPEC_V2_SCHEMA | typeof LEGACY_RENDER_SPEC_V2_SCHEMA;
+export const RESOLVED_CAPTURE_MANIFEST_V1_SCHEMA = (
+  EMIT_CANONICAL_RENDER_SCHEMAS ? CANONICAL_CAPTURE_MANIFEST_V1_SCHEMA : LEGACY_CAPTURE_MANIFEST_V1_SCHEMA
+) as typeof CANONICAL_CAPTURE_MANIFEST_V1_SCHEMA | typeof LEGACY_CAPTURE_MANIFEST_V1_SCHEMA;
+export const RENDER_SPEC_V3_SCHEMA = (
+  EMIT_CANONICAL_RENDER_SCHEMAS ? CANONICAL_RENDER_SPEC_V3_SCHEMA : LEGACY_RENDER_SPEC_V3_SCHEMA
+) as typeof CANONICAL_RENDER_SPEC_V3_SCHEMA | typeof LEGACY_RENDER_SPEC_V3_SCHEMA;
 
 const Sha256Schema = z
   .string()
@@ -240,7 +254,10 @@ export const CaptureCapabilityIntentSchema = z.strictObject({
 
 /** One canonical author-facing render configuration for every renderer. */
 export const RenderSpecV2Schema = z.strictObject({
-  schema: z.literal(RENDER_SPEC_V2_SCHEMA),
+  schema: z.union([
+    z.literal(CANONICAL_RENDER_SPEC_V2_SCHEMA),
+    z.literal(LEGACY_RENDER_SPEC_V2_SCHEMA),
+  ]),
   /** First release records exactly one actor-mounted image sensor. */
   sources: z.array(RenderSensorSourceSchema).length(1),
   clip: RenderClipSchema,
@@ -440,7 +457,10 @@ export const RenderCapabilityIntentV3Schema = z.strictObject({
 });
 
 export const RenderSpecV3Schema = z.strictObject({
-  schema: z.literal(RENDER_SPEC_V3_SCHEMA),
+  schema: z.union([
+    z.literal(CANONICAL_RENDER_SPEC_V3_SCHEMA),
+    z.literal(LEGACY_RENDER_SPEC_V3_SCHEMA),
+  ]),
   sources: z.array(RenderSourceV3Schema).min(1).max(64),
   clip: RenderClipSchema,
   video: RenderVideoV3Schema.optional(),
@@ -610,7 +630,10 @@ export const CaptureSourceProvenanceSchema = z.union([
 ]);
 
 export const ResolvedCaptureManifestSchema = z.strictObject({
-  schema: z.literal(RESOLVED_CAPTURE_MANIFEST_V1_SCHEMA),
+  schema: z.union([
+    z.literal(CANONICAL_CAPTURE_MANIFEST_V1_SCHEMA),
+    z.literal(LEGACY_CAPTURE_MANIFEST_V1_SCHEMA),
+  ]),
   createdAt: z.iso.datetime({ offset: true }),
   scenarioRevision: z.strictObject({
     id: z.string().min(1).max(200),
@@ -1222,9 +1245,13 @@ function requiredCapabilities(renderSpec: RenderSpecV2 | RenderSpecV3): string[]
 }
 
 function captureScheduleFps(renderSpec: RenderSpecV2 | RenderSpecV3): number {
-  if (renderSpec.schema === RENDER_SPEC_V2_SCHEMA) return renderSpec.video.fps;
+  if (
+    renderSpec.schema === CANONICAL_RENDER_SPEC_V2_SCHEMA
+    || renderSpec.schema === LEGACY_RENDER_SPEC_V2_SCHEMA
+  ) return renderSpec.video.fps;
   if (renderSpec.video) return renderSpec.video.fps;
   const sourceRates = renderSpec.sources.flatMap((source) => {
+    if (!('attributes' in source)) return [];
     if (source.modality === 'lidar') return [source.attributes.rotationFrequencyHz];
     if (source.modality === 'radar') return [];
     return [source.attributes.fps];

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .._compat_env import simforge_env
 import queue
 import subprocess
 import threading
@@ -248,7 +249,7 @@ COOKED_SIGNAL_ID_MAPS: Mapping[tuple[str, str, str], Mapping[str, str]] = {
 #: by the sha256 of the source XODR the control plane distributes for the map.
 #: Render packages name maps by their control-plane identity; this registry is
 #: the explicit bridge from that source identity to the runtime world CARLA
-#: actually cooked. UNISCENARIO_CARLA_COOKED_MAPS_JSON ({"<cookedName>":
+#: actually cooked. SIMFORGE_CARLA_COOKED_MAPS_JSON ({"<cookedName>":
 #: "<xodrSha256>"}) extends it for engines cooking additional worlds.
 COOKED_MAP_NAMES_BY_XODR_SHA256: Mapping[str, str] = {
     # Richmond Field Station (richmond-field-station_20260410-185647)
@@ -263,24 +264,24 @@ COOKED_MAP_NAMES_BY_XODR_SHA256: Mapping[str, str] = {
 def _configured_cooked_map_names() -> dict[str, str]:
     """Source-XODR sha256 -> cooked runtime map name (built-ins + env)."""
     names = dict(COOKED_MAP_NAMES_BY_XODR_SHA256)
-    raw = os.environ.get("UNISCENARIO_CARLA_COOKED_MAPS_JSON", "").strip()
+    raw = simforge_env("CARLA_COOKED_MAPS_JSON", "").strip()
     if not raw:
         return names
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise RuntimeError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must be valid JSON") from exc
+        raise RuntimeError("SIMFORGE_CARLA_COOKED_MAPS_JSON must be valid JSON") from exc
     if not isinstance(parsed, Mapping):
-        raise RuntimeError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must be a JSON object of cooked map names to XODR sha256 values")
+        raise RuntimeError("SIMFORGE_CARLA_COOKED_MAPS_JSON must be a JSON object of cooked map names to XODR sha256 values")
     for name, sha in parsed.items():
         if (
             not isinstance(name, str) or not name
             or not isinstance(sha, str) or len(sha) != 64
             or any(character not in "0123456789abcdef" for character in sha)
         ):
-            raise RuntimeError("UNISCENARIO_CARLA_COOKED_MAPS_JSON must map cooked map names to lowercase XODR sha256 values")
+            raise RuntimeError("SIMFORGE_CARLA_COOKED_MAPS_JSON must map cooked map names to lowercase XODR sha256 values")
         if names.get(sha, name) != name:
-            raise RuntimeError(f"UNISCENARIO_CARLA_COOKED_MAPS_JSON conflicts with the built-in cooked world for {sha}")
+            raise RuntimeError(f"SIMFORGE_CARLA_COOKED_MAPS_JSON conflicts with the built-in cooked world for {sha}")
         names[sha] = name
     return names
 
@@ -307,9 +308,9 @@ CAMERA_ENCODER_QUEUE_FRAMES = 4
 
 def _presentation_video_codec_args() -> list[str]:
     """Encoder selection shared by every per-camera stream (h264 mp4 output)."""
-    encoder = os.environ.get("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
+    encoder = simforge_env("PRESENTATION_VIDEO_ENCODER", "software")
     if encoder not in {"software", "nvidia"}:
-        raise RuntimeError("UNISCENARIO_PRESENTATION_VIDEO_ENCODER must be software or nvidia")
+        raise RuntimeError("SIMFORGE_PRESENTATION_VIDEO_ENCODER must be software or nvidia")
     if encoder == "nvidia":
         return ["-c:v", "h264_nvenc", "-preset", "p5", "-cq", "17", "-profile:v", "high"]
     return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-profile:v", "high", "-level:v", "4.2"]
@@ -524,9 +525,9 @@ class CarlaBackend:
         self.capture_disk_bytes = 0
         self.max_capture_disk_bytes = 0
         self.map_load_timeout_s = 180.0
-        self.sensor_timeout_s = float(os.environ.get("UNISCENARIO_SENSOR_FRAME_TIMEOUT_S", "10"))
+        self.sensor_timeout_s = float(simforge_env("SENSOR_FRAME_TIMEOUT_S", "10"))
         self.sensor_writer_workers = max(
-            1, min(32, int(os.environ.get("UNISCENARIO_SENSOR_WRITER_WORKERS", "8"))),
+            1, min(32, int(simforge_env("SENSOR_WRITER_WORKERS", "8"))),
         )
         self.actor_asset_evidence: dict[str, dict[str, Any]] = {}
         self.pronto_sensor_host_actor_id: str | None = None
@@ -543,7 +544,7 @@ class CarlaBackend:
             "cameras": {},
         }
         if not isfinite(self.sensor_timeout_s) or self.sensor_timeout_s <= 0:
-            raise RuntimeError("UNISCENARIO_SENSOR_FRAME_TIMEOUT_S must be finite and positive")
+            raise RuntimeError("SIMFORGE_SENSOR_FRAME_TIMEOUT_S must be finite and positive")
         self.fixed_timestep_s = 0.02
         self.speed_integrals: dict[str, float] = {}
         self.absent_actors: set[str] = set()
@@ -656,7 +657,7 @@ class CarlaBackend:
                     f"required for this XODR ({package_xodr_sha256}); "
                     "refusing the generated-OpenDRIVE fallback for a cooked map"
                 )
-            if os.environ.get("UNISCENARIO_CARLA_ALLOW_GENERATED_XODR") != "1":
+            if simforge_env("CARLA_ALLOW_GENERATED_XODR") != "1":
                 raise RuntimeError(
                     f"CARLA runtime does not contain exactly one cooked custom map named {requested_name}"
                 )
@@ -975,13 +976,13 @@ class CarlaBackend:
         check()
         assert self.world is not None
         authored = set(signal_ids)
-        raw_remap = os.environ.get("UNISCENARIO_CARLA_SIGNAL_ID_MAP", "{}")
+        raw_remap = simforge_env("CARLA_SIGNAL_ID_MAP", "{}")
         try:
             configured_remap = json.loads(raw_remap)
         except json.JSONDecodeError as exc:
-            raise RuntimeError("UNISCENARIO_CARLA_SIGNAL_ID_MAP must be valid JSON") from exc
+            raise RuntimeError("SIMFORGE_CARLA_SIGNAL_ID_MAP must be valid JSON") from exc
         if not isinstance(configured_remap, Mapping):
-            raise RuntimeError("UNISCENARIO_CARLA_SIGNAL_ID_MAP must be a JSON object")
+            raise RuntimeError("SIMFORGE_CARLA_SIGNAL_ID_MAP must be a JSON object")
         signal_remap = dict(getattr(self, "signal_id_map", {}))
         for key, value in configured_remap.items():
             if key in signal_remap and signal_remap[key] != value:

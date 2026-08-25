@@ -117,18 +117,18 @@ export async function settlePipelineJob(
           )
      ), canonical_artifacts AS (
        SELECT DISTINCT artifact.id, artifact.artifact_kind
-         FROM uniscenario.artifacts artifact
+         FROM simforge.artifacts artifact
         WHERE :stage_status = 'completed'
           AND artifact.workspace_id = :workspace_id
           AND artifact.artifact_state = 'available' AND artifact.deleted_at IS NULL
           AND (
             EXISTS (
-              SELECT 1 FROM uniscenario.operational_job_artifact_links link
+              SELECT 1 FROM simforge.operational_job_artifact_links link
                WHERE link.workspace_id = artifact.workspace_id
                  AND link.artifact_id = artifact.id AND link.job_family = :job_family
                  AND link.job_id = :job_id
             ) OR EXISTS (
-              SELECT 1 FROM uniscenario.artifact_links link
+              SELECT 1 FROM simforge.artifact_links link
                WHERE link.workspace_id = artifact.workspace_id
                  AND link.artifact_id = artifact.id AND link.render_job_id = :job_id
             )

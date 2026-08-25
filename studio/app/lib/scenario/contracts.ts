@@ -12,6 +12,7 @@ import {
   type ScenarioParityEvidenceV1,
   type ScenarioRenderResourceRequest,
 } from "@simcloud/shared";
+import { acceptedStoredSchemaId } from "./stored-wire-compat";
 
 export const SCENARIO_SCHEMA_VERSION = String(SCENARIO_TEMPLATE_VERSION);
 export const OPENSCENARIO_NATIVE_PROFILE = "ASAM OpenSCENARIO XML 1.4";
@@ -335,7 +336,7 @@ export type ScenarioRenderSensor = z.infer<
 >;
 
 export const ScenarioRenderSpecSchema = z.strictObject({
-  schema: z.literal("uniscenario.render-spec/v1").default("uniscenario.render-spec/v1"),
+  schema: acceptedStoredSchemaId("uniscenario.render-spec/v1").default("uniscenario.render-spec/v1"),
   width: z.number().int().min(64).max(8192),
   height: z.number().int().min(64).max(8192),
   fps: z.number().positive().max(240),

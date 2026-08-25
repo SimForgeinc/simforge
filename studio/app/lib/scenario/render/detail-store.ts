@@ -117,10 +117,10 @@ export async function listRenderJobAttempts(
             o.leased_at::text AS leased_at,
             CASE WHEN o.state = 'active' THEN o.leased_at::text ELSE NULL END AS started_at,
             o.completed_at::text AS completed_at
-       FROM uniscenario.operational_job_attempts o
-       JOIN uniscenario.render_jobs j
+       FROM simforge.operational_job_attempts o
+       JOIN simforge.render_jobs j
          ON j.id = o.job_id AND j.workspace_id = o.workspace_id
-       LEFT JOIN uniscenario.render_attempts a
+       LEFT JOIN simforge.render_attempts a
          ON a.id = o.id AND a.workspace_id = o.workspace_id
       WHERE o.workspace_id = :workspace_id AND o.job_id = :job_id
         AND o.job_family = 'openscenario_render'
@@ -208,8 +208,8 @@ export async function listRenderJobEvents(
             e.attempt_id AS render_attempt_id,
             (e.attempt_id IS NOT NULL AND a.id IS NOT NULL) AS attempt_lineage_valid,
             e.occurred_at::text AS created_at
-       FROM uniscenario.operational_job_events e
-       LEFT JOIN uniscenario.cpu_job_attempts a
+       FROM simforge.operational_job_events e
+       LEFT JOIN simforge.cpu_job_attempts a
          ON a.id = e.attempt_id AND a.workspace_id = e.workspace_id
         AND a.job_family = e.job_family AND a.job_id = e.job_id
       WHERE e.workspace_id = :workspace_id AND e.job_id = :job_id
@@ -259,8 +259,8 @@ export async function getRenderJobDetail(
             j.estimated_cost_cents, j.render_spec_sha256, j.hidden_at, j.hidden_by_user_id,
             j.parent_render_job_id, j.source_artifact_id, j.model_family, j.model_config_sha256,
             j.created_at, j.updated_at, j.started_at, j.completed_at, j.cancel_requested_at
-       FROM uniscenario.render_jobs j
-       JOIN uniscenario.execution_packages ep
+       FROM simforge.render_jobs j
+       JOIN simforge.execution_packages ep
          ON ep.id = j.execution_package_id AND ep.workspace_id = j.workspace_id
       WHERE j.workspace_id = :workspace_id AND j.id = :job_id
       LIMIT 1`,

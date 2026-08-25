@@ -4,6 +4,7 @@ import { hostname, totalmem } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { simforgeEnv } from './compat-env.mjs';
 
 export const INVENTORY_SCHEMA = 'uniscenario.render-qualification-inventory/v1';
 export const MANIFEST_SCHEMA = 'uniscenario.render-qualification-manifest/v1';
@@ -86,7 +87,7 @@ function databaseProcessEnvironment(databaseUrl) {
   try {
     url = new URL(databaseUrl);
   } catch {
-    throw new Error('UNISCENARIO_DEV_DATABASE_URL is not a valid URL');
+    throw new Error('SIMFORGE_DEV_DATABASE_URL is not a valid URL');
   }
   if (!['postgres:', 'postgresql:'].includes(url.protocol)) throw new Error('dev inventory requires a PostgreSQL URL');
   if (!url.hostname || !url.pathname.slice(1)) throw new Error('dev database URL must name a host and database');
@@ -176,7 +177,7 @@ SELECT jsonb_build_object(
     'xoscArtifactAvailable', xa.artifact_state = 'available' AND xa.deleted_at IS NULL,
     'packageArtifactAvailable', pa.artifact_state = 'available' AND pa.deleted_at IS NULL,
     'xoscValidationPassed', EXISTS (
-      SELECT 1 FROM uniscenario.validation_runs vr
+      SELECT 1 FROM simforge.validation_runs vr
       WHERE vr.workspace_id = r.workspace_id AND vr.revision_id = r.id
         AND vr.validation_state = 'passed'
         AND (vr.validator_kind ILIKE '%xosc%' OR vr.validator_kind ILIKE '%openscenario%' OR vr.validator_kind ILIKE '%xsd%')
@@ -184,25 +185,25 @@ SELECT jsonb_build_object(
     'assetCatalogMatchesMap', ep.asset_catalog_version_id = mv.asset_catalog_version_id
   ) END
 )::text
-FROM uniscenario.documents d
-JOIN uniscenario.revisions r ON r.id = d.latest_revision_id AND r.workspace_id = d.workspace_id
-LEFT JOIN uniscenario.map_versions mv ON mv.id = r.map_version_id
+FROM simforge.documents d
+JOIN simforge.revisions r ON r.id = d.latest_revision_id AND r.workspace_id = d.workspace_id
+LEFT JOIN simforge.map_versions mv ON mv.id = r.map_version_id
 LEFT JOIN public.map_assets ma ON ma.id = mv.source_map_id
-LEFT JOIN uniscenario.asset_catalog_versions acv ON acv.id = mv.asset_catalog_version_id
+LEFT JOIN simforge.asset_catalog_versions acv ON acv.id = mv.asset_catalog_version_id
 LEFT JOIN LATERAL (
-  SELECT candidate.* FROM uniscenario.execution_packages candidate
+  SELECT candidate.* FROM simforge.execution_packages candidate
   WHERE candidate.workspace_id = r.workspace_id AND candidate.revision_id = r.id
   ORDER BY candidate.created_at DESC, candidate.id DESC LIMIT 1
 ) ep ON true
-LEFT JOIN uniscenario.artifacts xa ON xa.id = ep.xosc_artifact_id
-LEFT JOIN uniscenario.artifacts pa ON pa.id = ep.package_artifact_id
+LEFT JOIN simforge.artifacts xa ON xa.id = ep.xosc_artifact_id
+LEFT JOIN simforge.artifacts pa ON pa.id = ep.package_artifact_id
 WHERE d.deleted_at IS NULL
 ORDER BY d.id;
 COMMIT;
 `;
 
-export async function inventoryDev({ output, databaseUrl = process.env.UNISCENARIO_DEV_DATABASE_URL } = {}) {
-  if (!databaseUrl) throw new Error('UNISCENARIO_DEV_DATABASE_URL is required; generic DATABASE_URL is deliberately ignored');
+export async function inventoryDev({ output, databaseUrl = simforgeEnv('DEV_DATABASE_URL') } = {}) {
+  if (!databaseUrl) throw new Error('SIMFORGE_DEV_DATABASE_URL is required; generic DATABASE_URL is deliberately ignored');
   const connection = databaseProcessEnvironment(databaseUrl);
   const result = await runProcess(['psql', '--no-psqlrc', '--set', 'ON_ERROR_STOP=1', '--tuples-only', '--no-align', '--quiet', '--command', INVENTORY_SQL], {
     env: connection.env,
@@ -776,7 +777,7 @@ async function runBenchmarkIteration(spec, index, kind) {
   }, Math.max(250, Number(spec.sampleIntervalMs ?? 1000)));
   const result = await runProcess(spec.command, {
     cwd: spec.cwd,
-    env: { ...process.env, ...(spec.environment ?? {}), UNISCENARIO_BENCHMARK_RUN: kind, UNISCENARIO_BENCHMARK_ITERATION: String(index) },
+    env: { ...process.env, ...(spec.environment ?? {}), SIMFORGE_BENCHMARK_RUN: kind, SIMFORGE_BENCHMARK_ITERATION: String(index) },
     onSpawn(value) { child = value; },
     onStdout(chunk) { if (spec.echoOutput !== false) process.stdout.write(chunk); },
     onStderr(chunk) { if (spec.echoOutput !== false) process.stderr.write(chunk); },

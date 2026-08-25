@@ -408,14 +408,14 @@ export async function publishGeneratedGalleryAsset(input: {
 }
 
 export async function countScenariosUsingGalleryAsset(catalogSlug: string): Promise<number> {
-  // The editor's live document is `uniscenario.drafts.canonical_content`; revisions are immutable
+  // The editor's live document is `simforge.drafts.canonical_content`; revisions are immutable
   // exports of the same scenario and would double-count a document. Deleted documents do not keep
   // an asset in active use. Searching every JSON string preserves references wherever the schema
   // stores a versioned catalog id rather than depending on one actor/prop path.
   const row = await queryOne<{ scenario_count: number }>(
     `SELECT COUNT(*)::int AS scenario_count
-     FROM uniscenario.documents d
-     JOIN uniscenario.drafts dr
+     FROM simforge.documents d
+     JOIN simforge.drafts dr
        ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
      WHERE d.deleted_at IS NULL
        AND EXISTS (

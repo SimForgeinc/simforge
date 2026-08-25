@@ -6,7 +6,7 @@ spawn the ego by role name, set autopilot off, attach an RGB camera, tick 200
 synchronous steps, save 10 camera frames, and read waypoints along the route.
 
 Prerequisites (environment, not code — like a CARLA host/port):
-    export UNISCENARIO_EPISODES=examples/episodes-baseline-midblock.json
+    export SIMFORGE_EPISODES=examples/episodes-baseline-midblock.json
     export SCEN_DEV_ASSETS=.dev-assets            # flat map-artifact layout
     # frames need a running SimForge Studio viewer (default :5199)
 

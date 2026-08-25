@@ -14,6 +14,7 @@ import {
   type ScenarioRevisionDto,
 } from "./contracts";
 import { canonicalContentSha256, scenarioId } from "./core";
+import { simforgeEnv } from "@/lib/compat-env";
 
 type DocumentRow = {
   id: string;
@@ -55,8 +56,8 @@ const DOCUMENT_SELECT = `
     d.dataset_id, dr.authoring_quality_id,
     d.created_at::text AS created_at, d.updated_at::text AS updated_at,
     d.latest_revision_id
-  FROM uniscenario.documents d
-  JOIN uniscenario.drafts dr ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
+  FROM simforge.documents d
+  JOIN simforge.drafts dr ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
 `;
 
 function documentDto(row: DocumentRow): ScenarioDocumentDto {
@@ -166,11 +167,11 @@ const DOCUMENT_SUMMARY_SELECT = `
     COALESCE(NULLIF(BTRIM(author.name), ''), NULLIF(BTRIM(author.email), '')) AS created_by_user_name,
     COALESCE(NULLIF(BTRIM(editor.name), ''), NULLIF(BTRIM(editor.email), '')) AS updated_by_user_name,
     d.created_at::text AS created_at, d.updated_at::text AS updated_at,
-    (SELECT COUNT(*)::int FROM uniscenario.revisions rev
+    (SELECT COUNT(*)::int FROM simforge.revisions rev
        WHERE rev.workspace_id = d.workspace_id AND rev.document_id = d.id) AS revision_count,
     EXISTS (
-      SELECT 1 FROM uniscenario.render_jobs rj
-      JOIN uniscenario.revisions rev
+      SELECT 1 FROM simforge.render_jobs rj
+      JOIN simforge.revisions rev
         ON rev.id = rj.revision_id AND rev.workspace_id = rj.workspace_id
       WHERE rev.document_id = d.id AND rev.workspace_id = d.workspace_id
         AND rj.job_state = 'succeeded'
@@ -178,14 +179,14 @@ const DOCUMENT_SUMMARY_SELECT = `
     COALESCE((
       SELECT jsonb_agg(jsonb_build_object('id', t.id, 'label', t.label, 'color', t.color)
                        ORDER BY t.label, t.id)
-      FROM uniscenario.document_tags dt
-      JOIN uniscenario.tags t ON t.id = dt.tag_id AND t.workspace_id = dt.workspace_id
+      FROM simforge.document_tags dt
+      JOIN simforge.tags t ON t.id = dt.tag_id AND t.workspace_id = dt.workspace_id
       WHERE dt.workspace_id = d.workspace_id AND dt.document_id = d.id
         AND t.deleted_at IS NULL
     ), '[]'::jsonb) AS tags
-  FROM uniscenario.documents d
-  JOIN uniscenario.drafts dr ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
-  LEFT JOIN uniscenario.map_versions mv
+  FROM simforge.documents d
+  JOIN simforge.drafts dr ON dr.document_id = d.id AND dr.workspace_id = d.workspace_id
+  LEFT JOIN simforge.map_versions mv
     ON mv.id = dr.map_version_id
   LEFT JOIN public.ba_user author ON author.id = d.created_by_user_id
   LEFT JOIN public.ba_user editor ON editor.id = d.updated_by_user_id
@@ -215,7 +216,7 @@ function documentSummaryDto(row: DocumentSummaryRow): ScenarioDocumentSummaryDto
     // Keep the preview bound to the document's exact immutable map version. Older scenarios can
     // legitimately reference a version that is no longer offered by the current map picker.
     mapThumbnailUrl: row.map_version_id && row.map_has_thumbnail
-      ? `/api/uniscenario/maps/${encodeURIComponent(row.map_version_id)}/thumbnail`
+      ? `/api/simforge/maps/${encodeURIComponent(row.map_version_id)}/thumbnail`
       : null,
     latestRevisionId: row.latest_revision_id,
     revisionCount: Number(row.revision_count ?? 0),
@@ -321,7 +322,7 @@ export async function duplicateScenarioDocument(
 
     const targetDatasetId = input.datasetId ?? source.datasetId;
     const dataset = await tx.queryOne<{ id: string }>(
-      `SELECT id FROM uniscenario.datasets
+      `SELECT id FROM simforge.datasets
        WHERE workspace_id = :workspace_id AND id = :dataset_id AND deleted_at IS NULL
        LIMIT 1`,
       { workspace_id: context.workspaceId, dataset_id: targetDatasetId },
@@ -331,7 +332,7 @@ export async function duplicateScenarioDocument(
     const copyId = scenarioId("uscn");
     const title = (input.title ?? `${source.title} Copy`).slice(0, 200);
     await tx.execute(
-      `INSERT INTO uniscenario.documents (
+      `INSERT INTO simforge.documents (
          id, workspace_id, title, schema_version, map_version_id, dataset_id,
          created_by_user_id, updated_by_user_id,
          derivation_kind, derived_from_document_id, derived_from_revision_id,
@@ -356,7 +357,7 @@ export async function duplicateScenarioDocument(
     );
     // Copy the draft content verbatim so the copy's content_sha256 equals the source's.
     await tx.execute(
-      `INSERT INTO uniscenario.drafts (
+      `INSERT INTO simforge.drafts (
          document_id, workspace_id, schema_version, canonical_content,
          content_sha256, map_version_id, authoring_quality_id, updated_by_user_id
        ) VALUES (
@@ -425,7 +426,7 @@ export async function createScenarioDocument(
   const digest = canonicalContentSha256(content);
   return withTransaction(async (tx) => {
     await tx.execute(
-      `INSERT INTO uniscenario.documents (
+      `INSERT INTO simforge.documents (
          id, workspace_id, title, schema_version, map_version_id, dataset_id,
          created_by_user_id, updated_by_user_id
        ) VALUES (
@@ -443,7 +444,7 @@ export async function createScenarioDocument(
       },
     );
     await tx.execute(
-      `INSERT INTO uniscenario.drafts (
+      `INSERT INTO simforge.drafts (
          document_id, workspace_id, schema_version, canonical_content,
          content_sha256, map_version_id, authoring_quality_id, updated_by_user_id
        ) VALUES (
@@ -501,7 +502,7 @@ export async function updateScenarioDocument(
     const schemaVersion = input.schemaVersion ?? current.schemaVersion;
     const mapVersionId = "mapVersionId" in input ? input.mapVersionId ?? null : current.mapVersionId;
     const draftRows = await tx.queryRows<{ document_id: string }>(
-      `UPDATE uniscenario.drafts
+      `UPDATE simforge.drafts
        SET draft_version = draft_version + 1,
            schema_version = :schema_version,
            canonical_content = CAST(:content AS jsonb),
@@ -534,7 +535,7 @@ export async function updateScenarioDocument(
       return { kind: "conflict" as const, current: documentDto(raced) };
     }
     await tx.execute(
-      `UPDATE uniscenario.documents
+      `UPDATE simforge.documents
        SET title = :title, schema_version = :schema_version, map_version_id = :map_version_id,
            updated_by_user_id = :user_id, updated_at = NOW()
        WHERE workspace_id = :workspace_id AND id = :document_id AND deleted_at IS NULL`,
@@ -558,7 +559,7 @@ export async function updateScenarioDocument(
 
 export async function softDeleteScenarioDocument(context: AppContext, documentId: string) {
   const rows = await queryRows<{ id: string }>(
-    `UPDATE uniscenario.documents
+    `UPDATE simforge.documents
      SET deleted_at = NOW(), deleted_by_user_id = :user_id, updated_by_user_id = :user_id,
          updated_at = NOW()
      WHERE workspace_id = :workspace_id AND id = :document_id AND deleted_at IS NULL
@@ -588,7 +589,7 @@ export async function createScenarioRevision(
     }
     if (traffic) {
       const bound = await tx.queryOne<{ id: string }>(
-        `SELECT id FROM uniscenario.artifacts
+        `SELECT id FROM simforge.artifacts
          WHERE id = :artifact_id AND workspace_id = :workspace_id
            AND artifact_kind = 'materialized-traffic' AND artifact_state = 'available'
            AND sha256 = :sha256 AND byte_length = :size_bytes
@@ -631,7 +632,7 @@ export async function createScenarioRevision(
       }
       const retryExportId = scenarioId("usexp");
       await tx.execute(
-        `INSERT INTO uniscenario.exports (
+        `INSERT INTO simforge.exports (
            id, workspace_id, revision_id, export_format, compiler_version, idempotency_key,
            ambient_mode, ambient_runtime_version, ambient_sumo_version, ambient_network_sha256,
            ambient_seed, ambient_config, ambient_config_sha256, ambient_result_sha256,
@@ -643,7 +644,7 @@ export async function createScenarioRevision(
            r.ambient_seed, r.ambient_config, r.ambient_config_sha256, r.ambient_result_sha256,
            r.materialized_traffic_artifact_id, r.materialized_traffic_sha256,
            r.materialized_traffic_size_bytes, r.materialized_traffic_source_input_digest
-         FROM uniscenario.revisions r
+         FROM simforge.revisions r
          WHERE r.workspace_id = :workspace_id AND r.id = :revision_id`,
         {
           id: retryExportId,
@@ -667,15 +668,15 @@ export async function createScenarioRevision(
     }
     const next = await tx.queryOne<{ next_revision: number }>(
       `SELECT COALESCE(MAX(revision_number), 0) + 1 AS next_revision
-       FROM uniscenario.revisions
+       FROM simforge.revisions
        WHERE workspace_id = :workspace_id AND document_id = :document_id`,
       { workspace_id: context.workspaceId, document_id: documentId },
     );
     const revisionId = scenarioId("usrev");
     const exportId = scenarioId("usexp");
-    const compilerVersion = process.env.UNISCENARIO_COMPILER_VERSION?.trim() || "uniscenario-compiler@2.0.0";
+    const compilerVersion = simforgeEnv("COMPILER_VERSION")?.trim() || "uniscenario-compiler@2.0.0";
     await tx.execute(
-      `INSERT INTO uniscenario.revisions (
+      `INSERT INTO simforge.revisions (
          id, workspace_id, document_id, revision_number, source_draft_version,
          schema_version, canonical_content, content_sha256, map_version_id,
          compiler_version, openscenario_profile, idempotency_key, created_by_user_id,
@@ -721,7 +722,7 @@ export async function createScenarioRevision(
       },
     );
     await tx.execute(
-      `INSERT INTO uniscenario.exports (
+      `INSERT INTO simforge.exports (
          id, workspace_id, revision_id, export_format, compiler_version, idempotency_key,
          ambient_mode, ambient_runtime_version, ambient_sumo_version, ambient_network_sha256,
          ambient_seed, ambient_config, ambient_config_sha256, ambient_result_sha256,
@@ -755,7 +756,7 @@ export async function createScenarioRevision(
       },
     );
     await tx.execute(
-      `UPDATE uniscenario.documents
+      `UPDATE simforge.documents
        SET latest_revision_id = :revision_id, updated_by_user_id = :user_id, updated_at = NOW()
        WHERE workspace_id = :workspace_id AND id = :document_id`,
       {
@@ -779,8 +780,8 @@ function revisionSelect(where: string) {
       r.source_draft_version, r.schema_version, r.content_sha256, r.map_version_id,
       r.openscenario_profile, r.created_at::text AS created_at,
       e.id AS export_id, e.export_format, e.export_state, e.artifact_id AS export_artifact_id
-    FROM uniscenario.revisions r
-    JOIN uniscenario.exports e ON e.revision_id = r.id AND e.workspace_id = r.workspace_id
+    FROM simforge.revisions r
+    JOIN simforge.exports e ON e.revision_id = r.id AND e.workspace_id = r.workspace_id
     WHERE ${where}
     ORDER BY e.created_at DESC
     LIMIT 1`;
@@ -842,13 +843,13 @@ async function readScenarioMapBrowserAsset(
   }>(
     `SELECT b.storage_bucket, b.storage_key, b.object_version_id,
        b.sha256, b.byte_length, b.media_type
-     FROM uniscenario.map_versions mv
-     JOIN uniscenario.browser_asset_sets s ON s.id = mv.browser_asset_set_id
+     FROM simforge.map_versions mv
+     JOIN simforge.browser_asset_sets s ON s.id = mv.browser_asset_set_id
        AND s.workspace_id = mv.workspace_id AND s.map_version_id = mv.id
        AND s.asset_set_state = 'available'
-     JOIN uniscenario.browser_asset_members m ON m.asset_set_id = s.id
+     JOIN simforge.browser_asset_members m ON m.asset_set_id = s.id
        AND m.relative_path = :relative_path
-     JOIN uniscenario.browser_asset_blobs b ON b.id = m.blob_id
+     JOIN simforge.browser_asset_blobs b ON b.id = m.blob_id
        AND b.verification_state = 'verified'
      WHERE mv.id = :map_version_id
        AND mv.retired_at IS NULL
@@ -899,14 +900,14 @@ export async function getScenarioMapBrowserAssets(
        b.object_version_id AS "objectVersionId", b.sha256,
        b.byte_length AS "byteLength", b.media_type AS "mediaType"
      FROM requested
-     JOIN uniscenario.map_versions mv ON mv.id = requested.map_version_id
+     JOIN simforge.map_versions mv ON mv.id = requested.map_version_id
        AND mv.retired_at IS NULL
-     JOIN uniscenario.browser_asset_sets s ON s.id = mv.browser_asset_set_id
+     JOIN simforge.browser_asset_sets s ON s.id = mv.browser_asset_set_id
        AND s.workspace_id = mv.workspace_id AND s.map_version_id = mv.id
        AND s.asset_set_state = 'available'
-     JOIN uniscenario.browser_asset_members m ON m.asset_set_id = s.id
+     JOIN simforge.browser_asset_members m ON m.asset_set_id = s.id
        AND m.relative_path = requested.relative_path
-     JOIN uniscenario.browser_asset_blobs b ON b.id = m.blob_id
+     JOIN simforge.browser_asset_blobs b ON b.id = m.blob_id
        AND b.verification_state = 'verified'`,
     // `jsonb_to_recordset` matches record columns by key name, so the bound
     // array must use the snake_case names the AS clause declares. Binding the
@@ -963,12 +964,12 @@ export async function listScenarioBrowserCacheInventory(
     const page = await queryRows<CacheInventoryRow>(
       `SELECT mv.id AS map_version_id, bs.closure_sha256, bm.relative_path,
          bb.sha256, bb.byte_length, bb.media_type, bm.required
-       FROM uniscenario.map_versions mv
-       JOIN uniscenario.browser_asset_sets bs ON bs.id = mv.browser_asset_set_id
+       FROM simforge.map_versions mv
+       JOIN simforge.browser_asset_sets bs ON bs.id = mv.browser_asset_set_id
          AND bs.workspace_id = mv.workspace_id AND bs.map_version_id = mv.id
          AND bs.asset_set_state = 'available'
-       JOIN uniscenario.browser_asset_members bm ON bm.asset_set_id = bs.id
-       JOIN uniscenario.browser_asset_blobs bb ON bb.id = bm.blob_id
+       JOIN simforge.browser_asset_members bm ON bm.asset_set_id = bs.id
+       JOIN simforge.browser_asset_blobs bb ON bb.id = bm.blob_id
          AND bb.verification_state = 'verified'
        WHERE mv.retired_at IS NULL
          AND (
@@ -1033,7 +1034,7 @@ async function readActiveEditorAssetReleaseCacheKey() {
        CONCAT_WS(':', workspace_id, id, manifest_sha256),
        ',' ORDER BY workspace_id, id
      ) AS release_cache_key
-     FROM uniscenario.editor_asset_releases
+     FROM simforge.editor_asset_releases
      WHERE release_state = 'active'`,
     {},
   );
@@ -1061,37 +1062,37 @@ async function readScenarioMapDescriptorRows(_activeReleaseCacheKey: string) {
          PARTITION BY mv.source_map_asset_id
          ORDER BY mv.created_at DESC, mv.id DESC
        ) AS source_publication_rank
-     FROM uniscenario.map_versions mv
-     JOIN uniscenario.browser_asset_sets bs ON bs.id = mv.browser_asset_set_id
+     FROM simforge.map_versions mv
+     JOIN simforge.browser_asset_sets bs ON bs.id = mv.browser_asset_set_id
        AND bs.workspace_id = mv.workspace_id AND bs.map_version_id = mv.id
        AND bs.asset_set_state = 'available'
-     JOIN uniscenario.browser_asset_members bm ON bm.asset_set_id = bs.id
+     JOIN simforge.browser_asset_members bm ON bm.asset_set_id = bs.id
        AND bm.relative_path = '3d/manifest.json' AND bm.role = 'manifest' AND bm.required = TRUE
-     JOIN uniscenario.browser_asset_blobs bb ON bb.id = bm.blob_id
+     JOIN simforge.browser_asset_blobs bb ON bb.id = bm.blob_id
        AND bb.verification_state = 'verified'
-     JOIN uniscenario.browser_asset_members xodr_member ON xodr_member.asset_set_id = bs.id
+     JOIN simforge.browser_asset_members xodr_member ON xodr_member.asset_set_id = bs.id
        AND xodr_member.relative_path = 'map.xodr' AND xodr_member.required = TRUE
-     JOIN uniscenario.browser_asset_blobs xodr_blob ON xodr_blob.id = xodr_member.blob_id
+     JOIN simforge.browser_asset_blobs xodr_blob ON xodr_blob.id = xodr_member.blob_id
        AND xodr_blob.verification_state = 'verified'
-     JOIN uniscenario.browser_asset_members topology_member ON topology_member.asset_set_id = bs.id
+     JOIN simforge.browser_asset_members topology_member ON topology_member.asset_set_id = bs.id
        AND topology_member.relative_path = 'topology-index.json.gz' AND topology_member.required = TRUE
-     JOIN uniscenario.browser_asset_blobs topology_blob ON topology_blob.id = topology_member.blob_id
+     JOIN simforge.browser_asset_blobs topology_blob ON topology_blob.id = topology_member.blob_id
        AND topology_blob.verification_state = 'verified'
-     JOIN uniscenario.browser_asset_members derived_member ON derived_member.asset_set_id = bs.id
+     JOIN simforge.browser_asset_members derived_member ON derived_member.asset_set_id = bs.id
        AND derived_member.relative_path = 'derived/topology-derived.json.gz' AND derived_member.required = TRUE
-     JOIN uniscenario.browser_asset_blobs derived_blob ON derived_blob.id = derived_member.blob_id
+     JOIN simforge.browser_asset_blobs derived_blob ON derived_blob.id = derived_member.blob_id
        AND derived_blob.verification_state = 'verified'
-     JOIN uniscenario.browser_asset_members locations_member ON locations_member.asset_set_id = bs.id
+     JOIN simforge.browser_asset_members locations_member ON locations_member.asset_set_id = bs.id
        AND locations_member.relative_path = 'derived/locations.json.gz' AND locations_member.required = TRUE
-     JOIN uniscenario.browser_asset_blobs locations_blob ON locations_blob.id = locations_member.blob_id
+     JOIN simforge.browser_asset_blobs locations_blob ON locations_blob.id = locations_member.blob_id
        AND locations_blob.verification_state = 'verified'
-     JOIN uniscenario.browser_asset_members signals_member ON signals_member.asset_set_id = bs.id
+     JOIN simforge.browser_asset_members signals_member ON signals_member.asset_set_id = bs.id
        AND signals_member.relative_path = 'signals.geojson.gz' AND signals_member.required = TRUE
-     JOIN uniscenario.browser_asset_blobs signals_blob ON signals_blob.id = signals_member.blob_id
+     JOIN simforge.browser_asset_blobs signals_blob ON signals_blob.id = signals_member.blob_id
        AND signals_blob.verification_state = 'verified'
-     JOIN uniscenario.browser_asset_members lanes_member ON lanes_member.asset_set_id = bs.id
+     JOIN simforge.browser_asset_members lanes_member ON lanes_member.asset_set_id = bs.id
        AND lanes_member.relative_path = 'lane-polygons.geojson.gz' AND lanes_member.required = TRUE
-     JOIN uniscenario.browser_asset_blobs lanes_blob ON lanes_blob.id = lanes_member.blob_id
+     JOIN simforge.browser_asset_blobs lanes_blob ON lanes_blob.id = lanes_member.blob_id
        AND lanes_blob.verification_state = 'verified'
      WHERE mv.retired_at IS NULL
        AND NULLIF(BTRIM(mv.source_map_asset_id), '') IS NOT NULL
@@ -1113,8 +1114,8 @@ async function readScenarioMapDescriptorRows(_activeReleaseCacheKey: string) {
 async function readAvailableThumbnailMapVersionIds() {
   return queryRows<{ id: string }>(
     `SELECT mv.id
-     FROM uniscenario.map_versions mv
-     JOIN uniscenario.artifacts th ON th.id = mv.thumbnail_artifact_id
+     FROM simforge.map_versions mv
+     JOIN simforge.artifacts th ON th.id = mv.thumbnail_artifact_id
        AND th.workspace_id = mv.workspace_id
        AND th.artifact_kind = 'map-thumbnail-v2'
        AND th.artifact_state = 'available'
@@ -1138,7 +1139,7 @@ export async function listScenarioMapDescriptors(_context: AppContext) {
     if (row.xodr_sha256 !== row.browser_xodr_sha256) {
       throw new Error(`Map ${row.id} publishes XODR bytes that do not match its immutable map version`);
     }
-    const browserAssetRootUrl = `/api/uniscenario/maps/${encodeURIComponent(row.id)}/browser-assets`;
+    const browserAssetRootUrl = `/api/simforge/maps/${encodeURIComponent(row.id)}/browser-assets`;
     return {
     mapVersionId: row.id,
     sourceMapId: row.source_map_asset_id,
@@ -1165,7 +1166,7 @@ export async function listScenarioMapDescriptors(_context: AppContext) {
     // Stable first-party route: the browser never needs to know which bucket owns the immutable
     // preview, and it never keeps an expiring S3 URL in SPA state.
     thumbnailUrl: thumbnailMapVersionIds.has(row.id)
-      ? `/api/uniscenario/maps/${encodeURIComponent(row.id)}/thumbnail`
+      ? `/api/simforge/maps/${encodeURIComponent(row.id)}/thumbnail`
       : null,
     // `signals.geojson`, for the 3D layer's signal overlay: `buildSignalOverlay`
     // takes `SignalFeature[]` from this artifact. Presigned per request like the
