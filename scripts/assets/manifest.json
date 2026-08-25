@@ -1,0 +1,344 @@
+{
+  "schema": "simforge.assets-manifest/v1",
+  "assetRootDefault": "~/simforge-assets",
+  "assetRootEnv": "SIMFORGE_ASSETS",
+  "notes": [
+    "Large assets NEVER live in git or in container images we build. They live under the asset root and are fetched on demand by scripts/assets/fetch.mjs.",
+    "CARLA is user-provided: users run their own CARLA container with maps baked inside (normal upstream distribution). We never package, rebuild, or redistribute CARLA or its map content. The docker-image entry below is a reference for the optional carla-up.sh developer convenience only.",
+    "file entries with \"url\": null are published through the SimForge platform blob store; digests below were measured from the canonical local copies on 2026-08-24. Populate url when a public location exists — fetch.mjs reports them honestly as unavailable until then."
+  ],
+  "assets": [
+    {
+      "id": "alpamayo-1.5-10b",
+      "class": "hf-cache",
+      "kind": "hf-repo",
+      "repo": "nvidia/Alpamayo-1.5-10B",
+      "revision": "7aba8293c09993f2e125c6819df05d7fa3e873ea",
+      "dest": "hf-cache",
+      "approxBytes": 7516192768,
+      "note": "Alpamayo VLA policy weights. Fetched into the standard HF hub cache layout (HF_HOME=<root>/hf-cache); integrity is content-addressed per blob by the HF hub protocol, pinned by revision."
+    },
+    {
+      "id": "carla-base-image",
+      "class": "carla",
+      "kind": "docker-image",
+      "ref": "ghcr.io/simforgeinc/carla-rr-maps:0.10.0",
+      "imageId": "sha256:8e7c7152f86a9e26878de5f280514f224290f70aad7b28d00d5087709504118e",
+      "userProvided": true,
+      "note": "Upstream-style CARLA 0.10.0 / UE 5.5 distribution with maps baked in. User-provided; fetch.mjs never pulls or builds it — status only reports presence and whether a server answers on :2000."
+    },
+    {
+      "id": "map-easterbrook-road",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_road.glb",
+      "sha256": "d20eb4dc1a893555768e2b97e172193163be4ef910865fd07d72eda8a98cb61a",
+      "bytes": 7558460
+    },
+    {
+      "id": "map-easterbrook-tile-0-1",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_tile_0_1.lod0.glb",
+      "sha256": "6519c3b52e31e6bb95d26c176b8ac417898dbc2973a302f242061c70a09bd250",
+      "bytes": 8374548
+    },
+    {
+      "id": "map-easterbrook-tile-1-0",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_tile_1_0.lod0.glb",
+      "sha256": "84be3b159ff2558bff48ea1468391c47a6cb7047058b40142741d19199e8978b",
+      "bytes": 6678068
+    },
+    {
+      "id": "map-easterbrook-tile-1-1",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook/tiles_tile_1_1.lod0.glb",
+      "sha256": "5b5f653146a6e7fea257649d76ec245c99029c1e2da8b750a0ca0ba31f3eeca8",
+      "bytes": 9264904
+    },
+    {
+      "id": "map-yale-tile-0-0-lod3",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/yale/yale-tile_0_0.lod3.glb",
+      "sha256": "ef69b10f79a30d4450d635dc19e165be25368c9147730c316e3618211f2f224e",
+      "bytes": 1681132
+    },
+    {
+      "id": "refs-carla-baseline",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/",
+      "sha256": null,
+      "bytes": null,
+      "note": "CARLA 0.10.0/UE5 reference shots (renderer look-parity baselines), FINAL set from the ref-bake lane: 12 PNGs (dry-noon/overcast/wet-dusk x intersection-overview/long-view/road-closeup/vehicle-contact) + poses.json + weather.json, pinned per-file below. bake.py/probe.py in the same dir are unpinned reproduction scripts. Known limitation recorded by the ref-bake lane: this CARLA build ignores sun_altitude/cloudiness; only wetness/precipitation render."
+    },
+    {
+      "id": "refs-carla-dry-noon-intersection-overview",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/dry-noon/intersection-overview.png",
+      "sha256": "93cf637ac1400da45798f2ce734cc553e83606ced425128f66ada00eae650d9a",
+      "bytes": 4168545
+    },
+    {
+      "id": "refs-carla-dry-noon-long-view",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/dry-noon/long-view.png",
+      "sha256": "942c550b9df1810d3af7d04478a939f8419784ae369a261a6cd9fc7f02e1530d",
+      "bytes": 3955595
+    },
+    {
+      "id": "refs-carla-dry-noon-road-closeup",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/dry-noon/road-closeup.png",
+      "sha256": "8a3cea290616b5a1a7bd1e64de8289aa6357823412d3f5a7bf19eeb0cd4ccf92",
+      "bytes": 5218696
+    },
+    {
+      "id": "refs-carla-dry-noon-vehicle-contact",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/dry-noon/vehicle-contact.png",
+      "sha256": "b024ec1f333431b62f3d9683e3c549805cdaf427dbbec5146329c4197d5f2dab",
+      "bytes": 4228986
+    },
+    {
+      "id": "refs-carla-overcast-intersection-overview",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/overcast/intersection-overview.png",
+      "sha256": "cfc5f35216cdc42f0a3c745ea4d2cc57c0769d75c19e1ae6c4c8a24f89edd60c",
+      "bytes": 4171275
+    },
+    {
+      "id": "refs-carla-overcast-long-view",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/overcast/long-view.png",
+      "sha256": "6ffcf27323c71e7804bee2ae71787b399a0fc1676b9658cc6c5cdee679ec7ab8",
+      "bytes": 3957267
+    },
+    {
+      "id": "refs-carla-overcast-road-closeup",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/overcast/road-closeup.png",
+      "sha256": "74cf668cf1965f599156b767212baca01a2a680931be49965a545392c39349f3",
+      "bytes": 5218778
+    },
+    {
+      "id": "refs-carla-overcast-vehicle-contact",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/overcast/vehicle-contact.png",
+      "sha256": "5538a2c7fcca83d8b8e523f146a9d57f14141ad5b05324a71a5a0cc99c25e402",
+      "bytes": 4232383
+    },
+    {
+      "id": "refs-carla-poses",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/poses.json",
+      "sha256": "ea6f20478d8520ca17a109e83a8715fc411d9249b4ea2705b8b6d491eb619486",
+      "bytes": 3467
+    },
+    {
+      "id": "refs-carla-weather",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/weather.json",
+      "sha256": "6db65435d68be32a6768449b981e2ecfdb38a9e5c8df354ae81851faf93065cb",
+      "bytes": 1304
+    },
+    {
+      "id": "refs-carla-wet-dusk-intersection-overview",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/wet-dusk/intersection-overview.png",
+      "sha256": "da8b31bb1fbfec9de4c6732db3a8b33cde499ee52b14d1ace309aa9f2dff5940",
+      "bytes": 4118816
+    },
+    {
+      "id": "refs-carla-wet-dusk-long-view",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/wet-dusk/long-view.png",
+      "sha256": "8e178c4cace11c8be47945486037d02885a3f45e3c786bb7088d4cd33278b7d8",
+      "bytes": 3902851
+    },
+    {
+      "id": "refs-carla-wet-dusk-road-closeup",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/wet-dusk/road-closeup.png",
+      "sha256": "109753ddfc693fd9d84f37fffa44aa7c30b4427b6b79e58b72f868e73a395e11",
+      "bytes": 4955634
+    },
+    {
+      "id": "refs-carla-wet-dusk-vehicle-contact",
+      "class": "refs",
+      "kind": "file",
+      "url": null,
+      "dest": "refs/carla-baseline/wet-dusk/vehicle-contact.png",
+      "sha256": "f3323593bc6dc64b39a8b213a86743b5fef7bb319879602cbd684b00861b3d27",
+      "bytes": 4115890
+    },
+    {
+      "id": "dev-map-yale-street",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/yale-street/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": [
+        "topology-index.json.gz",
+        "derived/topology-derived.json.gz",
+        "derived/locations.json.gz",
+        "search-index.json.gz",
+        "browser/topology-index.json.gz",
+        "3d/"
+      ],
+      "note": "Training/dev map artifacts (former dev-assets/<mapId>). Recovery: (a) rebuild via `pnpm maps:derivatives -- --map yale-street` from source map data, (b) published bundles in the platform S3 uniscenario artifact buckets. Engine convention: SCEN_DEV_ASSETS=~/simforge-assets/map-bundles."
+    },
+    {
+      "id": "dev-map-belmont-research-center",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/belmont-research-center/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": [
+        "topology-index.json.gz",
+        "derived/topology-derived.json.gz",
+        "derived/locations.json.gz",
+        "search-index.json.gz",
+        "browser/topology-index.json.gz",
+        "3d/"
+      ],
+      "note": "Needed by committed gold-01-belmont episodes; repo tests describe.skipIf on absence. Recovery as for yale-street."
+    },
+    {
+      "id": "dev-map-el-camino-road",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/el-camino-road/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": [
+        "topology-index.json.gz",
+        "derived/topology-derived.json.gz",
+        "derived/locations.json.gz",
+        "search-index.json.gz",
+        "browser/topology-index.json.gz",
+        "3d/"
+      ],
+      "note": "Recovery as for yale-street."
+    },
+    {
+      "id": "dev-map-easterbrook-discovery-school",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/easterbrook-discovery-school/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": [
+        "topology-index.json.gz",
+        "derived/topology-derived.json.gz",
+        "derived/locations.json.gz",
+        "search-index.json.gz",
+        "browser/topology-index.json.gz",
+        "3d/"
+      ],
+      "note": "Recovery as for yale-street. GLB tile digests for this map are tracked separately as map-easterbrook-* entries."
+    },
+    {
+      "id": "dev-map-richmond-field-station",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": [
+        "topology-index.json.gz",
+        "derived/topology-derived.json.gz",
+        "derived/locations.json.gz",
+        "search-index.json.gz",
+        "browser/topology-index.json.gz",
+        "3d/"
+      ],
+      "note": "Recovery as for yale-street. Already recovered on this machine; the three core artifacts carry recorded digests below."
+    },
+    {
+      "id": "dev-map-richmond-topology-index",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/topology-index.json.gz",
+      "sha256": "feb1e9ac00de961ede8fac419a650efa89747b4b6272d2c676870f1dc0f73105",
+      "bytes": 314851
+    },
+    {
+      "id": "dev-map-richmond-topology-derived",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/derived/topology-derived.json.gz",
+      "sha256": "445df1ecc729a40135ac0b2e545fa349013a550aa108a3e5a00f74470e115192",
+      "bytes": 37240
+    },
+    {
+      "id": "dev-map-richmond-locations",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/richmond-field-station/derived/locations.json.gz",
+      "sha256": "827dc13a1d08ea0fdd31f921bbbbe63f3cdee142bf0e44fa738ee6c168f1a4a6",
+      "bytes": 47305
+    },
+    {
+      "id": "sumo-runtime",
+      "class": "map-bundles",
+      "kind": "file",
+      "url": null,
+      "dest": "map-bundles/sumo-runtime/",
+      "sha256": null,
+      "bytes": null,
+      "expectedFiles": [
+        "sumo.mjs",
+        "sumo.wasm",
+        "runtime-manifest.json"
+      ],
+      "note": "Headless SUMO wasm runtime (schema uniscenarios.sumo-runtime.v1, SUMO 1.27.1) formerly at dev-assets/sumo-runtime; the old symlink target is deleted. Recovery: platform S3 uniscenario artifact buckets or rebuild per packages/cli README. Per-file sha256 from runtime-manifest.json once re-fetched."
+    }
+  ]
+}
