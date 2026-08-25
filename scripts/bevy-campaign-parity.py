@@ -515,6 +515,7 @@ def render_service(args) -> None:
             "-movflags", "+faststart", str(path),
         ], stdin=subprocess.PIPE)
     samples, server_ms = [], []
+    replay_digest = hashlib.sha256()
     started = time.time()
     try:
         for tick in range(frame_count):
@@ -522,6 +523,8 @@ def render_service(args) -> None:
             if not response.get("ok"):
                 raise RuntimeError(f"render_bundle tick {tick} failed: {response}")
             server_ms.append(float(response["server_ms"]))
+            for frame in sorted(response["frames"], key=lambda value: (value["sensorId"], value["pass"])):
+                replay_digest.update(f"{tick}:{frame['sensorId']}:{frame['pass']}:{frame.get('digest','')}\\n".encode())
             for frame in response["frames"]:
                 if frame["pass"] != "rgb":
                     continue
@@ -537,6 +540,8 @@ def render_service(args) -> None:
                 encoder.stdin.close()
             encoder.wait()
         client.close()
+        if service.poll() is None:
+            service.terminate()
         service.wait(timeout=30)
         log = service.stdout.read() if service.stdout else ""
         (out / "renderer.log").write_text(log)
@@ -547,6 +552,7 @@ def render_service(args) -> None:
         "gpuUtilMeanPct": statistics.fmean(s[0] for s in samples) if samples else None,
         "gpuUtilMaxPct": max((s[0] for s in samples), default=None),
         "vramMaxMiB": max((s[1] for s in samples), default=None),
+        "replayDigest": replay_digest.hexdigest(),
         "coverage": video_coverage(out / "chase-cam-trailing.mp4"),
     }
     dump(out / "benchmark.json", benchmark)
