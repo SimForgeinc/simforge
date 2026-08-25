@@ -116,7 +116,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
           ? { executablePath: options.chromiumExecutablePath ?? process.env.CHROMIUM_EXECUTABLE_PATH }
           : {}),
         args: [
-          '--enable-webgl', '--ignore-gpu-blocklist', '--allow-file-access-from-files',
+          '--enable-webgl', '--ignore-gpu-blocklist', '--allow-file-access-from-files', '--disable-web-security',
           // SwiftShader's Vulkan backend is the safe default; a host overriding
           // GL selection owns the whole GPU configuration (the feature flag
           // conflicts with --use-angle overrides).
