@@ -30,7 +30,8 @@ GOLDEN_CLIP = "030c760c-ae38-49aa-9ad8-f5650a545d26"  # upstream test_inference.
 GOLDEN_T0_US = 5_100_000
 
 
-def run_variant(quant: str, n: int, cams: int, run_clip: bool) -> dict:
+def run_variant(quant: str, n: int, cams: int, clip_cam_sets: list[list[int] | None],
+                partial_dir: Path | None) -> dict:
     import torch
 
     from simforge_alpamayo.engine import AlpamayoEngine
@@ -47,9 +48,19 @@ def run_variant(quant: str, n: int, cams: int, run_clip: bool) -> dict:
         out["cot"].append(result["reasoning"][0])
         print(f"[{quant}] input {i}: total={result['timings']['total_ms']:.0f}ms", flush=True)
     out["vram_peak"] = engine.vram()
+    _save_partial(partial_dir, out)
 
-    if run_clip:
-        out["open_loop"] = run_golden_clip(engine)
+    out["open_loop"] = []
+    for cam_set in clip_cam_sets:
+        torch.cuda.empty_cache()
+        try:
+            out["open_loop"].append(run_golden_clip(engine, cam_set))
+        except torch.OutOfMemoryError:
+            torch.cuda.empty_cache()
+            out["open_loop"].append(
+                {"cameras": cam_set or "all", "error": "CUDA OOM — profile does not fit"}
+            )
+        _save_partial(partial_dir, out)
 
     del engine
     gc.collect()
@@ -57,30 +68,41 @@ def run_variant(quant: str, n: int, cams: int, run_clip: bool) -> dict:
     return out
 
 
-def run_golden_clip(engine) -> dict:
+def _save_partial(partial_dir: Path | None, out: dict) -> None:
+    if partial_dir is None:
+        return
+    partial_dir.mkdir(parents=True, exist_ok=True)
+    path = partial_dir / f"variant_{out['quant']}.json"
+    path.write_text(json.dumps(out, indent=2, default=str))
+    print(f"[{out['quant']}] partial saved -> {path}", flush=True)
+
+
+def run_golden_clip(engine, cam_subset: list[int] | None = None) -> dict:
     """Upstream open-loop sanity: golden clip, minADE vs dataset ground truth."""
-    from alpamayo1_5 import helper
     from alpamayo1_5.load_physical_aiavdataset import load_physical_aiavdataset
 
     data = load_physical_aiavdataset(GOLDEN_CLIP, t0_us=GOLDEN_T0_US)
     frames = data["image_frames"]  # (N_cams, 4, 3, H, W) uint8
     n_cams, n_frames, _, h, w = frames.shape
+    cameras = [
+        {
+            "camera_id": int(data["camera_indices"][c]),
+            "frames": [
+                np.ascontiguousarray(
+                    frames[c, f].numpy().transpose(1, 2, 0)
+                ).tobytes()
+                for f in range(n_frames)
+            ],
+            "encoding": "raw",
+            "width": w,
+            "height": h,
+        }
+        for c in range(n_cams)
+    ]
+    if cam_subset is not None:
+        cameras = [c for c in cameras if c["camera_id"] in cam_subset]
     obs = {
-        "cameras": [
-            {
-                "camera_id": int(data["camera_indices"][c]),
-                "frames": [
-                    np.ascontiguousarray(
-                        frames[c, f].numpy().transpose(1, 2, 0)
-                    ).tobytes()
-                    for f in range(n_frames)
-                ],
-                "encoding": "raw",
-                "width": w,
-                "height": h,
-            }
-            for c in range(n_cams)
-        ],
+        "cameras": cameras,
         "ego_history_xyz": data["ego_history_xyz"][0, 0].numpy().tolist(),
         "ego_history_rot": data["ego_history_rot"][0, 0].numpy().tolist(),
     }
@@ -92,6 +114,7 @@ def run_golden_clip(engine) -> dict:
     return {
         "clip_id": GOLDEN_CLIP,
         "t0_us": GOLDEN_T0_US,
+        "cameras": [c["camera_id"] for c in cameras],
         "num_traj_samples": len(ade),
         "minADE_m": float(ade.min()),
         "ADE_per_sample_m": [float(a) for a in ade],
@@ -129,11 +152,22 @@ def main() -> None:
     parser.add_argument("--n", type=int, default=10)
     parser.add_argument("--cams", type=int, default=2)
     parser.add_argument("--clip", action="store_true",
-                        help="also run the golden-clip open-loop check per variant")
+                        help="run golden-clip open-loop at full 4-cam per variant")
+    parser.add_argument("--clip2", action="store_true",
+                        help="run golden-clip open-loop at 2-cam subset [1,6] per variant")
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
 
-    variants = [run_variant(q, args.n, args.cams, args.clip) for q in args.modes]
+    clip_cam_sets: list[list[int] | None] = []
+    if args.clip:
+        clip_cam_sets.append(None)
+    if args.clip2:
+        clip_cam_sets.append([1, 6])
+
+    partial_dir = Path(args.out).parent / "partials" if args.out else None
+    variants = [
+        run_variant(q, args.n, args.cams, clip_cam_sets, partial_dir) for q in args.modes
+    ]
 
     report: dict = {
         "n_inputs": args.n,

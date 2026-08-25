@@ -55,7 +55,7 @@ Server prints `READY <socket>` on stdout once listening.
 
 ### Wire protocol
 
-`[uint32 BE length][msgpack]` frames. Ops: `hello`, `health`,
+`[uint32 LE length][msgpack]` frames (matches packages/training-env env-server.ts). Ops: `hello`, `health`,
 `warmup {cams}`, `act {obs, seed, params}`, `reset`, `close`, `shutdown`.
 
 `act` request:

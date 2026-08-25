@@ -1,9 +1,8 @@
 """Length-prefixed MessagePack framing over a stream socket.
 
-Wire format (matches the simforge env-server convention):
-    [uint32 big-endian payload length][msgpack payload]
+Wire format (matches packages/training-env env-server.ts):
+    [uint32 little-endian payload length][msgpack payload]
 """
-
 from __future__ import annotations
 
 import socket
@@ -11,7 +10,7 @@ import struct
 
 import msgpack
 
-_LEN = struct.Struct(">I")
+_LEN = struct.Struct("<I")
 MAX_FRAME = 512 * 1024 * 1024  # 512 MiB — multi-camera raw frames are large
 
 

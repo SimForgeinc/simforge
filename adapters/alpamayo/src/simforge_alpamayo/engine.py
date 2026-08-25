@@ -42,6 +42,20 @@ SKIP_MODULES = [
     "diffusion",
 ]
 
+# FP8 constraints on a 16 GB card (torchao 0.12 weight-only fallback path
+# dequantizes with an fp32 scale expanded to the full weight shape):
+# * lm_head MUST stay bf16 — its fp8 dequant would expand a 2.4 GB fp32
+#   scale every forward step.
+# * the vision tower IS quantized (unlike NF4) to claw back ~0.6 GB;
+#   without it the weights (~13 GB) leave no activation headroom.
+FP8_SKIP_MODULES = [
+    "lm_head",
+    "embed_tokens",
+    "action_in_proj",
+    "action_out_proj",
+    "diffusion",
+]
+
 MIN_PIXELS = 163840
 MAX_PIXELS = 196608
 
@@ -57,15 +71,7 @@ def _quant_config(quant: str):
             bnb_4bit_use_double_quant=True,
             llm_int8_skip_modules=SKIP_MODULES,
         )
-    if quant == "fp8":
-        from torchao.quantization import Float8WeightOnlyConfig
-        from transformers import TorchAoConfig
-
-        return TorchAoConfig(
-            quant_type=Float8WeightOnlyConfig(),
-            modules_to_not_convert=SKIP_MODULES,
-        )
-    if quant == "bf16":
+    if quant in ("fp8", "bf16"):
         return None
     raise ValueError(f"unknown quant mode: {quant}")
 
@@ -145,6 +151,21 @@ class AlpamayoEngine:
 
         logger.info("loading %s [%s]...", PINS["model_repo"], self.quant)
         model = Alpamayo1_5.from_pretrained(PINS["model_repo"], **kwargs)
+        if self.quant == "fp8":
+            # torchao's on-the-fly GPU quantization spikes ~2.4 GB transients
+            # (scale expansion on lm_head-sized tensors) and OOMs a 16 GB
+            # card. Quantize on CPU instead — identical numerics — then move
+            # the already-quantized model to the GPU in one pass.
+            import torch.nn as nn
+            from torchao.quantization import Float8WeightOnlyConfig, quantize_
+
+            def _fp8_filter(module: torch.nn.Module, fqn: str) -> bool:
+                return isinstance(module, nn.Linear) and not any(
+                    skip in fqn for skip in FP8_SKIP_MODULES
+                )
+
+            logger.info("quantizing to fp8 (e4m3, weight-only) on CPU...")
+            quantize_(model, Float8WeightOnlyConfig(), filter_fn=_fp8_filter)
         if qcfg is None and self.device == "cuda":
             model = model.to("cuda")
         model.eval()
