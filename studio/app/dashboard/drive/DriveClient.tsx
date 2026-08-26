@@ -53,15 +53,14 @@ import { useWorldSource } from "@/app/lib/live-world/use-world-source";
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
 import { listScenarioMaps } from "@/app/lib/scenario/editor/api";
 import { useEditorRuntime } from "@/app/lib/scenario/editor/use-editor-runtime";
+import { EditorSceneEnvironmentBridge } from "@/app/dashboard/scenario/editor/EditorSceneEnvironmentBridge";
 import { PoleCameraGrid } from "./cameras/PoleCameraGrid";
-import { useSiteTimeOfDay } from "./environment";
 import { usePoleCameras } from "./pole-cameras";
 import { actorSpeedKph, formatClipTime } from "./drive-telemetry";
 
 type DriveView = "world" | "cameras";
 type FollowMode = "chase" | "dash";
 
-const DAYLIGHT_INSTANT = new Date("2026-06-21T20:00:00Z");
 const CONTROLLED_KEY_CODES: Record<string, true> = {
   ArrowUp: true,
   ArrowDown: true,
@@ -243,21 +242,6 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     };
   }, [remoteWorld]);
 
-  const followSiteTime = useMemo(
-    () => typeof window !== "undefined"
-      && new URLSearchParams(window.location.search).get("lighting") === "site",
-    [],
-  );
-  const siteTime = useSiteTimeOfDay({
-    viewer,
-    manifestUrl: map.browserManifestUrl,
-    at: followSiteTime ? (clock?.timeIso ? new Date(clock.timeIso) : null) : DAYLIGHT_INSTANT,
-    quality,
-  });
-
-  useEffect(() => {
-    if (siteTime.error) toast.warning("Site lighting unavailable", { description: siteTime.error, duration: 10000 });
-  }, [siteTime.error]);
   useEffect(() => {
     if (!bridge || !source) return;
     return source.subscribeFrames((frame) => bridge.apply(frame));
@@ -350,16 +334,6 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     setView(next);
   }, [driving, exitDrive]);
 
-  const createCameraViewer = useCallback(async (canvas: HTMLCanvasElement) => {
-    const cameraViewer = new CityViewer(canvas, viewerOptions(quality));
-    try {
-      await cameraViewer.loadMap(map.browserManifestUrl);
-      return cameraViewer;
-    } catch (error) {
-      cameraViewer.dispose();
-      throw error;
-    }
-  }, [map, quality]);
 
   const driveSpeedKph = actorSpeedKph(world.latestFrame, driving ? egoActorId : null);
   const driveClipTime = transport ? formatClipTime(transport.time, transport.duration) : null;
@@ -455,6 +429,16 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
             </div>
           ) : null}
         </TopBarTrailingPortal>
+        {/* The authored document owns weather and time of day. Drive previously
+            applied its own fixed-daylight environment here, which silently
+            overwrote every change made in the Weather panel: the document
+            updated, then the override repainted the scene. */}
+        <EditorSceneEnvironmentBridge
+          active={mapLoaded}
+          document={editorDocument}
+          quality={quality}
+          viewer={viewer}
+        />
         <ScenarioEditorShell
           className="h-full min-h-0 bg-background text-foreground"
           data-testid="drive-surface"
@@ -502,7 +486,7 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
               </div>
               {view === "cameras" ? (
                 <div className="absolute inset-0 overflow-auto bg-background p-4">
-                  <PoleCameraGrid rigs={poleCameras.rigs} features={poleCameras.features} feeds={cameraFeeds} viewerFactory={createCameraViewer} />
+                  <PoleCameraGrid rigs={poleCameras.rigs} features={poleCameras.features} feeds={cameraFeeds} viewer={viewer} />
                 </div>
               ) : null}
             </div>
