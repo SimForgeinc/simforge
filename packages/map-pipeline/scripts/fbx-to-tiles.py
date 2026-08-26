@@ -12,6 +12,7 @@ import sys
 import bpy
 from mathutils import Vector
 
+FFMPEG_BIN = 'ffmpeg'
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -19,6 +20,7 @@ def parse_args():
     parser.add_argument('--output', required=True)
     parser.add_argument('--cell-size', type=float, default=100.0)
     parser.add_argument('--material-bindings', required=True)
+    parser.add_argument('--ffmpeg', required=True)
     return parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
 
 
@@ -96,7 +98,7 @@ def converted_texture(binding, output, cache):
     load_path = source
     if needs_format_conversion:
         load_path = os.path.join(converted_dir, f'{digest}.source.png')
-        command = ['ffmpeg', '-loglevel', 'error', '-threads', '1', '-y', '-i', source, '-frames:v', '1']
+        command = [FFMPEG_BIN, '-loglevel', 'error', '-threads', '1', '-y', '-i', source, '-frames:v', '1']
         if binding['colorSpace'] == 'srgb' and source.lower().endswith('.exr'):
             command.extend(['-vf', "lutrgb=r='pow(val,1/2.2)':g='pow(val,1/2.2)':b='pow(val,1/2.2)'"])
         command.append(load_path)
@@ -338,6 +340,8 @@ def triangle_count(objects):
 
 def main():
     args = parse_args()
+    global FFMPEG_BIN
+    FFMPEG_BIN = args.ffmpeg
     with open(args.material_bindings, 'r', encoding='utf8') as handle:
         binding_plan = json.load(handle)
     report = {
