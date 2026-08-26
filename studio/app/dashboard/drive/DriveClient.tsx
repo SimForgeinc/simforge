@@ -41,6 +41,7 @@ import {
   type V1TimelineBrowserPlayback,
 } from "@/app/dashboard/scenario/editor/timeline/V1TimelineRail";
 import { ScenarioEditorReadout, ScenarioEditorShell } from "@/app/dashboard/scenario/editor/shell";
+import { useDriveAmbientTraffic } from "@/app/lib/scenario/ambient/useDriveAmbientTraffic";
 import { createMultiplexedCameraFeeds, type CameraFeeds } from "@/app/lib/live-world/camera-feeds";
 import {
   createAuthoredWorldSource,
@@ -241,6 +242,20 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
       feeds.close();
     };
   }, [remoteWorld]);
+
+  // Reuses Studio's browser SUMO lifecycle. Without this the rail's Traffic tool
+  // was a dead affordance: it advertised availability but nothing mounted the
+  // ambient runtime, so selecting SUMO produced no traffic and no error.
+  const ambientTraffic = useDriveAmbientTraffic({
+    document: editorDocument,
+    map,
+    viewer,
+    mapLoaded,
+    latestFrame: world.latestFrame,
+    mode: transport?.playing ? "playing" : transport?.inspecting ? "paused" : "authoring",
+    time: transport?.time ?? 0,
+    onFallback: (reason) => toast.error("SUMO unavailable", { description: reason }),
+  });
 
   useEffect(() => {
     if (!bridge || !source) return;
@@ -454,7 +469,9 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
                 activeTool={expandedTool}
                 onExpandedToolChange={selectLibraryTool}
                 document={editorDocument}
-                sumoAvailable={Boolean(map.sumoNetworkSha256)}
+                trafficDetails={ambientTraffic.trafficDetails}
+                sumoAvailable={ambientTraffic.sumoAvailable}
+                sumoStatus={ambientTraffic.sumoStatus}
               />
             </div>
           ) : null}
