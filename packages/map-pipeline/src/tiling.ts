@@ -5,9 +5,10 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { hashTree, sha256 } from './closure.js';
+import { buildMaterialBindingPlan } from './material-binding.js';
 
 const execFileAsync = promisify(execFile);
-export const FBX_TILER_REVISION = 3;
+export const FBX_TILER_REVISION = 4;
 
 export interface GridDefinition {
   originX: number;
@@ -89,6 +90,12 @@ export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResul
   }
 
   await mkdir(outputDir, { recursive: true });
+  const bindingPlan = await buildMaterialBindingPlan(sourceDir);
+  if (bindingPlan.unresolvedTextures.length > 0) {
+    throw new Error(`materials.json has ${bindingPlan.unresolvedTextures.length} unresolved texture references`);
+  }
+  const bindingPlanPath = path.join(outputDir, 'material-bindings.json');
+  await writeFile(bindingPlanPath, `${JSON.stringify(bindingPlan)}\n`);
   await execFileAsync(blender, [
     '--background',
     '--factory-startup',
@@ -97,6 +104,7 @@ export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResul
     '--',
     '--source', sourceDir,
     '--output', outputDir,
+    '--material-bindings', bindingPlanPath,
     '--cell-size', String(cellSize),
   ], { maxBuffer: 16 * 1024 * 1024 });
   try {

@@ -16,6 +16,15 @@ export type { AssembleClosureOptions, ClosureStageResult } from './assemble.js';
 export { canonicalJson, closureBytes, closureDigest, sha256 } from './closure.js';
 export type { ClosureKind, ClosureMember, MapClosure } from './closure.js';
 export {
+  buildMaterialBindingPlan,
+  classifyTextureRole,
+  matchMaterialName,
+  normalizeFbxMaterialName,
+  renderBinding,
+  ueAssetLeaf,
+} from './material-binding.js';
+export type { MaterialBinding, MaterialBindingPlan, SourceMaterialContract, TextureBinding, TextureRole } from './material-binding.js';
+export {
   browserOptimize,
   browserToolFingerprint,
   ktx2ToolFingerprint,
@@ -96,7 +105,7 @@ export async function runMapPipeline(options: RunMapPipelineOptions): Promise<Ma
   }
   const browser = await browserOptimize(canonical, options.workDir);
   const ktx2 = await ktx2Variant(browser, options.workDir, options.ktxBinDir);
-  const corpus = await nativeCorpus(browser, options.workDir);
+  const corpus = await nativeCorpus(ktx2, options.workDir);
   return {
     name: options.name,
     canonical: registryArtifact(canonical),
