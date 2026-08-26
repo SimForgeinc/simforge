@@ -55,6 +55,22 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@1.21.7)(tsx@4.23.12)
 
+  packages/asset-packer:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@1.21.7)(tsx@4.23.12)
+
   packages/cli:
     dependencies:
       '@gltf-transform/core':
@@ -4050,12 +4066,12 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@anthropic-ai/sdk@0.115.0(zod@3.25.76)':
+  '@anthropic-ai/sdk@0.115.0(zod@4.4.3)':
     dependencies:
       json-schema-to-ts: 3.1.1
       standardwebhooks: 1.0.0
     optionalDependencies:
-      zod: 3.25.76
+      zod: 4.4.3
 
   '@aws-sdk/checksums@3.1000.29':
     dependencies:
@@ -4722,9 +4738,9 @@ snapshots:
 
   '@langchain/anthropic@1.5.8(@langchain/core@1.2.9)':
     dependencies:
-      '@anthropic-ai/sdk': 0.115.0(zod@3.25.76)
+      '@anthropic-ai/sdk': 0.115.0(zod@4.4.3)
       '@langchain/core': 1.2.9
-      zod: 3.25.76
+      zod: 4.4.3
 
   '@langchain/core@1.2.9':
     dependencies:
@@ -4734,7 +4750,7 @@ snapshots:
       langsmith: 0.9.0
       mustache: 4.2.0
       p-queue: 6.6.2
-      zod: 3.25.76
+      zod: 4.4.3
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@opentelemetry/exporter-trace-otlp-proto'
@@ -4757,14 +4773,14 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  '@langchain/langgraph@1.4.12(@langchain/core@1.2.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@3.25.76)':
+  '@langchain/langgraph@1.4.12(@langchain/core@1.2.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@4.4.3)':
     dependencies:
       '@langchain/core': 1.2.9
       '@langchain/langgraph-checkpoint': 1.1.5(@langchain/core@1.2.9)
       '@langchain/langgraph-sdk': 1.9.31(@langchain/core@1.2.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@langchain/protocol': 0.0.18
       '@standard-schema/spec': 1.1.0
-      zod: 3.25.76
+      zod: 4.4.3
     transitivePeerDependencies:
       - react
       - react-dom
@@ -6002,10 +6018,10 @@ snapshots:
   langchain@1.5.10(@langchain/core@1.2.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       '@langchain/core': 1.2.9
-      '@langchain/langgraph': 1.4.12(@langchain/core@1.2.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@3.25.76)
+      '@langchain/langgraph': 1.4.12(@langchain/core@1.2.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@4.4.3)
       '@langchain/langgraph-checkpoint': 1.1.5(@langchain/core@1.2.9)
       langsmith: 0.9.0
-      zod: 3.25.76
+      zod: 4.4.3
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@opentelemetry/exporter-trace-otlp-proto'
