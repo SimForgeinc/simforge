@@ -136,7 +136,19 @@ function tick(): void {
 async function fetchTopology(url: string): Promise<TopologyIndex> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`lane graph request failed (${response.status})`);
-  return await response.json() as TopologyIndex;
+  const raw = new Uint8Array(await response.arrayBuffer());
+  // Map bundles ship sidecars gzipped. A static file server usually serves
+  // `.json.gz` as an opaque body with no `Content-Encoding`, so fetch does not
+  // decompress it and `response.json()` chokes on the 0x1f8b magic. Sniff the
+  // bytes rather than trusting the extension or the server's headers.
+  const gzipped = raw.length > 1 && raw[0] === 0x1f && raw[1] === 0x8b;
+  const bytes = gzipped ? await gunzip(raw) : raw;
+  return JSON.parse(new TextDecoder().decode(bytes)) as TopologyIndex;
+}
+
+async function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
+  const stream = new Blob([bytes as BlobPart]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 function emptyTopology(): TopologyIndex {

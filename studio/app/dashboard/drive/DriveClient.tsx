@@ -94,6 +94,23 @@ export function DriveClient() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // A live world only needs a browser manifest and a lane topology to run, so
+    // Drive accepts them directly. That keeps an un-ingested bundle drivable
+    // (`?manifest=/map-bundles/<name>/3d/manifest.json&lanes=...`) instead of
+    // requiring the full authoring publication pipeline first.
+    const params = new URLSearchParams(window.location.search);
+    const manifestOverride = params.get("manifest") ?? process.env.NEXT_PUBLIC_DRIVE_MAP_MANIFEST_URL ?? null;
+    if (manifestOverride) {
+      const lanesOverride = params.get("lanes") ?? process.env.NEXT_PUBLIC_DRIVE_MAP_LANES_URL ?? null;
+      setMap({
+        id: manifestOverride,
+        label: params.get("label") ?? "Direct bundle",
+        browserManifestUrl: manifestOverride,
+        ...(lanesOverride ? { topologyArtifactUrl: lanesOverride } : {}),
+      } as ScenarioMapDescriptorDto);
+      setMapError(null);
+      return () => controller.abort();
+    }
     void fetch("/api/simforge/maps", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Map catalog request failed (${response.status})`);
