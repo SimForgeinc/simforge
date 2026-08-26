@@ -162,6 +162,12 @@ export interface RunOptions {
    * deviating from its authored route — as a physical leader/yield target.
    */
   readonly ambientReactivity?: 'scripted' | 'reactive';
+  /**
+   * `'clip'` (default) preserves authored finite-episode trace semantics.
+   * `'live'` removes the clip stop, disables trace/metric history retention,
+   * and enables incremental actor presence mutation.
+   */
+  readonly mode?: 'clip' | 'live';
 }
 
 /**
@@ -313,6 +319,10 @@ export interface FixedStepSimulationSession {
    * digests are identical whether or not the caller drains mid-episode.
    */
   drainEvents(): readonly SimEvent[];
+  /** Add a normalized non-ambient actor at the current live tick boundary. */
+  addActor(actor: SimActor): void;
+  /** Toggle an existing actor's presence at the current live tick boundary. */
+  setActorPresence(actorId: string, present: boolean): void;
 }
 
 /** Moving actors this close to the end are clamped to the terminal pose. */
@@ -686,6 +696,7 @@ class Simulation {
   private readonly dt: number;
   private readonly warmupTicks: number;
   private readonly clipTicks: number;
+  private readonly live: boolean;
   private readonly actors: ActorRuntime[] = [];
   private readonly byId = new Map<string, ActorRuntime>();
   private readonly triggers: TriggerRuntime[] = [];
@@ -758,6 +769,7 @@ class Simulation {
 
   constructor(rawInput: SimScenarioInput, private readonly opts: RunOptions) {
     this.graph = opts.graph;
+    this.live = opts.mode === 'live';
 
     const normalized = normalizeSimScenarioInput(rawInput);
     const controlResolution = resolveOverlappingControlLanes(normalized, this.graph);
@@ -887,54 +899,7 @@ class Simulation {
     this.hasAmbientTraffic = this.ambientActorIds.length > 0;
     this.ambientReactive = this.hasAmbientTraffic && this.opts.ambientReactivity === 'reactive';
     for (const spec of [...input.actors].sort((a, b) => (a.id < b.id ? -1 : 1))) {
-      const rt = this.buildActor(spec);
-      this.actors.push(rt);
-      this.byId.set(rt.id, rt);
-      if (this.motionBackend && !rt.static && rt.kind !== 'static_object') {
-        this.dynamicActorIds.add(rt.id);
-        this.motionBackend.register({
-          actorId: rt.id,
-          kind: rt.kind,
-          dimensions: { l: rt.dims.l, w: rt.dims.w },
-          motionDirection: isReverseMotion(rt) ? -1 : 1,
-          state: {
-            x: rt.position.x,
-            y: rt.position.y,
-            yawRad: rt.headingRad,
-            longitudinalVelocityMps: rt.speedMps,
-          },
-          profile: this.physicsConfig.vehicleProfiles?.[rt.id],
-        });
-      }
-      this.tracks.set(rt.id, {
-        x: [],
-        y: [],
-        headingRad: [],
-        speedMps: [],
-        lateralOffsetM: [],
-        motionDirection: [],
-        laneRsl: [],
-        s: [],
-        present: [],
-        ...(this.dynamicActorIds.has(rt.id) ? {
-          physics: {
-            vxBodyMps: [],
-            vyBodyMps: [],
-            yawRateRadps: [],
-            steerRad: [],
-            wheelAngularSpeedRadps: [],
-            tireUtilization: [],
-            frontNormalForceN: [],
-            rearNormalForceN: [],
-            collisionImpulseNs: [],
-            collisionCount: [],
-          },
-        } : {}),
-      });
-      const initialRouteRef = semanticResolvedRouteRef(rt.route);
-      this.initialRouteRefByActor.set(rt.id, initialRouteRef);
-      this.routeRefByActor.set(rt.id, initialRouteRef);
-      this.routeRefTracks.set(rt.id, []);
+      this.registerActor(spec);
     }
     for (const it of [...input.interactions].sort((a, b) => (a.id < b.id ? -1 : 1))) {
       const tr = makeTriggerRuntime(it);
@@ -956,6 +921,7 @@ class Simulation {
             observers,
             this.actors.map((a) => a.id),
             this.dt,
+            { recordHistory: !this.live },
           )
         : null;
 
@@ -973,6 +939,60 @@ class Simulation {
       activeCollisions: new Set(),
     };
   }
+  private registerActor(spec: SimActor): ActorRuntime {
+    const rt = this.buildActor(spec);
+    const insertAt = this.actors.findIndex((actor) => actor.id > rt.id);
+    if (insertAt === -1) this.actors.push(rt);
+    else this.actors.splice(insertAt, 0, rt);
+    this.byId.set(rt.id, rt);
+    if (this.motionBackend && !rt.static && rt.kind !== 'static_object') {
+      this.dynamicActorIds.add(rt.id);
+      this.motionBackend.register({
+        actorId: rt.id,
+        kind: rt.kind,
+        dimensions: { l: rt.dims.l, w: rt.dims.w },
+        motionDirection: isReverseMotion(rt) ? -1 : 1,
+        state: {
+          x: rt.position.x,
+          y: rt.position.y,
+          yawRad: rt.headingRad,
+          longitudinalVelocityMps: rt.speedMps,
+        },
+        profile: this.physicsConfig.vehicleProfiles?.[rt.id],
+      });
+    }
+    this.tracks.set(rt.id, {
+      x: [],
+      y: [],
+      headingRad: [],
+      speedMps: [],
+      lateralOffsetM: [],
+      motionDirection: [],
+      laneRsl: [],
+      s: [],
+      present: [],
+      ...(this.dynamicActorIds.has(rt.id) ? {
+        physics: {
+          vxBodyMps: [],
+          vyBodyMps: [],
+          yawRateRadps: [],
+          steerRad: [],
+          wheelAngularSpeedRadps: [],
+          tireUtilization: [],
+          frontNormalForceN: [],
+          rearNormalForceN: [],
+          collisionImpulseNs: [],
+          collisionCount: [],
+        },
+      } : {}),
+    });
+    const initialRouteRef = semanticResolvedRouteRef(rt.route);
+    this.initialRouteRefByActor.set(rt.id, initialRouteRef);
+    this.routeRefByActor.set(rt.id, initialRouteRef);
+    this.routeRefTracks.set(rt.id, []);
+    return rt;
+  }
+
 
   /* ------------------------------------------------------------ actor setup */
 
@@ -1142,6 +1162,7 @@ class Simulation {
   /* -------------------------------------------------------------- main loop */
 
   run(): SimResult {
+    if (this.live) throw new Error('run() is unavailable in live mode; call advance() with a finite tick budget');
     const result = this.advance(Number.POSITIVE_INFINITY);
     return { input: result.input, trace: result.trace!, issues: result.issues, arrival: result.arrival };
   }
@@ -1151,8 +1172,11 @@ class Simulation {
   }
 
   advance(maxTicks = 1, opts: AdvanceOptions = {}): FixedStepSimulationProgress {
+    if (this.live && !Number.isFinite(maxTicks)) {
+      throw new Error('live mode requires a finite advance tick budget');
+    }
     const budget = Number.isFinite(maxTicks) ? Math.max(0, Math.floor(maxTicks)) : Number.MAX_SAFE_INTEGER;
-    const total = this.warmupTicks + this.clipTicks;
+    const total = this.live ? Number.MAX_SAFE_INTEGER : this.warmupTicks + this.clipTicks;
     let advanced = 0;
     while (!this.finished && this.nextTick <= total && advanced < budget) {
       const i = this.nextTick++;
@@ -1178,7 +1202,7 @@ class Simulation {
       for (const a of this.actors) {
         if (a.pendingMotionDirection !== null) this.engagePendingGear(a, t);
       }
-      if (t >= 0 || this.opts.includeWarmupTrace === true) {
+      if (!this.live && (t >= 0 || this.opts.includeWarmupTrace === true)) {
         // Record the state *at* `t`, before this tick's integration step, so
         // the sample at `t = 0` is exactly the prologue's final state. Warm-up
         // samples are tracks only: they must not alter recorded-clip metrics.
@@ -1196,7 +1220,7 @@ class Simulation {
     }
     return {
       input: this.resolvedInput,
-      trace: this.finished || opts.trace === true ? this.buildTrace() : null,
+      trace: !this.live && (this.finished || opts.trace === true) ? this.buildTrace() : null,
       issues: this.issues,
       arrival: this.arrivalSolutions,
       done: this.finished,
@@ -1244,12 +1268,41 @@ class Simulation {
     return { tS: this.world.t, done: this.finished, actors, minima };
   }
 
+  addActor(spec: SimActor): void {
+    if (!this.live) throw new Error('incremental actor mutation requires live mode');
+    if (this.byId.has(spec.id)) throw new Error(`actor ${spec.id} already exists`);
+    if (spec.tags.includes('ambient')) throw new Error('incremental ambient actors are not supported');
+    if ((spec.sensors?.length ?? 0) > 0) throw new Error('incremental sensor observers are not supported');
+    const actor = this.registerActor({ ...spec, presentAtStart: true });
+    this.perception?.addTarget(actor.id);
+    this.events.push({ t: this.world.t, kind: 'spawn', actorId: actor.id });
+  }
+
+  setActorPresence(actorId: string, present: boolean): void {
+    if (!this.live) throw new Error('incremental actor mutation requires live mode');
+    const actor = this.byId.get(actorId);
+    if (!actor) throw new Error(`unknown actor ${actorId}`);
+    if (actor.present === present) return;
+    actor.present = present;
+    if (!present) {
+      for (const key of [...this.world.activeCollisions]) {
+        if (key.startsWith(`${actorId}|`) || key.endsWith(`|${actorId}`)) {
+          this.world.activeCollisions.delete(key);
+        }
+      }
+      this.collisionSnapshots.delete(actorId);
+    }
+    if (present) this.events.push({ t: this.world.t, kind: 'spawn', actorId });
+    else this.events.push({ t: this.world.t, kind: 'despawn', actorId, reason: 'interaction' });
+  }
+
   /**
    * Events recorded since the previous call, in record order. Purely a
    * session-side read: the trace's event list is untouched either way, so
    * digests are identical whether or not the caller drains mid-episode.
    */
   drainEvents(): readonly SimEvent[] {
+    if (this.live) return this.events.splice(0);
     const pending = this.events.slice(this.drainedEventCount);
     this.drainedEventCount = this.events.length;
     return pending;
@@ -1509,7 +1562,7 @@ class Simulation {
         ? {}
         : { colliderA: contact.colliderA, colliderB: contact.colliderB };
       this.events.push({ t: contact.t, kind: 'collision', a: contact.a, b: contact.b, ...detail });
-      this.metrics.collisions.push({ t: contact.t, a: contact.a, b: contact.b, ...detail });
+      if (!this.live) this.metrics.collisions.push({ t: contact.t, a: contact.a, b: contact.b, ...detail });
       for (const [actorId, otherId] of [[contact.a, contact.b], [contact.b, contact.a]] as const) {
         const actor = this.byId.get(actorId);
         if (!actor || actor.static || actor.crashDisabledAtS != null) continue;
