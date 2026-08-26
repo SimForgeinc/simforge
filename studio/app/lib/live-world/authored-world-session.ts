@@ -39,11 +39,17 @@ export function authoredPlaybackBudget(
   const availableS = accumulatedS + elapsedWallS;
   const availableTicks = Math.floor((availableS + dt * 1e-9) / dt);
   const ticks = Math.min(availableTicks, maxTicks);
-  const remainderS = Math.max(0, availableS - ticks * dt);
+  // Discard lag beyond a single step rather than banking it. Retaining it made
+  // a stall -- a compile, a slow frame, four camera panes rendering -- replay
+  // later at the catch-up cap, so the clip advanced in bursts instead of at
+  // wall-clock rate: seconds of scenario in a fraction of a second. Real-time
+  // playback skips missed time; only `lagS` records what was dropped.
+  const remainderS = Math.min(Math.max(0, availableS - ticks * dt), dt);
+  const droppedS = Math.max(0, availableS - ticks * dt - remainderS);
   return {
     ticks,
     remainderS,
-    lagS: Math.max(0, (availableTicks - ticks) * dt),
+    lagS: droppedS,
   };
 }
 

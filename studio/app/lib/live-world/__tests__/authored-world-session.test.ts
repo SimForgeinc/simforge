@@ -88,17 +88,18 @@ describe('authored world session', () => {
     expect(authoredPlaybackBudget(0, 0, 0.02, 5).ticks).toBe(0);
   });
 
-  it('caps a slow interval and reports the retained wall-clock lag', () => {
+  it('drops unrecoverable lag instead of banking it for a later burst', () => {
+    // A half-second stall at a five-step cap can only advance 0.1 s of clip.
+    // The rest must be discarded, not carried, or playback replays it later and
+    // the clip lurches forward in bursts instead of tracking the wall clock.
     const slow = authoredPlaybackBudget(0.5, 0, 0.02, 5);
-    expect(slow).toEqual({
-      ticks: 5,
-      remainderS: 0.4,
-      lagS: 0.4,
-    });
+    expect(slow.ticks).toBe(5);
+    expect(slow.remainderS).toBeLessThanOrEqual(0.02);
+    expect(slow.lagS).toBeCloseTo(0.38, 12);
 
+    // The interval after a stall runs at normal rate, not at the cap.
     const recovery = authoredPlaybackBudget(0.05, slow.remainderS, 0.02, 5);
-    expect(recovery.ticks).toBe(5);
-    expect(recovery.remainderS).toBeCloseTo(0.35, 12);
-    expect(recovery.lagS).toBeCloseTo(0.34, 12);
+    expect(recovery.ticks).toBeLessThanOrEqual(3);
+    expect(recovery.remainderS).toBeLessThanOrEqual(0.02);
   });
 });

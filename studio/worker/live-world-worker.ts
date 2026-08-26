@@ -41,7 +41,7 @@ let authoredClockLastWallTimeMs: number | null = null;
 let authoredClockRemainderS = 0;
 let lastAuthoredLagWarningMs = Number.NEGATIVE_INFINITY;
 
-const AUTHORED_CATCH_UP_INTERVALS = 2;
+const AUTHORED_CATCH_UP_INTERVALS = 1.5;
 const AUTHORED_LAG_WARNING_INTERVAL_MS = 5_000;
 
 
