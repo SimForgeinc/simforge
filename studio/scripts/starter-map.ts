@@ -12,7 +12,7 @@ export const STARTER_MAP = [
   "Local demo",
 ] as const;
 
-const STARTER_MAP_VERSION = 2;
+const STARTER_MAP_VERSION = 3;
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const ROAD_GLB_FIXTURE = resolve(REPO_ROOT, "fixtures/yale-tile_0_0.lod3.glb");
 
@@ -30,9 +30,26 @@ const XODR = `<?xml version="1.0" standalone="yes"?>
 <lanes>
 <laneOffset s="0" a="0" b="0" c="0" d="0"/>
 <laneSection s="0">
-<left><lane id="1" type="driving" level="false"><link/><width sOffset="0" a="3.5" b="0" c="0" d="0"/><roadMark sOffset="0" type="broken" weight="standard" color="white" width="0.12" laneChange="both"/></lane></left>
-<center><lane id="0" type="none" level="false"><link/><roadMark sOffset="0" type="solid" weight="standard" color="yellow" width="0.15" laneChange="none"/></lane></center>
-<right><lane id="-1" type="driving" level="false"><link/><width sOffset="0" a="3.5" b="0" c="0" d="0"/><roadMark sOffset="0" type="broken" weight="standard" color="white" width="0.12" laneChange="both"/></lane></right>
+<left>
+<lane id="1" type="driving" level="false">
+<link/>
+<width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+<roadMark sOffset="0" type="broken" weight="standard" color="white" width="0.12" laneChange="both"/>
+</lane>
+</left>
+<center>
+<lane id="0" type="none" level="false">
+<link/>
+<roadMark sOffset="0" type="solid" weight="standard" color="yellow" width="0.15" laneChange="none"/>
+</lane>
+</center>
+<right>
+<lane id="-1" type="driving" level="false">
+<link/>
+<width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+<roadMark sOffset="0" type="broken" weight="standard" color="white" width="0.12" laneChange="both"/>
+</lane>
+</right>
 </laneSection>
 </lanes>
 <objects/>
