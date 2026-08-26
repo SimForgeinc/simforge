@@ -35,7 +35,7 @@ export function useEditorClipboard({
       combo: "mod+c",
       handler: () => {
         if (!controller.canAuthor) return false;
-        if ((window.getSelection()?.toString().length ?? 0) > 0) return false;
+        if ((window.getSelection()?.toString().trim().length ?? 0) > 0) return false;
         const actors = controller.state.selection
           .map((id) => editorDocument.actor(id))
           .filter((actor): actor is NonNullable<typeof actor> => actor !== undefined);
