@@ -31,7 +31,7 @@ use bevy::world_serialization::{WorldAssetRoot, WorldInstance, WorldInstanceSpaw
 use bevy::window::ExitCondition;
 use serde_json::json;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use render_core::lighting::{self, LightingRung};
@@ -112,9 +112,9 @@ struct Args {
     /// Weather state: clear | fog | rain | night.
     #[arg(long, default_value = "clear")]
     weather: String,
-    /// HDRI for the sky/IBL (equirectangular .hdr).
-    #[arg(long, default_value = "/home/path/local-simforge/maps/yale-street/browser/3d/env/sky.hdr")]
-    sky: String,
+    /// HDRI fallback when no `env/sky.hdr` exists beside the loaded map corpus.
+    #[arg(long)]
+    sky: Option<String>,
     /// Cinematic: screen-space reflections (deferred path).
     #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     ssr: bool,
@@ -285,6 +285,20 @@ fn sun_direction(elev_deg: f32, azim_deg: f32) -> Dir3 {
     Dir3::new(dir.normalize()).unwrap()
 }
 
+fn resolve_sky(glbs: &[String], explicit: Option<&str>) -> Result<String> {
+    for glb in glbs {
+        for ancestor in Path::new(glb).ancestors().skip(1) {
+            let candidate = ancestor.join("env").join("sky.hdr");
+            if candidate.is_file() {
+                return Ok(candidate.to_string_lossy().into_owned());
+            }
+        }
+    }
+    explicit
+        .map(str::to_owned)
+        .context("loaded map corpus has no env/sky.hdr; pass --sky <path>")
+}
+
 fn main() -> Result<()> {
     let mut args = <Args as clap::Parser>::parse();
     let mut seq_frames: Option<(Vec<SeqPose>, String)> = None;
@@ -297,6 +311,8 @@ fn main() -> Result<()> {
             bail!("glb paths must be absolute: {g}");
         }
     }
+    let resolved_sky = resolve_sky(&args.glbs, args.sky.as_deref())?;
+    args.sky = Some(resolved_sky);
     std::env::set_var("BEVY_ASSET_ROOT", "/");
     let (tx, rx) = crossbeam_channel::unbounded::<SentPass>();
 
@@ -423,7 +439,7 @@ fn startup_setup(
         &plan,
         sun_direction(args.sun_elev, args.sun_azim),
         400.0,
-        Some(args.sky.as_str()),
+        args.sky.as_deref(),
         (args.lux, if rung.ibl() { 0.0 } else { args.ambient }),
     )
     .unwrap_or_else(|e| panic!("WSB4 lighting/sky setup failed: {e:#}"));
@@ -1195,3 +1211,25 @@ fn receive_passes(
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_sky;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn resolves_sky_beside_loaded_corpus_without_scratch_default() {
+        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("simforge-native-sky-{unique}"));
+        let tiles = root.join("3d").join("tiles");
+        let sky = root.join("3d").join("env").join("sky.hdr");
+        fs::create_dir_all(&tiles).unwrap();
+        fs::create_dir_all(sky.parent().unwrap()).unwrap();
+        fs::write(&sky, b"#?RADIANCE\n").unwrap();
+        let glb = tiles.join("road.glb").to_string_lossy().into_owned();
+
+        assert_eq!(resolve_sky(&[glb], None).unwrap(), sky.to_string_lossy());
+        fs::remove_dir_all(root).unwrap();
+    }
+}
