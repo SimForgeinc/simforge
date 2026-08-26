@@ -1,6 +1,6 @@
 [project]
 name = "simforge-oss-carla-api"
-version = "0.1.0rc47"
+version = "0.1.0rc48"
 description = "CARLA-compatible Python API facade over the SimForge env-server and render path"
 readme = "README.md"
 requires-python = ">=3.11"

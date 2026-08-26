@@ -80,7 +80,7 @@ prevent core local authoring or deterministic simulation.
 ## Publication and immutable consumption
 
 `config/simforge-oss-stack.json` defines release identity and lists the 13-package
-stack at `0.1.0-rc.47`. Its historical `renameManifest` records the prior
+stack at `0.1.0-rc.48`. Its historical `renameManifest` records the prior
 package consolidation. The release tag is `v<stackVersion>`.
 
 Cloud's committed stack lock is the consumption authority. Its CI verifies:
