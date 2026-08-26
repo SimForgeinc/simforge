@@ -4,6 +4,7 @@ import { AssetUrlServiceError, normalizeAssetKey } from "@/app/lib/assets/asset-
 import { SUMO_RUNTIME_VERSION } from "@/app/lib/scenario/sumo-runtime";
 import { requireScenarioContext } from "@/app/lib/scenario/http";
 import { simforgeEnv } from "@/lib/compat-env";
+import { objectRedirect } from "@/app/lib/s3/local-object-redirect";
 
 type Context = { params: Promise<{ assetPath: string[] }> };
 
@@ -57,7 +58,7 @@ async function redirectAsset(request: NextRequest, route: Context, headOnly: boo
     const bucket = artifactBucket();
     requestedRange(request);
     const url = await getPresignedGetUrl(asset.key, bucket, SIGNED_URL_TTL_SECONDS);
-    const response = NextResponse.redirect(url, 307);
+    const response = objectRedirect(url, 307);
     response.headers.set("Cache-Control", "private, no-store");
     return response;
   } catch (error) {

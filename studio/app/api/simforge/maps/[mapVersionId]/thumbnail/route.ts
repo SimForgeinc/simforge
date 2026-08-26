@@ -2,6 +2,7 @@ import { getPresignedGetUrl } from "@/app/lib/s3/s3-presign";
 import { NextResponse } from "next/server";
 import { getScenarioMapThumbnail } from "@/app/lib/scenario/map-thumbnail-store";
 import { requireScenarioContext } from "@/app/lib/scenario/http";
+import { objectRedirect } from "@/app/lib/s3/local-object-redirect";
 
 type Context = { params: Promise<{ mapVersionId: string }> };
 
@@ -15,7 +16,7 @@ async function redirectThumbnail(route: Context, headOnly: boolean) {
       return NextResponse.json({ error: "map_thumbnail_not_found" }, { status: 404 });
     }
     const url = await getPresignedGetUrl(thumbnail.key, thumbnail.bucket, 60 * 60);
-    const response = NextResponse.redirect(url, 307);
+    const response = objectRedirect(url, 307);
     response.headers.set("Cache-Control", "private, no-store");
     return response;
   } catch {
