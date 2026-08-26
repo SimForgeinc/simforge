@@ -43,12 +43,6 @@
  */
 
 import { collectParamRefs, tryEvaluateExpr, type Expr, type ExprScope } from '../expr/index.js';
-import {
-  AUTHORED_ACTOR_LIMIT_CODE,
-  MAX_AUTHORED_ACTORS,
-  authoredActorCount,
-  authoredActorLimitMessage,
-} from '../actor-limits.js';
 import type { AnchorFeature } from '../schema/v2/anchor.js';
 import type { Condition, Interaction, PointRef, Trigger } from '../schema/v2/interactions.js';
 import { CONTINUOUS_VERBS, conditionLeaves } from '../schema/v2/interactions.js';
@@ -114,16 +108,6 @@ export function staticScope(template: ScenarioTemplateV2): ExprScope {
  */
 export function structuralIssues(template: ScenarioTemplateV2): ClauseResult[] {
   const out: ClauseResult[] = [];
-  const actorCount = authoredActorCount(template);
-  if (actorCount > MAX_AUTHORED_ACTORS) {
-    out.push(issue(
-      'error',
-      AUTHORED_ACTOR_LIMIT_CODE,
-      'roles',
-      `${authoredActorLimitMessage(actorCount)}; delete actors until the scenario is within the supported envelope`,
-      { required: { maximum: MAX_AUTHORED_ACTORS }, actual: actorCount },
-    ));
-  }
   const roles = new Map(template.roles.map((r) => [r.id, r] as const));
   const features = new Map(template.anchor.features.map((f) => [f.id, f] as const));
   const interactions = new Map(

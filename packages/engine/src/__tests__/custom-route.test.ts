@@ -58,6 +58,30 @@ describe('custom route runtime semantics', () => {
     expect(headingDelta).toBeLessThan(0.15);
   });
 
+  it('holds a one-point timed route for the whole clip', () => {
+    const input = parseSimScenarioInput({
+      mapId: 'synthetic-straight', clipSeconds: 1, warmupSeconds: 0, dt: 0.02,
+      seed: 'one-point-custom-timed-route',
+      actors: [{
+        id: 'actor', kind: 'car',
+        initial: { pose: { x: 4, z: 2, headingRad: 1.2 }, speedMps: 12 },
+        behavior: {
+          route: { kind: 'timedPolyline', points: [{ timeS: 0, x: 4, z: 2 }] },
+          cruiseSpeedMps: 12,
+          rules: { collisionAvoidance: false, yield: false },
+        },
+      }],
+      interactions: [],
+    });
+
+    const { trace } = runSimulation(input, { graph, guards: 'collect' });
+    const track = trace.ticks.actors.actor!;
+    expect(track.x.every((x) => Math.abs(x - 4) < 1e-9)).toBe(true);
+    expect(track.y.every((y) => Math.abs(y + 2) < 1e-9)).toBe(true);
+    expect(track.speedMps.slice(1).every((speed) => Math.abs(speed) < 1e-9)).toBe(true);
+    expect(track.headingRad.every((heading) => Math.abs(heading - 1.2) < 1e-9)).toBe(true);
+  });
+
   it('warns when exact waypoint timing exceeds the actor physical envelope', () => {
     const input = parseSimScenarioInput({
       mapId: 'synthetic-straight', clipSeconds: 1, warmupSeconds: 0, dt: 0.02,

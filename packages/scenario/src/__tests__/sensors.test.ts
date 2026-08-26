@@ -9,7 +9,6 @@ import {
   firstEnabledDashCamera,
   newSensorId,
   sensorAperture,
-  supportsDashCamera,
 } from '../schema/v2/sensors.js';
 import {
   defaultDashCamera,
@@ -67,19 +66,21 @@ describe('actor-attached sensors', () => {
     expect(newSensorId('radar')).toMatch(/^radar-/);
   });
 
-  it('rejects duplicate sensor ids and unsupported actor mounts clearly', () => {
+  it('rejects duplicate sensor ids but permits cameras and large rigs on every actor class', () => {
     const duplicate = ltapTemplateInput();
     const camera = defaultDashCamera({ class: 'car' }, 'same-camera');
     duplicate.roles![0]!.actor.sensors = [camera, camera];
     expect(() => parseTemplate(duplicate)).toThrow(ScenarioValidationError);
 
-    const unsupported = ltapTemplateInput();
-    unsupported.roles![0]!.actor = {
+    const unrestricted = ltapTemplateInput();
+    unrestricted.roles![0]!.actor = {
       class: 'pedestrian',
-      sensors: [{ ...camera, id: 'pedestrian-camera' }],
+      sensors: Array.from({ length: 40 }, (_, index) =>
+        defaultDashCamera({ class: 'pedestrian' }, `pedestrian-camera-${index}`)),
     };
-    expect(() => parseTemplate(unsupported)).toThrow(/not supported on actor class/);
-    expect(supportsDashCamera({ class: 'pedestrian' })).toBe(false);
+    const parsed = parseTemplate(unrestricted);
+    expect(parsed.roles[0]?.actor.sensors).toHaveLength(40);
+    expect(parsed.roles[0]?.actor.sensors.every((sensor) => sensor.type === 'dash_camera')).toBe(true);
   });
 
   it('discovers enabled dash cameras deterministically', () => {

@@ -1,6 +1,6 @@
 {
   "schema": "simforge.stack-config/v1",
-  "stackVersion": "0.1.0-rc.45",
+  "stackVersion": "0.1.0-rc.46",
   "repository": "https://github.com/SimForgeinc/simforge-oss",
   "contracts": {
     "scenarioTemplate": "2",
@@ -10,19 +10,19 @@
     "carlaExecution": "uniscenarios.carla-execution/v1"
   },
   "packages": [
-    { "name": "@simforge/scenario", "version": "0.1.0-rc.45", "path": "packages/scenario", "role": "scenario-format" },
-    { "name": "@simforge/engine", "version": "0.1.0-rc.45", "path": "packages/engine", "role": "simulation-engine" },
-    { "name": "@simforge/maps", "version": "0.1.0-rc.45", "path": "packages/maps", "role": "map-pipeline" },
-    { "name": "@simforge/compiler", "version": "0.1.0-rc.45", "path": "packages/compiler", "role": "scenario-compiler" },
-    { "name": "@simforge/viewer", "version": "0.1.0-rc.45", "path": "packages/viewer", "role": "interactive-viewer" },
-    { "name": "@simforge/editor", "version": "0.1.0-rc.45", "path": "packages/editor", "role": "authoring-core" },
-    { "name": "@simforge/playback", "version": "0.1.0-rc.45", "path": "packages/playback", "role": "playback-runtime" },
-    { "name": "@simforge/asset-catalog", "version": "0.1.0-rc.45", "path": "packages/asset-catalog", "role": "asset-catalog" },
-    { "name": "@simforge/render", "version": "0.1.0-rc.45", "path": "packages/render", "role": "render-runtime" },
-    { "name": "@simforge/openscenario", "version": "0.1.0-rc.45", "path": "packages/openscenario", "role": "openscenario-interop" },
-    { "name": "@simforge/training-env", "version": "0.1.0-rc.45", "path": "packages/training-env", "role": "training-environment" },
-    { "name": "@simforge/evaluation", "version": "0.1.0-rc.45", "path": "packages/evaluation", "role": "evaluation-harness" },
-    { "name": "@simforge/cli", "version": "0.1.0-rc.45", "path": "packages/cli", "role": "command-line-interface" }
+    { "name": "@simforge/scenario", "version": "0.1.0-rc.46", "path": "packages/scenario", "role": "scenario-format" },
+    { "name": "@simforge/engine", "version": "0.1.0-rc.46", "path": "packages/engine", "role": "simulation-engine" },
+    { "name": "@simforge/maps", "version": "0.1.0-rc.46", "path": "packages/maps", "role": "map-pipeline" },
+    { "name": "@simforge/compiler", "version": "0.1.0-rc.46", "path": "packages/compiler", "role": "scenario-compiler" },
+    { "name": "@simforge/viewer", "version": "0.1.0-rc.46", "path": "packages/viewer", "role": "interactive-viewer" },
+    { "name": "@simforge/editor", "version": "0.1.0-rc.46", "path": "packages/editor", "role": "authoring-core" },
+    { "name": "@simforge/playback", "version": "0.1.0-rc.46", "path": "packages/playback", "role": "playback-runtime" },
+    { "name": "@simforge/asset-catalog", "version": "0.1.0-rc.46", "path": "packages/asset-catalog", "role": "asset-catalog" },
+    { "name": "@simforge/render", "version": "0.1.0-rc.46", "path": "packages/render", "role": "render-runtime" },
+    { "name": "@simforge/openscenario", "version": "0.1.0-rc.46", "path": "packages/openscenario", "role": "openscenario-interop" },
+    { "name": "@simforge/training-env", "version": "0.1.0-rc.46", "path": "packages/training-env", "role": "training-environment" },
+    { "name": "@simforge/evaluation", "version": "0.1.0-rc.46", "path": "packages/evaluation", "role": "evaluation-harness" },
+    { "name": "@simforge/cli", "version": "0.1.0-rc.46", "path": "packages/cli", "role": "command-line-interface" }
   ],
   "pythonPackages": [
     { "name": "simforge-gym", "version": "0.1.0rc45", "path": "adapters/gym", "role": "gym-adapter", "registry": "pypi" },

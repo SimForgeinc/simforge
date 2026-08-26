@@ -12,8 +12,6 @@ import {
   SensorMountSchema,
   SensorRigMountSchema,
   newSensorId,
-  supportsDashCamera,
-  type ActorForDashCamera,
   type ActorSensor,
   type DashCameraSensor,
   type LidarSensor,
@@ -23,11 +21,7 @@ import {
   type VehicleAnchor,
   type VehicleAnchorMount,
 } from './sensors.js';
-import {
-  ActorClassSchema,
-  DEFAULT_ACTOR_DIMS,
-  type ActorSpec,
-} from './roles.js';
+import { DEFAULT_ACTOR_DIMS, type ActorSpec } from './roles.js';
 
 export const SensorRigCameraTemplateSchema = DashCameraSensorSchema
   .omit({ mount: true })
@@ -50,8 +44,7 @@ export const SensorRigPresetSchema = z.strictObject({
   id: EntityIdSchema,
   name: z.string().min(1).max(200),
   description: z.string().min(1).max(1_000).optional(),
-  compatibleActorClasses: z.array(ActorClassSchema).min(1),
-  sensors: z.array(SensorRigSensorTemplateSchema).min(1).max(32),
+  sensors: z.array(SensorRigSensorTemplateSchema).min(1),
 }).check((ctx) => {
   const ids = new Set<string>();
   ctx.value.sensors.forEach((sensor, index) => {
@@ -249,7 +242,6 @@ const CENTER_BOTTOM_RIGHT: VehicleAnchor = {
 const BASIC_DASH_CAMERA = SensorRigPresetSchema.parse({
   id: 'basic-dash-camera',
   name: 'Basic Dash Camera',
-  compatibleActorClasses: ['car', 'truck', 'bus', 'van', 'motorcycle'],
   sensors: [
     camera('dashcam-front', 'Front Camera', mountFromV1(FRONT_TOP_CENTER, {
       x: 1.6, lateralRight: 0, up: 1.7,
@@ -260,7 +252,6 @@ const BASIC_DASH_CAMERA = SensorRigPresetSchema.parse({
 const TESLA_HW3 = SensorRigPresetSchema.parse({
   id: 'tesla-hw3',
   name: 'Tesla Autopilot HW3',
-  compatibleActorClasses: ['car'],
   sensors: [
     camera('tesla-front-narrow', 'Front Narrow', mountFromV1(FRONT_TOP_CENTER, {
       x: 1.6, lateralRight: 0, up: 1.7,
@@ -295,7 +286,6 @@ const TESLA_HW3 = SensorRigPresetSchema.parse({
 const WAYMO_5TH_GEN = SensorRigPresetSchema.parse({
   id: 'waymo-5th-gen',
   name: 'Waymo 5th Gen (Simplified)',
-  compatibleActorClasses: ['car', 'van'],
   sensors: [
     camera('waymo-front', 'Front', mountFromV1(FRONT_TOP_CENTER, {
       x: 1.5, lateralRight: 0, up: 2,
@@ -330,7 +320,6 @@ const WAYMO_5TH_GEN = SensorRigPresetSchema.parse({
 const NVIDIA_SDG_AV = SensorRigPresetSchema.parse({
   id: 'nvidia-sdg-av',
   name: 'NVIDIA Sensor Config',
-  compatibleActorClasses: ['car', 'van', 'truck'],
   sensors: [
     camera('camera_front_center', 'Front Center', mountFromV1(FRONT_TOP_CENTER, {
       x: 2.1, lateralRight: 0, up: 1.45,
@@ -362,7 +351,6 @@ const NVIDIA_SDG_AV = SensorRigPresetSchema.parse({
 const ALPAMAYO_PAI = SensorRigPresetSchema.parse({
   id: 'alpamayo-pai',
   name: 'Alpamayo PAI 4-Camera',
-  compatibleActorClasses: ['car'],
   sensors: [
     camera('camera_front_wide_120fov', 'Front Wide 120 FOV', mountFromV1(FRONT_TOP_CENTER, {
       x: 2.05, lateralRight: 0, up: 1.5,
@@ -471,7 +459,6 @@ export function buildAlpamayoRigPreset(
     id,
     name,
     ...(description === undefined ? {} : { description }),
-    compatibleActorClasses: ['car'],
     sensors,
   });
 }
@@ -658,9 +645,6 @@ export function instantiateSensorRig(
     ? sensorRigPreset(presetOrId)
     : SensorRigPresetSchema.parse(presetOrId);
   if (!preset) throw new Error(`unknown sensor rig preset "${presetOrId}"`);
-  if (!preset.compatibleActorClasses.includes(actor.class)) {
-    throw new Error(`sensor rig "${preset.id}" is not compatible with actor class "${actor.class}"`);
-  }
 
   const ids = new Set<string>();
   return preset.sensors.map((template, index) => {
@@ -689,9 +673,6 @@ export function defaultDashCamera(
   actor: SensorMountActor,
   id: string = newSensorId('dash_camera'),
 ): DashCameraSensor {
-  if (!supportsDashCamera(actor)) {
-    throw new Error(`dash cameras are not supported on actor class "${actor.class}"`);
-  }
   return DashCameraSensorSchema.parse({
     id,
     type: 'dash_camera',
