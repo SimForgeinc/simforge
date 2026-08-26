@@ -18,6 +18,23 @@ export interface ControlInput {
   reverse?: boolean;
 }
 
+export interface WorldClock {
+  mode: 'live' | 'replay';
+  timeIso: string | null;
+  speed: number;
+}
+
+export interface TrajectoryPlaybackStatus {
+  active: boolean;
+  name?: string;
+  elapsed?: number;
+  duration?: number;
+  vehicleId?: string;
+  finished?: boolean;
+  error?: string;
+}
+
+
 export interface WorldSource {
   readonly status: WorldSourceStatus;
   readonly lastError: string | null;
@@ -32,5 +49,16 @@ export interface WorldSource {
   spawn(req: SpawnActorRequest): Promise<{ actorId: string }>;
   despawn(actorId: string): Promise<void>;
   control(input: ControlInput): void;
+  subscribeClock?(fn: (clock: WorldClock) => void): () => void;
+  setReplay?(opts: { startIso: string; speed?: number }): Promise<void>;
+  setLive?(): Promise<void>;
+  listTrajectories?(): Promise<ReadonlyArray<{ file: string; name?: string }>>;
+  startTrajectory?(file: string): Promise<void>;
+  stopTrajectory?(): Promise<void>;
+  /**
+   * The drive protocol exposes trajectory state as a request rather than a
+   * push. Remote sources poll it only while a consumer is subscribed.
+   */
+  subscribeTrajectoryStatus?(fn: (status: TrajectoryPlaybackStatus) => void): () => void;
   close(): void;
 }
