@@ -1,5 +1,6 @@
 import {
   Boxes,
+  CarFront,
   Database,
   FlaskConical,
   Map,
@@ -53,6 +54,13 @@ export const DASHBOARD_APPS: NavItem[] = [
     icon: PackageCheck,
     match: (p) => p.startsWith("/dashboard/dataset-export"),
     disabled: true,
+  },
+  {
+    href: "/dashboard/drive",
+    label: "Drive",
+    description: "Continuous worlds and live driving",
+    icon: CarFront,
+    match: (p) => p.startsWith("/dashboard/drive"),
   },
 ];
 
