@@ -740,18 +740,24 @@ export function PoleCameraGrid({
       const previousViewport = renderer.getViewport(new Vector4());
       const previousScissor = renderer.getScissor(new Vector4());
       const previousScissorTest = renderer.getScissorTest();
-      const renderPasses = panes.map((pane) => {
+      const desiredPasses = panes.map((pane) => {
         const bounds = pane.canvas.getBoundingClientRect();
         const width = Math.max(1, Math.min(640, Math.round(bounds.width)));
         const height = Math.max(1, Math.round(width * bounds.height / Math.max(1, bounds.width)));
         return { pane, width, height };
       });
-      const atlasWidth = renderPasses.reduce((sum, { width }) => sum + width, 0);
-      const atlasHeight = Math.max(...renderPasses.map(({ height }) => height));
+      const desiredWidth = desiredPasses.reduce((sum, { width }) => sum + width, 0);
+      const desiredHeight = Math.max(...desiredPasses.map(({ height }) => height));
+      const scale = Math.min(1, previousSize.x / desiredWidth, previousSize.y / desiredHeight);
+      const renderPasses = desiredPasses.map(({ pane, width, height }) => ({
+        pane,
+        width: Math.max(1, Math.floor(width * scale)),
+        height: Math.max(1, Math.floor(height * scale)),
+      }));
 
+      // Never resize the shared drawing buffer here. Reallocating it for this
+      // atlas every frame eventually loses the WebGL context for the World view.
       try {
-        renderer.setPixelRatio(1);
-        renderer.setSize(atlasWidth, atlasHeight, false);
         renderer.setScissorTest(true);
         let x = 0;
         for (const { pane, width, height } of renderPasses) {
@@ -763,12 +769,24 @@ export function PoleCameraGrid({
           const context = pane.canvas.getContext("2d");
           if (pane.canvas.width !== width) pane.canvas.width = width;
           if (pane.canvas.height !== height) pane.canvas.height = height;
-          context?.drawImage(renderer.domElement, x, atlasHeight - height, width, height, 0, 0, width, height);
+          const sourceX = Math.round(x * previousPixelRatio);
+          const sourceY = renderer.domElement.height - Math.round(height * previousPixelRatio);
+          const sourceWidth = Math.round(width * previousPixelRatio);
+          const sourceHeight = Math.round(height * previousPixelRatio);
+          context?.drawImage(
+            renderer.domElement,
+            sourceX,
+            sourceY,
+            sourceWidth,
+            sourceHeight,
+            0,
+            0,
+            width,
+            height,
+          );
           x += width;
         }
       } finally {
-        renderer.setPixelRatio(previousPixelRatio);
-        renderer.setSize(previousSize.x, previousSize.y, false);
         renderer.setViewport(previousViewport);
         renderer.setScissor(previousScissor);
         renderer.setScissorTest(previousScissorTest);
