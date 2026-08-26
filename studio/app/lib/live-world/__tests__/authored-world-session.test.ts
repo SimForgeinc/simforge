@@ -3,6 +3,7 @@ import { buildLaneGraph, parseSimScenarioInput } from '@simforge/engine';
 
 import {
   applyEgoControl,
+  authoredPlaybackBudget,
   assertControllableActor,
   createAuthoredWorldSession,
 } from '../authored-world-session';
@@ -69,5 +70,35 @@ describe('authored world session', () => {
     expect(reset.snapshot()).toEqual(initial);
     expect(compiledInput.clipSeconds).toBe(20);
     expect(compiledInput.dt).toBe(0.02);
+  });
+
+  it('paces fixed steps from elapsed wall time without callback-count drift', () => {
+    let remainderS = 0;
+    let ticks = 0;
+    for (let interval = 0; interval < 20; interval += 1) {
+      const budget = authoredPlaybackBudget(0.05, remainderS, 0.02, 5);
+      remainderS = budget.remainderS;
+      ticks += budget.ticks;
+      expect(budget.lagS).toBe(0);
+    }
+
+    expect(ticks).toBe(50);
+    expect(ticks * 0.02).toBeCloseTo(1, 12);
+    expect(remainderS).toBeCloseTo(0, 12);
+    expect(authoredPlaybackBudget(0, 0, 0.02, 5).ticks).toBe(0);
+  });
+
+  it('caps a slow interval and reports the retained wall-clock lag', () => {
+    const slow = authoredPlaybackBudget(0.5, 0, 0.02, 5);
+    expect(slow).toEqual({
+      ticks: 5,
+      remainderS: 0.4,
+      lagS: 0.4,
+    });
+
+    const recovery = authoredPlaybackBudget(0.05, slow.remainderS, 0.02, 5);
+    expect(recovery.ticks).toBe(5);
+    expect(recovery.remainderS).toBeCloseTo(0.35, 12);
+    expect(recovery.lagS).toBeCloseTo(0.34, 12);
   });
 });

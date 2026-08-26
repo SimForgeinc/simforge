@@ -11,6 +11,42 @@ import type { ControlInput } from './types';
 export function createAuthoredWorldSession(input: SimScenarioInput, graph: LaneGraph): WorldSession {
   return new WorldSession({ input, graph, mode: 'live' });
 }
+export interface AuthoredPlaybackBudget {
+  readonly ticks: number;
+  readonly remainderS: number;
+  readonly lagS: number;
+}
+
+export function authoredPlaybackBudget(
+  elapsedWallS: number,
+  accumulatedS: number,
+  dt: number,
+  maxTicks: number,
+): AuthoredPlaybackBudget {
+  if (!Number.isFinite(elapsedWallS) || elapsedWallS < 0) {
+    throw new RangeError(`elapsed wall time must be finite and non-negative, got ${String(elapsedWallS)}`);
+  }
+  if (!Number.isFinite(accumulatedS) || accumulatedS < 0) {
+    throw new RangeError(`accumulated time must be finite and non-negative, got ${String(accumulatedS)}`);
+  }
+  if (!Number.isFinite(dt) || dt <= 0) {
+    throw new RangeError(`fixed step must be finite and positive, got ${String(dt)}`);
+  }
+  if (!Number.isInteger(maxTicks) || maxTicks <= 0) {
+    throw new RangeError(`maximum tick budget must be a positive integer, got ${String(maxTicks)}`);
+  }
+
+  const availableS = accumulatedS + elapsedWallS;
+  const availableTicks = Math.floor((availableS + dt * 1e-9) / dt);
+  const ticks = Math.min(availableTicks, maxTicks);
+  const remainderS = Math.max(0, availableS - ticks * dt);
+  return {
+    ticks,
+    remainderS,
+    lagS: Math.max(0, (availableTicks - ticks) * dt),
+  };
+}
+
 export function selectAuthoredEgoActor(
   input: SimScenarioInput,
   preferredActorId: string | null = null,

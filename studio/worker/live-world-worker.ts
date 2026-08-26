@@ -16,6 +16,7 @@ import type {
 } from '../app/lib/live-world/worker-protocol';
 import {
   applyEgoControl,
+  authoredPlaybackBudget,
   authoredClipCompleted,
   authoredPlaybackRequiresReset,
   createAuthoredWorldSession,
@@ -37,7 +38,12 @@ let playing = true;
 let inspecting = false;
 let completed = false;
 let authoredTickHz = 20;
-let targetTimeS = 0;
+let authoredClockLastWallTimeMs: number | null = null;
+let authoredClockRemainderS = 0;
+let lastAuthoredLagWarningMs = Number.NEGATIVE_INFINITY;
+
+const AUTHORED_CATCH_UP_INTERVALS = 2;
+const AUTHORED_LAG_WARNING_INTERVAL_MS = 5_000;
 
 
 scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
@@ -118,7 +124,6 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
       if (authoredInput && /not running/i.test(outcome.error ?? '')) {
         completed = true;
         playing = false;
-        targetTimeS = authoredInput.clipSeconds;
         postTransport();
         return;
       }
@@ -233,7 +238,7 @@ function rebuildAuthoredWorld(): void {
   truth = world.subscribeTruth();
   commandSequence = 0;
   completed = false;
-  targetTimeS = 0;
+  resetAuthoredClock();
 }
 
 function applyTransport(message: Extract<LiveWorldWorkerRequest, { type: 'transport' }>): void {
@@ -252,9 +257,9 @@ function applyTransport(message: Extract<LiveWorldWorkerRequest, { type: 'transp
     }
     if (seconds + 1e-9 < world.time()) rebuildAuthoredWorld();
     playing = false;
+    resetAuthoredClock();
     inspecting = true;
     advanceAuthoredTo(seconds, false);
-    targetTimeS = world.time();
     completed = authoredClipCompleted(world.time(), authoredInput.clipSeconds);
     postTransport();
     return;
@@ -266,17 +271,20 @@ function applyTransport(message: Extract<LiveWorldWorkerRequest, { type: 'transp
   }
   if (message.action === 'stop') {
     playing = false;
+    resetAuthoredClock();
     postTransport();
     return;
   }
   if (message.action === 'playPause' && playing) {
     playing = false;
+    resetAuthoredClock();
   } else {
     // Play from the parked end state means replay, matching media controls.
     if (authoredPlaybackRequiresReset(completed, world.time(), authoredInput.clipSeconds)) {
       rebuildAuthoredWorld();
     }
     playing = true;
+    beginAuthoredClock();
   }
   inspecting = false;
   completed = false;
@@ -288,11 +296,49 @@ function tick(): void {
   if (!world || !truth || closed || !playing) return;
   try {
     if (authoredInput) {
-      targetTimeS = Math.min(authoredInput.clipSeconds, targetTimeS + 1 / authoredTickHz);
-      advanceAuthoredTo(targetTimeS, true);
+      const nowMs = performance.now();
+      if (authoredClockLastWallTimeMs === null) {
+        authoredClockLastWallTimeMs = nowMs;
+        postTransport();
+        return;
+      }
+
+      const elapsedWallS = Math.max(0, (nowMs - authoredClockLastWallTimeMs) / 1_000);
+      authoredClockLastWallTimeMs = nowMs;
+      const maxTicks = Math.max(
+        1,
+        Math.ceil(AUTHORED_CATCH_UP_INTERVALS / authoredTickHz / authoredInput.dt),
+      );
+      const budget = authoredPlaybackBudget(
+        elapsedWallS,
+        authoredClockRemainderS,
+        authoredInput.dt,
+        maxTicks,
+      );
+      authoredClockRemainderS = budget.remainderS;
+
+      if (budget.lagS > 0 && nowMs - lastAuthoredLagWarningMs >= AUTHORED_LAG_WARNING_INTERVAL_MS) {
+        post({
+          type: 'warning',
+          message: `Authored playback is ${(budget.lagS * 1_000).toFixed(0)} ms behind wall clock; `
+            + `catch-up is capped at ${maxTicks} fixed steps per worker interval`,
+        });
+        lastAuthoredLagWarningMs = nowMs;
+      }
+
+      if (budget.ticks > 0) {
+        const remainingS = Math.max(0, authoredInput.clipSeconds - world.time());
+        const remainingTicks = Math.ceil(remainingS / authoredInput.dt - 1e-9);
+        const ticks = Math.min(budget.ticks, remainingTicks);
+        if (ticks > 0) world.advance(ticks);
+        postTruthFrames(truth.drain(), true);
+      }
       completed = authoredClipCompleted(world.time(), authoredInput.clipSeconds);
 
-      if (completed) playing = false;
+      if (completed) {
+        playing = false;
+        resetAuthoredClock();
+      }
       postTransport();
       return;
     }
@@ -302,6 +348,17 @@ function tick(): void {
     fail(error);
     shutdown();
   }
+}
+
+function beginAuthoredClock(): void {
+  authoredClockLastWallTimeMs = performance.now();
+  authoredClockRemainderS = 0;
+  lastAuthoredLagWarningMs = Number.NEGATIVE_INFINITY;
+}
+
+function resetAuthoredClock(): void {
+  authoredClockLastWallTimeMs = null;
+  authoredClockRemainderS = 0;
 }
 
 function advanceAuthoredTo(seconds: number, emitAll: boolean): void {
