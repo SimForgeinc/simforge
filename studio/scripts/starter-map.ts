@@ -12,7 +12,7 @@ export const STARTER_MAP = [
   "Local demo",
 ] as const;
 
-const STARTER_MAP_VERSION = 1;
+const STARTER_MAP_VERSION = 2;
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const ROAD_GLB_FIXTURE = resolve(REPO_ROOT, "fixtures/yale-tile_0_0.lod3.glb");
 
@@ -81,18 +81,12 @@ export async function ensureStarterMapAssets(assetsRoot: string): Promise<void> 
       lodLevels: 1,
       coordinateSystem: "y-up",
     },
-    tiles: [{
-      id: "starter-road",
-      gridX: 0,
-      gridZ: 0,
-      bounds: { min: [-110, -5, -20], max: [110, 20, 20] },
-      lods: [{
-        level: 0,
-        file: "tiles/road.glb",
-        triangles: 12_649,
-        fileSize: roadGlb.byteLength,
-        geometricError: 0,
-      }],
+    tiles: [],
+    staticLayers: [{
+      id: "road",
+      file: "tiles/road.glb",
+      triangles: 12_649,
+      fileSize: roadGlb.byteLength,
     }],
   };
 
