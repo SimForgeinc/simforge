@@ -6,6 +6,7 @@ import math
 import os
 import re
 import shutil
+import subprocess
 import sys
 
 import bpy
@@ -86,35 +87,35 @@ def converted_texture(binding, output, cache):
     key = (source, binding['role'])
     if key in cache:
         return cache[key]
-    image = bpy.data.images.load(source, check_existing=True)
-    image.colorspace_settings.name = 'sRGB' if binding['colorSpace'] == 'srgb' else 'Non-Color'
     needs_normal_flip = binding['role'] == 'normal' and binding.get('normalConvention') == 'directx'
     needs_format_conversion = os.path.splitext(source)[1].lower() in ('.exr', '.tga')
-    if not needs_normal_flip and not needs_format_conversion:
-        cache[key] = image
-        return image
     with open(source, 'rb') as handle:
         digest = hashlib.sha256(handle.read() + binding['role'].encode('ascii')).hexdigest()
     converted_dir = os.path.join(output, '.converted-textures')
     os.makedirs(converted_dir, exist_ok=True)
-    target = os.path.join(converted_dir, f'{digest}.png')
-    if needs_normal_flip:
-        pixels = array('f', [0.0]) * (image.size[0] * image.size[1] * 4)
-        image.pixels.foreach_get(pixels)
-        for index in range(1, len(pixels), 4):
-            pixels[index] = 1.0 - pixels[index]
-        converted = bpy.data.images.new(f'{image.name}_OpenGL', width=image.size[0], height=image.size[1], alpha=True)
-        converted.colorspace_settings.name = 'Non-Color'
-        converted.pixels.foreach_set(pixels)
-        converted.filepath_raw = target
-        converted.file_format = 'PNG'
-        converted.save()
-    else:
-        image.filepath_raw = target
-        image.file_format = 'PNG'
-        image.save()
-        converted = bpy.data.images.load(target, check_existing=True)
-        converted.colorspace_settings.name = 'sRGB' if binding['colorSpace'] == 'srgb' else 'Non-Color'
+    load_path = source
+    if needs_format_conversion:
+        load_path = os.path.join(converted_dir, f'{digest}.source.png')
+        command = ['ffmpeg', '-loglevel', 'error', '-threads', '1', '-y', '-i', source, '-frames:v', '1']
+        if binding['colorSpace'] == 'srgb' and source.lower().endswith('.exr'):
+            command.extend(['-vf', "lutrgb=r='pow(val,1/2.2)':g='pow(val,1/2.2)':b='pow(val,1/2.2)'"])
+        command.append(load_path)
+        subprocess.run(command, check=True)
+    image = bpy.data.images.load(load_path, check_existing=True)
+    image.colorspace_settings.name = 'sRGB' if binding['colorSpace'] == 'srgb' else 'Non-Color'
+    if not needs_normal_flip:
+        cache[key] = image
+        return image
+    pixels = array('f', [0.0]) * (image.size[0] * image.size[1] * 4)
+    image.pixels.foreach_get(pixels)
+    for index in range(1, len(pixels), 4):
+        pixels[index] = 1.0 - pixels[index]
+    converted = bpy.data.images.new(f'{image.name}_OpenGL', width=image.size[0], height=image.size[1], alpha=True)
+    converted.colorspace_settings.name = 'Non-Color'
+    converted.pixels.foreach_set(pixels)
+    converted.filepath_raw = os.path.join(converted_dir, f'{digest}.png')
+    converted.file_format = 'PNG'
+    converted.save()
     cache[key] = converted
     return converted
 
