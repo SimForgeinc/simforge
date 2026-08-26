@@ -121,7 +121,11 @@ class RemoteWorldSource implements WorldSource {
     };
   }
 
-  async setReplay(opts: { startIso: string; speed?: number }): Promise<void> {
+  // Arrow properties, not prototype methods: `WorldSource` is consumed as a
+  // plain object and callers legitimately pull members off it. A prototype
+  // method loses `this` the moment that happens, failing at the call with
+  // "cannot read properties of undefined".
+  setReplay = async (opts: { startIso: string; speed?: number }): Promise<void> => {
     const replay = normalizeReplayRequest(opts);
     await this.requestTwin(
       { type: 'twin_replay', start: replay.start, speed: replay.speed },
@@ -132,15 +136,15 @@ class RemoteWorldSource implements WorldSource {
         }
       },
     );
-  }
+  };
 
-  async setLive(): Promise<void> {
+  setLive = async (): Promise<void> => {
     await this.requestTwin({ type: 'twin_live' }, 1, (message) => {
       if (message.type !== 'twin_mode' || message.mode !== 'live') {
         throw responseError(message, 'return to live');
       }
     });
-  }
+  };
 
   async listTrajectories(): Promise<ReadonlyArray<{ file: string; name?: string }>> {
     return this.request({ type: 'list_trajectories' }, (message) => {

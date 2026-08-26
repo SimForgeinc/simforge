@@ -29,8 +29,8 @@ export function ReplayDock(props: { source: WorldSource; className?: string }): 
 }
 
 function RemoteReplayDock({ source, className }: { source: WorldSource; className?: string }) {
-  const replay = source.setReplay!;
-  const returnLive = source.setLive!;
+  // Call these as members, never as detached references: they are methods on the
+  // source and lose `this` the moment they are pulled off the object.
   const [clock, setClock] = useState<WorldClock>({ mode: "live", timeIso: null, speed: 1 });
   const [clockReceivedAt, setClockReceivedAt] = useState(0);
   const [clockStale, setClockStale] = useState(true);
@@ -61,7 +61,7 @@ function RemoteReplayDock({ source, className }: { source: WorldSource; classNam
     setReplayError(null);
     try {
       const startIso = new Date(startLocal).toISOString();
-      await replay({ startIso, speed: Number(speed) });
+      await source.setReplay!({ startIso, speed: Number(speed) });
     } catch (error) {
       setReplayError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -73,7 +73,7 @@ function RemoteReplayDock({ source, className }: { source: WorldSource; classNam
     setReplayBusy(true);
     setReplayError(null);
     try {
-      await returnLive();
+      await source.setLive!();
     } catch (error) {
       setReplayError(error instanceof Error ? error.message : String(error));
     } finally {
