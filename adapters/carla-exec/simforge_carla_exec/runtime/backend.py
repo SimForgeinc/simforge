@@ -313,6 +313,12 @@ CAMERA_ENCODER_QUEUE_FRAMES = 8
 #: deadline: a healthy slower encoder throttles capture until it catches up.
 CAMERA_ENCODER_QUEUE_POLL_S = 1.0
 
+#: libcarla can expose a freshly spawned UE sensor before its streaming endpoint
+#: is ready. Its Python binding reports only ``RuntimeError("std::exception")``.
+#: Keep that narrow transient inside the process instead of burning a fleet
+#: attempt; all other listen failures remain immediate and fatal.
+SENSOR_LISTEN_RETRY_DELAYS_S = (0.1, 0.25, 0.5, 1.0)
+
 
 def _presentation_video_codec_args() -> list[str]:
     """Encoder selection shared by every per-camera stream (h264 mp4 output)."""
@@ -566,6 +572,7 @@ class CarlaBackend:
         self.streaming_primary_actor_id: str | None = None
         self.camera_grade_evidence: dict[str, dict[str, Any]] = {}
         self.visual_quality_stats: dict[str, dict[str, int]] = {}
+        self.sensor_listen_retries: dict[str, int] = {}
         self.visual_quality_evidence: dict[str, Any] = {
             "schema": "uniscenario.visual-quality-evidence/v1",
             "verdict": "not-evaluated",
@@ -955,6 +962,37 @@ class CarlaBackend:
         report = getattr(self, "spawn_placement", None)
         return dict(report) if isinstance(report, Mapping) else None
 
+    def _listen_sensor(
+        self,
+        sensor: Any,
+        callback: Callable[[Any], None],
+        sensor_key: str,
+        abort: Callable[[], None],
+    ) -> None:
+        failures = 0
+        while True:
+            abort()
+            try:
+                sensor.listen(callback)
+                self.sensor_listen_retries[sensor_key] = failures
+                if failures:
+                    print(
+                        f"CARLA sensor listen recovered for {sensor_key} after {failures} transient failure(s)",
+                        flush=True,
+                    )
+                return
+            except RuntimeError as exc:
+                if (
+                    "std::exception" not in str(exc)
+                    or failures >= len(SENSOR_LISTEN_RETRY_DELAYS_S)
+                    or getattr(sensor, "is_alive", True) is False
+                ):
+                    raise
+                delay_s = SENSOR_LISTEN_RETRY_DELAYS_S[failures]
+                failures += 1
+                abort()
+                sleep(delay_s)
+
     def _configure_collision_sensors(self, library: Any, abort: Callable[[], None]) -> None:
         """Attach passive collision observation without affecting vehicle motion."""
         spawn_actor = getattr(self.world, "spawn_actor", None)
@@ -969,7 +1007,16 @@ class CarlaBackend:
             sensor = spawn_actor(blueprint, self.carla.Transform(), attach_to=actor)
             if sensor is None:
                 raise RuntimeError(f"CARLA failed to attach collision observation to {actor_id}")
-            sensor.listen(lambda event, owner=actor_id: self._receive_collision(owner, event))
+            try:
+                self._listen_sensor(
+                    sensor,
+                    lambda event, owner=actor_id: self._receive_collision(owner, event),
+                    f"collision:{actor_id}",
+                    abort,
+                )
+            except BaseException:
+                sensor.destroy()
+                raise
             self.collision_sensors.append(sensor)
 
     def _receive_collision(self, actor_id: str, event: Any) -> None:
@@ -1559,7 +1606,16 @@ class CarlaBackend:
                 "transform": dict(requested.transform),
                 "config": dict(requested.config),
             }
-            sensor_actor.listen(lambda data, sensor_key=key: self._receive_sensor_frame(sensor_key, data))
+            try:
+                self._listen_sensor(
+                    sensor_actor,
+                    lambda data, sensor_key=key: self._receive_sensor_frame(sensor_key, data),
+                    key,
+                    check,
+                )
+            except BaseException:
+                sensor_actor.destroy()
+                raise
             self.sensors.append(sensor_actor)
             check()
 
@@ -2214,6 +2270,14 @@ class CarlaBackend:
                 for camera_id, evidence in sorted(self.camera_grade_evidence.items())
             },
             "visualQuality": dict(self.visual_quality_evidence),
+            "sensorListen": {
+                "retryCount": sum(self.sensor_listen_retries.values()),
+                "recoveredSensors": {
+                    sensor_key: retries
+                    for sensor_key, retries in sorted(self.sensor_listen_retries.items())
+                    if retries > 0
+                },
+            },
             "lifecycle": dict(sorted(self.actor_lifecycle.items())),
             "appearance": {
                 actor_id: {

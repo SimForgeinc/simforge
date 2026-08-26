@@ -51,6 +51,60 @@ def artifact_bytes(body: bytes | Path) -> bytes:
     return body.read_bytes() if isinstance(body, Path) else body
 
 
+def test_sensor_listen_retries_only_the_known_libcarla_spawn_race(monkeypatch, capsys) -> None:
+    class Sensor:
+        is_alive = True
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def listen(self, callback) -> None:
+            self.calls += 1
+            if self.calls < 3:
+                raise RuntimeError("std::exception")
+            callback("ready")
+
+    monkeypatch.setattr(
+        "simforge_carla_exec.runtime.backend.sleep",
+        lambda _seconds: None,
+    )
+    backend = object.__new__(CarlaBackend)
+    backend.sensor_listen_retries = {}
+    sensor = Sensor()
+    received: list[str] = []
+
+    backend._listen_sensor(sensor, received.append, "hero/front-rgb", lambda: None)
+
+    assert sensor.calls == 3
+    assert received == ["ready"]
+    assert backend.sensor_listen_retries == {"hero/front-rgb": 2}
+    assert "recovered for hero/front-rgb after 2 transient failure(s)" in capsys.readouterr().out
+
+
+def test_sensor_listen_does_not_retry_an_unrelated_runtime_failure(monkeypatch) -> None:
+    class Sensor:
+        is_alive = True
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def listen(self, _callback) -> None:
+            self.calls += 1
+            raise RuntimeError("sensor stream rejected")
+
+    monkeypatch.setattr(
+        "simforge_carla_exec.runtime.backend.sleep",
+        lambda _seconds: pytest.fail("unrelated failures must not back off"),
+    )
+    backend = object.__new__(CarlaBackend)
+    backend.sensor_listen_retries = {}
+    sensor = Sensor()
+
+    with pytest.raises(RuntimeError, match="sensor stream rejected"):
+        backend._listen_sensor(sensor, lambda _event: None, "hero/front-rgb", lambda: None)
+    assert sensor.calls == 1
+
+
 def test_optional_camera_grade_attributes_never_block_a_supported_sensor() -> None:
     class Blueprint:
         def __init__(self) -> None:
