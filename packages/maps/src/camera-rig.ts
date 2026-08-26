@@ -63,9 +63,13 @@ function requireFinite(value: number, name: string): number {
  *
  * `SignalFeature.position` is the mast base. `zOffset` is intentionally not
  * used: it describes the signal-head height, which is independent of the
- * camera's explicit mounting height. Compass bearing is converted to scene yaw
- * by subtracting 90°: north points toward -Z and east toward +X. A correction's
- * forward offset follows the corrected optical bearing.
+ * camera's explicit mounting height. `headingDeg` is a compass bearing; the
+ * -90° converts it to scene yaw, where north is -Z and east is +X
+ * (`coordinate-frame.ts:17-20`). Forward is therefore `(cos(yaw), sin(yaw))`
+ * here. The `-sin` in `viewer/renderer-contract.ts:145-146` instead converts an
+ * OpenDRIVE-local heading into scene space; it must not be applied again after
+ * this compass-to-scene conversion. A correction's forward offset follows the
+ * corrected optical bearing.
  */
 export function resolveCameraPose(
   feature: Pick<SignalFeature, 'position' | 'zOffset'>,
