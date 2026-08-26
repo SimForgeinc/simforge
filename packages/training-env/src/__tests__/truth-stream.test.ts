@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { parseSimScenarioInput, type SimScenarioInput } from '@simforge/engine';
 
 import { LANE_LEFT, scenario, syntheticGraph, vehicle } from '../fixture.js';
-import { TruthStreamClient, type TruthFrame } from '../truth-stream.js';
+import { encodeTruthFrame, TruthStreamClient, type TruthFrame } from '../truth-stream.js';
 import { WorldSession } from '../world-session.js';
 
 const graph = syntheticGraph();
@@ -132,14 +132,23 @@ describe('world-session live truth stream', () => {
     });
   });
 
-  it('reassembles arbitrarily split length-prefixed transport chunks', () => {
-    const framed = runBytes(1)[0]!;
+  it('keeps the frozen framed-msgpack bytes exact and reassembles every one-byte boundary', () => {
+    const fixture: TruthFrame = {
+      tick: 7,
+      timeSec: 0.35,
+      scene: { tick: 7, t: 0.35, actors: [] },
+      signals: [],
+      actors: [],
+    };
+    const framed = encodeTruthFrame(fixture);
+    expect(Buffer.from(framed).toString('hex')).toBe(
+      '4900000085a47469636b07a774696d65536563cb3fd6666666666666a57363656e6583a47469636b07a174cb3fd6666666666666a66163746f727390a77369676e616c7390a66163746f727390',
+    );
+
     const client = new TruthStreamClient();
-    expect(client.push(framed.subarray(0, 2))).toEqual([]);
-    expect(client.push(framed.subarray(2, 9))).toEqual([]);
-    const decoded = client.push(framed.subarray(9));
-    expect(decoded).toHaveLength(1);
-    expect(decoded[0]!.tick).toBe(1);
+    const decoded: TruthFrame[] = [];
+    for (const byte of framed) decoded.push(...client.push(Uint8Array.of(byte)));
+    expect(decoded).toEqual([fixture]);
   });
 
   it('drops oldest frames for a slow consumer and reports the exact cumulative count', () => {
