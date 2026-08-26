@@ -5,15 +5,18 @@ import {
   AlertTriangle,
   Check,
   Clipboard,
+  Lock,
   LoaderCircle,
   Pause,
   RefreshCw,
   RotateCcw,
   VideoOff,
+  Unlock,
 } from "lucide-react";
-import type { SignalFeature } from "@simforge/maps";
+import type { SignalFeature } from "@simforge/maps/signals";
 import type { PoleCamera, PoleCameraRig, ResolvedCameraPose } from "@simforge/maps/camera-rig";
 import { findRigFeature, resolveCameraPose } from "@simforge/maps/camera-rig";
+import { PerspectiveCamera, Vector2, Vector4 } from "three";
 import type { CityViewer } from "@simforge/viewer";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
@@ -41,14 +44,12 @@ import {
   type CameraAdjustments,
 } from "./camera-adjustments";
 
-export type PoleCameraViewerFactory = (
-  canvas: HTMLCanvasElement,
-) => CityViewer | Promise<CityViewer>;
 
 export interface PoleCameraGridProps {
   rigs: readonly PoleCameraRig[];
   features: readonly SignalFeature[];
-  viewerFactory: PoleCameraViewerFactory;
+  /** The surface's sole CityViewer. Camera panes render this viewer's scene. */
+  viewer: CityViewer | null;
   feeds?: CameraFeeds | null;
   onFeedStatus?: (cameraId: string, mode: CameraFeedState) => void;
 }
@@ -254,88 +255,138 @@ function MultiplexedCameraFeed({
   );
 }
 
+interface CameraPane {
+  readonly canvas: HTMLCanvasElement;
+  readonly camera: PerspectiveCamera;
+}
+
+function applyResolvedPose(cameraObject: PerspectiveCamera, pose: ResolvedCameraPose): void {
+  cameraObject.position.set(...pose.position);
+  cameraObject.up.set(0, 1, 0);
+  cameraObject.lookAt(...pose.target);
+  cameraObject.fov = pose.verticalFovDeg;
+  cameraObject.updateProjectionMatrix();
+  cameraObject.updateMatrixWorld(true);
+}
+
 function TwinView({
   camera,
-  feature,
-  viewerFactory,
+  pose,
+  cameraKey,
+  unlocked,
+  adjustment,
+  onAdjustmentChange,
+  registerPane,
   fill = false,
 }: {
   camera: PoleCamera;
-  feature: SignalFeature;
-  viewerFactory: PoleCameraViewerFactory;
+  pose: ResolvedCameraPose;
+  cameraKey: string;
+  unlocked: boolean;
+  adjustment: CameraAdjustment;
+  onAdjustmentChange: (adjustment: CameraAdjustment) => void;
+  registerPane: (key: string, pane: CameraPane | null) => void;
   fill?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const viewerRef = useRef<CityViewer | null>(null);
-  const latestCameraRef = useRef(camera);
-  const [generation, setGeneration] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  latestCameraRef.current = camera;
+  const cameraObjectRef = useRef<PerspectiveCamera | null>(null);
+  const dragRef = useRef<{ x: number; y: number } | null>(null);
+  const latestAdjustmentRef = useRef(adjustment);
+  latestAdjustmentRef.current = adjustment;
+  if (!cameraObjectRef.current) cameraObjectRef.current = new PerspectiveCamera();
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    let disposed = false;
-    setError(null);
-
-    Promise.resolve(viewerFactory(canvas))
-      .then((viewer) => {
-        if (disposed) {
-          viewer.dispose();
-          return;
-        }
-        viewerRef.current = viewer;
-        const pose = resolveCameraPose(feature, latestCameraRef.current);
-        viewer.applyView({ position: pose.position, target: pose.target, fov: pose.verticalFovDeg });
-      })
-      .catch((reason: unknown) => {
-        if (!disposed) setError(reason instanceof Error ? reason.message : String(reason));
-      });
-
-    return () => {
-      disposed = true;
-      viewerRef.current?.dispose();
-      viewerRef.current = null;
-    };
-  }, [feature, generation, viewerFactory]);
+    const cameraObject = cameraObjectRef.current;
+    if (!canvas || !cameraObject) return;
+    registerPane(cameraKey, { canvas, camera: cameraObject });
+    return () => registerPane(cameraKey, null);
+  }, [cameraKey, registerPane]);
 
   useEffect(() => {
-    const viewer = viewerRef.current;
-    if (!viewer) return;
-    try {
-      const pose = resolveCameraPose(feature, camera);
-      viewer.applyView({ position: pose.position, target: pose.target, fov: pose.verticalFovDeg });
-      setError(null);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    }
-  }, [camera, feature]);
+    const cameraObject = cameraObjectRef.current;
+    if (cameraObject) applyResolvedPose(cameraObject, pose);
+  }, [pose]);
+
+  const changeByInput = (yawDelta: number, pitchDelta: number, forwardDelta: number) => {
+    const current = latestAdjustmentRef.current;
+    onAdjustmentChange({
+      ...current,
+      correction: {
+        ...current.correction,
+        yawDeg: Math.min(45, Math.max(-45, current.correction.yawDeg + yawDelta)),
+        pitchDeg: Math.min(45, Math.max(-45, current.correction.pitchDeg + pitchDelta)),
+        forwardM: Math.min(10, Math.max(-10, current.correction.forwardM + forwardDelta)),
+      },
+    });
+  };
+  const poseBytes = JSON.stringify({
+    position: pose.position,
+    target: pose.target,
+    verticalFovDeg: pose.verticalFovDeg,
+  });
 
   return (
     <div
       className={cn(
         "relative overflow-hidden rounded-md border border-border bg-muted",
+        unlocked && "ring-1 ring-primary",
         fill && "h-full w-full",
       )}
       style={fill ? undefined : { aspectRatio: `${camera.intrinsics.width} / ${camera.intrinsics.height}` }}
     >
+      <div className="absolute start-2 top-2 z-10">
+        <Badge variant={unlocked ? "default" : "outline"} className="gap-1 bg-background/80">
+          {unlocked ? <Unlock aria-hidden="true" /> : <Lock aria-hidden="true" />}
+          {unlocked ? "Aiming" : "Locked"}
+        </Badge>
+      </div>
       <canvas
         ref={canvasRef}
-        className="block h-full w-full"
-        aria-label={`${camera.label ?? camera.id} calibrated digital twin view`}
+        className={cn("block h-full w-full", unlocked && "cursor-crosshair focus-visible:outline-none")}
+        aria-label={`${camera.label ?? camera.id} calibrated digital twin view, ${unlocked ? "aiming" : "locked"}`}
+        data-camera-key={cameraKey}
+        data-camera-pose={poseBytes}
+        tabIndex={unlocked ? 0 : -1}
+        onKeyDown={(event) => {
+          if (!unlocked) return;
+          const key = event.key.toLowerCase();
+          if (!["w", "a", "s", "d"].includes(key)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (key === "w") changeByInput(0, 0, 0.25);
+          if (key === "s") changeByInput(0, 0, -0.25);
+          if (key === "a") changeByInput(-1, 0, 0);
+          if (key === "d") changeByInput(1, 0, 0);
+        }}
+        onPointerDown={(event) => {
+          if (!unlocked) return;
+          event.preventDefault();
+          event.stopPropagation();
+          event.currentTarget.focus();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          dragRef.current = { x: event.clientX, y: event.clientY };
+        }}
+        onPointerMove={(event) => {
+          if (!unlocked || !dragRef.current || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const previous = dragRef.current;
+          dragRef.current = { x: event.clientX, y: event.clientY };
+          changeByInput((event.clientX - previous.x) * 0.15, (previous.y - event.clientY) * 0.15, 0);
+        }}
+        onPointerUp={(event) => {
+          if (!unlocked) return;
+          event.stopPropagation();
+          dragRef.current = null;
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+        }}
+        onPointerCancel={() => {
+          dragRef.current = null;
+        }}
       />
-      {error ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/90 p-5 text-center">
-          <AlertTriangle className="size-7 text-destructive" aria-hidden="true" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Twin view unavailable</p>
-            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{error}</p>
-          </div>
-          <Button type="button" size="sm" variant="outline" onClick={() => setGeneration((value) => value + 1)}>
-            <RefreshCw aria-hidden="true" /> Retry twin
-          </Button>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -537,8 +588,11 @@ function CameraAimControls({
 
 function Comparison({
   camera,
-  feature,
-  viewerFactory,
+  pose,
+  cameraKey,
+  adjustment,
+  onAdjustmentChange,
+  registerPane,
   feeds,
   feedStatus,
   active,
@@ -548,8 +602,11 @@ function Comparison({
   onFeedStatus,
 }: {
   camera: PoleCamera;
-  feature: SignalFeature;
-  viewerFactory: PoleCameraViewerFactory;
+  pose: ResolvedCameraPose;
+  cameraKey: string;
+  adjustment: CameraAdjustment;
+  onAdjustmentChange: (adjustment: CameraAdjustment) => void;
+  registerPane: (key: string, pane: CameraPane | null) => void;
   feeds?: CameraFeeds | null;
   feedStatus: CameraFeedState;
   active: boolean;
@@ -563,8 +620,18 @@ function Comparison({
   ) : (
     <FocusedCameraFeed camera={camera} active={active} onStatus={onFeedStatus} fill={mode === "overlay"} />
   );
-  const twin = <TwinView camera={camera} feature={feature} viewerFactory={viewerFactory} fill={mode === "overlay"} />;
-
+  const twin = (
+    <TwinView
+      camera={camera}
+      pose={pose}
+      cameraKey={cameraKey}
+      unlocked={active}
+      adjustment={adjustment}
+      onAdjustmentChange={onAdjustmentChange}
+      registerPane={registerPane}
+      fill={mode === "overlay"}
+    />
+  );
   if (mode === "overlay") {
     return (
       <div>
@@ -631,7 +698,7 @@ async function copyText(text: string): Promise<boolean> {
 export function PoleCameraGrid({
   rigs,
   features,
-  viewerFactory,
+  viewer,
   feeds = null,
   onFeedStatus,
 }: PoleCameraGridProps) {
@@ -644,9 +711,76 @@ export function PoleCameraGrid({
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [storageError, setStorageError] = useState<string | null>(null);
+  const panesRef = useRef(new Map<string, CameraPane>());
+  const rootRef = useRef<HTMLDivElement>(null);
   const onFeedStatusRef = useRef(onFeedStatus);
   onFeedStatusRef.current = onFeedStatus;
 
+  const registerPane = useCallback((key: string, pane: CameraPane | null) => {
+    if (pane) panesRef.current.set(key, pane);
+    else panesRef.current.delete(key);
+  }, []);
+
+  useEffect(() => {
+    if (!viewer) return;
+    const renderer = viewer.renderer;
+    let frameRequest = 0;
+    let lastRenderMs = 0;
+    const renderPanes = (now: number) => {
+      frameRequest = window.requestAnimationFrame(renderPanes);
+      if (now - lastRenderMs < 1000 / 15) return;
+      const panes = [...panesRef.current.values()].filter((pane) => pane.canvas.isConnected);
+      if (panes.length === 0) return;
+      lastRenderMs = now;
+
+      const previousSize = renderer.getSize(new Vector2());
+      const previousPixelRatio = renderer.getPixelRatio();
+      const previousViewport = renderer.getViewport(new Vector4());
+      const previousScissor = renderer.getScissor(new Vector4());
+      const previousScissorTest = renderer.getScissorTest();
+      const dimensions = panes.map(({ canvas }) => {
+        const bounds = canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.min(640, Math.round(bounds.width)));
+        return { width, height: Math.max(1, Math.round(width * bounds.height / Math.max(1, bounds.width))) };
+      });
+      const atlasWidth = dimensions.reduce((sum, value) => sum + value.width, 0);
+      const atlasHeight = Math.max(...dimensions.map((value) => value.height));
+
+      try {
+        renderer.setPixelRatio(1);
+        renderer.setSize(atlasWidth, atlasHeight, false);
+        renderer.setScissorTest(true);
+        let x = 0;
+        for (let index = 0; index < panes.length; index += 1) {
+          const pane = panes[index];
+          const { width, height } = dimensions[index];
+          pane.camera.aspect = width / height;
+          pane.camera.updateProjectionMatrix();
+          renderer.setViewport(x, 0, width, height);
+          renderer.setScissor(x, 0, width, height);
+          renderer.render(viewer.scene, pane.camera);
+          const context = pane.canvas.getContext("2d");
+          if (pane.canvas.width !== width) pane.canvas.width = width;
+          if (pane.canvas.height !== height) pane.canvas.height = height;
+          context?.drawImage(renderer.domElement, x, atlasHeight - height, width, height, 0, 0, width, height);
+          x += width;
+        }
+      } finally {
+        renderer.setPixelRatio(previousPixelRatio);
+        renderer.setSize(previousSize.x, previousSize.y, false);
+        renderer.setViewport(previousViewport);
+        renderer.setScissor(previousScissor);
+        renderer.setScissorTest(previousScissorTest);
+      }
+      if (rootRef.current) {
+        rootRef.current.dataset.viewerCount = "1";
+        rootRef.current.dataset.cameraObjectCount = String(panes.length);
+        rootRef.current.dataset.viewerFps = viewer.getStats().fps.toFixed(2);
+      }
+    };
+    frameRequest = window.requestAnimationFrame(renderPanes);
+    return () => window.cancelAnimationFrame(frameRequest);
+  }, [viewer]);
   useEffect(() => {
     if (!feeds) {
       setFeedStates({});
@@ -683,8 +817,8 @@ export function PoleCameraGrid({
   );
 
   useEffect(() => {
-    if (!configured.some((entry) => entry.key === focusedKey)) {
-      setFocusedKey(configured[0]?.key ?? null);
+    if (focusedKey && !configured.some((entry) => entry.key === focusedKey)) {
+      setFocusedKey(null);
     }
   }, [configured, focusedKey]);
 
@@ -709,7 +843,7 @@ export function PoleCameraGrid({
   }
 
   return (
-    <div className="space-y-4">
+    <div ref={rootRef} className="space-y-4" data-viewer-count={viewer ? "1" : "0"}>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-card p-3">
         <div>
           <p className="text-sm font-semibold text-foreground">Pole camera calibration</p>
@@ -752,27 +886,32 @@ export function PoleCameraGrid({
                 <CardDescription>{rig.label ?? `Pole ${rig.featureId}`}</CardDescription>
                 <CardAction className="flex items-center gap-2">
                   {focused ? (
-                    <div className="flex rounded-md border border-border p-0.5" aria-label="Camera comparison mode">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={comparisonMode === "split" ? "secondary" : "ghost"}
-                        onClick={() => setComparisonMode("split")}
-                      >
-                        Split
+                    <>
+                      <div className="flex rounded-md border border-border p-0.5" aria-label="Camera comparison mode">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={comparisonMode === "split" ? "secondary" : "ghost"}
+                          onClick={() => setComparisonMode("split")}
+                        >
+                          Split
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={comparisonMode === "overlay" ? "secondary" : "ghost"}
+                          onClick={() => setComparisonMode("overlay")}
+                        >
+                          Overlay
+                        </Button>
+                      </div>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setFocusedKey(null)}>
+                        <Lock aria-hidden="true" /> Stop aiming
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={comparisonMode === "overlay" ? "secondary" : "ghost"}
-                        onClick={() => setComparisonMode("overlay")}
-                      >
-                        Overlay
-                      </Button>
-                    </div>
+                    </>
                   ) : (
                     <Button type="button" size="sm" variant="outline" onClick={() => setFocusedKey(key)}>
-                      Aim this camera
+                      <Unlock aria-hidden="true" /> Aim this camera
                     </Button>
                   )}
                 </CardAction>
@@ -782,8 +921,11 @@ export function PoleCameraGrid({
                   <>
                     <Comparison
                       camera={camera}
-                      feature={feature}
-                      viewerFactory={viewerFactory}
+                      pose={pose}
+                      cameraKey={key}
+                      adjustment={controls}
+                      onAdjustmentChange={(nextAdjustment) => persist({ ...adjustments, [key]: nextAdjustment })}
+                      registerPane={registerPane}
                       feeds={feeds}
                       feedStatus={feedStatus}
                       active={focused}
