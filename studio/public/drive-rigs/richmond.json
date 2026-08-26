@@ -1,0 +1,98 @@
+{
+  "rigs": [
+    {
+      "featureId": "372",
+      "label": "RFS Mast 1",
+      "cameras": [
+        {
+          "id": "ch1",
+          "label": "cam-001-ch1",
+          "headingDeg": 153.94,
+          "pitchDeg": -39.2,
+          "mountHeightM": 7.0,
+          "intrinsics": {
+            "fx": 1325.4,
+            "fy": 1325.4,
+            "cx": 1280.0,
+            "cy": 960.0,
+            "width": 2560,
+            "height": 1920
+          },
+          "correction": {
+            "yawDeg": 0.0,
+            "pitchDeg": 0.0,
+            "heightM": 0.0,
+            "forwardM": 0.5
+          },
+          "streamUrl": "/streams/ch1.mjpg"
+        },
+        {
+          "id": "ch2",
+          "label": "cam-001-ch2",
+          "headingDeg": 371.25,
+          "pitchDeg": -40.52,
+          "mountHeightM": 7.0,
+          "intrinsics": {
+            "fx": 1325.4,
+            "fy": 1325.4,
+            "cx": 1280.0,
+            "cy": 960.0,
+            "width": 2560,
+            "height": 1920
+          },
+          "correction": {
+            "yawDeg": 5.74,
+            "pitchDeg": 15.49,
+            "heightM": 1.48,
+            "forwardM": 0.5
+          },
+          "streamUrl": "/streams/ch2.mjpg"
+        },
+        {
+          "id": "ch3",
+          "label": "cam-001-ch3",
+          "headingDeg": 329.58,
+          "pitchDeg": -30.42,
+          "mountHeightM": 7.0,
+          "intrinsics": {
+            "fx": 1325.4,
+            "fy": 1325.4,
+            "cx": 1280.0,
+            "cy": 960.0,
+            "width": 2560,
+            "height": 1920
+          },
+          "correction": {
+            "yawDeg": 0.08,
+            "pitchDeg": 0.26,
+            "heightM": -0.04,
+            "forwardM": 1.5
+          },
+          "streamUrl": "/streams/ch3.mjpg"
+        },
+        {
+          "id": "ch4",
+          "label": "cam-001-ch4",
+          "headingDeg": 237.37,
+          "pitchDeg": -43.48,
+          "mountHeightM": 7.0,
+          "intrinsics": {
+            "fx": 1325.4,
+            "fy": 1325.4,
+            "cx": 1280.0,
+            "cy": 960.0,
+            "width": 2560,
+            "height": 1920
+          },
+          "correction": {
+            "yawDeg": -2.16,
+            "pitchDeg": 4.95,
+            "heightM": -0.61,
+            "forwardM": 0.5
+          },
+          "streamUrl": "/streams/ch4.mjpg"
+        }
+      ]
+    }
+  ]
+}
