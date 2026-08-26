@@ -1,4 +1,4 @@
-import { TruthStreamClient } from '@simforge/training-env';
+import { TruthStreamClient } from '@simforge/training-env/browser';
 
 import type { LiveWorldWorkerRequest, LiveWorldWorkerResponse } from './worker-protocol';
 import type { ControlInput, SpawnActorRequest, WorldSource, WorldSourceStatus } from './types';

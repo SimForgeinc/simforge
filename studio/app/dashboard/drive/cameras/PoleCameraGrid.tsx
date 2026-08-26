@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, LoaderCircle, Pause, RefreshCw, VideoOff } from "lucide-react";
-import type { PoleCamera, PoleCameraRig, SignalFeature } from "@simforge/maps";
-import { findRigFeature, resolveCameraPose } from "@simforge/maps";
+import type { SignalFeature } from "@simforge/maps";
+import type { PoleCamera, PoleCameraRig } from "@simforge/maps/camera-rig";
+import { findRigFeature, resolveCameraPose } from "@simforge/maps/camera-rig";
 import type { CityViewer } from "@simforge/viewer";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";

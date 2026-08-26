@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -190,7 +191,16 @@ export async function seed(): Promise<void> {
   await seedIdentity();
   await seedPublicationBinding();
   await seedSumoRuntime();
+  let skipped = 0;
   for (const map of MAPS) {
+    // A dev checkout rarely holds the whole corpus. Skip absent bundles loudly
+    // rather than aborting the boot: one missing map must not deny the operator
+    // every other map, and a silent skip would look like a publish bug.
+    if (!existsSync(resolve(assetsRoot, map[0]))) {
+      console.warn(`skipped ${map[0]}: no bundle at ${resolve(assetsRoot, map[0])}`);
+      skipped += 1;
+      continue;
+    }
     const result = await publishDevAssetMap({
       map,
       assetsRoot,
@@ -202,6 +212,7 @@ export async function seed(): Promise<void> {
       + `SUMO ${result.sumoNetworkSha256 ? "ready" : "unavailable"}, thumbnail ${result.thumbnailBytes} bytes`,
     );
   }
+  if (skipped > 0) console.warn(`${skipped}/${MAPS.length} dev asset maps skipped; set SCEN_DEV_ASSETS to a fuller corpus`);
   const maps = await queryRows<{ id: string; label: string }>(
     "SELECT id, label FROM simforge.map_versions WHERE retired_at IS NULL ORDER BY label",
   );

@@ -1,4 +1,4 @@
-import type { TruthFrame } from '@simforge/training-env';
+import type { TruthFrame } from '@simforge/training-env/browser';
 
 export type WorldSourceStatus = 'idle' | 'connecting' | 'running' | 'error' | 'closed';
 

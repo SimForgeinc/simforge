@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TruthFrame } from '@simforge/training-env';
+import type { TruthFrame } from '@simforge/training-env/browser';
 
 const viewerMocks = vi.hoisted(() => ({
   batches: [] as Array<{ layer: string; actors: Array<Record<string, unknown>> }>,
@@ -25,7 +25,7 @@ vi.mock('@simforge/viewer', () => ({
   },
 }));
 
-vi.mock('@simforge/training-env', () => ({
+vi.mock('@simforge/training-env/browser', () => ({
   TruthStreamClient: class {
     push(): TruthFrame[] {
       return [];

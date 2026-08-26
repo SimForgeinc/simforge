@@ -6,7 +6,7 @@ import {
   type ActorKind,
   type TopologyIndex,
 } from '@simforge/engine';
-import { WorldSession, type TruthSubscription } from '@simforge/training-env';
+import { WorldSession, type TruthSubscription } from '@simforge/training-env/browser';
 
 import type {
   LiveWorldWorkerRequest,

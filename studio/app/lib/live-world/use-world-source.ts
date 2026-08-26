@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { TruthFrame } from '@simforge/training-env';
+import type { TruthFrame } from '@simforge/training-env/browser';
 
 import type { WorldSource, WorldSourceStatus } from './types';
 

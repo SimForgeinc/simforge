@@ -19,7 +19,8 @@ import {
   Video,
 } from "lucide-react";
 import { AUTHORING_CATALOG, type CatalogActorClass } from "@simforge/asset-catalog";
-import type { PoleCameraRig, SignalFeature } from "@simforge/maps";
+import type { SignalFeature } from "@simforge/maps";
+import type { PoleCameraRig } from "@simforge/maps/camera-rig";
 import { CityViewer, type CityViewerOptions } from "@simforge/viewer";
 import { CityView } from "@simforge/viewer/react";
 import { Raycaster, Vector2 } from "three";

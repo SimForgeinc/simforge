@@ -1,4 +1,4 @@
-import type { TruthFrame } from '@simforge/training-env';
+import type { TruthFrame } from '@simforge/training-env/browser';
 import {
   ThreeRendererAdapter,
   followCameraPose,
