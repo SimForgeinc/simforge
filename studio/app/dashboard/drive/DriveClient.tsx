@@ -39,6 +39,8 @@ import { createTruthViewerBridge, type TruthViewerBridge } from "@/app/lib/live-
 import type { WorldSource, WorldSourceStatus } from "@/app/lib/live-world/types";
 import { useWorldSource } from "@/app/lib/live-world/use-world-source";
 import { PoleCameraGrid } from "./cameras/PoleCameraGrid";
+import { useSiteTimeOfDay } from "./environment";
+import { ReplayDock } from "./replay";
 import { usePoleCameras } from "./pole-cameras";
 
 type DriveView = "world" | "cameras";
@@ -92,6 +94,7 @@ export function DriveClient() {
   const [view, setView] = useState<DriveView>("world");
   // `?twin=ws://host:8765`, or `?twin=1` to use this page's host on the default
   // twin port. Null means Drive runs its own world in-browser.
+  const [clock, setClock] = useState<{ mode: "live" | "replay"; timeIso: string | null; speed: number } | null>(null);
   const remoteWorld = useMemo(() => resolveRemoteWorld(), []);
   const [followMode, setFollowMode] = useState<FollowMode>("chase");
   const [egoActorId, setEgoActorId] = useState<string | null>(null);
@@ -188,6 +191,29 @@ export function DriveClient() {
       toast.warning("Drive world notice", { description: message, duration: 12000 });
     });
   }, [source]);
+
+  // The twin's own clock is authoritative — it is what replay moves. Lighting
+  // follows it so a replayed night renders as night; a local world has no such
+  // clock and simply follows wall time.
+  useEffect(() => {
+    if (!source?.subscribeClock) {
+      setClock(null);
+      return;
+    }
+    return source.subscribeClock(setClock);
+  }, [source]);
+
+  const siteTime = useSiteTimeOfDay({
+    viewer,
+    manifestUrl: map?.browserManifestUrl ?? null,
+    at: clock?.timeIso ? new Date(clock.timeIso) : null,
+    quality,
+  });
+
+  useEffect(() => {
+    if (!siteTime.error) return;
+    toast.warning("Site lighting unavailable", { description: siteTime.error, duration: 10000 });
+  }, [siteTime.error]);
 
   useEffect(() => {
     if (!bridge || !source) return;
@@ -379,11 +405,15 @@ export function DriveClient() {
         </div>
       )}
       leftSidebar={view === "world" ? (slotProps) => (
+        // The shell's slot root is a layout wrapper only: its CSS module sets
+        // `background: transparent; border: 0` and loads after Tailwind, so any
+        // background or border put here silently loses and the panel renders as
+        // unreadable text floating on the canvas. Chrome goes on the child, the
+        // way ActorLibraryRail does it in the editor.
+        <div {...slotProps} className={cn(slotProps.className, "flex h-full p-3")}>
         <aside
-          {...slotProps}
           className={cn(
-            slotProps.className,
-            "m-3 flex h-[calc(100%-1.5rem)] w-64 flex-col overflow-hidden rounded-lg border border-border bg-card/95 shadow-xl backdrop-blur",
+            "flex h-full w-64 flex-col overflow-hidden rounded-lg border border-border bg-card/95 shadow-xl backdrop-blur",
           )}
           aria-label="Actor palette"
         >
@@ -431,6 +461,7 @@ export function DriveClient() {
             {selectedBlueprint ? (spawning ? "ADDING ACTOR…" : "CLICK GROUND TO PLACE") : "SELECT AN ACTOR KIND"}
           </div>
         </aside>
+        </div>
       ) : null}
       canvas={(slotProps) => (
         <div {...slotProps} className={cn(slotProps.className, "relative bg-background")}>
@@ -484,26 +515,39 @@ export function DriveClient() {
         </div>
       )}
       floatingOverlay={view === "world" ? (
-        <div className="absolute right-4 top-4">
-          <div className="min-w-44 rounded-lg border border-border bg-card/90 p-3 shadow-lg backdrop-blur" style={{ fontFamily: "var(--font-meta)" }}>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">
-                <Gauge className="size-3.5" /> TELEMETRY
-              </span>
-              {driving ? <Badge variant="secondary" className="text-[9px]">DRIVING</Badge> : null}
+        <>
+          <div className="absolute right-4 top-4">
+            <div className="min-w-44 rounded-lg border border-border bg-card/90 p-3 shadow-lg backdrop-blur" style={{ fontFamily: "var(--font-meta)" }}>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">
+                  <Gauge className="size-3.5" /> TELEMETRY
+                </span>
+                {driving ? <Badge variant="secondary" className="text-[9px]">DRIVING</Badge> : null}
+              </div>
+              <dl className="grid grid-cols-2 gap-x-5 gap-y-1 text-xs">
+                <dt className="text-muted-foreground">Speed</dt>
+                <dd className="text-right font-semibold tabular-nums">{speedKmh.toFixed(1)} km/h</dd>
+                <dt className="text-muted-foreground">Actors</dt>
+                <dd className="text-right tabular-nums">{world.latestFrame?.actors.length ?? 0}</dd>
+                <dt className="text-muted-foreground">Tick</dt>
+                <dd className="text-right tabular-nums">{world.latestFrame?.tick ?? 0}</dd>
+                <dt className="text-muted-foreground">Clock</dt>
+                <dd className="text-right tabular-nums">{(world.latestFrame?.timeSec ?? 0).toFixed(1)} s</dd>
+                {siteTime.sunElevationDeg !== null ? (
+                  <>
+                    <dt className="text-muted-foreground">Sun</dt>
+                    <dd className="text-right tabular-nums">{siteTime.sunElevationDeg.toFixed(1)}&deg;</dd>
+                  </>
+                ) : null}
+              </dl>
             </div>
-            <dl className="grid grid-cols-2 gap-x-5 gap-y-1 text-xs">
-              <dt className="text-muted-foreground">Speed</dt>
-              <dd className="text-right font-semibold tabular-nums">{speedKmh.toFixed(1)} km/h</dd>
-              <dt className="text-muted-foreground">Actors</dt>
-              <dd className="text-right tabular-nums">{world.latestFrame?.actors.length ?? 0}</dd>
-              <dt className="text-muted-foreground">Tick</dt>
-              <dd className="text-right tabular-nums">{world.latestFrame?.tick ?? 0}</dd>
-              <dt className="text-muted-foreground">Clock</dt>
-              <dd className="text-right tabular-nums">{(world.latestFrame?.timeSec ?? 0).toFixed(1)} s</dd>
-            </dl>
           </div>
-        </div>
+          {source ? (
+            <div className="pointer-events-auto absolute bottom-16 left-1/2 -translate-x-1/2">
+              <ReplayDock source={source} />
+            </div>
+          ) : null}
+        </>
       ) : null}
     />
   );
