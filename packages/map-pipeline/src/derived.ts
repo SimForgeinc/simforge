@@ -14,7 +14,7 @@ import type { ClosureKind, MapClosure } from './closure.js';
 import type { ClosureStageResult } from './assemble.js';
 import type { StageResult } from './tiling.js';
 
-const BROWSER_OPTIMIZER_REVISION = 1;
+const BROWSER_OPTIMIZER_REVISION = 2;
 const KTX2_REPACK_REVISION = 1;
 const NATIVE_CORPUS_DECODER_REVISION = 4;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
@@ -76,7 +76,7 @@ export async function browserOptimize(source: ClosureStageResult, workDir: strin
       dedup(),
       prune(),
       weld(),
-      textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 90 }),
+      textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 90, resize: [8192, 8192] }),
       reorder({ encoder: MeshoptEncoder }),
       meshopt({ encoder: MeshoptEncoder, level: 'high' }),
     );
