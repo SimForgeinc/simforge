@@ -22,9 +22,9 @@
  * | gesture | owner |
  * |---|---|
  * | left click, no drag | editor (select or place) |
- * | left drag on empty map | camera (orbit) |
+ * | left drag on empty map | editor (marquee selection) |
  * | middle drag | camera (ground-plane pan) |
- * | right drag | camera (pan), or cancel while editing |
+ * | right drag | camera (orbit), including while a placement ghost is active |
  * | wheel | camera, except lateral nudge while lane-snapped |
  * | any pointer while in a modal mode (`G`/`R`/placing) | editor |
  *
@@ -72,6 +72,8 @@ export interface EditorState {
   readonly valid: boolean;
   /** Non-blocking route warning for the lane under the placement ghost. */
   readonly placementWarning: string | null;
+  /** Whether Shift was held for the most recent successful catalog placement. */
+  readonly placementSticky: boolean;
   readonly customRoutePointCount: number;
   readonly customRouteTool: CustomRouteTool | null;
   readonly customRouteSelectedPointIndex: number | null;
@@ -261,13 +263,11 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
   // -------------------------------------------------------- input: pointer
 
   protected onContextMenu = (event: MouseEvent): void => {
-    // Right-click cancels a modal gesture instead of opening a menu; outside a
-    // mode it belongs to the camera (pan), which already suppresses the menu.
-    if (this.mode === 'grab' || this.mode === 'rotate' || this.mode === 'placing' || this.mode === 'drawingRoute') {
-      event.preventDefault();
-      event.stopPropagation();
-      this.cancel();
-    }
+    // Right-click is an editor input throughout the attached workspace, while
+    // text fields retain the native copy/paste menu. Scoping this listener to
+    // the editor host leaves the rest of the dashboard untouched.
+    if (isTextEditingTarget(event.target)) return;
+    event.preventDefault();
   };
 
   /**
@@ -442,6 +442,7 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
         const ground = this.groundPoint(event);
         if (!ground) {
           this.ghost.hide();
+          for (const ghost of this.groupGhosts) ghost.hide();
           this.ghostPose = null;
           return;
         }
@@ -553,7 +554,7 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
     if (wasPlacing) {
       event.preventDefault();
       event.stopPropagation();
-      this.commitPlacement(event.altKey);
+      this.commitPlacement(event.altKey, event.shiftKey);
       return;
     }
     if (this.mode !== 'idle' || moved) return;
@@ -653,7 +654,7 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
 
   protected abstract updateGhost(ground: Vector3): void;
   protected abstract refreshGhost(): void;
-  protected abstract commitPlacement(altClick: boolean): void;
+  protected abstract commitPlacement(altClick: boolean, sticky?: boolean): void;
   protected abstract updateGrab(event?: PointerEvent): void;
   protected abstract updateRotate(event?: PointerEvent): void;
   protected abstract commitModal(): void;

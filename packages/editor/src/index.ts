@@ -3,6 +3,7 @@ export * from "./controller";
 export * from "./drop-resolver";
 export * from "./marquee";
 export * from "./ghostActor";
+export * from "./group-placement";
 export * from "./document";
 export * from "./keyboard";
 export * from "./laneIndex";

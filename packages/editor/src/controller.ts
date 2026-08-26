@@ -22,9 +22,9 @@
  * | gesture | owner |
  * |---|---|
  * | left click, no drag | editor (select or place) |
- * | left drag on empty map | camera (orbit) |
+ * | left drag on empty map | editor (marquee selection) |
  * | middle drag | camera (ground-plane pan) |
- * | right drag | camera (pan), or cancel while editing |
+ * | right drag | camera (orbit), including while a placement ghost is active |
  * | wheel | camera, except lateral nudge while lane-snapped |
  * | any pointer while in a modal mode (`G`/`R`/placing) | editor |
  *
@@ -59,6 +59,7 @@ import {
 import { firstOverlap, type Footprint } from './obb';
 import { authoringRoutes } from './routeOverlay';
 import { resolveVehicleDrop, DROP_SNAP_RADIUS_M, type DropOutcome } from './drop-resolver';
+import { resolveFreeGroupPlacement } from './group-placement';
 import { actorIdsInRect, applySelectionOp, selectionOpForModifiers, type ScreenRect, type SelectionOp } from './marquee';
 
 export type EditorMode = 'idle' | 'placing' | 'grab' | 'rotate' | 'drawingRoute';
@@ -84,6 +85,8 @@ export interface EditorState {
   readonly valid: boolean;
   /** Non-blocking route warning for the lane under the placement ghost. */
   readonly placementWarning: string | null;
+  /** Whether Shift was held for the most recent successful catalog placement. */
+  readonly placementSticky: boolean;
   readonly customRoutePointCount: number;
   readonly customRouteTool: CustomRouteTool | null;
   readonly customRouteSelectedPointIndex: number | null;
@@ -190,11 +193,39 @@ export class EditorController extends EditorControllerInput {
     }
     this.updateGhost(ground);
     const count = this.doc.actors.length;
-    this.commitPlacement(Boolean(modifiers.altKey));
+    this.commitPlacement(Boolean(modifiers.altKey), Boolean(modifiers.shiftKey));
     return this.doc.actors.length > count;
   }
 
   protected updateGhost(ground: Vector3): void {
+    if (this.groupPlacement) {
+      const existing = this.doc.actors.map((actor) => ({
+        id: actor.id,
+        x: actor.x,
+        z: actor.z,
+        length: actor.dims.l,
+        width: actor.dims.w,
+        headingRad: actor.headingRad,
+      }));
+      const resolved = resolveFreeGroupPlacement(
+        this.groupPlacement.actors,
+        ground,
+        (x, z, fallbackY) => this.groundY(x, z, fallbackY),
+        existing,
+      );
+      this.groupPlacement.poses = resolved.poses;
+      this.groupPlacement.valid = resolved.valid;
+      this.groupPlacement.blockerId = resolved.blockerId;
+      for (let index = 0; index < resolved.poses.length; index++) {
+        const pose = resolved.poses[index]!;
+        const ghost = this.groupGhosts[index]!;
+        ghost.show(pose.catalogId);
+        ghost.setPose(pose.x, pose.y, pose.z, pose.headingRad);
+        ghost.setValid(resolved.valid);
+      }
+      this.notify();
+      return;
+    }
     const catalogId = this.placing;
     if (!catalogId) return;
     const pose = this.computeGhostPose(catalogId, ground);
@@ -334,7 +365,22 @@ export class EditorController extends EditorControllerInput {
     };
   }
 
-  protected commitPlacement(altClick: boolean): void {
+  protected commitPlacement(altClick: boolean, sticky = false): void {
+    if (this.groupPlacement) {
+      const session = this.groupPlacement;
+      if (!session.valid || session.poses.length !== session.actors.length) {
+        this.flash(session.blockerId
+          ? `Paste overlaps ${session.blockerId} — choose another position`
+          : 'Choose a clear position for the pasted actors');
+        return;
+      }
+      const poses = session.poses;
+      const onCommit = session.onCommit;
+      this.cancelModal();
+      onCommit(poses);
+      this.notify();
+      return;
+    }
     const pose = this.ghostPose;
     const catalogId = this.placing;
     if (!pose || !catalogId) return;
@@ -351,6 +397,7 @@ export class EditorController extends EditorControllerInput {
         return;
       }
     }
+    this.placementSticky = sticky;
     this.doc.add([{
       id: actorId,
       catalogId,
@@ -651,6 +698,7 @@ export class EditorController extends EditorControllerInput {
     this.preview.clear();
     this.grab = null;
     this.rotate = null;
+    this.clearGroupGhosts();
     this.placing = null;
     this.placingKind = null;
     this.pendingActorId = null;
@@ -962,7 +1010,10 @@ export class EditorController extends EditorControllerInput {
         : this.ghostPose?.laneRef != null,
       lateral: this.lateral,
       flipped: this.flipped,
-      valid: this.mode === 'grab' ? this.grab?.valid ?? true : this.ghostPose?.valid ?? true,
+      valid: this.mode === 'grab'
+        ? this.grab?.valid ?? true
+        : this.groupPlacement?.valid ?? this.ghostPose?.valid ?? true,
+      placementSticky: this.placementSticky,
       placementWarning: this.mode === 'placing' ? this.ghostPose?.warning ?? null : null,
       customRoutePointCount: this.customRouteDraft?.points.length ?? 0,
       customRouteTool: this.customRouteDraft?.tool ?? null,
@@ -987,23 +1038,28 @@ export class EditorController extends EditorControllerInput {
           ? `${this.customRouteDraft.points.length} route points · drag a 3D point to move · Delete removes selected · Esc closes`
           : `${this.customRouteDraft?.points.length ?? 0} route points · click to draw or insert · Enter finishes drawing · Esc closes`;
       case 'placing': {
+        if (this.groupPlacement) {
+          return this.groupPlacement.valid
+            ? `${this.groupPlacement.actors.length} pasted actor${this.groupPlacement.actors.length === 1 ? '' : 's'} · click place · right-drag orbit · Esc cancel`
+            : 'overlap — choose a clear position · right-drag orbit · Esc cancel';
+        }
         const kind: ActorKind = this.placing ? actorKindFor(this.placing) : 'prop';
         if (this.placingFreeformStatic) {
-          return 'free placement · click place · click-drag set heading · Q / E rotate 5° · right-click cancel';
+          return 'free placement · click place · click-drag set heading · Q / E rotate 5° · Esc cancel';
         }
         if (kind === 'vehicle') {
           if (this.placing && isRoadBoundMotorVehicle(this.placing)) {
             return this.ghostPose?.laneRef
               ? this.ghostPose.warning
-                ? `${this.ghostPose.warning} · click to place anyway · Tab opposite lane · right-click cancel`
-                : `snapped to ${this.ghostPose.laneLabel ?? 'driving lane'} · click place · Tab opposite lane · scroll offset ${this.lateral.toFixed(2)} m · right-click cancel`
-              : 'no driving lane nearby · move onto a road · right-click cancel';
+                ? `${this.ghostPose.warning} · click to place anyway · Tab opposite lane · Esc cancel`
+                : `snapped to ${this.ghostPose.laneLabel ?? 'driving lane'} · click place · Tab opposite lane · scroll offset ${this.lateral.toFixed(2)} m · Esc cancel`
+              : 'no driving lane nearby · move onto a road · Esc cancel';
           }
           return this.ghostPose?.laneRef
-            ? `click place · Tab opposite lane · scroll offset ${this.lateral.toFixed(2)} m · ⌥ free · right-click cancel`
-            : 'free placement (⌥) · click place · drag set heading · right-click cancel';
+            ? `click place · Tab opposite lane · scroll offset ${this.lateral.toFixed(2)} m · ⌥ free · Esc cancel`
+            : 'free placement (⌥) · click place · drag set heading · Esc cancel';
         }
-        return 'click place · click-drag set heading · Q / E rotate 5° · right-click cancel';
+        return 'click place · click-drag set heading · Q / E rotate 5° · Esc cancel';
       }
       case 'grab': {
         if (this.grab?.direct) {
