@@ -352,6 +352,7 @@ def main():
         'roleCounts': binding_plan['roleCounts'],
         'ormChannels': binding_plan['ormChannels'],
         'normalConversion': 'DirectX green-down to glTF/OpenGL green-up (G := 1-G)',
+        'unresolvedTextures': binding_plan['unresolvedTextures'],
         'fidelityLimitations': binding_plan['fidelityLimitations'],
     }
     reset_scene()
