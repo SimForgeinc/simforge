@@ -9,7 +9,7 @@ authors = [{ name = "SimForge" }]
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/SimForgeinc/simforge"
+Repository = "https://github.com/SimForgeinc/simforge-oss"
 
 [project.scripts]
 simforge-carla-api = "simforge_carla_exec.local:main"

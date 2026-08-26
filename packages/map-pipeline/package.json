@@ -4,7 +4,7 @@
   "description": "Deterministic source-map to registry-closure pipeline.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SimForgeinc/simforge.git",
+    "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
     "directory": "packages/map-pipeline"
   },
   "license": "Apache-2.0",

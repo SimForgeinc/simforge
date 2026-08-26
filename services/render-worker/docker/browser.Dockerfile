@@ -40,7 +40,7 @@ ENV NODE_ENV=production \
 LABEL org.opencontainers.image.title="SimForge browser render worker" \
       org.opencontainers.image.version="$IMAGE_VERSION" \
       org.opencontainers.image.revision="$SOURCE_REVISION" \
-      org.opencontainers.image.source="https://github.com/SimForgeinc/simforge" \
+      org.opencontainers.image.source="https://github.com/SimForgeinc/simforge-oss" \
       io.uniscenarios.engine="browser" \
       io.uniscenarios.contract="uniscenario.render-worker-control/v2"
 USER 10001:10001
