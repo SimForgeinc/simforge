@@ -39,7 +39,7 @@
  * intervals that agree are merged.
  */
 
-import type { MapSignalPlan } from "@simforge/scenario";
+import type { MapSignalPlan } from "@simforge-oss/scenario";
 
 import { canonicalStageForController, orderedStages, selectSignalHead, type EditorSignalIndex } from "./stages";
 import type { ControlIndication, EditorSignalBaseline, MapSignalIndication } from "./types";

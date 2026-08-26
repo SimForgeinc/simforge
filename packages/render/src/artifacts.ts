@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { RenderSha256Schema } from '@simforge/scenario';
+import { RenderSha256Schema } from '@simforge-oss/scenario';
 
 export const ARTIFACT_MANIFEST_V1_SCHEMA = 'uniscenario.render-artifact-manifest/v1' as const;
 

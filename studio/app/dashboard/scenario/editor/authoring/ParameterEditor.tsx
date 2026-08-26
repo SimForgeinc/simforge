@@ -1,8 +1,8 @@
 "use client";
 
 import { SelectMenuField } from "@/app/components/ui/select-menu";
-import type { ParamDecl } from "@simforge/scenario";
-import type { EditorDocument } from "@simforge/editor";
+import type { ParamDecl } from "@simforge-oss/scenario";
+import type { EditorDocument } from "@simforge-oss/editor";
 import {
   DeleteButton,
   Heading,

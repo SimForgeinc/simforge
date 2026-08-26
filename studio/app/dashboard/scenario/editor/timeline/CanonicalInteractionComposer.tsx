@@ -10,14 +10,14 @@ import {
   type AnyTargetVariant,
   type EditorDocument,
   type SetTargetVariant,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import {
   VRU_CLASSES,
   type ActorClass,
   type Dynamics,
   type Interaction,
   type Trigger,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 import { snapToTimeGrid } from "@/app/lib/scenario/timeline";
 import { uniqueTimelineInteractionId } from "./v1-timeline-model";

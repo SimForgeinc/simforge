@@ -11,7 +11,7 @@ import {
   type SimScenarioInput,
   type TopologyIndex,
   type TopologyLane,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 const STEP_M = 5;
 

@@ -21,7 +21,7 @@
  */
 import { gunzipSync } from "node:zlib";
 import { getS3ObjectBytes } from "@/app/lib/s3/s3-get-object";
-import { MapProjection } from "@simforge/studio-shared";
+import { MapProjection } from "@simforge-oss/studio-shared";
 import {
   getMapArtifactLocation,
   getMapAssetByIdFromDb,

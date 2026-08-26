@@ -7,7 +7,7 @@ import {
   type SdgRecipeConfig,
   type Sensor,
   type SensorOutputModality,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 export type { SdgOutput };
 

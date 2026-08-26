@@ -1,4 +1,4 @@
-import type { RenderIntentV1 } from '@simforge/scenario';
+import type { RenderIntentV1 } from '@simforge-oss/scenario';
 
 import type { RenderArtifactManifest } from './artifacts.js';
 import { EngineCapabilityDeclarationSchema, type EngineCapabilityDeclaration } from './capabilities.js';

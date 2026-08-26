@@ -15,7 +15,7 @@ import {
   type SetValue,
   type Trigger,
   type Verb,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 
 /** A member of the canonical interaction union narrowed by its verb. */
 export type InteractionForVerb<V extends Verb> = Extract<Interaction, { verb: V }>;

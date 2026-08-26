@@ -1,7 +1,7 @@
 import type {
   ScenarioEditorActorDraft,
   TimedInstructionIntent,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import type { ParkingLaneRef } from "@/app/lib/maps/topology/parking-lanes";
 import type {

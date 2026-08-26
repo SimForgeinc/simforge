@@ -2,10 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { matchAnchorReport, normalizeDerivedMapIndex } from '@simforge/compiler';
-import { exportOpenScenarioXml14 } from '@simforge/openscenario';
-import { AsamExportError } from '@simforge/openscenario';
-import { adaptTemplate, buildMapControlPlan, materializationSemanticLosses, materialize, materializeMapBound, parseMapSignalCatalog, topologyWithMapSpeedLimits, type MapBundle, type MapControlPlan } from '@simforge/compiler';
+import { matchAnchorReport, normalizeDerivedMapIndex } from '@simforge-oss/compiler';
+import { exportOpenScenarioXml14 } from '@simforge-oss/openscenario';
+import { AsamExportError } from '@simforge-oss/openscenario';
+import { adaptTemplate, buildMapControlPlan, materializationSemanticLosses, materialize, materializeMapBound, parseMapSignalCatalog, topologyWithMapSpeedLimits, type MapBundle, type MapControlPlan } from '@simforge-oss/compiler';
 import { withParkedCarActors } from "@/app/lib/studio-shared/parked-cars";
 import { parkedCarsFromExtensions } from '@/app/lib/scenario/parking/extension';
 import {
@@ -29,26 +29,26 @@ import {
   type SimTrace,
   type FixedStepSimulationSession,
   type TopologyIndex,
-} from '@simforge/engine';
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
-import { registerExternalCatalogEntry, type ExternalCatalogEntry } from '@simforge/asset-catalog';
-import { ambientRobustnessGate } from '@simforge/playback/traffic';
-import type { OpenScenarioSnapshot, OpenScenarioSourceMapping } from '@simforge/openscenario';
+} from '@simforge-oss/engine';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
+import { registerExternalCatalogEntry, type ExternalCatalogEntry } from '@simforge-oss/asset-catalog';
+import { ambientRobustnessGate } from '@simforge-oss/playback/traffic';
+import type { OpenScenarioSnapshot, OpenScenarioSourceMapping } from '@simforge-oss/openscenario';
 import {
   selectPlayableSite,
   withBoundedSpeedCruiseRestoration,
   withEditablePhysicsDefault,
   withStableHighSpeedWorldRoutes,
-} from '@simforge/playback';
-import { loadStaticMapCollidersBounded } from '@simforge/playback';
-import type { StaticColliderDiagnostics } from '@simforge/playback';
-import { initialLiveTickBudget, planLiveRefill } from '@simforge/playback';
-import { mapAssetDigest, runtimeDigest, type MapRuntimeIdentity } from '@simforge/playback';
+} from '@simforge-oss/playback';
+import { loadStaticMapCollidersBounded } from '@simforge-oss/playback';
+import type { StaticColliderDiagnostics } from '@simforge-oss/playback';
+import { initialLiveTickBudget, planLiveRefill } from '@simforge-oss/playback';
+import { mapAssetDigest, runtimeDigest, type MapRuntimeIdentity } from '@simforge-oss/playback';
 import {
   createCollisionAwareFixedStepSimulation,
   requireReadyStaticColliderBundle,
-} from '@simforge/playback';
-import { withStudioBodyColorTags } from '@simforge/compiler';
+} from '@simforge-oss/playback';
+import { withStudioBodyColorTags } from '@simforge-oss/compiler';
 
 export interface ScenarioWorkerMap {
   /** Immutable browser asset/cache identity. Never used as semantic mapId. */

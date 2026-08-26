@@ -13,7 +13,7 @@ STEP_SECONDS = 0.02
 MAX_FRAMES = int(MAX_DURATION_SECONDS / STEP_SECONDS) + 1
 SUPPORTED_ACTOR_KINDS = {"vehicle", "car", "truck", "bus", "van", "motorcycle", "bicycle", "scooter", "pedestrian", "animal", "static_object"}
 
-# Every indication `CONTROL_INDICATIONS` (`@simforge/engine`) can
+# Every indication `CONTROL_INDICATIONS` (`@simforge-oss/engine`) can
 # put on a signal head, and therefore every `state` the writer can emit on a
 # `TrafficSignalStateAction`.  This tuple is the interpreter half of that
 # contract: the exhaustiveness pairing lives in

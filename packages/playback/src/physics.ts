@@ -3,7 +3,7 @@ import {
   type ActorPhysicsBackendProvenance,
   type MotionPhysicsMode,
   type SimScenarioInput,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 export type PhysicsDisplayReason = ActorPhysicsBackendProvenance['reason'] | 'provenance-unavailable';
 

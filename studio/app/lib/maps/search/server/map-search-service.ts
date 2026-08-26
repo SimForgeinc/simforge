@@ -20,8 +20,8 @@ import type {
   CandidateLocation,
   MapAssetEnrichmentSnapshot,
   MapSearchIndex,
-} from "@simforge/studio-shared";
-import { MapSearchIndexSchema } from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
+import { MapSearchIndexSchema } from "@simforge-oss/studio-shared";
 import aliasSpec from "@/app/lib/maps/search/map-search-aliases.json";
 import { getCandidateLocationsByMapAssetId } from "@/app/lib/db/map-candidate-location-store";
 import { getMapAssetEnrichmentById } from "@/app/lib/db/map-asset-enrichment-store";

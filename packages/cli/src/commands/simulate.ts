@@ -8,12 +8,12 @@
 
 import path from 'node:path';
 
-import { runSimulation, traceDigest, type SimTrace } from '@simforge/engine';
+import { runSimulation, traceDigest, type SimTrace } from '@simforge-oss/engine';
 
 import { EXIT } from '../errors.js';
-import { loadMap } from '@simforge/compiler/node';
+import { loadMap } from '@simforge-oss/compiler/node';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readInstance, writeTraceFile } from '@simforge/compiler/node';
+import { readInstance, writeTraceFile } from '@simforge-oss/compiler/node';
 
 export interface SimulateOptions {
   readonly file: string;

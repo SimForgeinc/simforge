@@ -1,11 +1,11 @@
-import type { ActorView } from "@simforge/viewer";
+import type { ActorView } from "@simforge-oss/viewer";
 import {
   obbOverlap,
   sweptObbTimeOfImpact,
   type Obb,
   type StaticMapCollider,
   type SumoAuthoredOccupancySource,
-} from "@simforge/engine";
+} from "@simforge-oss/engine";
 import type { ExternalTrafficActor } from "../index.js";
 
 type SumoExternalActorView = SumoAuthoredOccupancySource & {

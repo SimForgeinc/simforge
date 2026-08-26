@@ -1,4 +1,4 @@
-import type { Environment } from "@simforge/scenario";
+import type { Environment } from "@simforge-oss/scenario";
 import { z } from "zod";
 
 /**

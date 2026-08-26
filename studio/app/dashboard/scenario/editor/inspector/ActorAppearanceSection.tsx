@@ -9,8 +9,8 @@ import {
   loadCarlaCompatibility,
   type CarlaCompatibilityTable,
 } from "@/app/lib/scenario/carla-compatibility";
-import { AUTHORING_CATALOG as CATALOG, getEntry, type CatalogId } from "@simforge/asset-catalog";
-import type { ActorRecord, EditorController } from "@simforge/editor";
+import { AUTHORING_CATALOG as CATALOG, getEntry, type CatalogId } from "@simforge-oss/asset-catalog";
+import type { ActorRecord, EditorController } from "@simforge-oss/editor";
 import { Heading, NumberField } from "../authoring/fields";
 import { Readout } from "../regions/Readout";
 

@@ -38,7 +38,7 @@ import {
   type ScenarioTemplateV2,
   type AnchorFeature as V2Feature,
   type RoleBinding as V2Role,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import {
   type AdjacentKind as MAdjacentKind,
   type ApproachRelation as MApproachRelation,

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import type { CatalogId } from "@simforge/asset-catalog";
+import type { CatalogId } from "@simforge-oss/asset-catalog";
 
 /**
  * Shared drawing vocabulary for the vehicle catalog artwork.

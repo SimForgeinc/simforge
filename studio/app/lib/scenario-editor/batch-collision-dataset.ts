@@ -21,7 +21,7 @@ import {
   TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
   authoredJunctionTurn,
   type RuntimeScenarioEditorActor,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { createDatasetScenario } from "@/app/lib/db/scenario-query-store";
 import { resolveScenarioMapReference } from "@/app/lib/scenario-editor/scenario-api-store";
 import { getMapTopologyIndex } from "@/app/lib/maps/topology/server/topology-index-service";

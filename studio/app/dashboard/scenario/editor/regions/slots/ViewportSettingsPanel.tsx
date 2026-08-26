@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useId, useState } from "react";
 import { RotateCcw, Settings2, X } from "lucide-react";
-import type { CityViewer } from "@simforge/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
 import {
   SCENARIO_AUTHORING_QUALITY_CHOICES,
   type ScenarioAuthoringQuality,
 } from "@/app/lib/scenario/contracts";
-import type { CameraControlPreferences } from "@simforge/viewer";
+import type { CameraControlPreferences } from "@simforge-oss/viewer";
 import { Button } from "@/app/components/ui/button";
 import {
   Sheet,

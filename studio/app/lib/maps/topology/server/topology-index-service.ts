@@ -7,7 +7,7 @@ import {
   type RuntimeBoundMapTopologyIndex,
   type RuntimeTopologyFamily,
   type RuntimeTopologyProvenance,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import {
   getRuntimeMapArtifactVersion,
   headRuntimeMapArtifactManifest,

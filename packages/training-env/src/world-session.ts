@@ -65,7 +65,7 @@ import {
   type SimEvent,
   type SimScenarioInput,
   type TickObserver,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import {
   WorldTruthPublisher,
   type TruthActorCatalogEntry,

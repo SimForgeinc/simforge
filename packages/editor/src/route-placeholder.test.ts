@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Interaction } from '@simforge/scenario';
+import type { Interaction } from '@simforge-oss/scenario';
 
 import { actionsForActor, interactionForAction } from './timeline-actions';
 import { isRoutePlaceholder, routePlaceholderOnActor } from './route-placeholder';

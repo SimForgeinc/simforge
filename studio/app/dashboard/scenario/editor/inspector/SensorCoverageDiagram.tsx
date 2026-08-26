@@ -1,6 +1,6 @@
 "use client";
 
-import { sensorAperture, type ActorSensor } from "@simforge/scenario";
+import { sensorAperture, type ActorSensor } from "@simforge-oss/scenario";
 import { modalityLabel, sensorName } from "./sensor-presentation";
 
 /**

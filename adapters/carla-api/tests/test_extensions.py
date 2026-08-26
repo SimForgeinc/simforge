@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from simforge_carla_api import (
+from simforge_oss_carla_api import (
     Client,
     Color,
     LaneType,
@@ -22,23 +22,23 @@ from simforge_carla_api import (
     Vehicle,
     WeatherParameters,
 )
-from simforge_carla_api.debug import DebugHelper
-from simforge_carla_api.geoloc import (
+from simforge_oss_carla_api.debug import DebugHelper
+from simforge_oss_carla_api.geoloc import (
     METERS_PER_DEG_LAT,
     GeoOrigin,
     geolocation_to_transform,
     parse_geo_origin_text,
     transform_to_geolocation,
 )
-from simforge_carla_api.lane_types import TOPOLOGY_TO_FLAG
-from simforge_carla_api.physics import build_physics_control, resolve_physics_profile
-from simforge_carla_api.trafficmanager import PRESET_DENSITY_VEHICLES_PER_KM, TrafficManager
-from simforge_carla_api.weather import (
+from simforge_oss_carla_api.lane_types import TOPOLOGY_TO_FLAG
+from simforge_oss_carla_api.physics import build_physics_control, resolve_physics_profile
+from simforge_oss_carla_api.trafficmanager import PRESET_DENSITY_VEHICLES_PER_KM, TrafficManager
+from simforge_oss_carla_api.weather import (
     from_operational_conditions,
     scenario_weather_patch,
     to_operational_conditions,
 )
-from simforge_carla_api.xodr_surface import load_surface
+from simforge_oss_carla_api.xodr_surface import load_surface
 
 
 # ---------------------------------------------------------------- weather
@@ -81,7 +81,7 @@ def test_lane_type_flags():
 
 
 def Map_strings(mask):
-    from simforge_carla_api.map import Map
+    from simforge_oss_carla_api.map import Map
     return Map._topology_strings_for(mask)
 
 
@@ -252,7 +252,7 @@ def test_session_geolocation_roundtrip(yale_world):
 
 
 def test_session_load_world_richmond_with_baked_weather(dev_assets_root):
-    from simforge_carla_api.maps import find_instance_for_map, instance_search_roots
+    from simforge_oss_carla_api.maps import find_instance_for_map, instance_search_roots
     if find_instance_for_map("richmond-field-station-richmond-ca", instance_search_roots()) is None:
         pytest.skip("no richmond instance in local pools")
     client = Client()

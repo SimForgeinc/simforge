@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ActorView } from "@simforge/viewer";
+import type { ActorView } from "@simforge-oss/viewer";
 import { interpolateSumoActorViews } from "./sumoMotionSmoother";
 
 function actor(overrides: Partial<ActorView> = {}): ActorView {

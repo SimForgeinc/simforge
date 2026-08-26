@@ -216,7 +216,7 @@ export async function POST(
         derived.roadwayConsistency.bytes,
       ),
       // Without these two the map renders but the browser simulation refuses it:
-      // @simforge/playback fetches variants/manifest.json beside the city
+      // @simforge-oss/playback fetches variants/manifest.json beside the city
       // manifest and fails closed when the static-collider variant is absent.
       generatedMember(
         colliders.variantManifest.relativePath,
@@ -340,7 +340,7 @@ export async function POST(
     };
     const receipt = {
       contractVersion: "uniscenario.map-intel-build/v1",
-      builder: { package: "@simforge/maps", version: MAP_INTEL_BUILDER_VERSION },
+      builder: { package: "@simforge-oss/maps", version: MAP_INTEL_BUILDER_VERSION },
       mapId: mapSlugFromLabel(draft.label),
       catalogRevision: locations.catalogRevision,
       sourceHashes,

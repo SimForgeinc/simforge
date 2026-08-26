@@ -95,7 +95,7 @@ import {
   OpenScenarioImportError,
   analyzeOpenScenarioImport,
   type OpenScenarioImportAnalysis,
-} from "@simforge/openscenario/import";
+} from "@simforge-oss/openscenario/import";
 
 import type { EnvironmentPreset } from "../environment-preset";
 import { laneAtPose } from "../map-topology/lane-at-pose";

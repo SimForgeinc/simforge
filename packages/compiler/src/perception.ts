@@ -19,9 +19,9 @@
  * `fog_dense` means, and a preset is a name they can each resolve.
  */
 
-import type { Environment, ActorSensor, MapDivergence, NumberOrExpr } from '@simforge/scenario';
-import { sensorAperture } from '@simforge/scenario';
-import type { PerceptionConfig, SimSensor } from '@simforge/engine';
+import type { Environment, ActorSensor, MapDivergence, NumberOrExpr } from '@simforge-oss/scenario';
+import { sensorAperture } from '@simforge-oss/scenario';
+import type { PerceptionConfig, SimSensor } from '@simforge-oss/engine';
 
 /**
  * Meteorological visibility, metres, per weather preset.

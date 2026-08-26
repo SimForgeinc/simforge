@@ -4,7 +4,7 @@ import type {
   MapCandidateLocation,
   MapEnrichmentSummary,
   MapOverlayPayload,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import {
   MAP_CANDIDATE_LOCATION_KINDS,
   MAP_OVERLAY_LAYER_IDS,
@@ -12,8 +12,8 @@ import {
   MapCandidateLocationSchema,
   MapEnrichmentSummarySchema,
   MapOverlayPayloadSchema,
-} from "@simforge/studio-shared";
-import type { RoadSegmentForMatching } from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
+import type { RoadSegmentForMatching } from "@simforge-oss/studio-shared";
 import { execute, queryOne } from "./data-api";
 import { normalizeMapArtifactBucket } from "./map-asset-store";
 import { S3_BUCKET } from "../s3/s3-config";

@@ -1,5 +1,5 @@
-import { canonicalJson, sha256 } from '@simforge/map-registry';
-import type { ClosureMember, MapClosure } from '@simforge/map-registry';
+import { canonicalJson, sha256 } from '@simforge-oss/map-registry';
+import type { ClosureMember, MapClosure } from '@simforge-oss/map-registry';
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 

@@ -60,9 +60,9 @@ import {
   type LaneGraph,
   type SimScenarioInput,
   type TopologyIndex,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
-import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@simforge/compiler/node';
+import { availableMaps, findSite, loadMap, materialize, readTemplate } from '@simforge-oss/compiler/node';
 
 import { EnvSession } from './session.js';
 import { registerPolicySession } from './policy-session.js';

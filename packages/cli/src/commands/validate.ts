@@ -8,15 +8,15 @@
  * author said must stay true actually stay true on this site".
  */
 
-import { runSimulation } from '@simforge/engine';
+import { runSimulation } from '@simforge-oss/engine';
 
 import { CliError, EXIT } from '../errors.js';
 import { checkInvariants, type InvariantResidualReport } from '../invariants.js';
-import { loadMap } from '@simforge/compiler/node';
+import { loadMap } from '@simforge-oss/compiler/node';
 import { materialize } from '../materialize.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { findSite } from '@simforge/compiler/node';
-import { detectKind, readInstance, readTemplate } from '@simforge/compiler/node';
+import { findSite } from '@simforge-oss/compiler/node';
+import { detectKind, readInstance, readTemplate } from '@simforge-oss/compiler/node';
 import { metricsSummary } from './simulate.js';
 import { templateValidate } from './template.js';
 
@@ -45,7 +45,7 @@ export async function validate(options: ValidateOptions): Promise<number> {
     // A tier-1 pass on an instance is the engine contract plus the guards.
     const instance = await readInstance(options.file);
     const bundle = await loadMap(instance.input.mapId);
-    const { checkFeasibility } = await import('@simforge/engine');
+    const { checkFeasibility } = await import('@simforge-oss/engine');
     const issues = checkFeasibility(instance.input, bundle.graph);
     const errors = issues.filter((i) => i.severity === 'error').length;
     emit(
@@ -71,7 +71,7 @@ export async function validate(options: ValidateOptions): Promise<number> {
     const match = options.siteId
       ? await findSite(template, options.mapId, options.siteId)
       : await (async () => {
-          const { matchOnMap } = await import('@simforge/compiler/node');
+          const { matchOnMap } = await import('@simforge-oss/compiler/node');
           const m = await matchOnMap(template!, options.mapId as string);
           const site = m.report.sites[0];
           if (!site) {

@@ -20,7 +20,7 @@
  * and tolerance table.
  */
 
-import type { SceneState } from '@simforge/engine/scene-state';
+import type { SceneState } from '@simforge-oss/engine/scene-state';
 
 export const RENDERER_CONTRACT_VERSION = 'simforge.renderer-contract/v1' as const;
 

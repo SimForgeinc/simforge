@@ -65,15 +65,15 @@
  * crosses the wire and what every function in this folder consumes.
  */
 
-import type { MapSignalIndication } from "@simforge/scenario";
-import type { ControlIndication } from "@simforge/engine";
+import type { MapSignalIndication } from "@simforge-oss/scenario";
+import type { ControlIndication } from "@simforge-oss/engine";
 
 export type { ControlIndication, MapSignalIndication };
 
 /**
  * The indications a MAP signal plan may author.
  *
- * Deliberately six, not eleven. `@simforge/engine` defines
+ * Deliberately six, not eleven. `@simforge-oss/engine` defines
  * eleven `CONTROL_INDICATIONS` and the render worker now renders all eleven
  * (`SIGNAL_LAMP_BY_INDICATION`, with `flashing_*` alternating at 1 Hz), but
  * `MapSignalPlanClipSchema` refines the enum down to these six and

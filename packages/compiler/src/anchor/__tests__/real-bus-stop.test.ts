@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { decodeMaybeGzippedJson } from '@simforge/maps/opendrive';
+import { decodeMaybeGzippedJson } from '@simforge-oss/maps/opendrive';
 import { describe, expect, it } from 'vitest';
 
 import { matchAnchor } from '../matcher.js';

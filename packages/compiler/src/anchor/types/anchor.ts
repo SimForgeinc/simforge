@@ -6,7 +6,7 @@
  * `{value, essentiality, weight?}`** so the matcher can treat scoring
  * uniformly and explain every decision.
  *
- * This is a *local* declaration on purpose. `@simforge/scenario`
+ * This is a *local* declaration on purpose. `@simforge-oss/scenario`
  * v2 owns the authored document; the matcher only needs the data shape, and
  * duplicating ~150 lines of schema is much cheaper than a build-order cycle
  * between two in-flight packages. Reconciliation happens in the integration

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Choreography } from "@simforge/scenario";
+import type { Choreography } from "@simforge-oss/scenario";
 import { CarFront } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import type { V1TimelineCrashMarker } from "./V1TimelineRail";

@@ -17,7 +17,7 @@ import {
   type SessionActorSnapshot,
   type SimScenarioInput,
   type Vec2,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import type { BevConfig, BevRaster, ObservationConfig, PerceivedObject } from './types.js';
 

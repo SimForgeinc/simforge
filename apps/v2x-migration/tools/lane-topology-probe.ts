@@ -7,7 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { buildLaneGraph, type TopologyIndex } from '@simforge/engine';
+import { buildLaneGraph, type TopologyIndex } from '@simforge-oss/engine';
 
 const DIR = 'dev-assets/richmond-field-station';
 const index = JSON.parse(

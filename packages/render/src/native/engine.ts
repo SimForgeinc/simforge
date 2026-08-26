@@ -29,7 +29,7 @@ import {
   type RenderEngineAdapter,
   type RenderExecutionContext,
 } from '../index.js';
-import { parseRenderIntent, type RenderIntentV1 } from '@simforge/scenario';
+import { parseRenderIntent, type RenderIntentV1 } from '@simforge-oss/scenario';
 
 import { createTar, type TarEntry } from './tar.js';
 

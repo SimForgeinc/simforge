@@ -1,5 +1,5 @@
-import type { CameraView } from "@simforge/viewer";
-import type { DashCameraSensor } from "@simforge/scenario";
+import type { CameraView } from "@simforge-oss/viewer";
+import type { DashCameraSensor } from "@simforge-oss/scenario";
 import {
   allActorsCameraView,
   buildAllActorsCameraPlan,
@@ -9,7 +9,7 @@ import {
   type IncidentCameraPlan,
   type PlaybackBundle,
   type SampledActor,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";
 import { interpolateMapView } from "./map-camera-transition";
 
 /**

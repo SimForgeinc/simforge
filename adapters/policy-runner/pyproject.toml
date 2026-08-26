@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "simforge-policy-runner"
+name = "simforge-oss-policy-runner"
 version = "0.1.0"
 description = "Reference policy_step client: seeded episodes, deadline accounting, digested JSONL traces."
 requires-python = ">=3.10"
@@ -17,7 +17,7 @@ dependencies = [
 torch = ["torch>=2.0"]
 
 [project.scripts]
-simforge-policy-runner = "simforge_policy_runner.__main__:main"
+simforge-oss-policy-runner = "simforge_oss_policy_runner.__main__:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["simforge_policy_runner"]
+packages = ["simforge_oss_policy_runner"]

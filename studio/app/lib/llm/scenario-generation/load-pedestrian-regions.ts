@@ -19,7 +19,7 @@
  * edge with no regression.
  */
 import "server-only";
-import { MapProjection, type Vec2 } from "@simforge/studio-shared";
+import { MapProjection, type Vec2 } from "@simforge-oss/studio-shared";
 import { getCandidateLocationsByMapAssetId } from "@/app/lib/db/map-candidate-location-store";
 import {
   parkingLotSizeClass,

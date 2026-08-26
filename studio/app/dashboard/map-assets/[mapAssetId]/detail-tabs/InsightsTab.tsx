@@ -7,7 +7,7 @@ import type {
   MapAsset,
   MapAssetEnrichmentSnapshot,
   CandidateLocation,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { ScenarioSummary } from "@/app/lib/scenarios";
 import { CandidateLocationCard } from "@/app/dashboard/map-assets/map-detail-sections/CandidateLocationCard";
 import {

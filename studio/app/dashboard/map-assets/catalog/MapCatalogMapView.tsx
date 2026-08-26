@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import MapAssetsMapDynamic from "@/app/components/map-assets-map/MapAssetsMapDynamic";
 import { cn } from "@/app/lib/utils";
 import { getCardStats, getMapCapabilities, humanizeTag, rankDominantTags } from "./map-card-data";

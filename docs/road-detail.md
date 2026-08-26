@@ -130,7 +130,7 @@ material remains the blend base, so tile UV density, alpha modes, and any
 ORM repair (`tools/glb-orm-repair`) survive. The instance-ID pass and
 legend are unaffected (ID clones use engine-created unlit materials).
 
-The Node adapter (`@simforge/render` native engine) forwards
+The Node adapter (`@simforge-oss/render` native engine) forwards
 `NativeCameraSchedule.roadDetail` verbatim into the job file.
 
 ## Determinism & tests

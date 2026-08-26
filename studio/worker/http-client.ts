@@ -7,7 +7,7 @@ import { pipeline } from "node:stream/promises";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { simforgeEnv } from "../lib/compat-env";
 
-import type { RenderInputFile } from "@simforge/render";
+import type { RenderInputFile } from "@simforge-oss/render";
 
 import type {
   CpuFence,

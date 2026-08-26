@@ -7,7 +7,7 @@ import {
   SCENARIO_AUTHORING_QUALITY_CHOICES,
   type ScenarioAuthoringQuality,
 } from "@/app/lib/scenario/contracts";
-import type { ScenarioMapEntry } from "@simforge/editor";
+import type { ScenarioMapEntry } from "@simforge-oss/editor";
 
 const QUALITY_PREVIEW_IMAGES: Record<ScenarioAuthoringQuality, string> = {
   "roads-only": "/render-selection/roads-only.jpg",

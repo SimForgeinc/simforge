@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ActorRecord, EditorDocument } from "@simforge/editor";
+import type { ActorRecord, EditorDocument } from "@simforge-oss/editor";
 import { ActionPalette } from "../timeline/ActionPalette";
 import { InteractionList } from "../timeline/InteractionList";
 

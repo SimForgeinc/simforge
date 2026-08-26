@@ -25,8 +25,8 @@ import {
   type SimActor,
   type SimScenarioInput,
   type SceneTrace,
-} from '@simforge/engine';
-import type { Interaction, ScenarioTemplateV2 } from '@simforge/scenario';
+} from '@simforge-oss/engine';
+import type { Interaction, ScenarioTemplateV2 } from '@simforge-oss/scenario';
 import type { LaneIndex } from './laneIndex';
 
 export type RouteMarkerKind = 'turn-left' | 'turn-right' | 'reroute' | 'lane-change' | 'stop' | 'speed-change' | 'near-miss';

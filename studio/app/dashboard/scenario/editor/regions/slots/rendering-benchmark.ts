@@ -2,7 +2,7 @@ import type {
   BenchResult,
   CityViewer,
   RendererCapability,
-} from "@simforge/viewer";
+} from "@simforge-oss/viewer";
 import {
   SCENARIO_AUTHORING_QUALITY_IDS,
   type ScenarioAuthoringQuality,

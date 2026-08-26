@@ -1,5 +1,5 @@
 import type { ScenarioDocumentSummaryDto } from "@/app/lib/scenario/contracts";
-import type { ScenarioMapEntry } from "@simforge/editor";
+import type { ScenarioMapEntry } from "@simforge-oss/editor";
 import { documentEditedAtMs, documentMapLabel } from "./document-list-utils";
 
 /**

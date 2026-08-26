@@ -284,7 +284,7 @@ function invokeRunner(campaign: ResolvedCampaign, plan: EpisodePlan, dir: string
   const resolved = campaign.scenarios.get(plan.scenario.scenarioId)!;
   const tracePath = path.join(dir, 'trace.jsonl');
   const args = [
-    '-m', 'simforge_policy_runner',
+    '-m', 'simforge_oss_policy_runner',
     '--spec', resolved.specPath,
     '--session', String(plan.scenario.session),
     '--policy', plan.policy.runnerPolicy,

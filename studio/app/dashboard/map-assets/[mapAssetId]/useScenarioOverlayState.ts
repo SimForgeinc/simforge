@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { primaryActor, type MapAsset, type ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import { primaryActor, type MapAsset, type ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 import {
   buildActorTrajectoryGeoJSON,
   buildActorTrajectoryScenePaths,

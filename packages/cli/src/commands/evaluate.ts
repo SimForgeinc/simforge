@@ -16,11 +16,11 @@ import {
   intentRubricSchema,
   type EvaluateFilters,
   type IntentEvaluation,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
-import { readTraceFile, writeJsonFile } from '@simforge/compiler/node';
+import { readTraceFile, writeJsonFile } from '@simforge-oss/compiler/node';
 import { metricsSummary } from './simulate.js';
 
 export type EvaluateFilterMode = 'critical' | 'negative-control' | 'all';

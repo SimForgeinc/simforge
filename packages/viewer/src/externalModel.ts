@@ -1,4 +1,4 @@
-import type { ExternalModelBinding } from '@simforge/asset-catalog';
+import type { ExternalModelBinding } from '@simforge-oss/asset-catalog';
 import {
   AnimationClip,
   Box3,

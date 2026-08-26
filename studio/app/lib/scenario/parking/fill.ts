@@ -6,8 +6,8 @@
  * no catalog side effects beyond reading `CATALOG`.
  */
 
-import { CATALOG } from "@simforge/asset-catalog";
-import type { CatalogId } from "@simforge/asset-catalog";
+import { CATALOG } from "@simforge-oss/asset-catalog";
+import type { CatalogId } from "@simforge-oss/asset-catalog";
 
 import type { ParkedCar } from "@/app/lib/studio-shared/parked-cars";
 import type { ParkingStall } from "./stalls";
@@ -37,7 +37,7 @@ export const PARKABLE_MODELS: readonly ParkableModel[] = CATALOG.filter(
 }));
 
 // One definition, shared with the compiler: `catalogId` is a plain string there
-// because `@simforge/studio-shared` must stay free of `@simforge/*`. Callers that
+// because `@simforge-oss/studio-shared` must stay free of `@simforge-oss/*`. Callers that
 // need the branded `CatalogId` narrow it at the renderer boundary.
 export type { ParkedCar };
 

@@ -1,4 +1,4 @@
-import type { ControlIndication, SignalProgram } from '@simforge/engine';
+import type { ControlIndication, SignalProgram } from '@simforge-oss/engine';
 
 export type SignalControlDiagnosticCode =
   | 'unresolved_head'

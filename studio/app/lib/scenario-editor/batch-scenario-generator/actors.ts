@@ -1,6 +1,6 @@
 import type {
   ScenarioEditorActorDraft,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import { laneChangeSide } from "./types";
 import type {

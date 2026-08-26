@@ -3,7 +3,7 @@
 import type {
   AmbientTrafficProvenance,
   ResolvedAmbientTrafficProfile,
-} from "@simforge/engine";
+} from "@simforge-oss/engine";
 import { AmbientTrafficPanel } from "@/app/lib/scenario/ambient/AmbientTrafficPanel";
 import {
   ACCELERATED_SIGNAL_CYCLES_EXTENSION_KEY,
@@ -12,14 +12,14 @@ import {
   allSumoSignalsGreenFromExtensions,
   ambientSignalCycleSettingsFromExtensions,
   ambientTrafficProfileFromExtensions,
-} from "@simforge/playback/traffic";
+} from "@simforge-oss/playback/traffic";
 import {
   AMBIENT_TRAFFIC_PROVIDER_EXTENSION_KEY,
   ambientTrafficProviderFromExtensions,
   type AmbientTrafficProviderId,
   type SumoTrafficStatus,
-} from "@simforge/playback/traffic";
-import type { EditorDocument } from "@simforge/editor";
+} from "@simforge-oss/playback/traffic";
+import type { EditorDocument } from "@simforge-oss/editor";
 
 /**
  * Editor adapter for Scenario's canonical ambient traffic controls.

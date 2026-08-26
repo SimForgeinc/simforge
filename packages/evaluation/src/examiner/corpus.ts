@@ -16,8 +16,8 @@
  * materialized instance; see `tools/build-corpus.ts`.
  */
 
-import type { CausalChannel } from '@simforge/training-env';
-import type { Interaction } from '@simforge/engine';
+import type { CausalChannel } from '@simforge-oss/training-env';
+import type { Interaction } from '@simforge-oss/engine';
 
 export interface DecimatedTrack {
   readonly t: number[];

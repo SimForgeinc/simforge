@@ -1,5 +1,5 @@
-import type { DirectedLane } from "@simforge/engine";
-import type { CameraView } from "@simforge/viewer";
+import type { DirectedLane } from "@simforge-oss/engine";
+import type { CameraView } from "@simforge-oss/viewer";
 
 const MIN_START_LANE_METERS = 24;
 const TARGET_TOUR_METERS = 720;

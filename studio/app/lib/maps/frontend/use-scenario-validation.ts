@@ -4,7 +4,7 @@ import type {
   EsminiValidationMetrics,
   ScenarioValidationJob,
   ScenarioValidationVerdict,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 import { useVisiblePolling } from "@/app/lib/use-visible-polling";
 

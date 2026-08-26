@@ -7,7 +7,7 @@ import {
   type SemanticMapOverlay,
   type SemanticFeatureGeometry,
   type SemanticFeatureGraph,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 export const SEMANTIC_OVERLAY_MAX_BYTES = 2 * 1024 * 1024;
 const MAX_POLYLINE_POINTS = 256;

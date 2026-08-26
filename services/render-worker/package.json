@@ -1,5 +1,5 @@
 {
-  "name": "@simforge/render-worker",
+  "name": "@simforge-oss/render-worker",
   "version": "0.1.0-rc.45",
   "repository": {
     "type": "git",
@@ -28,8 +28,8 @@
     "bin"
   ],
   "dependencies": {
-    "@simforge/render": "workspace:*",
-    "@simforge/scenario": "workspace:*",
+    "@simforge-oss/render": "workspace:*",
+    "@simforge-oss/scenario": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

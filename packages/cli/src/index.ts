@@ -1,12 +1,12 @@
 /**
- * `@simforge/cli` — layer 4 of `docs/agent-authoring-architecture.md`.
+ * `@simforge-oss/cli` — layer 4 of `docs/agent-authoring-architecture.md`.
  *
  * The `simforge` binary is the product; this module is its library face, so the
  * editor, the workflows in layer 5 and the tests can call the same code paths
  * without shelling out.
  *
  * ```ts
- * import { loadMap, matchOnMap, materialize } from '@simforge/cli';
+ * import { loadMap, matchOnMap, materialize } from '@simforge-oss/cli';
  *
  * const bundle = await loadMap('yale-street');
  * const { report } = await matchOnMap(template, 'yale-street');
@@ -39,7 +39,7 @@ export {
   resolveMapSelection,
   type MapArtifactPresence,
   type MapBundle,
-} from '@simforge/compiler/node';
+} from '@simforge-oss/compiler/node';
 
 export {
   buildSiteSignalPlan,
@@ -52,7 +52,7 @@ export {
   type MapSignalJunction,
   type SiteSignalPlan,
 } from './map-signals.js';
-export { loadMapSignalCatalog } from '@simforge/compiler/node';
+export { loadMapSignalCatalog } from '@simforge-oss/compiler/node';
 
 export {
   CLAUSE_UNMATCHABLE,
@@ -88,7 +88,7 @@ export {
   type ReplayKey,
 } from './materialize.js';
 
-export { createMapContext } from '@simforge/compiler/node';
+export { createMapContext } from '@simforge-oss/compiler/node';
 
 export {
   assertMatchableAnchor,
@@ -97,7 +97,7 @@ export {
   matchOnMaps,
   siteSummary,
   type SiteMatch,
-} from '@simforge/compiler/node';
+} from '@simforge-oss/compiler/node';
 
 export {
   checkInvariants,
@@ -121,7 +121,7 @@ export {
   writeJsonFile,
   writeTraceFile,
   type InstanceFile,
-} from '@simforge/compiler/node';
+} from '@simforge-oss/compiler/node';
 
 export { PROP_DIMS, propDims, type PropDims } from './prop-dims.js';
 
@@ -165,4 +165,4 @@ export {
   type BuiltinRenderEngineId,
   type RenderEngineAdapter,
   type RenderExecutionContext,
-} from '@simforge/render';
+} from '@simforge-oss/render';

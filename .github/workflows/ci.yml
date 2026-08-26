@@ -56,4 +56,4 @@ jobs:
           python -m build adapters/carla-exec
           python -m venv /tmp/simforge-carla-smoke
           /tmp/simforge-carla-smoke/bin/python -m pip install adapters/carla-exec/dist/*.whl
-          /tmp/simforge-carla-smoke/bin/simforge-carla-api --help
+          /tmp/simforge-carla-smoke/bin/simforge-oss-carla-api --help

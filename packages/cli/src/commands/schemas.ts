@@ -19,11 +19,11 @@ import {
   buildAnchorJsonSchema,
   buildInteractionsJsonSchema,
   buildTemplateJsonSchema,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
-import { REPO_ROOT } from '@simforge/compiler/node';
+import { REPO_ROOT } from '@simforge-oss/compiler/node';
 
 const MODEL_PKG = path.join(REPO_ROOT, 'packages', 'scenario');
 

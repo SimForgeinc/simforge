@@ -1,4 +1,4 @@
-import type { MapStatsSignalization } from "@simforge/studio-shared";
+import type { MapStatsSignalization } from "@simforge-oss/studio-shared";
 
 function stripXmlComments(s: string): string {
   return s.replace(/<!--[\s\S]*?-->/g, "");

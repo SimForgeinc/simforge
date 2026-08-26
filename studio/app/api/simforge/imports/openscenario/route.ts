@@ -5,7 +5,7 @@ import {
   analyzeOpenScenarioImport,
   resolveOpenScenarioMap,
   translateOpenScenarioImport,
-} from "@simforge/openscenario/import";
+} from "@simforge-oss/openscenario/import";
 import { SCENARIO_SCHEMA_VERSION } from "@/app/lib/scenario/contracts";
 import {
   createScenarioDocument,

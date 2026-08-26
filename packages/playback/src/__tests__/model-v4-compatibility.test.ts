@@ -5,7 +5,7 @@ import {
   parseSimScenarioInput,
   type SimScenarioInput,
   type SimTrace,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import {
   PlaybackLoadError,
   canonicalPreviewIdentity,

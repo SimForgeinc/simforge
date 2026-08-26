@@ -2,7 +2,7 @@ import {
   PROP_TAGS,
   type ExternalCatalogEntry,
   type PropTag,
-} from "@simforge/asset-catalog";
+} from "@simforge-oss/asset-catalog";
 import type { GalleryCatalogEntryDto } from "./contracts";
 
 const PROP_TAG_SET = new Set<string>(PROP_TAGS);

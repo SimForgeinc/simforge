@@ -4,12 +4,12 @@ import {
   parseExternalCatalogEntries,
   resolveCatalogId,
   type CatalogEntry,
-} from '@simforge/asset-catalog/metadata';
+} from '@simforge-oss/asset-catalog/metadata';
 
 /**
  * Browser-safe occluder footprints for `props[]`.
  *
- * `@simforge/asset-catalog` owns the real dimensions. This table remains a
+ * `@simforge-oss/asset-catalog` owns the real dimensions. This table remains a
  * browser-safe prop-placement snapshot, while actor validation below imports
  * the catalog's metadata-only entry point (which does not load three.js).
  *
@@ -118,7 +118,7 @@ export const PROP_DIMS: Readonly<Record<string, PropDims>> = {
 };
 
 /**
- * Author-facing synonyms, mirroring `CATALOG_ALIASES` in `@simforge/asset-catalog`.
+ * Author-facing synonyms, mirroring `CATALOG_ALIASES` in `@simforge-oss/asset-catalog`.
  *
  * The catalog files a prop under the class that owns it — a tyre carcass is a
  * `hazard`, a cone is `construction`, a trolley is `street` furniture. Authors

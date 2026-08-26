@@ -15,7 +15,7 @@ import {
   type FramePose,
   type RoleBinding,
   type ScenarioTemplateV2,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import {
   MATCH_SEMANTICS_VERSION,
   buildCorridorFrame,

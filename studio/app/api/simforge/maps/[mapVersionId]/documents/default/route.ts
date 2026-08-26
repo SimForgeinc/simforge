@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { TemplateDocument } from "@simforge/scenario";
+import { TemplateDocument } from "@simforge-oss/scenario";
 import {
   DEFAULT_SCENARIO_AUTHORING_QUALITY_ID,
   SCENARIO_SCHEMA_VERSION,

@@ -1,8 +1,8 @@
 """CLI: run seeded policy_step episodes and write JSONL traces.
 
-Example (from the repo root, after building @simforge/training-env):
+Example (from the repo root, after building @simforge-oss/training-env):
 
-    python -m simforge_policy_runner \
+    python -m simforge_oss_policy_runner \
         --spec adapters/policy-runner/fixtures/synthetic-episode-dynamic.json \
         --policy torch --seed 42 --steps 30 --deadline-ms 50 \
         --fallback repeat-last --force-miss-at 13 --out /tmp/trace.jsonl
@@ -20,7 +20,7 @@ from .runner import run_episode
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="simforge-policy-runner")
+    parser = argparse.ArgumentParser(prog="simforge-oss-policy-runner")
     parser.add_argument("--spec", required=True, help="episode spec JSON for the env-server")
     parser.add_argument("--session", type=int, default=0, help="env session index inside the spec")
     parser.add_argument("--policy", choices=("scripted", "trajectory", "torch"), default="scripted")

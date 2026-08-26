@@ -20,36 +20,38 @@ const RETIRED_NAMES = [
   'scenario-materializer', 'scenario-model', 'scene-state', 'sim-engine',
   'trace-comparator', 'xodr-tools',
 ];
+const LEGACY_MODEL_PACKAGE = ['@simforge', 'model'].join('/');
+
 
 async function fixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), 'simforge-stack-'));
   const config = {
-    schema: 'simforge.stack-config/v1',
+    schema: 'simforge-oss.stack-config/v1',
     stackVersion: '1.2.3',
     repository: 'https://example.test/simforge',
     contracts: { scenarioTemplate: '2', simulationStepSeconds: 0.02 },
     packages: PACKAGE_NAMES.map((name) => ({
-      name: `@simforge/${name}`,
+      name: `@simforge-oss/${name}`,
       version: '1.2.3',
       path: `packages/${name}`,
       role: `${name}-role`,
     })),
     renameManifest: Object.fromEntries(
-      RETIRED_NAMES.map((name) => [`@uniscenarios/${name}`, '@simforge/model']),
+      RETIRED_NAMES.map((name) => [`@uniscenarios/${name}`, LEGACY_MODEL_PACKAGE]),
     ),
   };
   await mkdir(path.join(root, 'config'), { recursive: true });
-  await writeFile(path.join(root, 'config/simforge-stack.json'), JSON.stringify(config));
+  await writeFile(path.join(root, 'config/simforge-oss-stack.json'), JSON.stringify(config));
   for (const name of PACKAGE_NAMES) {
     const directory = `packages/${name}`;
     await mkdir(path.join(root, directory), { recursive: true });
     await writeFile(path.join(root, directory, 'package.json'), JSON.stringify({
-      name: `@simforge/${name}`, version: '1.2.3', license: 'Apache-2.0',
+      name: `@simforge-oss/${name}`, version: '1.2.3', license: 'Apache-2.0',
       main: './dist/index.js', types: './dist/index.d.ts', files: ['dist'],
       exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } },
       publishConfig: { access: 'public', provenance: true },
       repository: { directory },
-      ...(name === 'engine' ? { dependencies: { '@simforge/model': 'workspace:*' } } : {}),
+      ...(name === 'engine' ? { dependencies: { '@simforge-oss/model': 'workspace:*' } } : {}),
       ...overrides[name],
     }));
   }
@@ -61,12 +63,13 @@ test('builds a deterministic exact stack manifest', async () => {
   const manifest = await buildStackManifest({ repoRoot, sourceRevision: SHA });
   assert.equal(manifest.source.revision, SHA);
   assert.equal(manifest.packages.length, 13);
+  assert.equal(manifest.schema, 'simforge-oss.stack/v1');
   assert.deepEqual(manifest.packages.slice(0, 2), [
-    { name: '@simforge/model', version: '1.2.3', role: 'model-role' },
-    { name: '@simforge/engine', version: '1.2.3', role: 'engine-role' },
+    { name: '@simforge-oss/model', version: '1.2.3', role: 'model-role' },
+    { name: '@simforge-oss/engine', version: '1.2.3', role: 'engine-role' },
   ]);
   assert.deepEqual(manifest.renameManifest, Object.fromEntries(
-    RETIRED_NAMES.map((name) => [`@uniscenarios/${name}`, '@simforge/model']),
+    RETIRED_NAMES.map((name) => [`@uniscenarios/${name}`, LEGACY_MODEL_PACKAGE]),
   ));
   assert.deepEqual(manifest.pythonPackages, []);
   assert.equal(serializeStackManifest(manifest), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -74,12 +77,12 @@ test('builds a deterministic exact stack manifest', async () => {
 
 test('binds PyPI adapters to the PEP 440 form of the stack version', async () => {
   const repoRoot = await fixture();
-  const configPath = path.join(repoRoot, 'config/simforge-stack.json');
+  const configPath = path.join(repoRoot, 'config/simforge-oss-stack.json');
   const config = JSON.parse(await readFile(configPath, 'utf8'));
   config.stackVersion = '1.2.3-rc.4';
   for (const entry of config.packages) entry.version = config.stackVersion;
   config.pythonPackages = [{
-    path: 'adapters/carla-exec', name: 'simforge-carla-exec',
+    path: 'adapters/carla-exec', name: 'simforge-oss-carla-exec',
     version: '1.2.3rc4', role: 'optional-carla-execution-adapter', registry: 'pypi',
   }];
   for (const name of PACKAGE_NAMES) {
@@ -92,14 +95,14 @@ test('binds PyPI adapters to the PEP 440 form of the stack version', async () =>
   await mkdir(path.join(repoRoot, 'adapters/carla-exec'), { recursive: true });
   await writeFile(path.join(repoRoot, 'adapters/carla-exec/pyproject.toml'), [
     '[project]',
-    'name = "simforge-carla-exec"',
+    'name = "simforge-oss-carla-exec"',
     'version = "1.2.3rc4"',
     'license = "Apache-2.0"',
     '',
   ].join('\n'));
   const manifest = await buildStackManifest({ repoRoot, sourceRevision: SHA });
   assert.deepEqual(manifest.pythonPackages, [{
-    name: 'simforge-carla-exec', version: '1.2.3rc4',
+    name: 'simforge-oss-carla-exec', version: '1.2.3rc4',
     role: 'optional-carla-execution-adapter', ecosystem: 'pypi',
   }]);
 });
@@ -111,10 +114,10 @@ test('rejects private packages and version-skewed internal dependencies', async 
     /private and cannot be part of the public stack/u,
   );
 
-  const skewedRoot = await fixture({ engine: { dependencies: { '@simforge/model': '^1.2.3' } } });
+  const skewedRoot = await fixture({ engine: { dependencies: { '@simforge-oss/model': '^1.2.3' } } });
   await assert.rejects(
     buildStackManifest({ repoRoot: skewedRoot, sourceRevision: SHA }),
-    /must pin @simforge\/model to the stack version 1.2.3/u,
+    /must pin @simforge-oss\/model to the stack version 1.2.3/u,
   );
 });
 

@@ -20,7 +20,7 @@ node packages/cli/bin/simforge.js --help        # the command surface, as JSON
   `richmond-field-station-richmond-ca`, `san-ramon-phase-1-p1`,
   `san-ramon-phase-1-p2`, `san-ramon-phase-2`, `saratoga-school-area`, and
   `yale-st-palo-alto-ca`.
-- Build a package in isolation: `pnpm --filter @simforge/cli build`.
+- Build a package in isolation: `pnpm --filter @simforge-oss/cli build`.
 - Run one test file: `cd packages/cli && npx vitest run src/__tests__/cli-smoke.test.ts`.
 
 ## CLI contract

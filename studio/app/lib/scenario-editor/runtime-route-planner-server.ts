@@ -4,7 +4,7 @@ import {
   routeThroughAnchors,
   type MapAsset,
   type ScenarioEditorRoadAnchor,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
 import { getSemanticMapGraph } from "@/app/lib/maps/topology/server/semantic-map-service";
 import type { RouteOverlayResolution } from "./route-overlay-geometry";

@@ -1,6 +1,6 @@
 {
-  "name": "@simforge/render",
-  "version": "0.1.0-rc.46",
+  "name": "@simforge-oss/render",
+  "version": "0.1.0-rc.47",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
@@ -49,9 +49,9 @@
     "dist"
   ],
   "dependencies": {
-    "@simforge/playback": "workspace:*",
-    "@simforge/scenario": "workspace:*",
-    "@simforge/viewer": "workspace:*",
+    "@simforge-oss/playback": "workspace:*",
+    "@simforge-oss/scenario": "workspace:*",
+    "@simforge-oss/viewer": "workspace:*",
     "fflate": "^0.8.3",
     "playwright-core": "^1.62.1",
     "three": "^0.185.0",

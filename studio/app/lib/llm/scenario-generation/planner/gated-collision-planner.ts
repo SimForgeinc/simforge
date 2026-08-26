@@ -17,7 +17,7 @@
  * (line/arc/spiral) + `<laneOffset>` + per-lane `<width>` polynomials.
  */
 import "server-only";
-import type { MapTopologyIndex, TopologyGate, TopologyLane, Vec2 } from "@simforge/studio-shared";
+import type { MapTopologyIndex, TopologyGate, TopologyLane, Vec2 } from "@simforge-oss/studio-shared";
 import {
   findPolylineConflict,
   type PlannedActor,

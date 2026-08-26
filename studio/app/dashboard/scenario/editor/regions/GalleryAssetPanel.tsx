@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type DragEvent } from "react";
-import type { EditorController, EditorState } from "@simforge/editor";
-import type { CatalogId } from "@simforge/asset-catalog";
+import type { EditorController, EditorState } from "@simforge-oss/editor";
+import type { CatalogId } from "@simforge-oss/asset-catalog";
 import { CarlaCompatibilityPill } from "@/app/components/CarlaCompatibilityPill";
 import type { CarlaCompatibility } from "@/app/lib/scenario/carla-compatibility";
 import type { GalleryAssetSummary } from "@/app/lib/asset-gallery/contracts";

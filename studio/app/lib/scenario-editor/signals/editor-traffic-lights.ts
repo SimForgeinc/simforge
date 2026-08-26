@@ -109,7 +109,7 @@
  * `signalLensKindIndex` in `signal-head-model.ts`.
  */
 
-import { parseGeometrySegments, resolveSTtoXYWithHeading } from "@simforge/studio-shared";
+import { parseGeometrySegments, resolveSTtoXYWithHeading } from "@simforge-oss/studio-shared";
 import { carlaPointToRuntimePoint } from "@/app/lib/editor-map/coordinate-frames";
 
 export const EDITOR_TRAFFIC_LIGHTS_SCHEMA_VERSION =

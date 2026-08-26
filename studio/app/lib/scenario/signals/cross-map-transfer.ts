@@ -44,7 +44,7 @@
  * approximating it.
  */
 
-import type { MapSignalPlan } from "@simforge/scenario";
+import type { MapSignalPlan } from "@simforge-oss/scenario";
 
 import { buildMapSignalPlan, decompilePlanToCycle, layOutCycle, type CycleCoverage } from "./plan";
 import {

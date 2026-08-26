@@ -1,6 +1,6 @@
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
 import { MATCH_SEMANTICS_VERSION, type FeatureBinding, type MatchedSite, type ReferenceSpan } from './anchor/index.js';
-import { buildFollowRoute } from '@simforge/engine';
+import { buildFollowRoute } from '@simforge-oss/engine';
 import { CliError } from './errors.js';
 import { materialize, type MaterializeOptions, type MaterializeResult } from './materialize.js';
 import type { MapBundle } from './types.js';

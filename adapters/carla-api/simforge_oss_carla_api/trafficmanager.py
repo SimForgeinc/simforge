@@ -116,6 +116,6 @@ class TrafficManager:
                 f"TrafficManager.{name}: outside the supported surface "
                 "(speed/distance globals, per-vehicle registration, sync mode) — "
                 "ambient road users are engine-generated; see adapters/carla-api/"
-                "README.md coverage matrix and simforge_carla_api/trafficmanager.py")
+                "README.md coverage matrix and simforge_oss_carla_api/trafficmanager.py")
         _unsupported.__name__ = name
         return _unsupported

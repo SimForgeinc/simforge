@@ -6,16 +6,16 @@
     "types": ["node"],
     "typeRoots": ["../../../packages/render/node_modules/@types"],
     "paths": {
-      "@simforge/compiler": ["../../../packages/compiler/src/index.ts"],
-      "@simforge/render/web": ["../../../packages/render/src/index.ts"],
-      "@simforge/maps": ["../../../packages/maps/src/index.ts"],
-      "@simforge/openscenario": ["../../../packages/openscenario/src/index.ts"],
-      "@simforge/openscenario/*": ["../../../packages/openscenario/src/*"],
-      "@simforge/playback": ["../../../packages/playback/src/index.ts"],
-      "@simforge/render": ["../../../packages/render/src/index.ts"],
-      "@simforge/compiler": ["../../../packages/compiler/src/index.ts"],
-      "@simforge/scenario": ["../../../packages/scenario/src/index.ts"],
-      "@simforge/engine": ["../../../packages/engine/src/index.ts"]
+      "@simforge-oss/compiler": ["../../../packages/compiler/src/index.ts"],
+      "@simforge-oss/render/web": ["../../../packages/render/src/index.ts"],
+      "@simforge-oss/maps": ["../../../packages/maps/src/index.ts"],
+      "@simforge-oss/openscenario": ["../../../packages/openscenario/src/index.ts"],
+      "@simforge-oss/openscenario/*": ["../../../packages/openscenario/src/*"],
+      "@simforge-oss/playback": ["../../../packages/playback/src/index.ts"],
+      "@simforge-oss/render": ["../../../packages/render/src/index.ts"],
+      "@simforge-oss/compiler": ["../../../packages/compiler/src/index.ts"],
+      "@simforge-oss/scenario": ["../../../packages/scenario/src/index.ts"],
+      "@simforge-oss/engine": ["../../../packages/engine/src/index.ts"]
     }
   },
   "include": ["./*.ts"]

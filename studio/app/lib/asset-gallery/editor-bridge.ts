@@ -1,5 +1,5 @@
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
-import { registerExternalCatalogEntry } from "@simforge/asset-catalog";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
+import { registerExternalCatalogEntry } from "@simforge-oss/asset-catalog";
 import {
   collectGalleryCatalogIds,
   galleryCatalogEntry,

@@ -7,4 +7,4 @@ CARLA adapter and SimCloud's remote render workers.
 They cover all supported signal indications, appearance state changes, and
 actor despawn semantics. Consumers must compile these exact bytes and produce
 deterministic plans. Do not maintain a private copy in a product repository;
-consume the files from the published `@simforge/openscenario` package.
+consume the files from the published `@simforge-oss/openscenario` package.

@@ -39,7 +39,7 @@ import {
   type WalkerGait,
   type WalkerProfile,
 } from "@/app/lib/llm/scenario-generation/walker-profile";
-import type { MapTopologyIndex, Vec2 } from "@simforge/studio-shared";
+import type { MapTopologyIndex, Vec2 } from "@simforge-oss/studio-shared";
 import type {
   PlannedActor,
   PlannedCollision,

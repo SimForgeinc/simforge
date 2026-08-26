@@ -14,7 +14,7 @@
  * by the caller when no DB-discovered occluder matches, which is what makes
  * "anywhere" viable.
  */
-import type { MapTopologyIndex, TopologyGate } from "@simforge/studio-shared";
+import type { MapTopologyIndex, TopologyGate } from "@simforge-oss/studio-shared";
 import type { PedCrossingSite } from "./pedestrian-crossing-site-selector";
 import {
   arcPositionOnPolyline,

@@ -3,7 +3,7 @@ import type {
   OpenScenarioPlanActor,
   OpenScenarioPlanSample,
   OpenScenarioSignalChange,
-} from '@simforge/openscenario';
+} from '@simforge-oss/openscenario';
 import {
   ACTOR_KINDS,
   CONTROL_INDICATIONS,
@@ -12,7 +12,7 @@ import {
   type ControlIndication,
   type SceneTrace,
   type SimActor,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import {
   resolvePlaybackCatalogId,
   type PlaybackActor,

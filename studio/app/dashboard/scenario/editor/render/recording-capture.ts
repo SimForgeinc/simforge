@@ -1,7 +1,7 @@
 import { Vector2 } from "three";
-import type { CityViewer } from "@simforge/viewer";
-import type { PlaybackController } from "@simforge/playback";
-import type { ResolvedFrameSchedule } from "@simforge/scenario";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { PlaybackController } from "@simforge-oss/playback";
+import type { ResolvedFrameSchedule } from "@simforge-oss/scenario";
 import { setEditorSceneEnvironmentTime } from "../scene-environment";
 import {
   encodeDeterministicWebm,

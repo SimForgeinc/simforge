@@ -16,7 +16,7 @@ const QUALITY_OPTIONS: Array<{ value: RenderingPreference; label: string }> = [
   { value: "high", label: "High" },
 ];
 
-/** Controls shared authoring quality for the packaged @simforge/viewer. */
+/** Controls shared authoring quality for the packaged @simforge-oss/viewer. */
 export function DigitalTwinLayersPanel() {
   const [quality, setQuality] = useState<RenderingPreference>(
     () => readRenderingPreference() ?? "minimal",

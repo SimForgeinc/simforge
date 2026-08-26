@@ -5,7 +5,7 @@ import {
   type RuntimeBoundLaneGeometry,
   type RuntimeTopologyFamily,
   type SemanticMapGraph,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { readRuntimeTopologyBundleInput } from "@/app/lib/editor-map/runtime-topology-bundle";
 import { getRuntimeBoundMapTopologyIndex } from "./topology-index-service";
 import { readCompatibleSemanticGraphPublication } from "./semantic-graph-publication-store";

@@ -1,6 +1,6 @@
 [project]
-name = "simforge-carla-exec"
-version = "0.1.0rc45"
+name = "simforge-oss-carla-exec"
+version = "0.1.0rc47"
 description = "Optional local CARLA renderer, sensor, and deterministic conformance adapter for SimForge"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,7 +12,7 @@ dependencies = []
 Repository = "https://github.com/SimForgeinc/simforge-oss"
 
 [project.scripts]
-simforge-carla-api = "simforge_carla_exec.local:main"
+simforge-oss-carla-api = "simforge_oss_carla_exec.local:main"
 
 [project.optional-dependencies]
 dev = ["pytest==9.1.1"]
@@ -22,10 +22,10 @@ requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["simforge_carla_exec"]
+packages = ["simforge_oss_carla_exec"]
 
 [tool.hatch.build.targets.sdist]
-include = ["simforge_carla_exec", "tests", "README.md", "Dockerfile", "pyproject.toml"]
+include = ["simforge_oss_carla_exec", "tests", "README.md", "Dockerfile", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

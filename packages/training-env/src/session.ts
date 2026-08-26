@@ -28,7 +28,7 @@ import {
   type SimEvent,
   type SimScenarioInput,
   type TickObserver,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import { CausalChannelCollector, type CausalChannel, type CausalFrame } from './causal.js';
 import {

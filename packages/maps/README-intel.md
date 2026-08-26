@@ -1,4 +1,4 @@
-# `@simforge/maps`
+# `@simforge-oss/maps`
 
 Layer 1 of the SimForge stack: **per-map location intelligence**.
 
@@ -16,8 +16,8 @@ Nothing here imports three.js and nothing reads the network.
 ## Build
 
 ```bash
-pnpm --filter @simforge/maps build:map -- --map yale-st-palo-alto-ca
-pnpm --filter @simforge/maps build:map -- --all [--json]
+pnpm --filter @simforge-oss/maps build:map -- --map yale-st-palo-alto-ca
+pnpm --filter @simforge-oss/maps build:map -- --all [--json]
 ```
 
 Both artifacts carry the same `catalogRevision`, a hash over the *source
@@ -67,7 +67,7 @@ road-snaps.
 ## Query API
 
 ```ts
-import { buildMapIntelFromDir, findLocations, describeLocation } from '@simforge/maps';
+import { buildMapIntelFromDir, findLocations, describeLocation } from '@simforge-oss/maps';
 
 const { catalog, derived } = await buildMapIntelFromDir('dev-assets/yale-st-palo-alto-ca');
 

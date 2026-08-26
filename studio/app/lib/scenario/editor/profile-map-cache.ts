@@ -8,7 +8,7 @@ import {
   selectAssetVariant,
   type CityAssetVariantManifest,
   type CityManifest,
-} from "@simforge/viewer";
+} from "@simforge-oss/viewer";
 import { AUTHORING_QUALITY } from "@/app/dashboard/scenario/editor/authoring-quality";
 import {
   availableStorageBytes,

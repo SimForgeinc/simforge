@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ScenarioMapEntry } from '@simforge/editor';
+import type { ScenarioMapEntry } from '@simforge-oss/editor';
 import { playbackMapEntry } from './maps';
 
 function descriptor(overrides: Partial<ScenarioMapEntry> = {}): ScenarioMapEntry {

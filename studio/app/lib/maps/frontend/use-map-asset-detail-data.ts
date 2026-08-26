@@ -7,7 +7,7 @@ import type {
   MapAssetEnrichmentSnapshot,
   MapOverlayLayerId,
   CandidateLocation,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { MapBundleResponse } from "@/app/lib/scenario-editor/types";
 import type { SelectedGeoJSONFeaturePayload } from "@/app/lib/maps/frontend/feature-inspection-types";
 import { normalizeGeoJSONWithFeatureIds, buildFeatureIdIndex } from "@/app/lib/maps/frontend/geojson-utils";

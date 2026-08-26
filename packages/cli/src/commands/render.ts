@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
-import { parseRenderIntent, type RenderIntentV1 } from '@simforge/scenario';
+import { parseRenderIntent, type RenderIntentV1 } from '@simforge-oss/scenario';
 import {
   RenderArtifactManifestSchema,
   RenderProgressRecordSchema,
@@ -14,7 +14,7 @@ import {
   type BuiltinRenderEngineId,
   type RenderInputFile,
   type RenderProgressRecord,
-} from '@simforge/render';
+} from '@simforge-oss/render';
 
 import { CliError, EXIT } from '../errors.js';
 import { emit } from '../output.js';

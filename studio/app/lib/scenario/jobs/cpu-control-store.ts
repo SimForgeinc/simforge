@@ -7,7 +7,7 @@ import { putS3Object } from "@/app/lib/s3/s3-put-object";
 import {
   resolveCaptureManifest,
   ScenarioTemplateV2Schema,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 import { BROWSER_RECORDING_ADAPTER_VERSION } from "../recording-contracts";
 import {
   cancelCompilerExport,
@@ -231,7 +231,7 @@ async function browserClaimPayload(source: BrowserRenderSource) {
       engineVersion:
         typeof playbackRecord.trace?.header?.engineVersion === "string"
           ? playbackRecord.trace.header.engineVersion
-          : "@simforge/engine/local",
+          : "@simforge-oss/engine/local",
       traceVersion:
         typeof playbackRecord.trace?.header?.version === "number"
           ? playbackRecord.trace.header.version

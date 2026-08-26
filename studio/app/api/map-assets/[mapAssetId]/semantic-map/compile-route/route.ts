@@ -17,7 +17,7 @@ import { z } from "zod";
 import {
   RuntimeTopologyFamilySchema,
   compileAutopilotRoute,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { getCurrentSession } from "@/app/lib/auth/session";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";
 import {

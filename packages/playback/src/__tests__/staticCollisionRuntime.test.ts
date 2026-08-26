@@ -1,8 +1,8 @@
-import type * as SimEngine from '@simforge/engine';
+import type * as SimEngine from '@simforge-oss/engine';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createFixedStepSimulation = vi.hoisted(() => vi.fn());
-vi.mock('@simforge/engine', async (importOriginal) => ({
+vi.mock('@simforge-oss/engine', async (importOriginal) => ({
   ...await importOriginal<typeof SimEngine>(),
   createFixedStepSimulation,
 }));

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { RenderIntentV1 } from '@simforge/scenario';
+import type { RenderIntentV1 } from '@simforge-oss/scenario';
 
 export const ENGINE_CAPABILITIES_V1_SCHEMA = 'uniscenario.render-engine-capabilities/v1' as const;
 

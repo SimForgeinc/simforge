@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * capture-server — visualization rollout host over @simforge/training-env dist.
+ * capture-server — visualization rollout host over @simforge-oss/training-env dist.
  *
  * Mirrors scripts/rl/reactive-env-server.mjs session construction exactly
  * (reactive ambient traffic, BEV shim, decisionHz 5, goal routeEnd) so captured

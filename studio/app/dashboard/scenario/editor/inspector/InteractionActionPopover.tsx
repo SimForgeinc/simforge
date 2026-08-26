@@ -1,9 +1,9 @@
 "use client";
 
 import { Route, Trash2, Workflow } from "lucide-react";
-import type { Interaction, Trigger } from "@simforge/scenario";
+import type { Interaction, Trigger } from "@simforge-oss/scenario";
 
-import type { EditorDocument } from "@simforge/editor";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { InteractionSemanticsControls } from "../timeline/InteractionSemanticsControls";
 import { InteractionTargetControls } from "../timeline/InteractionTargetControls";
 import { TriggerControls } from "../timeline/TriggerControls";

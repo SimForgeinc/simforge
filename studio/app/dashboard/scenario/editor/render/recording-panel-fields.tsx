@@ -1,7 +1,7 @@
 "use client";
 
 import { CloudSun } from "lucide-react";
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
 import type { AuthoredRenderSensor } from "./render-spec-v3";
 
 /**

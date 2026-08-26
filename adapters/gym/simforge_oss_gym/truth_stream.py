@@ -48,8 +48,8 @@ def resolve_server_command(server_command: Sequence[str] | None = None) -> tuple
     if _REPO_SERVER_DIST.exists():
         return ("node", str(_REPO_SERVER_DIST))
     raise RuntimeError(
-        "no simforge-env-server found: build @simforge/training-env "
-        "(pnpm --filter @simforge/training-env build) or pass server_command"
+        "no simforge-env-server found: build @simforge-oss/training-env "
+        "(pnpm --filter @simforge-oss/training-env build) or pass server_command"
     )
 
 

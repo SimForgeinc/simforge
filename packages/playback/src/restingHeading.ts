@@ -1,4 +1,4 @@
-import type { ActorRenderer, ActorView } from '@simforge/viewer';
+import type { ActorRenderer, ActorView } from '@simforge-oss/viewer';
 import type { PlaybackBundle } from './model';
 
 const RESTING_SPEED_MPS = 1e-8;

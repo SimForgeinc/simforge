@@ -7,9 +7,9 @@ does not keep private copies of portable implementations.
 ## Release contract
 
 1. Every public package has the exact lockstep version in
-   `config/simforge-stack.json`; the current stack version is `0.1.0-rc.45`.
-2. The config contains exactly 13 `@simforge/*` packages and a
-   `renameManifest` mapping every old name to its new package or subpath.
+   `config/simforge-oss-stack.json`; the current stack version is `0.1.0-rc.47`.
+2. The config contains exactly 13 `@simforge-oss/*` packages and a
+   historical `renameManifest` recording the previous package consolidation.
 3. A release tag is exactly `v<stackVersion>` and identifies one immutable Git
    tree. Published versions are never overwritten or reused.
 4. Internal dependencies in packed artifacts are pinned to that stack version;
@@ -25,11 +25,11 @@ does not keep private copies of portable implementations.
 
 ## Package set
 
-`@simforge/scenario`, `@simforge/engine`, `@simforge/maps`,
-`@simforge/compiler`, `@simforge/viewer`, `@simforge/editor`,
-`@simforge/playback`, `@simforge/asset-catalog`, `@simforge/render`,
-`@simforge/openscenario`, `@simforge/training-env`, `@simforge/evaluation`, and
-`@simforge/cli`.
+`@simforge-oss/scenario`, `@simforge-oss/engine`, `@simforge-oss/maps`,
+`@simforge-oss/compiler`, `@simforge-oss/viewer`, `@simforge-oss/editor`,
+`@simforge-oss/playback`, `@simforge-oss/asset-catalog`, `@simforge-oss/render`,
+`@simforge-oss/openscenario`, `@simforge-oss/training-env`, `@simforge-oss/evaluation`, and
+`@simforge-oss/cli`.
 
 ## Release procedure
 

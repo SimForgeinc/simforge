@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { assetBounds } from "@/app/lib/maps/frontend/map-assets-map-utils";
 import { registerMapIcons } from "../map-icons";

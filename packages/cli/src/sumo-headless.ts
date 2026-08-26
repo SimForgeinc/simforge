@@ -24,10 +24,10 @@ import {
   type SumoNetworkWorldTransform,
   type SumoRuntimeManifest,
   type SumoRoadOccupancyIndex,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import { CliError } from './errors.js';
-import { DEV_ASSETS } from '@simforge/compiler/node';
+import { DEV_ASSETS } from '@simforge-oss/compiler/node';
 
 interface SumoModule {
   readonly HEAPU8: Uint8Array;

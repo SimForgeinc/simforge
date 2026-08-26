@@ -1,4 +1,4 @@
-import type { AssetDownloadStats, CameraView } from "@simforge/viewer";
+import type { AssetDownloadStats, CameraView } from "@simforge-oss/viewer";
 
 export const MAP_ZOOM_OUT_MS = 1_400;
 export const MAP_ZOOM_IN_MS = 1_800;

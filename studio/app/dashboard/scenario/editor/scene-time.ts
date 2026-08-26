@@ -1,4 +1,4 @@
-import type { Environment, TimeOfDay } from "@simforge/scenario";
+import type { Environment, TimeOfDay } from "@simforge-oss/scenario";
 
 export const SCENE_TIME_EXTENSION_KEY = "org.simforge.sceneTime.v1" as const;
 

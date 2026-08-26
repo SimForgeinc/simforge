@@ -85,7 +85,7 @@ async function waitForServer(url, timeoutMs) {
 async function startStudio(port) {
   const url = `http://127.0.0.1:${port}/`;
   const child = spawn('pnpm', [
-    '--filter', '@simforge/studio', 'dev', '--host', '127.0.0.1', '--port', String(port),
+    '--filter', '@simforge-oss/studio', 'dev', '--host', '127.0.0.1', '--port', String(port),
   ], { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'] });
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr = `${stderr}${chunk}`.slice(-8000); });
@@ -234,7 +234,7 @@ async function main() {
       rendererPath: {
         file: 'scripts/export-render.mjs',
         sha256: await sha256File(path.join(repoRoot, 'scripts/export-render.mjs')),
-        engine: 'chrome-headless three.js via Studio dev server (@simforge/studio)',
+        engine: 'chrome-headless three.js via Studio dev server (@simforge-oss/studio)',
         invocation: {
           url: studio.url,
           flags: mapMode ? ['--headless', '--map', mapId, '--frames', String(framesCount)] : ['--headless', '--no-video'],

@@ -126,7 +126,7 @@ polyline; `'speed-setpoint'` keeps the v1 reduction for regression
 comparability (target speed from the earliest `t > 0` sample, steering
 stays with the authored route logic; step frames carry no `ex`).
 
-Executor pipeline (`@simforge/engine` `sim/trajectory-follower.ts`, wired
+Executor pipeline (`@simforge-oss/engine` `sim/trajectory-follower.ts`, wired
 in `policy-session.ts`):
 
 1. **Anchoring.** A trajectory action whose points differ from the held
@@ -219,7 +219,7 @@ bytes. The server never inspects it and it never affects stepping.
 
 ## Reference runner
 
-`adapters/policy-runner` (`simforge_policy_runner`) is the canonical
+`adapters/policy-runner` (`simforge_oss_policy_runner`) is the canonical
 client: it spawns/attaches to an env-server, runs seeded episodes against
 scripted control and scripted-trajectory policies and a small PyTorch MLP,
 records per-step inference timing and deadline misses, and writes an

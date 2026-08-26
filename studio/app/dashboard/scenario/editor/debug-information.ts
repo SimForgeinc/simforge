@@ -1,14 +1,14 @@
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
 import type {
   ActorRecord,
   EditorState,
   ScenarioMapEntry,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import type {
   ScenarioAuthoringQuality,
   ScenarioDocumentDto,
 } from "@/app/lib/scenario/contracts";
-import type { PlaybackBundle } from "@simforge/playback";
+import type { PlaybackBundle } from "@simforge-oss/playback";
 import type { SimulationIssue } from "./simulation-issues";
 
 export interface EditorDebugInformationInput {

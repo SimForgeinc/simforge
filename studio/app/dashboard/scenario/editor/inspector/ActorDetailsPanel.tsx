@@ -7,7 +7,7 @@ import {
   DRIVER_PROFILE_IDS,
   DRIVER_PROFILES,
   type DriverProfile,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 import { Input } from "@/app/components/ui/input";
 import { CarlaCompatibilityPill } from "@/app/components/CarlaCompatibilityPill";
@@ -16,12 +16,12 @@ import {
   loadCarlaCompatibility,
   type CarlaCompatibilityTable,
 } from "@/app/lib/scenario/carla-compatibility";
-import { getEntry, type CatalogId } from "@simforge/asset-catalog";
+import { getEntry, type CatalogId } from "@simforge-oss/asset-catalog";
 import type {
   ActorRecord,
   EditorController,
   EditorDocument,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import {
   OBJECT_CATALOG_IDS,
   ObjectCatalogIcon,

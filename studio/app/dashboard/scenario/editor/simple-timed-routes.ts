@@ -1,6 +1,6 @@
-import type { Interaction } from "@simforge/scenario";
-import type { EditorDocument } from "@simforge/editor";
-import type { SceneTrace } from "@simforge/engine";
+import type { Interaction } from "@simforge-oss/scenario";
+import type { EditorDocument } from "@simforge-oss/editor";
+import type { SceneTrace } from "@simforge-oss/engine";
 
 export type EditorExperience = "simple" | "advanced";
 

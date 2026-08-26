@@ -21,7 +21,7 @@
  * every conversion rather than assuming it.
  */
 
-import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import type { ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 
 /** One FCD sample. `angle_deg` is SUMO's navigational angle: degrees, 0 = north
  * (+y in the net frame), increasing CLOCKWISE. `x`/`y` are the FRONT-BUMPER

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CARLA-API-only demo against SimForge.
 
-Uses ONLY the ``carla`` API surface (via the simforge-carla-api facade):
+Uses ONLY the ``carla`` API surface (via the simforge-oss-carla-api facade):
 spawn the ego by role name, set autopilot off, attach an RGB camera, tick 200
 synchronous steps, save 10 camera frames, and read waypoints along the route.
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import type { CityViewer } from "@simforge/viewer";
-import type { EditorDocument } from "@simforge/editor";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { EditorDocument } from "@simforge-oss/editor";
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
 import { applyEditorSceneEnvironment } from "./scene-environment";
 import { sceneTimeSignature } from "./scene-time";

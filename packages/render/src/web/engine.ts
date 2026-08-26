@@ -5,8 +5,8 @@ import { gunzip } from 'node:zlib';
 import { promisify } from 'node:util';
 import { chromium, type Page } from 'playwright-core';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration, type RenderArtifactManifest, type RenderEngineAdapter, type RenderExecutionContext } from '../index.js';
-import { fixedStepFrameCount, parseRenderIntent } from '@simforge/scenario';
-import { parsePlaybackPair, type PlaybackBundle } from '@simforge/playback';
+import { fixedStepFrameCount, parseRenderIntent } from '@simforge-oss/scenario';
+import { parsePlaybackPair, type PlaybackBundle } from '@simforge-oss/playback';
 import { BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import type { ArtifactIdentity } from './artifacts.js';
 import { BROWSER_RENDER_REQUEST_V1_SCHEMA, RENDER_INTENT_V1_SCHEMA, parseBrowserRenderIntent, type BrowserRenderIntentV1, type ResolvedBrowserRenderRequest } from './intent.js';
@@ -30,7 +30,7 @@ const gunzipAsync = promisify(gunzip);
 const CAPABILITIES: EngineCapabilityDeclaration = {
   schema: ENGINE_CAPABILITIES_V1_SCHEMA,
   engineId: BROWSER_RENDER_ENGINE_ID,
-  engineVersion: '0.1.0-rc.45',
+  engineVersion: '0.1.0-rc.47',
   backend: 'browser',
   protocolVersion: 1,
   capabilities: [
@@ -235,7 +235,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
           return {
             schema: 'uniscenario.render-artifact-manifest/v1',
             intentSha256: context.intentSha256,
-            engine: { engineId: BROWSER_RENDER_ENGINE_ID, engineVersion: options.engineVersion ?? '0.1.0-rc.45', backend: 'browser' },
+            engine: { engineId: BROWSER_RENDER_ENGINE_ID, engineVersion: options.engineVersion ?? '0.1.0-rc.47', backend: 'browser' },
             startedAt,
             completedAt: new Date().toISOString(),
             artifacts,

@@ -8,8 +8,8 @@ Chrome/three.js export path. It replaces assumption with measurement.
 
 | Tier | Scope | Byte-exact? | Evidence |
 | --- | --- | --- | --- |
-| 1. Symbolic engine + traces | `@simforge/engine` ticks, trace JSON, evidence verify (`same-input-hash`) | **Yes** — fixed-step 20ms, integer/canonical serialization; re-simulation reproduces byte-identical traces on any hardware | `campaigns/occluded-pedestrian/determinism-check.json` (trace sha256 equality across cells); engine test suite |
-| 2. Structured sensor passes (ID / depth / instance semantics) | G-buffer passes from `@simforge/render/web`, LiDAR/radar point records | **Yes on the Bevy path** (measured bit-identical across process runs, below); intended-but-unmeasured for the browser sensor pipeline | spike hash table §4; harness manifests |
+| 1. Symbolic engine + traces | `@simforge-oss/engine` ticks, trace JSON, evidence verify (`same-input-hash`) | **Yes** — fixed-step 20ms, integer/canonical serialization; re-simulation reproduces byte-identical traces on any hardware | `campaigns/occluded-pedestrian/determinism-check.json` (trace sha256 equality across cells); engine test suite |
+| 2. Structured sensor passes (ID / depth / instance semantics) | G-buffer passes from `@simforge-oss/render/web`, LiDAR/radar point records | **Yes on the Bevy path** (measured bit-identical across process runs, below); intended-but-unmeasured for the browser sensor pipeline | spike hash table §4; harness manifests |
 | 3. RGB pixels through Bevy headless | `scripts/renderer-spike/bevy-spike` offscreen wgpu renders | **Yes on one GPU** — RGB, instance-ID and depth f32 all sha256-identical across two independent process runs (RTX 5080). Cross-vendor/cross-driver: NOT guaranteed → golden-hash-per-GPU policy | `scripts/renderer-spike/FINDINGS.md` §4 |
 | 4. RGB pixels through Chrome | `scripts/export-render.mjs` → Studio dev server → headless Chrome → three.js WebGL canvas screenshots | **No.** Measured NOT byte-stable even on one machine, one Chrome build, sequential runs. RGB byte-exactness through Chrome is claimed only when *additionally* pinned to one hardware+driver+browser build AND shown stable by this harness per release | see manifest below |
 
@@ -102,7 +102,7 @@ HDRI sky and lighting-calibration parity remain open spike work
 ## Reproducing
 
 ```sh
-pnpm install && pnpm -r --filter './packages/*' --filter '@simforge/studio' build
+pnpm install && pnpm -r --filter './packages/*' --filter '@simforge-oss/studio' build
 
 # Map-orbit mode (no scenario evidence needed):
 node qualification/render-determinism/determinism-harness.mjs \

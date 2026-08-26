@@ -9,7 +9,7 @@ import {
   MAP_ASSET_DESCRIPTOR_TAGS,
   type CandidateLocation,
   type CandidateLocationKind,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 /** Matches the CandidateExplanation shape from the candidate engine. */
 type CandidateExplanation = {

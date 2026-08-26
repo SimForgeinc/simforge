@@ -5,7 +5,7 @@ import {
   type NpcAggressiveness,
   type ScenarioEditorActorDraft,
   type ScenarioEditorTimelineClip,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import {
   PRESET_SDG_AV,
   sensorsFromPreset,

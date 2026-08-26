@@ -6,9 +6,9 @@ import {
   actionsForActor,
   interactionForAction,
   type EditorDocument,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import { snapToTimeGrid } from "@/app/lib/scenario/timeline";
-import type { Interaction } from "@simforge/scenario";
+import type { Interaction } from "@simforge-oss/scenario";
 import { CanonicalInteractionComposer } from "./CanonicalInteractionComposer";
 
 type Role = EditorDocument["data"]["roles"][number];

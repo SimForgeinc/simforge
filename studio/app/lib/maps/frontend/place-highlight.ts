@@ -4,7 +4,7 @@ import type {
   CandidateLocation,
   MapAsset,
   MapAssetEnrichmentSnapshot,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { candidateLocationBounds } from "./candidate-location-utils";
 import { candidateToFocusTarget,
 lonLatToScene,

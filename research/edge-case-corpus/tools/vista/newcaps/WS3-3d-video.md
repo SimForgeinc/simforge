@@ -111,7 +111,7 @@ session: sibling agents are editing `packages/**` and an HMR full reload mid-seq
 ## Deliverables
 - **`research/edge-case-corpus/tools/vista/render3d.py`** - resumable batch driver:
   ```
-  pnpm --filter @simforge/studio dev --host 127.0.0.1 --port 5199   # ONCE
+  pnpm --filter @simforge-oss/studio dev --host 127.0.0.1 --port 5199   # ONCE
   cd research/edge-case-corpus/tools/vista
   python3 render3d.py --records /tmp/vista-dataset-all/train.jsonl \
                       --records /tmp/vista-dataset-all/test.jsonl \

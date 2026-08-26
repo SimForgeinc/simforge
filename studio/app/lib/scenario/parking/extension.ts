@@ -14,7 +14,7 @@ import {
   type ParkedCar,
 } from "@/app/lib/studio-shared/parked-cars";
 
-// The key, the baked-car type, and the reader live in `@simforge/studio-shared` because
+// The key, the baked-car type, and the reader live in `@simforge-oss/studio-shared` because
 // the compiler service needs the identical implementation — see that module.
 export { PARKED_CARS_EXTENSION_KEY };
 export type { ParkedCar };

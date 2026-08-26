@@ -3,10 +3,10 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gunzipSync } from 'node:zlib';
 
-import { buildLaneGraph, parseSimScenarioInput, type LaneGraph, type TopologyIndex } from '@simforge/engine';
-import { AsamExportError, exportOpenScenarioXml14 } from '@simforge/openscenario/export';
-import { validateOpenScenarioXml14 } from '@simforge/openscenario/node';
-import { DEV_ASSETS } from '@simforge/compiler/node';
+import { buildLaneGraph, parseSimScenarioInput, type LaneGraph, type TopologyIndex } from '@simforge-oss/engine';
+import { AsamExportError, exportOpenScenarioXml14 } from '@simforge-oss/openscenario/export';
+import { validateOpenScenarioXml14 } from '@simforge-oss/openscenario/node';
+import { DEV_ASSETS } from '@simforge-oss/compiler/node';
 
 export type AuditVerdict = 'xsd-validated' | 'unsupported-fail-closed' | 'asset-blocked' | 'unexpected-failure';
 

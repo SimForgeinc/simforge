@@ -325,9 +325,9 @@ function concat(...parts: readonly Uint8Array[]): Uint8Array {
   }
   return result;
 }
-import type { ResolvedFrameSchedule } from "@simforge/scenario";
+import type { ResolvedFrameSchedule } from "@simforge-oss/scenario";
 import {
   fixedStepCaptureFrames,
   runFixedStepCapture,
   type FixedStepCaptureFrame,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";

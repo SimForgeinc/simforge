@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import type { SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 
 import { BevRasterBuilder, ObjectListBuilder, StateVectorBuilder, STATE_VECTOR_SIZE } from '../observations.js';
 import { DEFAULT_BEV_CONFIG, DEFAULT_OBSERVATION_CONFIG } from '../types.js';

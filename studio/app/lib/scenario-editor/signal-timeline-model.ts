@@ -46,7 +46,7 @@ import {
   type JunctionSignalPlan,
   type SignalPhaseInterval,
   type SignalPhaseProgram,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import {
   nextSignalState,
   programBands,

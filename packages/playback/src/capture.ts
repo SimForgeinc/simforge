@@ -9,7 +9,7 @@
 import {
   fixedStepFrameCount,
   type ResolvedFrameSchedule,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 
 export interface CaptureClip {
   readonly startSeconds: number;

@@ -2,7 +2,7 @@
 
 import { Copy, Focus, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import type { ActorRecord, EditorController } from "@simforge/editor";
+import type { ActorRecord, EditorController } from "@simforge-oss/editor";
 import { Heading, NumberField } from "../authoring/fields";
 import { Readout } from "../regions/Readout";
 

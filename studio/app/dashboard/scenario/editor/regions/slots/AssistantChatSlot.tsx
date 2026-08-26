@@ -3,7 +3,7 @@
 import type {
   EditorController,
   EditorDocument,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 
 /**
  * HOST SLOT — assistant / copilot. Manifest section 11.

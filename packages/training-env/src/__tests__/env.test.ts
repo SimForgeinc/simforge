@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import type { SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 
 import { LANE_LEFT, LANE_RIGHT, scenario, syntheticGraph, vehicle } from '../fixture.js';
 import { EnvSession } from '../session.js';

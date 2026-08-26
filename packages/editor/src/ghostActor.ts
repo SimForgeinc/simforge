@@ -1,7 +1,7 @@
 import { BufferAttribute, BufferGeometry, DoubleSide, Group, LineBasicMaterial, LineSegments, type Material, Mesh, MeshBasicMaterial } from "three";
-import { getEntry, type CatalogId } from "@simforge/asset-catalog";
-import { propTemplate } from "@simforge/viewer";
-import { externalModelScene, onExternalModelChange } from "@simforge/viewer";
+import { getEntry, type CatalogId } from "@simforge-oss/asset-catalog";
+import { propTemplate } from "@simforge-oss/viewer";
+import { externalModelScene, onExternalModelChange } from "@simforge-oss/viewer";
 
 /**
  * The translucent preview that follows the cursor during placement.

@@ -1,4 +1,4 @@
-import type { ActorRenderer, ActorView } from "@simforge/viewer";
+import type { ActorRenderer, ActorView } from "@simforge-oss/viewer";
 
 export const SUMO_VISUAL_INTERPOLATION_SECONDS = 0.1;
 

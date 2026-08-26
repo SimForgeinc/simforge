@@ -7,7 +7,7 @@ import {
   type SensorMountPreset,
   type SensorRigActor,
   type SensorRigPreset,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 /**
  * Presentation vocabulary for the sensor editor.

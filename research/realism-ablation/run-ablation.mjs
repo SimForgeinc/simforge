@@ -25,7 +25,7 @@
  *     --out artifacts/realism-ablation/<run>.json [--record]
  *
  * If packages/bridge-fidelity has landed, --scorecard-cmd may be omitted: the
- * runner then tries `pnpm --filter @simforge/bridge-fidelity exec node dist/score-cli.js %FRAMES%`.
+ * runner then tries `pnpm --filter @simforge-oss/bridge-fidelity exec node dist/score-cli.js %FRAMES%`.
  */
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';

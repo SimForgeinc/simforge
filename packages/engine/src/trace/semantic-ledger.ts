@@ -5,7 +5,7 @@ import {
   type SemanticEvent,
   type SemanticLedger,
   type SemanticTrigger,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 
 import { contentHash } from '../core/hash.js';
 import type { Interaction, SimScenarioInput } from '../schema/input.js';

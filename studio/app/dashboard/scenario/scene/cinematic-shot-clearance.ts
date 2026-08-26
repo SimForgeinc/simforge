@@ -1,5 +1,5 @@
 import { Raycaster, Vector3 } from "three";
-import type { CameraView, CityViewer } from "@simforge/viewer";
+import type { CameraView, CityViewer } from "@simforge-oss/viewer";
 
 /**
  * Azimuth search for an unobstructed shot.

@@ -1,4 +1,4 @@
-# @simforge/alpamayo-runtime
+# @simforge-oss/alpamayo-runtime
 
 Locally runnable, quantized **Alpamayo 1.5 (10B reasoning VLA)** inference
 service for closed-loop evaluation on a single RTX 5080 (16 GB). Exposes

@@ -15,7 +15,7 @@
     "minimumDomainsPerMap": 0
   },
   "provenance": {
-    "generator": "@simforge/cli catalog create",
+    "generator": "@simforge-oss/cli catalog create",
     "generatorVersion": "2.0.0",
     "namespace": "uniscenarios-five-map-v2",
     "taxonomyDigest": "e7eae946e314074710c092632ca02141e95d41ff684bece2e849799443011e1c"

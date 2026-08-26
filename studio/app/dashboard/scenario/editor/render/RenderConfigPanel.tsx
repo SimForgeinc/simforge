@@ -15,7 +15,7 @@ import {
   type ActorSensor,
   type RenderModality,
   type ScenarioTemplateV2,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 import { cn } from "@/app/lib/utils";
 import {
   RenderOptionCard,

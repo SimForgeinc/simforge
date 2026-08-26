@@ -4,10 +4,10 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gunzipSync } from "node:zlib";
 
-import { parsePlaybackPair } from "@simforge/playback";
-import type { RenderInputFile } from "@simforge/render";
-import { hashFile } from "@simforge/render";
-import { contentHash, parseSimScenarioInput } from "@simforge/engine";
+import { parsePlaybackPair } from "@simforge-oss/playback";
+import type { RenderInputFile } from "@simforge-oss/render";
+import { hashFile } from "@simforge-oss/render";
+import { contentHash, parseSimScenarioInput } from "@simforge-oss/engine";
 
 import { executeRender } from "./executor.js";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight, Check, Copy } from "lucide-react";
-import { getMapAssetDescriptorTag } from "@simforge/studio-shared";
+import { getMapAssetDescriptorTag } from "@simforge-oss/studio-shared";
 import { cn } from "@/app/lib/utils";
 
 /** Props for the ScenarioTagsSection component. */

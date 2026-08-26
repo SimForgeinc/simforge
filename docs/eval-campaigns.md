@@ -22,7 +22,7 @@ simforge-eval-campaign rerun  --config campaign.json --episode <id>
 simforge-eval-campaign report --config campaign.json   # report.json + report.md
 ```
 
-During development: `pnpm --filter @simforge/evaluation exec tsx src/campaign-cli.ts …`.
+During development: `pnpm --filter @simforge-oss/evaluation exec tsx src/campaign-cli.ts …`.
 
 ## Campaign config
 

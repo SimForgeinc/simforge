@@ -6,7 +6,7 @@
  * everything via `export * from` so callers that previously imported
  * directly from the service continue to work unchanged.
  */
-import { COLLISION_FAMILY_IDS, COLLISION_TEMPLATES } from "@simforge/studio-shared";
+import { COLLISION_FAMILY_IDS, COLLISION_TEMPLATES } from "@simforge-oss/studio-shared";
 import { SEMANTIC_ID_CATALOG } from "./map-search-llm-schemas";
 
 /**

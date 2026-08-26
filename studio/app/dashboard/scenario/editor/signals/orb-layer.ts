@@ -6,7 +6,7 @@ import {
   signalIdForHit,
   trafficLightOrbIdForHit,
   type TrafficLightOrbHighlightSelection,
-} from "@simforge/maps/opendrive";
+} from "@simforge-oss/maps/opendrive";
 import {
   selectSignalHead,
   type ControlIndication,

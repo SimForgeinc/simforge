@@ -1,4 +1,4 @@
-import { parseTemplate, Sha256, type ScenarioTemplateV2 } from '@simforge/scenario';
+import { parseTemplate, Sha256, type ScenarioTemplateV2 } from '@simforge-oss/scenario';
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 export const MAX_XOSC_BYTES = 1_048_576;

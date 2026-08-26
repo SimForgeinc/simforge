@@ -1,4 +1,4 @@
-import type { EditorState } from "@simforge/editor";
+import type { EditorState } from "@simforge-oss/editor";
 
 import type { ViewportTool } from "./regions/actor-catalog";
 import type { EditorExperience } from "./simple-timed-routes";

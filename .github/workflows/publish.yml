@@ -39,7 +39,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('config/simforge-stack.json'));if(process.env.GITHUB_REF_NAME!=='v'+c.stackVersion)throw new Error('tag must equal v'+c.stackVersion)"
+          node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('config/simforge-oss-stack.json'));if(process.env.GITHUB_REF_NAME!=='v'+c.stackVersion)throw new Error('tag must equal v'+c.stackVersion)"
           pnpm --filter "./packages/*" publish --recursive --access public --provenance --no-git-checks
 
   publish-carla-exec:
@@ -58,11 +58,11 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, pathlib, re
-          config = json.loads(pathlib.Path("config/simforge-stack.json").read_text())
+          config = json.loads(pathlib.Path("config/simforge-oss-stack.json").read_text())
           expected = "v" + config["stackVersion"]
           assert os.environ["GITHUB_REF_NAME"] == expected, f"tag must equal {expected}"
           entry = next(item for item in config["pythonPackages"] if item["path"] == "adapters/carla-exec")
-          assert entry["name"] == "simforge-carla-exec"
+          assert entry["name"] == "simforge-oss-carla-exec"
           project = pathlib.Path(entry["path"], "pyproject.toml").read_text()
           version = re.search(r'^version = "([^"]+)"', project, re.MULTILINE).group(1)
           assert version == entry["version"] == config["stackVersion"].replace("-rc.", "rc")
@@ -72,9 +72,9 @@ jobs:
           python -m pip install "build==1.3.0" "./adapters/carla-exec[dev]"
           python -m pytest adapters/carla-exec/tests -q
           python -m build adapters/carla-exec
-          python -m venv /tmp/simforge-carla-exec-smoke
-          /tmp/simforge-carla-exec-smoke/bin/python -m pip install adapters/carla-exec/dist/*.whl
-          /tmp/simforge-carla-exec-smoke/bin/python -c "import simforge_carla_exec"
+          python -m venv /tmp/simforge-oss-carla-exec-smoke
+          /tmp/simforge-oss-carla-exec-smoke/bin/python -m pip install adapters/carla-exec/dist/*.whl
+          /tmp/simforge-oss-carla-exec-smoke/bin/python -c "import simforge_oss_carla_exec"
       - name: Publish immutable PyPI artifacts with provenance
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

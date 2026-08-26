@@ -7,8 +7,8 @@ import { AlertTriangle, ArrowLeft, Box, ChevronDown, Film, FolderUp, Image as Im
 import {
   MAP_ASSET_DESCRIPTOR_TAG_IDS,
   getMapAssetDescriptorTag,
-} from "@simforge/studio-shared";
-import type { MapAsset, MapAssetArtifactType } from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
+import type { MapAsset, MapAssetArtifactType } from "@simforge-oss/studio-shared";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { cn } from "@/app/lib/utils";

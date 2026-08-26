@@ -18,7 +18,7 @@ import {
   type SemanticExecutionIndex,
   type SemanticExecutionRuntimeControls,
   type RoadwayConsistencyReport,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { getRuntimeMapArtifactBucket } from "@/app/lib/editor-map/runtime-map-artifacts";
 import { getS3ObjectUtf8, getS3ObjectUtf8Bounded, headS3ObjectInfo } from "@/app/lib/s3/s3-get-object";
 import { putS3ObjectUtf8, putS3ObjectUtf8Gzipped } from "@/app/lib/s3/s3-put-object";

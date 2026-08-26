@@ -1,4 +1,4 @@
-import type { MapCoordinateRef, MapSource, XodrJunctionMatchInfo } from "@simforge/studio-shared";
+import type { MapCoordinateRef, MapSource, XodrJunctionMatchInfo } from "@simforge-oss/studio-shared";
 import {
   parseDatum,
   parseHorizontalUnits,
@@ -634,7 +634,7 @@ export function extractXodrRoadStats(xodr: string): XodrRoadStats {
 // ---------------------------------------------------------------------------
 
 /** Alias for the shared type — same shape used by the candidate location extractor. */
-export type { XodrJunctionMatchInfo as XodrJunctionInfo } from "@simforge/studio-shared";
+export type { XodrJunctionMatchInfo as XodrJunctionInfo } from "@simforge-oss/studio-shared";
 
 /**
  * Extract per-junction data from an XODR file.

@@ -132,7 +132,7 @@ class Client:
         return f"simforge-env-server proto {ENV_SERVER_PROTOCOL_VERSION}"
 
     def get_client_version(self) -> str:
-        return "simforge-carla-api-compat 0.1.0"
+        return "simforge-oss-carla-api-compat 0.1.0"
 
     def get_world(self):
         from .world import World
@@ -142,7 +142,7 @@ class Client:
         return self._world
 
     def get_available_maps(self) -> list[str]:
-        """Dev-assets map inventory (see simforge_carla_api/maps.py)."""
+        """Dev-assets map inventory (see simforge_oss_carla_api/maps.py)."""
         from .maps import available_maps
 
         return [m.map_id for m in available_maps(self._dev_assets_root)]
@@ -234,7 +234,7 @@ class Client:
         mode = simforge_env("FRAMES", "browser").lower()
         if mode == "off" or scenario.trace_path is None:
             return NullFrameSource()
-        cache = simforge_env("FRAME_CACHE") or "/tmp/simforge-carla-api-frames"
+        cache = simforge_env("FRAME_CACHE") or "/tmp/simforge-oss-carla-api-frames"
         workdir = Path(cache) / Path(scenario.instance_path).stem
         return BrowserClipFrameSource(
             scenario.instance_path, scenario.trace_path, str(workdir),

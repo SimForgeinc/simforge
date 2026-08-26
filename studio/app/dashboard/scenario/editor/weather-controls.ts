@@ -1,4 +1,4 @@
-import type { Environment, Weather } from "@simforge/scenario";
+import type { Environment, Weather } from "@simforge-oss/scenario";
 
 export const WEATHER_APPEARANCE_EXTENSION_KEY =
   "org.simforge.weatherAppearance.v1" as const;

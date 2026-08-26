@@ -11,8 +11,8 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { CityView } from "@simforge/viewer/react";
-import type { CityViewer } from "@simforge/viewer";
+import { CityView } from "@simforge-oss/viewer/react";
+import type { CityViewer } from "@simforge-oss/viewer";
 import {
   SCENARIO_AUTHORING_QUALITY_CHOICES,
   SCENARIO_AUTHORING_QUALITY_IDS,

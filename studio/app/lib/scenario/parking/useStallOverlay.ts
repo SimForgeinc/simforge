@@ -8,8 +8,8 @@ import {
   LineBasicMaterial,
   LineSegments,
 } from "three";
-import type { CityViewer } from "@simforge/viewer";
-import type { ParkedCar } from "@simforge/studio-shared/parked-cars";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { ParkedCar } from "@simforge-oss/studio-shared/parked-cars";
 
 import type { ParkingStall } from "./stalls";
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { Environment } from "@simforge/scenario";
+import type { Environment } from "@simforge-oss/scenario";
 
 import {
   FRESH_SCENARIO_MINUTES,

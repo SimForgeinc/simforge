@@ -1,4 +1,4 @@
-import { contentHash, type ResolvedAmbientTrafficProfile } from '@simforge/engine';
+import { contentHash, type ResolvedAmbientTrafficProfile } from '@simforge-oss/engine';
 
 /** Request identity; the worker replaces mapId with the loaded graph digest. */
 export function ambientCandidatePoolRequestKey(mapId: string, profile: ResolvedAmbientTrafficProfile): string {

@@ -14,7 +14,7 @@
  * halts the contacted actors before the tail runs, so the extension only changes
  * what near-misses do. Mutates the actors in place.
  */
-import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import type { ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import { tailSpeedProfileMps } from "@/app/lib/llm/scenario-generation/validation/planned-to-draft";
 

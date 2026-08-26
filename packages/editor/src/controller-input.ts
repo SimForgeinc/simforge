@@ -38,7 +38,7 @@
 
 import { Vector2, Vector3 } from 'three';
 import type { EditorViewer } from './viewer-contract';
-import { type CatalogId } from '@simforge/asset-catalog';
+import { type CatalogId } from '@simforge-oss/asset-catalog';
 import { handleEditorHistoryKey, isTextEditingTarget } from './keyboard';
 import {
   actorKindFor,

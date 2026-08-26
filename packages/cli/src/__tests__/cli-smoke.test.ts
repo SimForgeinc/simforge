@@ -14,8 +14,8 @@ import path from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
-import { readTraceFile, writeTraceFile } from '@simforge/compiler/node';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge-oss/compiler/node';
+import { readTraceFile, writeTraceFile } from '@simforge-oss/compiler/node';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
 const LTAP = path.join(REPO_ROOT, 'examples', 'ltap-opposing.template.json');

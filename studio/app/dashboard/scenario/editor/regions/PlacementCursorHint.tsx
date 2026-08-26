@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type RefObject } from "react";
 import { MousePointer2, TriangleAlert } from "lucide-react";
-import type { EditorState } from "@simforge/editor";
+import type { EditorState } from "@simforge-oss/editor";
 
 interface CursorPoint {
   x: number;

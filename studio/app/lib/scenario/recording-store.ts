@@ -7,7 +7,7 @@ import {
   ScenarioTemplateV2Schema,
   type RenderSpecV2,
   type ScenarioTemplateV2,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 import {
   checksumBoundPutRequiredHeaders,
   getPresignedGetUrl,

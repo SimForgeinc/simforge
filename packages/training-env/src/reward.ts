@@ -8,7 +8,7 @@
  * touching semantics.
  */
 
-import type { SessionPairMinima, SessionActorSnapshot, SimEvent } from '@simforge/engine';
+import type { SessionPairMinima, SessionActorSnapshot, SimEvent } from '@simforge-oss/engine';
 
 import type { RewardConfig } from './types.js';
 

@@ -16,7 +16,7 @@ import {
   type CatalogEntry,
   type CatalogId,
   isCatalogId,
-} from "@simforge/asset-catalog";
+} from "@simforge-oss/asset-catalog";
 import { CarlaReadyMark } from "@/app/components/CarlaReadyMark";
 import {
   carlaCompatibilityFor,
@@ -29,8 +29,8 @@ import {
   type CarlaObjectDto,
 } from "@/app/lib/scenario/carla-objects";
 
-import type { SumoTrafficStatus } from "@simforge/playback/traffic";
-import type { EditorController, EditorDocument, EditorState } from "@simforge/editor";
+import type { SumoTrafficStatus } from "@simforge-oss/playback/traffic";
+import type { EditorController, EditorDocument, EditorState } from "@simforge-oss/editor";
 import {
   ACTOR_LIBRARY_CATALOG,
   catalogEntryMatchesTool,

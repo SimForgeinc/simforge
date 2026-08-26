@@ -5,7 +5,7 @@ import type {
   CandidateLocation,
   MapAssetEnrichmentSnapshot,
   MapStats,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { Route, Gauge, PersonStanding, Bike, SquareParking, GitFork, ArrowUpDown, ChevronRight, ChevronsUpDown, Database } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 

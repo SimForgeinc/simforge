@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { mkdtempSync } from 'node:fs';
 
-import { PACKAGE_NAMES, verifyRepositoryNaming } from '../verify-repository-naming.mjs';
+import { PACKAGE_NAMES, STACK_PACKAGE_NAMES, verifyRepositoryNaming } from '../verify-repository-naming.mjs';
 
 const RETIRED_PACKAGE_NAMES = [
   'ambient-traffic', 'anchor-matcher', 'browser-renderer', 'camera-rig',
@@ -15,6 +15,8 @@ const RETIRED_PACKAGE_NAMES = [
   'scenario-materializer', 'scenario-model', 'scene-state', 'sim-engine',
   'trace-comparator', 'xodr-tools',
 ];
+const LEGACY_ENGINE_PACKAGE = ['@simforge', 'engine'].join('/');
+
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'simforge-naming-'));
@@ -22,21 +24,21 @@ function fixture() {
   for (const name of PACKAGE_NAMES) {
     mkdirSync(join(root, 'packages', name), { recursive: true });
     writeFileSync(join(root, 'packages', name, 'package.json'), JSON.stringify({
-      name: `@simforge/${name}`,
+      name: `@simforge-oss/${name}`,
       version: '0.1.0-rc.45',
       ...(name === 'cli' ? { bin: { simforge: './bin/simforge.js', sf: './bin/sf.js' } } : {}),
     }));
   }
   mkdirSync(join(root, 'studio'), { recursive: true });
-  writeFileSync(join(root, 'studio', 'package.json'), JSON.stringify({ name: '@simforge/studio' }));
+  writeFileSync(join(root, 'studio', 'package.json'), JSON.stringify({ name: '@simforge-oss/studio' }));
   mkdirSync(join(root, 'renderer'), { recursive: true });
   writeFileSync(join(root, 'renderer', 'Cargo.toml'), '[workspace]\n');
   mkdirSync(join(root, 'config'), { recursive: true });
-  writeFileSync(join(root, 'config', 'simforge-stack.json'), JSON.stringify({
+  writeFileSync(join(root, 'config', 'simforge-oss-stack.json'), JSON.stringify({
     stackVersion: '0.1.0-rc.45',
-    packages: PACKAGE_NAMES.map((name) => ({ name: `@simforge/${name}`, version: '0.1.0-rc.45' })),
+    packages: STACK_PACKAGE_NAMES.map((name) => ({ name: `@simforge-oss/${name}`, version: '0.1.0-rc.45' })),
     renameManifest: Object.fromEntries(
-      RETIRED_PACKAGE_NAMES.map((name) => [`@uniscenarios/${name}`, '@simforge/engine']),
+      RETIRED_PACKAGE_NAMES.map((name) => [`@uniscenarios/${name}`, LEGACY_ENGINE_PACKAGE]),
     ),
   }));
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'simforge', private: true }));
@@ -45,7 +47,7 @@ function fixture() {
 
 test('accepts the consolidated SimForge layout', () => {
   const item = fixture();
-  try { assert.equal(verifyRepositoryNaming(item.root).packageCount, 13); }
+  try { assert.equal(verifyRepositoryNaming(item.root).packageCount, 15); }
   finally { item.cleanup(); }
 });
 
@@ -54,6 +56,14 @@ test('rejects retired package imports', () => {
   try {
     writeFileSync(join(item.root, 'packages', 'cli', 'legacy.ts'), "import x from '@" + "uniscenarios/cli';\n");
     assert.throws(() => verifyRepositoryNaming(item.root), /imports the retired @uniscenarios scope/);
+  } finally { item.cleanup(); }
+});
+
+test('rejects the previous SimForge package scope', () => {
+  const item = fixture();
+  try {
+    writeFileSync(join(item.root, 'packages', 'cli', 'legacy-scope.ts'), "import x from '@simforge" + "/cli';\n");
+    assert.throws(() => verifyRepositoryNaming(item.root), /imports the retired @simforge package scope/);
   } finally { item.cleanup(); }
 });
 

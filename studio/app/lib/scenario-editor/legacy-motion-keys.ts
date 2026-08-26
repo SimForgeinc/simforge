@@ -1,4 +1,4 @@
-import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import type { ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 
 /**
  * The motion fields the one-motion model deletes, and whether a draft still

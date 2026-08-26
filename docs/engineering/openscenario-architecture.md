@@ -1,25 +1,25 @@
 # OpenSCENARIO architecture
 
 This document is the architecture authority for OpenSCENARIO in SimForge and
-SimForge Cloud. The implementation authority is `@simforge/openscenario`.
+SimForge Cloud. The implementation authority is `@simforge-oss/openscenario`.
 
 ## Decision
 
 Standards semantics flow in one direction:
 
 ```text
-@simforge/scenario + @simforge/engine + @simforge/maps
+@simforge-oss/scenario + @simforge-oss/engine + @simforge-oss/maps
                          |
                          v
-                @simforge/openscenario
+                @simforge-oss/openscenario
              /esmini          /trace-diff
                          |
        +-----------------+------------------+
        v                 v                  v
-@simforge/cli      SimForge Studio    adapters/carla-exec
+@simforge-oss/cli      SimForge Studio    adapters/carla-exec
 ```
 
-`@simforge/openscenario` never depends on the CLI, Studio, Cloud, esmini, or
+`@simforge-oss/openscenario` never depends on the CLI, Studio, Cloud, esmini, or
 CARLA presentation/transport code. Its browser-safe root does not import
 Node-only execution modules.
 
@@ -27,17 +27,17 @@ Node-only execution modules.
 
 | Entry point | Runtime | Owns |
 |---|---|---|
-| `@simforge/openscenario` | Browser-safe | Import analysis/translation, export compilers, capability reports, snapshots |
-| `@simforge/openscenario/import` | Browser-safe | Bounded XML parsing, security rejection, map resolution, translation |
-| `@simforge/openscenario/export` | Browser-safe | Format selection and portable compiler profiles |
-| `@simforge/openscenario/types` | Type-only | Options, results, issues, warnings, fidelity vocabulary |
-| `@simforge/openscenario/xml-1.4` | Browser-worker-safe | Native XML 1.4 compiler without Node dependencies |
-| `@simforge/openscenario/node` | Node-only | Digest-pinned XSD validation and complete runnable bundles |
-| `@simforge/openscenario/esmini` | Node-only | Sandboxed esmini execution and receipts; never rewrites a bundle |
-| `@simforge/openscenario/trace-diff` | Portable/Node | Deterministic canonical-vs-external trace comparison |
+| `@simforge-oss/openscenario` | Browser-safe | Import analysis/translation, export compilers, capability reports, snapshots |
+| `@simforge-oss/openscenario/import` | Browser-safe | Bounded XML parsing, security rejection, map resolution, translation |
+| `@simforge-oss/openscenario/export` | Browser-safe | Format selection and portable compiler profiles |
+| `@simforge-oss/openscenario/types` | Type-only | Options, results, issues, warnings, fidelity vocabulary |
+| `@simforge-oss/openscenario/xml-1.4` | Browser-worker-safe | Native XML 1.4 compiler without Node dependencies |
+| `@simforge-oss/openscenario/node` | Node-only | Digest-pinned XSD validation and complete runnable bundles |
+| `@simforge-oss/openscenario/esmini` | Node-only | Sandboxed esmini execution and receipts; never rewrites a bundle |
+| `@simforge-oss/openscenario/trace-diff` | Portable/Node | Deterministic canonical-vs-external trace comparison |
 | `adapters/carla-exec` | Python/runtime | Execute SimForge scenarios in real CARLA; never author standards semantics |
 
-`@simforge/cli` owns argument parsing, files, exit codes, and JSON output.
+`@simforge-oss/cli` owns argument parsing, files, exit codes, and JSON output.
 Studio owns interaction and presentation. Cloud owns identity, authorization,
 durable jobs, storage, observability, and billing.
 
@@ -45,10 +45,10 @@ durable jobs, storage, observability, and billing.
 
 ### Native export
 
-1. Authoring produces a validated `@simforge/scenario` document.
-2. `@simforge/compiler` creates a concrete world bound to map digests.
-3. `@simforge/engine` produces the canonical trace.
-4. `@simforge/openscenario` creates an immutable snapshot bound to document,
+1. Authoring produces a validated `@simforge-oss/scenario` document.
+2. `@simforge-oss/compiler` creates a concrete world bound to map digests.
+3. `@simforge-oss/engine` produces the canonical trace.
+4. `@simforge-oss/openscenario` creates an immutable snapshot bound to document,
    concrete input, trace, map, and exporter digests.
 5. The selected compiler emits XML/DSL plus a complete capability report.
 6. Node validation checks XML against the digest-pinned ASAM schema when
@@ -68,7 +68,7 @@ durable jobs, storage, observability, and billing.
 1. An adapter applies transport limits before parsing.
 2. The browser-safe importer rejects unsupported DTD/entity behavior and
    produces structured findings.
-3. Map references resolve through `@simforge/maps` using explicit map identity
+3. Map references resolve through `@simforge-oss/maps` using explicit map identity
    and digest.
 4. Translation produces a draft scenario plus a capability report; unsupported
    constructs remain visible and never silently disappear.

@@ -127,9 +127,9 @@ batch can never serve a differently-settled cell as fresh.
 ## REGRESSION STATUS
 * `npx tsc --noEmit -p packages/{sim-engine,scenario-materializer,cli}/tsconfig.json` — all three clean.
   (Per package; a bare `npx tsc --noEmit` prints help and exits 1 and is NOT a pass.)
-* `@simforge/engine`: **313 passed, 8 skipped, 0 failed** — exactly the WS-2 baseline.
-* `@simforge/compiler`: **75 passed, 0 failed.**
-* `@simforge/cli`: **71 failed, 298 passed, 1 skipped** against a baseline of 70 failures.
+* `@simforge-oss/engine`: **313 passed, 8 skipped, 0 failed** — exactly the WS-2 baseline.
+* `@simforge-oss/compiler`: **75 passed, 0 failed.**
+* `@simforge-oss/cli`: **71 failed, 298 passed, 1 skipped** against a baseline of 70 failures.
   The one extra name is
   `campaign 688dd78d ... 'reversing-pedestrian' keeps all preserved draws truthful and collision-free`
   (`expected undefined to be defined` — the exact site no longer matches). **It is not mine**: I

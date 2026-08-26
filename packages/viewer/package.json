@@ -1,6 +1,6 @@
 {
-  "name": "@simforge/viewer",
-  "version": "0.1.0-rc.46",
+  "name": "@simforge-oss/viewer",
+  "version": "0.1.0-rc.47",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
@@ -40,9 +40,9 @@
     "dist"
   ],
   "dependencies": {
-    "@simforge/asset-catalog": "workspace:*",
-    "@simforge/engine": "workspace:*",
-    "@simforge/scenario": "workspace:*",
+    "@simforge-oss/asset-catalog": "workspace:*",
+    "@simforge-oss/engine": "workspace:*",
+    "@simforge-oss/scenario": "workspace:*",
     "three": "^0.185.0"
   },
   "peerDependencies": {

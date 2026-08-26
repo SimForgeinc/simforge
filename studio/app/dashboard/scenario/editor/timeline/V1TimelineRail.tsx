@@ -27,7 +27,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { newTemplateId, type Interaction, type ReasoningTraceSegment } from "@simforge/scenario";
+import { newTemplateId, type Interaction, type ReasoningTraceSegment } from "@simforge-oss/scenario";
 
 import {
   actionsForActor,
@@ -35,12 +35,12 @@ import {
   type ActionDefinition,
   type EditorDocument,
   type EditorState,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import {
   getEntry,
   isCatalogId,
   type CatalogId,
-} from "@simforge/asset-catalog";
+} from "@simforge-oss/asset-catalog";
 import {
   carlaCompatibilityFor,
   loadCarlaCompatibility,

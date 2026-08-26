@@ -1,4 +1,4 @@
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import { localPointToLngLat, runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
 import {
   carlaYawForwardVector,

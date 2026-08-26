@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Radio, SlidersHorizontal } from "lucide-react";
-import { defaultDashCamera } from "@simforge/scenario";
+import { defaultDashCamera } from "@simforge-oss/scenario";
 import { Switch } from "@/app/components/ui/switch";
-import type { ActorRecord, EditorDocument } from "@simforge/editor";
+import type { ActorRecord, EditorDocument } from "@simforge-oss/editor";
 import { SensorSetupModal } from "./SensorSetupModal";
 import {
   appliedRigPreset,

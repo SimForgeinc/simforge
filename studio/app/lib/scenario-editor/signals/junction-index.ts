@@ -28,7 +28,7 @@ import {
   type JunctionMovementBinding,
   type TopologyIndexLike,
   type XodrJunctionSignalGroup,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 export const SIGNAL_JUNCTION_INDEX_SCHEMA_VERSION =
   "simforge.signal-junction-index.v1";

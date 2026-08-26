@@ -11,7 +11,7 @@ import {
   type LaneGraph,
   type SimScenarioInput,
   type SimTrace,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import {
   analyzeEsminiCompatibility,

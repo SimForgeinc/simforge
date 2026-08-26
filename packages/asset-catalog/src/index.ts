@@ -1,5 +1,5 @@
 /**
- * `@simforge/asset-catalog` — the placeable-object library.
+ * `@simforge-oss/asset-catalog` — the placeable-object library.
  *
  * Every object in the catalog is generated from `BufferGeometry` primitives at
  * runtime: no model files, no downloads, no licences to track. That keeps the
@@ -9,7 +9,7 @@
  * behind the same catalog ids.
  *
  * ```ts
- * import { buildProp, queryCatalog, buildWorkZone } from '@simforge/asset-catalog';
+ * import { buildProp, queryCatalog, buildWorkZone } from '@simforge-oss/asset-catalog';
  *
  * const van = buildProp('vehicle.van', { color: '#e8e9ea' });
  * van.position.set(x, groundY, z);          // ground-centred, +X forward

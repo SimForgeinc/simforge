@@ -10,8 +10,8 @@ import {
   profileForPreset,
   type AmbientTrafficProviderId,
   type SumoTrafficStatus,
-} from "@simforge/playback/traffic";
-import type { EditorDocument } from "@simforge/editor";
+} from "@simforge-oss/playback/traffic";
+import type { EditorDocument } from "@simforge-oss/editor";
 
 import {
   matchesSearch,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CatalogEntry } from '@simforge/asset-catalog/metadata';
+import type { CatalogEntry } from '@simforge-oss/asset-catalog/metadata';
 import {
   classifyCarlaFallbackVehicleClass,
   planCarlaVehicleFallbacks,

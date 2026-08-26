@@ -3,7 +3,7 @@
  * transition detection, trigger causality, conflict genesis — and the
  * historical-trace guarantee that attaching nothing changes a trace digest.
  */
-import { canonicalJson, serializeTrace, traceDigest, runSimulation } from '@simforge/engine';
+import { canonicalJson, serializeTrace, traceDigest, runSimulation } from '@simforge-oss/engine';
 import { describe, expect, it } from 'vitest';
 
 import {

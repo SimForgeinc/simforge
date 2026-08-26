@@ -4,16 +4,16 @@ import path from 'node:path';
 export default defineConfig({
   entry: { index: 'compat-entry.ts' },
   format: ['esm'],
-  dts: { resolve: ['@simforge/viewer'] },
+  dts: { resolve: ['@simforge-oss/viewer'] },
   sourcemap: true,
   clean: true,
   outDir: 'dist-compat',
-  external: ['three', '@simforge/scenario', '@simforge/engine', '@simforge/asset-catalog'],
-  noExternal: ['@simforge/viewer'],
+  external: ['three', '@simforge-oss/scenario', '@simforge-oss/engine', '@simforge-oss/asset-catalog'],
+  noExternal: ['@simforge-oss/viewer'],
   esbuildOptions(options) {
     options.alias = {
       ...(options.alias ?? {}),
-      '@simforge/viewer': path.resolve(__dirname, 'compat-viewer-shim.ts'),
+      '@simforge-oss/viewer': path.resolve(__dirname, 'compat-viewer-shim.ts'),
     };
   },
 });

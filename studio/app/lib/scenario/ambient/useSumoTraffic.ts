@@ -10,8 +10,8 @@ import {
   type ResolvedAmbientTrafficProfile,
   type SumoAuthoredOccupancySource,
   type SumoRoadOccupancyIndex,
-} from "@simforge/engine";
-import type { ActorRenderer, ActorView } from "@simforge/viewer";
+} from "@simforge-oss/engine";
+import type { ActorRenderer, ActorView } from "@simforge-oss/viewer";
 import type { MapEntry } from "../maps";
 import {
   evaluateSumoPerformance,
@@ -20,18 +20,18 @@ import {
   loadStaticMapCollidersBounded,
   type CollisionActorOverrides,
   type SumoStepTimingSample,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";
 import type {
   ExternalTrafficActor,
   TrafficNetworkPayload,
   TrafficStepRequest,
   TrafficStepResult,
-} from "@simforge/playback";
-import { SumoWasmTrafficProvider } from "@simforge/playback";
+} from "@simforge-oss/playback";
+import { SumoWasmTrafficProvider } from "@simforge-oss/playback";
 import {
   decodeSumoSignalSnapshot,
   type SumoSignalTopology,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";
 import type { StudioSessionMode } from "../session/model";
 import {
   BrowserMaterializedTrafficCapture,
@@ -39,7 +39,7 @@ import {
   SumoCollisionPhysics,
   SumoMotionSmoother,
   type SumoTrafficStatus,
-} from "@simforge/playback/traffic";
+} from "@simforge-oss/playback/traffic";
 import {
   decodeSumoActorViews,
   loadSumoAssets,

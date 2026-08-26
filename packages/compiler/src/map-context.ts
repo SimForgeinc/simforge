@@ -24,7 +24,7 @@ import type {
   LaneType,
   MapContext,
   SignalFacts,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import type { MapBundle } from './maps.js';
 import { buildSiteSignalPlan, resolveSiteSignalProgram } from './map-signals.js';
 

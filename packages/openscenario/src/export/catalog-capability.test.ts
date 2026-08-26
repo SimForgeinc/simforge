@@ -1,4 +1,4 @@
-import { parseSimScenarioInput } from '@simforge/engine';
+import { parseSimScenarioInput } from '@simforge-oss/engine';
 import { describe, expect, it } from 'vitest';
 import { analyzeAsamCapabilities } from './common.js';
 

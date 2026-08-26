@@ -3,7 +3,7 @@
  *
  * `dev-assets/` is not committed, so every suite that uses real map data guards
  * itself with `describe.skipIf(!hasYaleAssets())`. The loader deliberately goes
- * through `@simforge/maps/opendrive`' `decodeMaybeGzippedJson` — the same
+ * through `@simforge-oss/maps/opendrive`' `decodeMaybeGzippedJson` — the same
  * code path the editor uses — rather than re-implementing gzip handling.
  *
  * Two indexes are available on purpose:
@@ -18,7 +18,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decodeMaybeGzippedJson } from '@simforge/maps/opendrive';
+import { decodeMaybeGzippedJson } from '@simforge-oss/maps/opendrive';
 
 import { deriveMapIndexFromTopology } from '../derive.js';
 import type { RawSearchIndex, RawTopologyIndex } from '../derive.js';

@@ -1,6 +1,6 @@
 //! Batch render jobs: one schedule of ticks x rig cameras -> pass artifacts.
 //!
-//! Job files are produced by the Node adapter (`@simforge/native-renderer`)
+//! Job files are produced by the Node adapter (`@simforge-oss/native-renderer`)
 //! from a validated render intent + verified input map. The renderer writes
 //! raw artifacts plus `results.json` (per-artifact sha256 + timings); the
 //! adapter wraps those into the render-runtime artifact manifest.

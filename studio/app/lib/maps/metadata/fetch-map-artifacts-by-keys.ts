@@ -1,4 +1,4 @@
-import type { MapAssetArtifactType } from "@simforge/studio-shared";
+import type { MapAssetArtifactType } from "@simforge-oss/studio-shared";
 import { getS3ObjectUtf8 } from "@/app/lib/s3/s3-get-object";
 import type { FetchedMapArtifacts } from "./fetch-map-artifacts-from-s3";
 

@@ -16,8 +16,8 @@ import {
   Wind,
 } from "lucide-react";
 import type { CSSProperties } from "react";
-import type { EditorDocument } from "@simforge/editor";
-import type { Weather } from "@simforge/scenario";
+import type { EditorDocument } from "@simforge-oss/editor";
+import type { Weather } from "@simforge-oss/scenario";
 
 import {
   resolveEditorWeatherControls,

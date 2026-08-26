@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   EditorDocument,
   ScenarioMapEntry,
-} from "@simforge/editor";
-import type { CityViewer } from "@simforge/viewer";
-import type { ActorRenderer } from "@simforge/viewer";
-import { contentHash } from "@simforge/engine";
+} from "@simforge-oss/editor";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { ActorRenderer } from "@simforge-oss/viewer";
+import { contentHash } from "@simforge-oss/engine";
 import {
   createScenarioDocument,
   listScenarioDocuments,

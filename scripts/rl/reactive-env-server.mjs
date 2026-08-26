@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * reactive-env-server — Phase 3 training shim over @simforge/training-env.
+ * reactive-env-server — Phase 3 training shim over @simforge-oss/training-env.
  *
  * The stock `simforge-env-server` does not expose RunOptions, so reactive
  * ambient traffic (RunOptions.ambientReactivity = 'reactive') and BEV

@@ -95,7 +95,7 @@ export function canonicalStageForController(
 /**
  * What clicking one physical head resolves to.
  *
- * Mirrors `SignalReferenceSelection` from `@simforge/compiler`
+ * Mirrors `SignalReferenceSelection` from `@simforge-oss/compiler`
  * field for field, deliberately: the panel authors against
  * this shape and the compiler validates against that one, and any divergence
  * between them would be a class of bug that only shows up at Apply. The three

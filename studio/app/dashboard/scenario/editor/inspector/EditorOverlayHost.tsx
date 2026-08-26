@@ -9,7 +9,7 @@ import {
 import type {
   EditorController,
   EditorDocument,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import { ActorDetailsPanel } from "./ActorDetailsPanel";
 import { InteractionActionPopover } from "./InteractionActionPopover";
 import { useEditorOverlay } from "./editor-overlay-selection";

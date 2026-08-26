@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { CityViewer } from "@simforge/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
 import {
   samplePlaybackActors,
   type PlaybackBundle,
   type PlaybackController,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";
 import {
   buildCinematicShotList,
   cinematicViewAt,

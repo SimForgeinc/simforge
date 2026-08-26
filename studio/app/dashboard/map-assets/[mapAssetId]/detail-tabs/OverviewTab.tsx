@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Route, GitFork, PersonStanding, Footprints, Bike, SquareParking, ChevronRight, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import { cn } from "@/app/lib/utils";
-import type { MapAsset, MapAssetEnrichmentSnapshot, CandidateLocation } from "@simforge/studio-shared";
+import type { MapAsset, MapAssetEnrichmentSnapshot, CandidateLocation } from "@simforge-oss/studio-shared";
 import type { ScenarioSummary } from "@/app/lib/scenarios";
 import { CopyButton } from "@/app/components/CopyButton";
 import { MapMetadataSection } from "@/app/dashboard/map-assets/map-detail-sections/MapMetadataSection";

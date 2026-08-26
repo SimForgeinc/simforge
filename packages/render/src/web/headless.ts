@@ -1,5 +1,5 @@
-import { CityViewer } from '@simforge/viewer';
-import { PlaybackController } from '@simforge/playback';
+import { CityViewer } from '@simforge-oss/viewer';
+import { PlaybackController } from '@simforge-oss/playback';
 import { captureBrowserArtifacts, BROWSER_RENDER_ENGINE_ID, type BrowserCaptureResult } from './capture.js';
 import { parseResolvedBrowserRenderRequest, type ResolvedBrowserRenderRequest } from './intent.js';
 import type { ArtifactByteSink, ArtifactIdentity } from './artifacts.js';

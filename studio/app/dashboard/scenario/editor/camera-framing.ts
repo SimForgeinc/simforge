@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import type { SampledActor } from "@simforge/playback";
+import type { SampledActor } from "@simforge-oss/playback";
 
 /**
  * Camera framing the editor surface owns, as opposed to the deliberate

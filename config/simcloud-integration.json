@@ -1,7 +1,7 @@
 {
   "schema": "uniscenarios.simcloud-integration/v2",
   "platformRepository": "https://github.com/SimForgeinc/simcloud-platform",
-  "sourceStackConfig": "config/simforge-stack.json",
+  "sourceStackConfig": "config/simforge-oss-stack.json",
   "vendorLock": "vendor/uniscenarios/stack-lock.json",
   "consumerManifest": "package.json",
   "consumerLock": "package-lock.json",
@@ -102,7 +102,7 @@
     "scripts/agent/check-legacy-carla-retired.mjs"
   ],
   "forbiddenImportPatterns": [
-    "@simforge/uniscenario-(model|sim-engine|materializer|map-intel|anchor-matcher|xodr-tools|openscenario)",
+    "@simforge-oss/uniscenario-(model|sim-engine|materializer|map-intel|anchor-matcher|xodr-tools|openscenario)",
     "@/app/lib/uniscenario/editor/(core|catalog|renderer)(/|[\"'])",
     "@/app/lib/uniscenario/playback/(controller|model|physics|liveSimulationPlan|mapRuntime|site-selection|staticMapColliders|canonicalPreview|traffic-provider)",
     "@/app/lib/uniscenario/ambient/(candidatePool|model|provider|robustnessGate)",

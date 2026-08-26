@@ -1,4 +1,4 @@
-import type { Interaction } from '@simforge/scenario';
+import type { Interaction } from '@simforge-oss/scenario';
 
 /**
  * How far a placeholder's points may sit from the scene origin, in metres.

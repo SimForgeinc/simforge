@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TemplateDocument } from '@simforge/scenario';
-import { contentHash } from '@simforge/engine';
+import { TemplateDocument } from '@simforge-oss/scenario';
+import { contentHash } from '@simforge-oss/engine';
 import {
   ACCELERATED_SIGNAL_CYCLES_EXTENSION_KEY,
   AMBIENT_TRAFFIC_EXTENSION_KEY,

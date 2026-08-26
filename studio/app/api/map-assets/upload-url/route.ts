@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { MapAssetArtifactType } from "@simforge/studio-shared";
+import type { MapAssetArtifactType } from "@simforge-oss/studio-shared";
 import { UploadUrlBody, UploadUrlResponse } from "@/app/lib/api-schemas";
 void UploadUrlBody; void UploadUrlResponse;
 

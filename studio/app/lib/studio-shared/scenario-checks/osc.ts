@@ -6,7 +6,7 @@
  *
  * The caller compiles the draft with the in-house writer (`compileDraftToXosc`,
  * apps/web) and passes the source actors + emitted XML here; this module owns
- * the parse-back and comparison so it stays in `@simforge/studio-shared`.
+ * the parse-back and comparison so it stays in `@simforge-oss/studio-shared`.
  */
 import { computeEffectiveMotion, diffEffectiveMotion, type EffectiveMotionActorInput } from "../xosc/effective-motion";
 import { parseXoscToActors } from "../xosc/importer";

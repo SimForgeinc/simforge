@@ -1,4 +1,4 @@
-# @simforge/engine
+# @simforge-oss/engine
 
 The default for new and regenerated simulation is the force-based `dynamic-v1`
 backend. The deterministic `kinematic-v1` choreography model remains available
@@ -18,7 +18,7 @@ import {
   parseSimScenarioInput,
   runSimulation,
   evaluateTrace,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 const graph = buildLaneGraph(topologyIndexJson); // dev-assets/<map>/topology-index.json.gz
 const input = parseSimScenarioInput(doc);

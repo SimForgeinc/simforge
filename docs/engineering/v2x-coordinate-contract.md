@@ -33,7 +33,7 @@ CARLA world origin: the two metric frames share `(0, 0)` exactly.
 
 proj4/EPSG:4326 forward/inverse with the PROJ string above.
 Implementation: `CoordinateFrame.wgs84ToLocal` / `localToWgs84`
-(`@simforge/maps/opendrive`). Round-trip error is at machine precision.
+(`@simforge-oss/maps/opendrive`). Round-trip error is at machine precision.
 
 ### WGS-84 ↔ legacy flat-earth
 
@@ -47,7 +47,7 @@ inverse: lat = lat0 − y / 111320 ; lon = lon0 + x / (111320·cos(lat0))
 ```
 
 with `lat0 = 37.9150891287087`, `lon0 = −122.333308830857`.
-Implementation: `LegacyFlatEarthFrame` (`@simforge/maps/opendrive`,
+Implementation: `LegacyFlatEarthFrame` (`@simforge-oss/maps/opendrive`,
 `src/opendrive/legacy-flat-earth.ts`). Round-trip is algebraically exact.
 
 ### legacy flat-earth ↔ xodr-local
@@ -152,5 +152,5 @@ exact inverse round-trip, per-point cross-frame divergence reproduction, and
 the deployed twin's pole placement. Run:
 
 ```
-pnpm --filter @simforge/maps test
+pnpm --filter @simforge-oss/maps test
 ```

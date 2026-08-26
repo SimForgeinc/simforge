@@ -60,19 +60,19 @@ Every package is released at the same stack version.
 
 | System | Package | Responsibility |
 |---|---|---|
-| Scenario | [`@simforge/scenario`](packages/scenario) | Versioned, framework-free portable scenario documents and schemas. |
-| Engine | [`@simforge/engine`](packages/engine) | Fixed-step simulation, deterministic traces, and the `scene-state.v1` serializer exposed at `/scene-state`. |
-| World | [`@simforge/maps`](packages/maps) | OpenDRIVE parsing, georeferencing, lane and signal topology, and scenario-independent map intelligence; parsing is also exposed at `/opendrive`. |
-| World | [`@simforge/compiler`](packages/compiler) | Loads maps and templates, matches logical anchors, selects sites, and materializes concrete simulatable worlds. |
-| Studio runtime | [`@simforge/viewer`](packages/viewer) | Streaming three.js viewport, camera rigs, and framework-neutral actor presentation. |
-| Studio runtime | [`@simforge/editor`](packages/editor) | Authoring documents, editing interactions, validation, and editor state. |
-| Studio runtime | [`@simforge/playback`](packages/playback) | Deterministic trace playback, timing, and ambient traffic through `/traffic`. |
-| Studio runtime | [`@simforge/asset-catalog`](packages/asset-catalog) | Canonical parametric vehicles, pedestrians, props, and generated catalog assets. |
-| Rendering | [`@simforge/render`](packages/render) | Render-job contracts plus lazy web and native engines exposed at `/web` and `/native`. |
-| Interop | [`@simforge/openscenario`](packages/openscenario) | ASAM OpenSCENARIO import/export, esmini execution via `/esmini`, and conformance comparison via `/trace-diff`. |
-| Training & evaluation | [`@simforge/training-env`](packages/training-env) | Gymnasium-semantics environment and causal ground-truth channel without a CLI dependency. |
-| Training & evaluation | [`@simforge/evaluation`](packages/evaluation) | Frozen policy-evaluation protocols and the scenario-faithfulness examiner. |
-| CLI | [`@simforge/cli`](packages/cli) | `simforge`/`sf` orchestration and the stack-level integration surface. |
+| Scenario | [`@simforge-oss/scenario`](packages/scenario) | Versioned, framework-free portable scenario documents and schemas. |
+| Engine | [`@simforge-oss/engine`](packages/engine) | Fixed-step simulation, deterministic traces, and the `scene-state.v1` serializer exposed at `/scene-state`. |
+| World | [`@simforge-oss/maps`](packages/maps) | OpenDRIVE parsing, georeferencing, lane and signal topology, and scenario-independent map intelligence; parsing is also exposed at `/opendrive`. |
+| World | [`@simforge-oss/compiler`](packages/compiler) | Loads maps and templates, matches logical anchors, selects sites, and materializes concrete simulatable worlds. |
+| Studio runtime | [`@simforge-oss/viewer`](packages/viewer) | Streaming three.js viewport, camera rigs, and framework-neutral actor presentation. |
+| Studio runtime | [`@simforge-oss/editor`](packages/editor) | Authoring documents, editing interactions, validation, and editor state. |
+| Studio runtime | [`@simforge-oss/playback`](packages/playback) | Deterministic trace playback, timing, and ambient traffic through `/traffic`. |
+| Studio runtime | [`@simforge-oss/asset-catalog`](packages/asset-catalog) | Canonical parametric vehicles, pedestrians, props, and generated catalog assets. |
+| Rendering | [`@simforge-oss/render`](packages/render) | Render-job contracts plus lazy web and native engines exposed at `/web` and `/native`. |
+| Interop | [`@simforge-oss/openscenario`](packages/openscenario) | ASAM OpenSCENARIO import/export, esmini execution via `/esmini`, and conformance comparison via `/trace-diff`. |
+| Training & evaluation | [`@simforge-oss/training-env`](packages/training-env) | Gymnasium-semantics environment and causal ground-truth channel without a CLI dependency. |
+| Training & evaluation | [`@simforge-oss/evaluation`](packages/evaluation) | Frozen policy-evaluation protocols and the scenario-faithfulness examiner. |
+| CLI | [`@simforge-oss/cli`](packages/cli) | `simforge`/`sf` orchestration and the stack-level integration surface. |
 
 The other product boundaries are intentionally not npm packages:
 

@@ -14,7 +14,7 @@ import {
   laneTravelIncreasesSByConvention,
   travelOrderedPolyline,
   type RuntimeBoundMapTopologyIndex,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 const EXACT_JOIN_YAW_TOLERANCE_RAD = (60 * Math.PI) / 180;
 

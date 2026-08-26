@@ -8,7 +8,7 @@ import {
   parseSimScenarioInput,
   runSimulation,
   type TopologyIndex,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import { execa } from 'execa';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 

@@ -30,7 +30,7 @@ import {
   pairEvaluated,
   SPATIAL_MARGIN_M,
 } from './timeline.js';
-import type { CausalTriggerRecord } from '@simforge/training-env';
+import type { CausalTriggerRecord } from '@simforge-oss/training-env';
 
 
 export type VerdictStatus = 'pass' | 'fail' | 'unverifiable' | 'deferred';

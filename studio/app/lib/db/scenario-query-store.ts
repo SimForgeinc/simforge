@@ -1,4 +1,4 @@
-import { ScenarioSchema, type Scenario } from "@simforge/studio-shared";
+import { ScenarioSchema, type Scenario } from "@simforge-oss/studio-shared";
 import { datasetScenarioId, scenarioRowId } from "./ids";
 import { queryOne, queryRows, withTransaction } from "./data-api";
 import type { AppContext } from "./app-context";

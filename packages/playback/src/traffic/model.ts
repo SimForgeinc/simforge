@@ -5,13 +5,13 @@ import {
   type AmbientTrafficProvenance,
   type AmbientTrafficProfile,
   type ResolvedAmbientTrafficProfile,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 export {
   AMBIENT_TRAFFIC_EXTENSION_KEY,
   ambientTrafficProfileFromExtensions,
   defaultAmbientTrafficProfile,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 export const AMBIENT_TRAFFIC_STORAGE_KEY = 'uniscenarios.studio.ambient-traffic.v1';
 /**

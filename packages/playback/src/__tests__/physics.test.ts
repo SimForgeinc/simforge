@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseSimScenarioInput } from '@simforge/engine';
+import { parseSimScenarioInput } from '@simforge-oss/engine';
 import {
   activePhysicsModeForTrace,
   physicsSummaryForAuthoredActors,

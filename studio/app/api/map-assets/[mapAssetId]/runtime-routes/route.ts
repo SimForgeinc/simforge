@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ScenarioEditorRoadAnchorSchema } from "@simforge/studio-shared";
+import { ScenarioEditorRoadAnchorSchema } from "@simforge-oss/studio-shared";
 import { z } from "zod";
 import { requireRouteSession } from "@/app/lib/auth/route-session";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";

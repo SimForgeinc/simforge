@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { MapCoordinateRefSchema, MapImageryTilesetSchema } from "@simforge/studio-shared";
-import type { MapAsset, MapAssetArtifact, MapAssetArtifactType, MapPlaceContext } from "@simforge/studio-shared";
+import { MapCoordinateRefSchema, MapImageryTilesetSchema } from "@simforge-oss/studio-shared";
+import type { MapAsset, MapAssetArtifact, MapAssetArtifactType, MapPlaceContext } from "@simforge-oss/studio-shared";
 import { z } from "zod";
 import { MapAssetIdParams, UpdateMapAssetResponse } from "@/app/lib/api-schemas";
 import { requireRouteSession } from "@/app/lib/auth/route-session";

@@ -3,7 +3,7 @@ import {
   getEntry,
   type CatalogEntry,
   type CatalogId,
-} from "@simforge/asset-catalog";
+} from "@simforge-oss/asset-catalog";
 import type { CarlaObjectDto } from "@/app/lib/scenario/carla-objects";
 
 /**

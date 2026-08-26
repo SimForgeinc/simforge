@@ -12,9 +12,9 @@ It was extracted without modifying or deleting the source repository.
 - Platform and repository: **SimForge** / `simforge`
 - Components: **SimForge Engine**, **SimForge Renderer**, **SimForge Studio**,
   and **SimForge Cloud**
-- Package scope: `@simforge/*`; exactly 13 public TypeScript packages
+- Package scope: `@simforge-oss/*`; exactly 13 public TypeScript packages
 - Primary CLI: `simforge`; short alias: `sf`
-- Application workspace: `studio/` (`@simforge/studio`)
+- Application workspace: `studio/` (`@simforge-oss/studio`)
 - Native renderer workspace: `renderer/`
 
 The legacy Vite `apps/studio` application and `packages/editor-ui` are deleted.

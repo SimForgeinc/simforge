@@ -1,6 +1,6 @@
 /** The editor's visible recording window. Authoring and playback both begin at t=0. */
 
-import type { Choreography } from "@simforge/scenario";
+import type { Choreography } from "@simforge-oss/scenario";
 
 import type { TimelineRange } from "./geometry";
 

@@ -1,5 +1,5 @@
 {
-  "name": "@simforge/road-detail-gen",
+  "name": "@simforge-oss/road-detail-gen",
   "version": "1.0.0",
   "private": true,
   "type": "module",

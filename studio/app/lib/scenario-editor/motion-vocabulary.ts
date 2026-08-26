@@ -40,7 +40,7 @@ import type {
   BehaviorAction,
   BehaviorActionKind,
   ScenarioEditorActorDraft,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 /** Which layer a word is being spoken in. See the header. */
 export type MotionLayer = "route" | "interaction";

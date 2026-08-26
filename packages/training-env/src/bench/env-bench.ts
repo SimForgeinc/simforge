@@ -11,7 +11,7 @@ import { performance } from 'node:perf_hooks';
 
 import { LANE_LEFT, LANE_RIGHT, scenario, syntheticGraph, vehicle } from '../fixture.js';
 import { EnvSession } from '../session.js';
-import type { SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 
 const graph = syntheticGraph();
 const DT = 0.02;

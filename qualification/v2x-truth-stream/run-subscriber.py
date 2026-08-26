@@ -24,7 +24,7 @@ HERE = Path(__file__).resolve().parent
 # package __init__ pulls the Gymnasium env; the truth-stream client needs only
 # stdlib + msgpack).
 _spec = importlib.util.spec_from_file_location(
-    "truth_stream", HERE.parent.parent / "adapters" / "gym" / "simforge_gym" / "truth_stream.py"
+    "truth_stream", HERE.parent.parent / "adapters" / "gym" / "simforge_oss_gym" / "truth_stream.py"
 )
 _truth_stream = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_truth_stream)

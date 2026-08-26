@@ -16,7 +16,7 @@
  * end of an interaction that is waiting for you is the same deadlock.
  */
 
-import type { Interaction } from "@simforge/scenario";
+import type { Interaction } from "@simforge-oss/scenario";
 
 /**
  * Ids that already chain back to `interactionId`, directly or through others.

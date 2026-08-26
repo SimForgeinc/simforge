@@ -2,8 +2,8 @@
 
 Length-prefixed (u32 LE) MessagePack frames over the server's stdio, exactly
 the protocol documented in ``packages/training-env/src/env-server.ts`` and
-mirrored by ``adapters/gym/simforge_gym/protocol.py``.  Re-implemented here
-(~150 lines) instead of importing ``simforge_gym`` so the ROS runtime does not
+mirrored by ``adapters/gym/simforge_oss_gym/protocol.py``.  Re-implemented here
+(~150 lines) instead of importing ``simforge_oss_gym`` so the ROS runtime does not
 inherit that package's gymnasium/numpy dependencies; the compact wire keys are
 byte-identical to the gym client's.
 
@@ -161,6 +161,6 @@ def default_server_command(episodes_spec: str | Path) -> list[str]:
     dist = repo_root / "packages" / "training-env" / "dist" / "env-server.js"
     if not dist.exists():
         raise RuntimeError(
-            f"env-server build missing at {dist}; run: pnpm --filter @simforge/training-env... build"
+            f"env-server build missing at {dist}; run: pnpm --filter @simforge-oss/training-env... build"
         )
     return ["node", str(dist), "--episodes", str(episodes_spec)]

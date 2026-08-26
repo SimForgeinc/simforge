@@ -1,5 +1,5 @@
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
-import type { SimScenarioInput } from '@simforge/engine';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 import { describe, expect, it } from 'vitest';
 
 import {

@@ -1,9 +1,9 @@
-import type { ResolvedAmbientTrafficProfile } from "@simforge/engine";
-import { ambientTrafficProfileFromExtensions } from "@simforge/playback/traffic";
+import type { ResolvedAmbientTrafficProfile } from "@simforge-oss/engine";
+import { ambientTrafficProfileFromExtensions } from "@simforge-oss/playback/traffic";
 import {
   ambientTrafficProviderFromExtensions,
-} from "@simforge/playback/traffic";
-import type { ScenarioMapEntry } from "@simforge/editor";
+} from "@simforge-oss/playback/traffic";
+import type { ScenarioMapEntry } from "@simforge-oss/editor";
 import type { ScenarioMapOption } from "../list/document-map-groups";
 
 /** Playback compilation needs this complete immutable map-sidecar closure. */

@@ -1,4 +1,4 @@
-import type { MapOverlayLayerId } from "@simforge/studio-shared";
+import type { MapOverlayLayerId } from "@simforge-oss/studio-shared";
 
 /** Theme color tokens used across map layers. */
 export const C = {

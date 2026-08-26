@@ -1,4 +1,4 @@
-import { Sha256 } from '@simforge/scenario';
+import { Sha256 } from '@simforge-oss/scenario';
 
 import { crc32 } from './sensors/png.js';
 

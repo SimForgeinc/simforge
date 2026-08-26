@@ -26,20 +26,20 @@ import os from 'node:os';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import { MATCH_SEMANTICS_VERSION } from '@simforge/compiler/node';
+import { MATCH_SEMANTICS_VERSION } from '@simforge-oss/compiler/node';
 import {
   ENGINE_VERSION,
   contentHash,
   resolveAmbientTrafficProfile,
   type AmbientTrafficProfile,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import { cellPaths, runCell, type CellOptions, type CellResult } from '../batch-cell.js';
 import { EXIT } from '../errors.js';
 import { emit, emitLines, fixed, pad } from '../output.js';
 import { cellSeed, paramsVersion, templateId } from '../params.js';
-import { matchOnMaps } from '@simforge/compiler/node';
-import { readTemplate, writeJsonFile } from '@simforge/compiler/node';
+import { matchOnMaps } from '@simforge-oss/compiler/node';
+import { readTemplate, writeJsonFile } from '@simforge-oss/compiler/node';
 import type { EvaluateFilterMode } from './evaluate.js';
 
 export interface BatchOptions {

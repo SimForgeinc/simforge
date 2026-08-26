@@ -1,4 +1,4 @@
-# `@simforge/openscenario/esmini`
+# `@simforge-oss/openscenario/esmini`
 
 Pinned external execution boundary for esmini 3.6.0. It consumes only the typed
 `EsminiExecutionJob` produced by the compatibility bundle builder and returns a

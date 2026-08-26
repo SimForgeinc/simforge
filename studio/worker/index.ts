@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { simforgeEnv } from "../lib/compat-env";
 
-import type { RenderProgressRecord } from "@simforge/render";
+import type { RenderProgressRecord } from "@simforge-oss/render";
 
 import { runCompilerLoop } from "./compiler.js";
 import { executeRender } from "./executor.js";

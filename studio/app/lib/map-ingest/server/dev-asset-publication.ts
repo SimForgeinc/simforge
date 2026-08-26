@@ -374,7 +374,7 @@ export async function publishDevAssetMap({
     mapIntel: {
       contractVersion: receipt.contractVersion ?? "uniscenario.map-intel-build/v1",
       builder: {
-        package: receipt.builder?.package ?? "@simforge/maps",
+        package: receipt.builder?.package ?? "@simforge-oss/maps",
         version: receipt.builder?.version ?? MAP_INTEL_BUILDER_VERSION,
       },
       mapId: receipt.mapId ?? slug,

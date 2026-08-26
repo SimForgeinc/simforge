@@ -24,7 +24,7 @@ import {
 import { formatTimestamp, hasLiveJob, humanizeCode, jobModeLabel, jobModeTag, renderStateVisual } from "./render-view-model";
 import type { ScenarioGalleryItemDto } from "@/app/lib/scenario/render/contracts";
 import type { BrowserRecordingSummaryDto } from "@/app/lib/scenario/recording-contracts";
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
 
 const POLL_INTERVAL_MS = 5000;
 

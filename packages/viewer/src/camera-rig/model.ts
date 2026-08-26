@@ -1,5 +1,5 @@
 import type { CameraView } from '../index.js';
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
 
 /** Presentation-only metadata. It is intentionally outside SimScenarioInput. */
 export const CAMERA_EXTENSION_KEY = 'studio.presentation.cameras.v1';

@@ -21,7 +21,7 @@ import type {
   ScenarioEditorDraft,
   ScenarioEditorMapPoint,
   ScenarioValidationRepairKind,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 export interface RepairInput {
   draft: ScenarioEditorDraft;

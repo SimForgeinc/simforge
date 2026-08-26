@@ -5,7 +5,7 @@ import type {
   MapSearchIndexGraphEdge,
   MapSearchIndexGraphRelation,
   MapSearchIndexObject,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 /**
  * In-memory topology graph over the `search_index.json` canonical objects.

@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Raycaster, Vector2, Vector3 } from "three";
-import type { CityViewer } from "@simforge/viewer";
-import type { ActorRenderer } from "@simforge/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { ActorRenderer } from "@simforge-oss/viewer";
 import type {
   EditorDocument,
   EditorState,
   ScenarioMapEntry,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import type { ScenarioDocumentRecord } from "@/app/lib/scenario/editor/api";
 import type {
   ScenarioAuthoringQuality,

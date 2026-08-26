@@ -6,7 +6,7 @@ import {
   type RenderSpecV2,
   type RenderSpecV3,
   type ResolvedCaptureManifest,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 export const BROWSER_RECORDING_KIND = "browser_threejs_recording" as const;
 export const BROWSER_RECORDING_REQUEST_CONTRACT =

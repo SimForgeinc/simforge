@@ -1,5 +1,5 @@
-import { extractOpenScenarioExecutionPlan } from "@simforge/openscenario/execution-plan";
-import { playbackBundleFromReplay, type PlaybackBundle } from "@simforge/playback";
+import { extractOpenScenarioExecutionPlan } from "@simforge-oss/openscenario/execution-plan";
+import { playbackBundleFromReplay, type PlaybackBundle } from "@simforge-oss/playback";
 import { getExecutionPackageMembersClient } from "@/app/lib/scenario/execution-package-client";
 import { listOpenScenarioExports } from "./api";
 

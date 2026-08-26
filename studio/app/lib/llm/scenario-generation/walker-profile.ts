@@ -29,8 +29,8 @@ import {
   CARLA_UE5_WALKER_ADULTS,
   CARLA_UE5_WALKER_CHILDREN,
   walkerBlueprintAt,
-} from "@simforge/studio-shared";
-import { PEDESTRIAN_LIMITS } from "@simforge/engine";
+} from "@simforge-oss/studio-shared";
+import { PEDESTRIAN_LIMITS } from "@simforge-oss/engine";
 
 const WALKER_ACCELERATION_MPS2 = PEDESTRIAN_LIMITS.accelMax;
 

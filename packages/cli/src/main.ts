@@ -21,11 +21,11 @@ import {
   requireString,
   type ParsedArgs,
 } from './args.js';
-import type { AmbientTrafficProfile } from '@simforge/engine';
+import type { AmbientTrafficProfile } from '@simforge-oss/engine';
 
 import { CliError, EXIT, exitCodeOf, toStructuredError } from './errors.js';
 import { emit, emitError } from './output.js';
-import { availableMaps, resolveMapSelection, KNOWN_MAPS } from '@simforge/compiler/node';
+import { availableMaps, resolveMapSelection, KNOWN_MAPS } from '@simforge-oss/compiler/node';
 import { batch } from './commands/batch.js';
 import { catalogCreate, catalogVerify } from './commands/catalog.js';
 import { catalogBatch } from './commands/catalog-batch.js';

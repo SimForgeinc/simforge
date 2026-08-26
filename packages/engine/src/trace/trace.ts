@@ -14,7 +14,7 @@
  */
 
 import { quantize } from '../core/math.js';
-import type { SemanticLedger } from '@simforge/scenario';
+import type { SemanticLedger } from '@simforge-oss/scenario';
 import { toSceneXZ } from '../frames.js';
 import type { ActorKind, ControlIndication, Dims, MotionPhysicsMode, OperationalConditions, StaticProp } from '../schema/input.js';
 import {

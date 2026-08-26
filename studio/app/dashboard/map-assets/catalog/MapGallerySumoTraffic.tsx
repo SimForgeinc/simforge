@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ActorRenderer } from "@simforge/viewer";
-import type { CityViewer } from "@simforge/viewer";
-import { indexedWorldHeightSampler } from "@simforge/viewer";
-import { resolveAmbientTrafficProfile } from "@simforge/engine";
+import type { ActorRenderer } from "@simforge-oss/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
+import { indexedWorldHeightSampler } from "@simforge-oss/viewer";
+import { resolveAmbientTrafficProfile } from "@simforge-oss/engine";
 import {
   DISABLED_SUMO_STATUS,
   type SumoTrafficStatus,
-} from "@simforge/playback/traffic";
+} from "@simforge-oss/playback/traffic";
 import type { ScenarioMapDescriptorDto } from "@/app/lib/scenario/contracts";
 import type { MapEntry } from "@/app/lib/scenario/maps";
 import { useSumoTraffic } from "@/app/lib/scenario/ambient/useSumoTraffic";

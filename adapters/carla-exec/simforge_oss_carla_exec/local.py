@@ -209,7 +209,7 @@ def _execute_local_lease(
 
 
 def _canonical_render_intent_json(intent: Mapping[str, Any]) -> str:
-    """Match @simforge/scenario canonicalizeRenderIntent exactly.
+    """Match @simforge-oss/scenario canonicalizeRenderIntent exactly.
 
     Object keys use the shared canonical JSON ordering. The wire contract also
     defines the two per-source arrays as order-insensitive and sorts them by
@@ -1034,7 +1034,7 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="simforge-carla-api")
+    parser = argparse.ArgumentParser(prog="simforge-oss-carla-api")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=2000)
     commands = parser.add_subparsers(dest="command", required=True)

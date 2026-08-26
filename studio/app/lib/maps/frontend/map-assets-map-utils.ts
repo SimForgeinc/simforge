@@ -1,4 +1,4 @@
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { GEOJSON_FEATURE_ID_PROP } from "./feature-inspection-types";
 import {

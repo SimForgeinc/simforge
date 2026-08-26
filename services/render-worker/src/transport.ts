@@ -24,7 +24,7 @@ import {
   type WorkerDrainResponse,
   type WorkerRegisterRequest,
   type WorkerRegisteredResponse,
-} from '@simforge/render';
+} from '@simforge-oss/render';
 
 import type { RenderWorkerConfig } from './config.js';
 

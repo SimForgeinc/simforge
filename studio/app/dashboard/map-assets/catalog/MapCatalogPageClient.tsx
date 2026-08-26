@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, MapPin } from "lucide-react";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import type { ScenarioSummary } from "@/app/lib/scenarios";
 import { TopBarActionsPortal } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";

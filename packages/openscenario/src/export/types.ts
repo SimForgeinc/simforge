@@ -5,7 +5,7 @@ import type {
   Route,
   SimActor,
   SimScenarioInput,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 export const ASAM_FORMATS = ['xosc-1.4', 'xosc-1.3-esmini', 'osc-2.2'] as const;
 export type AsamFormat = (typeof ASAM_FORMATS)[number];

@@ -1,8 +1,8 @@
 /**
  * Structural types for the pieces of the rl stack policy-eval consumes at
  * runtime (see runtime.ts for why these are structural rather than a
- * workspace dependency). Shapes mirror @simforge/engine,
- * @simforge/compiler and @simforge/training-env.
+ * workspace dependency). Shapes mirror @simforge-oss/engine,
+ * @simforge-oss/compiler and @simforge-oss/training-env.
  */
 
 export interface SessionPairMinima {

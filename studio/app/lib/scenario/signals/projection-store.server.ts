@@ -6,7 +6,7 @@ import type { AppContext } from "@/app/lib/db/app-context";
 import { queryRows } from "@/app/lib/db/data-api";
 import { gunzipToUtf8 } from "@/app/lib/s3/gzip";
 import { getS3ObjectBytes, getS3ObjectUtf8 } from "@/app/lib/s3/s3-get-object";
-import type { TopologyIndex } from "@simforge/engine";
+import type { TopologyIndex } from "@simforge-oss/engine";
 
 import {
   readEditorSignalControlProjection,

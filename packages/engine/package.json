@@ -1,6 +1,6 @@
 {
-  "name": "@simforge/engine",
-  "version": "0.1.0-rc.46",
+  "name": "@simforge-oss/engine",
+  "version": "0.1.0-rc.47",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
@@ -40,7 +40,7 @@
     "dist"
   ],
   "dependencies": {
-    "@simforge/scenario": "workspace:*",
+    "@simforge-oss/scenario": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

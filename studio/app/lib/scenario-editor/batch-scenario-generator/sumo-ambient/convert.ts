@@ -22,7 +22,7 @@
  *    never resolve a SUMO ambient as the conflict actor.
  */
 
-import type { ScenarioEditorActorDraft, ScenarioEditorTimedWaypoint } from "@simforge/studio-shared";
+import type { ScenarioEditorActorDraft, ScenarioEditorTimedWaypoint } from "@simforge-oss/studio-shared";
 import { normalizeYawDegrees } from "../../../editor-map/coordinate-frames";
 import { blueprintForVtype, DEFAULT_VTYPE_LENGTHS_M } from "./blueprints";
 import {

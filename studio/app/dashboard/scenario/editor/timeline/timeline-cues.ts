@@ -4,7 +4,7 @@ import {
   latestOf,
   type Axis,
   type ScenarioTemplateV2,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 import { timingContextFor } from "@/app/lib/scenario/timeline";
 

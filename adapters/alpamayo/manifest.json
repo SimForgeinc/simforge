@@ -1,5 +1,5 @@
 {
-  "name": "@simforge/alpamayo-runtime",
+  "name": "@simforge-oss/alpamayo-runtime",
   "description": "Locally runnable, quantized Alpamayo 1.5 inference service (closed-loop act() over unix-socket MessagePack)",
   "pins": {
     "model": {

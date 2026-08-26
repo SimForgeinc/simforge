@@ -3,7 +3,7 @@ import {
   withSignalPlanWarnings,
   type JunctionSignalPlan,
   type ScenarioEditorAmbientTraffic,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { NormalizedScenarioDraft } from "@/app/lib/scenario-editor/draft-normalization";
 import {
   EMPTY_SIGNAL_PLAN_HISTORY,

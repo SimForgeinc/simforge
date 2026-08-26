@@ -1,4 +1,4 @@
-import type { CatalogId } from "@simforge/asset-catalog";
+import type { CatalogId } from "@simforge-oss/asset-catalog";
 
 import { Cat, Deer, Dog, Goose, Raccoon } from "./actor-art/animals";
 import {

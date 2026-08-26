@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseSimScenarioInput, type SimScenarioInput } from '@simforge/engine';
+import { parseSimScenarioInput, type SimScenarioInput } from '@simforge-oss/engine';
 
 import { LANE_LEFT, scenario, syntheticGraph, vehicle } from '../fixture.js';
 import { TruthStreamClient, type TruthFrame } from '../truth-stream.js';

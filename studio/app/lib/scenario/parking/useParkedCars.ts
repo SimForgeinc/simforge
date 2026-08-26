@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { CityViewer } from "@simforge/viewer";
-import type { ActorRenderer, ActorView } from "@simforge/viewer";
-import type { CatalogId } from "@simforge/asset-catalog";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { ActorRenderer, ActorView } from "@simforge-oss/viewer";
+import type { CatalogId } from "@simforge-oss/asset-catalog";
 
 import {
   carlaCompatibilityFor,
@@ -190,8 +190,8 @@ export function parkedCarViews(
   return cars.map((car) => ({
     id: car.id,
     // Every car came from PARKABLE_MODELS, whose ids are catalog ids; the shared
-    // type widens it to string only to keep `@simforge/studio-shared` free of
-    // `@simforge/*`.
+    // type widens it to string only to keep `@simforge-oss/studio-shared` free of
+    // `@simforge-oss/*`.
     catalogId: car.catalogId as CatalogId,
     x: car.x,
     // The sampled scene surface wins over the stall polygon's own elevation:

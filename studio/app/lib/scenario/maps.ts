@@ -1,4 +1,4 @@
-import type { ScenarioMapEntry } from '@simforge/editor';
+import type { ScenarioMapEntry } from '@simforge-oss/editor';
 
 export interface MapArtifactDigests {
   readonly xodrSha256: string;

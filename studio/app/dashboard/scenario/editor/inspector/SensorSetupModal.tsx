@@ -15,8 +15,8 @@ import {
   type ActorSpec,
   type DashCameraSensor,
   type SensorMount,
-} from "@simforge/scenario";
-import type { EditorDocument } from "@simforge/editor";
+} from "@simforge-oss/scenario";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { cn } from "@/app/lib/utils";

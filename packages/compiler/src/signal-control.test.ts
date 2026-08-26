@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ControlIndication, SignalProgram } from '@simforge/engine';
+import type { ControlIndication, SignalProgram } from '@simforge-oss/engine';
 import {
   buildSignalControlIndex,
   evaluateSignalReferencePhase,

@@ -22,7 +22,7 @@ import {
   type SignalPhaseProgram,
   type SignalPlanMode,
   type SignalTurn,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 // ---------------------------------------------------------------------------
 // Colour

@@ -8,7 +8,7 @@
  * checkers use, so ground-truth derivation and judgment cannot drift.
  */
 
-import type { CausalFrame, CausalTriggerRecord } from '@simforge/training-env';
+import type { CausalFrame, CausalTriggerRecord } from '@simforge-oss/training-env';
 
 import type { CorpusScenario, DecimatedTrack } from './corpus.js';
 

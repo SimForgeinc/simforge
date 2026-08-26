@@ -3,7 +3,7 @@
  * for testability. No React hooks, no DOM access.
  */
 
-import type { MapAssetArtifactType } from "@simforge/studio-shared";
+import type { MapAssetArtifactType } from "@simforge-oss/studio-shared";
 
 // ---------------------------------------------------------------------------
 // Types (shared with AddMapForm)

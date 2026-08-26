@@ -17,8 +17,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { InstancedMesh, PerspectiveCamera, Vector3 } from 'three';
 import { afterEach, describe, expect, it } from 'vitest';
-import { getEntry } from '@simforge/asset-catalog';
-import { actorClassSchema, sceneStateSchema, yawToQuaternion, type SceneState } from '@simforge/engine/scene-state';
+import { getEntry } from '@simforge-oss/asset-catalog';
+import { actorClassSchema, sceneStateSchema, yawToQuaternion, type SceneState } from '@simforge-oss/engine/scene-state';
 import { MAX_PROJECTED_HEADLIGHTS } from './actorRenderer';
 import { DEFAULT_ACTIVE_LUMINAIRE_LIMIT } from './luminaire-lighting';
 import {

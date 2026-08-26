@@ -1,4 +1,4 @@
-import type { Interaction } from "@simforge/scenario";
+import type { Interaction } from "@simforge-oss/scenario";
 
 const ROUTE_MOVEMENT_EPSILON_METERS = 0.05;
 

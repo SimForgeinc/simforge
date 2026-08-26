@@ -1,4 +1,4 @@
-"""simforge_carla_api — a CARLA-compatible Python API facade.
+"""simforge_oss_carla_api — a CARLA-compatible Python API facade.
 
 Maps the subset of the ``carla`` client API that CARLA-ecosystem tools
 actually use (see README coverage matrix) onto the SimForge env-server

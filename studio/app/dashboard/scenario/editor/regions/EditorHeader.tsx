@@ -7,10 +7,10 @@ import {
   useSetPageTitle,
   useSetTopBarActionsAlignment,
 } from "@/app/components/TopBarSlot";
-import type { CityViewer } from "@simforge/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
 import { Button } from "@/app/components/ui/button";
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
-import type { EditorDocument } from "@simforge/editor";
+import type { EditorDocument } from "@simforge-oss/editor";
 import {
   solutionForAuthoringIssue,
   type SimulationIssue,

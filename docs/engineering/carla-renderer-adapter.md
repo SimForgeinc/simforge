@@ -36,7 +36,7 @@ cannot be exposed through that API.
 ## Architecture
 
 The authoritative pipeline, implemented in
-`adapters/carla-exec/simforge_carla_exec/runtime`, is:
+`adapters/carla-exec/simforge_oss_carla_exec/runtime`, is:
 
 1. Validate the authored scenario and exact OpenDRIVE/controller/head bindings.
 2. Compile once with the SimForge evaluator into an immutable 50 Hz trace
@@ -163,7 +163,7 @@ event and signal gates remain primary.
 
 The down-converter targets real OpenSCENARIO 1.0 and emits a per-feature report.
 Before writing XML, derive required semantic identifiers and run the versioned
-gate in `adapters/carla-exec/simforge_carla_exec/capabilities.py`.
+gate in `adapters/carla-exec/simforge_oss_carla_exec/capabilities.py`.
 Unknown, unsupported, or approximate identifiers block execution. The initial
 exact allowlist is intentionally tiny (for example, supported absolute speed).
 Expand it only with an upstream parser mapping, an XSD-valid fixture, a real

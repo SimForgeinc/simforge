@@ -2,8 +2,8 @@ FROM ubuntu:24.04
 
 ARG SOURCE_REVISION
 LABEL org.opencontainers.image.revision="${SOURCE_REVISION}" \
-      org.opencontainers.image.source="https://github.com/SimForgeinc/UniScenarios" \
-      org.opencontainers.image.title="SimForge standalone Bevy campaign runner" \
+      org.opencontainers.image.source="https://github.com/SimForgeinc/simforge-oss" \
+      org.opencontainers.image.title="simforge-oss standalone Bevy campaign runner" \
       ai.simforge.hardware-profile="rtx3080-10gb-v1"
 
 ENV DEBIAN_FRONTEND=noninteractive \

@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { canonicalize, serializeTemplate, type ScenarioTemplateV2 } from "@simforge/scenario";
+import { canonicalize, serializeTemplate, type ScenarioTemplateV2 } from "@simforge-oss/scenario";
 
 export function sha256(value: string | Uint8Array): string {
   return createHash("sha256").update(value).digest("hex");

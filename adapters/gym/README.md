@@ -1,7 +1,7 @@
-# simforge-gym
+# simforge-oss-gym
 
 Gymnasium client for the SimForge deterministic env-server
-(`simforge-env-server` from `@simforge/training-env`).
+(`simforge-env-server` from `@simforge-oss/training-env`).
 
 - **`SimForgeEnv`** — one `gymnasium.Env` over one server session.
   Observations: `state_vector` (float64 `(10,)`, fixed engine layout),
@@ -25,7 +25,7 @@ sim-engine server (the only backend today).
 ## Usage
 
 ```python
-from simforge_gym import SimForgeEnv, SimForgeVector
+from simforge_oss_gym import SimForgeEnv, SimForgeVector
 
 env = SimForgeEnv("episodes.json", seed="seed-a")
 obs, info = env.reset()

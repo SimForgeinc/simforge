@@ -1,4 +1,4 @@
-import { contentHash, type SimTrace } from '@simforge/engine';
+import { contentHash, type SimTrace } from '@simforge-oss/engine';
 import {
   COMMON_DURATION_S,
   COMMON_SAMPLE_HZ,

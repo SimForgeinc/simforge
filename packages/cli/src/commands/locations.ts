@@ -19,10 +19,10 @@ import {
   type FindLocationsQuery,
   type LocationMatch,
   type StudioLocation,
-} from '@simforge/maps';
+} from '@simforge-oss/maps';
 
 import { CliError } from '../errors.js';
-import { loadMap } from '@simforge/compiler/node';
+import { loadMap } from '@simforge-oss/compiler/node';
 import { emit, emitLines, pad } from '../output.js';
 import { EXIT } from '../errors.js';
 

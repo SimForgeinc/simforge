@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { RenderIntentV1, RenderSourceV3 } from '@simforge/scenario';
+import type { RenderIntentV1, RenderSourceV3 } from '@simforge-oss/scenario';
 
 export const FIXED_SCHEDULE_V1_SCHEMA = 'uniscenario.render-fixed-schedule/v1' as const;
 

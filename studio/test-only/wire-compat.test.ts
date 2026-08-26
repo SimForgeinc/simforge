@@ -5,7 +5,7 @@ import {
   CANONICAL_SCENE_STATE_VERSION,
   LEGACY_SCENE_STATE_VERSION,
   sceneStateSchema,
-} from "@simforge/engine/scene-state";
+} from "@simforge-oss/engine/scene-state";
 import nextConfig from "../next.config";
 import { simforgeEnv } from "../lib/compat-env";
 import { GET as healthHandler } from "../app/api/simforge/internal/health/route";

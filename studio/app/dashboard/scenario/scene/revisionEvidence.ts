@@ -5,11 +5,11 @@ import {
   type MaterializedTrafficArtifactEnvelope,
   type MaterializedTrafficFrameActor,
   type ResolvedAmbientTrafficProfile,
-} from "@simforge/engine";
+} from "@simforge-oss/engine";
 import { EMPTY_AMBIENT_CONFIG_SHA256, type ScenarioAmbientProvenance } from "@/app/lib/scenario/contracts";
 import type { MapEntry } from "@/app/lib/scenario/maps";
-import type { PlaybackBundle } from "@simforge/playback";
-import type { AmbientTrafficProviderId } from "@simforge/playback/traffic";
+import type { PlaybackBundle } from "@simforge-oss/playback";
+import type { AmbientTrafficProviderId } from "@simforge-oss/playback/traffic";
 
 /** Build deterministic renderer/off traffic bytes only after an explicit export/render action. */
 export function materializeBrowserRevisionTraffic(

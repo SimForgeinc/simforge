@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera, Radar } from "lucide-react";
-import type { RenderModality } from "@simforge/scenario";
+import type { RenderModality } from "@simforge-oss/scenario";
 import { cn } from "@/app/lib/utils";
 import { humanize } from "./recording-panel-fields";
 import { RenderWizardBody, RenderWizardFooter } from "./RenderWizardChrome";

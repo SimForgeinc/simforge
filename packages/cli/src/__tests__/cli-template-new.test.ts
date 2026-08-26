@@ -15,7 +15,7 @@ import path from 'node:path';
 import { execa, type ExecaError } from 'execa';
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge-oss/compiler/node';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
 const haveArtifacts = existsSync(path.join(DEV_ASSETS, 'yale-st-palo-alto-ca'));

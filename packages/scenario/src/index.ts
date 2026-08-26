@@ -1,8 +1,8 @@
 /**
- * `@simforge/scenario` — the versioned scenario documents.
+ * `@simforge-oss/scenario` — the versioned scenario documents.
  *
  * Framework-free: no React, no three.js. Positions in v1 are plain `{x, y, z}`
- * in the y-up scene frame that `@simforge/maps/opendrive` produces, and
+ * in the y-up scene frame that `@simforge-oss/maps/opendrive` produces, and
  * headings are radians CCW about +Y from +X (equal to the OpenDRIVE heading —
  * see `schema/v1.ts`).
  *
@@ -33,7 +33,7 @@
  *
  * @example v1: edit a scene
  * ```ts
- * import { ScenarioDocument, MemoryScenarioFileStore } from '@simforge/scenario';
+ * import { ScenarioDocument, MemoryScenarioFileStore } from '@simforge-oss/scenario';
  *
  * const doc = ScenarioDocument.create({
  *   name: 'Yale & Grant left turn',
@@ -52,7 +52,7 @@
  *
  * @example v2: validate a template
  * ```ts
- * import { parseTemplate, validateTemplate } from '@simforge/scenario';
+ * import { parseTemplate, validateTemplate } from '@simforge-oss/scenario';
  *
  * const template = parseTemplate(JSON.parse(text));
  * const report = validateTemplate(template);        // document-only checks

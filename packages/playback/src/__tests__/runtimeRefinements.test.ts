@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ActorRenderer, ActorView } from '@simforge/viewer';
-import { parseSimScenarioInput } from '@simforge/engine';
+import type { ActorRenderer, ActorView } from '@simforge-oss/viewer';
+import { parseSimScenarioInput } from '@simforge-oss/engine';
 import {
   CollisionActorOverrides,
   withBoundedSpeedCruiseRestoration,

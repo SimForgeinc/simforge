@@ -1,4 +1,4 @@
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
 import {
   PROP_TAGS,
   registerExternalCatalogEntry,
@@ -7,7 +7,7 @@ import {
   type ExternalCatalogEntry,
   type PropClass,
   type PropTag,
-} from "@simforge/asset-catalog";
+} from "@simforge-oss/asset-catalog";
 
 export interface CarlaObjectDto {
   readonly catalogId: string;

@@ -10,10 +10,10 @@ import {
 import {
   MemoryStorage,
   WebTemplateFileStore,
-} from "@simforge/scenario";
-import { type ActorRenderer, type CityViewer } from "@simforge/viewer";
-import type { GroundIndex } from "@simforge/viewer";
-import type { PlaybackBundle } from "@simforge/playback";
+} from "@simforge-oss/scenario";
+import { type ActorRenderer, type CityViewer } from "@simforge-oss/viewer";
+import type { GroundIndex } from "@simforge-oss/viewer";
+import type { PlaybackBundle } from "@simforge-oss/playback";
 import {
   EditorController,
   EditorDocument,
@@ -21,7 +21,7 @@ import {
   type ScenarioMapEntry,
   warmAuthoringRuntime,
   warmSimulationAssets,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import type { ScenarioDocumentRecord } from "./api";
 
 export interface EditorRuntime {

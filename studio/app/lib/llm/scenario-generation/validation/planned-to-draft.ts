@@ -15,8 +15,8 @@ import {
   TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
   type ScenarioEditorActorDraft,
   type TimedInstructions,
-} from "@simforge/studio-shared";
-import { PEDESTRIAN_LIMITS } from "@simforge/engine";
+} from "@simforge-oss/studio-shared";
+import { PEDESTRIAN_LIMITS } from "@simforge-oss/engine";
 import {
   ADULT_RUN_SPEED_MPS,
   conflictWalkerBlueprint,

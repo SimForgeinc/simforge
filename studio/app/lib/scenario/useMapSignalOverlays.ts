@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ScenarioMapEntry } from "@simforge/editor";
-import type { CityViewer } from "@simforge/viewer";
+import type { ScenarioMapEntry } from "@simforge-oss/editor";
+import type { CityViewer } from "@simforge-oss/viewer";
 import { playbackMapEntry } from "@/app/lib/scenario/maps";
 import {
   loadMapOverlays,

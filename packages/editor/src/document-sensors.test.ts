@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MemoryStorage, WebTemplateFileStore, defaultDashCamera } from '@simforge/scenario';
+import { MemoryStorage, WebTemplateFileStore, defaultDashCamera } from '@simforge-oss/scenario';
 import { EditorDocument, sensorSubjectRole } from './document';
 import { TEST_MAP } from './map';
 

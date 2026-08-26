@@ -1,4 +1,4 @@
-import type { Condition, Interaction, Trigger } from "@simforge/scenario";
+import type { Condition, Interaction, Trigger } from "@simforge-oss/scenario";
 
 export const TRIGGER_KINDS: readonly Trigger["kind"][] = [
   "at",

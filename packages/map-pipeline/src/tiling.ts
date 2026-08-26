@@ -75,7 +75,7 @@ async function scriptPath(): Promise<string> {
       // Try the source-tree/build-tree alternative.
     }
   }
-  throw new Error('fbx-to-tiles.py is missing from @simforge/map-pipeline');
+  throw new Error('fbx-to-tiles.py is missing from @simforge-oss/map-pipeline');
 }
 
 export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResult> {

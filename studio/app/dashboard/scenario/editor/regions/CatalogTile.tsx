@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, DragEvent } from "react";
-import type { CatalogEntry, CatalogId, PropClass } from "@simforge/asset-catalog";
+import type { CatalogEntry, CatalogId, PropClass } from "@simforge-oss/asset-catalog";
 
 import { CarlaReadyMark } from "@/app/components/CarlaReadyMark";
 import {

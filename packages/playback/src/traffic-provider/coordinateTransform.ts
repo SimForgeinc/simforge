@@ -3,7 +3,7 @@ import {
   sumoNetworkToScene,
   sumoSceneHeadingToNetwork,
   sumoSceneToNetwork,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import type { NetworkWorldTransform } from './protocol';
 
 export function toWorld(x: number, y: number, transform: NetworkWorldTransform): { x: number; y: number } {

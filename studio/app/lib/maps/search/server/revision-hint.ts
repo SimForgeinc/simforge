@@ -1,4 +1,4 @@
-import type { ScenarioValidationReport } from "@simforge/studio-shared";
+import type { ScenarioValidationReport } from "@simforge-oss/studio-shared";
 
 /**
  * Turn a failing kinematic-validation report into ONE concrete

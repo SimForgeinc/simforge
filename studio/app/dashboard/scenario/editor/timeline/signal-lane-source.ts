@@ -1,4 +1,4 @@
-import type { MapSignalPlan } from "@simforge/scenario";
+import type { MapSignalPlan } from "@simforge-oss/scenario";
 
 import type {
   TimelineLaneSource,

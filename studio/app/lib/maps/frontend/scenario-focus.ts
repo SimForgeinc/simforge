@@ -17,7 +17,7 @@
  * existing POI flow rather than feeling like a separate concept.
  */
 
-import type { MapAsset, ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import type { MapAsset, ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
 import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates"
 import { actorPlannedTrajectories } from "./scenario-trajectories";

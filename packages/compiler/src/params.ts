@@ -23,7 +23,7 @@ import {
   Rng,
   contentHash,
   sha256,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import {
   compareWith,
   evaluateExpr,
@@ -31,7 +31,7 @@ import {
   type ExprScope,
   type ParamDecl,
   type ScenarioTemplateV2,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 
 import { CliError } from './errors.js';
 

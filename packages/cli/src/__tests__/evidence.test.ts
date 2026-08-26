@@ -6,10 +6,10 @@ import {
   parseSimScenarioInput,
   runSimulation,
   type TopologyIndex,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import { verifyEvidenceHashes } from '../evidence.js';
-import type { InstanceFile } from '@simforge/compiler/node';
+import type { InstanceFile } from '@simforge-oss/compiler/node';
 const LANE = '1:0:-1';
 const topology: TopologyIndex = {
   schemaVersion: 1,

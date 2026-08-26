@@ -18,8 +18,8 @@ import {
   normalizeDerivedMapIndex,
   type DerivedMapIndex,
   type MatchedSite,
-} from '@simforge/compiler/node';
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
+} from '@simforge-oss/compiler/node';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
 
 import {
   CATALOG_RESEARCH_SOURCES,
@@ -29,11 +29,11 @@ import {
   type IncidentDefinition,
 } from './catalog-taxonomy.js';
 import { CliError, EXIT } from './errors.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge/compiler/node';
+import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge-oss/compiler/node';
 import { adaptTemplate } from './adapt.js';
 import { materialize, templateId as canonicalTemplateId } from './materialize.js';
-import { assertMatchableAnchor, catalogExactMatcherPolicy } from '@simforge/compiler/node';
-import { readTemplate } from '@simforge/compiler/node';
+import { assertMatchableAnchor, catalogExactMatcherPolicy } from '@simforge-oss/compiler/node';
+import { readTemplate } from '@simforge-oss/compiler/node';
 
 export const CATALOG_KIND = 'uniscenarios-scenario-catalog' as const;
 export const CATALOG_VERSION = 2 as const;
@@ -228,7 +228,7 @@ export interface ScenarioCatalogManifest {
     readonly minimumDomainsPerMap: number;
   };
   readonly provenance: {
-    readonly generator: '@simforge/cli catalog create';
+    readonly generator: '@simforge-oss/cli catalog create';
     readonly generatorVersion: string;
     readonly namespace: string;
     readonly taxonomyDigest: string;
@@ -494,7 +494,7 @@ async function readMapContext(devAssets: string, mapId: string): Promise<MapCont
   } catch {
     throw new CliError('missing_map_provenance', `cannot read complete map provenance for ${mapId}`, {
       path: path.join(devAssets, mapId),
-      detail: { hint: 'run `pnpm --filter @simforge/maps build:map -- --all`' },
+      detail: { hint: 'run `pnpm --filter @simforge-oss/maps build:map -- --all`' },
     });
   }
 
@@ -1041,7 +1041,7 @@ export async function createScenarioCatalog(
       minimumDomainsPerMap: 0,
     },
     provenance: {
-      generator: '@simforge/cli catalog create',
+      generator: '@simforge-oss/cli catalog create',
       generatorVersion: CATALOG_GENERATOR_VERSION,
       namespace,
       taxonomyDigest: taxonomyHash,

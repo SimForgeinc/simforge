@@ -1,6 +1,6 @@
 {
-  "name": "@simforge/openscenario",
-  "version": "0.1.0-rc.46",
+  "name": "@simforge-oss/openscenario",
+  "version": "0.1.0-rc.47",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
@@ -112,8 +112,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@simforge/engine": "workspace:*",
-    "@simforge/scenario": "workspace:*",
+    "@simforge-oss/engine": "workspace:*",
+    "@simforge-oss/scenario": "workspace:*",
     "fast-xml-parser": "^5.5.6"
   },
   "devDependencies": {

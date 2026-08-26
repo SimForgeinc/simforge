@@ -36,13 +36,13 @@ managed storage, remote fleets, and hosted job controls belong only in Cloud.
 
 | Capability | Canonical owner | SimForge Cloud responsibility |
 |---|---|---|
-| Scenario schemas, documents, migrations, validation | `@simforge/scenario` | Persist and authorize documents through product APIs |
-| Fixed-step execution, physics, traces, scene state | `@simforge/engine` | Queue work and record durable lifecycle and artifacts |
-| OpenDRIVE intelligence and world compilation | `@simforge/maps`, `@simforge/compiler` | Supply authorized map/artifact references and store outputs |
-| Authoring, viewport, playback, traffic, assets | `@simforge/editor`, `@simforge/viewer`, `@simforge/playback`, `@simforge/asset-catalog` | Product layout, identity, collaboration, and cloud-backed media |
-| Render contracts and engines | `@simforge/render`, `renderer/` | Worker transport, leasing, credentials, capacity, and observability |
-| OpenSCENARIO and conformance runners | `@simforge/openscenario` | Import/export endpoints and object storage |
-| Training and evaluation protocols | `@simforge/training-env`, `@simforge/evaluation` | Managed training and evaluation jobs |
+| Scenario schemas, documents, migrations, validation | `@simforge-oss/scenario` | Persist and authorize documents through product APIs |
+| Fixed-step execution, physics, traces, scene state | `@simforge-oss/engine` | Queue work and record durable lifecycle and artifacts |
+| OpenDRIVE intelligence and world compilation | `@simforge-oss/maps`, `@simforge-oss/compiler` | Supply authorized map/artifact references and store outputs |
+| Authoring, viewport, playback, traffic, assets | `@simforge-oss/editor`, `@simforge-oss/viewer`, `@simforge-oss/playback`, `@simforge-oss/asset-catalog` | Product layout, identity, collaboration, and cloud-backed media |
+| Render contracts and engines | `@simforge-oss/render`, `renderer/` | Worker transport, leasing, credentials, capacity, and observability |
+| OpenSCENARIO and conformance runners | `@simforge-oss/openscenario` | Import/export endpoints and object storage |
+| Training and evaluation protocols | `@simforge-oss/training-env`, `@simforge-oss/evaluation` | Managed training and evaluation jobs |
 | CARLA API and CARLA execution logic | `adapters/carla-api`, `adapters/carla-exec` | External runtime capacity and credentials |
 | Accounts, workspaces, permissions, billing, datasets, jobs, providers | SimForge Cloud | Entire implementation |
 
@@ -79,9 +79,9 @@ prevent core local authoring or deterministic simulation.
 
 ## Publication and immutable consumption
 
-`config/simforge-stack.json` defines release identity and lists the 13-package
-stack at `0.1.0-rc.45`. Its `renameManifest` maps every old package to its new
-package or subpath. The release tag is `v<stackVersion>`.
+`config/simforge-oss-stack.json` defines release identity and lists the 13-package
+stack at `0.1.0-rc.47`. Its historical `renameManifest` records the prior
+package consolidation. The release tag is `v<stackVersion>`.
 
 Cloud's committed stack lock is the consumption authority. Its CI verifies:
 
@@ -90,7 +90,7 @@ Cloud's committed stack lock is the consumption authority. Its CI verifies:
   resolution agree;
 - no duplicate editor, engine, compiler, OpenSCENARIO, or CARLA implementation
   has appeared in Cloud;
-- product code imports `@simforge/*` rather than retired package names;
+- product code imports `@simforge-oss/*` rather than retired package names;
 - frozen database, route, document, and worker contracts remain unchanged.
 
 ## Frozen wire contract

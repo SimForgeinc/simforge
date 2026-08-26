@@ -1,4 +1,4 @@
-import type { ScenarioEditorRoadAnchor } from "@simforge/studio-shared";
+import type { ScenarioEditorRoadAnchor } from "@simforge-oss/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import type { ForbiddenFractionZones } from "./types";
 import {

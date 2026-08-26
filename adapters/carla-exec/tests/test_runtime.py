@@ -17,11 +17,11 @@ import xml.etree.ElementTree as ET
 import pytest
 import urllib.error
 
-from simforge_carla_exec.runtime import transport as artifact_transport
-from simforge_carla_exec.runtime import compiler as worker_compiler
-from simforge_carla_exec.runtime import executor as worker_runner
-from simforge_carla_exec.runtime import validation as worker_validation
-from simforge_carla_exec.runtime.backend import (
+from simforge_oss_carla_exec.runtime import transport as artifact_transport
+from simforge_oss_carla_exec.runtime import compiler as worker_compiler
+from simforge_oss_carla_exec.runtime import executor as worker_runner
+from simforge_oss_carla_exec.runtime import validation as worker_validation
+from simforge_oss_carla_exec.runtime.backend import (
     SIGNAL_LAMP_BY_INDICATION,
     VEHICLE_DOOR_MEMBERS,
     VEHICLE_LIGHT_BITS,
@@ -30,7 +30,7 @@ from simforge_carla_exec.runtime.backend import (
     resolve_signal_lamp,
     runtime_asset_bindings,
 )
-from simforge_carla_exec.runtime.compiler import (
+from simforge_oss_carla_exec.runtime.compiler import (
     SIGNAL_INDICATIONS,
     VEHICLE_COMPONENT_TYPES,
     VEHICLE_LIGHT_TYPES,
@@ -40,11 +40,11 @@ from simforge_carla_exec.runtime.compiler import (
     PlanFrame,
     compile_xosc14,
 )
-from simforge_carla_exec.runtime.contract import ContractError, OFFICIAL_XSD_SHA256, canonical_json, canonical_sha256, parse_lease
-from simforge_carla_exec.runtime.parity import ParityAccumulator
-from simforge_carla_exec.runtime.materialized_traffic import merge_materialized_traffic, parse_materialized_traffic
-from simforge_carla_exec.runtime.executor import CancellationRequested, LeaseDeadlineExceeded, execute_lease
-from simforge_carla_exec.runtime.validation import validate_xosc14
+from simforge_oss_carla_exec.runtime.contract import ContractError, OFFICIAL_XSD_SHA256, canonical_json, canonical_sha256, parse_lease
+from simforge_oss_carla_exec.runtime.parity import ParityAccumulator
+from simforge_oss_carla_exec.runtime.materialized_traffic import merge_materialized_traffic, parse_materialized_traffic
+from simforge_oss_carla_exec.runtime.executor import CancellationRequested, LeaseDeadlineExceeded, execute_lease
+from simforge_oss_carla_exec.runtime.validation import validate_xosc14
 
 
 def artifact_bytes(body: bytes | Path) -> bytes:
@@ -65,7 +65,7 @@ def test_sensor_listen_retries_only_the_known_libcarla_spawn_race(monkeypatch, c
             callback("ready")
 
     monkeypatch.setattr(
-        "simforge_carla_exec.runtime.backend.sleep",
+        "simforge_oss_carla_exec.runtime.backend.sleep",
         lambda _seconds: None,
     )
     backend = object.__new__(CarlaBackend)
@@ -93,7 +93,7 @@ def test_sensor_listen_does_not_retry_an_unrelated_runtime_failure(monkeypatch) 
             raise RuntimeError("sensor stream rejected")
 
     monkeypatch.setattr(
-        "simforge_carla_exec.runtime.backend.sleep",
+        "simforge_oss_carla_exec.runtime.backend.sleep",
         lambda _seconds: pytest.fail("unrelated failures must not back off"),
     )
     backend = object.__new__(CarlaBackend)
@@ -1790,7 +1790,7 @@ def test_video_lease_requires_a_reservation_for_every_non_primary_sensor():
 def test_camera_stream_encoder_surfaces_writer_failure_while_backpressured():
     import queue
     import threading
-    from simforge_carla_exec.runtime.backend import (
+    from simforge_oss_carla_exec.runtime.backend import (
         CAMERA_ENCODER_QUEUE_FRAMES,
         _CameraStreamEncoder,
     )
@@ -1816,7 +1816,7 @@ def test_camera_stream_encoder_surfaces_writer_failure_while_backpressured():
 def test_camera_stream_encoder_absorbs_transient_burst():
     import queue
     import threading
-    from simforge_carla_exec.runtime.backend import (
+    from simforge_oss_carla_exec.runtime.backend import (
         CAMERA_ENCODER_QUEUE_FRAMES,
         _CameraStreamEncoder,
     )
@@ -1837,7 +1837,7 @@ def test_camera_stream_encoder_absorbs_transient_burst():
 
 
 def test_presentation_video_encoder_selection(monkeypatch):
-    from simforge_carla_exec.runtime.backend import _presentation_video_codec_args
+    from simforge_oss_carla_exec.runtime.backend import _presentation_video_codec_args
     monkeypatch.delenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", raising=False)
     assert "libx264" in _presentation_video_codec_args()
     monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
@@ -1850,7 +1850,7 @@ def test_presentation_video_encoder_selection(monkeypatch):
 
 
 def test_camera_stream_encoder_round_trips_real_frames_through_ffmpeg(tmp_path, monkeypatch):
-    from simforge_carla_exec.runtime.backend import _CameraStreamEncoder
+    from simforge_oss_carla_exec.runtime.backend import _CameraStreamEncoder
     monkeypatch.delenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", raising=False)
     destination = tmp_path / "stream.mp4"
     class Frame:
@@ -2642,14 +2642,14 @@ def test_duration_and_output_budgets_fail_before_expensive_allocation(monkeypatc
 
 
 def test_worker_validator_pins_official_schema_and_rejects_invalid_xml():
-    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_oss_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     assert digest(xsd.read_bytes()) == OFFICIAL_XSD_SHA256
     with pytest.raises(ContractError, match="XSD validation failed"):
         validate_xosc14(b"<OpenSCENARIO/>", xsd)
 
 
 def test_validator_rejects_entity_expansion_without_starting_xmllint(monkeypatch):
-    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_oss_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     monkeypatch.setattr(worker_validation.subprocess, "run", lambda *_args, **_kwargs: pytest.fail("xmllint must not start"))
     payload = b'<!DOCTYPE x [<!ENTITY boom "boom">]><OpenSCENARIO>&boom;</OpenSCENARIO>'
     with pytest.raises(ContractError, match="DTD and entity declarations"):
@@ -2658,7 +2658,7 @@ def test_validator_rejects_entity_expansion_without_starting_xmllint(monkeypatch
 
 @pytest.mark.parametrize("encoding", ["utf-16", "utf-16-le", "utf-16-be", "utf-32"])
 def test_validator_rejects_non_utf8_dtd_before_any_parser(monkeypatch, encoding):
-    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_oss_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     monkeypatch.setattr(worker_validation.subprocess, "run", lambda *_args, **_kwargs: pytest.fail("xmllint must not start"))
     payload = '<!DoCtYpE x [<!EnTiTy boom "boom">]><OpenSCENARIO>&boom;</OpenSCENARIO>'.encode(encoding)
     with pytest.raises(ContractError, match="must be UTF-8"):
@@ -2668,7 +2668,7 @@ def test_validator_rejects_non_utf8_dtd_before_any_parser(monkeypatch, encoding)
 
 
 def test_validator_has_a_bounded_timeout(monkeypatch):
-    xsd = Path(__file__).parents[1] / "simforge_carla_exec" / "assets" / "OpenSCENARIO.xsd"
+    xsd = Path(__file__).parents[1] / "simforge_oss_carla_exec" / "assets" / "OpenSCENARIO.xsd"
     def timeout(*_args, **_kwargs):
         raise subprocess.TimeoutExpired("xmllint", 1)
     monkeypatch.setattr(worker_validation.subprocess, "run", timeout)
@@ -2697,7 +2697,7 @@ def test_asset_allowlist_rejects_ssrf_and_redirect_destinations(monkeypatch):
 
 
 def test_independent_worker_has_no_legacy_runtime_dependency():
-    package = Path(__file__).parents[1] / "simforge_carla_exec"
+    package = Path(__file__).parents[1] / "simforge_oss_carla_exec"
     forbidden = (
         "WorkerApi",
         "/api/uniscenario/internal",
@@ -2717,7 +2717,7 @@ def test_independent_worker_has_no_legacy_runtime_dependency():
 # Cross-language conformance corpus.
 #
 # These are the public writer/runtime contract fixtures shipped by the exact
-# versioned `@simforge/openscenario` package in this release stack.
+# versioned `@simforge-oss/openscenario` package in this release stack.
 # Compiling those bytes here catches writer/interpreter disagreement without a
 # private product-repository copy.
 # --------------------------------------------------------------------------
@@ -3339,7 +3339,7 @@ def test_knockdown_pose_drops_the_actor_instead_of_failing_the_render():
 
 
 def test_cooked_map_registry_resolves_known_xodrs_and_env_extensions(monkeypatch):
-    from simforge_carla_exec.runtime.backend import cooked_map_name_for_xodr
+    from simforge_oss_carla_exec.runtime.backend import cooked_map_name_for_xodr
     monkeypatch.delenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", raising=False)
     richmond = "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643"
     belmont = "35cf2b16a1d308c6436089a0edf66f20c87a79da12e79472a03a2f568ba28f63"
@@ -3361,7 +3361,7 @@ def test_cooked_xodr_never_falls_back_to_a_generated_world(monkeypatch):
     monkeypatch.delenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", raising=False)
     richmond_xodr = b"richmond-source-xodr"
     monkeypatch.setattr(
-        "simforge_carla_exec.runtime.backend.COOKED_MAP_NAMES_BY_XODR_SHA256",
+        "simforge_oss_carla_exec.runtime.backend.COOKED_MAP_NAMES_BY_XODR_SHA256",
         {hashlib.sha256(richmond_xodr).hexdigest(): "Richmond_Field_Station_Richmond_CA"},
     )
     backend = object.__new__(CarlaBackend)
@@ -3695,7 +3695,7 @@ def test_tick_fails_closed_when_the_engine_ticks_itself():
 
 
 def test_sensor_sample_cap_covers_pronto_20s_and_stays_fail_closed(monkeypatch):
-    from simforge_carla_exec.runtime import contract
+    from simforge_oss_carla_exec.runtime import contract
 
     base = {
         "schema": "uniscenario.render-resource-request/v1",

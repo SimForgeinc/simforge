@@ -1,7 +1,7 @@
 "use client";
 
 import { SelectMenuField } from "@/app/components/ui/select-menu";
-import type { EditorDocument } from "@simforge/editor";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { DeleteButton, Heading, MiniAdd, TextField, uniqueId } from "./fields";
 
 const ESSENTIALITY = ["required", "preferred", "cosmetic"] as const;

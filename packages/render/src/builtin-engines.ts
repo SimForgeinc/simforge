@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { RenderIntentV1Schema } from '@simforge/scenario';
+import { RenderIntentV1Schema } from '@simforge-oss/scenario';
 
 import { RenderArtifactManifestSchema, type RenderArtifactManifest } from './artifacts.js';
 import { ENGINE_CAPABILITIES_V1_SCHEMA, type EngineCapabilityDeclaration } from './capabilities.js';
@@ -146,13 +146,13 @@ export async function loadBuiltinRenderEngine(
   if (engineId === 'native') {
     const moduleSpecifier = typeof options.module === 'string'
       ? options.module
-      : process.env.SIMFORGE_NATIVE_ENGINE_MODULE ?? '@simforge/render/native';
+      : process.env.SIMFORGE_NATIVE_ENGINE_MODULE ?? '@simforge-oss/render/native';
     const { module: _module, ...engineOptions } = options;
     return loadRenderEngine(moduleSpecifier, engineOptions);
   }
   const binary = typeof options.binary === 'string'
     ? options.binary
-    : process.env.UNISCENARIOS_CARLA_BINARY ?? 'simforge-carla-api';
+    : process.env.UNISCENARIOS_CARLA_BINARY ?? 'simforge-oss-carla-api';
   const host = typeof options.host === 'string'
     ? options.host
     : process.env.CARLA_HOST ?? '127.0.0.1';

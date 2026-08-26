@@ -15,7 +15,7 @@ import { decode, encode } from '@msgpack/msgpack';
 
 import { LANE_LEFT, LANE_RIGHT, scenario, syntheticGraph, syntheticTopology, vehicle } from '../fixture.js';
 import { EnvServer, loadEpisodeSpec, serveSocket } from '../env-server.js';
-import type { SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 
 const BATCH_K = 8;
 const WARMUP_BATCHES = 20;

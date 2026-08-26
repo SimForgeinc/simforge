@@ -18,7 +18,7 @@ import {
   sensorAperture,
   sensorMountScenePose,
   type ActorSensor,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 
 export interface SensorOverlayActor {
   readonly id: string;

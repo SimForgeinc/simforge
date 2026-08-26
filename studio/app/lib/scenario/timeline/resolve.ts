@@ -5,7 +5,7 @@
  *
  * v1 computed clip starts itself, in `timeline-model.ts::computeClipStarts` — walking `after_clip`
  * chains, guarding cycles, falling back to t=0. v2 does not need that ported, because
- * `@simforge/scenario` already does the whole analysis in `validate/timing.ts`:
+ * `@simforge-oss/scenario` already does the whole analysis in `validate/timing.ts`:
  * `resolveTriggerTime` and `endBound` handle `at` / `after` / `when` / `arrival`, evaluate parameter
  * expressions at their declared defaults, guard `after` cycles, and honour the `event: 'start' | 'end'`
  * distinction that v1 had no equivalent for.
@@ -36,7 +36,7 @@ import {
   type Interaction,
   type ScenarioTemplateV2,
   type TimingContext,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 import { choreographyWindow } from "./clip-window";
 import type { TimelineRange } from "./geometry";

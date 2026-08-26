@@ -1,6 +1,6 @@
 "use client";
 
-import type { EditorDocument, EditorState } from "@simforge/editor";
+import type { EditorDocument, EditorState } from "@simforge-oss/editor";
 import {
   V1TimelineRail,
   type V1TimelineBrowserPlayback,

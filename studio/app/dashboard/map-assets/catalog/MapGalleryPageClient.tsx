@@ -4,12 +4,12 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CityViewer } from "@simforge/viewer";
-import type { ActorRenderer } from "@simforge/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { ActorRenderer } from "@simforge-oss/viewer";
 import {
   DISABLED_SUMO_STATUS,
   type SumoTrafficStatus,
-} from "@simforge/playback/traffic";
+} from "@simforge-oss/playback/traffic";
 import {
   AlertTriangle,
   ArrowRight,
@@ -24,7 +24,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import type {
   ScenarioDocumentDto,
   ScenarioMapDescriptorDto,

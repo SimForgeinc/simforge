@@ -1,4 +1,4 @@
-import { contentHash } from '@simforge/engine';
+import { contentHash } from '@simforge-oss/engine';
 import {
   TRACE_COMPARISON_FORMAT_VERSION,
   type ActorComparisonMetrics,

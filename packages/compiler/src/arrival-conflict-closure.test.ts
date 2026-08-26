@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Route } from '@simforge/engine';
+import { Route } from '@simforge-oss/engine';
 
 import { closeArrivalConflict } from './materialize.js';
 

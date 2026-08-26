@@ -1,5 +1,5 @@
 import type { CameraView, CityViewer } from '../index.js';
-import { newTemplateId } from '@simforge/scenario';
+import { newTemplateId } from '@simforge-oss/scenario';
 import { AuthoredCameraHelpers } from './helpers';
 import {
   CAMERA_EXTENSION_KEY,

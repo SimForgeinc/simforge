@@ -5,7 +5,7 @@ import type {
   MapOverlayLayerId,
   MapSearchIndex,
   MapSearchIndexObject,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import aliasSpec from "./map-search-aliases.json";
 import {
   objectFamilyForCandidateKind,
@@ -30,7 +30,7 @@ import {
   type GeoJSONFeatureCollection,
 } from "./geojson-props";
 import { humanizeTag } from "@/app/lib/scenario-intelligence-ui";
-import { isPedestrianSpawnCandidate } from "@simforge/studio-shared";
+import { isPedestrianSpawnCandidate } from "@simforge-oss/studio-shared";
 
 export type { SearchObjectFamily };
 

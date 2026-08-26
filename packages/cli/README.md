@@ -1,4 +1,4 @@
-# `@simforge/cli` — `simforge`
+# `@simforge-oss/cli` — `simforge`
 
 `simforge` is the canonical command. The shorter `scen` executable remains
 available as a compatibility alias for existing automation.
@@ -71,7 +71,7 @@ scenario. It accepts either a concrete instance or a v2 template. Map-bound
 Studio templates infer their pinned map and compile through
 `materializeMapBound`; portable templates use `--map` and optional `--site`
 (otherwise the highest-ranked executable site). Both paths then run the exact
-shared `@simforge/engine` used by Studio playback.
+shared `@simforge-oss/engine` used by Studio playback.
 
 ```bash
 # Full JSON report on stdout (every native tick by default).
@@ -384,7 +384,7 @@ Stated plainly, because they bound what a number from `simforge` means:
 ## Tests
 
 ```bash
-pnpm --filter @simforge/cli test
+pnpm --filter @simforge-oss/cli test
 ```
 
 The pure tests (adapter, seeding, prop-dims) always run. The materializer and

@@ -1,5 +1,5 @@
 import { Layer, Source } from "react-map-gl/maplibre";
-import type { MapOverlayLayer, MapOverlayLayerId } from "@simforge/studio-shared";
+import type { MapOverlayLayer, MapOverlayLayerId } from "@simforge-oss/studio-shared";
 import { C, OVERLAY_STYLES } from "../map-layer-constants";
 import { ENRICHMENT_GLYPH_ICON, ENRICHMENT_LINE_CHIP_ICON } from "../map-icons";
 import type { EnrichmentLayerStyle } from "@/app/lib/scenario-editor/layer-styles";

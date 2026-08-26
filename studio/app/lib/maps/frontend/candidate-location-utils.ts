@@ -4,7 +4,7 @@
  * for rendering candidate location overlays and fly-to animations.
  */
 
-import type { CandidateLocation } from "@simforge/studio-shared";
+import type { CandidateLocation } from "@simforge-oss/studio-shared";
 
 /** Geometry shapes the candidate-highlight layers can render. The shared
  *  source carries both fill (polygons) and line (linestrings) sublayers, so

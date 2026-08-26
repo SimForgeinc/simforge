@@ -13,7 +13,7 @@
  * the inspector just omits the block in that case.
  */
 import { useEffect, useState } from "react";
-import type { MapSearchIndex, MapSearchIndexStreetFacts } from "@simforge/studio-shared";
+import type { MapSearchIndex, MapSearchIndexStreetFacts } from "@simforge-oss/studio-shared";
 
 export interface StreetFactsForFeature {
   streetName: string;

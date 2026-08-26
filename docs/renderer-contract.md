@@ -17,7 +17,7 @@ executed through the Three adapter
 
 | Surface | Renderer | Status |
 |---|---|---|
-| Scenario editor + preview + quick VP9 recording | **Packaged Three WebGL** — `@simforge/viewer` `CityViewer` + `ActorRenderer` | Canonical authoring viewport. Keeps custom picking, `G`/`R` modal manipulation, WebCodecs canvas recording. |
+| Scenario editor + preview + quick VP9 recording | **Packaged Three WebGL** — `@simforge-oss/viewer` `CityViewer` + `ActorRenderer` | Canonical authoring viewport. Keeps custom picking, `G`/`R` modal manipulation, WebCodecs canvas recording. |
 | City / digital-twin | **Platform Three WebGPU** — bespoke `city-viewer` runtime (platform repo) | Canonical map/twin surface. Streaming, TSL post stack, luminaires. |
 | High-fidelity preview, sensor/dataset artifacts | **Native Bevy** — `renderer/{render-core,sensors,service}` | Canonical sensor/cinematic lane. Headless jobs + shm service; not a browser viewport. |
 

@@ -15,7 +15,7 @@ import {
   clearExternalCatalogEntries,
   registerExternalCatalogEntry,
   type ExternalModelBinding,
-} from '@simforge/asset-catalog';
+} from '@simforge-oss/asset-catalog';
 import { ActorRenderer, disposePropTemplates, type ActorView } from './actorRenderer';
 import {
   disposeExternalModels,

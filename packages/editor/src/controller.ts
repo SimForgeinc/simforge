@@ -38,9 +38,9 @@
 
 import { Vector2, Vector3, type Intersection } from 'three';
 import { getViewerSurfaceRect, type EditorViewer } from './viewer-contract';
-import { CATALOG, getEntry, type CatalogId } from '@simforge/asset-catalog';
-import { buildDefaultPlacementRoute, buildFollowRoute } from '@simforge/engine';
-import { type ActorView } from '@simforge/viewer';
+import { CATALOG, getEntry, type CatalogId } from '@simforge-oss/asset-catalog';
+import { buildDefaultPlacementRoute, buildFollowRoute } from '@simforge-oss/engine';
+import { type ActorView } from '@simforge-oss/viewer';
 import {
   actorKindFor,
   DEFAULT_AUTHORED_VEHICLE_SPEED_KPH,

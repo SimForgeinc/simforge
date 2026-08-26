@@ -57,9 +57,9 @@ import {
 } from 'three';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { LOW_FIDELITY_HIDDEN_ROLE } from './roads-only';
-import { buildProp, getEntry, type Dims, type ExternalModelBinding } from '@simforge/asset-catalog';
-import type { ActorKind } from '@simforge/engine';
-import type { ActorSensor } from '@simforge/scenario';
+import { buildProp, getEntry, type Dims, type ExternalModelBinding } from '@simforge-oss/asset-catalog';
+import type { ActorKind } from '@simforge-oss/engine';
+import type { ActorSensor } from '@simforge-oss/scenario';
 import {
   externalModelClips,
   externalModelScene,

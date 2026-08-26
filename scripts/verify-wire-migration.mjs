@@ -77,7 +77,7 @@ const requiredCoverage = [
   ['database compatibility views', 'studio/migrations/20260824190000_simforge_schema_compat.sql', 'CREATE VIEW uniscenario.%I AS SELECT * FROM simforge.%I'],
   ['route rewrite', 'studio/next.config.ts', 'destination: "/api/simforge/:path*"'],
   ['Node environment fallback', 'studio/lib/compat-env.ts', 'const legacyName = `UNISCENARIO_${name}`'],
-  ['Python environment fallback', 'adapters/carla-exec/simforge_carla_exec/_compat_env.py', 'legacy_name = f"UNISCENARIO_{name}"'],
+  ['Python environment fallback', 'adapters/carla-exec/simforge_oss_carla_exec/_compat_env.py', 'legacy_name = f"UNISCENARIO_{name}"'],
   ['scene-state dual read', 'packages/engine/src/scene-state/schema.ts', 'LEGACY_SCENE_STATE_VERSION'],
   ['artifact schema dual read', 'packages/scenario/src/render-intent.ts', 'LEGACY_RENDER_INTENT_V1_SCHEMA'],
   ['JSON Schema dual read', 'packages/scenario/src/json-schema.ts', 'LEGACY_JSON_SCHEMA_ID'],

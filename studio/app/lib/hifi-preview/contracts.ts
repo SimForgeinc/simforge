@@ -14,8 +14,8 @@
  * framing and records the actual rendered pose separately.
  */
 import { z } from "zod";
-import type { CameraStateReport } from "@simforge/viewer";
-import { RENDERER_CONTRACT_VERSION } from "@simforge/viewer";
+import type { CameraStateReport } from "@simforge-oss/viewer";
+import { RENDERER_CONTRACT_VERSION } from "@simforge-oss/viewer";
 
 export const HIFI_PREVIEW_REQUEST_SCHEMA = "simforge.hifi-preview-request/v1";
 export const HIFI_PREVIEW_PROVENANCE_SCHEMA = "simforge.hifi-preview-provenance/v1";

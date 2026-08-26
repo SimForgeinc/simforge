@@ -1,15 +1,15 @@
 "use client";
 
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
-import { contentHash, type AmbientCandidatePool, type AmbientTrafficProfile, type EvaluateFilters, type IntentRubricInput } from '@simforge/engine';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
+import { contentHash, type AmbientCandidatePool, type AmbientTrafficProfile, type EvaluateFilters, type IntentRubricInput } from '@simforge-oss/engine';
 import type { MapEntry } from '../maps';
-import { parsePlaybackPair, type PlaybackBundle } from '@simforge/playback';
+import { parsePlaybackPair, type PlaybackBundle } from '@simforge-oss/playback';
 import type { AmbientRobustnessSummary, ScenarioWorkerRequest, ScenarioWorkerResponse } from './scenario-worker';
 import type { ScenarioWorkerStartRequest } from './scenario-worker';
-import { RevisionGate } from '@simforge/playback';
+import { RevisionGate } from '@simforge-oss/playback';
 import { primeGalleryEntriesForDocument } from '../../asset-gallery/editor-bridge';
 import { primeCarlaObjectsForDocument } from '../carla-objects';
-import { listExternalCatalogEntries } from '@simforge/asset-catalog';
+import { listExternalCatalogEntries } from '@simforge-oss/asset-catalog';
 
 export interface LivePlaybackCounters {
   readonly startupMs: number | null;

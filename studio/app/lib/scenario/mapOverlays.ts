@@ -46,7 +46,7 @@
  */
 
 import { Group, type Raycaster } from 'three';
-import type { CityViewer, GroundIndex } from '@simforge/viewer';
+import type { CityViewer, GroundIndex } from '@simforge-oss/viewer';
 import {
   CoordinateFrame,
   buildLaneOverlay,
@@ -68,7 +68,7 @@ import {
   type TrafficLightOrbDepthMode,
   type TrafficLightOrbLayerUserData,
   type TrafficLightOrbHighlightSelection,
-} from '@simforge/maps/opendrive';
+} from '@simforge-oss/maps/opendrive';
 
 /** Where a map's overlay sidecars live. */
 export interface MapOverlayUrls {

@@ -6,8 +6,8 @@ import type {
   ScenarioDatasetDto,
   ScenarioDocumentSummaryDto,
 } from "@/app/lib/scenario/contracts";
-import type { CityViewer } from "@simforge/viewer";
-import type { ActorRenderer } from "@simforge/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
+import type { ActorRenderer } from "@simforge-oss/viewer";
 import { useSetPageTitle } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";
 import { CopyableErrorMessage } from "./list/CopyableErrorMessage";

@@ -1,4 +1,4 @@
-import { buildLaneGraph, parseSimScenarioInput, type TopologyIndex } from '@simforge/engine';
+import { buildLaneGraph, parseSimScenarioInput, type TopologyIndex } from '@simforge-oss/engine';
 import { describe, expect, it } from 'vitest';
 
 import {

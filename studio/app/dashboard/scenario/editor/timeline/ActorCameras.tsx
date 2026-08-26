@@ -1,10 +1,10 @@
 "use client";
 
 import { Gauge, Plus, Trash2 } from "lucide-react";
-import { defaultDashCamera, type ActorSensor } from "@simforge/scenario";
+import { defaultDashCamera, type ActorSensor } from "@simforge-oss/scenario";
 import { Button } from "@/app/components/ui/button";
 import { Switch } from "@/app/components/ui/switch";
-import type { EditorDocument } from "@simforge/editor";
+import type { EditorDocument } from "@simforge-oss/editor";
 
 type Role = EditorDocument["data"]["roles"][number];
 

@@ -26,9 +26,9 @@ import type {
   SessionActorSnapshot,
   SignalBook,
   SignalSnapshot,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
-import { yawToQuaternion, type ActorClass, type SceneFrame } from '@simforge/engine/scene-state';
+import { yawToQuaternion, type ActorClass, type SceneFrame } from '@simforge-oss/engine/scene-state';
 
 /** Static per-session metadata stamped onto every tick: the map identity pair
  * the V5 digest rule requires ({mapId, xodrSha256}) plus the engine step the

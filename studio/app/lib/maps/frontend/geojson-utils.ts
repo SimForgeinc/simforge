@@ -1,6 +1,6 @@
 import { GEOJSON_FEATURE_ID_PROP } from "./feature-inspection-types";
 import { lngLatToLocalPoint, localPointToLngLat } from "@/app/lib/editor-map/coordinates";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 
 /**
  * Returns a GeoJSON FeatureCollection with each feature having __mapId for

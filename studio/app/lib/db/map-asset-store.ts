@@ -5,7 +5,7 @@ import type {
   MapImageryTileset,
   MapPlaceContext,
   MapStats,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { cache } from "react";
 import { mapAssetArtifactRowId } from "./ids";
 import { execute, queryOne, queryRows, withTransaction } from "./data-api";

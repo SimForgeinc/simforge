@@ -57,7 +57,7 @@ entry  (96 B): camera_id[48] | pass[16] | payload_offset u64 | payload_len u64
 
 `payload_offset` points at PAYLOAD bytes (record header at `-128`).
 `digest` is CRC32 (IEEE) of the payload — deterministic per rendered frame,
-`zlib.crc32` / `crc32fast` / `@simforge/render` `crc32()` all agree.
+`zlib.crc32` / `crc32fast` / `@simforge-oss/render` `crc32()` all agree.
 Payloads keep the wgpu 256-byte row alignment: `rowStride = payload_len /
 height` for 4-byte-per-pixel formats.
 
@@ -96,10 +96,10 @@ obs, resp = client.step_bundle(sim_tick, cameras)   # cameras only on first call
 Zero-copy views pin the mmap: drop views before `reader.close()`.
 `verify=True` raises `TornBundleError` on any digest/liveness failure.
 
-**TypeScript (studio worker, copying)** — `@simforge/render/native`:
+**TypeScript (studio worker, copying)** — `@simforge-oss/render/native`:
 
 ```ts
-import { ShmBundleReader } from '@simforge/render/native';
+import { ShmBundleReader } from '@simforge-oss/render/native';
 const reader = new ShmBundleReader(shmPath);
 const bundle = reader.latestNew();   // null until a NEW sim_tick appears
 // bundle.entries[i]: {cameraId, pass, byteOffset, byteLength, width, height,

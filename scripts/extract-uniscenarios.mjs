@@ -124,7 +124,7 @@ function sha256(path) {
 function transformTextFiles(destination, paths) {
   const replacements = [
     ['https://scenario-studio.simforge.ai/schema', 'https://schemas.uniscenarios.dev'],
-    ['@scenario-studio/', '@simforge/'],
+    ['@scenario-studio/', '@simforge-oss/'],
     ['scenario-studio-monorepo', 'uniscenarios'],
     ['SCENARIO_STUDIO', 'UNISCENARIOS'],
     ['Scenario Studio', 'UniScenarios'],
@@ -246,10 +246,10 @@ It was extracted without modifying or deleting the source repository.
 ## Naming contract
 
 - Product and repository: **UniScenarios** / \`uniscenarios\`
-- Package scope: \`@simforge/*\`
+- Package scope: \`@simforge-oss/*\`
 - Primary CLI: \`uniscenarios\`
 - Compatibility CLI alias: \`scen\`
-- Application workspace: \`studio\` (\`@simforge/studio\`)
+- Application workspace: \`studio\` (\`@simforge-oss/studio\`)
 
 The \`studio\` directory name describes the authoring surface; it is not a
 legacy product name. Public UI, schemas, package metadata, and documentation use

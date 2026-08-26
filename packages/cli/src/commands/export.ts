@@ -3,11 +3,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { exportAsamScenario, AsamExportError, type AsamFormat } from '@simforge/openscenario/export';
+import { exportAsamScenario, AsamExportError, type AsamFormat } from '@simforge-oss/openscenario/export';
 import { CliError, EXIT } from '../errors.js';
-import { loadMap } from '@simforge/compiler/node';
+import { loadMap } from '@simforge-oss/compiler/node';
 import { emit, emitLines } from '../output.js';
-import { readInstance } from '@simforge/compiler/node';
+import { readInstance } from '@simforge-oss/compiler/node';
 
 export interface ExportOptions {
   readonly file: string;

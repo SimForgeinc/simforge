@@ -24,9 +24,9 @@ test('OpenSCENARIO standards behavior has one package owner', async () => {
   const canonical = await readJson('packages/openscenario/package.json');
   const cli = await readJson('packages/cli/package.json');
 
-  // The esmini runner is consolidated into @simforge/openscenario itself.
-  assert.equal(canonical.dependencies?.['@simforge/cli'], undefined);
-  assert.equal(cli.dependencies?.['@simforge/openscenario'], 'workspace:*');
+  // The esmini runner is consolidated into @simforge-oss/openscenario itself.
+  assert.equal(canonical.dependencies?.['@simforge-oss/cli'], undefined);
+  assert.equal(cli.dependencies?.['@simforge-oss/openscenario'], 'workspace:*');
   assert.deepEqual(await sourceFiles('packages/cli/src/asam'), []);
   assert.equal(await exists('packages/openscenario/src/export/index.ts'), true);
   assert.equal(await exists('packages/openscenario/src/node/index.ts'), true);
@@ -44,7 +44,7 @@ test('Studio imports the standards package instead of CLI internals', async () =
       if (entry.isDirectory()) pending.push(child);
       if (!entry.isFile() || !/\.[cm]?[jt]sx?$/u.test(entry.name)) continue;
       const source = await readFile(path.join(root, child), 'utf8');
-      if (source.includes('@simforge/cli/asam') || source.includes('packages/cli/src/asam')) violations.push(child);
+      if (source.includes('@simforge-oss/cli/asam') || source.includes('packages/cli/src/asam')) violations.push(child);
     }
   }
   assert.deepEqual(violations, []);

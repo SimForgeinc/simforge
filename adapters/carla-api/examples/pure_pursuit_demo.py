@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from simforge_carla_api import Client, Color, Location, VehicleControl  # noqa: E402
+from simforge_oss_carla_api import Client, Color, Location, VehicleControl  # noqa: E402
 
 LOOKAHEAD_GAIN, LOOKAHEAD_MIN, LOOKAHEAD_MAX = 1.5, 3.0, 15.0
 TARGET_SPEED_MPS = 8.0

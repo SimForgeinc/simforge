@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@simforge/viewer": ["./compat-viewer-shim.ts"]
+      "@simforge-oss/viewer": ["./compat-viewer-shim.ts"]
     }
   },
   "include": ["src", "compat-entry.ts", "compat-viewer-shim.ts", "../viewer/src"]

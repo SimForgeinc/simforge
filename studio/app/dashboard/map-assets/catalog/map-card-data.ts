@@ -1,5 +1,5 @@
-import type { MapAsset } from "@simforge/studio-shared";
-import { getMapAssetDescriptorTag } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
+import { getMapAssetDescriptorTag } from "@simforge-oss/studio-shared";
 
 // ---------------------------------------------------------------------------
 // Shared, pure derivation logic for the map-asset cards (catalog grid card and

@@ -10,8 +10,8 @@ import {
   type PointRef,
   type SignalRef,
   type Trigger,
-} from "@simforge/scenario";
-import type { EditorDocument } from "@simforge/editor";
+} from "@simforge-oss/scenario";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { NumberField, TextField } from "../authoring/fields";
 import {
   CONDITION_KINDS,

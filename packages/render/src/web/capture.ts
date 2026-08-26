@@ -1,6 +1,6 @@
-import { fixedStepCaptureFrames, samplePlaybackActors, type PlaybackBundle, type PlaybackController, type SampledActor } from '@simforge/playback';
-import { lowerRenderSpecToBrowser, type BrowserCameraRenderPass, type BrowserRenderPass, type RenderSpecV3, type ResolvedFrameSchedule } from '@simforge/scenario';
-import type { CityViewer } from '@simforge/viewer';
+import { fixedStepCaptureFrames, samplePlaybackActors, type PlaybackBundle, type PlaybackController, type SampledActor } from '@simforge-oss/playback';
+import { lowerRenderSpecToBrowser, type BrowserCameraRenderPass, type BrowserRenderPass, type RenderSpecV3, type ResolvedFrameSchedule } from '@simforge-oss/scenario';
+import type { CityViewer } from '@simforge-oss/viewer';
 import { Matrix4, PerspectiveCamera, Quaternion, Vector3, type Object3D } from 'three';
 import { HashedArtifactSink, StreamingZipWriter, sensorFramePath, throwIfAborted, type ArtifactReceipt, type ArtifactSinkFactory } from './artifacts.js';
 import { BoundedCpuPipeline } from './pipeline.js';

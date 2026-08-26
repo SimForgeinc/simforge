@@ -1,6 +1,6 @@
 {
-  "name": "@simforge/playback",
-  "version": "0.1.0-rc.46",
+  "name": "@simforge-oss/playback",
+  "version": "0.1.0-rc.47",
   "description": "Deterministic SimForge trace loading, sampling, playback control, map runtime, collider, and browser traffic runtime.",
   "repository": {
     "type": "git",
@@ -41,11 +41,11 @@
     "dist"
   ],
   "dependencies": {
-    "@simforge/asset-catalog": "workspace:*",
-    "@simforge/engine": "workspace:*",
-    "@simforge/openscenario": "workspace:*",
-    "@simforge/scenario": "workspace:*",
-    "@simforge/viewer": "workspace:*",
+    "@simforge-oss/asset-catalog": "workspace:*",
+    "@simforge-oss/engine": "workspace:*",
+    "@simforge-oss/openscenario": "workspace:*",
+    "@simforge-oss/scenario": "workspace:*",
+    "@simforge-oss/viewer": "workspace:*",
     "three": "^0.185.0"
   },
   "devDependencies": {

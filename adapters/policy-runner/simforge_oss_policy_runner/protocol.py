@@ -18,7 +18,7 @@ POLICY_STEP_PROTOCOL_VERSION = 1
 
 _HEADER = struct.Struct("<I")
 
-#: This file lives at <repo>/adapters/policy-runner/simforge_policy_runner/.
+#: This file lives at <repo>/adapters/policy-runner/simforge_oss_policy_runner/.
 REPO_DIR = Path(__file__).resolve().parents[3]
 SERVER_DIST = REPO_DIR / "packages" / "training-env" / "dist" / "env-server.js"
 
@@ -65,7 +65,7 @@ class PolicyServer:
     @staticmethod
     def default_command(spec_path: str | Path, decision_hz: int | None = None) -> tuple[str, ...]:
         if not SERVER_DIST.exists():
-            raise RuntimeError(f"missing {SERVER_DIST}; build @simforge/training-env first")
+            raise RuntimeError(f"missing {SERVER_DIST}; build @simforge-oss/training-env first")
         command = ("node", str(SERVER_DIST), "--episodes", str(spec_path))
         if decision_hz is not None:
             command += ("--decision-hz", str(decision_hz))

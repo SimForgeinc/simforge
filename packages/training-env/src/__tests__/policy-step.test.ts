@@ -26,7 +26,7 @@ import {
   type FrameBundleRef,
   type PolicyAction,
 } from '../policy-step.js';
-import type { SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 
 const graph = syntheticGraph();
 

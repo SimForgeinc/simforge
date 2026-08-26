@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ActorView } from "@simforge/viewer";
-import type { SumoAuthoredOccupancySource } from "@simforge/engine";
+import type { ActorView } from "@simforge-oss/viewer";
+import type { SumoAuthoredOccupancySource } from "@simforge-oss/engine";
 import { SumoCollisionPhysics } from "./sumoCollisionPhysics";
 
 type SumoExternalActorView = SumoAuthoredOccupancySource;

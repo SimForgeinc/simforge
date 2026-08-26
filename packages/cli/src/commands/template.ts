@@ -13,18 +13,18 @@ import {
   parseAndValidateTemplate,
   toScenarioIssues,
   type ClauseResult,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { adaptTemplate } from '../adapt.js';
 import { CliError, EXIT } from '../errors.js';
-import { assertKnownMap } from '@simforge/compiler/node';
-import { createMapContext } from '@simforge/compiler/node';
+import { assertKnownMap } from '@simforge-oss/compiler/node';
+import { createMapContext } from '@simforge-oss/compiler/node';
 import { emit, emitLines, pad } from '../output.js';
-import { matchOnMap } from '@simforge/compiler/node';
-import { writeJsonFile } from '@simforge/compiler/node';
+import { matchOnMap } from '@simforge-oss/compiler/node';
+import { writeJsonFile } from '@simforge-oss/compiler/node';
 
 export interface TemplateValidateOptions {
   readonly file: string;

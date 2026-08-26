@@ -8,9 +8,9 @@
  * different scenario and the cell must not be accepted or promoted.
  */
 
-import { contentHash, resolvePhysicsConfig, type MotionPhysicsMode, type SimTrace } from '@simforge/engine';
+import { contentHash, resolvePhysicsConfig, type MotionPhysicsMode, type SimTrace } from '@simforge-oss/engine';
 
-import type { InstanceFile } from '@simforge/compiler/node';
+import type { InstanceFile } from '@simforge-oss/compiler/node';
 
 export interface EvidenceHashIssue {
   readonly code:

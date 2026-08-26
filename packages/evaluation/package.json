@@ -1,6 +1,6 @@
 {
-  "name": "@simforge/evaluation",
-  "version": "0.1.0-rc.46",
+  "name": "@simforge-oss/evaluation",
+  "version": "0.1.0-rc.47",
   "description": "WS5 EvalHarness — frozen policy evaluation protocol: versioned suite (policy-eval-suite.v1), deterministic env server over the suite entries, and suite-hash-keyed report inputs. The Python runner lives under qualification/policy-eval-runner.",
   "repository": {
     "type": "git",
@@ -42,10 +42,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@simforge/compiler": "workspace:*",
-    "@simforge/engine": "workspace:*",
-    "@simforge/scenario": "workspace:*",
-    "@simforge/training-env": "workspace:*",
+    "@simforge-oss/compiler": "workspace:*",
+    "@simforge-oss/engine": "workspace:*",
+    "@simforge-oss/scenario": "workspace:*",
+    "@simforge-oss/training-env": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

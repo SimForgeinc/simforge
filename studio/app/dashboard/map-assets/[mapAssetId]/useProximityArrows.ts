@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import { resolvePlaceHighlight } from "@/app/lib/maps/frontend/place-highlight";
 import type { PlaceHighlight, PlaceHighlightContext } from "@/app/lib/maps/frontend/place-highlight";
 import type { MapSearchResult } from "@/app/lib/maps/search/map-search";

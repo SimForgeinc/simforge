@@ -4,7 +4,7 @@ import type {
   DatasetStats,
   DatasetStatsRepairState,
   DatasetStatus,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { createHash } from "node:crypto";
 import { datasetId } from "./ids";
 import { execute, queryOne, queryRows, type SqlParams } from "./data-api";

@@ -3,8 +3,8 @@
  * to Three.js scene-frame coordinates.
  */
 
-import type { CandidateLocation } from '@simforge/studio-shared';
-import { MapProjection } from '@simforge/studio-shared';
+import type { CandidateLocation } from '@simforge-oss/studio-shared';
+import { MapProjection } from '@simforge-oss/studio-shared';
 
 const DEG2RAD = Math.PI / 180;
 const METERS_PER_DEG = 111320;

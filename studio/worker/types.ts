@@ -2,7 +2,7 @@ import type {
   RenderArtifactManifest,
   RenderInputFile,
   RenderProgressRecord,
-} from "@simforge/render";
+} from "@simforge-oss/render";
 
 export type LocalRenderEngine = "browser" | "native";
 

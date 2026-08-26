@@ -2,7 +2,7 @@
  * Static collision derivative for an uploaded map.
  *
  * The browser simulation fails closed without it: `loadStaticMapColliders`
- * (`@simforge/playback`) fetches `variants/manifest.json` beside the city
+ * (`@simforge-oss/playback`) fetches `variants/manifest.json` beside the city
  * manifest, checks that its `sourceManifestSha256` matches the manifest bytes it
  * just read, then fetches and digest-verifies the artifact the
  * `static-colliders` variant names. Any missing link surfaces in the editor as
@@ -14,9 +14,9 @@ import { createHash } from "node:crypto";
 import {
   buildStaticColliderArtifact,
   serializeStaticColliderArtifact,
-} from "@simforge/studio-shared/map-ingest/static-colliders.mjs";
+} from "@simforge-oss/studio-shared/map-ingest/static-colliders.mjs";
 
-import type { MapTopologyIndex } from "@simforge/studio-shared/map-topology/types";
+import type { MapTopologyIndex } from "@simforge-oss/studio-shared/map-topology/types";
 import type { CityManifestDocument } from "./city-manifest";
 
 export type ColliderSourceLayer = {

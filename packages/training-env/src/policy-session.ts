@@ -15,7 +15,7 @@
  * stream yields byte-identical responses.
  */
 
-import { TrajectoryFollower, anchorPlanToWorld, type TrajectoryPlanPoint } from '@simforge/engine';
+import { TrajectoryFollower, anchorPlanToWorld, type TrajectoryPlanPoint } from '@simforge-oss/engine';
 
 import { ENV_SERVER_PROTOCOL_VERSION, encodeStepResult, type EnvServer, type WireRequest } from './env-server.js';
 import {

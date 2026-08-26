@@ -1,5 +1,5 @@
 /**
- * @simforge/training-env — Gymnasium-semantics environment core over the
+ * @simforge-oss/training-env — Gymnasium-semantics environment core over the
  * SimForge fixed-step engine, plus the versioned causal ground-truth
  * channel used by the faithfulness-supervision program (rl-plan Phase 1).
  */

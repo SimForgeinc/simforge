@@ -2,7 +2,7 @@
  * Regenerate `src/__tests__/fixtures/mini-yale.json.gz`.
  *
  * ```
- * pnpm --filter @simforge/maps exec tsx scripts/extract-fixture.ts
+ * pnpm --filter @simforge-oss/maps exec tsx scripts/extract-fixture.ts
  * ```
  *
  * Carves a small, self-contained neighbourhood out of the Yale Street map —
@@ -21,7 +21,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync, gzipSync } from 'node:zlib';
 
-import { CoordinateFrame } from '@simforge/maps/opendrive';
+import { CoordinateFrame } from '@simforge-oss/maps/opendrive';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');

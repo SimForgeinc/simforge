@@ -1,4 +1,4 @@
-import type { ActorRenderer, ActorView } from '@simforge/viewer';
+import type { ActorRenderer, ActorView } from '@simforge-oss/viewer';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PlaybackBundle } from '../model';

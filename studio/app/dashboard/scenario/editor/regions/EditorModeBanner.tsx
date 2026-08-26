@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/app/components/ui/button";
-import type { EditorController, EditorState } from "@simforge/editor";
+import type { EditorController, EditorState } from "@simforge-oss/editor";
 import { Check, Move3d, PenLine, Trash2, X } from "lucide-react";
 
 /**

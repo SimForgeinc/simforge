@@ -8,8 +8,8 @@ import {
   resolveActorMotion,
   resolveTurnIntents,
   runwayBudgetM,
-} from "@simforge/studio-shared";
-import type { SemanticMapGraph } from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
+import type { SemanticMapGraph } from "@simforge-oss/studio-shared";
 import { getCurrentSession } from "@/app/lib/auth/session";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";
 import {

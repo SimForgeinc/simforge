@@ -174,8 +174,8 @@ Rebrand program dispatched and landed on main the same day. Lanes: RebrandCore
 merge/rename sweep), DocsRewrite (README storefront + docs refile),
 ReleasePrep (publication manifest, 13-tarball audit, SimCloud sync data),
 VerifyMerged (full verification incl. Studio browser E2E). Post-merge fixes:
-browser-safe "." vs node-only "./node" entries for @simforge/compiler and
-@simforge/maps (studio client bundle had pulled fs); restored the
+browser-safe "." vs node-only "./node" entries for @simforge-oss/compiler and
+@simforge-oss/maps (studio client bundle had pulled fs); restored the
 digest-protected authored catalog artifact the sweep had rewritten; dev:worker
 made worker-only; studio/.next untracked. CLI suite's 62 remaining failures
 reproduce byte-for-byte at the pre-rebrand baseline with the same dev-assets —

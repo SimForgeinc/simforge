@@ -1,7 +1,7 @@
 /**
  * `simforge import <file.xosc>` — OpenSCENARIO XML 1.4 → v2 scenario template.
  *
- * The heavy lifting lives in `@simforge/openscenario/import` (`analyze` →
+ * The heavy lifting lives in `@simforge-oss/openscenario/import` (`analyze` →
  * `resolveOpenScenarioMap` → `translate`); this command is the agent-facing
  * wrapper: it binds the file's embedded map identity against the dev-assets
  * maps on disk, runs tier-1 validation over the translated draft, and reports
@@ -26,13 +26,13 @@ import {
   translateOpenScenarioImport,
   type OpenScenarioImportDiagnostic,
   type OpenScenarioImportMapCandidate,
-} from '@simforge/openscenario/import';
-import { parseAndValidateTemplate, type ClauseResult } from '@simforge/scenario';
+} from '@simforge-oss/openscenario/import';
+import { parseAndValidateTemplate, type ClauseResult } from '@simforge-oss/scenario';
 
-import { assertKnownMap, availableMaps, mapDir } from '@simforge/compiler/node';
+import { assertKnownMap, availableMaps, mapDir } from '@simforge-oss/compiler/node';
 import { CliError, EXIT } from '../errors.js';
 import { emit, emitLines, pad } from '../output.js';
-import { writeJsonFile } from '@simforge/compiler/node';
+import { writeJsonFile } from '@simforge-oss/compiler/node';
 
 export interface ImportOptions {
   readonly file: string;

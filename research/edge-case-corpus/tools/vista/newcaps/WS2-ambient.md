@@ -129,8 +129,8 @@ That is the whole change: two lines, in one function. Properties:
 
 ## Test-suite baselines (measured BEFORE any change, on this worktree)
 
-* `@simforge/engine`: **313 passed, 8 skipped, 0 failed** (43 files passed, 1 skipped).
-* `@simforge/cli`: **299 passed, 70 failed, 1 skipped** (29 files failed, 11 passed, 1 skipped).
+* `@simforge-oss/engine`: **313 passed, 8 skipped, 0 failed** (43 files passed, 1 skipped).
+* `@simforge-oss/cli`: **299 passed, 70 failed, 1 skipped** (29 files failed, 11 passed, 1 skipped).
   Note: the parent said ~67 pre-existing failures; the measured figure on this worktree is **70**.
   Post-change counts must be compared against 70, not 67.
 

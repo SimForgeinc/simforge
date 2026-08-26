@@ -1,6 +1,6 @@
 import type { ScenarioSimulationPreviewDto } from "@/app/lib/scenario/contracts";
 import { fetchContentAddressedArtifact } from "@/app/lib/scenario/artifact-cache";
-import { parsePlaybackPair, type PlaybackBundle } from "@simforge/playback";
+import { parsePlaybackPair, type PlaybackBundle } from "@simforge-oss/playback";
 // v2 invalidates traces generated before static map colliders were aligned to
 // the browser scene frame. Replaying those v1 traces would preserve vehicles
 // that had already passed through visible buildings.

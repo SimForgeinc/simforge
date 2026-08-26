@@ -21,7 +21,7 @@
  * including hand-authored ones.
  */
 
-import { primaryActor, type MapAsset, type ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import { primaryActor, type MapAsset, type ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
 import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates"
 import {

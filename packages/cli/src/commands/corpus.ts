@@ -40,7 +40,7 @@ import { MeshoptDecoder, MeshoptEncoder } from 'meshoptimizer';
 import sharp from 'sharp';
 
 import { CliError, EXIT } from '../errors.js';
-import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
+import { DEV_ASSETS, REPO_ROOT } from '@simforge-oss/compiler/node';
 import { emit } from '../output.js';
 
 export const CORPUS_SCHEMA = 'sensor-corpus.v1';

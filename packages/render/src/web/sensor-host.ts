@@ -1,5 +1,5 @@
-import type { PlaybackBundle } from '@simforge/playback';
-import type { RenderSensorSourceHost, RenderSpecV3 } from '@simforge/scenario';
+import type { PlaybackBundle } from '@simforge-oss/playback';
+import type { RenderSensorSourceHost, RenderSpecV3 } from '@simforge-oss/scenario';
 
 /** Browser-side defense after portable schema validation and input materialization. */
 export function assertBrowserSensorHosts(

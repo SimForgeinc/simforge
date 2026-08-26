@@ -1,11 +1,11 @@
-import type { FixedStepCaptureFrame } from '@simforge/playback';
+import type { FixedStepCaptureFrame } from '@simforge-oss/playback';
 import type {
   BrowserCameraRenderPass,
   BrowserLidarRenderPass,
   BrowserRadarRenderPass,
   BrowserRenderPass,
   ResolvedFrameSchedule,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import { throwIfAborted, type HashedArtifactSink } from './artifacts.js';
 import type { RadarDetection } from './sensors/csv.js';
 import type { LidarPoint } from './sensors/ply.js';

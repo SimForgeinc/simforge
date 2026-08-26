@@ -1,6 +1,6 @@
 "use client";
 
-import type { EditorDocument } from "@simforge/editor";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { Readout } from "./Readout";
 
 /**

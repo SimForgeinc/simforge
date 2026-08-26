@@ -15,7 +15,7 @@ It does not reimplement any renderer. It is a batch driver:
     run keeps everything it already produced.
 
 PREREQUISITE - the Studio dev server must already be running, started ONCE:
-    pnpm --filter @simforge/studio dev --host 127.0.0.1 --port 5199
+    pnpm --filter @simforge-oss/studio dev --host 127.0.0.1 --port 5199
 
 Usage:
     python3 render3d.py --records /tmp/vista-dataset-all/train.jsonl \

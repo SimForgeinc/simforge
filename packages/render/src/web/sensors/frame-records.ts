@@ -1,4 +1,4 @@
-import type { BrowserRenderPass } from '@simforge/scenario';
+import type { BrowserRenderPass } from '@simforge-oss/scenario';
 import { Matrix4 } from 'three';
 import { sensorFramePath } from '../artifacts.js';
 

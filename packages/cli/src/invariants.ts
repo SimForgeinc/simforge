@@ -34,14 +34,14 @@ import {
   type Invariant,
   type Range,
   type ScenarioTemplateV2,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import {
   criticalityMetricsInWindow,
   verifyNearMissOutcome,
   type ArrivalSolution,
   type SensorPerceptionMetric,
   type SimTrace,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 export interface InvariantResidualReport {
   readonly id: string;

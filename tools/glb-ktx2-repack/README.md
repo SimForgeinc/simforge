@@ -30,7 +30,7 @@ node tools/glb-ktx2-repack/scripts/bevy-decode.mjs out.ktx2.glb out.bevy.glb
 
 # focused tests: geometry-identity assertion + KTX2 decode smoke on the real
 # production fixture fixtures/yale-tile_0_0.lod3.glb
-pnpm --filter @simforge/glb-ktx2-repack test
+pnpm --filter @simforge-oss/glb-ktx2-repack test
 ```
 
 ## Codec choices (and why ETC1S is NOT the default for baseColor)

@@ -1,6 +1,6 @@
 /** `simforge maps list` — what is on disk, and whether it is derived yet. */
 
-import { KNOWN_MAPS, artifactPresence, loadMap, mapDir, DEV_ASSETS } from '@simforge/compiler/node';
+import { KNOWN_MAPS, artifactPresence, loadMap, mapDir, DEV_ASSETS } from '@simforge-oss/compiler/node';
 import { emit, emitLines, pad } from '../output.js';
 import { EXIT } from '../errors.js';
 import { existsSync } from 'node:fs';

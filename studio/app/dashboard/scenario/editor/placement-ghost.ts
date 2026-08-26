@@ -1,4 +1,4 @@
-import type { EditorMode } from "@simforge/editor";
+import type { EditorMode } from "@simforge-oss/editor";
 
 /**
  * Keep the translucent placement ghost off screen when nothing is being placed.

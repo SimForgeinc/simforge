@@ -38,10 +38,10 @@
 
 import { Raycaster, Vector2, Vector3 } from 'three';
 import { getViewerSurfaceRect, type EditorViewer } from './viewer-contract';
-import { getEntry, type CatalogId } from '@simforge/asset-catalog';
-import type { Interaction, ScenarioTemplateV2 } from '@simforge/scenario';
-import type { SceneTrace, SimScenarioInput } from '@simforge/engine';
-import { ActorRenderer, type ActorView } from '@simforge/viewer';
+import { getEntry, type CatalogId } from '@simforge-oss/asset-catalog';
+import type { Interaction, ScenarioTemplateV2 } from '@simforge-oss/scenario';
+import type { SceneTrace, SimScenarioInput } from '@simforge-oss/engine';
+import { ActorRenderer, type ActorView } from '@simforge-oss/viewer';
 import { GhostActor } from './ghostActor';
 import { interactionDraftId } from './interaction-palette';
 import { resolveVehicleDrop, RESNAP_RADIUS_M, type DropOutcome } from './drop-resolver';

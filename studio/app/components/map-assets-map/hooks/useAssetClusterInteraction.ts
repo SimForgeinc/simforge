@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import type { MutableRefObject } from "react";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import {
   ALL_LAYER_IDS,
   CLICKABLE_LAYER_IDS,

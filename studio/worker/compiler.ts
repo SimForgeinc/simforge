@@ -93,7 +93,7 @@ class CompilerClient {
 export async function runCompilerLoop(baseUrl: string | URL, token: string, signal: AbortSignal): Promise<void> {
   const workerId = simforgeEnv("COMPILER_WORKER_ID")?.trim() || `local-compiler-${hostname().replace(/[^A-Za-z0-9._:-]/g, "-")}-${process.pid}`;
   const client = new CompilerClient(new URL(baseUrl), token, workerId);
-  const xsdPath = createRequire(import.meta.url).resolve("@simforge/openscenario/schema/OpenSCENARIO.xsd");
+  const xsdPath = createRequire(import.meta.url).resolve("@simforge-oss/openscenario/schema/OpenSCENARIO.xsd");
   process.stdout.write(`${JSON.stringify({ component: "simforge-local-compiler", event: "worker.started", workerId, compilerVersion: COMPILER_VERSION })}\n`);
   while (!signal.aborted) {
     try {

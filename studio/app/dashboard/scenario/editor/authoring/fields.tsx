@@ -3,7 +3,7 @@
 import { useId, type ReactNode } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
-import { newTemplateId } from "@simforge/scenario";
+import { newTemplateId } from "@simforge-oss/scenario";
 
 /**
  * Shared controls for the authoring panel's six editors.

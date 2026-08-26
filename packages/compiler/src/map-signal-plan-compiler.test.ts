@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SignalBook, contentHash, type SignalProgram } from '@simforge/engine';
-import type { MapSignalPlan } from '@simforge/scenario';
+import { SignalBook, contentHash, type SignalProgram } from '@simforge-oss/engine';
+import type { MapSignalPlan } from '@simforge-oss/scenario';
 
 import { compileMapSignalPlans, MapSignalPlanCompileError } from './map-signal-plan-compiler.js';
 

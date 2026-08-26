@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MemoryStorage, WebTemplateFileStore, type Interaction } from '@simforge/scenario';
+import { MemoryStorage, WebTemplateFileStore, type Interaction } from '@simforge-oss/scenario';
 import { EditorDocument } from './document';
 import { TEST_MAP } from './map';
 

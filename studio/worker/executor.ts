@@ -3,15 +3,15 @@ import { spawn } from "node:child_process";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { createRenderEngine as createBrowserRenderEngine } from "@simforge/render/web";
-import { canonicalize, type RenderIntentV1 } from "@simforge/scenario";
+import { createRenderEngine as createBrowserRenderEngine } from "@simforge-oss/render/web";
+import { canonicalize, type RenderIntentV1 } from "@simforge-oss/scenario";
 import {
   RenderArtifactManifestSchema,
   assertEngineSupportsIntent,
   createFixedSchedules,
   hashFile,
   loadBuiltinRenderEngine,
-} from "@simforge/render";
+} from "@simforge-oss/render";
 
 import type {
   RecordingArtifact,
@@ -23,7 +23,7 @@ export async function executeRender(request: RenderExecutionRequest): Promise<Re
   const wireIntent = request.intent as unknown as RenderIntentV1 & { engine?: unknown; schedule?: unknown };
   const { engine: _engine, schedule: _schedule, ...portableIntent } = wireIntent;
   const intent = portableIntent as RenderIntentV1;
-  // Hash exactly as the control plane does: canonicalize (from @simforge/scenario)
+  // Hash exactly as the control plane does: canonicalize (from @simforge-oss/scenario)
   // sorts keys, drops undefined, and ROUNDS floats. A local canonicalizer without
   // float rounding diverges on irrational sensor mount angles (e.g. the Pronto rig).
   const intentSha256 = createHash("sha256").update(JSON.stringify(canonicalize(wireIntent))).digest("hex");

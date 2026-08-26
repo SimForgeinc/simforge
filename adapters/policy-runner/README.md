@@ -1,4 +1,4 @@
-# simforge-policy-runner
+# simforge-oss-policy-runner
 
 Reference client for the policy_step protocol (`docs/policy-step.md`):
 spawns an env-server, runs seeded episodes against a scripted control
@@ -14,10 +14,10 @@ forced (deterministic), never left to scheduling noise.
 
 ## Usage
 
-Build the server once (`pnpm --filter @simforge/training-env build`), then:
+Build the server once (`pnpm --filter @simforge-oss/training-env build`), then:
 
 ```sh
-python -m simforge_policy_runner \
+python -m simforge_oss_policy_runner \
     --spec fixtures/synthetic-episode-dynamic.json \
     --policy torch --seed 42 --policy-seed 7 --steps 30 \
     --deadline-ms 50 --fallback zero-control --force-miss-at 9 \
@@ -41,7 +41,7 @@ error, applied setpoints and preview point — so the trace shows the ego
 following the curves. Use the long-clip fixture:
 
 ```sh
-python -m simforge_policy_runner \
+python -m simforge_oss_policy_runner \
     --spec fixtures/synthetic-episode-trajectory.json \
     --policy trajectory --seed 42 --steps 120 --out /tmp/trace.jsonl
 ```

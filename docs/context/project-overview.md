@@ -30,8 +30,8 @@ compatibility in both directions. Its portable deterministic core includes:
   frozen policy evaluation, and scenario-faithfulness examination.
 - **Automation** (`packages/cli`): the `simforge` binary and `sf` alias.
 
-All 13 TypeScript packages use the `@simforge/*` scope and lockstep
-`0.1.0-rc.45` version.
+All 13 TypeScript packages use the `@simforge-oss/*` scope and lockstep
+`0.1.0-rc.47` version.
 
 ## Products and compatibility
 
@@ -54,7 +54,7 @@ CARLA interoperability remains two separate adapters:
 
 ## Repository layout
 
-- `packages/` — the 13-package `@simforge/*` TypeScript stack.
+- `packages/` — the 13-package `@simforge-oss/*` TypeScript stack.
 - `studio/` — SimForge Studio, the local product and default launch surface.
 - `renderer/` — SimForge Renderer Rust workspace.
 - `adapters/` — Gymnasium, CARLA API, and CARLA execution boundaries.

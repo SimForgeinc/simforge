@@ -1,4 +1,4 @@
-import { abortableDelay, throwIfCanceled } from '@simforge/render';
+import { abortableDelay, throwIfCanceled } from '@simforge-oss/render';
 
 import type { RenderWorkerConfig } from './config.js';
 

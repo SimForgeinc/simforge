@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFixedStepSimulation, parseSimScenarioInput } from '@simforge/engine';
+import { createFixedStepSimulation, parseSimScenarioInput } from '@simforge-oss/engine';
 import { initialLiveTickBudget, liveBatchTickBudget } from '../liveSimulationPlan';
 
 function dynamicActors(count: number) {

@@ -1,4 +1,4 @@
-import type { MapAssetAddress } from "@simforge/studio-shared";
+import type { MapAssetAddress } from "@simforge-oss/studio-shared";
 import { queryRows } from "./data-api";
 
 /**

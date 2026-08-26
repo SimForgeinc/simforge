@@ -1,4 +1,4 @@
-import type { LaneGeometry, LaneGraph } from "@simforge/engine";
+import type { LaneGeometry, LaneGraph } from "@simforge-oss/engine";
 
 type Poly3 = { s: number; a: number; b: number; c: number; d: number };
 type RoadProfile = { length: number; sectionStarts: number[]; elevations: Poly3[] };

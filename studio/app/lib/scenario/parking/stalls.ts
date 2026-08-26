@@ -23,7 +23,7 @@ export const PARKING_STALL_SCHEMA_VERSION = 1;
  * The projection (`MapProjection.geoToLocal`) yields the z-up runtime frame
  * `{x east, y north}`; the scene is that frame embedded y-up, so `x` carries
  * over and `z = -runtime.y` (the conversion used by
- * `@simforge/playback` staticMapColliders and `control-plan.server.ts`). `headingRad` is
+ * `@simforge-oss/playback` staticMapColliders and `control-plan.server.ts`). `headingRad` is
  * numerically identical in both frames: the model defines it as CCW about +Y
  * from +X where heading `h` points along `(cos h, sin h)` z-up, which is
  * `(cos h, -sin h)` in scene `(x, z)`.

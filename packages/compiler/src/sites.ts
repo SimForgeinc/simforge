@@ -10,7 +10,7 @@
 import { matchAnchorReport, type MatchReport, type MatchedSite } from './anchor/index.js';
 import { assertMaterializableMapControls } from './materialize.js';
 import { buildSiteRoadControls, buildSiteSignalPlan } from './map-signals.js';
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
 
 import { adaptTemplate, unmatchableNotes, type AdaptNote } from './adapt.js';
 import { CliError } from './errors.js';

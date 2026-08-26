@@ -27,7 +27,7 @@ import {
   type CameraPoseCommand,
   type FixtureCameraCase,
   type Mat4,
-} from "@simforge/viewer";
+} from "@simforge-oss/viewer";
 
 import { CreateHifiPreviewSchema, contractCameraReportAsWire, type WireCameraStateReport } from "../contracts";
 

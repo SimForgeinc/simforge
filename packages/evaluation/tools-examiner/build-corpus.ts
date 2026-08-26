@@ -18,7 +18,7 @@
  * with a logged reason; the build fails only if fewer than {@link MIN_SCENARIOS}
  * distinct scenarios succeed.
  *
- * Run: pnpm --filter @simforge/evaluation corpus:build
+ * Run: pnpm --filter @simforge-oss/evaluation corpus:build
  */
 
 import path from 'node:path';
@@ -33,17 +33,17 @@ import {
   readTemplate,
   writeJsonFile,
   type MapBundle,
-} from '@simforge/compiler/node';
-import type { MatchedSite } from '@simforge/compiler/node';
-import { EnvSession, type CausalChannel } from '@simforge/training-env';
+} from '@simforge-oss/compiler/node';
+import type { MatchedSite } from '@simforge-oss/compiler/node';
+import { EnvSession, type CausalChannel } from '@simforge-oss/training-env';
 import {
   runSimulation,
   traceDigest,
   type Interaction,
   type SimScenarioInput,
   type SimTrace,
-} from '@simforge/engine';
-import type { ScenarioTemplateV2 } from '@simforge/scenario';
+} from '@simforge-oss/engine';
+import type { ScenarioTemplateV2 } from '@simforge-oss/scenario';
 
 /**
  * Candidate templates; ≥5 distinct successful simulated scenarios are

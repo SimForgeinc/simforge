@@ -17,7 +17,7 @@ import { LANE_LEFT, scenario, syntheticGraph, vehicle } from '../fixture.js';
 import { EnvServer } from '../env-server.js';
 import { registerPolicySession, type PolicySessionOptions } from '../policy-session.js';
 import { POLICY_STEP_PROTOCOL_VERSION, encodePolicyAction, toEnvAction, type PolicyAction } from '../policy-step.js';
-import type { SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 
 const graph = syntheticGraph();
 

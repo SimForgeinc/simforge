@@ -1,8 +1,8 @@
 import {
   DEFAULT_CAMERA_CONTROL_PREFERENCES,
   type CameraControlPreferences,
-} from "@simforge/viewer";
-import type { CameraMode } from "@simforge/viewer";
+} from "@simforge-oss/viewer";
+import type { CameraMode } from "@simforge-oss/viewer";
 
 /**
  * Viewport settings: the camera-control preferences plus what the scene draws.

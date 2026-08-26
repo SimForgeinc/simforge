@@ -2,8 +2,8 @@
 
 import { Radio, Trash2 } from "lucide-react";
 import { useMemo } from "react";
-import type { Interaction, Trigger } from "@simforge/scenario";
-import type { EditorDocument } from "@simforge/editor";
+import type { Interaction, Trigger } from "@simforge-oss/scenario";
+import type { EditorDocument } from "@simforge-oss/editor";
 import {
   choreographyWindow,
   resolveInteractionLayout,

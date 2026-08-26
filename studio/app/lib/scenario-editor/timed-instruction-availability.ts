@@ -2,7 +2,7 @@ import type {
   ScenarioEditorActorDraft,
   TimedInstructionPrimitiveId,
   TimedInstructions,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { RuntimeRoadOverlayCollection } from "@/app/lib/editor-map/types";
 
 export type TimedInstructionPrimitiveAvailability = {

@@ -7,8 +7,8 @@ COPY --from=source /packages/scenario ./packages/scenario
 COPY --from=source /packages/render ./packages/render
 COPY --from=source /services/render-worker ./services/render-worker
 RUN pnpm install --frozen-lockfile --ignore-scripts \
- && pnpm --filter @simforge/scenario --filter @simforge/render --filter @simforge/render-worker build \
- && pnpm deploy --legacy --filter @simforge/render-worker --prod /out/worker
+ && pnpm --filter @simforge-oss/scenario --filter @simforge-oss/render --filter @simforge-oss/render-worker build \
+ && pnpm deploy --legacy --filter @simforge-oss/render-worker --prod /out/worker
 
 FROM python:3.12.10-slim-bookworm AS python-build
 WORKDIR /src
@@ -31,7 +31,7 @@ COPY --from=python-build /wheels /tmp/wheels
 RUN python3 -m pip install --no-cache-dir /home/carla/PythonAPI/carla/dist/carla-*.whl /tmp/wheels/*.whl && rm -rf /tmp/wheels
 ENV NODE_ENV=production \
     PORT=8080 \
-    UNISCENARIOS_CARLA_BINARY=/usr/local/bin/simforge-carla-api \
+    UNISCENARIOS_CARLA_BINARY=/usr/local/bin/simforge-oss-carla-api \
     UNISCENARIOS_SCRATCH_DIR=/scratch \
     UNISCENARIOS_CARLA_BLUEPRINT_ID=vehicle.kia.carnival \
     UNISCENARIOS_CARLA_BLUEPRINT_CLASS=/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C \

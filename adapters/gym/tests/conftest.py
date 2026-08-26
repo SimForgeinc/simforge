@@ -12,8 +12,8 @@ REPO_DIR = ADAPTER_DIR.parents[1]
 SPEC_PATH = Path(__file__).parent / "fixtures" / "synthetic-episode.json"
 
 TSX = REPO_DIR / "node_modules" / ".bin" / "tsx"
-SERVER_SRC = REPO_DIR / "packages" / "rl-env" / "src" / "env-server.ts"
-SERVER_DIST = REPO_DIR / "packages" / "rl-env" / "dist" / "env-server.js"
+SERVER_SRC = REPO_DIR / "packages" / "training-env" / "src" / "env-server.ts"
+SERVER_DIST = REPO_DIR / "packages" / "training-env" / "dist" / "env-server.js"
 
 
 def server_command() -> tuple[str, ...]:
@@ -25,7 +25,7 @@ def server_command() -> tuple[str, ...]:
     installed = shutil.which("simforge-env-server")
     if installed:
         return (installed,)
-    raise RuntimeError("no simforge-env-server available: build @simforge/training-env first")
+    raise RuntimeError("no simforge-env-server available: build @simforge-oss/training-env first")
 
 
 def _server_available() -> bool:

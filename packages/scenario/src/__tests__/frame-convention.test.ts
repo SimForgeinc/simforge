@@ -1,7 +1,7 @@
 /**
  * Guards the heading convention documented in `schema/v1.ts`.
  *
- * `@simforge/maps/opendrive` maps OpenDRIVE-local (z-up, x-east, y-north) to
+ * `@simforge-oss/maps/opendrive` maps OpenDRIVE-local (z-up, x-east, y-north) to
  * the scene frame (y-up) with `scene = (x, z, -y)` and no translation
  * (`CoordinateFrame.localToScene`). The transform is reproduced here rather
  * than imported so this package keeps zero runtime dependencies on the renderer

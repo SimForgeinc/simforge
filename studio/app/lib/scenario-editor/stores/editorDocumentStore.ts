@@ -2,7 +2,7 @@ import { create } from "zustand";
 import {
   normalizeActorBaseClip,
   type ScenarioEditorActorDraft,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { UnloadableActor } from "@/app/lib/scenario-editor/draft-normalization";
 import type { EditorActorRecord } from "@/app/lib/scenario-editor/types";
 import {

@@ -1,11 +1,11 @@
 /**
  * XODR geometry sampling and coordinate transform utilities.
  *
- * Re-exports from @simforge/studio-shared — the canonical implementation now lives
+ * Re-exports from @simforge-oss/studio-shared — the canonical implementation now lives
  * in the shared package for use by scene graph builders and other pure consumers.
  */
 
-export type { XY, GeometrySegment, CoordTransform } from "@simforge/studio-shared";
+export type { XY, GeometrySegment, CoordTransform } from "@simforge-oss/studio-shared";
 export {
   localToLonLat,
   sampleGeometry,
@@ -13,4 +13,4 @@ export {
   resolveSTtoXYWithHeading,
   parseGeometrySegments,
   sampleRoadReferenceLineToLonLat,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";

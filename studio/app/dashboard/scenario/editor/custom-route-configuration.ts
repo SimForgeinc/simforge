@@ -1,5 +1,5 @@
-import type { EditorController, EditorDocument } from "@simforge/editor";
-import type { SampledActor } from "@simforge/playback";
+import type { EditorController, EditorDocument } from "@simforge-oss/editor";
+import type { SampledActor } from "@simforge-oss/playback";
 import { resolveInteractionLayout } from "@/app/lib/scenario/timeline";
 
 export type CustomRoutePlayback = {

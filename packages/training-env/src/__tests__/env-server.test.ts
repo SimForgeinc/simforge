@@ -14,7 +14,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { LANE_LEFT, LANE_RIGHT, scenario, syntheticGraph, syntheticTopology, vehicle } from '../fixture.js';
 import { EnvServer, loadEpisodeSpec, serveSocket } from '../env-server.js';
-import type { SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge-oss/engine';
 
 const graph = syntheticGraph();
 const topology = syntheticTopology();

@@ -13,7 +13,7 @@
  * for walkers).
  */
 
-import type { MapAsset, ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import type { MapAsset, ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 import { runtimePointToLngLat } from "@/app/lib/editor-map/coordinates";
 import { lonLatToScene } from "@/app/lib/maps/frontend/city-scene-coordinates"
 import { deriveActorColor } from "@/app/lib/scenario-editor/actor-color";

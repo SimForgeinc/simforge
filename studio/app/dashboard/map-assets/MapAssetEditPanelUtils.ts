@@ -1,4 +1,4 @@
-import type { MapAssetArtifactType, MapCoordinateRef, MapPlaceContext } from "@simforge/studio-shared";
+import type { MapAssetArtifactType, MapCoordinateRef, MapPlaceContext } from "@simforge-oss/studio-shared";
 
 /** Display a tag ID with underscores replaced by spaces for readability. */
 export function displayTag(tagId: string): string {

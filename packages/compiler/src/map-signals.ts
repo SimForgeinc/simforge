@@ -10,7 +10,7 @@
  */
 
 import type { DerivedMapIndex, MatchedSite } from './anchor/index.js';
-import type { LaneGraph, RoadControl, SignalProgram, TopologyGate, TopologyIndex } from '@simforge/engine';
+import type { LaneGraph, RoadControl, SignalProgram, TopologyGate, TopologyIndex } from '@simforge-oss/engine';
 
 export interface MapSignalHead {
   readonly id: string;

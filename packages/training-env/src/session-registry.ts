@@ -25,7 +25,7 @@
 
 import { z } from 'zod';
 
-import { ACTOR_KINDS, type LaneGraph, type SimScenarioInput } from '@simforge/engine';
+import { ACTOR_KINDS, type LaneGraph, type SimScenarioInput } from '@simforge-oss/engine';
 
 import type { EnvServer, WireRequest } from './env-server.js';
 import type { TruthSubscription } from './truth-stream.js';

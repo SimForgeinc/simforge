@@ -59,7 +59,7 @@ import {
   type Environment,
   type RoleBinding as V2Role,
   type Trigger as V2Trigger,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import {
   MATCH_SEMANTICS_VERSION,
   type FeatureBinding,
@@ -107,8 +107,8 @@ import {
   type SurfacePatch as SimSurfacePatch,
   type Trigger as SimTrigger,
   pruneDanglingAfterInteractions,
-} from '@simforge/engine';
-import type { CatalogEntry } from '@simforge/asset-catalog/metadata';
+} from '@simforge-oss/engine';
+import type { CatalogEntry } from '@simforge-oss/asset-catalog/metadata';
 
 import { CliError } from './errors.js';
 import {

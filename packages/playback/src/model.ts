@@ -16,14 +16,14 @@ import {
   type StaticProp,
   type AmbientTrafficProvenance,
   type ControlIndication,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import {
   getEntry,
   isCatalogId,
   type CatalogId,
   type Dims,
-} from '@simforge/asset-catalog';
-import type { OpenScenarioSnapshot } from '@simforge/openscenario';
+} from '@simforge-oss/asset-catalog';
+import type { OpenScenarioSnapshot } from '@simforge-oss/openscenario';
 
 const TRACE_CHANNELS = ['x', 'y', 'headingRad', 'speedMps', 'laneRsl', 's', 'present'] as const;
 const STATIC_CHANNELS = ['x', 'y', 'headingRad', 'speedMps', 'present'] as const;

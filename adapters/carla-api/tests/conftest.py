@@ -16,7 +16,7 @@ ADAPTER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = ADAPTER_ROOT.parents[1]
 sys.path.insert(0, str(ADAPTER_ROOT))
 
-from simforge_carla_api import Client  # noqa: E402
+from simforge_oss_carla_api import Client  # noqa: E402
 
 
 def _dev_assets_root() -> Path:
@@ -28,7 +28,7 @@ def _dev_assets_root() -> Path:
 
 def _instance_for(map_id: str) -> Path | None:
     """A real scenario-instance for ``map_id`` from committed/local pools."""
-    from simforge_carla_api.maps import find_instance_for_map, instance_search_roots
+    from simforge_oss_carla_api.maps import find_instance_for_map, instance_search_roots
 
     return find_instance_for_map(map_id, instance_search_roots())
 
@@ -40,7 +40,7 @@ def dev_assets_root() -> Path:
 
 @pytest.fixture(scope="session")
 def yale_client():
-    from simforge_carla_api.maps import build_episode_spec
+    from simforge_oss_carla_api.maps import build_episode_spec
 
     if _instance_for("yale-st-palo-alto-ca") is None:
         pytest.skip("no yale-street scenario-instance available")
@@ -59,7 +59,7 @@ def yale_world(yale_client):
 
 @pytest.fixture(scope="session")
 def richmond_world():
-    from simforge_carla_api.maps import build_episode_spec
+    from simforge_oss_carla_api.maps import build_episode_spec
 
     if _instance_for("richmond-field-station-richmond-ca") is None:
         pytest.skip("no richmond-field-station scenario-instance available")

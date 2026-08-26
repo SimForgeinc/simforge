@@ -3,18 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AlertTriangle, Box, Loader2 } from "lucide-react";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import type {
   CityViewer,
   ViewerMarker,
   ViewerOverlayState,
   ViewerPath,
   ViewerPoint3,
-} from "@simforge/viewer";
+} from "@simforge-oss/viewer";
 import type { SearchResultMarker } from "@/app/components/map-assets-map/layers/SearchResultMarkersLayer";
 
 const CityViewDynamic = dynamic(
-  () => import("@simforge/viewer/react").then((module) => module.CityView),
+  () => import("@simforge-oss/viewer/react").then((module) => module.CityView),
   {
     ssr: false,
     loading: () => (

@@ -1,0 +1,58 @@
+{
+  "schema": "simforge-oss.stack-config/v1",
+  "stackVersion": "0.1.0-rc.47",
+  "repository": "https://github.com/SimForgeinc/simforge-oss",
+  "contracts": {
+    "scenarioTemplate": "2",
+    "simulationStepSeconds": 0.02,
+    "openScenarioXml": "1.4.0",
+    "openScenarioDsl": "2.2.0",
+    "carlaExecution": "uniscenarios.carla-execution/v1"
+  },
+  "packages": [
+    { "name": "@simforge-oss/scenario", "version": "0.1.0-rc.47", "path": "packages/scenario", "role": "scenario-format" },
+    { "name": "@simforge-oss/engine", "version": "0.1.0-rc.47", "path": "packages/engine", "role": "simulation-engine" },
+    { "name": "@simforge-oss/maps", "version": "0.1.0-rc.47", "path": "packages/maps", "role": "map-pipeline" },
+    { "name": "@simforge-oss/compiler", "version": "0.1.0-rc.47", "path": "packages/compiler", "role": "scenario-compiler" },
+    { "name": "@simforge-oss/viewer", "version": "0.1.0-rc.47", "path": "packages/viewer", "role": "interactive-viewer" },
+    { "name": "@simforge-oss/editor", "version": "0.1.0-rc.47", "path": "packages/editor", "role": "authoring-core" },
+    { "name": "@simforge-oss/playback", "version": "0.1.0-rc.47", "path": "packages/playback", "role": "playback-runtime" },
+    { "name": "@simforge-oss/asset-catalog", "version": "0.1.0-rc.47", "path": "packages/asset-catalog", "role": "asset-catalog" },
+    { "name": "@simforge-oss/render", "version": "0.1.0-rc.47", "path": "packages/render", "role": "render-runtime" },
+    { "name": "@simforge-oss/openscenario", "version": "0.1.0-rc.47", "path": "packages/openscenario", "role": "openscenario-interop" },
+    { "name": "@simforge-oss/training-env", "version": "0.1.0-rc.47", "path": "packages/training-env", "role": "training-environment" },
+    { "name": "@simforge-oss/evaluation", "version": "0.1.0-rc.47", "path": "packages/evaluation", "role": "evaluation-harness" },
+    { "name": "@simforge-oss/cli", "version": "0.1.0-rc.47", "path": "packages/cli", "role": "command-line-interface" }
+  ],
+  "pythonPackages": [
+    { "name": "simforge-oss-gym", "version": "0.1.0rc47", "path": "adapters/gym", "role": "gym-adapter", "registry": "pypi" },
+    { "name": "simforge-oss-carla-exec", "version": "0.1.0rc47", "path": "adapters/carla-exec", "role": "carla-execution-adapter", "registry": "pypi" },
+    { "name": "simforge-oss-carla-api", "version": "0.1.0rc47", "path": "adapters/carla-api", "role": "carla-api-compatibility", "registry": "pypi" }
+  ],
+  "renameManifest": {
+    "@uniscenarios/scenario-model": "@simforge/scenario",
+    "@uniscenarios/sim-engine": "@simforge/engine",
+    "@uniscenarios/scene-state": "@simforge/engine/scene-state",
+    "@uniscenarios/xodr-tools": "@simforge/maps/opendrive",
+    "@uniscenarios/map-intel": "@simforge/maps",
+    "@uniscenarios/anchor-matcher": "@simforge/compiler",
+    "@uniscenarios/scenario-materializer": "@simforge/compiler",
+    "@uniscenarios/city-renderer": "@simforge/viewer",
+    "@uniscenarios/camera-rig": "@simforge/viewer",
+    "@uniscenarios/editor-core": "@simforge/editor",
+    "@uniscenarios/editor-ui": "@simforge/editor",
+    "@uniscenarios/playback": "@simforge/playback",
+    "@uniscenarios/ambient-traffic": "@simforge/playback/traffic",
+    "@uniscenarios/prop-catalog": "@simforge/asset-catalog",
+    "@uniscenarios/render-runtime": "@simforge/render",
+    "@uniscenarios/browser-renderer": "@simforge/render/web",
+    "@uniscenarios/native-renderer": "@simforge/render/native",
+    "@uniscenarios/openscenario": "@simforge/openscenario",
+    "@uniscenarios/esmini-runner": "@simforge/openscenario/esmini",
+    "@uniscenarios/trace-comparator": "@simforge/openscenario/trace-diff",
+    "@uniscenarios/rl-env": "@simforge/training-env",
+    "@uniscenarios/policy-eval": "@simforge/evaluation",
+    "@uniscenarios/examiner": "@simforge/evaluation",
+    "@uniscenarios/cli": "@simforge/cli"
+  }
+}

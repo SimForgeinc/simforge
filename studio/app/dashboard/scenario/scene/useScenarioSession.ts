@@ -1,27 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DashCameraSensor, ScenarioTemplateV2 } from "@simforge/scenario";
-import type { ActorRenderer } from "@simforge/viewer";
-import type { CityViewer } from "@simforge/viewer";
-import { indexedWorldHeightSampler } from "@simforge/viewer";
+import type { DashCameraSensor, ScenarioTemplateV2 } from "@simforge-oss/scenario";
+import type { ActorRenderer } from "@simforge-oss/viewer";
+import type { CityViewer } from "@simforge-oss/viewer";
+import { indexedWorldHeightSampler } from "@simforge-oss/viewer";
 import {
   ambientTrafficProviderFromExtensions,
   DISABLED_SUMO_STATUS,
   type SumoTrafficStatus,
-} from "@simforge/playback/traffic";
-import { ambientTrafficProfileFromExtensions } from "@simforge/playback/traffic";
+} from "@simforge-oss/playback/traffic";
+import { ambientTrafficProfileFromExtensions } from "@simforge-oss/playback/traffic";
 import type {
   ScenarioAmbientProvenance,
   ScenarioDocumentDto,
   ScenarioMaterializedTrafficReference,
 } from "@/app/lib/scenario/contracts";
-import { contentHash, type MaterializedTrafficArtifactEnvelope } from "@simforge/engine";
+import { contentHash, type MaterializedTrafficArtifactEnvelope } from "@simforge-oss/engine";
 import {
   CollisionActorOverrides,
   type PlaybackBundle,
   type PlaybackController,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";
 import { downloadSimulationPreview, encodeSimulationPreview } from "@/app/lib/scenario/playback/simulationPreview";
 import { ScenarioWorkerClient } from "@/app/lib/scenario/playback/scenarioWorkerClient";
 import { usePlayback } from "@/app/lib/scenario/playback/usePlayback";
@@ -30,7 +30,7 @@ import type { MapOverlayHandle } from "@/app/lib/scenario/mapOverlays";
 import { useMapSignalOverlays } from "@/app/lib/scenario/useMapSignalOverlays";
 import { uploadAndConsumeScenarioMaterializedTraffic } from "@/app/lib/scenario/editor/api";
 import { loadSumoAssets } from "@/app/lib/scenario/ambient/sumoAssets";
-import { normalizeAuthoringGraph } from "@simforge/editor";
+import { normalizeAuthoringGraph } from "@simforge-oss/editor";
 import * as api from "../list/api";
 import type { ScenarioMapOption } from "../list/document-map-groups";
 import {

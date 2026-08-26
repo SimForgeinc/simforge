@@ -1,4 +1,4 @@
-"""Python port of the slice of ``@simforge/maps``'s LaneGraph that the
+"""Python port of the slice of ``@simforge-oss/maps``'s LaneGraph that the
 CARLA ``Map``/``Waypoint`` surface needs.
 
 Backed directly by the map pipeline artifact

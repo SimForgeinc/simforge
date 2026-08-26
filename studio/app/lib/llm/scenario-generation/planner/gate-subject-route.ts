@@ -7,7 +7,7 @@
  * The module intentionally has no "server-only" guard so unit tests can
  * import it without a Next.js server context.
  */
-import type { MapTopologyIndex, TopologyGate, TopologyLane, Vec2 } from "@simforge/studio-shared";
+import type { MapTopologyIndex, TopologyGate, TopologyLane, Vec2 } from "@simforge-oss/studio-shared";
 import type { PlannedActor } from "@/app/lib/llm/scenario-generation/collision-route-planner";
 
 // ── Polyline utilities ──────────────────────────────────────────────────────

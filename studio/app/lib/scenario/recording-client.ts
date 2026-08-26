@@ -2,7 +2,7 @@ import type {
   BrowserRecordingDetailDto,
   BrowserRecordingSummaryDto,
 } from "./recording-contracts";
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
 
 export type BrowserRecordingRevisionInput = {
   id: string;

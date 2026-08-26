@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from simforge_gym import SimForgeVector
+from simforge_oss_gym import SimForgeVector
 
 from conftest import server_cmd  # noqa: F401 - re-exported fixture
 

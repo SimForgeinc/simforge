@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Sparkles, X } from "lucide-react";
-import type { CityViewer } from "@simforge/viewer";
-import { cameraStateReport } from "@simforge/viewer";
-import type { EditorState, ScenarioMapEntry } from "@simforge/editor";
-import { editorSourceMapId } from "@simforge/editor";
-import { actorClassForCatalogEntry, getEntry, type CatalogActorClass } from "@simforge/asset-catalog";
+import type { CityViewer } from "@simforge-oss/viewer";
+import { cameraStateReport } from "@simforge-oss/viewer";
+import type { EditorState, ScenarioMapEntry } from "@simforge-oss/editor";
+import { editorSourceMapId } from "@simforge-oss/editor";
+import { actorClassForCatalogEntry, getEntry, type CatalogActorClass } from "@simforge-oss/asset-catalog";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/app/lib/utils";
 import {

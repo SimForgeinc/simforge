@@ -1,9 +1,9 @@
 "use client";
 
 import { useId, useState } from "react";
-import type { Interaction } from "@simforge/scenario";
+import type { Interaction } from "@simforge-oss/scenario";
 import { Input } from "@/app/components/ui/input";
-import type { EditorDocument } from "@simforge/editor";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { InteractionTargetModeControls } from "./InteractionTargetControls";
 
 export const MAX_AUTHORED_TARGET_SPEED_KPH = 130;

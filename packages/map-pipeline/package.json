@@ -1,5 +1,5 @@
 {
-  "name": "@simforge/map-pipeline",
+  "name": "@simforge-oss/map-pipeline",
   "version": "0.1.0-rc.45",
   "description": "Deterministic source-map to registry-closure pipeline.",
   "repository": {
@@ -23,8 +23,8 @@
     "@gltf-transform/core": "4.4.2",
     "@gltf-transform/extensions": "4.4.2",
     "@gltf-transform/functions": "4.4.2",
-    "@simforge/maps": "workspace:*",
-    "@simforge/map-registry": "workspace:*",
+    "@simforge-oss/maps": "workspace:*",
+    "@simforge-oss/map-registry": "workspace:*",
     "meshoptimizer": "1.2.0",
     "sharp": "0.34.5",
     "zod": "^4.4.3"

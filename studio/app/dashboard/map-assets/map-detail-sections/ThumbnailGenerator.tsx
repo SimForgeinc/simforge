@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect, useImperativeHandle } from "r
 import { Camera, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { toast } from "sonner";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 
 type Props = {
   asset: MapAsset;

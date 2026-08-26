@@ -110,9 +110,10 @@ function assertRenameManifest(config, packageNames) {
     if (typeof target !== 'string') {
       throw new Error(`renameManifest target for ${source} must be a package or package subpath`);
     }
-    const targetPackage = target.split('/').slice(0, 2).join('/');
-    if (!packageNames.has(targetPackage)) {
-      throw new Error(`renameManifest target ${target} is outside the 13-package stack`);
+    const legacyTargetPackage = target.split('/').slice(0, 2).join('/');
+    const currentTargetPackage = legacyTargetPackage.replace(/^@simforge(?=\/)/u, '@simforge-oss');
+    if (legacyTargetPackage === currentTargetPackage || !packageNames.has(currentTargetPackage)) {
+      throw new Error(`historical renameManifest target ${target} has no package in the 13-package stack`);
     }
   }
 }
@@ -120,8 +121,8 @@ function assertRenameManifest(config, packageNames) {
 export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   if (!repoRoot) throw new Error('repoRoot is required');
 
-  const config = await readJson(path.join(repoRoot, 'config/simforge-stack.json'));
-  if (config.schema !== 'simforge.stack-config/v1') {
+  const config = await readJson(path.join(repoRoot, 'config/simforge-oss-stack.json'));
+  if (config.schema !== 'simforge-oss.stack-config/v1') {
     throw new Error(`Unsupported stack config schema: ${String(config.schema)}`);
   }
 
@@ -143,8 +144,8 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   const versions = new Map();
   for (const entry of config.packages) {
     const packageJson = await readJson(path.join(repoRoot, entry.path, 'package.json'));
-    if (typeof packageJson.name !== 'string' || !packageJson.name.startsWith('@simforge/')) {
-      throw new Error(`${entry.path} must declare an @simforge package name`);
+    if (typeof packageJson.name !== 'string' || !packageJson.name.startsWith('@simforge-oss/')) {
+      throw new Error(`${entry.path} must declare an @simforge-oss package name`);
     }
     if (packageJson.name !== entry.name || packageJson.version !== entry.version) {
       throw new Error(`${entry.path} identity must equal ${entry.name} ${entry.version}`);
@@ -185,7 +186,7 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   }
 
   return {
-    schema: 'simforge.stack/v1',
+    schema: 'simforge-oss.stack/v1',
     stackVersion: config.stackVersion,
     source: {
       repository: config.repository,

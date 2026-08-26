@@ -5,13 +5,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const config = JSON.parse(await readFile(path.join(repoRoot, 'config/simforge-stack.json'), 'utf8'));
+const config = JSON.parse(await readFile(path.join(repoRoot, 'config/simforge-oss-stack.json'), 'utf8'));
 const root = await mkdtemp(path.join(tmpdir(), 'simforge-packed-stack-'));
 const tarballs = path.join(root, 'tarballs');
 await mkdir(tarballs);
 
 const dependencies = {};
-for (const entry of config.packages) {
+const supportPackagePaths = ['packages/map-registry', 'packages/map-pipeline'];
+const packedEntries = [
+  ...supportPackagePaths.map((packagePath) => ({ path: packagePath })),
+  ...config.packages,
+];
+for (const entry of packedEntries) {
   const packageRoot = path.join(repoRoot, entry.path);
   const packageJson = JSON.parse(await readFile(path.join(packageRoot, 'package.json'), 'utf8'));
   execFileSync('pnpm', ['pack', '--pack-destination', tarballs], {
@@ -34,7 +39,7 @@ execFileSync('npm', [
   'install', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false',
 ], { cwd: root, stdio: 'pipe' });
 
-const names = Object.keys(dependencies);
+const names = config.packages.map((entry) => entry.name);
 const smokeScript = path.join(root, 'smoke-import.mjs');
 await writeFile(smokeScript, [
   `const names = ${JSON.stringify(names)};`,
@@ -52,7 +57,7 @@ const verified = JSON.parse(execFileSync(process.execPath, [smokeScript], {
 }));
 
 await writeFile(path.join(root, 'smoke-result.json'), `${JSON.stringify({
-  schema: 'simforge.packed-stack-smoke/v1',
+  schema: 'simforge-oss.packed-stack-smoke/v1',
   stackVersion: config.stackVersion,
   verified,
 }, null, 2)}\n`);

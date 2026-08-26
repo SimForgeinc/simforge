@@ -4,7 +4,7 @@
  * The compiler refuses a revision whose concrete input digest differs from the
  * one the browser simulated (`materialized_traffic_source_input_digest_mismatch`).
  * Two copies of this logic would eventually drift and break every render, so it
- * lives here — deliberately dependency-free (no zod, no `@simforge/*`) so a
+ * lives here — deliberately dependency-free (no zod, no `@simforge-oss/*`) so a
  * Next.js app and a Node service on a different zod major can both import it.
  */
 
@@ -155,7 +155,7 @@ export function withParkedCarActors<T extends ActorsCarrier>(
       },
       behavior: {
         // Spelled out rather than left to the schema's defaults: this module is
-        // deliberately free of `@simforge/*`, so nothing here can parse an
+        // deliberately free of `@simforge-oss/*`, so nothing here can parse an
         // actor. The exporter reads `rules.obeySignals` directly and crashes on
         // an actor that lacks it. `parked-cars-export.test.ts` asserts these
         // match what `actorSchema` fills in, so upstream drift fails loudly.

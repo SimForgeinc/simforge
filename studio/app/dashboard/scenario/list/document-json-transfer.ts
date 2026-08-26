@@ -1,4 +1,4 @@
-import { parseTemplate, type ScenarioTemplateV2 } from "@simforge/scenario";
+import { parseTemplate, type ScenarioTemplateV2 } from "@simforge-oss/scenario";
 
 /**
  * Download and import a document as JSON.

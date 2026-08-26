@@ -11,11 +11,11 @@ async function fixture({ includeSchema = true } = {}) {
   await mkdir(path.join(root, 'config'), { recursive: true });
   await mkdir(path.join(root, 'packages/openscenario/dist'), { recursive: true });
   await mkdir(path.join(root, 'packages/openscenario/schema'), { recursive: true });
-  await writeFile(path.join(root, 'config/simforge-stack.json'), JSON.stringify({
+  await writeFile(path.join(root, 'config/simforge-oss-stack.json'), JSON.stringify({
     packages: [{ path: 'packages/openscenario' }],
   }));
   await writeFile(path.join(root, 'packages/openscenario/package.json'), JSON.stringify({
-    name: '@simforge/openscenario',
+    name: '@simforge-oss/openscenario',
     version: '1.0.0',
     main: './dist/index.js',
     exports: { '.': './dist/index.js', './schema/*': './schema/*' },
@@ -30,7 +30,7 @@ async function fixture({ includeSchema = true } = {}) {
 test('accepts wildcard exports when at least one packaged artifact matches', async () => {
   const repoRoot = await fixture();
   const verified = await verifyPackageArtifacts({ repoRoot });
-  assert.deepEqual(verified, [{ name: '@simforge/openscenario', version: '1.0.0', targets: 2 }]);
+  assert.deepEqual(verified, [{ name: '@simforge-oss/openscenario', version: '1.0.0', targets: 2 }]);
 });
 
 test('rejects wildcard exports that match no packaged artifacts', async () => {

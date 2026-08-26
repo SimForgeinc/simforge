@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contentHash } from '@simforge/engine';
+import { contentHash } from '@simforge-oss/engine';
 import {
   buildDualTracePlaybackData,
   compareNormalizedTraces,

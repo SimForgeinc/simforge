@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
-import type { AmbientTrafficProvenance, ResolvedAmbientTrafficProfile } from '@simforge/engine';
-import { ambientPromotionCapability, nextAmbientSeed, profileForPreset, type AmbientTrafficPreset } from '@simforge/playback/traffic';
+import type { AmbientTrafficProvenance, ResolvedAmbientTrafficProfile } from '@simforge-oss/engine';
+import { ambientPromotionCapability, nextAmbientSeed, profileForPreset, type AmbientTrafficPreset } from '@simforge-oss/playback/traffic';
 import type { AmbientRobustnessSummary } from '../playback/scenario-worker';
-import type { AmbientTrafficProviderId, SumoTrafficStatus } from '@simforge/playback/traffic';
+import type { AmbientTrafficProviderId, SumoTrafficStatus } from '@simforge-oss/playback/traffic';
 
 export interface AmbientTrafficPanelProps {
   profile: ResolvedAmbientTrafficProfile;

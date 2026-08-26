@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 
-import { normalizeDerivedMapIndex, type DerivedMapIndex } from "@simforge/compiler";
-import type { DerivedTopology, LocationCatalog } from "@simforge/maps";
-import { exportOpenScenarioXml14 } from "@simforge/openscenario";
-import { OFFICIAL_OPENSCENARIO_140_XSD, validateOpenScenarioXml14 } from "@simforge/openscenario/node";
-import { withBoundedSpeedCruiseRestoration, withStableHighSpeedWorldRoutes } from "@simforge/playback";
+import { normalizeDerivedMapIndex, type DerivedMapIndex } from "@simforge-oss/compiler";
+import type { DerivedTopology, LocationCatalog } from "@simforge-oss/maps";
+import { exportOpenScenarioXml14 } from "@simforge-oss/openscenario";
+import { OFFICIAL_OPENSCENARIO_140_XSD, validateOpenScenarioXml14 } from "@simforge-oss/openscenario/node";
+import { withBoundedSpeedCruiseRestoration, withStableHighSpeedWorldRoutes } from "@simforge-oss/playback";
 import {
   buildMapControlPlan,
   materializationSemanticLosses,
@@ -15,8 +15,8 @@ import {
   type MapBundle,
   type MapControlPlan,
   withStudioBodyColorTags,
-} from "@simforge/compiler";
-import { parseTemplate, serializeTemplate, validateTemplate, type ScenarioTemplateV2 } from "@simforge/scenario";
+} from "@simforge-oss/compiler";
+import { parseTemplate, serializeTemplate, validateTemplate, type ScenarioTemplateV2 } from "@simforge-oss/scenario";
 import {
   ambientTrafficProfileFromExtensions,
   buildLaneGraph,
@@ -27,7 +27,7 @@ import {
   type AmbientTrafficProvenance,
   type SimScenarioInput,
   type TopologyIndex,
-} from "@simforge/engine";
+} from "@simforge-oss/engine";
 
 import { bakedParkedCarsFromExtensions, withParkedCarActors } from "../app/lib/studio-shared/parked-cars.js";
 import { buildXodrElevationResolver } from "./xodr-elevation.js";

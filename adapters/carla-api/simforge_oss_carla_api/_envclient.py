@@ -23,7 +23,7 @@ ENV_SERVER_PROTOCOL_VERSION = 1
 _HEADER = struct.Struct("<I")
 
 #: Repo-local server dist relative to a checkout of this adapter.
-_REPO_SERVER_DIST = Path(__file__).resolve().parents[3] / "packages" / "rl-env" / "dist" / "env-server.js"
+_REPO_SERVER_DIST = Path(__file__).resolve().parents[3] / "packages" / "training-env" / "dist" / "env-server.js"
 
 #: A sibling pristine checkout (this worktree may not have a build).
 _MAIN_SERVER_DIST = Path("/home/path/SimForge/packages/training-env/dist/env-server.js")
@@ -51,8 +51,8 @@ def resolve_server_command(server_command=None) -> tuple[str, ...]:
     if _MAIN_SERVER_DIST.exists():
         return ("node", str(_MAIN_SERVER_DIST))
     raise RuntimeError(
-        "no simforge-env-server found: install @simforge/training-env "
-        "(pnpm --filter @simforge/training-env build), set SIMFORGE_ENV_SERVER, "
+        "no simforge-env-server found: install @simforge-oss/training-env "
+        "(pnpm --filter @simforge-oss/training-env build), set SIMFORGE_ENV_SERVER, "
         "or pass server_command"
     )
 

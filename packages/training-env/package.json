@@ -1,6 +1,6 @@
 {
-  "name": "@simforge/training-env",
-  "version": "0.1.0-rc.46",
+  "name": "@simforge-oss/training-env",
+  "version": "0.1.0-rc.47",
   "description": "Gymnasium-semantics environment core over the SimForge fixed-step engine: EnvSession (reset/step), observations (state vector, perception-gated object list, BEV raster), reward assembly, and the versioned causal ground-truth channel.",
   "repository": {
     "type": "git",
@@ -42,8 +42,8 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.1.3",
-    "@simforge/compiler": "workspace:*",
-    "@simforge/engine": "workspace:*",
+    "@simforge-oss/compiler": "workspace:*",
+    "@simforge-oss/engine": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

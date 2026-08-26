@@ -1,4 +1,4 @@
-# @simforge/scenario
+# @simforge-oss/scenario
 
 The scenario document: schemas, edit history, (de)serialization, migrations,
 validation and persistence. Framework-free TypeScript — no React, no three.js,
@@ -18,7 +18,7 @@ for retargetable scenarios and the emission target for LLM agents — jump to
 [Schema v2](#schema-v2--the-portable-scenariotemplate).
 
 ```ts
-import { ScenarioDocument, WebScenarioFileStore } from '@simforge/scenario';
+import { ScenarioDocument, WebScenarioFileStore } from '@simforge-oss/scenario';
 
 const doc = ScenarioDocument.create({
   name: 'Yale & Grant unprotected left',
@@ -56,7 +56,7 @@ doc.markClean();
 ## Frame conventions
 
 `pose.position` is the **scene frame**: metres, **y-up**, the same frame
-`CoordinateFrame.localToScene` in `@simforge/maps/opendrive` produces and the
+`CoordinateFrame.localToScene` in `@simforge-oss/maps/opendrive` produces and the
 same one `manifest.scene.bounds` is expressed in. No translation is applied —
 scene coordinates are absolute OpenDRIVE-local coordinates, re-axed as
 `scene = (x, z, -y)`.
@@ -178,7 +178,7 @@ being partially parsed.
 ## Schema v2 — the portable `ScenarioTemplate`
 
 ```ts
-import { parseTemplate, validateTemplate } from '@simforge/scenario';
+import { parseTemplate, validateTemplate } from '@simforge-oss/scenario';
 
 const template = parseTemplate({
   scenarioVersion: 2,
@@ -322,7 +322,7 @@ quietly does it wrong.
 ## Scripts
 
 ```sh
-pnpm --filter @simforge/scenario test        # vitest
-pnpm --filter @simforge/scenario typecheck   # tsc --noEmit
-pnpm --filter @simforge/scenario schema      # regenerate JSON Schemas
+pnpm --filter @simforge-oss/scenario test        # vitest
+pnpm --filter @simforge-oss/scenario typecheck   # tsc --noEmit
+pnpm --filter @simforge-oss/scenario schema      # regenerate JSON Schemas
 ```

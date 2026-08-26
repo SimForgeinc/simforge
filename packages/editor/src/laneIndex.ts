@@ -51,7 +51,7 @@ import {
   decodeTopologyIndex,
   type LaneGraph,
   type TopologyIndex,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 /** `road:section:lane`, the topology index's lane key. */
 export type LaneRsl = string;

@@ -1,7 +1,7 @@
 /**
  * Emit every published JSON Schema from the zod source of truth.
  *
- * Run with `pnpm --filter @simforge/scenario schema`. The outputs
+ * Run with `pnpm --filter @simforge-oss/scenario schema`. The outputs
  * are committed, and `src/__tests__/json-schema.test.ts` /
  * `src/__tests__/v2-json-schema.test.ts` fail if they drift — so a schema can
  * never quietly fall behind the zod source of truth.

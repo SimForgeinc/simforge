@@ -6,7 +6,7 @@ import {
   type RawTopologyIndex,
   type RawTopologyLane,
 } from './anchor/index.js';
-import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@simforge/scenario';
+import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@simforge-oss/scenario';
 
 import { adaptTemplate } from './adapt.js';
 import { bindPortableVariation, liftMapBoundTemplate } from './portable.js';

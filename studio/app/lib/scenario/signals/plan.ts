@@ -41,7 +41,7 @@ import {
   MapSignalPlanSchema,
   type MapSignalPlan,
   type MapSignalPlanClip,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 import type { StageInterval } from "./reference-cycle";
 import {

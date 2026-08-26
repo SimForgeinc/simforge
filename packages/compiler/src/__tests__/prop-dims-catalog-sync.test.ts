@@ -1,5 +1,5 @@
 /**
- * `PROP_DIMS` is a hand-maintained mirror of `@simforge/asset-catalog`, kept
+ * `PROP_DIMS` is a hand-maintained mirror of `@simforge-oss/asset-catalog`, kept
  * separate so the headless CLI does not import three.js for three numbers per
  * prop. A mirror with no test is a mirror that drifts, and drift here is
  * invisible: a catalog id the mirror has never heard of falls through

@@ -36,9 +36,9 @@ import {
   type TemplateFileStore,
   type ValidationReport,
   type DriverProfile,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import { reconcileTemplateMapIdentity } from './map-identity';
-import { actorClassForCatalogEntry, getEntry, type CatalogActorClass, type CatalogId, type Dims } from '@simforge/asset-catalog';
+import { actorClassForCatalogEntry, getEntry, type CatalogActorClass, type CatalogId, type Dims } from '@simforge-oss/asset-catalog';
 import { editorMapVersionId, editorSourceMapId, type MapEntry } from './map';
 import { defaultSpeedKph, isActionCompatible } from './timeline-actions';
 import { routePlaceholderOnActor } from './route-placeholder';

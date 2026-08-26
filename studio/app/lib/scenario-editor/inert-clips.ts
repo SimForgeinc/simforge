@@ -1,4 +1,4 @@
-import type { JunctionSignalPlan, ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import type { JunctionSignalPlan, ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 
 
 /**

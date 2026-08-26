@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 
-export { canonicalizeRenderIntent, hashRenderIntent } from '@simforge/scenario';
+export { canonicalizeRenderIntent, hashRenderIntent } from '@simforge-oss/scenario';
 
 export async function hashFile(path: string): Promise<{ sha256: string; sizeBytes: number }> {
   const hash = createHash('sha256');

@@ -5,7 +5,7 @@ import type {
   MapAsset,
   MapAssetEnrichmentSnapshot,
   MapOverlayLayerId,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { SelectedGeoJSONFeaturePayload } from "@/app/lib/maps/frontend/feature-inspection-types";
 import type { LaneRenderMode } from "@/app/lib/maps/frontend/lane-render-mode";
 import type { ScenarioCandidateFamilyLayer } from "@/app/lib/maps/frontend/scenario-candidate-layers";

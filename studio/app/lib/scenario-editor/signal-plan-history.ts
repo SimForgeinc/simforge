@@ -21,7 +21,7 @@
  * "how far back can I go" does not depend on which kind of edit you made.
  */
 
-import type { JunctionSignalPlan } from "@simforge/studio-shared";
+import type { JunctionSignalPlan } from "@simforge-oss/studio-shared";
 import { DEFAULT_ACTOR_SETUP_HISTORY_MAX_ENTRIES } from "./actor-setup-history";
 
 export const SIGNAL_PLAN_HISTORY_MAX_ENTRIES =

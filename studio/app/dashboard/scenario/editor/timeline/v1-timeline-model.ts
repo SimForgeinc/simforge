@@ -1,4 +1,4 @@
-import type { Interaction } from "@simforge/scenario";
+import type { Interaction } from "@simforge-oss/scenario";
 
 import { snapToTimeGrid, type TimelineRange } from "@/app/lib/scenario/timeline";
 

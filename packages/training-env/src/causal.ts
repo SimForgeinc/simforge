@@ -19,7 +19,7 @@
  * trips are byte-exact through `canonicalJson`.
  */
 
-import { canonicalJson, type SessionPairMinima, type SimEvent, type SimScenarioInput } from '@simforge/engine';
+import { canonicalJson, type SessionPairMinima, type SimEvent, type SimScenarioInput } from '@simforge-oss/engine';
 
 export const CAUSAL_CHANNEL_VERSION = 1;
 

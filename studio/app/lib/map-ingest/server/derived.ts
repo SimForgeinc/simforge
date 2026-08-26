@@ -2,17 +2,17 @@ import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 
-import { asMapId, buildMapIntel } from "@simforge/maps";
-import { CoordinateFrame } from "@simforge/maps/opendrive";
-import { readGlb } from "@simforge/studio-shared/map-ingest/glb";
+import { asMapId, buildMapIntel } from "@simforge-oss/maps";
+import { CoordinateFrame } from "@simforge-oss/maps/opendrive";
+import { readGlb } from "@simforge-oss/studio-shared/map-ingest/glb";
 import {
   buildRoadwayConsistencyReport,
   serializeRoadwayConsistencyReport,
-} from "@simforge/studio-shared/map-ingest/roadway-consistency-report";
-import { validateRoadwayConsistency } from "@simforge/studio-shared/map-topology/roadway-consistency-core.mjs";
+} from "@simforge-oss/studio-shared/map-ingest/roadway-consistency-report";
+import { validateRoadwayConsistency } from "@simforge-oss/studio-shared/map-topology/roadway-consistency-core.mjs";
 
-import type { MapSources } from "@simforge/maps/node";
-import type { MapTopologyIndex } from "@simforge/studio-shared/map-topology/types";
+import type { MapSources } from "@simforge-oss/maps/node";
+import type { MapTopologyIndex } from "@simforge-oss/studio-shared/map-topology/types";
 import type { CityManifestDocument } from "./city-manifest";
 
 import mapIntelPackageJson from "../../../../../packages/maps/package.json";

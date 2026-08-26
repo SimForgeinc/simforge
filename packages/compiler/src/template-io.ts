@@ -16,7 +16,7 @@ import {
   serializeTemplate,
   toScenarioIssues,
   type ScenarioTemplateV2,
-} from '@simforge/scenario';
+} from '@simforge-oss/scenario';
 import {
   decodeTraceGz,
   encodeTraceGz,
@@ -24,7 +24,7 @@ import {
   safeParseSimScenarioInput,
   type SimScenarioInput,
   type SimTrace,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import { CliError, EXIT } from './errors.js';
 export interface CatalogArtifactProvenance {

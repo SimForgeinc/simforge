@@ -24,7 +24,7 @@ async function verifyTarget(packageRoot, target) {
 
 export async function verifyPackageArtifacts({ repoRoot }) {
   if (!repoRoot) throw new Error('repoRoot is required');
-  const config = await readJson(path.join(repoRoot, 'config/simforge-stack.json'));
+  const config = await readJson(path.join(repoRoot, 'config/simforge-oss-stack.json'));
   const verified = [];
   for (const entry of config.packages) {
     const packageRoot = path.join(repoRoot, entry.path);

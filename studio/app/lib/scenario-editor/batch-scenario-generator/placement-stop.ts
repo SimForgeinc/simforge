@@ -1,4 +1,4 @@
-import type { TimedInstructionPrimitiveId } from "@simforge/studio-shared";
+import type { TimedInstructionPrimitiveId } from "@simforge-oss/studio-shared";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import type {
   Candidate,

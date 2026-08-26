@@ -166,7 +166,7 @@ class Vehicle(Actor):
         """VehiclePhysicsControl from the engine's dynamics profile.
 
         Pure-pursuit consumers read ``wheelbase_m`` and front-wheel
-        ``max_steer_angle``; see simforge_carla_api/physics.py for the exact
+        ``max_steer_angle``; see simforge_oss_carla_api/physics.py for the exact
         mapping from sim-engine's ACTOR_PHYSICS_PROFILES and any per-actor
         ``input.physics.vehicleProfiles`` overrides.
         """

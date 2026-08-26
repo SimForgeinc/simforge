@@ -1,4 +1,4 @@
-import { buildMapTopologyIndex } from "@simforge/studio-shared/map-topology/build-topology-index";
+import { buildMapTopologyIndex } from "@simforge-oss/studio-shared/map-topology/build-topology-index";
 import type { MapPreflight } from "@/app/lib/map-ingest/contracts";
 
 export type MapPreflightResult =

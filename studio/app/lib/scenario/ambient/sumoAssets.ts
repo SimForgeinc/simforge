@@ -8,20 +8,20 @@ import {
   type SumoNetworkManifest,
   type SumoRuntimeManifest,
   type SumoRoadOccupancyIndex,
-} from "@simforge/engine";
-import type { ActorView } from "@simforge/viewer";
+} from "@simforge-oss/engine";
+import type { ActorView } from "@simforge-oss/viewer";
 import type { MapEntry } from "../maps";
 import type {
   NetworkWorldTransform,
   TrafficNetworkPayload,
   TrafficStepResult,
-} from "@simforge/playback";
-import { toNetwork } from "@simforge/playback";
+} from "@simforge-oss/playback";
+import { toNetwork } from "@simforge-oss/playback";
 import {
   fitSumoSignalProgramsToScenario,
   parseSumoSignalTopology,
   type SumoSignalTopology,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";
 import {
   SUMO_RUNTIME_MANIFEST_URL,
   SUMO_RUNTIME_MODULE_URL,

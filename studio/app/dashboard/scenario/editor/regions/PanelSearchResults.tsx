@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 import type { CSSProperties, DragEvent } from "react";
-import type { CatalogEntry, CatalogId } from "@simforge/asset-catalog";
+import type { CatalogEntry, CatalogId } from "@simforge-oss/asset-catalog";
 
 import type { CarlaCompatibility } from "@/app/lib/scenario/carla-compatibility";
 

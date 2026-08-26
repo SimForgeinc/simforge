@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import type { EditorDocument } from "@simforge/editor";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { InvariantEditor } from "../authoring/InvariantEditor";
 import { ParameterEditor } from "../authoring/ParameterEditor";
 import { VariantEditor } from "../authoring/VariantEditor";

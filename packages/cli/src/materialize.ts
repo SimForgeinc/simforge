@@ -1,1 +1,1 @@
-export * from '@simforge/compiler';
+export * from '@simforge-oss/compiler';

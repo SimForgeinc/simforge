@@ -1,7 +1,7 @@
 import type {
   ScenarioEditorActorDraft,
   ScenarioEditorRoadAnchor,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { RuntimeRoadOverlayCollection } from "@/app/lib/editor-map/types";
 import type { RuntimeLaneTypeId } from "@/app/lib/editor-map/runtime-layer-visibility";
 import type { RuntimeMapResponse } from "@/app/lib/runtime/runtime-types";

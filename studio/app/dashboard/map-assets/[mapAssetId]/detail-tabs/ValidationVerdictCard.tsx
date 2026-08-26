@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import type {
   ScenarioValidationJob,
   ScenarioValidationRepairKind,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 
 import { cn } from "@/app/lib/utils";
 import type { ScenarioValidationState } from "@/app/lib/maps/frontend/use-scenario-validation";

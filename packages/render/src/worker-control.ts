@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { RenderIntentV1Schema, RenderSha256Schema } from '@simforge/scenario';
+import { RenderIntentV1Schema, RenderSha256Schema } from '@simforge-oss/scenario';
 
 import { ArtifactIdentitySchema } from './artifacts.js';
 import { EngineCapabilityDeclarationSchema } from './capabilities.js';

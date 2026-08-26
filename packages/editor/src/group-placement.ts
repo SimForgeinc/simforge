@@ -1,4 +1,4 @@
-import { getEntry, type CatalogId } from '@simforge/asset-catalog';
+import { getEntry, type CatalogId } from '@simforge-oss/asset-catalog';
 import { firstOverlap, type Footprint } from './obb';
 
 /** Clearance shared with ordinary actor placement. */

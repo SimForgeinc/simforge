@@ -7,7 +7,7 @@ import {
   type MaterializedTrafficProvider,
   type SceneTrace,
   type SimTrace,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import type { TrafficStepResult } from '../index.js';
 
 export type AmbientTrafficProviderId = 'off' | 'native' | 'sumo';

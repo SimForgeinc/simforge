@@ -1,9 +1,9 @@
-import type { ActorRenderer, ActorView } from '@simforge/viewer';
+import type { ActorRenderer, ActorView } from '@simforge-oss/viewer';
 import {
   parseSimScenarioInput,
   type Interaction,
   type SimScenarioInput,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 import type { PlaybackBundle } from './model';
 
 const HIGH_SPEED_WORLD_ROUTE_MPS = 20;

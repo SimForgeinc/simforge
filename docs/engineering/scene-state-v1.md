@@ -6,7 +6,7 @@ generation) and **live** (msgpack scene-diff stream from the env-server,
 closed loop). Wire formats: JSON (files, hashing) and msgpack (streams); the
 field names are identical in both.
 
-- Public entry point: `@simforge/engine/scene-state`
+- Public entry point: `@simforge-oss/engine/scene-state`
 - Schema: `packages/engine/src/scene-state/schema.ts`
 - Emitter trace → document: `packages/engine/src/scene-state/emit.ts`
 - Rust consumer types: `renderer/render-core/src/scene_state.rs`

@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type { AppContext } from "@/app/lib/db/app-context";
-import { parseTemplate, type ScenarioTemplateV2 } from "@simforge/scenario";
+import { parseTemplate, type ScenarioTemplateV2 } from "@simforge-oss/scenario";
 import { queryOne, queryRows, withTransaction } from "@/app/lib/db/data-api";
 import { parseJsonObject } from "@/app/lib/db/json-helpers";
 import {

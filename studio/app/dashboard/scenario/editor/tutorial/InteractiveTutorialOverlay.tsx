@@ -9,7 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import { Button } from "@/app/components/ui/button";
-import { CAMERA_ORBIT_EVENT } from "@simforge/viewer";
+import { CAMERA_ORBIT_EVENT } from "@simforge-oss/viewer";
 import { markTutorialComplete } from "./tutorial-steps";
 import type { EditorExperience } from "../simple-timed-routes";
 import {

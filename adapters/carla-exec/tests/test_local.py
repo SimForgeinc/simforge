@@ -6,8 +6,8 @@ import json
 from types import SimpleNamespace
 import pytest
 
-from simforge_carla_exec import local
-from simforge_carla_exec.runtime.contract import OFFICIAL_XSD_SHA256
+from simforge_oss_carla_exec import local
+from simforge_oss_carla_exec.runtime.contract import OFFICIAL_XSD_SHA256
 
 
 def test_default_schema_is_bundled_and_digest_pinned() -> None:

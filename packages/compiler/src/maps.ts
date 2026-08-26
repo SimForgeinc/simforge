@@ -24,13 +24,13 @@ import {
   KNOWN_MAPS,
   type DerivedTopology,
   type LocationCatalog,
-} from '@simforge/maps/node';
+} from '@simforge-oss/maps/node';
 import {
   normalizeDerivedMapIndex,
   type DerivedMapIndex,
 } from './anchor/index.js';
 import { topologyWithMapSpeedLimits } from './map-signals.js';
-import { buildLaneGraph, type LaneGraph, type TopologyIndex } from '@simforge/engine';
+import { buildLaneGraph, type LaneGraph, type TopologyIndex } from '@simforge-oss/engine';
 
 import { CliError } from './errors.js';
 import type { MapSignalCatalog } from './map-signals.js';
@@ -86,7 +86,7 @@ async function readJsonGz<T>(file: string, code: string): Promise<T> {
   } catch {
     throw new CliError(code, `missing artifact ${path.relative(REPO_ROOT, file)}`, {
       path: file,
-      detail: { hint: 'run `pnpm --filter @simforge/maps build:map -- --all`' },
+      detail: { hint: 'run `pnpm --filter @simforge-oss/maps build:map -- --all`' },
     });
   }
   const plain = bytes[0] === 0x1f && bytes[1] === 0x8b ? gunzipSync(bytes) : bytes;

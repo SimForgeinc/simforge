@@ -1,5 +1,5 @@
 import type { AsamConstructCapabilityEntry } from './export/types.js';
-import { operationalConditionsSchema, type OperationalConditions, type SimEvent, type SimTrace } from '@simforge/engine';
+import { operationalConditionsSchema, type OperationalConditions, type SimEvent, type SimTrace } from '@simforge-oss/engine';
 
 import { readXml, XmlReadError, type XmlElement } from './replay/xml.js';
 

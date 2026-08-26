@@ -33,7 +33,7 @@
  */
 import {
   type CollisionFamilyId,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import type { MapSearchDocument } from "@/app/lib/maps/search/map-search-corpus";
 import type { PlannerTrace } from "@/app/lib/llm/scenario-generation/planner/planner-trace";
 import type {

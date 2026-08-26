@@ -1,4 +1,4 @@
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
 
 export type CanonicalMapIdentity = {
   readonly mapVersionId: string;

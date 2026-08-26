@@ -1,4 +1,4 @@
-import { getEntry } from "@simforge/asset-catalog";
+import { getEntry } from "@simforge-oss/asset-catalog";
 import {
   carlaCompatibilityFor,
   type CarlaCompatibilityTable,

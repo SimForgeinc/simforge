@@ -1,7 +1,7 @@
 import { access, mkdtemp, rm } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
-import { runMapPipeline } from '@simforge/map-pipeline';
-import type { RegistryClosureArtifact } from '@simforge/map-pipeline';
+import { runMapPipeline } from '@simforge-oss/map-pipeline';
+import type { RegistryClosureArtifact } from '@simforge-oss/map-pipeline';
 import {
   closureFromDirectory,
   createRegistryBackend,
@@ -17,7 +17,7 @@ import {
   type DerivedClosureKind,
   type MapVersion,
   type RegistryBackend,
-} from '@simforge/map-registry';
+} from '@simforge-oss/map-registry';
 import { basename, join, resolve } from 'node:path';
 import { EXIT } from '../errors.js';
 import { emit, emitLines } from '../output.js';

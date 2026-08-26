@@ -1,4 +1,4 @@
-import { contentHash } from '@simforge/engine';
+import { contentHash } from '@simforge-oss/engine';
 
 export interface MapRuntimeIdentity {
   /** Canonical source map id used by MapBundle, replay and simulation input. */

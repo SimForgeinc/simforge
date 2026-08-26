@@ -10,7 +10,7 @@ import {
   Plus,
   RefreshCw,
 } from "lucide-react";
-import type { MapAsset } from "@simforge/studio-shared";
+import type { MapAsset } from "@simforge-oss/studio-shared";
 import {
   TopBarActionsPortal,
   TopBarTrailingPortal,

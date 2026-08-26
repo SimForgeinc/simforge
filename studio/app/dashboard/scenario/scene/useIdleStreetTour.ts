@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CameraView, CityViewer } from "@simforge/viewer";
-import { LaneIndex } from "@simforge/editor";
+import type { CameraView, CityViewer } from "@simforge-oss/viewer";
+import { LaneIndex } from "@simforge-oss/editor";
 import type { ScenarioMapOption } from "../list/document-map-groups";
 import { interpolateMapView } from "./map-camera-transition";
 import {

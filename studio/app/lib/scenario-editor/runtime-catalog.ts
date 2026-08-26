@@ -6,7 +6,7 @@ import {
   DEFAULT_CARLA_ACTOR_CATALOG,
   type CarlaActorCatalog,
   type CarlaRuntimeCatalog,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { getRuntimeMapArtifactBucket } from "@/app/lib/editor-map/runtime-map-artifacts";
 import { getS3ObjectUtf8 } from "@/app/lib/s3/s3-get-object";
 

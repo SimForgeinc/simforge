@@ -17,7 +17,7 @@
  * Strict Yale instance + trace slice (the Studio server should be bound to the
  * same explicit IPv4 host when a Starcode preview will open it):
  *
- *   pnpm --filter @simforge/studio dev --host 127.0.0.1 --port 5199
+ *   pnpm --filter @simforge-oss/studio dev --host 127.0.0.1 --port 5199
  *   node scripts/export-render.mjs --url http://127.0.0.1:5199 \
  *     --instance artifacts/qa/golden-yale-bus-stop-20260801-corrected/instance.json \
  *     --trace artifacts/qa/golden-yale-bus-stop-20260801-corrected/trace.json.gz \

@@ -8,7 +8,7 @@ lines, archive paths, URLs, or environment variables.
 
 `POST /v1/external-runs` with an `EsminiExecutionJob`. Return `202` with the
 current `ExternalRunSnapshot`. The job contains the exact
-`EsminiBundleManifest` emitted by `@simforge/openscenario/node` plus opaque server content
+`EsminiBundleManifest` emitted by `@simforge-oss/openscenario/node` plus opaque server content
 handles created by `ingestRunnableBundle`.
 
 ## Inspect
@@ -31,7 +31,7 @@ slot, and produces a terminal `cancelled` result.
   crashes on some otherwise valid production OpenDRIVE object records; this is
   disclosed in the attached local receipt and never weakens CSV trace parity.
 - `parseEsminiCsv` converts CSV to `RawExternalTrace` from
-  `@simforge/openscenario/trace-diff`.
+  `@simforge-oss/openscenario/trace-diff`.
 - esmini CSV exposes collision pairs but no semantic action lifecycle, therefore
   `ESMINI_OBSERVABLE_EVENT_KINDS` is empty.
 - Frames/video, when provided by a deployment renderer, are non-authoritative.

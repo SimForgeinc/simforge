@@ -9,7 +9,7 @@
  * ## Why this remains separate from canonical import
  *
  * Inbound third-party files are parsed and bounded by
- * `@simforge/openscenario/import`. This checker has the opposite trust
+ * `@simforge-oss/openscenario/import`. This checker has the opposite trust
  * boundary: it reads a file we DID write and asks only whether our own
  * emission stayed inside the ScenarioRunner surface. It is an assertion about
  * our writer, not a defence against an attacker, and must never be used as one.

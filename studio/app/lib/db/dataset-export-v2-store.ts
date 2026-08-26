@@ -7,7 +7,7 @@ import type {
   DatasetExportTaskInput,
   DatasetExportTaskStage,
   ExportFormat,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import {
   DatasetExportRequestedOutputsSchema,
   DatasetExportScopeSchema,
@@ -15,8 +15,8 @@ import {
   assertDatasetExportRecipeQueueable,
   defaultDatasetExportRequestedOutputs,
   resolveDatasetExportRecipe,
-} from "@simforge/studio-shared";
-import { normalizeCanonicalJobStatus } from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
+import { normalizeCanonicalJobStatus } from "@simforge-oss/studio-shared";
 import {
   datasetExportJobId,
   datasetExportPublicationId,

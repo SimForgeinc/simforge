@@ -2,9 +2,9 @@ import type {
   MapTopologyIndex,
   ScenarioEditorRoadAnchor,
   Vec2,
-} from "@simforge/studio-shared";
-import type { TravelAwareTopologyIndex } from "@simforge/studio-shared";
-import { flipFractionForTravel, laneTravelIncreasesS } from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
+import type { TravelAwareTopologyIndex } from "@simforge-oss/studio-shared";
+import { flipFractionForTravel, laneTravelIncreasesS } from "@simforge-oss/studio-shared";
 import { polylineLength } from "@/app/lib/llm/scenario-generation/planner/gate-subject-route";
 
 /** Provider-neutral geometry used by map projection and semantic binding. */

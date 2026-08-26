@@ -13,7 +13,7 @@ import type {
   EditorToolExecutionResult,
 } from "@/app/lib/editor-tools/types";
 import type { MapLocation } from "@/app/lib/editor-map/types";
-import type { ScenarioEditorActorDraft } from "@simforge/studio-shared";
+import type { ScenarioEditorActorDraft } from "@simforge-oss/studio-shared";
 import {
   PRESET_TRAILING_CAMERA,
   sensorsFromPreset,

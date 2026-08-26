@@ -9,7 +9,7 @@ import {
   type RuntimeScenarioEditorActor,
   type ScenarioEditorActorDraft,
   type ScenarioIntention,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import {
   buildScenarioMetadata,
   type ScenarioMetadataSoftwareVersions,
@@ -371,7 +371,7 @@ const COLLISION_FAMILY_INTENTION_BASE = {
 export const COLLISION_FAMILY_INTENTION = {
   ...COLLISION_FAMILY_INTENTION_BASE,
   // The two NEAR-MISS families. `CollisionFamilyId` gained them when the
-  // near-miss templates landed in `@simforge/studio-shared/scenario-families`, which
+  // near-miss templates landed in `@simforge-oss/studio-shared/scenario-families`, which
   // happened on the branch this file merged with (2026-07-27) — so this record
   // was written against a six-family union and `satisfies` now demands both.
   //

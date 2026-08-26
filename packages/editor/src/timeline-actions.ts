@@ -1,4 +1,4 @@
-import type { Interaction, ScenarioTemplateV2, Verb } from '@simforge/scenario';
+import type { Interaction, ScenarioTemplateV2, Verb } from '@simforge-oss/scenario';
 
 export type ActorClass = ScenarioTemplateV2['roles'][number]['actor']['class'];
 export type ActionFamily = 'vehicle' | 'pedestrian' | 'robot' | 'drone' | 'cyclist' | 'static';

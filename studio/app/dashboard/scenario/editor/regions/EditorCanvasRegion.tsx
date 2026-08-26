@@ -5,12 +5,12 @@ import type { ReactNode, RefObject } from "react";
 import {
   CityView,
   type CityViewProps,
-} from "@simforge/viewer/react";
-import type { CityViewer } from "@simforge/viewer";
+} from "@simforge-oss/viewer/react";
+import type { CityViewer } from "@simforge-oss/viewer";
 import type {
   EditorState,
   ScenarioMapEntry,
-} from "@simforge/editor";
+} from "@simforge-oss/editor";
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
 import { CloudActivityIndicator } from "@/app/components/CloudLoadingSurface";
 import { cn } from "@/app/lib/utils";

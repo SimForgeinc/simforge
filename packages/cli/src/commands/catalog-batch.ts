@@ -13,8 +13,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import { MATCH_SEMANTICS_VERSION, type MatchedSite } from '@simforge/compiler/node';
-import { ENGINE_VERSION, traceDigest } from '@simforge/engine';
+import { MATCH_SEMANTICS_VERSION, type MatchedSite } from '@simforge-oss/compiler/node';
+import { ENGINE_VERSION, traceDigest } from '@simforge-oss/engine';
 
 import type { CatalogArtifactProvenance, CellOptions, CellResult } from '../batch-cell.js';
 import {
@@ -29,9 +29,9 @@ import {
 import { CliError, EXIT, toStructuredError, type StructuredError } from '../errors.js';
 import { verifyEvidenceHashes } from '../evidence.js';
 import { emit, emitLines } from '../output.js';
-import { CATALOG_EXACT_SITE_OPTIONS, matchOnMap } from '@simforge/compiler/node';
-import { REPO_ROOT } from '@simforge/compiler/node';
-import { readTemplate, readTraceFile, type InstanceFile } from '@simforge/compiler/node';
+import { CATALOG_EXACT_SITE_OPTIONS, matchOnMap } from '@simforge-oss/compiler/node';
+import { REPO_ROOT } from '@simforge-oss/compiler/node';
+import { readTemplate, readTraceFile, type InstanceFile } from '@simforge-oss/compiler/node';
 import type { EvaluateFilterMode } from './evaluate.js';
 
 export const CATALOG_EXECUTOR_VERSION = '1.0.1' as const;

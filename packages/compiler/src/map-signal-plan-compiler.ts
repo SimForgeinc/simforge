@@ -1,8 +1,8 @@
-import type { MapSignalPlan, MapSignalPlanClip } from '@simforge/scenario';
+import type { MapSignalPlan, MapSignalPlanClip } from '@simforge-oss/scenario';
 import type {
   ControlIndication,
   SignalProgram,
-} from '@simforge/engine';
+} from '@simforge-oss/engine';
 
 import type { MapSignalCatalog } from './map-signals.js';
 import {

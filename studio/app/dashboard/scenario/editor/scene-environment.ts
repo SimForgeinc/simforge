@@ -2,12 +2,12 @@ import type {
   CityViewer,
   CityWeatherAppearance,
   WeatherParticleBudget,
-} from "@simforge/viewer";
+} from "@simforge-oss/viewer";
 import type {
   Environment,
   TimeOfDay,
   Weather,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 import type { DirectionalLight } from "three";
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
 import { resolveEditorWeatherControls } from "./weather-controls";

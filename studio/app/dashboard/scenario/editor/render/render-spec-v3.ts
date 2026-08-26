@@ -4,7 +4,7 @@ import {
   type RenderModality,
   type RenderSpecV3,
   type ScenarioTemplateV2,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 export type AuthoredRenderSensor = {
   actorId: string;

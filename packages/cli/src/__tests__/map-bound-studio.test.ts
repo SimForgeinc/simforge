@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseTemplate, TemplateDocument } from '@simforge/scenario';
-import { materializeMapBound } from '@simforge/compiler/node';
-import { buildSeededPlacementRoute, createFixedStepSimulation, runSimulation } from '@simforge/engine';
-import { loadMap } from '@simforge/compiler/node';
+import { parseTemplate, TemplateDocument } from '@simforge-oss/scenario';
+import { materializeMapBound } from '@simforge-oss/compiler/node';
+import { buildSeededPlacementRoute, createFixedStepSimulation, runSimulation } from '@simforge-oss/engine';
+import { loadMap } from '@simforge-oss/compiler/node';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
 const studioMapAssets = localMapAssetRequirement(['yale-st-palo-alto-ca', 'belmont-office-park-belmont-ca']);

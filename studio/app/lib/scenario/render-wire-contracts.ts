@@ -1,4 +1,4 @@
-import { RenderSpecV3Schema, type RenderSpecV3 } from "@simforge/scenario";
+import { RenderSpecV3Schema, type RenderSpecV3 } from "@simforge-oss/scenario";
 import { z } from "zod";
 
 const Sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);

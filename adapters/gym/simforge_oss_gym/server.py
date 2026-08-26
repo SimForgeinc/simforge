@@ -5,7 +5,7 @@ Two transports, matching the server's own:
 - ``SocketTransport`` — connect to a unix socket started with ``--socket``.
 - ``StdioTransport`` — spawn the server as a subprocess and speak the same
   framed protocol over its stdin/stdout (the default for
-  :class:`~simforge_gym.env.SimForgeEnv`).
+  :class:`~simforge_oss_gym.env.SimForgeEnv`).
 """
 
 from __future__ import annotations
@@ -39,8 +39,8 @@ def resolve_server_command(server_command: Sequence[str] | None = None) -> tuple
         return ("node", str(_REPO_SERVER_DIST))
     raise RuntimeError(
         f"simforge env-server build missing at {_REPO_SERVER_DIST}; "
-        "run `pnpm --filter @simforge/training-env build` from the repository root, "
-        "install @simforge/training-env, or pass server_command"
+        "run `pnpm --filter @simforge-oss/training-env build` from the repository root, "
+        "install @simforge-oss/training-env, or pass server_command"
     )
 
 

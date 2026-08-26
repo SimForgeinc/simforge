@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const PACKAGE_NAMES = [
+export const STACK_PACKAGE_NAMES = [
   'scenario',
   'engine',
   'maps',
@@ -19,6 +19,8 @@ export const PACKAGE_NAMES = [
   'evaluation',
   'cli',
 ];
+
+export const PACKAGE_NAMES = [...STACK_PACKAGE_NAMES, 'map-pipeline', 'map-registry'];
 
 const RETIRED_PACKAGE_NAMES = [
   'ambient-traffic', 'anchor-matcher', 'browser-renderer', 'camera-rig',
@@ -96,7 +98,7 @@ export function verifyRepositoryNaming(root) {
   const errors = [];
   const rootManifest = readJson(join(root, 'package.json'));
   if (rootManifest.name !== 'simforge') errors.push('package.json name must be "simforge"');
-  const stack = readJson(join(root, 'config/simforge-stack.json'));
+  const stack = readJson(join(root, 'config/simforge-oss-stack.json'));
 
   const actualPackages = readdirSync(join(root, 'packages'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(root, 'packages', entry.name, 'package.json')))
@@ -110,12 +112,14 @@ export function verifyRepositoryNaming(root) {
     const path = join(root, 'packages', name, 'package.json');
     if (!existsSync(path)) continue;
     const manifest = readJson(path);
-    if (manifest.name !== `@simforge/${name}`) errors.push(`packages/${name}/package.json must be named @simforge/${name}`);
-    if (manifest.version !== stack.stackVersion) errors.push(`packages/${name}/package.json must match stack version ${stack.stackVersion}`);
+    if (manifest.name !== `@simforge-oss/${name}`) errors.push(`packages/${name}/package.json must be named @simforge-oss/${name}`);
+    if (STACK_PACKAGE_NAMES.includes(name) && manifest.version !== stack.stackVersion) {
+      errors.push(`packages/${name}/package.json must match stack version ${stack.stackVersion}`);
+    }
   }
 
   const studio = readJson(join(root, 'studio', 'package.json'));
-  if (studio.name !== '@simforge/studio') errors.push('studio/package.json must be named @simforge/studio');
+  if (studio.name !== '@simforge-oss/studio') errors.push('studio/package.json must be named @simforge-oss/studio');
   for (const path of REMOVED_PATHS) {
     if (existsSync(join(root, path))) errors.push(`${path} must not exist`);
   }
@@ -128,9 +132,9 @@ export function verifyRepositoryNaming(root) {
   const expectedBins = { simforge: './bin/simforge.js', sf: './bin/sf.js' };
   if (JSON.stringify(cli.bin) !== JSON.stringify(expectedBins)) errors.push('CLI bins must be exactly simforge and sf; the uniscenarios bin is retired');
 
-  if (stack.packages?.length !== 13) errors.push('config/simforge-stack.json must contain 13 packages');
+  if (stack.packages?.length !== 13) errors.push('config/simforge-oss-stack.json must contain 13 packages');
   const stackNames = (stack.packages ?? []).map((item) => item.name).sort();
-  const packageNames = PACKAGE_NAMES.map((name) => `@simforge/${name}`).sort();
+  const packageNames = STACK_PACKAGE_NAMES.map((name) => `@simforge-oss/${name}`).sort();
   if (JSON.stringify(stackNames) !== JSON.stringify(packageNames)) errors.push('stack package names must match the 13-package workspace');
   for (const item of stack.packages ?? []) {
     if (item.version !== stack.stackVersion) errors.push(`${item.name} manifest version must match ${stack.stackVersion}`);
@@ -141,10 +145,12 @@ export function verifyRepositoryNaming(root) {
   }
 
   const legacyImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@uniscenarios\//u;
+  const legacyEngineImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@simforge\//u;
   const productScopePrefix = ['@sim', 'cloud/'].join('');
   for (const path of sourceFiles(root)) {
     const source = readFileSync(path, 'utf8');
     if (legacyImport.test(source)) errors.push(`${relative(root, path)} imports the retired @uniscenarios scope`);
+    if (legacyEngineImport.test(source)) errors.push(`${relative(root, path)} imports the retired @simforge package scope`);
     if (source.includes(productScopePrefix)) errors.push(`${relative(root, path)} contains the product-only package scope`);
   }
 

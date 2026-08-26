@@ -1,6 +1,6 @@
 import type { AppContext } from "@/app/lib/db/app-context";
 import { withTransaction } from "@/app/lib/db/data-api";
-import type { RenderSpecV3 } from "@simforge/scenario";
+import type { RenderSpecV3 } from "@simforge-oss/scenario";
 import { canonicalJsonSha256, scenarioId } from "./core";
 import type { ScenarioRenderJobDto } from "./contracts";
 import {

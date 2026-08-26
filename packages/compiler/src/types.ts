@@ -1,6 +1,6 @@
-import type { DerivedTopology, LocationCatalog } from '@simforge/maps';
+import type { DerivedTopology, LocationCatalog } from '@simforge-oss/maps';
 import type { DerivedMapIndex } from './anchor/index.js';
-import type { LaneGraph, TopologyIndex } from '@simforge/engine';
+import type { LaneGraph, TopologyIndex } from '@simforge-oss/engine';
 import type { MapSignalCatalog } from './map-signals.js';
 
 /** Fully decoded map materialization data. Loading is deliberately owned by callers. */

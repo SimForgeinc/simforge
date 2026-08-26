@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from simforge_carla_api import Location, Transform, VehicleControl
-from simforge_carla_api._lanegraph import LaneGraphLite, load_topology_index
-from simforge_carla_api.blueprint import default_blueprint_library
+from simforge_oss_carla_api import Location, Transform, VehicleControl
+from simforge_oss_carla_api._lanegraph import LaneGraphLite, load_topology_index
+from simforge_oss_carla_api.blueprint import default_blueprint_library
 
 
 @pytest.fixture(scope="module")

@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   deriveEnrichmentTags,
-} from "@simforge/studio-shared";
-import type { MapStats, MapStatsSignalization } from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
+import type { MapStats, MapStatsSignalization } from "@simforge-oss/studio-shared";
 import {
   extractMapSourceFromXodr,
   extractCoordinateRefFromXodr,

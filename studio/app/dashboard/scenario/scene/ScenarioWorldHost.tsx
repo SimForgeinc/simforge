@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import type { CityViewer } from "@simforge/viewer";
-import { ActorRenderer } from "@simforge/viewer";
-import { CityView } from "@simforge/viewer/react";
+import type { CityViewer } from "@simforge-oss/viewer";
+import { ActorRenderer } from "@simforge-oss/viewer";
+import { CityView } from "@simforge-oss/viewer/react";
 import { cn } from "@/app/lib/utils";
 import { readRenderingPreference,
 RENDERING_PREFERENCE_CHANGE_EVENT,
@@ -25,7 +25,7 @@ import {
   type SceneLoadProgressTracker,
 } from "./map-load-progress";
 import { SceneLoadingTransition } from "./SceneLoadingTransition";
-import { authoringRuntimeReady } from "@simforge/editor";
+import { authoringRuntimeReady } from "@simforge-oss/editor";
 
 /**
  * GPU upload pacing while the loading overlay is up.

@@ -24,7 +24,7 @@ import "server-only";
  * ## Single source of truth
  *
  * The catalog, baseline programs, and control index are produced by
- * `@simforge/compiler` — the same `parseMapSignalCatalog`,
+ * `@simforge-oss/compiler` — the same `parseMapSignalCatalog`,
  * `buildMapControlPlan`, and `buildSignalControlIndex` used by playback. The
  * projection also records the broad control-plan hash as provenance, while plan
  * validity is decided from immutable map and exact physical reference ids.
@@ -53,13 +53,13 @@ import {
   buildMapControlPlan,
   buildSignalControlIndex,
   parseMapSignalCatalog,
-} from "@simforge/compiler";
+} from "@simforge-oss/compiler";
 import {
   buildLaneGraph,
   contentHash,
   type SignalProgram,
   type TopologyIndex,
-} from "@simforge/engine";
+} from "@simforge-oss/engine";
 
 import {
   EDITOR_SIGNAL_PROJECTION_VERSION,

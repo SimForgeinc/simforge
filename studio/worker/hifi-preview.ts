@@ -239,7 +239,7 @@ async function buildNativeCorpus(
     }
     const repoRoot = resolve(process.cwd(), "..");
     const build = spawn("pnpm", [
-      "--filter", "@simforge/cli",
+      "--filter", "@simforge-oss/cli",
       "simforge",
       "corpus", "build",
       "--map", mapId,

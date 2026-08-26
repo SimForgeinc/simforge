@@ -1,4 +1,4 @@
-import { EXTERNAL_CATALOG_PREFIXES, type CatalogEntry } from '@simforge/asset-catalog/metadata';
+import { EXTERNAL_CATALOG_PREFIXES, type CatalogEntry } from '@simforge-oss/asset-catalog/metadata';
 import type { PropDims } from './prop-dims.js';
 import type { ActorCatalogResolver } from './prop-dims.js';
 

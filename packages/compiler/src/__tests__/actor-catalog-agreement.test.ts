@@ -31,9 +31,9 @@ import {
   normalizeDerivedMapIndex,
   type MatchedSite,
 } from '../anchor/index.js';
-import type { DerivedTopology, LocationCatalog } from '@simforge/maps';
-import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@simforge/scenario';
-import { buildLaneGraph, type TopologyIndex } from '@simforge/engine';
+import type { DerivedTopology, LocationCatalog } from '@simforge-oss/maps';
+import { ScenarioTemplateV2Schema, type ScenarioTemplateV2 } from '@simforge-oss/scenario';
+import { buildLaneGraph, type TopologyIndex } from '@simforge-oss/engine';
 
 import { adaptTemplate } from '../adapt.js';
 import {

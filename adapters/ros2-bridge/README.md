@@ -19,7 +19,7 @@ The bridge is a client of `simforge-env-server`
 MessagePack frames over the server's stdio; ops `hello` / `reset` / `step` /
 `close`; actions ride compact keys `{ts, ta, dir, ctrl:[throttle,brake,steer]}`.
 `simforge_ros2_bridge/env_client.py` mirrors
-`adapters/gym/simforge_gym/protocol.py` byte-for-byte but stays free of that
+`adapters/gym/simforge_oss_gym/protocol.py` byte-for-byte but stays free of that
 package's gymnasium/numpy dependencies (system-python ROS runtime only needs
 `msgpack`, which ships with ROS-adjacent apt packages).
 
@@ -85,7 +85,7 @@ source /opt/ros/jazzy/setup.bash
 export PYTHONPATH=$PWD:$PYTHONPATH   # from adapters/ros2-bridge
 
 # bridge (spawns the env-server itself; build it once:
-#   pnpm --filter @simforge/training-env... build)
+#   pnpm --filter @simforge-oss/training-env... build)
 python3 -m simforge_ros2_bridge.bridge_node --ros-args \
   -p episodes:=$PWD/config/episodes/synthetic-straight.episodes.json \
   -p seed:=my-seed -p bag_dir:=/tmp/sf-bridge/bag -p meta_path:=/tmp/sf-bridge/meta.json

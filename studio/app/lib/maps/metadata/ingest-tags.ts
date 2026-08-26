@@ -1,5 +1,5 @@
-import type { MapStats } from "@simforge/studio-shared";
-import { MAP_ASSET_DESCRIPTOR_TAG_IDS } from "@simforge/studio-shared";
+import type { MapStats } from "@simforge-oss/studio-shared";
+import { MAP_ASSET_DESCRIPTOR_TAG_IDS } from "@simforge-oss/studio-shared";
 
 const ALLOWED = new Set(MAP_ASSET_DESCRIPTOR_TAG_IDS);
 

@@ -1,7 +1,7 @@
 "use client";
 
-import type { Variant } from "@simforge/scenario";
-import type { EditorDocument } from "@simforge/editor";
+import type { Variant } from "@simforge-oss/scenario";
+import type { EditorDocument } from "@simforge-oss/editor";
 import { DeleteButton, Heading, MiniAdd, TextField, uniqueId } from "./fields";
 
 /**

@@ -1,35 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ActorRenderer } from "@simforge/viewer";
-import type { CameraView, CityViewer } from "@simforge/viewer";
-import { indexedWorldHeightSampler } from "@simforge/viewer";
+import type { ActorRenderer } from "@simforge-oss/viewer";
+import type { CameraView, CityViewer } from "@simforge-oss/viewer";
+import { indexedWorldHeightSampler } from "@simforge-oss/viewer";
 import {
   ambientSignalCycleSettingsFromExtensions,
   ambientTrafficProfileFromExtensions,
-} from "@simforge/playback/traffic";
+} from "@simforge-oss/playback/traffic";
 import {
   ambientTrafficProviderFromExtensions,
   BrowserMaterializedTrafficCapture,
   sumoOwnsPhysicalSignalStates,
-} from "@simforge/playback/traffic";
-import type { MaterializedTrafficArtifactEnvelope } from "@simforge/engine";
+} from "@simforge-oss/playback/traffic";
+import type { MaterializedTrafficArtifactEnvelope } from "@simforge-oss/engine";
 import { useSumoTraffic } from "@/app/lib/scenario/ambient/useSumoTraffic";
 import { parkedCarsFromExtensions } from "@/app/lib/scenario/parking/extension";
 import {
   parkedCarOccupancySources,
   useParkedCars,
 } from "@/app/lib/scenario/parking/useParkedCars";
-import { allSumoSignalsGreenFromExtensions } from "@simforge/playback/traffic";
+import { allSumoSignalsGreenFromExtensions } from "@simforge-oss/playback/traffic";
 import type { ScenarioDocumentDto } from "@/app/lib/scenario/contracts";
 import { playbackMapEntry, type MapEntry } from "@/app/lib/scenario/maps";
-import type { PlaybackBundle } from "@simforge/playback";
-import { firstEnabledDashCamera } from "@simforge/scenario";
+import type { PlaybackBundle } from "@simforge-oss/playback";
+import { firstEnabledDashCamera } from "@simforge-oss/scenario";
 import { usePlaybackControllerState } from "@/app/lib/scenario/playback/usePlayback";
 import {
   applyRestingHeading,
   createRestingHeading,
-} from "@simforge/playback";
+} from "@simforge-oss/playback";
 import { cn } from "@/app/lib/utils";
 import { CloudActivityIndicator } from "@/app/components/CloudLoadingSurface";
 import { renderableMaps } from "./mapCatalog";
@@ -437,7 +437,7 @@ export function SumoPreviewTraffic({
   const restingHeading = useMemo(() => createRestingHeading(bundle), [bundle]);
   const externalActors = (playback.controller?.currentActors ?? []).map((sampled) => {
     // Same repair as the editor's playback renderer: a dwell in a timed route
-    // is recorded facing due east. See `restingHeading` in `@simforge/playback`.
+    // is recorded facing due east. See `restingHeading` in `@simforge-oss/playback`.
     const actor = applyRestingHeading(
       { ...sampled, animationTimeS: playback.controller?.state.time ?? 0 },
       restingHeading,

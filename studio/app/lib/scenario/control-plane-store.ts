@@ -51,7 +51,7 @@ import {
   type ScenarioParityEvidenceV1,
   type ScenarioRenderResourceRequest,
   type ScenarioRenderWorkerIdentity,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { simforgeEnv } from "@/lib/compat-env";
 
 type RenderSpec = z.infer<typeof ScenarioRenderSpecSchema>;

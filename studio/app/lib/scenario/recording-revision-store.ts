@@ -4,7 +4,7 @@ import { parseJsonObject } from "@/app/lib/db/json-helpers";
 import {
   parseTemplate,
   type ScenarioTemplateV2,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 type RecordingRevisionRow = {
   id: string;

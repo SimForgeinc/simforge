@@ -2,7 +2,7 @@
  * Runtime resolution of the RL environment stack for policy-eval.
  *
  * policy-eval deliberately takes no static workspace dependency on
- * `@simforge/training-env` / `@simforge/cli`: the eval protocol must keep
+ * `@simforge-oss/training-env` / `@simforge-oss/cli`: the eval protocol must keep
  * working from a split worktree (the hardening lanes branch from main before
  * the rl-env WIP lands) and must reuse rl-env's own node_modules for
  * transitive imports, exactly like `scripts/rl/reactive-env-server.mjs`
@@ -65,11 +65,11 @@ export function resolveRlRuntime(): Promise<RlRuntime> {
     const rlEnvRoot = roots[0];
     if (rlEnvRoot === undefined) {
       throw new Error(
-        'no @simforge/training-env dist found; set UNISCENARIOS_RL_ENV to a checkout with packages/training-env/dist',
+        'no @simforge-oss/training-env dist found; set UNISCENARIOS_RL_ENV to a checkout with packages/training-env/dist',
       );
     }
     const req = createRequire(path.join(rlEnvRoot, 'package.json'));
-    const cli = (await import(pathToFileURL(req.resolve('@simforge/cli')).href)) as {
+    const cli = (await import(pathToFileURL(req.resolve('@simforge-oss/cli')).href)) as {
       readTemplate: RlRuntime['readTemplate'];
       findSite: RlRuntime['findSite'];
       materialize: RlRuntime['materialize'];

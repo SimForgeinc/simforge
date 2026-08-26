@@ -4,14 +4,14 @@ import {
   ScenarioTemplateV2Schema,
   type RenderSpecV3,
   type ScenarioTemplateV2,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 import {
   SCENARIO_NATIVE_PHYSICS_ACCEPTANCE_LIMITS,
   ScenarioParityEvidenceV1Schema,
   ScenarioRenderWorkerIdentitySchema,
   type ScenarioParityEvidenceV1,
   type ScenarioRenderResourceRequest,
-} from "@simforge/studio-shared";
+} from "@simforge-oss/studio-shared";
 import { acceptedStoredSchemaId } from "./stored-wire-compat";
 
 export const SCENARIO_SCHEMA_VERSION = String(SCENARIO_TEMPLATE_VERSION);

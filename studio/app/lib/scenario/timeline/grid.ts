@@ -6,14 +6,14 @@
  * `BEHAVIOR_TIME_QUANTUM_S = 0.1` exists twice in `packages/shared` — `scenario-behavior.ts:57` and
  * `preview-engine/constants.ts:20` — and this is deliberately NOT a third alias of either. Both live
  * in the v1 package, every one of that package's `preview-engine` consumers is a v1 file, and
- * `lib/scenario/**` presently imports `@simforge/studio-shared` in zero files. Reaching across would make
+ * `lib/scenario/**` presently imports `@simforge-oss/studio-shared` in zero files. Reaching across would make
  * this the first v2→v1 dependency in an otherwise clean tree, in a constant, on the eve of v1's
  * deletion.
  *
  * The v2 document schema has no quantum of its own: `AtTriggerSchema.t` accepts any finite number, and
  * `NumberOrExpr` accepts an expression. Quantization is an AUTHORING concern — it exists so a dragged
  * chip lands somewhere the author can retype — not a document invariant, which is why it belongs to
- * the editor and not to `@simforge/scenario`.
+ * the editor and not to `@simforge-oss/scenario`.
  *
  * So: when v1 dies, the two `packages/shared` copies go with it and this becomes the single
  * definition. That is the resolution to the duplication, not a cross-import.

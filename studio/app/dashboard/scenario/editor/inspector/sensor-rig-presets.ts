@@ -6,7 +6,7 @@ import {
   SensorRigRadarTemplateSchema,
   type SensorRigMount,
   type SensorRigPreset,
-} from "@simforge/scenario";
+} from "@simforge-oss/scenario";
 
 const MM_TO_M = 1 / 1_000;
 const DEG_TO_RAD = Math.PI / 180;

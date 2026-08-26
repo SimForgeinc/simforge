@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import type { CameraView, CityViewer } from '@simforge/viewer';
+import type { CameraView, CityViewer } from '@simforge-oss/viewer';
 import {
   PlaybackController,
   createPlaybackVerticalMotion,
@@ -10,12 +10,12 @@ import {
   type PlaybackState,
   withCollisionActorOverrides,
   withPlaybackVerticalMotion,
-} from '@simforge/playback';
+} from '@simforge-oss/playback';
 import type { MapOverlayHandle } from '../mapOverlays';
-import type { CameraPolicy } from '@simforge/viewer';
-import type { DashCameraSensor } from '@simforge/scenario';
-import type { ActorRenderer } from '@simforge/viewer';
-import { createRestingHeading, withRestingHeading } from '@simforge/playback';
+import type { CameraPolicy } from '@simforge-oss/viewer';
+import type { DashCameraSensor } from '@simforge-oss/scenario';
+import type { ActorRenderer } from '@simforge-oss/viewer';
+import { createRestingHeading, withRestingHeading } from '@simforge-oss/playback';
 
 export interface UsePlaybackOptions {
   viewer: CityViewer | null;
@@ -68,7 +68,7 @@ export function usePlayback({
       createPlaybackVerticalMotion(bundle, sampleHeight),
     );
     // A stopped body keeps the heading it stopped with; the trace records due
-    // east for a timed-route dwell. See `restingHeading` in `@simforge/playback`.
+    // east for a timed-route dwell. See `restingHeading` in `@simforge-oss/playback`.
     const orientedRenderer = withRestingHeading(
       verticalRenderer,
       createRestingHeading(bundle),

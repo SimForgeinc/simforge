@@ -1,10 +1,10 @@
-import type { ScenarioTemplateV2 } from "@simforge/scenario";
-import type { MaterializedTrafficArtifactEnvelope, SceneTrace } from "@simforge/engine";
+import type { ScenarioTemplateV2 } from "@simforge-oss/scenario";
+import type { MaterializedTrafficArtifactEnvelope, SceneTrace } from "@simforge-oss/engine";
 import {
   consumeMaterializedTrafficSceneTraceEvidence,
   type BrowserMaterializedTrafficSceneTraceEvidence,
-} from "@simforge/playback/traffic";
-import type { ScenarioMapEntry } from "@simforge/editor";
+} from "@simforge-oss/playback/traffic";
+import type { ScenarioMapEntry } from "@simforge-oss/editor";
 import { fetchContentAddressedArtifact } from "@/app/lib/scenario/artifact-cache";
 import {
   SCENARIO_SCHEMA_VERSION,

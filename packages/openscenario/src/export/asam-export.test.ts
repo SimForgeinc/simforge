@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { buildLaneGraph, parseSimScenarioInput, runSimulation, type TopologyIndex } from '@simforge/engine';
+import { buildLaneGraph, parseSimScenarioInput, runSimulation, type TopologyIndex } from '@simforge-oss/engine';
 import { execa } from 'execa';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
