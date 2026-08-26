@@ -491,10 +491,12 @@ export async function createProfileMapPlan(
     }
     return { ...asset, bytes: identity.byteLength, sha256: identity.sha256 };
   });
+  let requiresSumoRuntime = false;
   for (const map of maps) {
     const inventoryMap = mapById.get(map.mapVersionId);
     for (const asset of inventoryMap?.assets ?? []) {
       if (!asset.relativePath.startsWith("derived/sumo/")) continue;
+      requiresSumoRuntime = true;
       verifiedDiscovered.push({
         url: `/api/simforge/maps/${encodeURIComponent(map.mapVersionId)}/browser-assets/${asset.relativePath}`,
         bytes: asset.byteLength,
@@ -503,35 +505,37 @@ export async function createProfileMapPlan(
       });
     }
   }
-  const runtimeAssets = await Promise.all(
-    [SUMO_RUNTIME_MANIFEST_URL, SUMO_RUNTIME_MODULE_URL, SUMO_RUNTIME_WASM_URL]
-      .map(async (url): Promise<ProfileMapAsset> => {
-        const head = await fetch(url, { method: "HEAD", signal });
-        if (!head.ok) throw new Error(`SUMO runtime cache asset is unavailable (${head.status}).`);
-        let bytes = Number(head.headers.get("content-length"));
-        // Dynamic hosting layers may legitimately strip Content-Length from a
-        // HEAD response even though the backing S3 object has a verified size.
-        // A one-byte range preserves the object's total length in
-        // Content-Range without downloading the runtime (notably sumo.wasm).
-        if (!Number.isSafeInteger(bytes) || bytes <= 0) {
-          const range = await fetch(url, {
-            headers: { Range: "bytes=0-0" },
-            signal,
-          });
-          if (!range.ok) {
-            throw new Error(`SUMO runtime cache asset is unavailable (${range.status}).`);
+  if (requiresSumoRuntime) {
+    const runtimeAssets = await Promise.all(
+      [SUMO_RUNTIME_MANIFEST_URL, SUMO_RUNTIME_MODULE_URL, SUMO_RUNTIME_WASM_URL]
+        .map(async (url): Promise<ProfileMapAsset> => {
+          const head = await fetch(url, { method: "HEAD", signal });
+          if (!head.ok) throw new Error(`SUMO runtime cache asset is unavailable (${head.status}).`);
+          let bytes = Number(head.headers.get("content-length"));
+          // Dynamic hosting layers may legitimately strip Content-Length from a
+          // HEAD response even though the backing S3 object has a verified size.
+          // A one-byte range preserves the object's total length in
+          // Content-Range without downloading the runtime (notably sumo.wasm).
+          if (!Number.isSafeInteger(bytes) || bytes <= 0) {
+            const range = await fetch(url, {
+              headers: { Range: "bytes=0-0" },
+              signal,
+            });
+            if (!range.ok) {
+              throw new Error(`SUMO runtime cache asset is unavailable (${range.status}).`);
+            }
+            const total = /\/(\d+)$/.exec(range.headers.get("content-range") ?? "")?.[1];
+            bytes = Number(total ?? (range.status === 200 ? range.headers.get("content-length") : null));
+            await range.body?.cancel().catch(() => undefined);
           }
-          const total = /\/(\d+)$/.exec(range.headers.get("content-range") ?? "")?.[1];
-          bytes = Number(total ?? (range.status === 200 ? range.headers.get("content-length") : null));
-          await range.body?.cancel().catch(() => undefined);
-        }
-        if (!Number.isSafeInteger(bytes) || bytes <= 0) {
-          throw new Error(`SUMO runtime cache asset has no verified size: ${url}`);
-        }
-        return { url, bytes, mapVersionId: "sumo-runtime" };
-      }),
-  );
-  verifiedDiscovered.push(...runtimeAssets);
+          if (!Number.isSafeInteger(bytes) || bytes <= 0) {
+            throw new Error(`SUMO runtime cache asset has no verified size: ${url}`);
+          }
+          return { url, bytes, mapVersionId: "sumo-runtime" };
+        }),
+    );
+    verifiedDiscovered.push(...runtimeAssets);
+  }
   const assets = uniqueAssets(verifiedDiscovered);
   let remainingBytes = 0;
   let remainingAssets = 0;
