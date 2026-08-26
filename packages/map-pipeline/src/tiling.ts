@@ -102,9 +102,6 @@ export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResul
 
   await mkdir(outputDir, { recursive: true });
   const bindingPlan = await buildMaterialBindingPlan(sourceDir);
-  if (bindingPlan.unresolvedTextures.length > 0) {
-    throw new Error(`materials.json has ${bindingPlan.unresolvedTextures.length} unresolved texture references`);
-  }
   const bindingPlanPath = path.join(outputDir, 'material-bindings.json');
   await writeFile(bindingPlanPath, `${JSON.stringify(bindingPlan)}\n`);
   await execFileAsync(blender, [
