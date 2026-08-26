@@ -1,6 +1,6 @@
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
-import { gzipSync } from 'node:zlib';
 
 import { NodeIO } from '@gltf-transform/core';
 
@@ -14,7 +14,8 @@ import type { MapTopologyIndex } from './ported/map-topology/types.js';
 import { buildClosure, canonicalJson, closureDigest, filesUnder, hashTree, sha256, writeClosure } from './closure.js';
 import type { MapClosure } from './closure.js';
 import type { StageResult } from './tiling.js';
-export const CLOSURE_ASSEMBLER_REVISION = 2;
+export const CLOSURE_ASSEMBLER_REVISION = 4;
+export const DEFAULT_SKY_PATH = path.join(os.homedir(), 'simforge-assets', 'hdri', 'clear-day-sky.hdr');
 
 type Bounds = { min: [number, number, number]; max: [number, number, number] };
 type InventoryRow = {
@@ -55,6 +56,7 @@ export interface AssembleClosureOptions {
   tiles: StageResult;
   mapName: string;
   sourceDir: string;
+  xodrPath?: string;
   workDir: string;
 }
 
@@ -225,20 +227,37 @@ async function buildSourceMetadata(
   return tiles;
 }
 
-async function findXodr(sourceDir: string): Promise<string | undefined> {
-  return (await filesUnder(sourceDir)).find((file) => file.toLowerCase().endsWith('.xodr'));
+async function resolveXodrPath(sourceDir: string, explicitPath?: string): Promise<string | undefined> {
+  if (explicitPath !== undefined) return path.resolve(explicitPath);
+  const relativePath = (await filesUnder(sourceDir)).find((file) => file.toLowerCase().endsWith('.xodr'));
+  return relativePath === undefined ? undefined : path.join(sourceDir, relativePath);
 }
 
-async function roadSidecars(sourceDir: string, mapName: string): Promise<{
+async function resolveSkyPath(sourceDir: string): Promise<string> {
+  const ownSky = (await filesUnder(sourceDir)).find((file) =>
+    file.toLowerCase().endsWith('env/sky.hdr') || file.toLowerCase() === 'sky.hdr'
+  );
+  return ownSky === undefined
+    ? path.resolve(process.env['SIMFORGE_DEFAULT_SKY'] ?? DEFAULT_SKY_PATH)
+    : path.join(sourceDir, ownSky);
+}
+
+async function writeSky(contentDir: string, sourceDir: string): Promise<void> {
+  const source = await resolveSkyPath(sourceDir);
+  const destination = path.join(contentDir, '3d', 'env', 'sky.hdr');
+  await mkdir(path.dirname(destination), { recursive: true });
+  await cp(source, destination);
+}
+
+async function roadSidecars(xodrPath: string | undefined, mapName: string): Promise<{
   xodr: Buffer;
   topology: MapTopologyIndex;
   topologyBytes: Buffer;
   lanePolygons: Buffer;
   signals: Buffer;
 } | undefined> {
-  const relativePath = await findXodr(sourceDir);
-  if (!relativePath) return undefined;
-  const xodr = await readFile(path.join(sourceDir, relativePath));
+  if (xodrPath === undefined) return undefined;
+  const xodr = await readFile(xodrPath);
   const text = xodr.toString('utf8');
   const topology = buildMapTopologyIndex({
     mapName,
@@ -255,8 +274,23 @@ async function roadSidecars(sourceDir: string, mapName: string): Promise<{
   };
 }
 
+export async function writeRoadSidecars(contentDir: string, xodrPath: string, mapName: string): Promise<void> {
+  const sidecars = await roadSidecars(path.resolve(xodrPath), mapName);
+  if (sidecars === undefined) throw new Error(`XODR sidecars require an XODR path for ${mapName}`);
+  await writeFile(path.join(contentDir, 'map.xodr'), sidecars.xodr);
+  await writeFile(path.join(contentDir, 'topology-index.json.gz'), sidecars.topologyBytes);
+  await writeFile(path.join(contentDir, 'lane-polygons.geojson.gz'), sidecars.lanePolygons);
+  await writeFile(path.join(contentDir, 'signals.geojson.gz'), sidecars.signals);
+  await mkdir(path.join(contentDir, 'derived'), { recursive: true });
+  await writeFile(path.join(contentDir, 'derived', 'topology-derived.json.gz'), gzipCanonical({ schema: 'simforge.topology-derived.v1', lanes: sidecars.topology.lanes }));
+  await writeFile(path.join(contentDir, 'derived', 'locations.json.gz'), gzipCanonical({ schema: 'simforge.map-locations.v1', locations: [] }));
+  await writeFile(path.join(contentDir, 'derived', 'roadway-consistency.json.gz'), gzipCanonical({ schema: 'simforge.roadway-consistency.v1', verdict: 'not-evaluated' }));
+}
+
 export async function assembleClosure(options: AssembleClosureOptions): Promise<ClosureStageResult> {
-  const inputDigest = sha256(`${options.tiles.outputDigest}\0${options.tiles.inputDigest}`);
+  const xodrPath = await resolveXodrPath(options.sourceDir, options.xodrPath);
+  const xodrDigest = xodrPath === undefined ? 'none' : sha256(await readFile(xodrPath));
+  const inputDigest = sha256(`${options.tiles.outputDigest}\0${options.tiles.inputDigest}\0${xodrDigest}`);
   const toolFingerprint = sha256(`closure-assemble\0${CLOSURE_ASSEMBLER_REVISION}`);
   const cacheKey = sha256(`${inputDigest}\0${toolFingerprint}`);
   const outputDir = path.resolve(options.workDir, 'closure-assemble', cacheKey);
@@ -281,18 +315,10 @@ export async function assembleClosure(options: AssembleClosureOptions): Promise<
   }
   await writeFile(path.join(contentDir, '3d', 'manifest.json'), `${canonicalJson(manifest)}\n`);
   await writeFile(path.join(contentDir, '3d', 'semantics.json'), `${canonicalJson(await buildSemantics(path.join(options.tiles.outputDir, 'tiles'), inventory.objects))}\n`);
+  await writeSky(contentDir, options.sourceDir);
 
-  const sidecars = await roadSidecars(options.sourceDir, options.mapName);
-  if (sidecars) {
-    await writeFile(path.join(contentDir, 'map.xodr'), sidecars.xodr);
-    await writeFile(path.join(contentDir, 'topology-index.json.gz'), sidecars.topologyBytes);
-    await writeFile(path.join(contentDir, 'lane-polygons.geojson.gz'), sidecars.lanePolygons);
-    await writeFile(path.join(contentDir, 'signals.geojson.gz'), sidecars.signals);
-    await mkdir(path.join(contentDir, 'derived'), { recursive: true });
-    await writeFile(path.join(contentDir, 'derived', 'topology-derived.json.gz'), gzipCanonical({ schema: 'simforge.topology-derived.v1', lanes: sidecars.topology.lanes }));
-    await writeFile(path.join(contentDir, 'derived', 'locations.json.gz'), gzipCanonical({ schema: 'simforge.map-locations.v1', locations: [] }));
-    await writeFile(path.join(contentDir, 'derived', 'roadway-consistency.json.gz'), gzipCanonical({ schema: 'simforge.roadway-consistency.v1', verdict: 'not-evaluated' }));
-  }
+  const sidecars = await roadSidecars(xodrPath, options.mapName);
+  if (sidecars) await writeRoadSidecars(contentDir, xodrPath!, options.mapName);
 
   const viewerOnly = sidecars === undefined;
   const closure = await buildClosure(contentDir, 'canonical', { viewerOnly });

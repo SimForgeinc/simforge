@@ -11,6 +11,7 @@ import { fbxToTiles } from './tiling.js';
 import type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from './tiling.js';
 
 export { assembleClosure } from './assemble.js';
+export { writeRoadSidecars } from './assemble.js';
 export type { AssembleClosureOptions, ClosureStageResult } from './assemble.js';
 export { canonicalJson, closureBytes, closureDigest, sha256 } from './closure.js';
 export type { ClosureKind, ClosureMember, MapClosure } from './closure.js';
@@ -28,6 +29,7 @@ export type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from '.
 
 export interface RunMapPipelineOptions {
   sourceDir: string;
+  xodrPath?: string;
   name: string;
   workDir: string;
   blender?: string;
@@ -86,6 +88,7 @@ export async function runMapPipeline(options: RunMapPipelineOptions): Promise<Ma
     tiles,
     mapName: options.name,
     sourceDir: options.sourceDir,
+    ...(options.xodrPath ? { xodrPath: options.xodrPath } : {}),
     workDir: options.workDir,
   });
   if (options.derived === false) {

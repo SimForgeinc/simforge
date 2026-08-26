@@ -57,6 +57,7 @@ export async function registryMapsList(options: RegistryListOptions): Promise<nu
 export interface RegistryIngestOptions {
   directory: string;
   name: string;
+  xodrPath?: string;
   registry?: string;
   version?: MapVersion;
   label?: string;
@@ -115,6 +116,7 @@ export async function registryMapsIngest(options: RegistryIngestOptions): Promis
       pipelineWorkDir = await mkdtemp(join(tmpdir(), 'simforge-map-ingest-'));
       const pipeline = await runMapPipeline({
         sourceDir: directory,
+        ...(options.xodrPath ? { xodrPath: resolve(options.xodrPath) } : {}),
         name: options.name,
         workDir: pipelineWorkDir,
       });
