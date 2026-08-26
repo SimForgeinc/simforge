@@ -260,6 +260,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           booleans: GLOBAL_BOOLEANS,
           values: [
             'name',
+            'xodr',
             'registry',
             'version',
             'label',
@@ -279,6 +280,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
         return registryMapsIngest({
           directory: positional(args, 0, 'source-directory'),
           name: requireString(args, 'name'),
+          xodrPath: optionalString(args, 'xodr'),
           registry: optionalString(args, 'registry'),
           version: version as `v${number}` | undefined,
           label: optionalString(args, 'label'),

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,12 +10,17 @@ import { assembleClosure, assignGridCell, fbxToTiles, materializeRegistryPayload
 
 const temporaryRoots: string[] = [];
 let sourceDir: string;
+let previousDefaultSky: string | undefined;
 
 beforeAll(async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'simforge-map-pipeline-test-'));
   temporaryRoots.push(root);
   sourceDir = path.join(root, 'source');
   await mkdir(sourceDir, { recursive: true });
+  const defaultSky = path.join(root, 'clear-day-sky.hdr');
+  await writeFile(defaultSky, '#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y 1 +X 1\n');
+  previousDefaultSky = process.env['SIMFORGE_DEFAULT_SKY'];
+  process.env['SIMFORGE_DEFAULT_SKY'] = defaultSky;
   const fixtureScript = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'generate-synthetic-fbx.py');
   execFileSync('blender', [
     '--background',
@@ -26,6 +31,8 @@ beforeAll(async () => {
   expect((await stat(path.join(sourceDir, 'synthetic.fbx'))).size).toBeLessThan(5 * 1024 * 1024);
 }, 120_000);
 afterAll(async () => {
+  if (previousDefaultSky === undefined) delete process.env['SIMFORGE_DEFAULT_SKY'];
+  else process.env['SIMFORGE_DEFAULT_SKY'] = previousDefaultSky;
   await Promise.all(temporaryRoots.map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -61,6 +68,7 @@ describe('FBX tiling and closure assembly', () => {
     expect(memberPaths).toEqual(expect.arrayContaining([
       '3d/manifest.json',
       '3d/semantics.json',
+      '3d/env/sky.hdr',
       '3d/tiles/road.glb',
       '3d/tiles/tile_0_1.lod0.glb',
     ]));
