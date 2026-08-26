@@ -12,6 +12,21 @@ export function createAuthoredWorldSession(input: SimScenarioInput, graph: LaneG
   return new WorldSession({ input, graph, mode: 'live' });
 }
 
+export function authoredClipCompleted(timeS: number, durationS: number): boolean {
+  return Number.isFinite(timeS)
+    && Number.isFinite(durationS)
+    && durationS >= 0
+    && timeS >= durationS - 1e-9;
+}
+
+export function authoredPlaybackRequiresReset(
+  completed: boolean,
+  timeS: number,
+  durationS: number,
+): boolean {
+  return completed || authoredClipCompleted(timeS, durationS);
+}
+
 export function assertControllableActor(input: SimScenarioInput, actorId: string): void {
   const actor = input.actors.find((candidate) => candidate.id === actorId);
   if (!actor) throw new Error(`Cannot designate unknown authored actor ${actorId} as ego`);

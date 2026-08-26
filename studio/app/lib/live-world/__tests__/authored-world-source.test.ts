@@ -35,6 +35,7 @@ class FakeWorker {
   onerror: ((event: ErrorEvent) => void) | null = null;
   playing = false;
   inspecting = false;
+  completed = false;
   time = 0;
   duration = 20;
 
@@ -49,18 +50,24 @@ class FakeWorker {
       return;
     }
     if (message.type !== 'transport') return;
-    if (message.action === 'play') this.playing = true;
+    if (message.action === 'play') {
+      if (this.completed) this.time = 0;
+      this.completed = false;
+      this.playing = true;
+    }
     if (message.action === 'stop') this.playing = false;
     if (message.action === 'playPause') this.playing = !this.playing;
     if (message.action === 'seek') {
       this.playing = false;
       this.inspecting = true;
       this.time = message.seconds ?? this.time;
+      this.completed = this.time >= this.duration;
     }
     if (message.action === 'exitInspection') this.inspecting = false;
     if (message.action === 'reset') {
       this.playing = false;
       this.inspecting = false;
+      this.completed = false;
       this.time = 0;
     }
     this.emitTransport();
@@ -77,6 +84,7 @@ class FakeWorker {
       type: 'transport',
       playing: this.playing,
       inspecting: this.inspecting,
+      completed: this.completed,
       time: this.time,
       duration: this.duration,
     });

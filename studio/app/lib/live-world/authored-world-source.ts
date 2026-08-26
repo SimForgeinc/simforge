@@ -16,6 +16,7 @@ export interface WorldTransport {
   readonly sessionId: string;
   readonly playing: boolean;
   readonly inspecting: boolean;
+  readonly completed: boolean;
   readonly time: number;
   readonly duration: number;
   play(): void;
@@ -73,18 +74,19 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   private currentStatus: WorldSourceStatus = 'connecting';
   private currentError: string | null = null;
   private currentEgoActorId: string | null = null;
-  private transportState: { playing: boolean; inspecting: boolean; time: number };
+  private transportState: { playing: boolean; inspecting: boolean; completed: boolean; time: number };
   readonly transport: WorldTransport;
 
   constructor(input: SimScenarioInput, map: ScenarioMapEntry, tickHz: number) {
     this.input = input;
-    this.transportState = { playing: false, inspecting: false, time: 0 };
+    this.transportState = { playing: false, inspecting: false, completed: false, time: 0 };
     const sessionId = `authored-world-${nextSessionId++}`;
     const source = this;
     this.transport = {
       sessionId,
       get playing() { return source.transportState.playing; },
       get inspecting() { return source.transportState.inspecting; },
+      get completed() { return source.transportState.completed; },
       get time() { return source.transportState.time; },
       duration: input.clipSeconds,
       play: () => this.sendTransport('play'),
@@ -144,8 +146,9 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   }
 
   control(input: ControlInput): void {
-    if (this.currentStatus !== 'running') throw new Error('authored world is not running');
+    if (this.currentStatus !== 'running') return;
     if (this.currentEgoActorId === null) throw new Error('No authored ego vehicle is selected');
+    if (this.transportState.completed) return;
     this.worker.postMessage({
       type: 'control',
       input: { ...input, actorId: this.currentEgoActorId },
@@ -203,6 +206,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
       this.transportState = {
         playing: message.playing,
         inspecting: message.inspecting,
+        completed: message.completed,
         time: message.time,
       };
       for (const listener of this.transportListeners) listener(this.transport);

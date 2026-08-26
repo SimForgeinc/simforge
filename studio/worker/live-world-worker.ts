@@ -16,6 +16,8 @@ import type {
 } from '../app/lib/live-world/worker-protocol';
 import {
   applyEgoControl,
+  authoredClipCompleted,
+  authoredPlaybackRequiresReset,
   assertControllableActor,
   createAuthoredWorldSession,
 } from '../app/lib/live-world/authored-world-session';
@@ -32,6 +34,7 @@ let authoredGraph: LaneGraph | null = null;
 let egoActorId: string | null = null;
 let playing = true;
 let inspecting = false;
+let completed = false;
 let authoredTickHz = 20;
 let targetTimeS = 0;
 
@@ -77,6 +80,15 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
   }
 
   if (message.type === 'control') {
+    // A completed authored clip is a healthy, parked world. Keyboard control
+    // continues at 20 Hz while Drive is mounted, so ignore it until replay
+    // instead of asking a finished WorldSession to accept another act command.
+    if (authoredInput && (completed || authoredClipCompleted(world.time(), authoredInput.clipSeconds))) {
+      completed = true;
+      playing = false;
+      postTransport();
+      return;
+    }
     const outcome = authoredInput
       ? egoActorId === null
         ? { ok: false, error: 'No authored ego vehicle is selected' }
@@ -93,7 +105,16 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
             },
           },
         });
-    if (!outcome.ok) fail(new Error(outcome.error ?? 'control failed'));
+    if (!outcome.ok) {
+      if (authoredInput && /not running/i.test(outcome.error ?? '')) {
+        completed = true;
+        playing = false;
+        targetTimeS = authoredInput.clipSeconds;
+        postTransport();
+        return;
+      }
+      fail(new Error(outcome.error ?? 'control failed'));
+    }
     return;
   }
 
@@ -188,6 +209,7 @@ async function initializeAuthored(
   authoredTickHz = message.tickHz;
   playing = false;
   inspecting = false;
+  completed = false;
   rebuildAuthoredWorld();
   timer = setInterval(tick, 1000 / authoredTickHz);
   post({ type: 'ready' });
@@ -200,6 +222,7 @@ function rebuildAuthoredWorld(): void {
   world = createAuthoredWorldSession(authoredInput, authoredGraph);
   truth = world.subscribeTruth();
   commandSequence = 0;
+  completed = false;
   targetTimeS = 0;
 }
 
@@ -222,6 +245,7 @@ function applyTransport(message: Extract<LiveWorldWorkerRequest, { type: 'transp
     inspecting = true;
     advanceAuthoredTo(seconds, false);
     targetTimeS = world.time();
+    completed = authoredClipCompleted(world.time(), authoredInput.clipSeconds);
     postTransport();
     return;
   }
@@ -235,16 +259,17 @@ function applyTransport(message: Extract<LiveWorldWorkerRequest, { type: 'transp
     postTransport();
     return;
   }
-  if (message.action === 'playPause') {
-    playing = !playing;
+  if (message.action === 'playPause' && playing) {
+    playing = false;
   } else {
+    // Play from the parked end state means replay, matching media controls.
+    if (authoredPlaybackRequiresReset(completed, world.time(), authoredInput.clipSeconds)) {
+      rebuildAuthoredWorld();
+    }
     playing = true;
   }
   inspecting = false;
-  if (playing && world.time() >= authoredInput.clipSeconds - 1e-9) {
-    playing = false;
-    throw new Error('Authored clip has ended; reset before playing it again');
-  }
+  completed = false;
   postTransport();
 }
 
@@ -255,7 +280,8 @@ function tick(): void {
     if (authoredInput) {
       targetTimeS = Math.min(authoredInput.clipSeconds, targetTimeS + 1 / authoredTickHz);
       advanceAuthoredTo(targetTimeS, true);
-      if (world.time() >= authoredInput.clipSeconds - 1e-9) playing = false;
+      completed = authoredClipCompleted(world.time(), authoredInput.clipSeconds);
+      if (completed) playing = false;
       postTransport();
       return;
     }
@@ -288,8 +314,9 @@ function postTransport(): void {
   post({
     type: 'transport',
     playing,
+    completed,
     inspecting,
-    time: Math.min(authoredInput.clipSeconds, Math.max(0, world.time())),
+    time: completed ? authoredInput.clipSeconds : Math.min(authoredInput.clipSeconds, Math.max(0, world.time())),
     duration: authoredInput.clipSeconds,
   });
 }

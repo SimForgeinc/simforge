@@ -19,7 +19,7 @@ export type LiveWorldWorkerRequest =
 export type LiveWorldWorkerResponse =
   | { type: 'ready' }
   | { type: 'frame'; bytes: ArrayBuffer }
-  | { type: 'transport'; playing: boolean; inspecting: boolean; time: number; duration: number }
+  | { type: 'transport'; playing: boolean; inspecting: boolean; completed: boolean; time: number; duration: number }
   | { type: 'result'; requestId: number; actorId?: string }
   | { type: 'error'; message: string; requestId?: number }
   | { type: 'warning'; message: string };

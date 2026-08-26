@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Camera, LayoutGrid, LogIn, LogOut, Video } from "lucide-react";
+import { Camera, LayoutGrid, LogIn, LogOut, RotateCcw, Video } from "lucide-react";
 import type {
   EditorController,
   EditorDocument,
@@ -36,7 +36,7 @@ import { EditorModeBanner } from "@/app/dashboard/scenario/editor/regions/Editor
 import { PlacementCursorHint } from "@/app/dashboard/scenario/editor/regions/PlacementCursorHint";
 import { ScenarioTimelineDock } from "@/app/dashboard/scenario/editor/ScenarioTimelineDock";
 import type { V1TimelineBrowserPlayback } from "@/app/dashboard/scenario/editor/timeline/V1TimelineRail";
-import { ScenarioEditorShell } from "@/app/dashboard/scenario/editor/shell";
+import { ScenarioEditorReadout, ScenarioEditorShell } from "@/app/dashboard/scenario/editor/shell";
 import { createMultiplexedCameraFeeds, type CameraFeeds } from "@/app/lib/live-world/camera-feeds";
 import {
   createAuthoredWorldSource,
@@ -52,6 +52,7 @@ import { useEditorRuntime } from "@/app/lib/scenario/editor/use-editor-runtime";
 import { PoleCameraGrid } from "./cameras/PoleCameraGrid";
 import { useSiteTimeOfDay } from "./environment";
 import { usePoleCameras } from "./pole-cameras";
+import { actorSpeedKph, formatClipTime } from "./drive-telemetry";
 
 type DriveView = "world" | "cameras";
 type FollowMode = "chase" | "dash";
@@ -314,6 +315,8 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   }, [map, quality]);
 
   const transport = authoredSource?.transport ?? null;
+  const driveSpeedKph = actorSpeedKph(world.latestFrame, driving ? egoActorId : null);
+  const driveClipTime = transport ? formatClipTime(transport.time, transport.duration) : null;
   const timelinePlayback = useMemo<V1TimelineBrowserPlayback | null>(() => {
     if (!transport) return null;
     return {
@@ -432,17 +435,39 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
               ) : null}
             </div>
           )}
-          statusOverlay={view === "world" && state?.mode === "placing" ? (
-            <PlacementCursorHint state={state} hostRef={hostRef} canvas={viewer?.renderer.domElement ?? null} />
-          ) : view === "world" && state?.mode && state.mode !== "idle" ? (
-            <div className="pointer-events-auto"><EditorModeBanner state={state} controller={controller} /></div>
-          ) : effectiveStatus !== "running" || viewerError ? (
-            <div className="absolute left-1/2 top-4 -translate-x-1/2" role={effectiveStatus === "error" || viewerError ? "alert" : "status"}>
-              <div className={cn("rounded-md border bg-card/95 px-3 py-2 text-xs shadow-lg backdrop-blur", effectiveStatus === "error" || viewerError ? "border-destructive/50 text-destructive" : "border-border text-muted-foreground")}>
-                <WorldStatus status={effectiveStatus} error={effectiveError ?? viewerError} mapLoaded={mapLoaded} />
-              </div>
+          statusOverlay={(slotProps) => (
+            <div {...slotProps}>
+              {view === "world" && state?.mode === "placing" ? (
+                <PlacementCursorHint state={state} hostRef={hostRef} canvas={viewer?.renderer.domElement ?? null} />
+              ) : view === "world" && state?.mode && state.mode !== "idle" ? (
+                <div className="pointer-events-auto"><EditorModeBanner state={state} controller={controller} /></div>
+              ) : null}
+              {view === "world" && driving && driveClipTime ? (
+                <ScenarioEditorReadout
+                  className="absolute left-4 top-4 flex items-baseline gap-3"
+                  role="status"
+                  aria-label={`Driving speed ${driveSpeedKph.toFixed(1)} kilometers per hour, clip time ${driveClipTime}`}
+                >
+                  <span className="text-editor-text tabular-nums">{driveSpeedKph.toFixed(1)} km/h</span>
+                  <span className="tabular-nums">{driveClipTime}</span>
+                </ScenarioEditorReadout>
+              ) : null}
+              {view === "world" && transport?.completed ? (
+                <ScenarioEditorReadout className="pointer-events-auto absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-3" role="status">
+                  <span className="text-editor-text">Scenario complete · {formatClipTime(transport.time, transport.duration)}</span>
+                  <Button type="button" size="sm" variant="secondary" onClick={() => transport.play()}>
+                    <RotateCcw /> Replay
+                  </Button>
+                </ScenarioEditorReadout>
+              ) : effectiveStatus !== "running" || viewerError ? (
+                <div className="absolute left-1/2 top-4 -translate-x-1/2" role={effectiveStatus === "error" || viewerError ? "alert" : "status"}>
+                  <div className={cn("rounded-md border bg-card/95 px-3 py-2 text-xs shadow-lg backdrop-blur", effectiveStatus === "error" || viewerError ? "border-destructive/50 text-destructive" : "border-border text-muted-foreground")}>
+                    <WorldStatus status={effectiveStatus} error={effectiveError ?? viewerError} mapLoaded={mapLoaded} />
+                  </div>
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          )}
           floatingOverlay={view === "world" && editorDocument ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-auto max-h-[min(65vh,520px)] justify-center px-4" data-testid="floating-timeline-layer">
               <div className="pointer-events-auto relative h-auto max-h-[min(65vh,520px)] w-full max-w-[920px] min-w-0">
