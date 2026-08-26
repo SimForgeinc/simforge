@@ -393,9 +393,10 @@ export function DriveClient() {
                   setViewerError(null);
                 }}
                 onError={(reason) => {
+                  const message = errorMessage(reason);
                   setMapLoaded(false);
-                  setViewerError(reason);
-                  toast.error("Drive map could not load", { description: reason });
+                  setViewerError(message);
+                  toast.error("Drive map could not load", { description: message });
                 }}
                 className="h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 ariaLabel={`${map.label} continuous simulation. Choose an actor and click the ground to place it.`}
