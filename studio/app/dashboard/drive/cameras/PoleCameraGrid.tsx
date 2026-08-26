@@ -292,8 +292,15 @@ function TwinView({
   const cameraObjectRef = useRef<PerspectiveCamera | null>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
   const latestAdjustmentRef = useRef(adjustment);
+  const latestPoseRef = useRef(pose);
+  latestPoseRef.current = pose;
   latestAdjustmentRef.current = adjustment;
   if (!cameraObjectRef.current) cameraObjectRef.current = new PerspectiveCamera();
+  const poseBytes = JSON.stringify({
+    position: pose.position,
+    target: pose.target,
+    verticalFovDeg: pose.verticalFovDeg,
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -305,8 +312,8 @@ function TwinView({
 
   useEffect(() => {
     const cameraObject = cameraObjectRef.current;
-    if (cameraObject) applyResolvedPose(cameraObject, pose);
-  }, [pose]);
+    if (cameraObject) applyResolvedPose(cameraObject, latestPoseRef.current);
+  }, [poseBytes]);
 
   const changeByInput = (yawDelta: number, pitchDelta: number, forwardDelta: number) => {
     const current = latestAdjustmentRef.current;
@@ -320,11 +327,6 @@ function TwinView({
       },
     });
   };
-  const poseBytes = JSON.stringify({
-    position: pose.position,
-    target: pose.target,
-    verticalFovDeg: pose.verticalFovDeg,
-  });
 
   return (
     <div
