@@ -153,7 +153,7 @@ function imageViewSet(json) {
  * - `colorCodec: 'etc1s'` remains available for web-only derivatives: Three's
  *   KTX2Loader transcodes BasisLZ fine and transfer size is ~4x smaller.
  */
-export function toktxArgs(cls, { colorCodec = 'uastc', etc1sQuality = 160, uastcQuality = 2, uastcRdo = 1.0, zstdLevel = 18 } = {}) {
+export function toktxArgs(cls, { colorCodec = 'uastc', etc1sQuality = 160, uastcQuality = 2, uastcRdo = 1.0, zstdLevel = 9 } = {}) {
   const common = ['--t2', '--genmipmap', '--assign_primaries', 'bt709'];
   if (cls === 'color' && colorCodec === 'etc1s') {
     return [...common, '--encode', 'etc1s', '--clevel', '2', '--qlevel', String(etc1sQuality), '--assign_oetf', 'srgb'];
@@ -180,6 +180,20 @@ async function encodeKtx2(webpBytes, cls, name, { ktxBinDir, tmpDir, options }) 
   const sharp = (await import('sharp')).default;
   const image = sharp(webpBytes);
   const meta = await image.metadata();
+  const cacheDir = process.env.SIMFORGE_KTX2_CACHE;
+  const cacheKey = sha256(Buffer.concat([
+    webpBytes,
+    Buffer.from(`\0${cls}\0uastc2-rdo1-zstd9\0${JSON.stringify(options ?? {})}`),
+  ]));
+  const cachePath = cacheDir ? path.join(cacheDir, `${cacheKey}.ktx2`) : undefined;
+  if (cachePath && fs.existsSync(cachePath)) {
+    return {
+      ktx2: fs.readFileSync(cachePath),
+      width: meta.width,
+      height: meta.height,
+      hasAlpha: meta.hasAlpha ?? false,
+    };
+  }
   const safe = String(name ?? 'image').replace(/[^\w.-]+/g, '_');
   const pngPath = path.join(tmpDir, `${safe}.png`);
   const ktxPath = path.join(tmpDir, `${safe}.ktx2`);
@@ -193,6 +207,12 @@ async function encodeKtx2(webpBytes, cls, name, { ktxBinDir, tmpDir, options }) 
     throw new Error(`toktx failed for ${name}: ${run.stderr || run.stdout}`);
   }
   const ktx2 = fs.readFileSync(ktxPath);
+  if (cachePath) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+    const temporaryCachePath = `${cachePath}.${process.pid}.tmp`;
+    fs.writeFileSync(temporaryCachePath, ktx2);
+    fs.renameSync(temporaryCachePath, cachePath);
+  }
   fs.rmSync(pngPath, { force: true });
   fs.rmSync(ktxPath, { force: true });
   return { ktx2, width: meta.width, height: meta.height, hasAlpha: meta.hasAlpha ?? false };
