@@ -133,9 +133,9 @@ export function DriveClient() {
   }, [map]);
 
   useEffect(() => {
-    if (!bridge || !world.latestFrame) return;
-    bridge.apply(world.latestFrame);
-  }, [bridge, world.latestFrame]);
+    if (!bridge || !source) return;
+    return source.subscribeFrames((frame) => bridge.apply(frame));
+  }, [bridge, source]);
 
   useEffect(() => {
     if (!bridge) return;
