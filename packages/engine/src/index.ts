@@ -369,7 +369,7 @@ export { SimEngineError, issue } from './errors.js';
 export type { SimIssue, SimIssueCode, SimIssueSeverity } from './errors.js';
 
 /* -------------------------------------------------------------------- util */
-export { canonicalJson, contentHash, sha256 } from './core/hash.js';
+export { canonicalJson, contentHash, sha256, sha256Bytes } from './core/hash.js';
 export { Rng, normalizeSeed, seedFromString } from './core/rng.js';
 export { obbOverlap, obbCorners } from './core/math.js';
 export type { Obb, Vec2 } from './core/math.js';
