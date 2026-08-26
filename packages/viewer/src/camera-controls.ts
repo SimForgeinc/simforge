@@ -354,7 +354,7 @@ export class CameraRig {
       const press = this.dragPress;
       if (!press || !crossedCameraDragThreshold(press.x, press.y, event.clientX, event.clientY)) return;
       this.cameraDragging = true;
-      if (this.dragButton === 0) {
+      if (this.dragButton === 0 || this.dragButton === 2) {
         this.dom.dispatchEvent(new Event(CAMERA_ORBIT_EVENT, { bubbles: true }));
       }
       this.stableYawRemaining = 0;
@@ -363,11 +363,10 @@ export class CameraRig {
       this.dollyScale = 1;
       if (this.dragButton === 2) this.suppressNextContextMenu = true;
     }
-    if (this.pointers.size >= 2 || this.dragButton === 1 || this.dragButton === 2) {
-      const button = this.dragButton === 2 ? 2 : 1;
-      const delta = cameraPanDrag(button, dx, dy, this.rightPanScale, this.controlPreferences);
+    if (this.pointers.size >= 2 || this.dragButton === 1) {
+      const delta = cameraPanDrag(1, dx, dy, this.rightPanScale, this.controlPreferences);
       this.pan(delta.dx, delta.dy);
-    } else if (this.dragButton === 0) {
+    } else if (this.dragButton === 0 || this.dragButton === 2) {
       const delta = cameraLookDrag(dx, dy, this.orbitSpeed, this.damping, this.controlPreferences);
       this.stableYawRemaining += delta.yaw;
       this.stablePitchRemaining += delta.pitch;

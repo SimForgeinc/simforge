@@ -97,24 +97,26 @@ describe('CameraRig eye-orbit and inverted drags', () => {
     rig.dispose();
   });
 
-  it('middle and right drags share the default direction and keep RMB precise', () => {
+  it('keeps middle drag as pan and binds right drag to eye orbit', () => {
     const middle = rigFixture();
     const middleStart = middle.camera.position.clone();
     middle.dom.dispatch('pointerdown', { pointerId: 1, button: 1, clientX: 20, clientY: 20 });
     middle.dom.dispatch('pointermove', { pointerId: 1, clientX: 32, clientY: 13, movementX: 12, movementY: -7 });
     middle.rig.update(1 / 60);
-    const middleDelta = middle.camera.position.clone().sub(middleStart);
-    expect(middleDelta.x).toBeLessThan(0);
+    expect(middle.camera.position.clone().sub(middleStart).x).toBeLessThan(0);
     middle.rig.dispose();
 
     const right = rigFixture();
-    const rightStart = right.camera.position.clone();
+    const onOrbit = vi.fn();
+    right.dom.addEventListener(CAMERA_ORBIT_EVENT, onOrbit);
+    const eye = right.camera.position.toArray();
+    const quaternion = right.camera.quaternion.toArray();
     right.dom.dispatch('pointerdown', { pointerId: 1, button: 2, clientX: 20, clientY: 20 });
     right.dom.dispatch('pointermove', { pointerId: 1, clientX: 32, clientY: 13, movementX: 12, movementY: -7 });
     right.rig.update(1 / 60);
-    const rightDelta = right.camera.position.clone().sub(rightStart);
-    expect(rightDelta.x).toBeLessThan(0);
-    expect(Math.abs(rightDelta.x)).toBeLessThan(Math.abs(middleDelta.x));
+    expect(right.camera.position.toArray()).toEqual(eye);
+    expect(right.camera.quaternion.toArray()).not.toEqual(quaternion);
+    expect(onOrbit).toHaveBeenCalledOnce();
     right.rig.dispose();
   });
 

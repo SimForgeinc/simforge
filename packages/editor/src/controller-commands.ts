@@ -22,9 +22,9 @@
  * | gesture | owner |
  * |---|---|
  * | left click, no drag | editor (select or place) |
- * | left drag on empty map | camera (orbit) |
+ * | left drag on empty map | editor (marquee selection) |
  * | middle drag | camera (ground-plane pan) |
- * | right drag | camera (pan), or cancel while editing |
+ * | right drag | camera (orbit), including while a placement ghost is active |
  * | wheel | camera, except lateral nudge while lane-snapped |
  * | any pointer while in a modal mode (`G`/`R`/placing) | editor |
  *
@@ -46,6 +46,10 @@ import { GhostActor } from './ghostActor';
 import { interactionDraftId } from './interaction-palette';
 import { resolveVehicleDrop, RESNAP_RADIUS_M, type DropOutcome } from './drop-resolver';
 import type { ScreenRect } from './marquee';
+import {
+  type GroupPlacementActor,
+  type GroupPlacementPose,
+} from './group-placement';
 
 import {
   actorKindFor,
@@ -97,6 +101,8 @@ export interface EditorState {
   readonly valid: boolean;
   /** Non-blocking route warning for the lane under the placement ghost. */
   readonly placementWarning: string | null;
+  /** Whether Shift was held for the most recent successful catalog placement. */
+  readonly placementSticky: boolean;
   readonly customRoutePointCount: number;
   readonly customRouteTool: CustomRouteTool | null;
   readonly customRouteSelectedPointIndex: number | null;
@@ -169,6 +175,14 @@ interface GhostPose {
   warning?: string | null;
 }
 
+interface GroupPlacementSession {
+  readonly actors: readonly GroupPlacementActor[];
+  readonly onCommit: (poses: readonly GroupPlacementPose[]) => void;
+  poses: readonly GroupPlacementPose[];
+  valid: boolean;
+  blockerId: string | null;
+}
+
 interface VehicleSnapOptions {
   /** Explicit authoring offset retained within the selected lane. */
   lateralM?: number;
@@ -220,6 +234,9 @@ export abstract class EditorControllerCommands {
   protected lateral = 0;
   protected flipped = false;
   protected ghostPose: GhostPose | null = null;
+  protected placementSticky = false;
+  protected groupPlacement: GroupPlacementSession | null = null;
+  protected groupGhosts: GhostActor[] = [];
   protected preview = new Map<string, PosePatch>();
   /** Completed fixed-step run for the current committed document revision. */
   protected simulationPreview: {
@@ -422,7 +439,7 @@ export abstract class EditorControllerCommands {
     if (this.frameHandle) cancelAnimationFrame(this.frameHandle);
     this.unbindDoc?.();
     this.unbindDoc = null;
-    this.ghost.dispose();
+    this.clearGroupGhosts();
     if (this.ownsRenderer) this.renderer.dispose();
     else {
       this.renderer.clearLayer('editor');
@@ -434,7 +451,49 @@ export abstract class EditorControllerCommands {
 
   // ---------------------------------------------------------- commands (UI)
 
+  /**
+   * Enter cursor-attached free-form placement for an actor group.
+   *
+   * This deliberately shares the ordinary `placing` input mode and GhostActor
+   * rendering, but never asks the lane resolver: the exact green preview poses
+   * are the poses delivered to `onCommit`. A red overlapping preview refuses
+   * the click, and Escape cancels without invoking the callback.
+   */
+  beginGroupPlacement(
+    actors: readonly GroupPlacementActor[],
+    onCommit: (poses: readonly GroupPlacementPose[]) => void,
+  ): boolean {
+    if (!this.authoringEnabled || actors.length === 0) return false;
+    this.cancelModal();
+    this.mode = 'placing';
+    this.placing = null;
+    this.placingKind = null;
+    this.placementSticky = false;
+    this.groupPlacement = {
+      actors: actors.map((actor) => ({ ...actor })),
+      onCommit,
+      poses: [],
+      valid: false,
+      blockerId: null,
+    };
+    this.groupGhosts = actors.map((actor) => {
+      const ghost = new GhostActor();
+      this.viewer.scene.add(ghost.group);
+      ghost.show(actor.catalogId);
+      ghost.hide();
+      return ghost;
+    });
+    this.notify();
+    return true;
+  }
+  protected clearGroupGhosts(): void {
+    for (const ghost of this.groupGhosts) ghost.dispose();
+    this.groupGhosts = [];
+    this.groupPlacement = null;
+  }
+
   /** Enter placement mode with a catalog item, or leave it if it is already active. */
+
   togglePlacement(catalogId: CatalogId, options: { freeformStatic?: boolean } = {}): void {
     if (!this.authoringEnabled) return;
     const freeformStatic = Boolean(options.freeformStatic);
@@ -444,6 +503,7 @@ export abstract class EditorControllerCommands {
     }
     this.cancelModal();
     this.placingFreeformStatic = freeformStatic;
+    this.placementSticky = false;
     this.placingKind = null;
     this.pendingActorId = null;
     this.mode = 'placing';
