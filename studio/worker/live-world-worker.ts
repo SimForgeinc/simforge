@@ -4,6 +4,8 @@ import {
   buildLaneGraph,
   parseSimScenarioInput,
   type ActorKind,
+  type LaneGraph,
+  type SimScenarioInput,
   type TopologyIndex,
 } from '@simforge/engine';
 import { WorldSession, type TruthSubscription } from '@simforge/training-env/browser';
@@ -12,6 +14,11 @@ import type {
   LiveWorldWorkerRequest,
   LiveWorldWorkerResponse,
 } from '../app/lib/live-world/worker-protocol';
+import {
+  applyEgoControl,
+  assertControllableActor,
+  createAuthoredWorldSession,
+} from '../app/lib/live-world/authored-world-session';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 
@@ -20,11 +27,22 @@ let truth: TruthSubscription | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
 let commandSequence = 0;
 let closed = false;
+let authoredInput: SimScenarioInput | null = null;
+let authoredGraph: LaneGraph | null = null;
+let egoActorId: string | null = null;
+let playing = true;
+let inspecting = false;
+let authoredTickHz = 20;
+let targetTimeS = 0;
 
 scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
   const message = event.data;
   if (message.type === 'init') {
     void initialize(message).catch((error: unknown) => fail(error));
+    return;
+  }
+  if (message.type === 'init-authored') {
+    void initializeAuthored(message).catch((error: unknown) => fail(error));
     return;
   }
   if (message.type === 'close') {
@@ -36,19 +54,45 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
     return;
   }
 
+  if (message.type === 'set-ego') {
+    try {
+      if (message.actorId !== null) {
+        if (!authoredInput) throw new Error('ego designation is only available for authored worlds');
+        assertControllableActor(authoredInput, message.actorId);
+      }
+      egoActorId = message.actorId;
+    } catch (error) {
+      fail(error);
+    }
+    return;
+  }
+
+  if (message.type === 'transport') {
+    try {
+      applyTransport(message);
+    } catch (error) {
+      fail(error);
+    }
+    return;
+  }
+
   if (message.type === 'control') {
-    const outcome = world.applyCommand('drive-worker', commandSequence++, {
-      kind: 'act',
-      actorId: message.input.actorId,
-      action: {
-        motionDirection: message.input.reverse ? -1 : 1,
-        control: {
-          steer: message.input.steer,
-          throttle: message.input.throttle,
-          brake: message.input.brake,
-        },
-      },
-    });
+    const outcome = authoredInput
+      ? egoActorId === null
+        ? { ok: false, error: 'No authored ego vehicle is selected' }
+        : applyEgoControl(world, egoActorId, message.input, commandSequence++)
+      : world.applyCommand('drive-worker', commandSequence++, {
+          kind: 'act',
+          actorId: message.input.actorId,
+          action: {
+            motionDirection: message.input.reverse ? -1 : 1,
+            control: {
+              steer: message.input.steer,
+              throttle: message.input.throttle,
+              brake: message.input.brake,
+            },
+          },
+        });
     if (!outcome.ok) fail(new Error(outcome.error ?? 'control failed'));
     return;
   }
@@ -76,15 +120,17 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
     return;
   }
 
-  const outcome = world.applyCommand('drive-worker', commandSequence++, {
-    kind: 'despawn',
-    actorId: message.actorId,
-  });
-  if (!outcome.ok) {
-    fail(new Error(outcome.error ?? 'despawn failed'), message.requestId);
-    return;
+  if (message.type === 'despawn') {
+    const outcome = world.applyCommand('drive-worker', commandSequence++, {
+      kind: 'despawn',
+      actorId: message.actorId,
+    });
+    if (!outcome.ok) {
+      fail(new Error(outcome.error ?? 'despawn failed'), message.requestId);
+      return;
+    }
+    post({ type: 'result', requestId: message.requestId });
   }
-  post({ type: 'result', requestId: message.requestId });
 };
 
 async function initialize(message: Extract<LiveWorldWorkerRequest, { type: 'init' }>): Promise<void> {
@@ -130,18 +176,124 @@ async function initialize(message: Extract<LiveWorldWorkerRequest, { type: 'init
   post({ type: 'ready' });
 }
 
-function tick(): void {
-  if (!world || !truth || closed) return;
-  try {
-    world.advance(1);
-    for (const frame of truth.drain()) {
-      const bytes = frame.slice().buffer;
-      scope.postMessage({ type: 'frame', bytes } satisfies LiveWorldWorkerResponse, [bytes]);
+async function initializeAuthored(
+  message: Extract<LiveWorldWorkerRequest, { type: 'init-authored' }>,
+): Promise<void> {
+  if (world || closed) throw new Error('live world worker can only be initialized once');
+  if (!Number.isFinite(message.tickHz) || message.tickHz <= 0) {
+    throw new Error(`tickHz must be positive, got ${String(message.tickHz)}`);
+  }
+  authoredInput = parseSimScenarioInput(message.input);
+  authoredGraph = buildLaneGraph(await fetchTopology(message.laneGraphUrl));
+  authoredTickHz = message.tickHz;
+  playing = false;
+  inspecting = false;
+  rebuildAuthoredWorld();
+  timer = setInterval(tick, 1000 / authoredTickHz);
+  post({ type: 'ready' });
+  postTransport();
+}
+
+function rebuildAuthoredWorld(): void {
+  if (!authoredInput || !authoredGraph) throw new Error('authored world inputs are unavailable');
+  truth?.unsubscribe();
+  world = createAuthoredWorldSession(authoredInput, authoredGraph);
+  truth = world.subscribeTruth();
+  commandSequence = 0;
+  targetTimeS = 0;
+}
+
+function applyTransport(message: Extract<LiveWorldWorkerRequest, { type: 'transport' }>): void {
+  if (!authoredInput || !world) throw new Error('transport is only available for authored worlds');
+  if (message.action === 'reset') {
+    playing = false;
+    inspecting = false;
+    rebuildAuthoredWorld();
+    postTransport();
+    return;
+  }
+  if (message.action === 'seek') {
+    const seconds = message.seconds;
+    if (seconds === undefined || !Number.isFinite(seconds) || seconds < 0 || seconds > authoredInput.clipSeconds) {
+      throw new RangeError(`seek time must be within 0..${authoredInput.clipSeconds} seconds`);
     }
+    if (seconds + 1e-9 < world.time()) {
+      throw new Error('Live authored worlds cannot seek backwards; reset rebuilds the world at t=0');
+    }
+    playing = false;
+    inspecting = true;
+    advanceAuthoredTo(seconds, false);
+    targetTimeS = world.time();
+    postTransport();
+    return;
+  }
+  if (message.action === 'exitInspection') {
+    inspecting = false;
+    postTransport();
+    return;
+  }
+  if (message.action === 'stop') {
+    playing = false;
+    postTransport();
+    return;
+  }
+  if (message.action === 'playPause') {
+    playing = !playing;
+  } else {
+    playing = true;
+  }
+  inspecting = false;
+  if (playing && world.time() >= authoredInput.clipSeconds - 1e-9) {
+    playing = false;
+    throw new Error('Authored clip has ended; reset before playing it again');
+  }
+  postTransport();
+}
+
+
+function tick(): void {
+  if (!world || !truth || closed || !playing) return;
+  try {
+    if (authoredInput) {
+      targetTimeS = Math.min(authoredInput.clipSeconds, targetTimeS + 1 / authoredTickHz);
+      advanceAuthoredTo(targetTimeS, true);
+      if (world.time() >= authoredInput.clipSeconds - 1e-9) playing = false;
+      postTransport();
+      return;
+    }
+    world.advance(1);
+    postTruthFrames(truth.drain(), true);
   } catch (error) {
     fail(error);
     shutdown();
   }
+}
+
+function advanceAuthoredTo(seconds: number, emitAll: boolean): void {
+  if (!world || !truth || !authoredInput) return;
+  const remaining = Math.max(0, seconds - world.time());
+  const ticks = Math.ceil(remaining / authoredInput.dt - 1e-9);
+  if (ticks > 0) world.advance(ticks);
+  postTruthFrames(truth.drain(), emitAll);
+}
+
+function postTruthFrames(frames: Uint8Array[], emitAll: boolean): void {
+  const selected = emitAll ? frames : frames.slice(-1);
+  for (const frame of selected) {
+    const bytes = frame.slice().buffer;
+    scope.postMessage({ type: 'frame', bytes } satisfies LiveWorldWorkerResponse, [bytes]);
+  }
+}
+
+function postTransport(): void {
+  if (!world || !authoredInput) return;
+  post({
+    type: 'transport',
+    playing,
+    inspecting,
+    time: Math.min(authoredInput.clipSeconds, Math.max(0, world.time())),
+    duration: authoredInput.clipSeconds,
+  });
 }
 
 async function fetchTopology(url: string): Promise<TopologyIndex> {

@@ -1,12 +1,14 @@
 'use client';
 
-import { isRoadActorKind, resolvePhysicsConfig, type SimScenarioInput } from '@simforge/engine';
+import type { SimScenarioInput } from '@simforge/engine';
 import type { EditorDocument, ScenarioMapEntry } from '@simforge/editor';
-import { ambientTrafficProfileFromExtensions } from '@simforge/playback/traffic';
+import { ambientTrafficProviderFromExtensions } from '@simforge/playback/traffic';
 import { TruthStreamClient } from '@simforge/training-env/browser';
 
 import { playbackMapEntry } from '../scenario/maps';
 import { ScenarioWorkerClient } from '../scenario/playback/scenarioWorkerClient';
+import { previewAmbientTrafficProfile } from '../../dashboard/scenario/scene/previewPolicy';
+import { assertControllableActor } from './authored-world-session';
 import type { LiveWorldWorkerRequest, LiveWorldWorkerResponse } from './worker-protocol';
 import type { ControlInput, SpawnActorRequest, WorldSource, WorldSourceStatus } from './types';
 
@@ -42,7 +44,11 @@ export async function createAuthoredWorldSource(opts: {
     const bundle = await compiler.prepare(
       opts.document.data,
       playbackMapEntry(opts.map),
-      ambientTrafficProfileFromExtensions(opts.document.data.extensions),
+      previewAmbientTrafficProfile(
+        ambientTrafficProviderFromExtensions(opts.document.data.extensions),
+        opts.document.data.extensions,
+        opts.document.data.mapSignalPlans.length > 0,
+      ),
       undefined,
       { materializeOnly: true },
     );
@@ -74,6 +80,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
     this.input = input;
     this.transportState = { playing: false, inspecting: false, time: 0 };
     const sessionId = `authored-world-${nextSessionId++}`;
+    const source = this;
     this.transport = {
       sessionId,
       get playing() { return source.transportState.playing; },
@@ -87,7 +94,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
       seek: (seconds) => this.seek(seconds),
       exitInspection: () => this.sendTransport('exitInspection'),
     };
-    const source = this;
+
 
     this.worker = new Worker(new URL('../../../worker/live-world-worker.ts', import.meta.url), {
       type: 'module',
@@ -220,14 +227,3 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   }
 }
 
-export function assertControllableActor(input: SimScenarioInput, actorId: string): void {
-  const actor = input.actors.find((candidate) => candidate.id === actorId);
-  if (!actor) throw new Error(`Cannot designate unknown authored actor ${actorId} as ego`);
-  if (!isRoadActorKind(actor.kind)) {
-    throw new Error(`Authored actor ${actorId} (${actor.kind}) is not a controllable road vehicle`);
-  }
-  if (actor.static) throw new Error(`Authored actor ${actorId} is static and has no controllable dynamics`);
-  if (resolvePhysicsConfig(input).mode !== 'dynamic-v1') {
-    throw new Error(`Authored actor ${actorId} cannot be driven because the world does not use dynamic-v1 physics`);
-  }
-}
