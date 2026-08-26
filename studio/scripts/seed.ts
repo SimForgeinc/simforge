@@ -18,14 +18,19 @@ import { SUMO_RUNTIME_VERSION } from "../app/lib/scenario/sumo-runtime";
 import { migrate } from "./migrate";
 
 const MAPS: readonly DevAssetMap[] = [
-  ["yale-street", "Yale Street", "New Haven, Connecticut"],
-  ["belmont-research-center", "Belmont Research Center", "Belmont, California"],
-  ["el-camino-road", "El Camino Road", "California"],
-  ["easterbrook-discovery-school", "Easterbrook Discovery School", "San Jose, California"],
-  ["richmond-field-station", "Richmond Field Station", "Richmond, California"],
+  ["belmont-office-park-belmont-ca", "Belmont Office Park", "Belmont, California"],
+  ["di-rosa-sf", "Di Rosa", "San Francisco, California"],
+  ["el-camino-rd-palo-alto-ca", "El Camino Road", "Palo Alto, California"],
+  ["page-mill-rd-palo-alto-ca", "Page Mill Road", "Palo Alto, California"],
+  ["richmond-field-station-richmond-ca", "Richmond Field Station", "Richmond, California"],
+  ["san-ramon-phase-1-p1", "San Ramon Phase 1 P1", "San Ramon, California"],
+  ["san-ramon-phase-1-p2", "San Ramon Phase 1 P2", "San Ramon, California"],
+  ["san-ramon-phase-2", "San Ramon Phase 2", "San Ramon, California"],
+  ["saratoga-school-area", "Saratoga School Area", "Saratoga, California"],
+  ["yale-st-palo-alto-ca", "Yale Street", "Palo Alto, California"],
 ];
 const assetsRoot =
-  process.env.UNISCENARIOS_DEV_ASSETS?.trim() || "/home/path/SimForge/dev-assets";
+  process.env.SCEN_DEV_ASSETS?.trim() || "/home/path/simforge-assets/map-bundles";
 const catalogArtifactId = "artifact_local_catalog_v2";
 const catalogVersionId = "catalog_local_v2";
 const editorReleaseId = "editor_release_local_dev_assets_v2";

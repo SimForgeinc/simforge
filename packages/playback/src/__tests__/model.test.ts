@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { existsSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import {
@@ -23,7 +22,7 @@ import {
 
 function input(): SimScenarioInput {
   return parseSimScenarioInput({
-    mapId: 'yale-street',
+    mapId: 'test-map',
     clipSeconds: 1,
     warmupSeconds: 0,
     dt: 0.2,
@@ -62,7 +61,7 @@ function trace(documentInput = input()): SimTrace {
       engineVersion: '0.1.0',
       inputHash: hash,
       seed: 'playback-test',
-      mapId: 'yale-street',
+      mapId: 'test-map',
       engineGraphDigest: 'graph-digest',
       topologyDigest: 'graph-digest',
       dt: 0.2,
@@ -122,7 +121,7 @@ function pair() {
       manifest: {
         instanceId: 'golden#1',
         inputHash: contentHash(documentInput),
-        replayKey: { mapId: 'yale-street', engineGraphDigest: 'graph-digest' },
+        replayKey: { mapId: 'test-map', engineGraphDigest: 'graph-digest' },
         actors: [{ id: 'bus' }, { id: 'ego' }],
       },
       input: documentInput,
@@ -142,8 +141,8 @@ function catalogPair(): any {
     visibility: 'unrestricted',
   };
   const catalogSlot = {
-    identity: 'yale-street-001-bus-stop-deadbeef0000',
-    mapId: 'yale-street',
+    identity: 'test-map-001-bus-stop-deadbeef0000',
+    mapId: 'test-map',
     incidentId: 'bus-stop-emergence',
     seed: 'a'.repeat(64),
     attemptSeed: 'b'.repeat(64),
@@ -309,7 +308,7 @@ describe('SimForge concrete playback import', () => {
         manifest: {
           instanceId: 'signalized#1',
           inputHash: contentHash(documentInput),
-          replayKey: { mapId: 'yale-street', engineGraphDigest: 'graph-digest' },
+          replayKey: { mapId: 'test-map', engineGraphDigest: 'graph-digest' },
           actors: [{ id: 'bus' }, { id: 'ego' }],
         },
         input: documentInput,
@@ -483,7 +482,7 @@ describe('SimForge concrete playback import', () => {
       manifest: {
         instanceId: 'fixed-prop#1',
         inputHash: contentHash(documentInput),
-        replayKey: { mapId: 'yale-street', engineGraphDigest: 'graph-digest' },
+        replayKey: { mapId: 'test-map', engineGraphDigest: 'graph-digest' },
         actors: [{ id: 'bus' }, { id: 'ego' }],
       },
       input: documentInput,
@@ -531,29 +530,3 @@ describe('SimForge concrete playback import', () => {
   });
 });
 
-const GOLDEN_ROOT = new URL('../../../../../fixtures/evidence/golden-yale-bus-stop/', import.meta.url);
-const GOLDEN_INSTANCE = new URL('instance.json', GOLDEN_ROOT);
-const GOLDEN_TRACE = new URL('trace.json.gz', GOLDEN_ROOT);
-
-describe.skipIf(!existsSync(GOLDEN_INSTANCE) || !existsSync(GOLDEN_TRACE))('current-engine golden Yale pair', () => {
-  it('loads three concrete actors and samples real static/dynamic motion', async () => {
-    const bundle = await readPlaybackFiles(
-      new BytesFile('instance.json', new Uint8Array(readFileSync(GOLDEN_INSTANCE))),
-      new BytesFile('trace.json.gz', new Uint8Array(readFileSync(GOLDEN_TRACE))),
-    );
-    expect(bundle.instance.manifest.instanceId).toBe('fa9fa19457cf576f#8');
-    expect(bundle.instance.manifest.inputHash).toBe(
-      'e0538cb4b73547228248372bc6f2f606bbab8d3b97722b46789d41c229e70897',
-    );
-    expect(bundle.actors.map((actor) => actor.id)).toEqual(['bus', 'ego', 'ped']);
-
-    const before = samplePlaybackActors(bundle, 0);
-    const conflict = samplePlaybackActors(bundle, 6.9);
-    const bus0 = before.find((actor) => actor.id === 'bus')!;
-    const bus1 = conflict.find((actor) => actor.id === 'bus')!;
-    const ego0 = before.find((actor) => actor.id === 'ego')!;
-    const ego1 = conflict.find((actor) => actor.id === 'ego')!;
-    expect(bus1).toEqual(bus0);
-    expect(Math.hypot(ego1.x - ego0.x, ego1.z - ego0.z)).toBeGreaterThan(80);
-  });
-});

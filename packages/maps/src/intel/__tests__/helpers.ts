@@ -32,11 +32,11 @@ export const DEV_ASSETS = path.join(REPO_ROOT, 'dev-assets');
 
 /** Maps expected under `dev-assets/`. */
 export const ALL_MAPS = [
-  'yale-street',
-  'belmont-research-center',
-  'el-camino-road',
-  'easterbrook-discovery-school',
-  'richmond-field-station',
+  'yale-st-palo-alto-ca',
+  'belmont-office-park-belmont-ca',
+  'el-camino-rd-palo-alto-ca',
+  'saratoga-school-area',
+  'richmond-field-station-richmond-ca',
 ] as const;
 
 /** True when the full artifact tree is present locally. */

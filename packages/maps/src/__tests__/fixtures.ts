@@ -21,8 +21,8 @@ export function readFixtureBytes(name: string): Uint8Array {
 
 export const yaleHeaderText = (): string => readFixtureText('yale-header.xodr');
 
-export const yaleManifest = (): SceneManifestLike =>
-  JSON.parse(readFixtureText('yale-3d-manifest.json')) as SceneManifestLike;
+export const mapManifest = (): SceneManifestLike =>
+  JSON.parse(readFixtureText('scene-3d-manifest.json')) as SceneManifestLike;
 
 export const yaleSignals = (): Promise<FeatureCollection<SignalProperties>> =>
   decodeMaybeGzippedJson<FeatureCollection<SignalProperties>>(

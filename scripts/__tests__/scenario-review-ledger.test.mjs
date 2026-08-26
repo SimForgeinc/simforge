@@ -20,7 +20,7 @@ function scenarioManifest() {
     schema: 'uniscenarios.scenario-visual-evidence.v1',
     evidenceClass: 'scenario-instance-incident',
     scenarioId: 'scenario-1',
-    mapId: 'yale-street',
+    mapId: 'yale-st-palo-alto-ca',
     inputHash: hash('a'),
     traceDigest: hash('b'),
     renderer: { cameraMode: 'incident-composition' },
@@ -133,7 +133,7 @@ test('requires reviewer-entered exact frame/video digests and every applicable c
     reviewed: 1,
     accepted: 1,
     rejected: 0,
-    byMap: { 'yale-street': { reviewed: 1, accepted: 1, rejected: 0 } },
+    byMap: { 'yale-st-palo-alto-ca': { reviewed: 1, accepted: 1, rejected: 0 } },
   });
   assert.equal(ledger.entries[0].countsTowardScenarioCoverage, true);
 

@@ -251,14 +251,7 @@ COOKED_SIGNAL_ID_MAPS: Mapping[tuple[str, str, str], Mapping[str, str]] = {
 #: the explicit bridge from that source identity to the runtime world CARLA
 #: actually cooked. SIMFORGE_CARLA_COOKED_MAPS_JSON ({"<cookedName>":
 #: "<xodrSha256>"}) extends it for engines cooking additional worlds.
-COOKED_MAP_NAMES_BY_XODR_SHA256: Mapping[str, str] = {
-    # Richmond Field Station (richmond-field-station_20260410-185647)
-    "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643":
-        "Richmond_Field_Station_Richmond_CA",
-    # Belmont Office Park (belmont-research-center_20260410-184713)
-    "35cf2b16a1d308c6436089a0edf66f20c87a79da12e79472a03a2f568ba28f63":
-        "Belmont_Office_Park_Belmont_CA",
-}
+COOKED_MAP_NAMES_BY_XODR_SHA256: Mapping[str, str] = {}
 
 
 def _configured_cooked_map_names() -> dict[str, str]:

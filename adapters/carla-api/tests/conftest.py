@@ -42,9 +42,9 @@ def dev_assets_root() -> Path:
 def yale_client():
     from simforge_carla_api.maps import build_episode_spec
 
-    if _instance_for("yale-street") is None:
+    if _instance_for("yale-st-palo-alto-ca") is None:
         pytest.skip("no yale-street scenario-instance available")
-    spec_path, _ = build_episode_spec("yale-street")
+    spec_path, _ = build_episode_spec("yale-st-palo-alto-ca")
     client = Client(episodes_spec=spec_path)
     yield client
     client.close()
@@ -61,9 +61,9 @@ def yale_world(yale_client):
 def richmond_world():
     from simforge_carla_api.maps import build_episode_spec
 
-    if _instance_for("richmond-field-station") is None:
+    if _instance_for("richmond-field-station-richmond-ca") is None:
         pytest.skip("no richmond-field-station scenario-instance available")
-    spec_path, _ = build_episode_spec("richmond-field-station")
+    spec_path, _ = build_episode_spec("richmond-field-station-richmond-ca")
     client = Client(episodes_spec=spec_path)
     try:
         world = client.get_world()

@@ -189,7 +189,7 @@ function authoredSceneState(): SceneState {
   });
   return sceneStateSchema.parse({
     version: 'scene-state.v1',
-    mapId: 'yale-street',
+    mapId: 'test-map',
     frame: 'scene-yup',
     dt: 0.02,
     tickHz: 50,

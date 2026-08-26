@@ -20,7 +20,7 @@ import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
 const FIXTURE = path.join(REPO_ROOT, 'packages', 'openscenario', 'conformance', 'actor-despawn.xosc');
-const haveArtifacts = existsSync(path.join(DEV_ASSETS, 'yale-street'));
+const haveArtifacts = existsSync(path.join(DEV_ASSETS, 'yale-st-palo-alto-ca'));
 
 interface Run {
   code: number;
@@ -117,13 +117,13 @@ describe('simforge import', () => {
   it.skipIf(!haveArtifacts)('translates against --map, writes the draft, and reports what was lossy', async () => {
     const out = path.join(os.tmpdir(), `simforge-import-${Date.now()}.template.json`);
     tmpFiles.push(out);
-    const run = await simforge('import', FIXTURE, '--map', 'yale-street', '--out', out);
+    const run = await simforge('import', FIXTURE, '--map', 'yale-st-palo-alto-ca', '--out', out);
     // Storyboard semantics are not translatable, so findings exist even on a
     // successful translation — exit 2 says "read me", not "failed".
     expect(run.code).toBe(2);
     const payload = json<ImportSummary>(run);
     expect(payload.map.status).toBe('resolved');
-    expect(payload.map.selectedMapVersionId).toBe('yale-street');
+    expect(payload.map.selectedMapVersionId).toBe('yale-st-palo-alto-ca');
     expect(payload.stats.rolesTranslated).toBe(payload.stats.actors);
     expect(payload.capabilities.unsupported).toBeGreaterThan(0);
     expect(payload.lossy.length).toBeGreaterThan(0);
@@ -137,7 +137,7 @@ describe('simforge import', () => {
       extensions: { openScenarioImport: { source: { sha256: string } } };
     };
     expect(document.scenarioVersion).toBe(2);
-    expect(document.anchor.pin.mapId).toBe('yale-street');
+    expect(document.anchor.pin.mapId).toBe('yale-st-palo-alto-ca');
     expect(document.roles.every((r) => r.kind === 'scene_absolute')).toBe(true);
     expect(document.extensions.openScenarioImport.source.sha256).toMatch(/^[0-9a-f]{64}$/);
 
@@ -147,7 +147,7 @@ describe('simforge import', () => {
   });
 
   it.skipIf(!haveArtifacts)('renders the same result under --pretty without changing the verdict', async () => {
-    const run = await simforge('import', FIXTURE, '--map', 'yale-street', '--pretty');
+    const run = await simforge('import', FIXTURE, '--map', 'yale-st-palo-alto-ca', '--pretty');
     expect(run.code).toBe(2);
     expect(run.stdout).toContain('lossy:');
     expect(run.stdout).toContain('ASAM OpenSCENARIO 1.4');

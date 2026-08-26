@@ -18,7 +18,7 @@ for (let index = 2; index < process.argv.length; index += 2) {
 }
 const baseUrl = args.get('url') ?? 'http://127.0.0.1:5199/';
 const output = args.get('out') ?? '/tmp/simforge-first-run-graphics.json';
-const maps = (args.get('maps') ?? 'easterbrook-discovery-school,yale-street').split(',');
+const maps = (args.get('maps') ?? 'saratoga-school-area,yale-st-palo-alto-ca').split(',');
 const presets = (args.get('presets') ?? 'roads-only,ultra-low-3d,minimal,high').split(',');
 const allConditions = [
   { id: 'hardware-enabled', launchArgs: ['--ignore-gpu-blocklist', '--enable-gpu-rasterization'] },

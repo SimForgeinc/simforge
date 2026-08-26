@@ -40,7 +40,7 @@ export const CATALOG_VERSION = 2 as const;
 export const CATALOG_GENERATOR_VERSION = '2.0.0' as const;
 export const CATALOG_SLOTS_PER_MAP = 100 as const;
 export const CATALOG_MIN_INCIDENT_TYPES_PER_MAP = 3 as const;
-export const DEFAULT_CATALOG_NAMESPACE = 'uniscenarios-five-map-v2' as const;
+export const DEFAULT_CATALOG_NAMESPACE = 'simforge-active-maps-v3' as const;
 
 /** Existing executable templates are implementation provenance, not the taxonomy. */
 export const CATALOG_TEMPLATE_SOURCES = [

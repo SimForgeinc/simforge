@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Physics-control-driven pure pursuit on richmond-field-station.
+"""Physics-control-driven pure pursuit on richmond-field-station-richmond-ca.
 
 Exercises the V3 facade extensions end to end on a real env-server session:
 
-- ``client.load_world("richmond-field-station")`` — new session from the
+- ``client.load_world("richmond-field-station-richmond-ca")`` — new session from the
   dev-assets map inventory + instance catalog;
 - ``vehicle.get_physics_control()`` — wheelbase / max steer from the engine
   vehicle profiles feeding the pure-pursuit bicycle model exactly like the
@@ -60,7 +60,7 @@ def build_reference_path(world, start_transform, cap: int = 600):
 def main(decisions: int = 300) -> int:
     client = Client()
     try:
-        world = client.load_world("richmond-field-station")
+        world = client.load_world("richmond-field-station-richmond-ca")
         world.tick()  # first decision: engine state becomes readable
         digest = world.get_map().digest
         print(f"map: {world.get_map().name}  xodrSha256={digest['xodrSha256'][:16]}…")

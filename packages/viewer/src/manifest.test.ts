@@ -7,7 +7,7 @@ import { buildVegetation } from './vegetation';
 import type { CityManifest } from './types';
 
 const manifest = JSON.parse(
-  readFileSync(path.resolve(__dirname, '../../../fixtures/yale-3d-manifest.json'), 'utf8'),
+  readFileSync(path.resolve(__dirname, '../../../fixtures/scene-3d-manifest.json'), 'utf8'),
 ) as CityManifest;
 
 describe('manifest', () => {

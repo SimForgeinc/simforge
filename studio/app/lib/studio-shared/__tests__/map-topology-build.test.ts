@@ -518,7 +518,7 @@ describe.skipIf(!existsSync(YALE))("Yale_St_Fixed — hand-verified", () => {
   });
 
   it("derives Left/Right/Straight in LANE TRAVEL direction (sign-aware)", () => {
-    const idx = buildMapTopologyIndex({ mapName: "yale-street", xodr });
+    const idx = buildMapTopologyIndex({ mapName: "yale-st-palo-alto-ca", xodr });
     const gate = (id: string) => idx.gates.find((g) => g.id === id);
 
     // conn0 → road 116, lane id +1: the road's +s direction has a
@@ -550,7 +550,7 @@ describe.skipIf(!existsSync(YALE))("Yale_St_Fixed — hand-verified", () => {
   });
 
   it("connecting lane is junction-internal and back-links its approach", () => {
-    const idx = buildMapTopologyIndex({ mapName: "yale-street", xodr });
+    const idx = buildMapTopologyIndex({ mapName: "yale-st-palo-alto-ca", xodr });
     const g = idx.gates.find((x) => x.id === "115:0:4-1")!;
     const conn = idx.lanes[g.connectingLaneRsl]!;
     expect(conn.isJunction).toBe(true);

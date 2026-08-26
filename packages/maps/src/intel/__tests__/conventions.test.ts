@@ -252,7 +252,7 @@ describe('arm counts agree with outward-leg clustering', () => {
 
 describe.skipIf(!devAssetsAvailable())('conventions on the full Yale map', () => {
   it('finds the opposing conflicts at junction 134 and keeps arm counts sane', async () => {
-    const yale = await buildMapIntelFromDir(path.join(DEV_ASSETS, 'yale-street'));
+    const yale = await buildMapIntelFromDir(path.join(DEV_ASSETS, 'yale-st-palo-alto-ca'));
     const j134 = yale.derived.junctions.find((j) => (j.junctionId as string) === '134');
     expect(j134).toBeDefined();
     if (!j134) return;
@@ -282,7 +282,7 @@ describe.skipIf(!devAssetsAvailable())('conventions on the full Yale map', () =>
   });
 
   it('agrees with the arm counts the search index reports for four-ways', async () => {
-    const yale = await buildMapIntelFromDir(path.join(DEV_ASSETS, 'yale-street'));
+    const yale = await buildMapIntelFromDir(path.join(DEV_ASSETS, 'yale-st-palo-alto-ca'));
     const byId = new Map(
       yale.catalog.locations
         .filter((l) => l.type === 'junction')

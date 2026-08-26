@@ -16,10 +16,10 @@ def yale_graph():
         c for c in [
             Path(__file__).resolve().parents[1] / ".dev-assets",
         ]
-        if any((c / "yale-street" / sub / "topology-index.json.gz").exists()
+        if any((c / "yale-st-palo-alto-ca" / sub / "topology-index.json.gz").exists()
                for sub in ("", "browser"))
     )
-    index = load_topology_index(root, "yale-street")
+    index = load_topology_index(root, "yale-st-palo-alto-ca")
     return LaneGraphLite(index)
 
 

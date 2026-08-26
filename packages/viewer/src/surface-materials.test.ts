@@ -34,11 +34,11 @@ describe('semantic surface classifier', () => {
   });
 
   it.each([
-    ['yale-street', 'Roads_Road_Layer0', 'Asphalt1_Road', 'asphalt'],
-    ['belmont-research-center', 'Roads_Sidewalk_Layer0', 'Concrete4_rrx_Curb', 'curb'],
-    ['el-camino-road', 'Roads_Sidewalk_Layer0', 'Grass1_Sidewalk', 'grass'],
-    ['easterbrook-discovery-school', 'Roads_Layer0', 'Curb_Saratoga', 'curb'],
-    ['richmond-field-station', 'Roads_Sidewalk_Layer0', 'Concrete1_Sidewalk', 'concrete'],
+    ['yale-st-palo-alto-ca', 'Roads_Road_Layer0', 'Asphalt1_Road', 'asphalt'],
+    ['belmont-office-park-belmont-ca', 'Roads_Sidewalk_Layer0', 'Concrete4_rrx_Curb', 'curb'],
+    ['el-camino-rd-palo-alto-ca', 'Roads_Sidewalk_Layer0', 'Grass1_Sidewalk', 'grass'],
+    ['saratoga-school-area', 'Roads_Layer0', 'Curb_Saratoga', 'curb'],
+    ['richmond-field-station-richmond-ca', 'Roads_Sidewalk_Layer0', 'Concrete1_Sidewalk', 'concrete'],
   ] as const)('covers audited %s semantic identities', (_map, meshName, materialName, expected) => {
     const mesh = surface(meshName, materialName);
     expect(classifySurface(mesh, mesh.material as MeshStandardMaterial, 'road').kind).toBe(expected);

@@ -236,8 +236,8 @@ def test_session_ground_projection_and_sidewalk(yale_world):
 
 def test_session_map_digest_identity(yale_world, dev_assets_root):
     digest = yale_world.get_map().digest
-    bundle = json.loads((dev_assets_root / "yale-street" / "bundle.json").read_text())
-    assert digest["mapId"] == "yale-street"
+    bundle = json.loads((dev_assets_root / "yale-st-palo-alto-ca" / "bundle.json").read_text())
+    assert digest["mapId"] == "yale-st-palo-alto-ca"
     assert digest["xodrSha256"] == bundle["xodrSha256"]
 
 
@@ -253,20 +253,22 @@ def test_session_geolocation_roundtrip(yale_world):
 
 def test_session_load_world_richmond_with_baked_weather(dev_assets_root):
     from simforge_carla_api.maps import find_instance_for_map, instance_search_roots
-    if find_instance_for_map("richmond-field-station", instance_search_roots()) is None:
+    if find_instance_for_map("richmond-field-station-richmond-ca", instance_search_roots()) is None:
         pytest.skip("no richmond instance in local pools")
     client = Client()
     try:
-        world = client.load_world("richmond-field-station", weather="rain",
+        world = client.load_world("richmond-field-station-richmond-ca", weather="rain",
                                   traffic="light")
-        assert world.get_map().name == "richmond-field-station"
+        assert world.get_map().name == "richmond-field-station-richmond-ca"
         digest = world.get_map().digest
-        assert digest["xodrSha256"] == \
-            "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643"
+        bundle = json.loads(
+            (dev_assets_root / "richmond-field-station-richmond-ca" / "bundle.json").read_text()
+        )
+        assert digest["xodrSha256"] == bundle["xodrSha256"]
         world.tick()
         assert world.get_weather().precipitation > 0
         # Ground truth Z from the source XODR elevation profile:
-        surface = load_surface(dev_assets_root, "richmond-field-station")
+        surface = load_surface(dev_assets_root, "richmond-field-station-richmond-ca")
         assert surface.z_anywhere(0.0, 0.0) is not None
     finally:
         client.close()
@@ -274,4 +276,4 @@ def test_session_load_world_richmond_with_baked_weather(dev_assets_root):
 
 def test_session_available_maps_match_inventory(yale_client, dev_assets_root):
     maps = yale_client.get_available_maps()
-    assert "yale-street" in maps and "richmond-field-station" in maps
+    assert "yale-st-palo-alto-ca" in maps and "richmond-field-station-richmond-ca" in maps

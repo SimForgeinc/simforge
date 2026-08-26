@@ -16,7 +16,7 @@ Nothing here imports three.js and nothing reads the network.
 ## Build
 
 ```bash
-pnpm --filter @simforge/maps build:map -- --map yale-street
+pnpm --filter @simforge/maps build:map -- --map yale-st-palo-alto-ca
 pnpm --filter @simforge/maps build:map -- --all [--json]
 ```
 
@@ -69,7 +69,7 @@ road-snaps.
 ```ts
 import { buildMapIntelFromDir, findLocations, describeLocation } from '@simforge/maps';
 
-const { catalog, derived } = await buildMapIntelFromDir('dev-assets/yale-street');
+const { catalog, derived } = await buildMapIntelFromDir('dev-assets/yale-st-palo-alto-ca');
 
 const unprotectedLefts = findLocations(catalog, {
   type: 'junction_movement',

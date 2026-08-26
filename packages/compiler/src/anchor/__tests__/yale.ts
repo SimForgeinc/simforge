@@ -27,7 +27,7 @@ import type { DerivedMapIndex } from '../types/map-index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = resolve(here, '../../../..');
-export const YALE_DIR = resolve(REPO_ROOT, 'dev-assets/yale-street');
+export const YALE_DIR = resolve(REPO_ROOT, 'dev-assets/yale-st-palo-alto-ca');
 export const YALE_TOPOLOGY = resolve(YALE_DIR, 'topology-index.json.gz');
 export const YALE_SEARCH = resolve(YALE_DIR, 'search-index.json.gz');
 
@@ -76,7 +76,7 @@ export function loadYaleIndex(): Promise<DerivedMapIndex> {
       ? await decodeMaybeGzippedJson<unknown>(readFileSync(locationsPath))
       : undefined;
     return normalizeDerivedMapIndex(derived, {
-      mapId: 'yale-street',
+      mapId: 'yale-st-palo-alto-ca',
       topology,
       ...(searchIndex ? { searchIndex } : {}),
       ...(locations ? { locations } : {}),
@@ -91,7 +91,7 @@ export function loadYaleSelfDerived(): Promise<DerivedMapIndex> {
   cachedSelfDerived = (async () => {
     const [topology, searchIndex] = await Promise.all([loadTopology(), loadSearchIndex()]);
     return deriveMapIndexFromTopology(topology, {
-      mapId: 'yale-street',
+      mapId: 'yale-st-palo-alto-ca',
       ...(searchIndex ? { searchIndex } : {}),
     });
   })();

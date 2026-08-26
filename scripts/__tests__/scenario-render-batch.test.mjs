@@ -27,11 +27,11 @@ import {
 } from '../scenario-render-batch-lib.mjs';
 
 const mapIds = [
-  'yale-street',
-  'belmont-research-center',
-  'el-camino-road',
-  'easterbrook-discovery-school',
-  'richmond-field-station',
+  'yale-st-palo-alto-ca',
+  'belmont-office-park-belmont-ca',
+  'el-camino-rd-palo-alto-ca',
+  'saratoga-school-area',
+  'richmond-field-station-richmond-ca',
 ];
 
 function hash(character) {
@@ -135,8 +135,8 @@ test('refuses resume after catalog, renderer, or render-setting drift', () => {
     /provenance changed/,
   );
   const studioDrift = provenance();
-  studioDrift.rendererSources = studioDrift.rendererSources.map((item) => (
-    item.file === 'studio/src/editor/actorRenderer.ts' ? { ...item, sha256: hash('0') } : item
+  studioDrift.rendererSources = studioDrift.rendererSources.map((item, index) => (
+    index === 0 ? { ...item, sha256: hash('0') } : item
   ));
   assert.throws(
     () => resumeBatchLedger(ledger, source, studioDrift, config()),
@@ -332,7 +332,7 @@ test('counts only byte-verified, machine-passed evidence with an exact observed 
   const entries = ledger.entries.map((item, index) => index === 0 ? tampered : item);
   const summary = summarizeBatchEntries(entries, source.maps);
   assert.equal(summary.accepted, 0);
-  assert.equal(summary.byMap['yale-street'].accepted, 0);
+  assert.equal(summary.byMap['yale-st-palo-alto-ca'].accepted, 0);
 });
 
 test('missing source evidence always has zero credit even if stale ledger state claimed acceptance', async () => {

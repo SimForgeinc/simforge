@@ -5,14 +5,14 @@ import { buildSeededPlacementRoute, createFixedStepSimulation, runSimulation } f
 import { loadMap } from '@simforge/compiler/node';
 import { localMapAssetRequirement } from './asset-test-utils.js';
 
-const studioMapAssets = localMapAssetRequirement(['yale-street', 'belmont-research-center']);
+const studioMapAssets = localMapAssetRequirement(['yale-st-palo-alto-ca', 'belmont-office-park-belmont-ca']);
 function xy(point: { x: number; y: number } | readonly [number, number]): { x: number; y: number } {
   return Array.isArray(point) ? { x: point[0]!, y: point[1]! } : point as { x: number; y: number };
 }
 
 describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${studioMapAssets.missingReason}`, () => {
   it('materializes a browser-created fresh scenario with no actors', async () => {
-    const bundle = await loadMap('belmont-research-center');
+    const bundle = await loadMap('belmont-office-park-belmont-ca');
     const document = TemplateDocument.create({
       name: 'Fresh Belmont scenario',
       sourceMap: { mapId: bundle.mapId, mapName: 'Belmont Research Center' },
@@ -29,7 +29,7 @@ describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${s
   }, 30_000);
 
   it('compiles the actor-owned initial lanePath and exact 30 mph profile without timeline indirection', async () => {
-    const bundle = await loadMap('yale-street');
+    const bundle = await loadMap('yale-st-palo-alto-ca');
     const actorId = 'vehicle-random-turns';
     const candidate = Object.values(bundle.topology.lanes)
       .filter((lane) => lane.laneType === 'driving')
@@ -111,7 +111,7 @@ describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${s
   }, 30_000);
 
   it('materializes a freshly placed v2 vehicle and simulates the exact clip duration', async () => {
-    const bundle = await loadMap('yale-street');
+    const bundle = await loadMap('yale-st-palo-alto-ca');
     const lane = Object.values(bundle.topology.lanes)
       .filter((candidate) => candidate.laneType === 'driving' && candidate.polyline.length >= 2)
       .sort((a, b) => a.rsl.localeCompare(b.rsl))[0]!;
@@ -140,7 +140,7 @@ describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${s
   }, 30_000);
 
   it('uses the full choreography and prop compiler for authored map-bound actors', async () => {
-    const bundle = await loadMap('yale-street');
+    const bundle = await loadMap('yale-st-palo-alto-ca');
     const lane = Object.values(bundle.topology.lanes)
       .filter((candidate) => candidate.laneType === 'driving' && candidate.polyline.length >= 2 && candidate.polyline.length >= 2)
       .sort((a, b) => b.polyline.length - a.polyline.length || a.rsl.localeCompare(b.rsl))[0]!;
@@ -204,7 +204,7 @@ describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${s
   }, 30_000);
 
   it('resolves arrival triggers and compiles lane changes on authored lane actors', async () => {
-    const bundle = await loadMap('yale-street');
+    const bundle = await loadMap('yale-st-palo-alto-ca');
     const lane = Object.values(bundle.topology.lanes)
       .filter((candidate) => candidate.laneType === 'driving' && candidate.polyline.length >= 2)
       .find((candidate) => candidate.adjacentLanes?.left?.sameDirection || candidate.adjacentLanes?.right?.sameDirection)!;
@@ -245,7 +245,7 @@ describe.skipIf(!studioMapAssets.available)(`map-bound Studio materialization${s
   }, 30_000);
 
   it('keeps two distinct Belmont authoring poses exact at Play t=0', async () => {
-    const bundle = await loadMap('belmont-research-center');
+    const bundle = await loadMap('belmont-office-park-belmont-ca');
     const speedKph = 48.28032;
     const requiredDownstreamM = speedKph / 3.6 * 20 + 10;
     const usable = Object.values(bundle.topology.lanes)

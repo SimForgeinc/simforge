@@ -12,10 +12,14 @@ pnpm install
 node packages/cli/bin/simforge.js --help        # the command surface, as JSON
 ```
 
-- **dev-assets are required** for anything map-bound: `dev-assets/<mapId>/`
-  (yale-street, belmont-research-center, el-camino-road,
-  easterbrook-discovery-school, richmond-field-station). They are git-ignored;
-  override the location with `SCEN_DEV_ASSETS=<dir>`.
+- **Map bundles are required** for anything map-bound. Pull an active immutable
+  map version with `simforge maps pull <map>@<version>`; the default cache is
+  `~/.local/share/simforge/maps`, and `SCEN_DEV_ASSETS=<dir>` overrides the
+  canonical bundle root. Active maps are `belmont-office-park-belmont-ca`,
+  `di-rosa-sf`, `el-camino-rd-palo-alto-ca`, `page-mill-rd-palo-alto-ca`,
+  `richmond-field-station-richmond-ca`, `san-ramon-phase-1-p1`,
+  `san-ramon-phase-1-p2`, `san-ramon-phase-2`, `saratoga-school-area`, and
+  `yale-st-palo-alto-ca`.
 - Build a package in isolation: `pnpm --filter @simforge/cli build`.
 - Run one test file: `cd packages/cli && npx vitest run src/__tests__/cli-smoke.test.ts`.
 
@@ -39,10 +43,10 @@ $U schemas --content > /tmp/template.schema.json    # the emission contract
 
 $U template new --out s.template.json               # deterministic v2 skeleton
 $U template validate s.template.json                # tier-1; exit 2 = repair
-$U template validate s.template.json --map yale-street   # + map-backed checks
+$U template validate s.template.json --map yale-st-palo-alto-ca   # + map-backed checks
 
 $U sites match s.template.json --all-maps           # ranked concrete sites
-$U instantiate s.template.json --map yale-street --site <siteId> \
+$U instantiate s.template.json --map yale-st-palo-alto-ca --site <siteId> \
     --seed fixed-seed-1 --out i.instance.json
 $U simulate i.instance.json --trace i.trace.json.gz
 $U evaluate i.trace.json.gz                         # reject filters
@@ -60,14 +64,14 @@ road IDs:
 
 ```sh
 $U maps list
-$U locations find --map yale-street --type junction --facts control=signalized
-$U locations resolve "signalized junction near a school" --map yale-street
+$U locations find --map yale-st-palo-alto-ca --type junction --facts control=signalized
+$U locations resolve "signalized junction near a school" --map yale-st-palo-alto-ca
 ```
 
 ## Import / export (OpenSCENARIO)
 
 ```sh
-$U import scene.xosc --map yale-street --out imported.template.json
+$U import scene.xosc --map yale-st-palo-alto-ca --out imported.template.json
 $U render hash render-intent.json
 $U render run render-intent.json --engine browser --inputs inputs.json --out clip/
 ```

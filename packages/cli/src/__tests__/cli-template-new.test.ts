@@ -18,7 +18,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { DEV_ASSETS, REPO_ROOT } from '@simforge/compiler/node';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
-const haveArtifacts = existsSync(path.join(DEV_ASSETS, 'yale-street'));
+const haveArtifacts = existsSync(path.join(DEV_ASSETS, 'yale-st-palo-alto-ca'));
 
 interface Run {
   code: number;
@@ -109,13 +109,13 @@ describe('simforge template new', () => {
   });
 
   it.skipIf(!haveArtifacts)('pre-binds --map/--site through anchor.pin', async () => {
-    const run = await simforge('template', 'new', '--map', 'yale-street', '--site', 'site-123');
+    const run = await simforge('template', 'new', '--map', 'yale-st-palo-alto-ca', '--site', 'site-123');
     expect(run.code).toBe(0);
     const payload = json<{
       template: { sourceMap: { mapId: string }; anchor: { pin: { mapId: string; siteId?: string } } };
     }>(run);
-    expect(payload.template.sourceMap.mapId).toBe('yale-street');
-    expect(payload.template.anchor.pin).toEqual({ mapId: 'yale-street', siteId: 'site-123' });
+    expect(payload.template.sourceMap.mapId).toBe('yale-st-palo-alto-ca');
+    expect(payload.template.anchor.pin).toEqual({ mapId: 'yale-st-palo-alto-ca', siteId: 'site-123' });
   });
 
   it.skipIf(!haveArtifacts)('rejects an unknown map with the closed vocabulary attached', async () => {
@@ -123,6 +123,6 @@ describe('simforge template new', () => {
     expect(run.code).toBe(1);
     const error = JSON.parse(run.stderr) as { code: string; detail: { known: string[] } };
     expect(error.code).toBe('unknown_map');
-    expect(error.detail.known).toContain('yale-street');
+    expect(error.detail.known).toContain('yale-st-palo-alto-ca');
   });
 });

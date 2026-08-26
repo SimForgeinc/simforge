@@ -8,7 +8,7 @@ function fixtureTrace(): TraceInput {
   const channel = (values: number[]) => values;
   return {
     header: {
-      mapId: 'yale-street',
+      mapId: 'yale-st-palo-alto-ca',
       dt: 0.02,
       actorMetadata: {
         ego: {
@@ -50,7 +50,7 @@ describe('emitSceneState', () => {
   it('produces a schema-valid v1 document with stable ordering', () => {
     expect(() => sceneStateSchema.parse(doc)).not.toThrow();
     expect(doc.version).toBe('scene-state.v1');
-    expect(doc.mapId).toBe('yale-street');
+    expect(doc.mapId).toBe('yale-st-palo-alto-ca');
     expect(doc.tickHz).toBe(50);
     expect(doc.tickCount).toBe(4);
     expect(doc.frame).toBe('scene-yup');
@@ -95,7 +95,7 @@ describe('emitSceneState', () => {
     // Ego accelerates 10 → 10.5 → 11 m/s along +x at 50 Hz: Δv = 0.5 m/s per tick
     // → 25 m/s² world-frame; first record has no prior sample and reports zeros.
     const accelDoc = emitSceneState({
-      header: { mapId: 'yale-street', dt: 0.02 },
+      header: { mapId: 'yale-st-palo-alto-ca', dt: 0.02 },
       ticks: {
         t: [0, 0.02, 0.04],
         actors: {

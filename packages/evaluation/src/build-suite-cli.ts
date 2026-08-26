@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * policy-eval-build-suite — derive the frozen `policy-eval-suite.v1.json`
- * from the five-map catalog minus the rl training banks.
+ * policy-eval-build-suite — derive a frozen `policy-eval-suite.v1.json`
+ * from an explicit active-map catalog minus explicit training banks.
  *
  *   node packages/evaluation/dist/build-suite-cli.js \
- *     --catalog catalog/uniscenarios-five-map-v2.catalog.json \
- *     --training-glob 'scripts/rl/episodes/*-*.json' \
+ *     --catalog <active-map-catalog.json> \
+ *     --training-glob '<episode-glob>' \
  *     --out qualification/policy-eval-suite.v1.json [--validate]
  *
  * `--validate` materialize-probes every candidate cell (needs dev-assets and
@@ -33,8 +33,8 @@ interface Flags {
 
 function parseArgs(argv: readonly string[]): Flags {
   const flags: Flags = {
-    catalog: 'catalog/uniscenarios-five-map-v2.catalog.json',
-    trainingGlob: 'scripts/rl/episodes/*-train.json,scripts/rl/episodes/*-eval.json',
+    catalog: '',
+    trainingGlob: '',
     out: 'qualification/policy-eval-suite.v1.json',
     validate: false,
   };
@@ -53,6 +53,8 @@ function parseArgs(argv: readonly string[]): Flags {
       default: throw new Error(`unknown flag ${arg}`);
     }
   }
+  if (!flags.catalog) throw new Error('--catalog is required');
+  if (!flags.trainingGlob) throw new Error('--training-glob is required');
   return flags;
 }
 

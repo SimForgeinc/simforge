@@ -66,11 +66,16 @@ import {
 } from './scenario-review-ledger-lib.mjs';
 
 const MAPS = [
-  { id: 'yale-street', label: 'Yale Street' },
-  { id: 'belmont-research-center', label: 'Belmont Research Center' },
-  { id: 'el-camino-road', label: 'El Camino Road' },
-  { id: 'easterbrook-discovery-school', label: 'Easterbrook Discovery School' },
-  { id: 'richmond-field-station', label: 'Richmond Field Station' },
+  { id: 'belmont-office-park-belmont-ca', label: 'Belmont Office Park' },
+  { id: 'di-rosa-sf', label: 'Di Rosa' },
+  { id: 'el-camino-rd-palo-alto-ca', label: 'El Camino Road — Palo Alto' },
+  { id: 'page-mill-rd-palo-alto-ca', label: 'Page Mill Road' },
+  { id: 'richmond-field-station-richmond-ca', label: 'Richmond Field Station — Richmond' },
+  { id: 'san-ramon-phase-1-p1', label: 'San Ramon Phase 1 P1' },
+  { id: 'san-ramon-phase-1-p2', label: 'San Ramon Phase 1 P2' },
+  { id: 'san-ramon-phase-2', label: 'San Ramon Phase 2' },
+  { id: 'saratoga-school-area', label: 'Saratoga School Area' },
+  { id: 'yale-st-palo-alto-ca', label: 'Yale Street — Palo Alto' },
 ];
 
 function argsOf(argv) {
@@ -174,7 +179,7 @@ function reorientCamera(camera, offset) {
 }
 const maps = args.has('all-maps')
   ? MAPS
-  : [MAPS.find((m) => m.id === (args.get('map') ?? 'yale-street')) ?? MAPS[0]];
+  : [MAPS.find((m) => m.id === (args.get('map') ?? 'yale-st-palo-alto-ca')) ?? MAPS[0]];
 
 function withMap(base, mapId) {
   const u = new URL(base);

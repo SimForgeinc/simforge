@@ -117,9 +117,8 @@ function deriveDraftDigest(
  * The logical map id: lowercase, hyphen-separated, no underscores.
  *
  * This is the identity map-intel brands with `asMapId`, whose pattern is
- * `^[a-z0-9][a-z0-9-]*$`, and it is the same distinction `config/scenario/
- * map-seeds.json` already draws — `mapId: "belmont-research-center"` beside
- * `sourceMapId: "belmont-research-center_20260410-184713"`.
+ * `^[a-z0-9][a-z0-9-]*$`, matching the distinction between a stable logical
+ * map id and a source publication id.
  */
 export function mapSlugFromLabel(label: string): string {
   return label

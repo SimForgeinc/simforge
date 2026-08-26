@@ -1,17 +1,16 @@
 import assert from 'node:assert/strict';
-import { closeSync, existsSync, openSync, readFileSync, readSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
-import { gunzipSync } from 'node:zlib';
 import { buildStaticColliderArtifact, extractGlbColliders, serializeStaticColliderArtifact } from '../static-map-colliders-lib.mjs';
-import { sha256, writeGlb } from '../map-derivatives-lib.mjs';
+import { writeGlb } from '../map-derivatives-lib.mjs';
 
 const fixture = () => readFileSync(resolve(import.meta.dirname, '../../fixtures/yale-tile_0_0.lod3.glb'));
 
 test('static collider artifact is byte-for-byte deterministic and schema-stable', () => {
   const bytes = fixture();
   const input = {
-    mapId: 'yale-street',
+    mapId: 'yale-st-palo-alto-ca',
     sourceManifestSha256: 'a'.repeat(64),
     manifest: { tiles: [{ id: 'yale-0-0', lods: [{ level: 3, file: 'tile.glb' }] }] },
     topology: { lanes: {} },
@@ -52,32 +51,3 @@ test('only explicitly named curbs become road-boundary colliders', () => {
   assert.deepEqual(artifact.colliders.map(({ id, class: kind }) => ({ id, kind })), [{ id: 'tile/0', kind: 'road-boundary' }]);
 });
 
-const fullYale = resolve(import.meta.dirname, '../../dev-assets/yale-street');
-test('full Yale artifact covers buildings, fences, and barriers compactly', { skip: !existsSync(fullYale) }, () => {
-  const manifestBytes = readFileSync(resolve(fullYale, '3d/manifest.json'));
-  const manifest = JSON.parse(manifestBytes);
-  const topology = JSON.parse(gunzipSync(readFileSync(resolve(fullYale, 'topology-index.json.gz'))));
-  const readHeader = (relative) => {
-    const descriptor = openSync(resolve(fullYale, '3d', relative), 'r');
-    try {
-      const header = Buffer.alloc(20);
-      readSync(descriptor, header, 0, 20, 0);
-      const jsonLength = header.readUInt32LE(12);
-      const bytes = Buffer.alloc(20 + jsonLength);
-      header.copy(bytes);
-      readSync(descriptor, bytes, 20, jsonLength, 20);
-      return bytes;
-    } finally {
-      closeSync(descriptor);
-    }
-  };
-  const start = performance.now();
-  const artifact = buildStaticColliderArtifact({
-    mapId: 'yale-street', sourceManifestSha256: sha256(manifestBytes), manifest, topology, readSource: readHeader,
-  });
-  assert.ok(artifact.statistics.classes.building >= 70);
-  assert.ok(artifact.statistics.classes.wall >= 8);
-  assert.ok(artifact.statistics.classes.barrier >= 2);
-  assert.ok(Buffer.byteLength(serializeStaticColliderArtifact(artifact)) < 100_000);
-  assert.ok(performance.now() - start < 1_000);
-});

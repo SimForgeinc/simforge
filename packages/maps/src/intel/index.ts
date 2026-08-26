@@ -17,7 +17,7 @@
  * ```ts
  * import { buildMapIntelFromDir, findLocations, describeLocation } from '../index.js';
  *
- * const { catalog, derived } = await buildMapIntelFromDir('dev-assets/yale-street');
+ * const { catalog, derived } = await buildMapIntelFromDir('dev-assets/yale-st-palo-alto-ca');
  *
  * const unprotectedLefts = findLocations(catalog, {
  *   type: 'junction_movement',

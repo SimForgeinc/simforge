@@ -228,7 +228,7 @@ describe('adaptTemplate — policy and roles', () => {
 
   it('drops a pin with no siteId and explains why', () => {
     const { anchor, notes } = adaptTemplate(
-      parse({ anchor: { id: 'a', features: [], pin: { mapId: 'yale-street' } } }),
+      parse({ anchor: { id: 'a', features: [], pin: { mapId: 'yale-st-palo-alto-ca' } } }),
     );
     expect(anchor.pin).toBeUndefined();
     expect(notes.some((n) => n.reason.includes('pin_site_unresolved'))).toBe(true);

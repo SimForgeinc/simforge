@@ -9,10 +9,10 @@ import {
 } from '../overlays/lanes.js';
 import type { FeatureCollection } from '../geojson.js';
 import type { LanePolygonProperties } from '../lanes.js';
-import { yaleHeaderText, yaleLanePolygonSample, yaleManifest } from './fixtures.js';
+import { yaleHeaderText, yaleLanePolygonSample, mapManifest } from './fixtures.js';
 
 const frame = (): CoordinateFrame =>
-  CoordinateFrame.fromMapAssets(yaleHeaderText(), yaleManifest());
+  CoordinateFrame.fromMapAssets(yaleHeaderText(), mapManifest());
 
 async function load(): Promise<LanePolygon[]> {
   return lanePolygonsFromGeoJson(await yaleLanePolygonSample(), frame());

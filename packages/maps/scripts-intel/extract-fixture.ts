@@ -25,7 +25,7 @@ import { CoordinateFrame } from '@simforge/maps/opendrive';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');
-const SRC = path.join(REPO_ROOT, 'dev-assets', 'yale-street');
+const SRC = path.join(REPO_ROOT, 'dev-assets', 'yale-st-palo-alto-ca');
 const OUT = path.join(HERE, '..', 'src', '__tests__', 'fixtures', 'mini-yale.json.gz');
 
 /** Junction the fixture is centred on: signalized, four arms, four approaches. */

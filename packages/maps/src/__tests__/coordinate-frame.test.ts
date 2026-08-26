@@ -8,10 +8,10 @@
 import { describe, expect, it } from 'vitest';
 import { CoordinateFrame } from '../coordinate-frame.js';
 import { parseXodrHeader } from '../header.js';
-import { yaleHeaderText, yaleManifest } from './fixtures.js';
+import { yaleHeaderText, mapManifest } from './fixtures.js';
 
 function frame(): CoordinateFrame {
-  return CoordinateFrame.fromMapAssets(yaleHeaderText(), yaleManifest());
+  return CoordinateFrame.fromMapAssets(yaleHeaderText(), mapManifest());
 }
 
 describe('CoordinateFrame — projection', () => {
@@ -75,7 +75,7 @@ describe('CoordinateFrame — the empirically calibrated local -> scene axes', (
 
   it('applies no translation: manifest.scene.origin is the tile-grid corner', () => {
     const f = frame();
-    const manifest = yaleManifest();
+    const manifest = mapManifest();
     expect(f.sceneOrigin).toEqual([0, 0, 0]);
     expect(f.tileGridOrigin).toEqual(manifest.scene.origin);
 
@@ -86,7 +86,7 @@ describe('CoordinateFrame — the empirically calibrated local -> scene axes', (
       cellSize: number[];
       bounds: { min: number[]; max: number[] };
     };
-    const tiles = (yaleManifest() as unknown as {
+    const tiles = (mapManifest() as unknown as {
       tiles: Array<{ gridX: number; gridZ: number; bounds: { min: number[] } }>;
     }).tiles;
     expect(tiles.length).toBeGreaterThan(10);
@@ -168,7 +168,7 @@ describe('CoordinateFrame — the empirically calibrated local -> scene axes', (
   });
 
   it('honours an explicit sceneOrigin for pipelines that do recentre', () => {
-    const f = CoordinateFrame.fromMapAssets(yaleHeaderText(), yaleManifest(), [-100, -5, 200]);
+    const f = CoordinateFrame.fromMapAssets(yaleHeaderText(), mapManifest(), [-100, -5, 200]);
     expect(f.localToScene(10, 20, 30)).toEqual([-90, 25, 180]);
     expect(f.sceneToLocal(f.localToScene(10, 20, 30))).toEqual([10, 20, 30]);
   });
@@ -178,7 +178,7 @@ describe('CoordinateFrame — the empirically calibrated local -> scene axes', (
     // the app never has the text `fromMapAssets` wants. Both paths must agree —
     // including the manifest-derived fields, which callers used to wire by hand
     // (and which `calibrationReport` needs).
-    const manifest = yaleManifest();
+    const manifest = mapManifest();
     const fromText = CoordinateFrame.fromMapAssets(yaleHeaderText(), manifest);
     const fromParsed = CoordinateFrame.fromHeader(parseXodrHeader(yaleHeaderText()), manifest);
 

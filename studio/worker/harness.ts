@@ -11,18 +11,13 @@ import { contentHash, parseSimScenarioInput } from "@simforge/engine";
 
 import { executeRender } from "./executor.js";
 
-const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-
-const DEFAULT_FIXTURE = resolve(
-  REPOSITORY_ROOT,
-  "catalog/evidence/yale-street/yale-street-007-multiple-threat-crosswalk-585ad30557a6/instance.json",
-);
 
 async function main(argv: readonly string[]): Promise<void> {
   const args = argumentsOf(argv);
-  const instancePath = resolve(args.instance ?? DEFAULT_FIXTURE);
+  if (!args.instance) throw new Error("--instance is required");
+  const instancePath = resolve(args.instance);
   const tracePath = resolve(args.trace ?? join(dirname(instancePath), "trace.json.gz"));
-  const devAssets = resolve(args.devAssets ?? process.env.SCEN_DEV_ASSETS ?? "/home/path/SimForge/dev-assets");
+  const devAssets = resolve(args.devAssets ?? process.env.SCEN_DEV_ASSETS ?? "/home/path/simforge-assets/map-bundles");
   const output = resolve(args.output ?? "/tmp/simforge-cloud-worker-harness");
   process.env.UNISCENARIOS_BROWSER_ENGINE_MODULE ??= pathToFileURL(
     resolve(REPOSITORY_ROOT, "packages/render/dist/index.js"),

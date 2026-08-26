@@ -138,7 +138,7 @@ describe('determinism', () => {
 describe('siteId', () => {
   const base = {
     anchorId: 'a1',
-    mapId: 'yale-street',
+    mapId: 'yale-st-palo-alto-ca',
     topologyDigest: 'digest-1',
     originFeatureId: 'junction:115',
     entryLaneRsl: '27:0:-2',

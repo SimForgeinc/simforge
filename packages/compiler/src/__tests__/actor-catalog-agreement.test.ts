@@ -46,7 +46,7 @@ import type { MapBundle } from '../types.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEV_ASSETS = path.resolve(HERE, '..', '..', '..', '..', 'dev-assets');
-const MAP_ID = 'richmond-field-station';
+const MAP_ID = 'richmond-field-station-richmond-ca';
 const HAVE_MAP = existsSync(path.join(DEV_ASSETS, MAP_ID, 'topology-index.json.gz'));
 
 function readJsonGz<T>(file: string): T {

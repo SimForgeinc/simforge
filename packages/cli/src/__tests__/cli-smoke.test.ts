@@ -19,7 +19,7 @@ import { readTraceFile, writeTraceFile } from '@simforge/compiler/node';
 
 const BIN = path.join(REPO_ROOT, 'packages', 'cli', 'bin', 'simforge.js');
 const LTAP = path.join(REPO_ROOT, 'examples', 'ltap-opposing.template.json');
-const MAP = 'yale-street';
+const MAP = 'yale-st-palo-alto-ca';
 const SUMO_SCENARIO = path.join(REPO_ROOT, 'examples', 'edge-cases', '03-red-light-ambulance-preemption', 'scenario.instance.json');
 const haveArtifacts =
   existsSync(path.join(DEV_ASSETS, MAP, 'derived', 'topology-derived.json.gz')) && existsSync(LTAP);

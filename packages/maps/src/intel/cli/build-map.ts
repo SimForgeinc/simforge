@@ -2,7 +2,7 @@
  * Offline catalog builder.
  *
  * ```
- * pnpm --filter ../../index.js build:map -- --map yale-street
+ * pnpm --filter ../../index.js build:map -- --map yale-st-palo-alto-ca
  * pnpm --filter ../../index.js build:map -- --all
  * ```
  *
@@ -32,11 +32,11 @@ const DEV_ASSETS = path.join(REPO_ROOT, 'dev-assets');
 
 /** Maps shipped in `dev-assets/`, in build order. */
 export const KNOWN_MAPS = [
-  'yale-street',
-  'belmont-research-center',
-  'el-camino-road',
-  'easterbrook-discovery-school',
-  'richmond-field-station',
+  'yale-st-palo-alto-ca',
+  'belmont-office-park-belmont-ca',
+  'el-camino-rd-palo-alto-ca',
+  'saratoga-school-area',
+  'richmond-field-station-richmond-ca',
 ] as const;
 
 interface Args {

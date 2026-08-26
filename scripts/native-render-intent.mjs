@@ -5,7 +5,7 @@
  *
  * Usage:
  *   node scripts/native-render-intent.mjs --instance <instance.json> \
- *     --trace <trace.json.gz> --corpus-root <SCEN_SENSOR_CORPUS/yale-street> \
+ *     --trace <trace.json.gz> --corpus-root <SCEN_SENSOR_CORPUS/map-id> \
  *     --out <dir> [--camera pronto-cam1] [--width 736] [--height 416]
  *     [--fps 24] [--ground-y 13]
  *
@@ -251,7 +251,7 @@ const intent = {
     revisionId,
     scenarioSha256: await sha256File(tracePath),
     openScenario: { sha256: await sha256File(xoscPath), sizeBytes: (await fs.stat(xoscPath)).size },
-    map: { mapId: 'yale-street', revisionId: 'yale-corpus-v1', sha256: mapSha },
+    map: { mapId: input.mapId, revisionId: `${input.mapId}-corpus`, sha256: mapSha },
   },
   sensorHosts: sources.map((source) => ({
     sourceId: source.outputName,

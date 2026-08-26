@@ -21,7 +21,7 @@ import type { DerivedMapIndex } from '../types/map-index.js';
 const here = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(here, '../../../..');
 
-const maps = ['yale-street', 'el-camino-road'] as const;
+const maps = ['yale-st-palo-alto-ca', 'el-camino-rd-palo-alto-ca'] as const;
 
 function haveMap(mapId: string): boolean {
   const dir = resolve(REPO_ROOT, 'dev-assets', mapId);

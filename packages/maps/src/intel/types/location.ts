@@ -210,7 +210,7 @@ export interface LocationCatalog {
   /** sha256 over the sorted source hashes — the cache key. */
   catalogRevision: string;
   mapId: MapId;
-  /** Full map asset id, e.g. `yale-street_20260409-234639`. */
+  /** Full source publication id; it may include an ingestion timestamp or digest. */
   mapAssetId: string;
   sourceHashes: Record<string, string>;
   builtAt: string;

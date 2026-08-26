@@ -16,7 +16,7 @@ function slot(overrides: Partial<CatalogSlotView>): CatalogSlotView {
   return {
     identity: 'identity',
     seed: 'seed-0',
-    mapId: 'yale-street',
+    mapId: 'yale-st-palo-alto-ca',
     matcherSiteId: 'aaaa1111bbbb2222',
     templateSource: 'examples/queue-tail.template.json',
     variant: {
@@ -35,7 +35,7 @@ const TRAINING_BANKS: TrainingEpisodeSpec[] = [
   {
     source: 'scripts/rl/episodes/dartout-yale-street-4783ce656e89ff59-train.json',
     template: '../../../examples/cpnco-parked-row.template.json',
-    map: 'yale-street',
+    map: 'yale-st-palo-alto-ca',
     site: '4783ce656e89ff59',
     seeds: ['2000', '2001', '2002', '2003', '2004'],
   },
@@ -84,7 +84,7 @@ describe('training exclusion (held-out rule)', () => {
   it('excludes slots materialized by a rl bank at the same site+seed', () => {
     const trained = slot({
       templateSource: 'examples/cpnco-parked-row.template.json',
-      mapId: 'yale-street',
+      mapId: 'yale-st-palo-alto-ca',
       matcherSiteId: '4783ce656e89ff59',
       seed: '2003',
     });
@@ -109,7 +109,7 @@ describe('suite construction', () => {
     {
       source: 'scripts/rl/episodes/dartout-yale-street-4783ce656e89ff59-train.json',
       template: '../../../examples/cpnco-parked-row.template.json',
-      map: 'yale-street',
+      map: 'yale-st-palo-alto-ca',
       site: '4783ce656e89ff59',
       seeds: ['2000'],
     },
@@ -118,15 +118,15 @@ describe('suite construction', () => {
   function catalog(): CatalogSlotView[] {
     const out: CatalogSlotView[] = [];
     out.push(
-      slot({ identity: 'c1', templateSource: 'examples/mechanisms/corridor/cut-in-brake.template.json', mapId: 'yale-street' }),
-      slot({ identity: 'c2', templateSource: 'examples/mechanisms/corridor/cut-in-brake.template.json', mapId: 'belmont-research-center' }),
+      slot({ identity: 'c1', templateSource: 'examples/mechanisms/corridor/cut-in-brake.template.json', mapId: 'yale-st-palo-alto-ca' }),
+      slot({ identity: 'c2', templateSource: 'examples/mechanisms/corridor/cut-in-brake.template.json', mapId: 'belmont-office-park-belmont-ca' }),
     );
     out.push(
-      slot({ identity: 'q1', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'belmont-research-center' }),
-      slot({ identity: 'q2', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'el-camino-road' }),
+      slot({ identity: 'q1', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'belmont-office-park-belmont-ca' }),
+      slot({ identity: 'q2', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'el-camino-rd-palo-alto-ca' }),
     );
     // cut-in: single slot only → layout shift must skip gracefully.
-    out.push(slot({ identity: 'c1', templateSource: 'examples/mechanisms/corridor/cut-in-brake.template.json', mapId: 'yale-street' }));
+    out.push(slot({ identity: 'c1', templateSource: 'examples/mechanisms/corridor/cut-in-brake.template.json', mapId: 'yale-st-palo-alto-ca' }));
     return out;
   }
 
@@ -167,9 +167,9 @@ describe('suite construction', () => {
 
   it('never emits a base route that fails the validation probe, and skips abilities without partners', async () => {
     const slots = [
-      slot({ identity: 'bad', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'belmont-research-center' }),
-      slot({ identity: 'good', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'el-camino-road' }),
-      slot({ identity: 'good2', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'yale-street' }),
+      slot({ identity: 'bad', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'belmont-office-park-belmont-ca' }),
+      slot({ identity: 'good', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'el-camino-rd-palo-alto-ca' }),
+      slot({ identity: 'good2', templateSource: 'examples/mechanisms/corridor/queue-tail.template.json', mapId: 'yale-st-palo-alto-ca' }),
     ];
     const { suite, skipped } = await buildSuite({
       slots,

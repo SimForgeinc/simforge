@@ -208,7 +208,7 @@ describe('segment intersection primitive', () => {
 
 describe.skipIf(!devAssetsAvailable())('conflict pairs on the full Yale map', () => {
   it('gives a signalized four-way opposing through × left crossings', async () => {
-    const yale = await buildMapIntelFromDir(path.join(DEV_ASSETS, 'yale-street'));
+    const yale = await buildMapIntelFromDir(path.join(DEV_ASSETS, 'yale-st-palo-alto-ca'));
     const signalizedFourWays = yale.derived.junctions.filter(
       (j) => j.control === 'signalized' && j.armCount === 4,
     );

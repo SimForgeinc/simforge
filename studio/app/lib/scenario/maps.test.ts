@@ -6,8 +6,8 @@ function descriptor(overrides: Partial<ScenarioMapEntry> = {}): ScenarioMapEntry
   const root = '/api/simforge/maps/usmv_1/browser-assets';
   return {
     id: 'usmv_1', versionId: 'usmv_1', mapVersionId: 'usmv_1',
-    sourceMapId: 'easterbrook-discovery-school_20260410-191436',
-    label: 'Easterbrook', locality: 'San Jose, CA',
+    sourceMapId: 'saratoga-school-area',
+    label: 'Saratoga School Area', locality: 'Saratoga, CA',
     browserAssetRootUrl: root, browserManifestUrl: `${root}/3d/manifest.json`,
     browserClosureSha256: 'a'.repeat(64),
     artifacts: {
@@ -26,7 +26,7 @@ describe('SimCloud playback map adapter', () => {
     const map = playbackMapEntry(descriptor());
     expect(map).toMatchObject({
       id: 'usmv_1', mapVersionId: 'usmv_1',
-      sourceMapId: 'easterbrook-discovery-school_20260410-191436',
+      sourceMapId: 'saratoga-school-area',
       manifest: '/api/simforge/maps/usmv_1/browser-assets/3d/manifest.json',
       xodr: '/api/simforge/maps/usmv_1/browser-assets/map.xodr',
       topology: '/api/simforge/maps/usmv_1/browser-assets/topology-index.json.gz',

@@ -1,6 +1,6 @@
 
 import { chromium } from 'playwright-core';
-const url = 'http://127.0.0.1:5199/?map=belmont-research-center&dpr=1';
+const url = 'http://127.0.0.1:5199/?map=belmont-office-park-belmont-ca&dpr=1';
 const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--ignore-gpu-blocklist', '--window-size=1680,1080'] });
 const ctx = await browser.newContext({ viewport: { width: 1600, height: 960 }, deviceScaleFactor: 1 });
 await ctx.addInitScript(() => {

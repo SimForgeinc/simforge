@@ -20,10 +20,10 @@ import {
   type TrafficLightStateUserData,
   type TrafficLightOrbLayerUserData,
 } from '../overlays/signals.js';
-import { yaleHeaderText, yaleManifest, yaleSignals } from './fixtures.js';
+import { yaleHeaderText, mapManifest, yaleSignals } from './fixtures.js';
 
 const frame = (): CoordinateFrame =>
-  CoordinateFrame.fromMapAssets(yaleHeaderText(), yaleManifest());
+  CoordinateFrame.fromMapAssets(yaleHeaderText(), mapManifest());
 
 async function load() {
   return signalsFromGeoJson(await yaleSignals(), frame());

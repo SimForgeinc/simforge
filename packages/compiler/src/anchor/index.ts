@@ -7,7 +7,7 @@
  *   parseLogicalAnchor, matchAnchor, matchAnchorReport,
  * } from './index.js';
  *
- * const index = normalizeDerivedMapIndex(derivedJson, { mapId: 'yale-street' });
+ * const index = normalizeDerivedMapIndex(derivedJson, { mapId: 'yale-st-palo-alto-ca' });
  * const anchor = parseLogicalAnchor(json);
  * const sites = matchAnchor(anchor, index, { roles });
  * ```

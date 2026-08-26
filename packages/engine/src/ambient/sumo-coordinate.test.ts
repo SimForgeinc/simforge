@@ -10,14 +10,14 @@ import {
 const maps: Record<string, SumoNetworkWorldTransform> = {
   // Generated sidecar registrations. Yale's large negative northing is the
   // coordinate range that exposed the former CLI-only double reflection.
-  'yale-street': {
+  'yale-st-palo-alto-ca': {
     translationX: 352.19,
     translationY: -1482.44,
     rotationDegrees: 0,
     scale: 1,
     invertY: true,
   },
-  'belmont-research-center': {
+  'belmont-office-park-belmont-ca': {
     translationX: -248.57,
     translationY: 304.62,
     rotationDegrees: 0,
@@ -44,7 +44,7 @@ describe('provider-neutral SUMO scene coordinate contract', () => {
   }
 
   it('keeps Yale scene z in the same negative range for output and proxies', () => {
-    const transform = maps['yale-street']!;
+    const transform = maps['yale-st-palo-alto-ca']!;
     const scene = sumoNetworkToScene({ x: 200, y: 100 }, transform);
     expect(scene).toEqual({ x: 552.19, z: -1582.44 });
     const restored = sumoSceneToNetwork(scene, transform);
@@ -53,7 +53,7 @@ describe('provider-neutral SUMO scene coordinate contract', () => {
   });
 
   it('round-trips headings with reflection and rotation exactly once', () => {
-    const transform = { ...maps['yale-street']!, rotationDegrees: 17 };
+    const transform = { ...maps['yale-st-palo-alto-ca']!, rotationDegrees: 17 };
     for (const heading of [0, 45, 90, 180, 315]) {
       expect(sumoSceneHeadingToNetwork(sumoNetworkHeadingToScene(heading, transform), transform))
         .toBeCloseTo(heading, 9);
@@ -61,7 +61,7 @@ describe('provider-neutral SUMO scene coordinate contract', () => {
   });
 
   it('rejects a degenerate sidecar registration', () => {
-    expect(() => sumoNetworkToScene({ x: 0, y: 0 }, { ...maps['yale-street']!, scale: 0 }))
+    expect(() => sumoNetworkToScene({ x: 0, y: 0 }, { ...maps['yale-st-palo-alto-ca']!, scale: 0 }))
       .toThrow(/scale/);
   });
 });

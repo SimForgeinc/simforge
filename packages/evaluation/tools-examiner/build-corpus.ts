@@ -122,11 +122,11 @@ interface PickedSite {
 /** Pick the best site across maps deterministically (highest score wins ties lexicographically). */
 async function pickSite(template: ScenarioTemplateV2): Promise<PickedSite | null> {
   const maps = [
-    'yale-street',
-    'belmont-research-center',
-    'el-camino-road',
-    'easterbrook-discovery-school',
-    'richmond-field-station',
+    'yale-st-palo-alto-ca',
+    'belmont-office-park-belmont-ca',
+    'el-camino-rd-palo-alto-ca',
+    'saratoga-school-area',
+    'richmond-field-station-richmond-ca',
   ];
   const matches = await matchOnMaps(template, maps);
   let best: PickedSite | null = null;
