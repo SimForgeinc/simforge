@@ -64,6 +64,28 @@ async function resolveAsset(route: Context): Promise<ResolvedAsset> {
   return { kind: "asset", asset };
 }
 
+/**
+ * Keep a dev redirect on the caller's origin.
+ *
+ * With real object storage the presigned URL is absolute and must stay absolute.
+ * The local-objects dev fallback, though, builds its URL from a configured base
+ * (`s3-presign.ts` falls back to `http://127.0.0.1:<port>`), so redirecting to
+ * it sends a browser to a host it never asked for: `127.0.0.1` is the client's
+ * own machine when Studio is reached over a LAN or tunnel, and any other fixed
+ * host turns the asset fetch cross-origin and CORS-blocked. A relative Location
+ * follows whichever origin the request arrived on, so every client works without
+ * configuration.
+ */
+function sameOriginWhenLocal(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.pathname.startsWith("/api/local-objects/")) return url;
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return url;
+  }
+}
+
 async function redirectAsset(route: Context, headOnly: boolean): Promise<NextResponse> {
   try {
     const asset = await resolveAsset(route);
@@ -76,7 +98,13 @@ async function redirectAsset(route: Context, headOnly: boolean): Promise<NextRes
       asset.asset.bucket,
       SIGNED_URL_TTL_SECONDS,
     );
-    const response = NextResponse.redirect(url, 307);
+    // `NextResponse.redirect` requires an absolute URL and throws on a relative
+    // one, so set the header directly. A relative Location is valid per RFC 7231
+    // and is what keeps the asset on the caller's origin.
+    const response = new NextResponse(null, {
+      status: 307,
+      headers: { Location: sameOriginWhenLocal(url) },
+    });
     response.headers.set("Cache-Control", browserAssetRedirectCacheControl());
     return response;
   } catch (error) {
