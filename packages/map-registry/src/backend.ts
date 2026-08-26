@@ -17,6 +17,12 @@ import { Readable } from 'node:stream';
 
 export interface PutOptions {
   ifAbsent?: boolean;
+  ifMatch?: string;
+}
+
+export interface VersionedObject {
+  bytes: Uint8Array;
+  etag?: string;
 }
 
 export interface MultipartOptions {
@@ -27,6 +33,7 @@ export interface MultipartOptions {
 export interface RegistryBackend {
   readonly url: string;
   get(key: string): Promise<Uint8Array>;
+  getVersioned?(key: string): Promise<VersionedObject>;
   getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array>;
   exists(key: string): Promise<boolean>;
   list(prefix: string): Promise<string[]>;
@@ -70,6 +77,10 @@ export class FileRegistryBackend implements RegistryBackend {
 
   async get(key: string): Promise<Uint8Array> {
     return readFile(safeFilePath(this.root, key));
+  }
+
+  async getVersioned(key: string): Promise<VersionedObject> {
+    return { bytes: await this.get(key) };
   }
 
   async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
@@ -172,6 +183,18 @@ async function bodyBytes(body: unknown): Promise<Uint8Array> {
   throw new Error('S3 returned an unreadable response body');
 }
 
+export function isRegistryWriteConflict(error: unknown): boolean {
+  if (error === null || typeof error !== 'object') return false;
+  let status: unknown;
+  if ('$metadata' in error && error.$metadata !== null && typeof error.$metadata === 'object'
+    && 'httpStatusCode' in error.$metadata) {
+    status = error.$metadata.httpStatusCode;
+  } else if ('statusCode' in error) {
+    status = error.statusCode;
+  }
+  return status === 409 || status === 412;
+}
+
 export class S3RegistryBackend implements RegistryBackend {
   readonly url: string;
   readonly bucket: string;
@@ -193,8 +216,15 @@ export class S3RegistryBackend implements RegistryBackend {
   }
 
   async get(key: string): Promise<Uint8Array> {
+    return (await this.getVersioned(key)).bytes;
+  }
+
+  async getVersioned(key: string): Promise<VersionedObject> {
     const response = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: this.objectKey(key) }));
-    return bodyBytes(response.Body);
+    return {
+      bytes: await bodyBytes(response.Body),
+      ...(response.ETag === undefined ? {} : { etag: response.ETag }),
+    };
   }
 
   async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
@@ -237,19 +267,47 @@ export class S3RegistryBackend implements RegistryBackend {
   }
 
   async put(key: string, bytes: Uint8Array, options: PutOptions = {}): Promise<void> {
-    await this.client.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: this.objectKey(key),
-        Body: bytes,
-        ...(options.ifAbsent ? { IfNoneMatch: '*' } : {}),
-      }),
-    );
+    try {
+      await this.client.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: this.objectKey(key),
+          Body: bytes,
+          ...(options.ifAbsent ? { IfNoneMatch: '*' } : {}),
+          ...(options.ifMatch ? { IfMatch: options.ifMatch } : {}),
+        }),
+      );
+    } catch (error) {
+      if (!options.ifAbsent || !isRegistryWriteConflict(error) || !/^blobs\/sha256\/[a-f0-9]{2}\/[a-f0-9]{64}$/u.test(key)) throw error;
+      await this.verifyExistingBlob(key, bytes.byteLength);
+    }
+  }
+
+  private async verifyExistingBlob(key: string, expectedBytes: number): Promise<void> {
+    const response = await this.client.send(new HeadObjectCommand({
+      Bucket: this.bucket,
+      Key: this.objectKey(key),
+      ChecksumMode: 'ENABLED',
+    }));
+    if (response.ContentLength !== expectedBytes) {
+      throw new Error(`content-addressed blob collision for ${key}: expected ${expectedBytes} bytes, found ${response.ContentLength ?? 'unknown'}`);
+    }
+    const expectedDigest = key.split('/').at(-1);
+    if (response.ChecksumSHA256 !== undefined && expectedDigest?.match(/^[a-f0-9]{64}$/)) {
+      const expectedChecksum = Buffer.from(expectedDigest, 'hex').toString('base64');
+      if (response.ChecksumSHA256 !== expectedChecksum) {
+        throw new Error(`content-addressed blob checksum mismatch for ${key}`);
+      }
+    }
   }
 
   async putFile(key: string, sourcePath: string, options: PutOptions & MultipartOptions = {}): Promise<void> {
-    if (options.ifAbsent && (await this.exists(key))) throw new Error(`registry object already exists: ${key}`);
     const source = await stat(sourcePath);
+    if (options.ifAbsent && (await this.exists(key))) {
+      if (!/^blobs\/sha256\/[a-f0-9]{2}\/[a-f0-9]{64}$/u.test(key)) throw new Error(`registry object already exists: ${key}`);
+      await this.verifyExistingBlob(key, source.size);
+      return;
+    }
     if (source.size === 0) {
       await this.put(key, new Uint8Array(), { ifAbsent: options.ifAbsent });
       if (options.resumeFile !== undefined) await unlink(options.resumeFile).catch(() => undefined);

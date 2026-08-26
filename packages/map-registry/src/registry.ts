@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, open, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
-import type { RegistryBackend } from './backend.js';
+import { isRegistryWriteConflict, type RegistryBackend } from './backend.js';
 import {
   assertClosure,
   assertSafeRelativePath,
@@ -37,6 +37,61 @@ async function readOptionalJson<T>(backend: RegistryBackend, key: string, fallba
   return parseJson<T>(await backend.get(key), key);
 }
 
+
+export interface IndexWriteRetryOptions {
+  maxAttempts?: number;
+  sleep?: (milliseconds: number) => Promise<void>;
+  random?: () => number;
+}
+
+export async function mergeIndexEntry(
+  backend: RegistryBackend,
+  name: string,
+  version: MapVersion,
+  summary: MapSummary | undefined,
+  options: IndexWriteRetryOptions = {},
+): Promise<void> {
+  const maxAttempts = options.maxAttempts ?? 7;
+  const sleep = options.sleep ?? ((milliseconds: number) =>
+    new Promise<void>((resolve) => setTimeout(resolve, milliseconds)));
+  const random = options.random ?? Math.random;
+  let lastConflict: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const exists = await backend.exists('index.json');
+    const snapshot = exists
+      ? backend.getVersioned
+        ? await backend.getVersioned('index.json')
+        : { bytes: await backend.get('index.json') }
+      : undefined;
+    const index = snapshot === undefined ? {} : parseJson<MapRegistryIndex>(snapshot.bytes, 'index.json');
+    const previous = index[name];
+    const versions = [...new Set([...(previous?.versions ?? []), version])]
+      .sort((left, right) => Number(left.slice(1)) - Number(right.slice(1)));
+    const latest = versions.at(-1) ?? version;
+    const entry: MapIndexEntry = {
+      latest,
+      versions,
+      summary: summary ?? previous?.summary ?? {},
+    };
+    try {
+      await backend.put(
+        'index.json',
+        textEncoder.encode(canonicalJson({ ...index, [name]: entry })),
+        snapshot?.etag ? { ifMatch: snapshot.etag } : exists ? {} : { ifAbsent: true },
+      );
+      return;
+    } catch (error) {
+      if (!isRegistryWriteConflict(error)) throw error;
+      lastConflict = error;
+      if (attempt + 1 >= maxAttempts) break;
+      const exponentialMs = Math.min(25 * 2 ** attempt, 1_000);
+      await sleep(exponentialMs + Math.floor(exponentialMs * 0.25 * random()));
+    }
+  }
+  throw new Error(`registry index update for ${name}@${version} exhausted ${maxAttempts} attempts`, {
+    cause: lastConflict,
+  });
+}
 
 async function uploadClosureMembers(
   backend: RegistryBackend,
@@ -143,14 +198,7 @@ export async function publishVersion(
   };
   await backend.put(versionsKey, textEncoder.encode(canonicalJson([...records, record])));
 
-  const index = await readOptionalJson<MapRegistryIndex>(backend, 'index.json', {});
-  const previous = index[input.name];
-  const entry: MapIndexEntry = {
-    latest: version,
-    versions: [...(previous?.versions ?? []), version],
-    summary: input.summary ?? previous?.summary ?? {},
-  };
-  await backend.put('index.json', textEncoder.encode(canonicalJson({ ...index, [input.name]: entry })));
+  await mergeIndexEntry(backend, input.name, version, input.summary);
   return { record, derivedKeys };
 }
 

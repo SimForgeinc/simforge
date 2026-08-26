@@ -1,18 +1,20 @@
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   FileRegistryBackend,
+  S3RegistryBackend,
   canonicalJson,
   closureDigest,
   closureFromDirectory,
   promoteVersion,
+  mergeIndexEntry,
   publishVersion,
   pullVersion,
   sha256,
 } from '../index.js';
-import type { MapClosure } from '../index.js';
+import type { MapClosure, PutOptions, RegistryBackend, VersionedObject } from '../index.js';
 
 const temporaryRoots: string[] = [];
 
@@ -24,6 +26,110 @@ async function temporaryRoot(label: string): Promise<string> {
 
 afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+
+class ConflictBackend implements RegistryBackend {
+  readonly url = 'memory://registry';
+  readonly objects = new Map<string, Uint8Array>();
+  private revision = 0;
+
+  constructor(private conflictsRemaining: number) {}
+
+  async get(key: string): Promise<Uint8Array> {
+    const bytes = this.objects.get(key);
+    if (bytes === undefined) throw Object.assign(new Error('missing'), { statusCode: 404 });
+    return bytes;
+  }
+
+  async getVersioned(key: string): Promise<VersionedObject> {
+    return { bytes: await this.get(key), etag: String(this.revision) };
+  }
+
+  async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
+    return (await this.get(key)).slice(start, endInclusive === undefined ? undefined : endInclusive + 1);
+  }
+
+  async exists(key: string): Promise<boolean> {
+    return this.objects.has(key);
+  }
+
+  async list(prefix: string): Promise<string[]> {
+    return [...this.objects.keys()].filter((key) => key.startsWith(prefix)).sort();
+  }
+
+  async put(key: string, bytes: Uint8Array, options: PutOptions = {}): Promise<void> {
+    if (this.conflictsRemaining > 0) {
+      this.conflictsRemaining -= 1;
+      throw Object.assign(new Error('precondition'), { $metadata: { httpStatusCode: 412 } });
+    }
+    if (options.ifAbsent && this.objects.has(key)) {
+      throw Object.assign(new Error('precondition'), { $metadata: { httpStatusCode: 412 } });
+    }
+    if (options.ifMatch !== undefined && options.ifMatch !== String(this.revision)) {
+      throw Object.assign(new Error('precondition'), { $metadata: { httpStatusCode: 412 } });
+    }
+    this.objects.set(key, bytes);
+    this.revision += 1;
+  }
+
+  async putFile(): Promise<void> {
+    throw new Error('not used');
+  }
+}
+
+describe('concurrent registry writes', () => {
+  it('re-reads and additively merges index entries after conditional conflicts', async () => {
+    const backend = new ConflictBackend(2);
+    await Promise.all([
+      mergeIndexEntry(backend, 'alpha-map', 'v1', { label: 'Alpha' }, { sleep: async () => undefined, random: () => 0 }),
+      mergeIndexEntry(backend, 'beta-map', 'v1', { label: 'Beta' }, { sleep: async () => undefined, random: () => 0 }),
+    ]);
+    const index = JSON.parse(new TextDecoder().decode(await backend.get('index.json')));
+    expect(Object.keys(index).sort()).toEqual(['alpha-map', 'beta-map']);
+  });
+
+  it('surfaces an exhausted index retry cap', async () => {
+    const backend = new ConflictBackend(10);
+    await expect(mergeIndexEntry(
+      backend,
+      'blocked-map',
+      'v1',
+      undefined,
+      { maxAttempts: 3, sleep: async () => undefined, random: () => 0 },
+    )).rejects.toThrow('exhausted 3 attempts');
+    expect(await backend.exists('index.json')).toBe(false);
+  });
+
+  it('treats a raced content-addressed blob put as success only at matching length', async () => {
+    const digest = 'a'.repeat(64);
+    const bytes = Buffer.from('shared');
+    const send = vi.fn(async (command: object) => {
+      if (command.constructor.name === 'PutObjectCommand') {
+        throw Object.assign(new Error('precondition'), { $metadata: { httpStatusCode: 412 } });
+      }
+      return { ContentLength: bytes.byteLength };
+    });
+    // Deliberately structural fake: only the AWS client's send boundary is exercised.
+    const client = { send } as unknown as ConstructorParameters<typeof S3RegistryBackend>[1];
+    const backend = new S3RegistryBackend('s3://registry-test', client);
+    await expect(backend.put(`blobs/sha256/aa/${digest}`, bytes, { ifAbsent: true })).resolves.toBeUndefined();
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a raced blob whose existing length disagrees', async () => {
+    const digest = 'b'.repeat(64);
+    const send = vi.fn(async (command: object) => {
+      if (command.constructor.name === 'PutObjectCommand') {
+        throw Object.assign(new Error('precondition'), { $metadata: { httpStatusCode: 412 } });
+      }
+      return { ContentLength: 999 };
+    });
+    // Deliberately structural fake: only the AWS client's send boundary is exercised.
+    const client = { send } as unknown as ConstructorParameters<typeof S3RegistryBackend>[1];
+    const backend = new S3RegistryBackend('s3://registry-test', client);
+    await expect(backend.put(`blobs/sha256/bb/${digest}`, Buffer.from('shared'), { ifAbsent: true }))
+      .rejects.toThrow('content-addressed blob collision');
+  });
 });
 
 describe('canonical registry schema', () => {
