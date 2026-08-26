@@ -34,6 +34,7 @@ import type { ScenarioAuthoringQuality, ScenarioMapDescriptorDto } from "@/app/l
 import { AUTHORING_QUALITY, defaultAuthoringQuality } from "@/app/dashboard/scenario/editor/authoring-quality";
 import { ScenarioEditorShell } from "@/app/dashboard/scenario/editor/shell";
 import { createLocalWorldSource } from "@/app/lib/live-world/local-world-source";
+import { createRemoteWorldSource } from "@/app/lib/live-world/remote-world-source";
 import { createTruthViewerBridge, type TruthViewerBridge } from "@/app/lib/live-world/truth-viewer-bridge";
 import type { WorldSource, WorldSourceStatus } from "@/app/lib/live-world/types";
 import { useWorldSource } from "@/app/lib/live-world/use-world-source";
@@ -89,6 +90,9 @@ export function DriveClient() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [quality, setQuality] = useState<ScenarioAuthoringQuality>("high");
   const [view, setView] = useState<DriveView>("world");
+  // `?twin=ws://host:8765`, or `?twin=1` to use this page's host on the default
+  // twin port. Null means Drive runs its own world in-browser.
+  const remoteWorld = useMemo(() => resolveRemoteWorld(), []);
   const [followMode, setFollowMode] = useState<FollowMode>("chase");
   const [egoActorId, setEgoActorId] = useState<string | null>(null);
   const [driving, setDriving] = useState(false);
@@ -153,11 +157,20 @@ export function DriveClient() {
     if (!map) return;
     let nextSource: WorldSource;
     try {
-      nextSource = createLocalWorldSource({
-        mapManifestUrl: map.browserManifestUrl,
-        laneGraphUrl: map.topologyArtifactUrl,
-        tickHz: 20,
-      });
+      // A live twin already owns its world: it advances the simulation, mirrors
+      // real detections into it and serves the site cameras. Attaching to that
+      // world is a different source, not a different app — everything else on
+      // this surface is identical.
+      nextSource = remoteWorld
+        ? createRemoteWorldSource({
+            truthUrl: `${remoteWorld}/twin`,
+            commandUrl: `${remoteWorld}/drive`,
+          })
+        : createLocalWorldSource({
+            mapManifestUrl: map.browserManifestUrl,
+            laneGraphUrl: map.topologyArtifactUrl,
+            tickHz: 20,
+          });
       setSource(nextSource);
       setSourceCreationError(null);
     } catch (error) {
@@ -167,7 +180,7 @@ export function DriveClient() {
       return;
     }
     return () => nextSource.close();
-  }, [map]);
+  }, [map, remoteWorld]);
 
   useEffect(() => {
     if (!source?.subscribeWarnings) return;
@@ -510,6 +523,28 @@ function WorldStatus({
   if (status === "connecting") return <>Connecting continuous world…</>;
   if (status === "closed") return <>World closed</>;
   return <>Preparing continuous world…</>;
+}
+
+/** Default WebSocket port a SimForge twin serves its world on. */
+const TWIN_DEFAULT_PORT = "8765";
+
+/**
+ * Origin of an attached live twin, or null to run a world in this browser.
+ *
+ * `?twin=1` derives the origin from the page so a tunnelled or LAN host works
+ * without being told its own name; an explicit `ws://`/`wss://` value wins. The
+ * scheme follows the page's, because a secure page cannot open a plain socket.
+ */
+function resolveRemoteWorld(): string | null {
+  if (typeof window === "undefined") return null;
+  const raw = new URLSearchParams(window.location.search).get("twin")
+    ?? process.env.NEXT_PUBLIC_DRIVE_TWIN_URL
+    ?? null;
+  if (!raw) return null;
+  if (/^wss?:\/\//.test(raw)) return raw.replace(/\/+$/, "");
+  const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+  const port = raw === "1" || raw === "true" ? TWIN_DEFAULT_PORT : raw;
+  return `${scheme}://${window.location.hostname}:${port}`;
 }
 
 function buildPlaceableKinds(query: string): PlaceableActorKind[] {

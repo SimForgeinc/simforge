@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 
+/**
+ * Origin serving a live twin's camera feeds (MJPEG) when one is attached.
+ * Proxied rather than hot-linked so the browser makes no cross-origin request:
+ * feeds then share the page's connection budget and work unchanged over a
+ * tunnelled host. Unset means no twin is attached and the route is not mounted,
+ * which is better than mounting a rewrite that 502s.
+ */
+const twinHttpOrigin = process.env.SIMFORGE_TWIN_HTTP_ORIGIN?.trim();
+
 const nextConfig: NextConfig = {
   // Deprecated wire alias: pre-SimForge clients are forwarded to the single canonical handler tree.
   async rewrites() {
@@ -8,6 +17,9 @@ const nextConfig: NextConfig = {
         source: "/api/uniscenario/:path*",
         destination: "/api/simforge/:path*",
       },
+      ...(twinHttpOrigin
+        ? [{ source: "/streams/:path*", destination: `${twinHttpOrigin}/streams/:path*` }]
+        : []),
     ];
   },
   allowedDevOrigins: [
@@ -31,6 +43,7 @@ const nextConfig: NextConfig = {
     "@simforge/playback",
     "@simforge/scenario",
     "@simforge/engine",
+    "@simforge/training-env",
   ],
   webpack(config) {
     config.resolve.extensionAlias = {
