@@ -132,6 +132,9 @@ import {
   shouldShowSimpleRouteTutorial,
   simpleRouteTutorialStorage,
 } from "./tutorial/simple-route-tutorial";
+import { MultiSelectionPanel } from "./MultiSelectionPanel";
+import { UnanchoredActorBadges } from "./UnanchoredActorBadges";
+import { useEditorClipboard } from "./clipboard/use-editor-clipboard";
 import {
   routePointWarningMessage,
   routePointMayBeTooFast,
@@ -392,6 +395,22 @@ export function ScenarioEditorSurface({
   const tutorialPlaybackState = usePlaybackControllerState(sharedPlayback?.controller ?? null);
   const selected =
     state?.actors.find((actor) => state.selection.includes(actor.id)) ?? null;
+  /** The single-actor inspector only makes sense for exactly one selection. */
+  const singleSelectedId = state && state.selection.length === 1 ? (selected?.id ?? null) : null;
+  const [clipboardNotice, setClipboardNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!clipboardNotice) return;
+    const timer = window.setTimeout(() => setClipboardNotice(null), 3200);
+    return () => window.clearTimeout(timer);
+  }, [clipboardNotice]);
+  useEditorClipboard({
+    controller,
+    editorDocument,
+    sourceMapId: map.sourceMapId,
+    documentId: record?.id ?? null,
+    active: active && !sharedPlayback?.inspecting,
+    onNotice: setClipboardNotice,
+  });
   const sceneReady = Boolean(worldReady && state && editorDocument);
 
   const heightSampler = useMemo(
@@ -861,7 +880,7 @@ export function ScenarioEditorSurface({
     <EditorConfigurationBlockProvider blocked={Boolean(sharedPlayback?.inspecting)}>
       <EditorOverlayProvider
         documentKey={editorDocument}
-        selectedActorId={selected?.id ?? null}
+        selectedActorId={singleSelectedId}
         suppressActorDetails={state?.mode === "drawingRoute"}
         onSelectActor={selectActor}
       >
@@ -960,7 +979,7 @@ export function ScenarioEditorSurface({
           );
         }}
         statusOverlay={
-          state?.mode === "placing" ? (
+          state?.mode === "placing" || state?.mode === "grab" ? (
             <PlacementCursorHint
               state={state}
               hostRef={hostRef}
@@ -969,6 +988,19 @@ export function ScenarioEditorSurface({
           ) : state?.mode && state.mode !== "idle" ? (
             <div className="pointer-events-auto">
               <EditorModeBanner state={state} controller={controller} />
+            </div>
+          ) : state ? (
+            <div className="pointer-events-none flex flex-col items-center gap-2">
+              {clipboardNotice ? (
+                <p
+                  className="pointer-events-none rounded-md border border-border/70 bg-black/85 px-3 py-1 text-xs text-white shadow-lg backdrop-blur-md"
+                  data-testid="clipboard-notice"
+                  role="status"
+                >
+                  {clipboardNotice}
+                </p>
+              ) : null}
+              <MultiSelectionPanel controller={controller} state={state} />
             </div>
           ) : null
         }
@@ -1039,6 +1071,11 @@ export function ScenarioEditorSurface({
         map={map}
         state={state}
         viewer={viewer}
+      />
+      <UnanchoredActorBadges
+        viewer={viewer}
+        controller={controller}
+        state={active && !sharedPlayback?.inspecting ? state : null}
       />
       <TutorialOverlaySlot
         actorCount={state?.actors.length ?? 0}

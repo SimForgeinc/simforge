@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import { CityViewer } from './viewer';
 import type { CityViewerOptions } from './types';
+import {
+  installViewerRuntimeDiagnostics,
+  type ViewerRuntimeDiagnostics,
+} from './viewer-diagnostics';
 
 export interface CityViewProps {
   /** Manifest URL, relative to `options.baseUrl` when set. */
@@ -53,6 +57,7 @@ export function CityView({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<unknown>(null);
   const viewerRef = useRef<CityViewer | null>(null);
+  const diagnosticsRef = useRef<ViewerRuntimeDiagnostics | null>(null);
   const loadGenerationRef = useRef(0);
   // Options are read once at mount; changing them later requires a remount.
   const optionsRef = useRef(options);
@@ -69,9 +74,12 @@ export function CityView({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const viewer = new CityViewer(canvas, optionsRef.current);
+    diagnosticsRef.current = installViewerRuntimeDiagnostics(viewer);
     viewerRef.current = viewer;
     onReadyRef.current?.(viewer);
     return () => {
+      diagnosticsRef.current?.dispose();
+      diagnosticsRef.current = null;
       viewerRef.current = null;
       viewer.dispose();
     };
@@ -83,14 +91,17 @@ export function CityView({
     const generation = ++loadGenerationRef.current;
     setError(null);
     onCapabilitiesChangeRef.current?.([]);
+    diagnosticsRef.current?.mapLoadStarted(manifestUrl);
     viewer.loadMap(manifestUrl)
       .then(() => {
         if (generation !== loadGenerationRef.current) return;
+        diagnosticsRef.current?.mapLoadSucceeded(manifestUrl);
         onMapLoadedRef.current?.(manifestUrl);
         onCapabilitiesChangeRef.current?.(viewer.getCapabilities());
       })
       .catch((err: unknown) => {
         if (generation !== loadGenerationRef.current) return;
+        diagnosticsRef.current?.mapLoadFailed(manifestUrl, err);
         setError(err);
         onErrorRef.current?.(err, manifestUrl);
         console.error('[city-renderer] loadMap failed', err);

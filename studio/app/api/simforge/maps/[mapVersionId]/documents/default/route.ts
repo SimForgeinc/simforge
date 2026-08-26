@@ -18,6 +18,10 @@ import {
   FRESH_SCENARIO_MINUTES,
   withSceneMinutes,
 } from "@/app/dashboard/scenario/editor/scene-time";
+import {
+  DEFAULT_VISIBILITY_M,
+  withEditorLightingOverrides,
+} from "@/app/dashboard/scenario/editor/lighting-controls";
 
 const EDITOR_APP_VERSION = "0.1.0-editor";
 
@@ -55,7 +59,10 @@ export async function POST(
   template.setClip(undefined, 0);
   const content = {
     ...template.data,
-    environment: withSceneMinutes(template.data.environment, FRESH_SCENARIO_MINUTES),
+    environment: withEditorLightingOverrides(
+      withSceneMinutes(template.data.environment, FRESH_SCENARIO_MINUTES),
+      { visibilityM: DEFAULT_VISIBILITY_M },
+    ),
   };
   const document = await createScenarioDocument(auth.context, {
     title: template.data.meta.name,

@@ -18,6 +18,9 @@ import { z } from "zod";
  */
 export const LIGHTING_EXTENSION_KEY = "org.simforge.lighting.v1" as const;
 
+/** Canonical authored visibility for every fresh scenario. */
+export const DEFAULT_VISIBILITY_M = 200;
+
 /** Inclusive bounds every override is clamped to, and the neutral value. */
 export const LIGHTING_RANGES = {
   ambient: { min: 0, max: 4, neutral: 1, step: 0.05 },
@@ -25,7 +28,7 @@ export const LIGHTING_RANGES = {
   sunWarmth: { min: -1, max: 1, neutral: 0, step: 0.02 },
   exposure: { min: 0.1, max: 3, neutral: 1, step: 0.02 },
   sky: { min: 0, max: 3, neutral: 1, step: 0.05 },
-  visibilityM: { min: 20, max: 20_000, neutral: 20_000, step: 20 },
+  visibilityM: { min: 20, max: 500, neutral: DEFAULT_VISIBILITY_M, step: 20 },
   haze: { min: 0, max: 1, neutral: 0, step: 0.02 },
 } as const;
 

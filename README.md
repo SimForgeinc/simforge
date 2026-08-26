@@ -33,6 +33,13 @@ pnpm dev
 
 SimForge Studio is then available at <http://localhost:5199>.
 
+On first boot, Studio generates a compact Starter Road from checked-in source
+assets when the optional full development map library is not installed. No
+separate map download or environment variable is required for the quickstart.
+Set `SCEN_DEV_ASSETS` to a full map-bundle directory when you want the larger
+local catalog; Studio continues to use the starter map if that directory is
+unavailable.
+
 The CLI binary is `simforge`; `sf` is its short alias:
 
 ```sh

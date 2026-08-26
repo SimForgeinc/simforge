@@ -211,23 +211,25 @@ export async function publishDevAssetMap({
     return member;
   };
 
-  // Dev-assets retain the timestamped source publication id they were built
-  // under. This local publication binds the same immutable network bytes to
-  // the stable map asset slug, so its sidecar must carry that published source
-  // identity just like the synchronous ingest pipeline's generated outputs.
+  // Full development bundles carry SUMO. The checked-source starter map does
+  // not: it remains a usable authoring world while honestly advertising native
+  // traffic only instead of shipping a 10 MB browser runtime in every clone.
   const sumoManifestPath = "derived/sumo/sumo-network-manifest.json";
-  const sourceSumoManifest = JSON.parse(
-    await readFile(requireMember(sumoManifestPath).sourcePath!, "utf8"),
-  ) as Record<string, unknown>;
-  const sumoManifestMember = await storeGeneratedMember(
-    sumoManifestPath,
-    Buffer.from(`${JSON.stringify({ ...sourceSumoManifest, sourceMapId: slug })}\n`),
-  );
-  const sumoManifestIndex = members.findIndex(
-    (member) => member.relativePath === sumoManifestPath,
-  );
-  members[sumoManifestIndex] = sumoManifestMember;
-  byPath.set(sumoManifestPath, sumoManifestMember);
+  const sourceSumoMember = byPath.get(sumoManifestPath);
+  if (sourceSumoMember?.sourcePath) {
+    const sourceSumoManifest = JSON.parse(
+      await readFile(sourceSumoMember.sourcePath, "utf8"),
+    ) as Record<string, unknown>;
+    const sumoManifestMember = await storeGeneratedMember(
+      sumoManifestPath,
+      Buffer.from(`${JSON.stringify({ ...sourceSumoManifest, sourceMapId: slug })}\n`),
+    );
+    const sumoManifestIndex = members.findIndex(
+      (member) => member.relativePath === sumoManifestPath,
+    );
+    members[sumoManifestIndex] = sumoManifestMember;
+    byPath.set(sumoManifestPath, sumoManifestMember);
+  }
 
   const xodrBytes = await readFile(requireMember("map.xodr").sourcePath!);
   const xodrText = xodrBytes.toString("utf8");
@@ -235,24 +237,28 @@ export async function publishDevAssetMap({
   const manifest = JSON.parse(manifestBytes.toString("utf8")) as Manifest;
   const topologyBytes = await readFile(requireMember("topology-index.json.gz").sourcePath!);
   const topology = jsonFromGzip<Topology>(topologyBytes);
-  const lanePolygons = jsonFromGzip<NonNullable<Parameters<typeof buildDerivedArtifacts>[0]["lanePolygonsJson"]>>(
-    await readFile(requireMember("lane-polygons.geojson.gz").sourcePath!),
-  );
-  const signals = jsonFromGzip<NonNullable<Parameters<typeof buildDerivedArtifacts>[0]["signalsJson"]>>(
-    await readFile(requireMember("signals.geojson.gz").sourcePath!),
-  );
-  const roadway = buildDerivedArtifacts({
-    mapId: slug,
-    xodrText,
-    xodrSha256: requireMember("map.xodr").sha256,
-    topologyIndex: topology,
-    topologyBytes,
-    lanePolygonsJson: lanePolygons,
-    signalsJson: signals,
-    manifest: manifest as Parameters<typeof buildDerivedArtifacts>[0]["manifest"],
-    roadGlbBytes: await readFile(resolve(mapRoot, roadGlbPath(paths))),
-  }).roadwayConsistency.bytes;
-  if (!byPath.has("derived/roadway-consistency.json.gz")) {
+  let roadway: Buffer;
+  const existingRoadway = byPath.get("derived/roadway-consistency.json.gz");
+  if (existingRoadway?.sourcePath) {
+    roadway = await readFile(existingRoadway.sourcePath);
+  } else {
+    const lanePolygons = jsonFromGzip<NonNullable<Parameters<typeof buildDerivedArtifacts>[0]["lanePolygonsJson"]>>(
+      await readFile(requireMember("lane-polygons.geojson.gz").sourcePath!),
+    );
+    const signals = jsonFromGzip<NonNullable<Parameters<typeof buildDerivedArtifacts>[0]["signalsJson"]>>(
+      await readFile(requireMember("signals.geojson.gz").sourcePath!),
+    );
+    roadway = buildDerivedArtifacts({
+      mapId: slug,
+      xodrText,
+      xodrSha256: requireMember("map.xodr").sha256,
+      topologyIndex: topology,
+      topologyBytes,
+      lanePolygonsJson: lanePolygons,
+      signalsJson: signals,
+      manifest: manifest as Parameters<typeof buildDerivedArtifacts>[0]["manifest"],
+      roadGlbBytes: await readFile(resolve(mapRoot, roadGlbPath(paths))),
+    }).roadwayConsistency.bytes;
     const member = await storeGeneratedMember("derived/roadway-consistency.json.gz", roadway);
     members.push(member);
     byPath.set(member.relativePath, member);
