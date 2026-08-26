@@ -144,8 +144,11 @@ class LocalWorldSource implements WorldSource {
       for (const listener of this.warningListeners) listener(message.message);
       return;
     }
-
-
+    // Handle the error variant explicitly rather than treating everything that
+    // falls through as an error. New response variants get added to this union
+    // by other work, and a fall-through would both mistype `requestId` and
+    // silently report an unrelated message as a world failure.
+    if (message.type !== 'error') return;
     if (message.requestId !== undefined) {
       const request = this.pending.get(message.requestId);
       if (request) {
