@@ -12,9 +12,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { CircleAlert } from "lucide-react";
 import type { CloudLoadingTelemetry } from "@/app/components/CloudLoadingSurface";
 import { CloudLoadingSurface } from "@/app/components/CloudLoadingSurface";
 import { cn } from "@/app/lib/utils";
+import { Button } from "@/app/components/ui/button";
+
+/**
+ * Maximum time a byte-identical loading source may report no progress before
+ * the overlay offers recovery instead of silently covering Studio forever.
+ */
+export const DASHBOARD_LOADING_STALL_MS = 45_000;
 
 const EXIT_MS = 900;
 const ROUTE_ENTRY_DELAY_MS = 180;
@@ -30,6 +38,8 @@ export type DashboardLoadingSource = {
   progress?: number | null;
   progressLabel?: string;
   progressValueLabel?: string;
+  /** Cooperative liveness signal for long stages whose visible progress is coarse. */
+  activityToken?: string | number;
   telemetry?: CloudLoadingTelemetry | null;
   phase?: string;
   priority?: number;
@@ -63,7 +73,27 @@ export function DashboardLoadingProvider({ children }: { children: ReactNode }) 
   const [sources, setSources] = useState<Map<string, RegisteredSource>>(() => new Map());
   const [hydrating, setHydrating] = useState(true);
   const orderRef = useRef(0);
-  const candidate = highestPrioritySource(sources) ?? (hydrating ? INITIAL_ROUTE_SOURCE : null);
+  const rawCandidate = highestPrioritySource(sources) ?? (hydrating ? INITIAL_ROUTE_SOURCE : null);
+  const [stalled, setStalled] = useState(false);
+  const stallSignature =
+    rawCandidate && rawCandidate.severity !== "error"
+      ? [
+          rawCandidate.kind,
+          rawCandidate.title,
+          rawCandidate.detail ?? "",
+          rawCandidate.phase ?? "",
+          String(rawCandidate.progress ?? ""),
+          rawCandidate.progressValueLabel ?? "",
+          String(rawCandidate.activityToken ?? ""),
+        ].join("\u0000")
+      : null;
+  const candidate = useMemo(
+    () =>
+      stalled && rawCandidate && rawCandidate.severity !== "error"
+        ? stalledLoadingSource(rawCandidate)
+        : rawCandidate,
+    [rawCandidate, stalled],
+  );
   const [renderedSource, setRenderedSource] = useState<DashboardLoadingSource>(
     INITIAL_ROUTE_SOURCE,
   );
@@ -102,6 +132,21 @@ export function DashboardLoadingProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     setHydrating(false);
   }, []);
+
+  useEffect(() => {
+    if (stallSignature === null) {
+      setStalled(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setStalled(true);
+      const [kind, title] = stallSignature.split("\u0000");
+      console.error(
+        `Dashboard loading stalled: ${kind} source "${title}" made no progress for ${Math.round(DASHBOARD_LOADING_STALL_MS / 1000)}s.`,
+      );
+    }, DASHBOARD_LOADING_STALL_MS);
+    return () => window.clearTimeout(timer);
+  }, [stallSignature]);
 
   useLayoutEffect(() => {
     if (candidate) {
@@ -238,6 +283,26 @@ export function dashboardRouteLoadingSource({
   };
 }
 
+function stalledLoadingSource(source: DashboardLoadingSource): DashboardLoadingSource {
+  return {
+    kind: source.kind,
+    title: "Loading is taking longer than expected",
+    detail: `“${source.title}” has made no progress for ${Math.round(DASHBOARD_LOADING_STALL_MS / 1000)} seconds. Reload to try again; if this keeps happening, report it with the current address.`,
+    eyebrow: "SimForge interrupted",
+    severity: "error",
+    priority: 100,
+    icon: <CircleAlert className="size-5" aria-hidden="true" />,
+    actions: (
+      <Button
+        className="mt-6 h-10 rounded-full bg-[#E8E044] px-5 text-black hover:bg-[#f1ea55]"
+        onClick={() => window.location.reload()}
+      >
+        Reload
+      </Button>
+    ),
+  };
+}
+
 function highestPrioritySource(
   sources: Map<string, RegisteredSource>,
 ): DashboardLoadingSource | null {
@@ -276,6 +341,7 @@ function loadingSourcesEqual(
     && left.progress === right.progress
     && left.progressLabel === right.progressLabel
     && left.progressValueLabel === right.progressValueLabel
+    && left.activityToken === right.activityToken
     && left.telemetry === right.telemetry
     && left.phase === right.phase
     && left.priority === right.priority

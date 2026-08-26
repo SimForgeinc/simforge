@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,7 +9,7 @@ import {
   LOCAL_WORKSPACE_ID,
 } from "../app/lib/auth/session";
 import { queryRows, withTransaction } from "../app/lib/db/data-api";
-import { LOCAL_ARTIFACT_BUCKET } from "../app/lib/db/config";
+import { LOCAL_ARTIFACT_BUCKET, LOCAL_CLOUD_ROOT } from "../app/lib/db/config";
 import {
   publishDevAssetMap,
   type DevAssetMap,
@@ -16,8 +17,9 @@ import {
 import { registerLocalFile, writeLocalObject } from "../app/lib/s3/s3-object";
 import { SUMO_RUNTIME_VERSION } from "../app/lib/scenario/sumo-runtime";
 import { migrate } from "./migrate";
+import { ensureStarterMapAssets, STARTER_MAP } from "./starter-map";
 
-const MAPS: readonly DevAssetMap[] = [
+const FULL_DEV_MAPS: readonly DevAssetMap[] = [
   ["belmont-office-park-belmont-ca", "Belmont Office Park", "Belmont, California"],
   ["di-rosa-sf", "Di Rosa", "San Francisco, California"],
   ["el-camino-rd-palo-alto-ca", "El Camino Road", "Palo Alto, California"],
@@ -29,8 +31,13 @@ const MAPS: readonly DevAssetMap[] = [
   ["saratoga-school-area", "Saratoga School Area", "Saratoga, California"],
   ["yale-st-palo-alto-ca", "Yale Street", "Palo Alto, California"],
 ];
-const assetsRoot =
+const configuredAssetsRoot =
   process.env.SCEN_DEV_ASSETS?.trim() || "/home/path/simforge-assets/map-bundles";
+const fullAssetsAvailable = existsSync(resolve(configuredAssetsRoot, FULL_DEV_MAPS[0]![0]));
+const assetsRoot = fullAssetsAvailable
+  ? configuredAssetsRoot
+  : resolve(LOCAL_CLOUD_ROOT, "starter-map-assets");
+const MAPS: readonly DevAssetMap[] = fullAssetsAvailable ? FULL_DEV_MAPS : [STARTER_MAP];
 const catalogArtifactId = "artifact_local_catalog_v2";
 const catalogVersionId = "catalog_local_v2";
 const editorReleaseId = "editor_release_local_dev_assets_v2";
@@ -174,6 +181,10 @@ async function seedSumoRuntime(): Promise<void> {
     ["runtime-manifest.json", "application/json"],
     ["THIRD_PARTY_NOTICES.md", "text/markdown"],
   ] as const;
+  if (!runtimeFiles.every(([fileName]) => existsSync(resolve(runtimeRoot, fileName)))) {
+    console.log("SUMO browser runtime unavailable; Studio will use native deterministic traffic");
+    return;
+  }
   for (const [fileName, contentType] of runtimeFiles) {
     await registerLocalFile(
       LOCAL_ARTIFACT_BUCKET,
@@ -186,6 +197,12 @@ async function seedSumoRuntime(): Promise<void> {
 }
 
 export async function seed(): Promise<void> {
+  if (!fullAssetsAvailable) {
+    await ensureStarterMapAssets(assetsRoot);
+    console.log(
+      `development map bundles were not found at ${configuredAssetsRoot}; generated the bundled Starter Road`,
+    );
+  }
   await migrate();
   await seedIdentity();
   await seedPublicationBinding();

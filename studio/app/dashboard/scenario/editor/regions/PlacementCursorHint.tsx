@@ -34,15 +34,20 @@ export function PlacementCursorHint({
     return () => target.removeEventListener("pointermove", onPointerMove);
   }, [canvas, hostRef]);
 
-  if (!state || state.mode !== "placing") return null;
+  if (!state || (state.mode !== "placing" && state.mode !== "grab")) return null;
 
-  const ready = state.valid;
-  const warning = state.placementWarning;
+  const moving = state.mode === "grab";
+  const ready = state.valid && state.dropOutcome !== "invalid";
+  const warning = state.placementWarning
+    ?? (moving && state.dropOutcome === "free"
+      ? "Warning: off-road — will place unanchored."
+      : null);
   const detail = warning ?? (ready
     ? state.snapped && state.laneLabel
       ? state.laneLabel
       : "Free placement"
-    : "Move onto a valid surface");
+    : moving ? state.hint : "Move onto a valid surface");
+  const action = moving ? "move" : "place";
   const Icon = warning ? TriangleAlert : MousePointer2;
 
   return (
@@ -52,6 +57,7 @@ export function PlacementCursorHint({
           ? "border-amber-300/80 bg-amber-400/25 text-amber-50 shadow-[0_10px_36px_rgba(251,191,36,.22)]"
           : "border-white/10 bg-black/70 text-white shadow-[0_10px_32px_rgba(0,0,0,.22)]"
       }`}
+      data-placement-mode={state.mode}
       data-placement-valid={String(ready)}
       data-placement-warning={String(Boolean(warning))}
       data-testid="placement-cursor-hint"
@@ -65,7 +71,7 @@ export function PlacementCursorHint({
       />
       <span className="min-w-0">
         <strong className={`block text-[11px] font-medium leading-tight ${warning ? "text-amber-50" : ""}`}>
-          {warning ? "Route warning · click to place anyway" : ready ? "Click to place" : "Placement armed"}
+          {warning ? `Route warning · click to ${action} anyway` : ready ? `Click to ${action}` : moving ? "Move blocked" : "Placement armed"}
         </strong>
         <span className={`block max-w-[280px] text-[9px] leading-snug ${warning ? "text-amber-100/85" : "text-white/65"}`}>
           {detail}{warning ? " Interactions may not work properly on this road." : ""} · Esc cancel
