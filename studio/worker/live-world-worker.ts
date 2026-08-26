@@ -104,6 +104,17 @@ async function initialize(message: Extract<LiveWorldWorkerRequest, { type: 'init
     ? await fetchTopology(message.laneGraphUrl)
     : emptyTopology();
   const graph = buildLaneGraph(topology);
+  // A world with no lane graph starts and advances perfectly happily, but every
+  // road actor is then rejected with "no drivable lane", which reads as a
+  // placement bug rather than a missing input. Say so once, up front.
+  if (Object.keys(topology.lanes).length === 0) {
+    post({
+      type: 'warning',
+      message: message.laneGraphUrl
+        ? `lane graph at ${message.laneGraphUrl} contains no lanes; road actors cannot be placed`
+        : 'no lane graph was supplied; road actors cannot be placed',
+    });
+  }
   const input = parseSimScenarioInput({
     mapId,
     clipSeconds: 120,

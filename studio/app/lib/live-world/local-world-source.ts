@@ -16,6 +16,13 @@ class LocalWorldSource implements WorldSource {
   private readonly decoder = new TruthStreamClient();
   private readonly frameListeners = new Set<Parameters<WorldSource['subscribeFrames']>[0]>();
   private readonly statusListeners = new Set<Parameters<WorldSource['subscribeStatus']>[0]>();
+  private readonly warningListeners = new Set<(message: string) => void>();
+  /**
+   * Warnings are emitted while the worker initialises, which is before React
+   * has had a chance to subscribe. Retain them and replay on subscribe, or the
+   * only notice a world ever produces is silently dropped.
+   */
+  private readonly seenWarnings: string[] = [];
   private readonly pending = new Map<number, {
     resolve: (value: { actorId: string } | void) => void;
     reject: (error: Error) => void;
@@ -60,6 +67,12 @@ class LocalWorldSource implements WorldSource {
     this.statusListeners.add(fn);
     fn(this.currentStatus, this.currentError);
     return () => this.statusListeners.delete(fn);
+  }
+
+  subscribeWarnings(fn: (message: string) => void): () => void {
+    this.warningListeners.add(fn);
+    for (const message of this.seenWarnings) fn(message);
+    return () => this.warningListeners.delete(fn);
   }
 
   spawn(req: SpawnActorRequest): Promise<{ actorId: string }> {
@@ -124,6 +137,14 @@ class LocalWorldSource implements WorldSource {
       request.resolve(message.actorId ? { actorId: message.actorId } : undefined);
       return;
     }
+    if (message.type === 'warning') {
+      // Non-fatal: the world is running and usable, but something about the
+      // inputs will make it behave in a way the operator would misread.
+      this.seenWarnings.push(message.message);
+      for (const listener of this.warningListeners) listener(message.message);
+      return;
+    }
+
 
     if (message.requestId !== undefined) {
       const request = this.pending.get(message.requestId);

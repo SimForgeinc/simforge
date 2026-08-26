@@ -11,4 +11,5 @@ export type LiveWorldWorkerResponse =
   | { type: 'ready' }
   | { type: 'frame'; bytes: ArrayBuffer }
   | { type: 'result'; requestId: number; actorId?: string }
-  | { type: 'error'; message: string; requestId?: number };
+  | { type: 'error'; message: string; requestId?: number }
+  | { type: 'warning'; message: string };

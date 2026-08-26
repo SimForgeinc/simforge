@@ -170,6 +170,13 @@ export function DriveClient() {
   }, [map]);
 
   useEffect(() => {
+    if (!source?.subscribeWarnings) return;
+    return source.subscribeWarnings((message) => {
+      toast.warning("Drive world notice", { description: message, duration: 12000 });
+    });
+  }, [source]);
+
+  useEffect(() => {
     if (!bridge || !source) return;
     return source.subscribeFrames((frame) => bridge.apply(frame));
   }, [bridge, source]);
