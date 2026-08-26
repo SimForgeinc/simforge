@@ -740,22 +740,21 @@ export function PoleCameraGrid({
       const previousViewport = renderer.getViewport(new Vector4());
       const previousScissor = renderer.getScissor(new Vector4());
       const previousScissorTest = renderer.getScissorTest();
-      const dimensions = panes.map(({ canvas }) => {
-        const bounds = canvas.getBoundingClientRect();
+      const renderPasses = panes.map((pane) => {
+        const bounds = pane.canvas.getBoundingClientRect();
         const width = Math.max(1, Math.min(640, Math.round(bounds.width)));
-        return { width, height: Math.max(1, Math.round(width * bounds.height / Math.max(1, bounds.width))) };
+        const height = Math.max(1, Math.round(width * bounds.height / Math.max(1, bounds.width)));
+        return { pane, width, height };
       });
-      const atlasWidth = dimensions.reduce((sum, value) => sum + value.width, 0);
-      const atlasHeight = Math.max(...dimensions.map((value) => value.height));
+      const atlasWidth = renderPasses.reduce((sum, { width }) => sum + width, 0);
+      const atlasHeight = Math.max(...renderPasses.map(({ height }) => height));
 
       try {
         renderer.setPixelRatio(1);
         renderer.setSize(atlasWidth, atlasHeight, false);
         renderer.setScissorTest(true);
         let x = 0;
-        for (let index = 0; index < panes.length; index += 1) {
-          const pane = panes[index];
-          const { width, height } = dimensions[index];
+        for (const { pane, width, height } of renderPasses) {
           pane.camera.aspect = width / height;
           pane.camera.updateProjectionMatrix();
           renderer.setViewport(x, 0, width, height);
