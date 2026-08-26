@@ -24,12 +24,16 @@ export {
 } from './world-session.js';
 export type {
   AdvanceResult,
+  BatchOp,
+  CommandOutcome,
+  ReplayResult,
   SpawnRequest,
+  WorldActorState,
   WorldCommand,
-  WorldCommandResult,
+  WorldLogEntry,
   WorldSessionLog,
   WorldSessionOptions,
-  WorldSessionSnapshot,
+  WorldSnapshot,
 } from './world-session.js';
 
 export {

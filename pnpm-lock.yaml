@@ -573,6 +573,9 @@ importers:
       '@simforge/scenario':
         specifier: workspace:*
         version: link:../packages/scenario
+      '@simforge/training-env':
+        specifier: workspace:*
+        version: link:../packages/training-env
       '@simforge/viewer':
         specifier: workspace:*
         version: link:../packages/viewer

@@ -38,8 +38,23 @@ import { createTruthViewerBridge, type TruthViewerBridge } from "@/app/lib/live-
 import type { WorldSource, WorldSourceStatus } from "@/app/lib/live-world/types";
 import { useWorldSource } from "@/app/lib/live-world/use-world-source";
 import { PoleCameraGrid } from "./cameras/PoleCameraGrid";
+import { usePoleCameras } from "./pole-cameras";
 
 type DriveView = "world" | "cameras";
+/**
+ * What Drive actually needs from a map: somewhere to fetch the browser manifest
+ * and, optionally, the lane topology. Deliberately narrower than
+ * `ScenarioMapDescriptorDto` — a live world does not require an authoring
+ * publication record, so a directly supplied bundle is a first-class source
+ * rather than a partially-filled DTO.
+ */
+type DriveMap = {
+  readonly id: string;
+  readonly label: string;
+  readonly browserManifestUrl: string;
+  readonly topologyArtifactUrl?: string;
+};
+
 type FollowMode = "chase" | "dash";
 
 type PlaceableActorKind = {
@@ -49,8 +64,6 @@ type PlaceableActorKind = {
   assetCount: number;
 };
 
-const EMPTY_RIGS: readonly PoleCameraRig[] = [];
-const EMPTY_SIGNAL_FEATURES: readonly SignalFeature[] = [];
 const CONTROLLED_KEY_CODES: Record<string, true> = {
   ArrowUp: true,
   ArrowDown: true,
@@ -66,7 +79,7 @@ const CONTROLLED_KEY_CODES: Record<string, true> = {
 
 
 export function DriveClient() {
-  const [map, setMap] = useState<ScenarioMapDescriptorDto | null>(null);
+  const [map, setMap] = useState<DriveMap | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
   const [source, setSource] = useState<WorldSource | null>(null);
   const [sourceCreationError, setSourceCreationError] = useState<string | null>(null);
@@ -87,6 +100,7 @@ export function DriveClient() {
 
   const world = useWorldSource(source);
   const placeableKinds = useMemo(() => buildPlaceableKinds(catalogQuery), [catalogQuery]);
+  const poleCameras = usePoleCameras(map?.browserManifestUrl ?? null);
 
   useEffect(() => {
     setQuality(defaultAuthoringQuality());
@@ -107,7 +121,7 @@ export function DriveClient() {
         label: params.get("label") ?? "Direct bundle",
         browserManifestUrl: manifestOverride,
         ...(lanesOverride ? { topologyArtifactUrl: lanesOverride } : {}),
-      } as ScenarioMapDescriptorDto);
+      });
       setMapError(null);
       return () => controller.abort();
     }
@@ -118,7 +132,12 @@ export function DriveClient() {
         const maps = Array.isArray(payload) ? payload : payload.maps ?? [];
         if (maps.length === 0) throw new Error("No published maps are available for Drive");
         const preferred = maps.find((candidate) => /richmond/i.test(candidate.label)) ?? maps[0]!;
-        setMap(preferred);
+        setMap({
+          id: preferred.mapVersionId,
+          label: preferred.label,
+          browserManifestUrl: preferred.browserManifestUrl,
+          ...(preferred.topologyArtifactUrl ? { topologyArtifactUrl: preferred.topologyArtifactUrl } : {}),
+        });
         setMapError(null);
       })
       .catch((error: unknown) => {
@@ -426,8 +445,8 @@ export function DriveClient() {
           {view === "cameras" ? (
             <div className="absolute inset-0 overflow-auto bg-background p-4">
               <PoleCameraGrid
-                rigs={EMPTY_RIGS}
-                features={EMPTY_SIGNAL_FEATURES}
+                rigs={poleCameras.rigs}
+                features={poleCameras.features}
                 viewerFactory={createCameraViewer}
               />
             </div>
