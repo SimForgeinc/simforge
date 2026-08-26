@@ -30,6 +30,7 @@ import type { LiveWorldWorkerRequest, LiveWorldWorkerResponse } from '../worker-
 
 class FakeWorker {
   static instances: FakeWorker[] = [];
+  static respondToInit = true;
   readonly sent: LiveWorldWorkerRequest[] = [];
   onmessage: ((event: MessageEvent<LiveWorldWorkerResponse>) => void) | null = null;
   onerror: ((event: ErrorEvent) => void) | null = null;
@@ -44,6 +45,7 @@ class FakeWorker {
   postMessage(message: LiveWorldWorkerRequest) {
     this.sent.push(message);
     if (message.type === 'init-authored') {
+      if (!FakeWorker.respondToInit) return;
       this.duration = message.input.clipSeconds;
       this.emit({ type: 'ready' });
       this.emitTransport();
@@ -93,6 +95,7 @@ class FakeWorker {
 
 beforeEach(() => {
   FakeWorker.instances = [];
+  FakeWorker.respondToInit = true;
   compilerMocks.prepareArgs = null;
   compilerMocks.disposeCount = 0;
   compilerMocks.input = fixtureInput();
@@ -119,6 +122,26 @@ describe('authored world source', () => {
     expect(source.status).toBe('running');
     source.close();
     document.dispose();
+  });
+
+  it('turns a worker initialization stall into a specific terminal error', async () => {
+    vi.useFakeTimers();
+    FakeWorker.respondToInit = false;
+    const document = await fixtureDocument();
+    const source = await createAuthoredWorldSource({ document, map: TEST_MAP });
+    const statuses: Array<{ status: string; error: string | null }> = [];
+    source.subscribeStatus((status, error) => statuses.push({ status, error }));
+
+    await vi.advanceTimersByTimeAsync(45_000);
+
+    expect(source.status).toBe('error');
+    expect(source.lastError).toBe(
+      'Authored world worker did not become ready within 45000 ms while loading the lane topology.',
+    );
+    expect(statuses.at(-1)).toEqual({ status: 'error', error: source.lastError });
+    source.close();
+    document.dispose();
+    vi.useRealTimers();
   });
 
   it('designates an authored ego and routes every control packet to it', async () => {

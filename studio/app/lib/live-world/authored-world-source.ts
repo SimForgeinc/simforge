@@ -40,6 +40,8 @@ export interface AuthoredWorldSource extends WorldSource {
   setEgo(actorId: string | null): void;
 }
 
+const AUTHORED_WORKER_READY_TIMEOUT_MS = 45_000;
+
 export async function createAuthoredWorldSource(opts: {
   document: EditorDocument;
   map: ScenarioMapEntry;
@@ -83,6 +85,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   private currentEgoActorId: string | null = null;
   private transportState: { playing: boolean; inspecting: boolean; completed: boolean; time: number };
   readonly transport: WorldTransport;
+  private readyTimeout: ReturnType<typeof setTimeout> | undefined;
 
   constructor(input: SimScenarioInput, document: EditorDocument, map: ScenarioMapEntry, tickHz: number) {
     this.input = input;
@@ -111,7 +114,17 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
       name: 'simforge-authored-world',
     });
     this.worker.onmessage = (event: MessageEvent<LiveWorldWorkerResponse>) => this.onMessage(event.data);
-    this.worker.onerror = (event) => this.setStatus('error', event.message || 'authored world worker failed');
+    this.worker.onerror = (event) => {
+      clearTimeout(this.readyTimeout);
+      this.setStatus('error', event.message || 'authored world worker failed');
+    };
+    this.readyTimeout = setTimeout(() => {
+      this.worker.terminate();
+      this.setStatus(
+        'error',
+        `Authored world worker did not become ready within ${AUTHORED_WORKER_READY_TIMEOUT_MS} ms while loading the lane topology.`,
+      );
+    }, AUTHORED_WORKER_READY_TIMEOUT_MS);
     this.worker.postMessage({
       type: 'init-authored',
       input,
@@ -187,6 +200,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   }
 
   close(): void {
+    clearTimeout(this.readyTimeout);
     if (this.currentStatus === 'closed') return;
     this.worker.postMessage({ type: 'close' } satisfies LiveWorldWorkerRequest);
     this.worker.terminate();
@@ -212,7 +226,8 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   private onMessage(message: LiveWorldWorkerResponse): void {
     if (this.currentStatus === 'closed') return;
     if (message.type === 'ready') {
-      this.setStatus('running', null);
+      clearTimeout(this.readyTimeout);
+      if (this.currentStatus !== 'error') this.setStatus('running', null);
       return;
     }
     if (message.type === 'frame') {
@@ -241,7 +256,10 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
       for (const listener of this.warningListeners) listener(message.message);
       return;
     }
-    if (message.type === 'error') this.setStatus('error', message.message);
+    if (message.type === 'error') {
+      clearTimeout(this.readyTimeout);
+      this.setStatus('error', message.message);
+    }
   }
 
   private setStatus(status: WorldSourceStatus, error: string | null): void {

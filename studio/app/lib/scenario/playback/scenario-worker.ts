@@ -261,7 +261,10 @@ async function prepareUncached(request: ScenarioWorkerRequest): Promise<Scenario
   // editor preview can never present cars passing through visible structures.
   const isInteractiveCompile = request.kind === 'compile' || request.operation === 'materialize';
   postPrepareProgress(request, 'map-collisions');
-  const staticCollision = requireReadyStaticColliderBundle(await runtime.colliders, graph);
+  const staticCollision = requireReadyStaticColliderBundle(
+    await readyRuntimeColliders(runtime),
+    graph,
+  );
   const revision = request.revision ?? String(request.id);
 
   // A blank editor still owns one normal concrete world. It has no authored
@@ -519,6 +522,19 @@ async function getMapRuntime(map: ScenarioWorkerMap): Promise<MapRuntime> {
   }
 }
 
+async function readyRuntimeColliders(runtime: MapRuntime) {
+  try {
+    return await runtime.colliders;
+  } catch (error) {
+    // A resolved MapRuntime otherwise keeps its rejected collider promise for
+    // the worker's lifetime. Evict both identities so the next preparation
+    // genuinely reloads the immutable map assets and collider bundle.
+    runtimesByAsset.delete(runtime.identity.assetDigest);
+    if (runtimesByKey.get(runtime.key) === runtime) runtimesByKey.delete(runtime.key);
+    throw error;
+  }
+}
+
 async function runLive(request: ScenarioWorkerStartRequest, token: number): Promise<void> {
   const runtime = runtimesByKey.get(request.runtimeKey);
   if (!runtime) throw new Error('The compiled map runtime is no longer available; compile this revision again.');
@@ -527,7 +543,7 @@ async function runLive(request: ScenarioWorkerStartRequest, token: number): Prom
   if (prepared) preparedLiveSessions.delete(inputKey);
   const liveStaticCollision = prepared
     ? null
-    : requireReadyStaticColliderBundle(await runtime.colliders, runtime.graph);
+    : requireReadyStaticColliderBundle(await readyRuntimeColliders(runtime), runtime.graph);
   const simulation = prepared ?? createCollisionAwareFixedStepSimulation(
     request.input,
     runtime.graph,

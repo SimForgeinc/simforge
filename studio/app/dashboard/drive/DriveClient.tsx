@@ -18,6 +18,7 @@ import type { CityViewerOptions } from "@simforge/viewer";
 import { CityViewer } from "@simforge/viewer";
 import { CityView } from "@simforge/viewer/react";
 import { toast } from "sonner";
+import { contentHash } from "@simforge/engine";
 
 import { TopBarActionsPortal, TopBarTrailingPortal } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";
@@ -145,11 +146,15 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   const [transportRevision, setTransportRevision] = useState(0);
   const [documentRevision, setDocumentRevision] = useState(0);
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const preparedDocumentHashRef = useRef<string | null>(null);
   const remoteWorld = useMemo(() => resolveRemoteWorld(), []);
   const world = useWorldSource(source);
   const transport = authoredSource?.transport ?? null;
   const poleCameras = usePoleCameras(map.browserManifestUrl);
-  const onDocumentChange = useCallback(() => {
+  const onDocumentChange = useCallback((document: EditorDocument) => {
+    const nextHash = contentHash(document.data);
+    if (preparedDocumentHashRef.current === nextHash) return;
+    preparedDocumentHashRef.current = nextHash;
     setDocumentRevision((revision) => revision + 1);
   }, []);
 
@@ -166,13 +171,20 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   });
   const { controller, editorDocument, state } = runtime;
   const selectedActor = state?.actors.find((actor) => state.selection.includes(actor.id)) ?? null;
+  const selectedVehicleRole = selectedActor
+    ? editorDocument?.data.roles.find((role) => role.id === selectedActor.id && isVehicleRole(role)) ?? null
+    : null;
+  const availableEgoActorId = authoredSource?.selectEgo(selectedVehicleRole?.id) ?? null;
 
 
   useEffect(() => {
     if (!remoteWorld && !editorDocument) return;
     let disposed = false;
     let live: WorldSource | null = null;
+    preparedDocumentHashRef.current = editorDocument ? contentHash(editorDocument.data) : null;
     setSourceCreationError(null);
+    setSource(null);
+    setAuthoredSource(null);
     const open = async () => remoteWorld
       ? createRemoteWorldSource({ truthUrl: `${remoteWorld}/twin`, commandUrl: `${remoteWorld}/drive` })
       : createAuthoredWorldSource({ document: editorDocument!, map, tickHz: 20 });
@@ -264,6 +276,18 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     setViewerError(null);
   }, []);
 
+  useEffect(() => {
+    if (!driving || !authoredSource || !egoActorId) return;
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => authoredSource.transport.play());
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [authoredSource, driving, egoActorId]);
+
   const selectActor = useCallback((actorId: string | null) => {
     setExpandedTool(null);
     controller?.setSelection(actorId ? [actorId] : []);
@@ -277,11 +301,8 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     if (!authoredSource || !viewer || !editorDocument || enteringDrive) return;
     setEnteringDrive(true);
     try {
-      const selectedRole = selectedActor
-        ? editorDocument.data.roles.find((role) => role.id === selectedActor.id)
-        : null;
-      const preferredActorId = selectedRole && isVehicleRole(selectedRole) ? selectedRole.id : null;
-      const actorId = authoredSource.selectEgo(preferredActorId);
+      const selectedRole = selectedVehicleRole;
+      const actorId = availableEgoActorId;
       if (!actorId) throw new Error("Place an authored vehicle before entering drive");
       authoredSource.setEgo(actorId);
       setEgoActorId(actorId);
@@ -294,8 +315,6 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
         ? timelineActorLabels(editorDocument.data.roles).get(role.id)
         : null;
       setEgoActorLabel(timelineLabel ?? role?.label ?? actorId);
-      setCameraNotice(null);
-      authoredSource.transport.play();
       bridge?.setFollow(actorId, followMode);
       setExpandedTool(null);
       setDriving(true);
@@ -304,7 +323,16 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     } finally {
       setEnteringDrive(false);
     }
-  }, [authoredSource, bridge, editorDocument, enteringDrive, followMode, selectedActor, state, viewer]);
+  }, [
+    authoredSource,
+    availableEgoActorId,
+    bridge,
+    editorDocument,
+    enteringDrive,
+    followMode,
+    selectedVehicleRole,
+    viewer,
+  ]);
 
   const exitDrive = useCallback(() => {
     bridge?.setFollow(null);
@@ -372,6 +400,9 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     ? "error"
     : world.status;
   const effectiveError = sourceCreationError ?? runtime.error ?? world.error;
+  const driveUnavailableReason = authoredSource && !availableEgoActorId
+    ? "Place an authored vehicle and wait for it to finish preparing before entering drive."
+    : null;
 
   return (
     <EditorConfigurationBlockProvider blocked={driving}>
@@ -411,7 +442,13 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
                   </Button>
                 </>
               ) : (
-                <Button type="button" size="sm" disabled={!authoredSource || !viewer || world.status !== "running" || enteringDrive} onClick={enterDrive}>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!authoredSource || !viewer || world.status !== "running" || !availableEgoActorId || enteringDrive}
+                  title={driveUnavailableReason ?? undefined}
+                  onClick={enterDrive}
+                >
                   <LogIn /> {enteringDrive ? "Entering…" : "Enter drive"}
                 </Button>
               )}
@@ -501,10 +538,10 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
                     <RotateCcw /> Replay
                   </Button>
                 </ScenarioEditorReadout>
-              ) : effectiveStatus !== "running" || viewerError ? (
+              ) : effectiveStatus !== "running" || viewerError || driveUnavailableReason ? (
                 <div className="absolute left-1/2 top-4 -translate-x-1/2" role={effectiveStatus === "error" || viewerError ? "alert" : "status"}>
                   <div className={cn("rounded-md border bg-card/95 px-3 py-2 text-xs shadow-lg backdrop-blur", effectiveStatus === "error" || viewerError ? "border-destructive/50 text-destructive" : "border-border text-muted-foreground")}>
-                    <WorldStatus status={effectiveStatus} error={effectiveError ?? viewerError} mapLoaded={mapLoaded} />
+                    <WorldStatus status={effectiveStatus} error={effectiveError ?? viewerError ?? driveUnavailableReason} mapLoaded={mapLoaded} />
                   </div>
                 </div>
               ) : null}
