@@ -633,7 +633,8 @@ export abstract class EditorControllerInput extends EditorControllerCommands {
       valid: true,
       reason: null,
       headingOffsetRad: 0,
-      outcome: 'snapped'
+      outcome: 'snapped',
+      warning: null
     };
     this.mode = 'grab';
     this.ghost.show(actor.catalogId);

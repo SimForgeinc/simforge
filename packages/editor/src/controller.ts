@@ -83,7 +83,7 @@ export interface EditorState {
   readonly flipped: boolean;
   /** Ghost placement is legal. */
   readonly valid: boolean;
-  /** Non-blocking route warning for the lane under the placement ghost. */
+  /** Non-blocking route warning for the lane under the placement or move preview. */
   readonly placementWarning: string | null;
   /** Whether Shift was held for the most recent successful catalog placement. */
   readonly placementSticky: boolean;
@@ -453,6 +453,7 @@ export class EditorController extends EditorControllerInput {
     session.valid = true;
     session.reason = null;
     let anyFree = false;
+    let warning: string | null = null;
 
     this.preview.clear();
     for (const actor of session.origin.values()) {
@@ -471,6 +472,12 @@ export class EditorController extends EditorControllerInput {
           routeUsable: (anchor) => this.routeForLaneMutation(actor, anchor) !== null,
         });
         if (resolved.outcome === 'free') anyFree = true;
+        if (!warning && resolved.laneRef) {
+          const speedKph = actor.initialSpeedKph ?? defaultDrivingSpeedKph(actor.catalogId);
+          if (speedKph !== null) {
+            warning = this.placementRouteWarning(resolved.laneRef, speedKph);
+          }
+        }
         this.preview.set(actor.id, {
           x: resolved.x,
           y: this.groundY(resolved.x, resolved.z, actor.y),
@@ -510,6 +517,7 @@ export class EditorController extends EditorControllerInput {
         }
       }
       session.outcome = !session.valid ? 'invalid' : anyFree ? 'free' : 'snapped';
+      session.warning = session.valid ? warning : null;
       if (session.direct) {
         for (const [id, actor] of session.origin) {
           const patch = this.preview.get(id);
@@ -1014,7 +1022,9 @@ export class EditorController extends EditorControllerInput {
         ? this.grab?.valid ?? true
         : this.groupPlacement?.valid ?? this.ghostPose?.valid ?? true,
       placementSticky: this.placementSticky,
-      placementWarning: this.mode === 'placing' ? this.ghostPose?.warning ?? null : null,
+      placementWarning: this.mode === 'placing'
+        ? this.ghostPose?.warning ?? null
+        : this.mode === 'grab' ? this.grab?.warning ?? null : null,
       customRoutePointCount: this.customRouteDraft?.points.length ?? 0,
       customRouteTool: this.customRouteDraft?.tool ?? null,
       customRouteSelectedPointIndex: this.customRouteDraft?.selectedPointIndex ?? null,

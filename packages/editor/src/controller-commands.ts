@@ -145,6 +145,8 @@ interface GrabSession {
   headingOffsetRad: number;
   /** Live resolver verdict for the whole moving set. */
   outcome: DropOutcome;
+  /** First non-blocking route warning for the moving road vehicles. */
+  warning: string | null;
 }
 
 interface DirectMovePress {
@@ -1029,7 +1031,8 @@ export abstract class EditorControllerCommands {
       valid: true,
       reason: null,
       headingOffsetRad: 0,
-      outcome: 'snapped'
+      outcome: 'snapped',
+      warning: null
     };
     this.mode = 'grab';
     this.notify();
