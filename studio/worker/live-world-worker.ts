@@ -18,8 +18,8 @@ import {
   applyEgoControl,
   authoredClipCompleted,
   authoredPlaybackRequiresReset,
-  assertControllableActor,
   createAuthoredWorldSession,
+  prepareAuthoredEgoInput,
 } from '../app/lib/live-world/authored-world-session';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -30,6 +30,7 @@ let timer: ReturnType<typeof setInterval> | null = null;
 let commandSequence = 0;
 let closed = false;
 let authoredInput: SimScenarioInput | null = null;
+let authoredBaseInput: SimScenarioInput | null = null;
 let authoredGraph: LaneGraph | null = null;
 let egoActorId: string | null = null;
 let playing = true;
@@ -37,6 +38,7 @@ let inspecting = false;
 let completed = false;
 let authoredTickHz = 20;
 let targetTimeS = 0;
+
 
 scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
   const message = event.data;
@@ -59,11 +61,17 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
 
   if (message.type === 'set-ego') {
     try {
-      if (message.actorId !== null) {
-        if (!authoredInput) throw new Error('ego designation is only available for authored worlds');
-        assertControllableActor(authoredInput, message.actorId);
+      if (message.actorId === null) {
+        egoActorId = null;
+        return;
       }
+      if (!authoredBaseInput) throw new Error('ego designation is only available for authored worlds');
+      authoredInput = prepareAuthoredEgoInput(authoredBaseInput, message.actorId);
       egoActorId = message.actorId;
+      playing = false;
+      inspecting = false;
+      rebuildAuthoredWorld();
+      postTransport();
     } catch (error) {
       fail(error);
     }
@@ -105,6 +113,7 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
             },
           },
         });
+
     if (!outcome.ok) {
       if (authoredInput && /not running/i.test(outcome.error ?? '')) {
         completed = true;
@@ -204,7 +213,8 @@ async function initializeAuthored(
   if (!Number.isFinite(message.tickHz) || message.tickHz <= 0) {
     throw new Error(`tickHz must be positive, got ${String(message.tickHz)}`);
   }
-  authoredInput = parseSimScenarioInput(message.input);
+  authoredBaseInput = parseSimScenarioInput(message.input);
+  authoredInput = authoredBaseInput;
   authoredGraph = buildLaneGraph(await fetchTopology(message.laneGraphUrl));
   authoredTickHz = message.tickHz;
   playing = false;
@@ -281,6 +291,7 @@ function tick(): void {
       targetTimeS = Math.min(authoredInput.clipSeconds, targetTimeS + 1 / authoredTickHz);
       advanceAuthoredTo(targetTimeS, true);
       completed = authoredClipCompleted(world.time(), authoredInput.clipSeconds);
+
       if (completed) playing = false;
       postTransport();
       return;

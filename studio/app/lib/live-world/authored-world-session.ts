@@ -11,6 +11,75 @@ import type { ControlInput } from './types';
 export function createAuthoredWorldSession(input: SimScenarioInput, graph: LaneGraph): WorldSession {
   return new WorldSession({ input, graph, mode: 'live' });
 }
+export function selectAuthoredEgoActor(
+  input: SimScenarioInput,
+  preferredActorId: string | null = null,
+): string | null {
+  const candidates = input.actors.filter((actor) =>
+    isRoadActorKind(actor.kind) && !actor.static,
+  );
+  if (preferredActorId) {
+    const preferred = candidates.find((actor) =>
+      actor.id === preferredActorId || authoredRoleIdForActor(actor) === preferredActorId,
+    );
+    if (preferred) return preferred.id;
+  }
+  return candidates
+    .map((actor, index) => ({ actor, index, score: routeRunwayScore(actor) }))
+    .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.actor.id ?? null;
+}
+
+export function authoredRoleIdForActor(
+  actor: SimScenarioInput['actors'][number],
+): string | null {
+  return actor.tags.find((tag) => tag.startsWith('role:'))?.slice('role:'.length) ?? null;
+}
+
+export function prepareAuthoredEgoInput(
+  input: SimScenarioInput,
+  actorId: string,
+): SimScenarioInput {
+  assertControllableActor(input, actorId);
+  return {
+    ...input,
+    actors: input.actors.map((actor) => {
+      if (actor.id !== actorId) return actor;
+      const route = actor.initial.laneRef
+        ? {
+            kind: 'follow' as const,
+            startRsl: actor.initial.laneRef.rsl,
+            turns: [],
+            maxLengthM: 2000,
+          }
+        : actor.behavior.route;
+      return {
+        ...actor,
+        initial: { ...actor.initial, speedMps: 0 },
+        behavior: {
+          ...actor.behavior,
+          route,
+          cruiseSpeedMps: 0,
+        },
+      };
+    }),
+  };
+}
+function routeRunwayScore(actor: SimScenarioInput['actors'][number]): number {
+  const route = actor.behavior.route;
+  if (route.kind === 'follow') return route.maxLengthM;
+  if (route.kind === 'lanePath') {
+    const stationM = actor.initial.laneRef?.s ?? 0;
+    return route.lanes.length * 1_000_000 - stationM;
+  }
+  if (route.kind === 'timedPolyline') return route.points.at(-1)?.timeS ?? 0;
+  let distanceM = 0;
+  for (let index = 1; index < route.points.length; index += 1) {
+    const previous = route.points[index - 1]!;
+    const current = route.points[index]!;
+    distanceM += Math.hypot(current.x - previous.x, current.z - previous.z);
+  }
+  return distanceM;
+}
 
 export function authoredClipCompleted(timeS: number, durationS: number): boolean {
   return Number.isFinite(timeS)

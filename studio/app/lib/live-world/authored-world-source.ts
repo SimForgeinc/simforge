@@ -8,7 +8,11 @@ import { TruthStreamClient } from '@simforge/training-env/browser';
 import { playbackMapEntry } from '../scenario/maps';
 import { ScenarioWorkerClient } from '../scenario/playback/scenarioWorkerClient';
 import { previewAmbientTrafficProfile } from '../../dashboard/scenario/scene/previewPolicy';
-import { assertControllableActor } from './authored-world-session';
+import {
+  assertControllableActor,
+  authoredRoleIdForActor,
+  selectAuthoredEgoActor,
+} from './authored-world-session';
 import type { LiveWorldWorkerRequest, LiveWorldWorkerResponse } from './worker-protocol';
 import type { ControlInput, SpawnActorRequest, WorldSource, WorldSourceStatus } from './types';
 
@@ -31,6 +35,8 @@ export interface AuthoredWorldSource extends WorldSource {
   readonly transport: WorldTransport;
   subscribeTransport(fn: (t: WorldTransport) => void): () => void;
   readonly egoActorId: string | null;
+  selectEgo(preferredActorId?: string | null): string | null;
+  roleIdForActor(actorId: string): string | null;
   setEgo(actorId: string | null): void;
 }
 
@@ -57,7 +63,7 @@ export async function createAuthoredWorldSource(opts: {
   } finally {
     compiler.dispose();
   }
-  return new AuthoredWorkerWorldSource(input, opts.map, opts.tickHz ?? 20);
+  return new AuthoredWorkerWorldSource(input, opts.document, opts.map, opts.tickHz ?? 20);
 }
 
 let nextSessionId = 1;
@@ -66,6 +72,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   private readonly worker: Worker;
   private readonly decoder = new TruthStreamClient();
   private readonly input: SimScenarioInput;
+  private readonly roleIdByActorId: ReadonlyMap<string, string>;
   private readonly frameListeners = new Set<Parameters<WorldSource['subscribeFrames']>[0]>();
   private readonly statusListeners = new Set<Parameters<WorldSource['subscribeStatus']>[0]>();
   private readonly warningListeners = new Set<(message: string) => void>();
@@ -77,8 +84,9 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   private transportState: { playing: boolean; inspecting: boolean; completed: boolean; time: number };
   readonly transport: WorldTransport;
 
-  constructor(input: SimScenarioInput, map: ScenarioMapEntry, tickHz: number) {
+  constructor(input: SimScenarioInput, document: EditorDocument, map: ScenarioMapEntry, tickHz: number) {
     this.input = input;
+    this.roleIdByActorId = matchCompiledActorsToRoles(input, document);
     this.transportState = { playing: false, inspecting: false, completed: false, time: 0 };
     const sessionId = `authored-world-${nextSessionId++}`;
     const source = this;
@@ -139,6 +147,20 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
     return () => this.transportListeners.delete(fn);
   }
 
+  selectEgo(preferredActorId: string | null = null): string | null {
+    const preferredCompiledActorId = preferredActorId
+      ? [...this.roleIdByActorId].find(([, roleId]) => roleId === preferredActorId)?.[0] ?? preferredActorId
+      : null;
+    return selectAuthoredEgoActor(this.input, preferredCompiledActorId);
+  }
+
+  roleIdForActor(actorId: string): string | null {
+    const mappedRoleId = this.roleIdByActorId.get(actorId);
+    if (mappedRoleId) return mappedRoleId;
+    const actor = this.input.actors.find((candidate) => candidate.id === actorId);
+    return actor ? authoredRoleIdForActor(actor) : null;
+  }
+
   setEgo(actorId: string | null): void {
     if (actorId !== null) assertControllableActor(this.input, actorId);
     this.currentEgoActorId = actorId;
@@ -146,6 +168,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
   }
 
   control(input: ControlInput): void {
+
     if (this.currentStatus !== 'running') return;
     if (this.currentEgoActorId === null) throw new Error('No authored ego vehicle is selected');
     if (this.transportState.completed) return;
@@ -195,6 +218,7 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
     if (message.type === 'frame') {
       try {
         for (const frame of this.decoder.push(new Uint8Array(message.bytes))) {
+
           for (const listener of this.frameListeners) listener(frame);
         }
       } catch (error) {
@@ -226,5 +250,34 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
     this.currentError = error;
     for (const listener of this.statusListeners) listener(status, error);
   }
+}
+
+function matchCompiledActorsToRoles(
+  input: SimScenarioInput,
+  document: EditorDocument,
+): ReadonlyMap<string, string> {
+  const roles = document.data.roles;
+  const unusedRoleIds = new Set(roles.map((role) => role.id));
+  const result = new Map<string, string>();
+  for (const actor of input.actors) {
+    const compiledRoleId = authoredRoleIdForActor(actor);
+    const catalogId = actor.tags.find((tag) => tag.startsWith('catalog:'))?.slice('catalog:'.length);
+    const classId = actor.tags.find((tag) => tag.startsWith('class:'))?.slice('class:'.length);
+    const role = roles.find((candidate) =>
+      unusedRoleIds.has(candidate.id) && candidate.id === compiledRoleId,
+    ) ?? roles.find((candidate) =>
+      unusedRoleIds.has(candidate.id)
+      && catalogId !== undefined
+      && candidate.actor.catalogId === catalogId,
+    ) ?? roles.find((candidate) =>
+      unusedRoleIds.has(candidate.id)
+      && classId !== undefined
+      && candidate.actor.class === classId,
+    ) ?? roles.find((candidate) => unusedRoleIds.has(candidate.id));
+    if (!role) continue;
+    result.set(actor.id, role.id);
+    unusedRoleIds.delete(role.id);
+  }
+  return result;
 }
 

@@ -35,7 +35,10 @@ import { EditorHeader } from "@/app/dashboard/scenario/editor/regions/EditorHead
 import { EditorModeBanner } from "@/app/dashboard/scenario/editor/regions/EditorModeBanner";
 import { PlacementCursorHint } from "@/app/dashboard/scenario/editor/regions/PlacementCursorHint";
 import { ScenarioTimelineDock } from "@/app/dashboard/scenario/editor/ScenarioTimelineDock";
-import type { V1TimelineBrowserPlayback } from "@/app/dashboard/scenario/editor/timeline/V1TimelineRail";
+import {
+  timelineActorLabels,
+  type V1TimelineBrowserPlayback,
+} from "@/app/dashboard/scenario/editor/timeline/V1TimelineRail";
 import { ScenarioEditorReadout, ScenarioEditorShell } from "@/app/dashboard/scenario/editor/shell";
 import { createMultiplexedCameraFeeds, type CameraFeeds } from "@/app/lib/live-world/camera-feeds";
 import {
@@ -134,6 +137,8 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   const [clock, setClock] = useState<{ mode: "live" | "replay"; timeIso: string | null; speed: number } | null>(null);
   const [followMode, setFollowMode] = useState<FollowMode>("chase");
   const [egoActorId, setEgoActorId] = useState<string | null>(null);
+  const [egoActorLabel, setEgoActorLabel] = useState<string | null>(null);
+  const [cameraNotice, setCameraNotice] = useState<string | null>(null);
   const [driving, setDriving] = useState(false);
   const [enteringDrive, setEnteringDrive] = useState(false);
   const [expandedTool, setExpandedTool] = useState<ViewportTool | null>(null);
@@ -142,6 +147,7 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const remoteWorld = useMemo(() => resolveRemoteWorld(), []);
   const world = useWorldSource(source);
+  const transport = authoredSource?.transport ?? null;
   const poleCameras = usePoleCameras(map.browserManifestUrl);
   const onDocumentChange = useCallback(() => {
     setDocumentRevision((revision) => revision + 1);
@@ -160,6 +166,7 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   });
   const { controller, editorDocument, state } = runtime;
   const selectedActor = state?.actors.find((actor) => state.selection.includes(actor.id)) ?? null;
+
 
   useEffect(() => {
     if (!remoteWorld && !editorDocument) return;
@@ -245,8 +252,8 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   }, [bridge, source]);
   useEffect(() => {
     if (!bridge) return;
-    bridge.setFollow(driving ? egoActorId : null, followMode);
-  }, [bridge, driving, egoActorId, followMode]);
+    bridge.setFollow(driving && !transport?.completed ? egoActorId : null, followMode);
+  }, [bridge, driving, egoActorId, followMode, transport, transportRevision]);
   useEffect(() => () => bridge?.dispose(), [bridge]);
 
   useDriveControls(source, driving ? egoActorId : null);
@@ -273,14 +280,23 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
       const selectedRole = selectedActor
         ? editorDocument.data.roles.find((role) => role.id === selectedActor.id)
         : null;
-      const role = selectedRole && isVehicleRole(selectedRole)
-        ? selectedRole
-        : editorDocument.data.roles.find(isVehicleRole);
-      if (!role) throw new Error("Place and select an authored vehicle before entering drive");
-      authoredSource.setEgo(role.id);
-      setEgoActorId(role.id);
+      const preferredActorId = selectedRole && isVehicleRole(selectedRole) ? selectedRole.id : null;
+      const actorId = authoredSource.selectEgo(preferredActorId);
+      if (!actorId) throw new Error("Place an authored vehicle before entering drive");
+      authoredSource.setEgo(actorId);
+      setEgoActorId(actorId);
+      const roleId = authoredSource.roleIdForActor(actorId);
+      const role = editorDocument.data.roles.find((candidate) => candidate.id === roleId)
+        ?? (selectedRole && isVehicleRole(selectedRole) ? selectedRole : null)
+        ?? editorDocument.data.roles.find(isVehicleRole)
+        ?? null;
+      const timelineLabel = role
+        ? timelineActorLabels(editorDocument.data.roles).get(role.id)
+        : null;
+      setEgoActorLabel(timelineLabel ?? role?.label ?? actorId);
+      setCameraNotice(null);
       authoredSource.transport.play();
-      bridge?.setFollow(role.id, followMode);
+      bridge?.setFollow(actorId, followMode);
       setExpandedTool(null);
       setDriving(true);
     } catch (error) {
@@ -288,7 +304,7 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     } finally {
       setEnteringDrive(false);
     }
-  }, [authoredSource, bridge, editorDocument, enteringDrive, followMode, selectedActor, viewer]);
+  }, [authoredSource, bridge, editorDocument, enteringDrive, followMode, selectedActor, state, viewer]);
 
   const exitDrive = useCallback(() => {
     bridge?.setFollow(null);
@@ -297,6 +313,9 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     }
     authoredSource?.setEgo(null);
     setDriving(false);
+    setEgoActorId(null);
+    setEgoActorLabel(null);
+    setCameraNotice(null);
   }, [authoredSource, bridge, egoActorId, source]);
   const switchView = useCallback((next: DriveView) => {
     if (next === "cameras" && driving) exitDrive();
@@ -314,9 +333,25 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
     }
   }, [map, quality]);
 
-  const transport = authoredSource?.transport ?? null;
   const driveSpeedKph = actorSpeedKph(world.latestFrame, driving ? egoActorId : null);
   const driveClipTime = transport ? formatClipTime(transport.time, transport.duration) : null;
+  useEffect(() => {
+    if (!driving || !bridge || !egoActorId || !world.latestFrame || transport?.completed) return;
+    const followedActorIsPresent = world.latestFrame.scene.actors.some(
+      (actor) => actor.id === egoActorId && actor.kind !== "despawn",
+    );
+    if (followedActorIsPresent || cameraNotice) return;
+    bridge.setFollow(null);
+    setCameraNotice(`Driving view released because ${egoActorLabel ?? "the ego vehicle"} is unavailable.`);
+  }, [
+    bridge,
+    cameraNotice,
+    driving,
+    egoActorId,
+    egoActorLabel,
+    transport?.completed,
+    world.latestFrame,
+  ]);
   const timelinePlayback = useMemo<V1TimelineBrowserPlayback | null>(() => {
     if (!transport) return null;
     return {
@@ -446,15 +481,22 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
                 <ScenarioEditorReadout
                   className="absolute left-4 top-4 flex items-baseline gap-3"
                   role="status"
-                  aria-label={`Driving speed ${driveSpeedKph.toFixed(1)} kilometers per hour, clip time ${driveClipTime}`}
+                  aria-label={`Driving ${egoActorLabel ?? "vehicle"}, speed ${driveSpeedKph.toFixed(1)} kilometers per hour, clip time ${driveClipTime}${transport?.playing ? "" : ", paused"}`}
                 >
+                  <span className="text-editor-text">{egoActorLabel ? `Driving ${egoActorLabel}` : "Driving"}</span>
                   <span className="text-editor-text tabular-nums">{driveSpeedKph.toFixed(1)} km/h</span>
                   <span className="tabular-nums">{driveClipTime}</span>
+                  {!transport?.playing && !transport?.completed ? <span>Paused</span> : null}
+                </ScenarioEditorReadout>
+              ) : null}
+              {view === "world" && cameraNotice ? (
+                <ScenarioEditorReadout className="absolute left-4 top-14" role="status">
+                  <span className="text-editor-text">{cameraNotice}</span>
                 </ScenarioEditorReadout>
               ) : null}
               {view === "world" && transport?.completed ? (
                 <ScenarioEditorReadout className="pointer-events-auto absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-3" role="status">
-                  <span className="text-editor-text">Scenario complete · {formatClipTime(transport.time, transport.duration)}</span>
+                  <span className="text-editor-text">Scenario complete · {formatClipTime(transport.time, transport.duration)} · Free camera restored</span>
                   <Button type="button" size="sm" variant="secondary" onClick={() => transport.play()}>
                     <RotateCcw /> Replay
                   </Button>

@@ -3,11 +3,19 @@ export function speedMpsToKph(speedMps: number): number {
 }
 
 export function actorSpeedKph(
-  frame: { actors: readonly { id: string; speedMps: number }[] } | null,
+  frame: {
+    scene: {
+      actors: readonly {
+        id: string;
+        velocity: readonly [number, number, number];
+      }[];
+    };
+  } | null,
   actorId: string | null,
 ): number {
   if (!frame || !actorId) return 0;
-  return speedMpsToKph(frame.actors.find((actor) => actor.id === actorId)?.speedMps ?? 0);
+  const velocity = frame.scene.actors.find((actor) => actor.id === actorId)?.velocity;
+  return speedMpsToKph(velocity ? Math.hypot(velocity[0], velocity[2]) : 0);
 }
 
 export function formatClipTime(timeS: number, durationS: number): string {

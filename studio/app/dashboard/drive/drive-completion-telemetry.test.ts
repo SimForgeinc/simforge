@@ -21,8 +21,12 @@ describe("Drive clip completion and telemetry", () => {
 
   it("converts truth-frame velocity from m/s to km/h exactly once", () => {
     expect(speedMpsToKph(10)).toBe(36);
-    expect(actorSpeedKph({ actors: [{ id: "ego", speedMps: 13.4112 }] }, "ego")).toBeCloseTo(48.28032, 8);
-    expect(actorSpeedKph({ actors: [{ id: "other", speedMps: 40 }] }, "ego")).toBe(0);
+    expect(actorSpeedKph({
+      scene: { actors: [{ id: "ego", velocity: [13.4112, 0, 0] }] },
+    }, "ego")).toBeCloseTo(48.28032, 8);
+    expect(actorSpeedKph({
+      scene: { actors: [{ id: "other", velocity: [40, 0, 0] }] },
+    }, "ego")).toBe(0);
   });
 
   it("formats and clamps authored clip time at the visible duration", () => {
