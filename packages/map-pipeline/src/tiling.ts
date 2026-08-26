@@ -8,7 +8,7 @@ import { hashTree, sha256 } from './closure.js';
 import { buildMaterialBindingPlan } from './material-binding.js';
 
 const execFileAsync = promisify(execFile);
-export const FBX_TILER_REVISION = 4;
+export const FBX_TILER_REVISION = 5;
 
 export interface GridDefinition {
   originX: number;
@@ -36,6 +36,7 @@ export interface FbxToTilesOptions {
   workDir: string;
   blender?: string;
   cellSize?: number;
+  ffmpeg?: string;
 }
 
 export interface StageResult {
@@ -44,6 +45,13 @@ export interface StageResult {
   outputDigest: string;
   outputDir: string;
   cacheKey: string;
+}
+
+async function toolVersion(executable: string): Promise<string> {
+  const { stdout } = await execFileAsync(executable, ['-version']);
+  const firstLine = stdout.split(/\r?\n/, 1)[0]?.trim();
+  if (!firstLine) throw new Error(`could not determine tool version from ${executable}`);
+  return firstLine;
 }
 
 async function blenderVersion(blender: string): Promise<string> {
@@ -73,10 +81,13 @@ async function scriptPath(): Promise<string> {
 export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResult> {
   const sourceDir = path.resolve(options.sourceDir);
   const blender = options.blender ?? process.env.SIMFORGE_BLENDER ?? 'blender';
+  const ffmpeg = options.ffmpeg ?? process.env.SIMFORGE_FFMPEG ?? 'ffmpeg';
   const cellSize = options.cellSize ?? 100;
   const inputDigest = await hashTree(sourceDir);
-  const version = await blenderVersion(blender);
-  const toolFingerprint = sha256(`fbx-to-tiles\0${FBX_TILER_REVISION}\0${version}\0cell=${cellSize}`);
+  const [version, ffmpegVersion] = await Promise.all([blenderVersion(blender), toolVersion(ffmpeg)]);
+  const toolFingerprint = sha256(
+    `fbx-to-tiles\0${FBX_TILER_REVISION}\0${version}\0${ffmpegVersion}\0cell=${cellSize}`,
+  );
   const cacheKey = sha256(`${inputDigest}\0${toolFingerprint}`);
   const outputDir = path.resolve(options.workDir, 'fbx-to-tiles', cacheKey);
   const receiptPath = path.join(outputDir, 'stage.json');
@@ -105,6 +116,7 @@ export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResul
     '--source', sourceDir,
     '--output', outputDir,
     '--material-bindings', bindingPlanPath,
+    '--ffmpeg', ffmpeg,
     '--cell-size', String(cellSize),
   ], { maxBuffer: 16 * 1024 * 1024 });
   try {
