@@ -6,76 +6,57 @@ import {
   useMemo,
   useRef,
   useState,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
-import {
-  Camera,
-  CarFront,
-  Gauge,
-  LayoutGrid,
-  LogIn,
-  LogOut,
-  PersonStanding,
-  Video,
-} from "lucide-react";
-import { AUTHORING_CATALOG, type CatalogActorClass } from "@simforge/asset-catalog";
-import type { SignalFeature } from "@simforge/maps";
-import type { PoleCameraRig } from "@simforge/maps/camera-rig";
-import { CityViewer, type CityViewerOptions } from "@simforge/viewer";
+import { Camera, LayoutGrid, LogIn, LogOut, Video } from "lucide-react";
+import type {
+  EditorController,
+  EditorDocument,
+  EditorState,
+  ScenarioMapEntry,
+} from "@simforge/editor";
+import type { CityViewerOptions } from "@simforge/viewer";
+import { CityViewer } from "@simforge/viewer";
 import { CityView } from "@simforge/viewer/react";
-import { Raycaster, Vector2 } from "three";
 import { toast } from "sonner";
 
-import { Badge } from "@/app/components/ui/badge";
+import { TopBarActionsPortal, TopBarTrailingPortal } from "@/app/components/TopBarSlot";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
 import { cn } from "@/app/lib/utils";
-import type { ScenarioAuthoringQuality, ScenarioMapDescriptorDto } from "@/app/lib/scenario/contracts";
 import { AUTHORING_QUALITY, defaultAuthoringQuality } from "@/app/dashboard/scenario/editor/authoring-quality";
+import { EditorConfigurationBlockProvider } from "@/app/dashboard/scenario/editor/inspector/EditorDetailsPanel";
+import { EditorOverlayHost } from "@/app/dashboard/scenario/editor/inspector/EditorOverlayHost";
+import {
+  EditorOverlayProvider,
+  useEditorOverlay,
+} from "@/app/dashboard/scenario/editor/inspector/editor-overlay-selection";
+import { ActorLibraryRail } from "@/app/dashboard/scenario/editor/regions/ActorLibraryRail";
+import type { ViewportTool } from "@/app/dashboard/scenario/editor/regions/actor-catalog";
+import { EditorHeader } from "@/app/dashboard/scenario/editor/regions/EditorHeader";
+import { EditorModeBanner } from "@/app/dashboard/scenario/editor/regions/EditorModeBanner";
+import { PlacementCursorHint } from "@/app/dashboard/scenario/editor/regions/PlacementCursorHint";
+import { ScenarioTimelineDock } from "@/app/dashboard/scenario/editor/ScenarioTimelineDock";
+import type { V1TimelineBrowserPlayback } from "@/app/dashboard/scenario/editor/timeline/V1TimelineRail";
 import { ScenarioEditorShell } from "@/app/dashboard/scenario/editor/shell";
-import { createLocalWorldSource } from "@/app/lib/live-world/local-world-source";
-import { createRemoteWorldSource } from "@/app/lib/live-world/remote-world-source";
 import { createMultiplexedCameraFeeds, type CameraFeeds } from "@/app/lib/live-world/camera-feeds";
+import {
+  createAuthoredWorldSource,
+  type AuthoredWorldSource,
+} from "@/app/lib/live-world/authored-world-source";
+import { createRemoteWorldSource } from "@/app/lib/live-world/remote-world-source";
 import { createTruthViewerBridge, type TruthViewerBridge } from "@/app/lib/live-world/truth-viewer-bridge";
 import type { WorldSource, WorldSourceStatus } from "@/app/lib/live-world/types";
 import { useWorldSource } from "@/app/lib/live-world/use-world-source";
+import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
+import { listScenarioMaps } from "@/app/lib/scenario/editor/api";
+import { useEditorRuntime } from "@/app/lib/scenario/editor/use-editor-runtime";
 import { PoleCameraGrid } from "./cameras/PoleCameraGrid";
 import { useSiteTimeOfDay } from "./environment";
-import { ReplayDock } from "./replay";
 import { usePoleCameras } from "./pole-cameras";
 
 type DriveView = "world" | "cameras";
-/**
- * What Drive actually needs from a map: somewhere to fetch the browser manifest
- * and, optionally, the lane topology. Deliberately narrower than
- * `ScenarioMapDescriptorDto` — a live world does not require an authoring
- * publication record, so a directly supplied bundle is a first-class source
- * rather than a partially-filled DTO.
- */
-type DriveMap = {
-  readonly id: string;
-  readonly label: string;
-  readonly browserManifestUrl: string;
-  readonly topologyArtifactUrl?: string;
-};
-
 type FollowMode = "chase" | "dash";
 
-/**
- * Mid-afternoon at the Richmond site (20:00 UTC ≈ 13:00 PDT), used as Drive's
- * default lighting so the map is plainly visible. A fixed instant rather than
- * "now" keeps the scene identical between sessions and machines, which matters
- * when comparing a twin render against a real camera.
- */
 const DAYLIGHT_INSTANT = new Date("2026-06-21T20:00:00Z");
-
-type PlaceableActorKind = {
-  actorClass: CatalogActorClass;
-  blueprint: string;
-  label: string;
-  assetCount: number;
-};
-
 const CONTROLLED_KEY_CODES: Record<string, true> = {
   ArrowUp: true,
   ArrowDown: true,
@@ -89,72 +70,34 @@ const CONTROLLED_KEY_CODES: Record<string, true> = {
   Space: true,
 };
 
-
 export function DriveClient() {
-  const [map, setMap] = useState<DriveMap | null>(null);
+  const [map, setMap] = useState<ScenarioMapEntry | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [source, setSource] = useState<WorldSource | null>(null);
-  const [sourceCreationError, setSourceCreationError] = useState<string | null>(null);
-  const [viewer, setViewer] = useState<CityViewer | null>(null);
-  const [bridge, setBridge] = useState<TruthViewerBridge | null>(null);
-  const [viewerError, setViewerError] = useState<string | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [quality, setQuality] = useState<ScenarioAuthoringQuality>("high");
-  const [view, setView] = useState<DriveView>("world");
-  const [cameraFeeds, setCameraFeeds] = useState<CameraFeeds | null>(null);
-  // `?twin=ws://host:8765`, or `?twin=1` to use this page's host on the default
-  // twin port. Null means Drive runs its own world in-browser.
-  const [clock, setClock] = useState<{ mode: "live" | "replay"; timeIso: string | null; speed: number } | null>(null);
-  const remoteWorld = useMemo(() => resolveRemoteWorld(), []);
-  const [followMode, setFollowMode] = useState<FollowMode>("chase");
-  const [egoActorId, setEgoActorId] = useState<string | null>(null);
-  const [driving, setDriving] = useState(false);
-  const [enteringDrive, setEnteringDrive] = useState(false);
-  const [selectedBlueprint, setSelectedBlueprint] = useState<string | null>(null);
-  const [catalogQuery, setCatalogQuery] = useState("");
-  const [spawning, setSpawning] = useState(false);
-  const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
-
-  const world = useWorldSource(source);
-  const placeableKinds = useMemo(() => buildPlaceableKinds(catalogQuery), [catalogQuery]);
-  const poleCameras = usePoleCameras(map?.browserManifestUrl ?? null);
-
-  useEffect(() => {
-    setQuality(defaultAuthoringQuality());
-  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    // A live world only needs a browser manifest and a lane topology to run, so
-    // Drive accepts them directly. That keeps an un-ingested bundle drivable
-    // (`?manifest=/map-bundles/<name>/3d/manifest.json&lanes=...`) instead of
-    // requiring the full authoring publication pipeline first.
     const params = new URLSearchParams(window.location.search);
     const manifestOverride = params.get("manifest") ?? process.env.NEXT_PUBLIC_DRIVE_MAP_MANIFEST_URL ?? null;
+    const lanesOverride = params.get("lanes") ?? process.env.NEXT_PUBLIC_DRIVE_MAP_LANES_URL ?? null;
     if (manifestOverride) {
-      const lanesOverride = params.get("lanes") ?? process.env.NEXT_PUBLIC_DRIVE_MAP_LANES_URL ?? null;
-      setMap({
-        id: manifestOverride,
-        label: params.get("label") ?? "Direct bundle",
-        browserManifestUrl: manifestOverride,
-        ...(lanesOverride ? { topologyArtifactUrl: lanesOverride } : {}),
-      });
-      setMapError(null);
+      try {
+        setMap(directMapEntry({
+          manifestUrl: manifestOverride,
+          topologyUrl: lanesOverride,
+          label: params.get("label") ?? "Direct bundle",
+        }));
+        setMapError(null);
+      } catch (error) {
+        const message = errorMessage(error);
+        setMapError(message);
+        toast.error("Drive could not use the direct map bundle", { description: message });
+      }
       return () => controller.abort();
     }
-    void fetch("/api/simforge/maps", { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`Map catalog request failed (${response.status})`);
-        const payload = await response.json() as { maps?: ScenarioMapDescriptorDto[] } | ScenarioMapDescriptorDto[];
-        const maps = Array.isArray(payload) ? payload : payload.maps ?? [];
+    void listScenarioMaps(controller.signal)
+      .then((maps) => {
         if (maps.length === 0) throw new Error("No published maps are available for Drive");
-        const preferred = maps.find((candidate) => /richmond/i.test(candidate.label)) ?? maps[0]!;
-        setMap({
-          id: preferred.mapVersionId,
-          label: preferred.label,
-          browserManifestUrl: preferred.browserManifestUrl,
-          ...(preferred.topologyArtifactUrl ? { topologyArtifactUrl: preferred.topologyArtifactUrl } : {}),
-        });
+        setMap(maps.find((candidate) => /richmond/i.test(candidate.label)) ?? maps[0]!);
         setMapError(null);
       })
       .catch((error: unknown) => {
@@ -166,34 +109,91 @@ export function DriveClient() {
     return () => controller.abort();
   }, []);
 
+  if (!map) {
+    return (
+      <div className="grid h-full min-h-0 place-items-center bg-background text-sm text-muted-foreground" role={mapError ? "alert" : "status"}>
+        {mapError ?? "Loading Drive map…"}
+      </div>
+    );
+  }
+  return <DriveSurface map={map} />;
+}
+
+function DriveSurface({ map }: { map: ScenarioMapEntry }) {
+  const [source, setSource] = useState<WorldSource | null>(null);
+  const [authoredSource, setAuthoredSource] = useState<AuthoredWorldSource | null>(null);
+  const [sourceCreationError, setSourceCreationError] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<CityViewer | null>(null);
+  const [bridge, setBridge] = useState<TruthViewerBridge | null>(null);
+  const [viewerError, setViewerError] = useState<string | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [quality, setQuality] = useState<ScenarioAuthoringQuality>("high");
+  const [view, setView] = useState<DriveView>("world");
+  const [cameraFeeds, setCameraFeeds] = useState<CameraFeeds | null>(null);
+  const [clock, setClock] = useState<{ mode: "live" | "replay"; timeIso: string | null; speed: number } | null>(null);
+  const [followMode, setFollowMode] = useState<FollowMode>("chase");
+  const [egoActorId, setEgoActorId] = useState<string | null>(null);
+  const [driving, setDriving] = useState(false);
+  const [enteringDrive, setEnteringDrive] = useState(false);
+  const [expandedTool, setExpandedTool] = useState<ViewportTool | null>(null);
+  const [transportRevision, setTransportRevision] = useState(0);
+  const [documentRevision, setDocumentRevision] = useState(0);
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const remoteWorld = useMemo(() => resolveRemoteWorld(), []);
+  const world = useWorldSource(source);
+  const poleCameras = usePoleCameras(map.browserManifestUrl);
+  const onDocumentChange = useCallback(() => {
+    setDocumentRevision((revision) => revision + 1);
+  }, []);
+
+  useEffect(() => setQuality(defaultAuthoringQuality()), []);
+
+
+  const runtime = useEditorRuntime({
+    record: null,
+    map,
+    viewer,
+    runtimeReady: mapLoaded,
+    hostRef,
+    onDocumentChange,
+  });
+  const { controller, editorDocument, state } = runtime;
+  const selectedActor = state?.actors.find((actor) => state.selection.includes(actor.id)) ?? null;
+
   useEffect(() => {
-    if (!map) return;
-    let nextSource: WorldSource;
-    try {
-      // A live twin already owns its world: it advances the simulation, mirrors
-      // real detections into it and serves the site cameras. Attaching to that
-      // world is a different source, not a different app — everything else on
-      // this surface is identical.
-      nextSource = remoteWorld
-        ? createRemoteWorldSource({
-            truthUrl: `${remoteWorld}/twin`,
-            commandUrl: `${remoteWorld}/drive`,
-          })
-        : createLocalWorldSource({
-            mapManifestUrl: map.browserManifestUrl,
-            laneGraphUrl: map.topologyArtifactUrl,
-            tickHz: 20,
-          });
-      setSource(nextSource);
-      setSourceCreationError(null);
-    } catch (error) {
-      const message = errorMessage(error);
-      setSourceCreationError(message);
-      toast.error("Drive world could not start", { description: message });
-      return;
-    }
-    return () => nextSource.close();
-  }, [map, remoteWorld]);
+    if (!remoteWorld && !editorDocument) return;
+    let disposed = false;
+    let live: WorldSource | null = null;
+    setSourceCreationError(null);
+    const open = async () => remoteWorld
+      ? createRemoteWorldSource({ truthUrl: `${remoteWorld}/twin`, commandUrl: `${remoteWorld}/drive` })
+      : createAuthoredWorldSource({ document: editorDocument!, map, tickHz: 20 });
+    void open()
+      .then((nextSource) => {
+        if (disposed) return nextSource.close();
+        live = nextSource;
+        setSource(nextSource);
+        setAuthoredSource(remoteWorld ? null : nextSource as AuthoredWorldSource);
+      })
+      .catch((error: unknown) => {
+        if (disposed) return;
+        const message = errorMessage(error);
+        setSourceCreationError(message);
+        toast.error("Drive world could not start", { description: message });
+      });
+    return () => {
+      disposed = true;
+      setSource(null);
+      setAuthoredSource(null);
+      live?.close();
+    };
+  }, [documentRevision, editorDocument, map, remoteWorld]);
+
+  useEffect(() => {
+    if (!authoredSource) return;
+    setTransportRevision((revision) => revision + 1);
+    return authoredSource.subscribeTransport(() => setTransportRevision((revision) => revision + 1));
+  }, [authoredSource]);
 
   useEffect(() => {
     if (!source?.subscribeWarnings) return;
@@ -202,9 +202,6 @@ export function DriveClient() {
     });
   }, [source]);
 
-  // The twin's own clock is authoritative — it is what replay moves. Lighting
-  // follows it so a replayed night renders as night; a local world has no such
-  // clock and simply follows wall time.
   useEffect(() => {
     if (!source?.subscribeClock) {
       setClock(null);
@@ -213,10 +210,6 @@ export function DriveClient() {
     return source.subscribeClock(setClock);
   }, [source]);
 
-  // One socket carries every channel. Without it each camera would hold a
-  // long-lived multipart response, and four of those exhaust most of the
-  // browser's six connections per host and starve map-tile streaming — so the
-  // grid can only stream one channel at a time.
   useEffect(() => {
     if (!remoteWorld) {
       setCameraFeeds(null);
@@ -230,10 +223,6 @@ export function DriveClient() {
     };
   }, [remoteWorld]);
 
-  // Daylight by default. Real site time is correct but Richmond at night renders
-  // almost black, which is indistinguishable from a map that failed to load —
-  // and the editor this surface mirrors lights scenes from the authored
-  // environment, not the wall clock. `?lighting=site` opts into real solar time.
   const followSiteTime = useMemo(
     () => typeof window !== "undefined"
       && new URLSearchParams(window.location.search).get("lighting") === "site",
@@ -241,26 +230,22 @@ export function DriveClient() {
   );
   const siteTime = useSiteTimeOfDay({
     viewer,
-    manifestUrl: map?.browserManifestUrl ?? null,
+    manifestUrl: map.browserManifestUrl,
     at: followSiteTime ? (clock?.timeIso ? new Date(clock.timeIso) : null) : DAYLIGHT_INSTANT,
     quality,
   });
 
   useEffect(() => {
-    if (!siteTime.error) return;
-    toast.warning("Site lighting unavailable", { description: siteTime.error, duration: 10000 });
+    if (siteTime.error) toast.warning("Site lighting unavailable", { description: siteTime.error, duration: 10000 });
   }, [siteTime.error]);
-
   useEffect(() => {
     if (!bridge || !source) return;
     return source.subscribeFrames((frame) => bridge.apply(frame));
   }, [bridge, source]);
-
   useEffect(() => {
     if (!bridge) return;
     bridge.setFollow(driving ? egoActorId : null, followMode);
   }, [bridge, driving, egoActorId, followMode]);
-
   useEffect(() => () => bridge?.dispose(), [bridge]);
 
   useDriveControls(source, driving ? egoActorId : null);
@@ -271,82 +256,53 @@ export function DriveClient() {
     setViewerError(null);
   }, []);
 
-  const spawnAtPoint = useCallback(async (
-    blueprint: string,
-    point: { x: number; y: number; z: number },
-    controlled = false,
-  ) => {
-    if (!source) throw new Error("The world is not ready to accept actors");
-    return source.spawn({
-      blueprint,
-      position: { x: point.x, y: point.z, z: point.y },
-      controlled,
-    });
-  }, [source]);
+  const selectActor = useCallback((actorId: string | null) => {
+    setExpandedTool(null);
+    controller?.setSelection(actorId ? [actorId] : []);
+  }, [controller]);
+  const selectLibraryTool = useCallback((tool: ViewportTool | null) => {
+    setExpandedTool(tool);
+    if (tool) controller?.setSelection([]);
+  }, [controller]);
 
-  const onCanvasPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button === 0) pointerDownRef.current = { x: event.clientX, y: event.clientY };
-  }, []);
-
-  const onCanvasPointerUp = useCallback(async (event: ReactPointerEvent<HTMLDivElement>) => {
-    const down = pointerDownRef.current;
-    pointerDownRef.current = null;
-    if (!down || event.button !== 0 || !selectedBlueprint || !viewer || spawning) return;
-    if (Math.hypot(event.clientX - down.x, event.clientY - down.y) > 5) return;
-    const point = groundPointFromPointer(viewer, event.clientX, event.clientY);
-    if (!point) {
-      toast.error("Choose a visible ground point", {
-        description: "The selected screen point does not intersect the loaded world.",
-      });
-      return;
-    }
-    setSpawning(true);
-    try {
-      await spawnAtPoint(selectedBlueprint, point);
-    } catch (error) {
-      toast.error("Actor could not be added", { description: errorMessage(error) });
-    } finally {
-      setSpawning(false);
-    }
-  }, [selectedBlueprint, spawnAtPoint, spawning, viewer]);
-
-  const enterDrive = useCallback(async () => {
-    if (!source || !viewer || enteringDrive) return;
+  const enterDrive = useCallback(() => {
+    if (!authoredSource || !viewer || !editorDocument || enteringDrive) return;
     setEnteringDrive(true);
     try {
-      let actorId = egoActorId;
-      if (!actorId) {
-        const target = viewer.captureView().target;
-        const groundY = viewer.sampleGroundHeight(target[0], target[2]) ?? target[1];
-        const spawned = await spawnAtPoint(
-          "vehicle.car",
-          { x: target[0], y: groundY, z: target[2] },
-          true,
-        );
-        actorId = spawned.actorId;
-        setEgoActorId(actorId);
-      }
-      bridge?.setFollow(actorId, followMode);
+      const selectedRole = selectedActor
+        ? editorDocument.data.roles.find((role) => role.id === selectedActor.id)
+        : null;
+      const role = selectedRole && isVehicleRole(selectedRole)
+        ? selectedRole
+        : editorDocument.data.roles.find(isVehicleRole);
+      if (!role) throw new Error("Place and select an authored vehicle before entering drive");
+      authoredSource.setEgo(role.id);
+      setEgoActorId(role.id);
+      authoredSource.transport.play();
+      bridge?.setFollow(role.id, followMode);
+      setExpandedTool(null);
       setDriving(true);
     } catch (error) {
       toast.error("Drive mode could not start", { description: errorMessage(error) });
     } finally {
       setEnteringDrive(false);
     }
-  }, [bridge, egoActorId, enteringDrive, followMode, source, spawnAtPoint, viewer]);
+  }, [authoredSource, bridge, editorDocument, enteringDrive, followMode, selectedActor, viewer]);
 
   const exitDrive = useCallback(() => {
     bridge?.setFollow(null);
+    if (source && egoActorId) {
+      source.control({ actorId: egoActorId, steer: 0, throttle: 0, brake: 0 });
+    }
+    authoredSource?.setEgo(null);
     setDriving(false);
-  }, [bridge]);
-
+  }, [authoredSource, bridge, egoActorId, source]);
   const switchView = useCallback((next: DriveView) => {
     if (next === "cameras" && driving) exitDrive();
     setView(next);
   }, [driving, exitDrive]);
 
   const createCameraViewer = useCallback(async (canvas: HTMLCanvasElement) => {
-    if (!map) throw new Error("No map is selected for the pole camera viewer");
     const cameraViewer = new CityViewer(canvas, viewerOptions(quality));
     try {
       await cameraViewer.loadMap(map.browserManifestUrl);
@@ -357,265 +313,189 @@ export function DriveClient() {
     }
   }, [map, quality]);
 
-  const activeEgo = world.latestFrame?.scene.actors.find(
-    (actor) => actor.id === egoActorId && actor.kind !== "despawn",
-  );
-  const speedKmh = activeEgo
-    ? Math.hypot(...activeEgo.velocity) * 3.6
-    : 0;
-  const effectiveStatus: WorldSourceStatus = sourceCreationError || mapError
+  const transport = authoredSource?.transport ?? null;
+  const timelinePlayback = useMemo<V1TimelineBrowserPlayback | null>(() => {
+    if (!transport) return null;
+    return {
+      sessionId: transport.sessionId,
+      playing: transport.playing,
+      inspecting: transport.inspecting || transport.playing || driving,
+      time: transport.time,
+      onPlay: () => transport.play(),
+      onStop: () => transport.stop(),
+      onReset: () => transport.reset(),
+      onPlayPause: () => transport.playPause(),
+      onSeek: (seconds) => transport.seek(seconds),
+      onExitInspection: () => transport.exitInspection(),
+    };
+  }, [driving, transport, transportRevision]);
+
+  const effectiveStatus: WorldSourceStatus = sourceCreationError || runtime.error
     ? "error"
     : world.status;
-  const effectiveError = sourceCreationError ?? mapError ?? world.error;
+  const effectiveError = sourceCreationError ?? runtime.error ?? world.error;
 
   return (
-    <ScenarioEditorShell
-      className="h-full min-h-0 bg-background text-foreground"
-      data-testid="drive-surface"
-      canvasMode="interactive"
-      header={(slotProps) => (
-        <div
-          {...slotProps}
-          className={cn(
-            slotProps.className,
-            "flex items-center gap-3 border-b border-border bg-card/95 px-3 shadow-sm backdrop-blur",
-          )}
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            <CarFront className="size-4 text-primary" aria-hidden="true" />
-            <span className="truncate text-sm font-semibold">Continuous world</span>
-            {map ? <span className="hidden truncate text-xs text-muted-foreground md:inline">{map.label}</span> : null}
-          </div>
-          <div className="ml-auto flex items-center gap-1 rounded-md border border-border bg-muted/40 p-1" aria-label="Drive view">
-            <Button
-              type="button"
-              size="sm"
-              variant={view === "world" ? "secondary" : "ghost"}
-              className="h-7 px-2 text-xs"
-              onClick={() => switchView("world")}
-              aria-pressed={view === "world"}
-            >
+    <EditorConfigurationBlockProvider blocked={driving}>
+      <EditorOverlayProvider
+        documentKey={editorDocument}
+        selectedActorId={selectedActor?.id ?? null}
+        suppressActorDetails={driving || state?.mode === "drawingRoute"}
+        onSelectActor={selectActor}
+      >
+        <EditorHeader
+          document={editorDocument}
+          quality={quality}
+          onQualityChange={setQuality}
+          viewer={viewer}
+          experience="advanced"
+        />
+        <TopBarActionsPortal>
+          <div className="flex items-center gap-1" aria-label="Drive view">
+            <Button type="button" size="sm" variant={view === "world" ? "secondary" : "ghost"} onClick={() => switchView("world")} aria-pressed={view === "world"}>
               <LayoutGrid /> World
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={view === "cameras" ? "secondary" : "ghost"}
-              className="h-7 px-2 text-xs"
-              onClick={() => switchView("cameras")}
-              aria-pressed={view === "cameras"}
-            >
+            <Button type="button" size="sm" variant={view === "cameras" ? "secondary" : "ghost"} onClick={() => switchView("cameras")} aria-pressed={view === "cameras"}>
               <Video /> Cameras
             </Button>
           </div>
+        </TopBarActionsPortal>
+        <TopBarTrailingPortal>
           {view === "world" ? (
             <div className="flex items-center gap-1">
               {driving ? (
                 <>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-2 text-xs"
-                    onClick={() => setFollowMode((mode) => mode === "chase" ? "dash" : "chase")}
-                  >
+                  <Button type="button" size="sm" variant="outline" onClick={() => setFollowMode((mode) => mode === "chase" ? "dash" : "chase")}>
                     <Camera /> {followMode === "chase" ? "Chase" : "Dash"}
                   </Button>
-                  <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={exitDrive}>
+                  <Button type="button" size="sm" variant="secondary" onClick={exitDrive}>
                     <LogOut /> Exit drive
                   </Button>
                 </>
               ) : (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-8 text-xs"
-                  disabled={!source || !viewer || world.status !== "running" || enteringDrive}
-                  onClick={() => void enterDrive()}
-                >
-                  <LogIn /> {enteringDrive ? "Entering…" : egoActorId ? "Resume drive" : "Enter drive"}
+                <Button type="button" size="sm" disabled={!authoredSource || !viewer || world.status !== "running" || enteringDrive} onClick={enterDrive}>
+                  <LogIn /> {enteringDrive ? "Entering…" : "Enter drive"}
                 </Button>
               )}
             </div>
           ) : null}
-        </div>
-      )}
-      leftSidebar={view === "world" ? (slotProps) => (
-        // The shell's slot root is a layout wrapper only: its CSS module sets
-        // `background: transparent; border: 0` and loads after Tailwind, so any
-        // background or border put here silently loses and the panel renders as
-        // unreadable text floating on the canvas. Chrome goes on the child, the
-        // way ActorLibraryRail does it in the editor.
-        <div {...slotProps} className={cn(slotProps.className, "flex h-full p-3")}>
-        <aside
-          className={cn(
-            "flex h-full w-64 flex-col overflow-hidden rounded-lg border border-border bg-card/95 shadow-xl backdrop-blur",
-          )}
-          aria-label="Actor palette"
-        >
-          <div className="border-b border-border p-3">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <CarFront className="size-4 text-primary" aria-hidden="true" />
-              Add actors
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Choose a simulation kind, then click the ground. Placement stays available while driving.
-            </p>
-            <Input
-              className="mt-3 h-8 text-xs"
-              value={catalogQuery}
-              onChange={(event) => setCatalogQuery(event.target.value)}
-              placeholder="Search the asset catalog"
-              aria-label="Search actor catalog"
-            />
-          </div>
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
-            {placeableKinds.map((kind) => {
-              const selected = selectedBlueprint === kind.blueprint;
-              const Icon = kind.actorClass === "pedestrian" ? PersonStanding : CarFront;
-              return (
-                <Button
-                  key={kind.blueprint}
-                  type="button"
-                  variant={selected ? "secondary" : "ghost"}
-                  className="h-auto w-full justify-start px-2 py-2 text-left"
-                  onClick={() => setSelectedBlueprint(selected ? null : kind.blueprint)}
-                  aria-pressed={selected}
-                >
-                  <Icon className="size-4" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs font-medium">{kind.label}</span>
-                    <span className="block truncate text-[10px] font-normal text-muted-foreground">
-                      {kind.assetCount} catalog {kind.assetCount === 1 ? "asset" : "assets"}
-                    </span>
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
-          <div className="border-t border-border px-3 py-2 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-meta)" }}>
-            {selectedBlueprint ? (spawning ? "ADDING ACTOR…" : "CLICK GROUND TO PLACE") : "SELECT AN ACTOR KIND"}
-          </div>
-        </aside>
-        </div>
-      ) : null}
-      canvas={(slotProps) => (
-        <div {...slotProps} className={cn(slotProps.className, "relative bg-background")}>
-          <div
-            className={cn("absolute inset-0", view === "world" ? "visible" : "invisible pointer-events-none")}
-            onPointerDown={onCanvasPointerDown}
-            onPointerUp={(event) => void onCanvasPointerUp(event)}
-          >
-            {map ? (
-              <CityView
-                key={quality}
-                manifestUrl={map.browserManifestUrl}
-                options={viewerOptions(quality)}
-                onReady={onViewerReady}
-                onMapLoaded={() => {
-                  setMapLoaded(true);
-                  setViewerError(null);
-                }}
-                onError={(reason) => {
-                  const message = errorMessage(reason);
-                  setMapLoaded(false);
-                  setViewerError(message);
-                  toast.error("Drive map could not load", { description: message });
-                }}
-                className="h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                ariaLabel={`${map.label} continuous simulation. Choose an actor and click the ground to place it.`}
-                role="application"
-                tabIndex={0}
-              />
-            ) : null}
-          </div>
-          {view === "cameras" ? (
-            <div className="absolute inset-0 overflow-auto bg-background p-4">
-              <PoleCameraGrid
-                rigs={poleCameras.rigs}
-                features={poleCameras.features}
-                feeds={cameraFeeds}
-                viewerFactory={createCameraViewer}
+        </TopBarTrailingPortal>
+        <ScenarioEditorShell
+          className="h-full min-h-0 bg-background text-foreground"
+          data-testid="drive-surface"
+          canvasMode="interactive"
+          header={null}
+          leftSidebar={view === "world" && !driving ? (slotProps) => (
+            <div {...slotProps} className={cn(slotProps.className, "flex h-full")}>
+              <ActorLibraryRail
+                controller={controller}
+                state={state}
+                hostRef={hostRef}
+                canvas={viewer?.renderer.domElement ?? null}
+                activeTool={expandedTool}
+                onExpandedToolChange={selectLibraryTool}
+                document={editorDocument}
+                sumoAvailable={Boolean(map.sumoNetworkSha256)}
               />
             </div>
           ) : null}
-        </div>
-      )}
-      statusOverlay={(
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2" role={effectiveStatus === "error" || viewerError ? "alert" : "status"}>
-          <div className={cn(
-            "rounded-md border bg-card/95 px-3 py-2 text-xs shadow-lg backdrop-blur",
-            effectiveStatus === "error" || viewerError ? "border-destructive/50 text-destructive" : "border-border text-muted-foreground",
-          )}>
-            <WorldStatus status={effectiveStatus} error={effectiveError ?? viewerError} mapLoaded={mapLoaded} />
-          </div>
-        </div>
-      )}
-      floatingOverlay={view === "world" ? (
-        <>
-          <div className="absolute right-4 top-4">
-            <div className="min-w-44 rounded-lg border border-border bg-card/90 p-3 shadow-lg backdrop-blur" style={{ fontFamily: "var(--font-meta)" }}>
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.12em] text-muted-foreground">
-                  <Gauge className="size-3.5" /> TELEMETRY
-                </span>
-                {driving ? <Badge variant="secondary" className="text-[9px]">DRIVING</Badge> : null}
-              </div>
-              <dl className="grid grid-cols-2 gap-x-5 gap-y-1 text-xs">
-                <dt className="text-muted-foreground">Speed</dt>
-                <dd className="text-right font-semibold tabular-nums">{speedKmh.toFixed(1)} km/h</dd>
-                <dt className="text-muted-foreground">Actors</dt>
-                <dd className="text-right tabular-nums">{world.latestFrame?.actors.length ?? 0}</dd>
-                <dt className="text-muted-foreground">Tick</dt>
-                <dd className="text-right tabular-nums">{world.latestFrame?.tick ?? 0}</dd>
-                <dt className="text-muted-foreground">Clock</dt>
-                <dd className="text-right tabular-nums">{(world.latestFrame?.timeSec ?? 0).toFixed(1)} s</dd>
-                {siteTime.sunElevationDeg !== null ? (
-                  <>
-                    <dt className="text-muted-foreground">Sun</dt>
-                    <dd className="text-right tabular-nums">{siteTime.sunElevationDeg.toFixed(1)}&deg;</dd>
-                  </>
+          canvas={(slotProps) => (
+            <div {...slotProps} className={cn(slotProps.className, "relative bg-background")}>
+              <div ref={hostRef} className={cn("absolute inset-0", view === "world" ? "visible" : "invisible pointer-events-none")}>
+                {map ? (
+                  <CityView
+                    key={quality}
+                    manifestUrl={map.browserManifestUrl}
+                    options={viewerOptions(quality)}
+                    onReady={onViewerReady}
+                    onMapLoaded={() => {
+                      setMapLoaded(true);
+                      setViewerError(null);
+                    }}
+                    onError={(reason) => {
+                      const message = errorMessage(reason);
+                      setMapLoaded(false);
+                      setViewerError(message);
+                      toast.error("Drive map could not load", { description: message });
+                    }}
+                    className="h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    ariaLabel={`${map.label} authored driving scenario`}
+                    role="application"
+                    tabIndex={0}
+                  />
                 ) : null}
-              </dl>
+              </div>
+              {view === "cameras" ? (
+                <div className="absolute inset-0 overflow-auto bg-background p-4">
+                  <PoleCameraGrid rigs={poleCameras.rigs} features={poleCameras.features} feeds={cameraFeeds} viewerFactory={createCameraViewer} />
+                </div>
+              ) : null}
             </div>
-          </div>
-          {source ? (
-            <div className="pointer-events-auto absolute bottom-16 left-1/2 -translate-x-1/2">
-              <ReplayDock source={source} />
+          )}
+          statusOverlay={view === "world" && state?.mode === "placing" ? (
+            <PlacementCursorHint state={state} hostRef={hostRef} canvas={viewer?.renderer.domElement ?? null} />
+          ) : view === "world" && state?.mode && state.mode !== "idle" ? (
+            <div className="pointer-events-auto"><EditorModeBanner state={state} controller={controller} /></div>
+          ) : effectiveStatus !== "running" || viewerError ? (
+            <div className="absolute left-1/2 top-4 -translate-x-1/2" role={effectiveStatus === "error" || viewerError ? "alert" : "status"}>
+              <div className={cn("rounded-md border bg-card/95 px-3 py-2 text-xs shadow-lg backdrop-blur", effectiveStatus === "error" || viewerError ? "border-destructive/50 text-destructive" : "border-border text-muted-foreground")}>
+                <WorldStatus status={effectiveStatus} error={effectiveError ?? viewerError} mapLoaded={mapLoaded} />
+              </div>
             </div>
           ) : null}
-        </>
-      ) : null}
+          floatingOverlay={view === "world" && editorDocument ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-auto max-h-[min(65vh,520px)] justify-center px-4" data-testid="floating-timeline-layer">
+              <div className="pointer-events-auto relative h-auto max-h-[min(65vh,520px)] w-full max-w-[920px] min-w-0">
+                <DriveTimelineDock
+                  controller={controller}
+                  document={editorDocument}
+                  state={state}
+                  playback={timelinePlayback}
+                  readOnly={driving}
+                />
+              </div>
+            </div>
+          ) : null}
+        />
+        <EditorOverlayHost controller={controller} document={editorDocument} showActorMotionControls />
+      </EditorOverlayProvider>
+    </EditorConfigurationBlockProvider>
+  );
+}
+
+function DriveTimelineDock({ controller, document, state, playback, readOnly }: {
+  controller: EditorController | null;
+  document: EditorDocument;
+  state: EditorState | null;
+  playback: V1TimelineBrowserPlayback | null;
+  readOnly: boolean;
+}) {
+  const { selection, actions } = useEditorOverlay();
+  return (
+    <ScenarioTimelineDock
+      document={document}
+      state={state ?? undefined}
+      playback={playback}
+      selectedInteractionId={selection.kind === "interaction" ? selection.interactionId : null}
+      onFocusActor={actions.selectActor}
+      onSelectActor={actions.selectActor}
+      onSelectInteraction={actions.selectInteraction}
+      onClearSelection={actions.clear}
+      readOnly={readOnly}
+      experience="advanced"
     />
   );
 }
 
-function WorldStatus({
-  status,
-  error,
-  mapLoaded,
-}: {
-  status: WorldSourceStatus;
-  error: string | null;
-  mapLoaded: boolean;
-}) {
+function WorldStatus({ status, error, mapLoaded }: { status: WorldSourceStatus; error: string | null; mapLoaded: boolean }) {
   if (error) return <>{error}</>;
   if (status === "running") return <>{mapLoaded ? "World running" : "World running · loading map"}</>;
-  if (status === "connecting") return <>Connecting continuous world…</>;
+  if (status === "connecting") return <>Connecting authored world…</>;
   if (status === "closed") return <>World closed</>;
-  return <>Preparing continuous world…</>;
+  return <>Preparing authored world…</>;
 }
 
-/** Default WebSocket port a SimForge twin serves its world on. */
 const TWIN_DEFAULT_PORT = "8765";
-
-/**
- * Origin of an attached live twin, or null to run a world in this browser.
- *
- * `?twin=1` derives the origin from the page so a tunnelled or LAN host works
- * without being told its own name; an explicit `ws://`/`wss://` value wins. The
- * scheme follows the page's, because a secure page cannot open a plain socket.
- */
 function resolveRemoteWorld(): string | null {
   if (typeof window === "undefined") return null;
   const raw = new URLSearchParams(window.location.search).get("twin")
@@ -628,50 +508,40 @@ function resolveRemoteWorld(): string | null {
   return `${scheme}://${window.location.hostname}:${port}`;
 }
 
-function buildPlaceableKinds(query: string): PlaceableActorKind[] {
-  const byBlueprint = new Map<string, PlaceableActorKind>();
-  for (const entry of AUTHORING_CATALOG) {
-    if (!entry.actorClass) continue;
-    const blueprint = localBlueprintFor(entry.actorClass);
-    if (!blueprint) continue;
-    const existing = byBlueprint.get(blueprint);
-    if (existing) {
-      existing.assetCount += 1;
-      continue;
-    }
-    byBlueprint.set(blueprint, {
-      actorClass: entry.actorClass,
-      blueprint,
-      label: actorClassLabel(entry.actorClass),
-      assetCount: 1,
-    });
-  }
-  const needle = query.trim().toLowerCase();
-  return [...byBlueprint.values()]
-    .filter((kind) => !needle || `${kind.label} ${kind.actorClass}`.toLowerCase().includes(needle))
-    .sort((left, right) => left.label.localeCompare(right.label));
+function directMapEntry({ manifestUrl, topologyUrl, label }: { manifestUrl: string; topologyUrl: string | null; label: string }): ScenarioMapEntry {
+  const suffix = "/3d/manifest.json";
+  if (!manifestUrl.endsWith(suffix)) throw new Error(`Direct manifest must end in ${suffix}`);
+  const root = manifestUrl.slice(0, -suffix.length);
+  const id = `direct:${manifestUrl}`;
+  const emptyDigest = "0".repeat(64);
+  return {
+    id,
+    versionId: id,
+    mapVersionId: id,
+    sourceMapId: id,
+    label,
+    locality: "",
+    browserAssetRootUrl: root,
+    browserManifestUrl: manifestUrl,
+    browserClosureSha256: emptyDigest,
+    artifacts: {
+      xodrSha256: emptyDigest,
+      topologySha256: emptyDigest,
+      derivedTopologySha256: emptyDigest,
+      locationsSha256: emptyDigest,
+      signalsSha256: emptyDigest,
+      lanePolygonsSha256: emptyDigest,
+    },
+    sumoNetworkSha256: null,
+    manifestUrl,
+    topologyUrl: topologyUrl ?? `${root}/topology-index.json.gz`,
+  };
 }
 
-function localBlueprintFor(actorClass: CatalogActorClass): string | null {
-  if (actorClass === "pedestrian") return "walker.pedestrian";
-  if (
-    actorClass === "car"
-    || actorClass === "truck"
-    || actorClass === "bus"
-    || actorClass === "van"
-    || actorClass === "motorcycle"
-    || actorClass === "bicycle"
-  ) {
-    return `vehicle.${actorClass}`;
-  }
-  return null;
-}
 
-function actorClassLabel(actorClass: CatalogActorClass): string {
-  return actorClass
-    .split("_")
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(" ");
+type ScenarioRole = EditorDocument["data"]["roles"][number];
+function isVehicleRole(role: ScenarioRole): boolean {
+  return !role.actor.static && role.actor.class !== "pedestrian" && role.actor.class !== "static_object";
 }
 
 function viewerOptions(quality: ScenarioAuthoringQuality): CityViewerOptions {
@@ -683,52 +553,21 @@ function viewerOptions(quality: ScenarioAuthoringQuality): CityViewerOptions {
   };
 }
 
-function groundPointFromPointer(
-  viewer: CityViewer,
-  clientX: number,
-  clientY: number,
-): { x: number; y: number; z: number } | null {
-  const canvas = viewer.renderer.domElement;
-  const bounds = canvas.getBoundingClientRect();
-  if (bounds.width <= 0 || bounds.height <= 0) return null;
-  const ndc = new Vector2(
-    ((clientX - bounds.left) / bounds.width) * 2 - 1,
-    -(((clientY - bounds.top) / bounds.height) * 2 - 1),
-  );
-  const ray = new Raycaster();
-  ray.setFromCamera(ndc, viewer.camera);
-  if (Math.abs(ray.ray.direction.y) < 1e-6) return null;
-
-  const target = viewer.captureView().target;
-  let groundY = viewer.sampleGroundHeight(target[0], target[2]) ?? target[1];
-  let x = target[0];
-  let z = target[2];
-  for (let index = 0; index < 3; index += 1) {
-    const distance = (groundY - ray.ray.origin.y) / ray.ray.direction.y;
-    if (!Number.isFinite(distance) || distance <= 0) return null;
-    x = ray.ray.origin.x + ray.ray.direction.x * distance;
-    z = ray.ray.origin.z + ray.ray.direction.z * distance;
-    groundY = viewer.sampleGroundHeight(x, z) ?? groundY;
-  }
-  return { x, y: groundY, z };
-}
-
 function useDriveControls(source: WorldSource | null, actorId: string | null) {
   useEffect(() => {
     if (!source || !actorId) return;
     const pressed = new Set<string>();
-    const controlledCodes = CONTROLLED_KEY_CODES;
     const editableTarget = (target: EventTarget | null) => {
       const element = target as HTMLElement | null;
       return element?.isContentEditable || element?.tagName === "INPUT" || element?.tagName === "TEXTAREA";
     };
     const keyDown = (event: KeyboardEvent) => {
-      if (!controlledCodes[event.code] || editableTarget(event.target)) return;
+      if (!CONTROLLED_KEY_CODES[event.code] || editableTarget(event.target)) return;
       event.preventDefault();
       pressed.add(event.code);
     };
     const keyUp = (event: KeyboardEvent) => {
-      if (!controlledCodes[event.code]) return;
+      if (!CONTROLLED_KEY_CODES[event.code]) return;
       event.preventDefault();
       pressed.delete(event.code);
     };
@@ -745,7 +584,6 @@ function useDriveControls(source: WorldSource | null, actorId: string | null) {
         reverse: pressed.has("KeyR"),
       });
     };
-
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
     const interval = window.setInterval(transmit, 50);
@@ -754,7 +592,6 @@ function useDriveControls(source: WorldSource | null, actorId: string | null) {
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
       window.clearInterval(interval);
-      source.control({ actorId, steer: 0, throttle: 0, brake: 0 });
     };
   }, [actorId, source]);
 }

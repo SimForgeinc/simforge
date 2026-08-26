@@ -1,37 +1,29 @@
 # Drive
 
-A continuously simulating world you can drop actors into and drive through,
-presented in the same editor chrome as the rest of Studio.
-
-Drive is a dashboard app (`DASHBOARD_APPS` in `app/lib/dashboard-nav.ts`), not a
-mode of the scenario editor. That separation is deliberate and load-bearing —
-see "Why not the editor" below.
+A real in-memory scenario editor whose compiled 20-second scenario can be driven
+interactively. Drive reuses the scenario editor's document, controller, actor
+library, inspector, header, and timeline rather than maintaining parallel UI.
 
 ## Shape
 
 ```
 page.tsx ─ requireAppContext, then DriveClient
-DriveClient.tsx ─ composes the real ScenarioEditorShell:
-   header        mode toggle (World / Cameras), enter/exit drive, camera mode
-   leftSidebar   actor palette, from @simforge/asset-catalog
-   canvas        CityView from @simforge/viewer/react
-   statusOverlay world status, honest connection state
-   floatingOverlay telemetry
+DriveClient.tsx ─ composes the real editor regions:
+   EditorHeader          shared authoring header and viewport settings
+   ActorLibraryRail      controller-backed actor and environment placement
+   EditorOverlayHost     selected-actor details
+   ScenarioTimelineDock  authored actor lanes and world transport
+   CityView              map and authored/live actor rendering
 cameras/PoleCameraGrid.tsx ─ real feed beside a twin render, per pole camera
 pole-cameras.ts ─ resolves rigs + map signal features
 ```
 
-The world itself is not in this directory. It is a `WorldSource`
-(`app/lib/live-world/`), with two implementations behind one interface:
-
-- **local** — a real `WorldSession` from `@simforge/training-env` running in a
-  Web Worker at 20 Hz (`worker/live-world-worker.ts`). No server required.
-- **remote** — attaches to a live twin over WebSocket, decoding the frozen
-  `u32 LE + msgpack(TruthFrame)` wire with `TruthStreamClient`.
-
-Truth frames drive the viewer imperatively through
-`ThreeRendererAdapter.applyActorFrame`; React never re-renders per tick.
-
+`useEditorRuntime` opens a genuine blank `EditorDocument` in memory and binds an
+`EditorController` to the viewer, lane index, and indexed ground sampler. The
+local `AuthoredWorldSource` compiles that document through the normal playback
+compiler and starts its `WorldSession` input in the live-world worker. Truth
+frames drive the viewer imperatively; React does not re-render per simulation
+tick.
 ## Running it
 
 A live world needs a browser manifest and a lane topology. Both can be supplied
@@ -52,35 +44,23 @@ Env equivalents: `NEXT_PUBLIC_DRIVE_MAP_MANIFEST_URL`,
 `NEXT_PUBLIC_DRIVE_TWIN_URL`. Camera feeds are proxied same-origin through
 `SIMFORGE_TWIN_HTTP_ORIGIN`.
 
-Omitting `lanes` produces a world that runs but refuses every road actor. That
-is reported once as a notice rather than left to look like a placement bug.
+Direct bundles must have the same complete sidecar closure as published maps.
+The `manifest` must end in `/3d/manifest.json`; `lanes` overrides the topology
+used by the live world. Missing compiler sidecars or invalid digests are surfaced
+as world-start errors rather than silently falling back to an ad-hoc simulation.
 
 ## Attaching to a live twin
 
-With `?twin=`, three further surfaces come alive, all driven by the twin rather
-than invented locally:
+With `?twin=`, two further surfaces are driven by the twin rather than invented
+locally:
 
-- **Replay** (`replay/ReplayDock.tsx`) — pick a start within the past 24 hours
-  and a speed in the server's real 0.25×–8× range. The clock displayed is the
-  server's (`twin_clock`), never a locally ticked estimate that would drift. The
-  dock returns `null` for a world that cannot replay, so mounting it against a
-  local world costs nothing. Server refusals are shown verbatim — replay is
-  legitimately refused while a drive session is active, and that must never be
-  presented as if it started.
 - **Site lighting** (`environment/`) — solar elevation and azimuth computed from
   the map's own geography (`CoordinateFrame` → WGS84, no configured coordinates)
   and the authoritative clock, applied through the shipped
-  `applyEditorSceneEnvironment`. Because it follows the twin's clock, a replayed
-  night renders as night. The sun is continuous, not quantised to the
-  `timeOfDay` presets; only the ambient appearance model remains preset-derived.
+  `applyEditorSceneEnvironment`.
 - **Camera feeds** (`@/app/lib/live-world/camera-feeds`) — one WebSocket carries
-  every channel, tagged per channel with its honest feed state. This exists
-  because a long-lived `multipart/x-mixed-replace` response per channel consumed
-  one of the browser's six connections per host, and four of them starved
-  map-tile streaming; only the focused channel could stream. Construct it in an
-  effect with cleanup: the class connects in its constructor, so React
-  StrictMode's double-invoke creates two instances and the cleanup must close the
-  first.
+  every channel, tagged per channel with its honest feed state. Construct it in
+  an effect with cleanup because the class connects in its constructor.
 
 ## Aiming a pole camera
 
@@ -97,33 +77,18 @@ Adjustments live in `localStorage` per (pole, camera) and never mutate the
 loaded rig. **Copy rig JSON** emits the complete payload to paste into product
 configuration, which is the only durable home for calibration.
 
-## Why not the editor
-
-The editor's authoring regions are bound to `EditorDocument`, a view over the
-authored `ScenarioTemplateV2`, which has no tick, time, observation, velocity or
-live-signal concept and carries undo/autosave. A truth stream is an observation,
-not an edit. Mirroring frames into that document would file observations as
-authoring changes and engage undo.
-
-So Drive reuses the shell, the shared viewer, the tokens and the chrome, and
-**must not** import `useEditorRuntime`, `EditorDocument`, `EditorController`,
-`ActorLibraryRail`, the inspector or `ScenarioTimelineDock`.
-
 ## Drive is camera and input ownership
 
-Entering drive does not change what the world is doing. It attaches the camera
-to an ego via `followCameraPose` and routes keys to `control` at 20 Hz; exiting
-releases the camera and stops transmitting. The world never stops, and actors
-can still be placed while driving. This mirrors how playback's
-`inspecting`/`presenting` states take actor and camera ownership from authoring.
+Selecting **Enter drive** designates the selected authored vehicle (or the first
+authored vehicle) as ego, starts the document's compiled transport, attaches the
+camera through `followCameraPose`, and routes keys to `control` at 20 Hz. Exiting
+releases the camera, clears ego ownership, and stops transmitting controls while
+the authored scenario keeps playing. Authoring chrome is hidden and the timeline
+is read-only only while that ownership is active.
 
-Two invariants that have each caused a real bug:
-
-- The keyboard effect depends only on stable identities (`source`, `actorId`).
-  Depend on an object rebuilt per frame and the listener is torn down between
-  keydown and keyup; the lost keyup leaves the zero-order-held throttle on.
-- Convert speed to km/h exactly once. Truth-frame velocity is m/s; a twin's
-  `telemetry.speed` is already km/h.
+The keyboard effect depends only on stable identities (`source`, `actorId`).
+Depending on an object rebuilt per frame can tear down the listener between
+keydown and keyup and leave the zero-order-held throttle active.
 
 ## Cameras on poles
 
