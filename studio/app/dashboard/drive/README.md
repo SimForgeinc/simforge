@@ -55,6 +55,48 @@ Env equivalents: `NEXT_PUBLIC_DRIVE_MAP_MANIFEST_URL`,
 Omitting `lanes` produces a world that runs but refuses every road actor. That
 is reported once as a notice rather than left to look like a placement bug.
 
+## Attaching to a live twin
+
+With `?twin=`, three further surfaces come alive, all driven by the twin rather
+than invented locally:
+
+- **Replay** (`replay/ReplayDock.tsx`) — pick a start within the past 24 hours
+  and a speed in the server's real 0.25×–8× range. The clock displayed is the
+  server's (`twin_clock`), never a locally ticked estimate that would drift. The
+  dock returns `null` for a world that cannot replay, so mounting it against a
+  local world costs nothing. Server refusals are shown verbatim — replay is
+  legitimately refused while a drive session is active, and that must never be
+  presented as if it started.
+- **Site lighting** (`environment/`) — solar elevation and azimuth computed from
+  the map's own geography (`CoordinateFrame` → WGS84, no configured coordinates)
+  and the authoritative clock, applied through the shipped
+  `applyEditorSceneEnvironment`. Because it follows the twin's clock, a replayed
+  night renders as night. The sun is continuous, not quantised to the
+  `timeOfDay` presets; only the ambient appearance model remains preset-derived.
+- **Camera feeds** (`@/app/lib/live-world/camera-feeds`) — one WebSocket carries
+  every channel, tagged per channel with its honest feed state. This exists
+  because a long-lived `multipart/x-mixed-replace` response per channel consumed
+  one of the browser's six connections per host, and four of them starved
+  map-tile streaming; only the focused channel could stream. Construct it in an
+  effect with cleanup: the class connects in its constructor, so React
+  StrictMode's double-invoke creates two instances and the cleanup must close the
+  first.
+
+## Aiming a pole camera
+
+A rig's numbers rarely match a real installation on the first try, so the
+Cameras view can aim each channel by hand: compass heading, mount pitch, mount
+height and the four extrinsic corrections, each editable as an exact number
+because the target is a physical camera. The resolved scene yaw, vertical FOV
+and final position are shown alongside, since the point is to debug an aim
+rather than nudge a slider. A REAL-over-TWIN opacity overlay is the sharpest
+tool here — coincident road edges and poles expose angular error that two
+separate panes hide.
+
+Adjustments live in `localStorage` per (pole, camera) and never mutate the
+loaded rig. **Copy rig JSON** emits the complete payload to paste into product
+configuration, which is the only durable home for calibration.
+
 ## Why not the editor
 
 The editor's authoring regions are bound to `EditorDocument`, a view over the
