@@ -71,35 +71,6 @@ export function authoredRoleIdForActor(
   return actor.tags.find((tag) => tag.startsWith('role:'))?.slice('role:'.length) ?? null;
 }
 
-export function prepareAuthoredEgoInput(
-  input: SimScenarioInput,
-  actorId: string,
-): SimScenarioInput {
-  assertControllableActor(input, actorId);
-  return {
-    ...input,
-    actors: input.actors.map((actor) => {
-      if (actor.id !== actorId) return actor;
-      const route = actor.initial.laneRef
-        ? {
-            kind: 'follow' as const,
-            startRsl: actor.initial.laneRef.rsl,
-            turns: [],
-            maxLengthM: 2000,
-          }
-        : actor.behavior.route;
-      return {
-        ...actor,
-        initial: { ...actor.initial, speedMps: 0 },
-        behavior: {
-          ...actor.behavior,
-          route,
-          cruiseSpeedMps: 0,
-        },
-      };
-    }),
-  };
-}
 function routeRunwayScore(actor: SimScenarioInput['actors'][number]): number {
   const route = actor.behavior.route;
   if (route.kind === 'follow') return route.maxLengthM;

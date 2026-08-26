@@ -16,11 +16,11 @@ import type {
 } from '../app/lib/live-world/worker-protocol';
 import {
   applyEgoControl,
+  assertControllableActor,
   authoredPlaybackBudget,
   authoredClipCompleted,
   authoredPlaybackRequiresReset,
   createAuthoredWorldSession,
-  prepareAuthoredEgoInput,
 } from '../app/lib/live-world/authored-world-session';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -31,7 +31,6 @@ let timer: ReturnType<typeof setInterval> | null = null;
 let commandSequence = 0;
 let closed = false;
 let authoredInput: SimScenarioInput | null = null;
-let authoredBaseInput: SimScenarioInput | null = null;
 let authoredGraph: LaneGraph | null = null;
 let egoActorId: string | null = null;
 let playing = true;
@@ -67,16 +66,12 @@ scope.onmessage = (event: MessageEvent<LiveWorldWorkerRequest>): void => {
 
   if (message.type === 'set-ego') {
     try {
-      if (message.actorId === null) {
-        egoActorId = null;
-        return;
-      }
-      if (!authoredBaseInput) throw new Error('ego designation is only available for authored worlds');
-      authoredInput = prepareAuthoredEgoInput(authoredBaseInput, message.actorId);
+      if (!authoredInput) throw new Error('ego designation is only available for authored worlds');
+      if (message.actorId !== null) assertControllableActor(authoredInput, message.actorId);
       egoActorId = message.actorId;
       playing = false;
       inspecting = false;
-      rebuildAuthoredWorld();
+      resetAuthoredClock();
       postTransport();
     } catch (error) {
       fail(error);
@@ -218,8 +213,7 @@ async function initializeAuthored(
   if (!Number.isFinite(message.tickHz) || message.tickHz <= 0) {
     throw new Error(`tickHz must be positive, got ${String(message.tickHz)}`);
   }
-  authoredBaseInput = parseSimScenarioInput(message.input);
-  authoredInput = authoredBaseInput;
+  authoredInput = parseSimScenarioInput(message.input);
   authoredGraph = buildLaneGraph(await fetchTopology(message.laneGraphUrl));
   authoredTickHz = message.tickHz;
   playing = false;

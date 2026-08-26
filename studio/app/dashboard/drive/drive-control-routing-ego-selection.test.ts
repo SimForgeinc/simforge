@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import {
   applyEgoControl,
   createAuthoredWorldSession,
-  prepareAuthoredEgoInput,
   selectAuthoredEgoActor,
 } from "../../lib/live-world/authored-world-session";
 
@@ -49,53 +48,22 @@ describe("Drive control routing and ego selection", () => {
     expect(selectAuthoredEgoActor(input)).toBe("long");
   });
 
-  it("gives only the ego a stopped, extended driver-owned route while preserving every other actor", () => {
-    const input = parseSimScenarioInput({
-      mapId: "drive-takeover",
-      clipSeconds: 20,
-      warmupSeconds: 0,
-      dt: 0.02,
-      physics: { mode: "dynamic-v1" },
-      actors: [
-        {
-          id: "ego",
-          kind: "car",
-          initial: {
-            laneRef: { rsl: "10:0:-1", s: 25, tFrac: 0 },
-            pose: { x: 25, z: 0, headingRad: 0 },
-            speedMps: 13.4112,
-          },
-          behavior: {
-            route: { kind: "lanePath", lanes: ["10:0:-1"] },
-            cruiseSpeedMps: 13.4112,
-            rules: {
-              obeySignals: true,
-              yield: true,
-              yieldToVehicles: true,
-              yieldToPedestrians: true,
-              collisionAvoidance: true,
-              aggression: 0.5,
-              speedFactor: 1,
-            },
-          },
-        },
-        vehicle("other", 300, 50),
-      ],
-    });
+  it("drives the authored actor in place without rewriting the compiled document", () => {
+    const input = worldInput();
+    const authoredActors = structuredClone(input.actors);
+    const world = createAuthoredWorldSession(input, graph);
+    const actorIdsBefore = world.snapshot().actors.map((actor) => actor.id);
 
-    const takeover = prepareAuthoredEgoInput(input, "ego");
-    const ego = takeover.actors.find((actor) => actor.id === "ego")!;
-    expect(ego.initial.speedMps).toBe(0);
-    expect(ego.behavior.cruiseSpeedMps).toBe(0);
-    expect(ego.behavior.route).toEqual({
-      kind: "follow",
-      startRsl: "10:0:-1",
-      turns: [],
-      maxLengthM: 2000,
-    });
-    expect(ego.behavior.rules.obeySignals).toBe(true);
-    expect(takeover.actors.find((actor) => actor.id === "other"))
-      .toEqual(input.actors.find((actor) => actor.id === "other"));
+    expect(applyEgoControl(world, "compiled-short", {
+      actorId: "compiled-short",
+      steer: 0,
+      throttle: 1,
+      brake: 0,
+    }, 0)).toEqual({ ok: true });
+    world.advance(1);
+
+    expect(world.snapshot().actors.map((actor) => actor.id)).toEqual(actorIdsBefore);
+    expect(input.actors).toEqual(authoredActors);
   });
 
   it("rejects a mismatched control target and moves the designated ego under held throttle", () => {

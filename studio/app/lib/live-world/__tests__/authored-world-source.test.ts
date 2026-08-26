@@ -144,17 +144,30 @@ describe('authored world source', () => {
     vi.useRealTimers();
   });
 
-  it('designates an authored ego and routes every control packet to it', async () => {
+  it('repeatedly designates and releases the same authored ego without stale routing state', async () => {
     const { source, document, worker } = await createFixtureSource();
-    source.setEgo('ego');
-    source.control({ actorId: 'other', steer: 0.2, throttle: 0.7, brake: 0 });
+    for (let cycle = 0; cycle < 3; cycle += 1) {
+      source.setEgo('ego');
+      source.control({ actorId: 'other', steer: 0.2, throttle: 0.7, brake: 0 });
+      expect(source.egoActorId).toBe('ego');
+      source.setEgo(null);
+      expect(source.egoActorId).toBeNull();
+    }
 
-    expect(source.egoActorId).toBe('ego');
-    expect(worker.sent).toContainEqual({ type: 'set-ego', actorId: 'ego' });
-    expect(worker.sent).toContainEqual({
-      type: 'control',
-      input: { actorId: 'ego', steer: 0.2, throttle: 0.7, brake: 0 },
-    });
+    expect(worker.sent.filter((message) => message.type === 'set-ego')).toEqual([
+      { type: 'set-ego', actorId: 'ego' },
+      { type: 'set-ego', actorId: null },
+      { type: 'set-ego', actorId: 'ego' },
+      { type: 'set-ego', actorId: null },
+      { type: 'set-ego', actorId: 'ego' },
+      { type: 'set-ego', actorId: null },
+    ]);
+    expect(worker.sent.filter((message) => message.type === 'control')).toEqual(
+      Array.from({ length: 3 }, () => ({
+        type: 'control',
+        input: { actorId: 'ego', steer: 0.2, throttle: 0.7, brake: 0 },
+      })),
+    );
     source.close();
     document.dispose();
   });
