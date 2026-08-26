@@ -35,6 +35,7 @@ import { AUTHORING_QUALITY, defaultAuthoringQuality } from "@/app/dashboard/scen
 import { ScenarioEditorShell } from "@/app/dashboard/scenario/editor/shell";
 import { createLocalWorldSource } from "@/app/lib/live-world/local-world-source";
 import { createRemoteWorldSource } from "@/app/lib/live-world/remote-world-source";
+import { createMultiplexedCameraFeeds, type CameraFeeds } from "@/app/lib/live-world/camera-feeds";
 import { createTruthViewerBridge, type TruthViewerBridge } from "@/app/lib/live-world/truth-viewer-bridge";
 import type { WorldSource, WorldSourceStatus } from "@/app/lib/live-world/types";
 import { useWorldSource } from "@/app/lib/live-world/use-world-source";
@@ -92,6 +93,7 @@ export function DriveClient() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [quality, setQuality] = useState<ScenarioAuthoringQuality>("high");
   const [view, setView] = useState<DriveView>("world");
+  const [cameraFeeds, setCameraFeeds] = useState<CameraFeeds | null>(null);
   // `?twin=ws://host:8765`, or `?twin=1` to use this page's host on the default
   // twin port. Null means Drive runs its own world in-browser.
   const [clock, setClock] = useState<{ mode: "live" | "replay"; timeIso: string | null; speed: number } | null>(null);
@@ -202,6 +204,23 @@ export function DriveClient() {
     }
     return source.subscribeClock(setClock);
   }, [source]);
+
+  // One socket carries every channel. Without it each camera would hold a
+  // long-lived multipart response, and four of those exhaust most of the
+  // browser's six connections per host and starve map-tile streaming — so the
+  // grid can only stream one channel at a time.
+  useEffect(() => {
+    if (!remoteWorld) {
+      setCameraFeeds(null);
+      return;
+    }
+    const feeds = createMultiplexedCameraFeeds({ url: `${remoteWorld}/camera-feeds` });
+    setCameraFeeds(feeds);
+    return () => {
+      setCameraFeeds(null);
+      feeds.close();
+    };
+  }, [remoteWorld]);
 
   const siteTime = useSiteTimeOfDay({
     viewer,
@@ -498,6 +517,7 @@ export function DriveClient() {
               <PoleCameraGrid
                 rigs={poleCameras.rigs}
                 features={poleCameras.features}
+                feeds={cameraFeeds}
                 viewerFactory={createCameraViewer}
               />
             </div>
