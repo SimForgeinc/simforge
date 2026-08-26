@@ -61,6 +61,14 @@ type DriveMap = {
 
 type FollowMode = "chase" | "dash";
 
+/**
+ * Mid-afternoon at the Richmond site (20:00 UTC ≈ 13:00 PDT), used as Drive's
+ * default lighting so the map is plainly visible. A fixed instant rather than
+ * "now" keeps the scene identical between sessions and machines, which matters
+ * when comparing a twin render against a real camera.
+ */
+const DAYLIGHT_INSTANT = new Date("2026-06-21T20:00:00Z");
+
 type PlaceableActorKind = {
   actorClass: CatalogActorClass;
   blueprint: string;
@@ -222,10 +230,19 @@ export function DriveClient() {
     };
   }, [remoteWorld]);
 
+  // Daylight by default. Real site time is correct but Richmond at night renders
+  // almost black, which is indistinguishable from a map that failed to load —
+  // and the editor this surface mirrors lights scenes from the authored
+  // environment, not the wall clock. `?lighting=site` opts into real solar time.
+  const followSiteTime = useMemo(
+    () => typeof window !== "undefined"
+      && new URLSearchParams(window.location.search).get("lighting") === "site",
+    [],
+  );
   const siteTime = useSiteTimeOfDay({
     viewer,
     manifestUrl: map?.browserManifestUrl ?? null,
-    at: clock?.timeIso ? new Date(clock.timeIso) : null,
+    at: followSiteTime ? (clock?.timeIso ? new Date(clock.timeIso) : null) : DAYLIGHT_INSTANT,
     quality,
   });
 
