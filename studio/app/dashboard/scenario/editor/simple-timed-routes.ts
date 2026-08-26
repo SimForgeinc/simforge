@@ -6,20 +6,25 @@ export type EditorExperience = "simple" | "advanced";
 
 export const EDITOR_EXPERIENCE_STORAGE_KEY = "simcloud.uniscenario.editor-experience.v1";
 
-const MOTION_VERBS = new Set<Interaction["verb"]>([
-  "speed",
-  "gap",
-  "changeLane",
-  "laneOffset",
-  "route",
-]);
+const MOTION_VERBS: Partial<Record<Interaction["verb"], true>> = {
+  speed: true,
+  gap: true,
+  changeLane: true,
+  laneOffset: true,
+  route: true,
+};
 
-export function readEditorExperience(storage: Pick<Storage, "getItem">): EditorExperience | null {
+function isMotionVerb(verb: Interaction["verb"]): boolean {
+  return MOTION_VERBS[verb] === true;
+}
+
+export function readEditorExperience(storage: Pick<Storage, "getItem">): EditorExperience {
   try {
-    const value = storage.getItem(EDITOR_EXPERIENCE_STORAGE_KEY);
-    return value === "simple" || value === "advanced" ? value : null;
+    return storage.getItem(EDITOR_EXPERIENCE_STORAGE_KEY) === "advanced"
+      ? "advanced"
+      : "simple";
   } catch {
-    return null;
+    return "simple";
   }
 }
 
@@ -40,7 +45,9 @@ export function isCustomTimedRoute(
   verb: "route";
   target: { mode: "customTimedRoute"; points: readonly TimedRoutePoint[] };
 } {
-  return interaction.verb === "route" && interaction.target.mode === "customTimedRoute";
+  return interaction.verb === "route"
+    && interaction.target.mode === "customTimedRoute"
+    && Array.isArray(interaction.target.points);
 }
 
 export type TimedRoutePoint = { timeS: number; x: number; z: number };
@@ -66,7 +73,7 @@ export function isClipLockedSimpleRoute(
     && interaction.until?.kind === "at"
     && typeof interaction.until.t === "number"
     && Math.abs(interaction.until.t - clipSeconds) <= SIMPLE_ROUTE_TIME_EPSILON
-    && points.length >= 2;
+    && points.length >= 1;
 }
 
 function legacyExpandedPoints(
@@ -101,7 +108,7 @@ function sampleTraceActor(
 ): { x: number; z: number } | null {
   const track = trace?.ticks.actors[actorId];
   const times = trace?.ticks.t;
-  if (!track || !times?.length) return null;
+  if (!track || !times?.length || track.x.length < times.length || track.z.length < times.length) return null;
   let right = times.findIndex((time) => time >= timeS - 1e-9);
   if (right < 0) right = times.length - 1;
   const left = Math.max(0, right - 1);
@@ -128,7 +135,7 @@ export function needsSimpleRouteConversion(document: EditorDocument): boolean {
   );
   for (const actorId of movableActorIds) {
     const motion = document.data.choreography.interactions.filter(
-      (interaction) => interaction.actor === actorId && MOTION_VERBS.has(interaction.verb),
+      (interaction) => interaction.actor === actorId && isMotionVerb(interaction.verb),
     );
     if (motion.length !== 1
       || !isClipLockedSimpleRoute(motion[0]!, clipSeconds)
@@ -139,8 +146,79 @@ export function needsSimpleRouteConversion(document: EditorDocument): boolean {
 
 export function hasAdvancedMotion(document: EditorDocument): boolean {
   return document.data.choreography.interactions.some(
-    (interaction) => MOTION_VERBS.has(interaction.verb) && !isCustomTimedRoute(interaction),
+    (interaction) => isMotionVerb(interaction.verb) && !isCustomTimedRoute(interaction),
   );
+}
+
+/**
+ * A custom timed route owns the actor's complete motion timeline. Normalizing
+ * at the mutation boundary prevents the placement compiler's lane-following
+ * route from continuing alongside the authored route.
+ */
+export function setExclusiveCustomTimedRoute(
+  document: EditorDocument,
+  interaction: Interaction,
+): boolean {
+  if (!isCustomTimedRoute(interaction)) return false;
+  const normalized: Interaction = {
+    ...interaction,
+    trigger: { kind: "at", t: 0 },
+    until: { kind: "at", t: document.data.choreography.clipSeconds },
+  };
+  const existing = document.data.choreography.interactions.find(
+    (candidate) => candidate.id === interaction.id,
+  );
+  for (const candidate of document.data.choreography.interactions) {
+    if (
+      candidate.id !== interaction.id
+      && candidate.actor === interaction.actor
+      && isMotionVerb(candidate.verb)
+    ) {
+      document.removeInteraction(candidate.id);
+    }
+  }
+  if (existing) document.replaceInteraction(interaction.id, normalized);
+  else document.addInteraction(normalized);
+  return true;
+}
+
+/**
+ * Replace one newly placed movable actor's compiler-provided motion with the
+ * stationary two-point placeholder used by Simple mode.
+ */
+export function armActorSimpleTimedRoute(
+  document: EditorDocument,
+  actorId: string,
+): boolean {
+  const role = document.data.roles.find((candidate) => candidate.id === actorId);
+  if (!role || role.actor.static) return false;
+  const authored = document.actor(role.id);
+  const pose = authored
+    ?? (role.kind === "scene_absolute" ? { x: role.pose.position.x, z: role.pose.position.z } : null);
+  if (!pose) return false;
+  const point = {
+    x: Number(pose.x.toFixed(3)),
+    z: Number(pose.z.toFixed(3)),
+  };
+  const second = Math.max(
+    0.1,
+    Math.min(1, Number(document.data.choreography.clipSeconds.toFixed(3))),
+  );
+  return setExclusiveCustomTimedRoute(document, {
+    id: routeId(role.id),
+    actor: role.id,
+    label: "Simple timed route",
+    trigger: { kind: "at", t: 0 },
+    until: { kind: "at", t: document.data.choreography.clipSeconds },
+    verb: "route",
+    target: {
+      mode: "customTimedRoute",
+      points: [
+        { timeS: 0, ...point },
+        { timeS: second, ...point },
+      ],
+    },
+  });
 }
 
 /**
@@ -158,16 +236,14 @@ export function convertDocumentToSimpleTimedRoutes(
   for (const role of document.data.roles) {
     if (role.actor.static) continue;
     const existingMotion = document.data.choreography.interactions.filter(
-      (interaction) => interaction.actor === role.id && MOTION_VERBS.has(interaction.verb),
+      (interaction) => interaction.actor === role.id && isMotionVerb(interaction.verb),
     );
     if (existingMotion.length === 1 && isCustomTimedRoute(existingMotion[0]!)) {
       const existingRoute = existingMotion[0];
       const repairedPoints = legacyExpandedPoints(existingRoute, clipSeconds);
       if (isClipLockedSimpleRoute(existingRoute, clipSeconds) && !repairedPoints) continue;
-      document.replaceInteraction(existingRoute.id, {
+      setExclusiveCustomTimedRoute(document, {
         ...existingRoute,
-        trigger: { kind: "at", t: 0 },
-        until: { kind: "at", t: clipSeconds },
         ...(repairedPoints ? { target: { ...existingRoute.target, points: repairedPoints } } : {}),
       });
       continue;
@@ -192,7 +268,7 @@ export function convertDocumentToSimpleTimedRoutes(
       timeS,
       ...(sampleTraceActor(trace, role.id, timeS) ?? fallback),
     }));
-    document.addInteraction({
+    setExclusiveCustomTimedRoute(document, {
       id: routeId(role.id),
       actor: role.id,
       label: "Simple timed route",

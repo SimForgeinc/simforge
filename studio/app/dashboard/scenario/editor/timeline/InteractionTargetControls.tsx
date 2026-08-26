@@ -10,6 +10,7 @@ import {
   type Interaction,
   type SetValue,
 } from "@simforge/scenario";
+import { setExclusiveCustomTimedRoute } from "../simple-timed-routes";
 
 type SpeedInteraction = Extract<Interaction, { verb: "speed" }>;
 type ChangeLaneInteraction = Extract<Interaction, { verb: "changeLane" }>;
@@ -57,7 +58,9 @@ export function InteractionTargetControls({
 }) {
   const commit = (target: unknown) => {
     const parsed = InteractionSchema.safeParse({ ...interaction, target });
-    if (parsed.success) document.replaceInteraction(interaction.id, parsed.data);
+    if (!parsed.success) return;
+    if (setExclusiveCustomTimedRoute(document, parsed.data)) return;
+    document.replaceInteraction(interaction.id, parsed.data);
   };
   const roleOptions = document.data.roles.map((role) => ({
     value: role.id,

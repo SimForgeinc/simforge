@@ -3,9 +3,12 @@ import type { EditorState } from "@simforge/editor";
 import type { ViewportTool } from "./regions/actor-catalog";
 import type { EditorExperience } from "./simple-timed-routes";
 
-export type PlacementSnapshot = Pick<EditorState, "mode"> & { actorCount: number };
+export type PlacementSnapshot = Pick<EditorState, "mode" | "placementSticky"> & {
+  actorCount: number;
+  actorIds: readonly string[];
+};
 
-/** Every catalog is a single-shot workflow: successful placement closes it. */
+/** Plain placement closes the catalog; Shift-placement keeps the run open. */
 export function shouldFinishActorPlacement(input: {
   experience: EditorExperience | null;
   activeTool: ViewportTool | null;
@@ -16,5 +19,6 @@ export function shouldFinishActorPlacement(input: {
     && input.activeTool !== null
     && input.current !== null
     && input.previous !== null
-    && input.current.actorCount > input.previous.actorCount;
+    && input.current.actorCount > input.previous.actorCount
+    && !input.current.placementSticky;
 }
