@@ -1,4 +1,5 @@
 import argparse
+from array import array
 import hashlib
 import json
 import math
@@ -16,6 +17,7 @@ def parse_args():
     parser.add_argument('--source', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--cell-size', type=float, default=100.0)
+    parser.add_argument('--material-bindings', required=True)
     return parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
 
 
@@ -75,6 +77,180 @@ def normalize_source_images(output):
                 node.image = replacements[node.image]
     return converted_dir
 
+def normalized_material_name(value):
+    return re.sub(r'\\.\\d{3}$', '', value).split(':')[-1].strip().lower()
+
+
+def converted_texture(binding, output, cache):
+    source = binding['file']
+    key = (source, binding['role'])
+    if key in cache:
+        return cache[key]
+    image = bpy.data.images.load(source, check_existing=True)
+    image.colorspace_settings.name = 'sRGB' if binding['colorSpace'] == 'srgb' else 'Non-Color'
+    needs_normal_flip = binding['role'] == 'normal' and binding.get('normalConvention') == 'directx'
+    needs_format_conversion = os.path.splitext(source)[1].lower() in ('.exr', '.tga')
+    if not needs_normal_flip and not needs_format_conversion:
+        cache[key] = image
+        return image
+    with open(source, 'rb') as handle:
+        digest = hashlib.sha256(handle.read() + binding['role'].encode('ascii')).hexdigest()
+    converted_dir = os.path.join(output, '.converted-textures')
+    os.makedirs(converted_dir, exist_ok=True)
+    target = os.path.join(converted_dir, f'{digest}.png')
+    if needs_normal_flip:
+        pixels = array('f', [0.0]) * (image.size[0] * image.size[1] * 4)
+        image.pixels.foreach_get(pixels)
+        for index in range(1, len(pixels), 4):
+            pixels[index] = 1.0 - pixels[index]
+        converted = bpy.data.images.new(f'{image.name}_OpenGL', width=image.size[0], height=image.size[1], alpha=True)
+        converted.colorspace_settings.name = 'Non-Color'
+        converted.pixels.foreach_set(pixels)
+        converted.filepath_raw = target
+        converted.file_format = 'PNG'
+        converted.save()
+    else:
+        image.filepath_raw = target
+        image.file_format = 'PNG'
+        image.save()
+        converted = bpy.data.images.load(target, check_existing=True)
+        converted.colorspace_settings.name = 'sRGB' if binding['colorSpace'] == 'srgb' else 'Non-Color'
+    cache[key] = converted
+    return converted
+
+
+def first_texture(bindings, *roles):
+    for role in roles:
+        for binding in bindings:
+            if binding['role'] == role:
+                return binding
+    return None
+
+
+def material_input(bsdf, *names):
+    for name in names:
+        value = bsdf.inputs.get(name)
+        if value is not None:
+            return value
+    return None
+
+
+def apply_binding(material, binding, output, image_cache):
+    material.use_nodes = True
+    material.surface_render_method = 'BLENDED' if binding['alphaMode'] == 'BLEND' else 'DITHERED'
+    material.use_transparency_overlap = binding['alphaMode'] != 'OPAQUE'
+    material.diffuse_color[3] = 1.0
+    material.use_backface_culling = not binding['doubleSided']
+    material['simforge_alpha_mode'] = binding['alphaMode']
+    if 'alphaCutoff' in binding:
+        material['simforge_alpha_cutoff'] = binding['alphaCutoff']
+        material.alpha_threshold = binding['alphaCutoff']
+    if 'anisotropy' in binding:
+        material['simforge_sampler_anisotropy'] = binding['anisotropy']
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output_node = nodes.new('ShaderNodeOutputMaterial')
+    bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+    links.new(bsdf.outputs['BSDF'], output_node.inputs['Surface'])
+
+    def image_node(texture):
+        node = nodes.new('ShaderNodeTexImage')
+        node.image = converted_texture(texture, output, image_cache)
+        node.interpolation = 'Linear'
+        node.extension = 'REPEAT'
+        return node
+
+    base = first_texture(binding['textures'], 'baseColor')
+    if base:
+        node = image_node(base)
+        links.new(node.outputs['Color'], material_input(bsdf, 'Base Color'))
+        if binding['alphaMode'] != 'OPAQUE':
+            links.new(node.outputs['Alpha'], material_input(bsdf, 'Alpha'))
+    normal = first_texture(binding['textures'], 'normal')
+    if normal:
+        node = image_node(normal)
+        normal_node = nodes.new('ShaderNodeNormalMap')
+        links.new(node.outputs['Color'], normal_node.inputs['Color'])
+        links.new(normal_node.outputs['Normal'], material_input(bsdf, 'Normal'))
+    orm = first_texture(binding['textures'], 'orm')
+    if orm:
+        node = image_node(orm)
+        separate = nodes.new('ShaderNodeSeparateColor')
+        links.new(node.outputs['Color'], separate.inputs['Color'])
+        links.new(separate.outputs['Green'], material_input(bsdf, 'Roughness'))
+        links.new(separate.outputs['Blue'], material_input(bsdf, 'Metallic'))
+        group = bpy.data.node_groups.get('glTF Material Output')
+        if group is None:
+            group = bpy.data.node_groups.new('glTF Material Output', 'ShaderNodeTree')
+            group.interface.new_socket(name='Occlusion', in_out='INPUT', socket_type='NodeSocketFloat')
+        occlusion = nodes.new('ShaderNodeGroup')
+        occlusion.node_tree = group
+        links.new(separate.outputs['Red'], occlusion.inputs['Occlusion'])
+    else:
+        roughness = first_texture(binding['textures'], 'roughness')
+        metallic = first_texture(binding['textures'], 'metallic')
+        occlusion_texture = first_texture(binding['textures'], 'occlusion')
+        if roughness:
+            links.new(image_node(roughness).outputs['Color'], material_input(bsdf, 'Roughness'))
+        if metallic:
+            links.new(image_node(metallic).outputs['Color'], material_input(bsdf, 'Metallic'))
+        if occlusion_texture:
+            node = image_node(occlusion_texture)
+            group = bpy.data.node_groups.get('glTF Material Output')
+            if group is None:
+                group = bpy.data.node_groups.new('glTF Material Output', 'ShaderNodeTree')
+                group.interface.new_socket(name='Occlusion', in_out='INPUT', socket_type='NodeSocketFloat')
+            occlusion = nodes.new('ShaderNodeGroup')
+            occlusion.node_tree = group
+            links.new(node.outputs['Color'], occlusion.inputs['Occlusion'])
+    opacity = first_texture(binding['textures'], 'opacity', 'mask')
+    if opacity and binding['alphaMode'] != 'OPAQUE':
+        links.new(image_node(opacity).outputs['Color'], material_input(bsdf, 'Alpha'))
+    emissive = first_texture(binding['textures'], 'emissive')
+    if emissive:
+        links.new(image_node(emissive).outputs['Color'], material_input(bsdf, 'Emission Color', 'Emission'))
+
+def apply_material_bindings(objects, plan, output, report, prototype_id=None):
+    by_name = {}
+    for row in plan['materials']:
+        by_name.setdefault(normalized_material_name(row['name']), []).append(row)
+
+    def resolve(name):
+        normalized = normalized_material_name(name)
+        candidates = by_name.get(normalized, [])
+        if not candidates:
+            candidates = by_name.get(re.sub(r'_\d+$', '', normalized), [])
+        return candidates
+
+    expected = plan.get('prototypeMaterials', {}).get((prototype_id or '').lower(), [])
+    image_cache = {}
+    seen = set()
+    for obj in objects:
+        for slot_index, slot in enumerate(obj.material_slots):
+            if slot.material is None:
+                continue
+            material = slot.material
+            if material.name in seen:
+                continue
+            seen.add(material.name)
+            candidates = resolve(material.name)
+            if not candidates and slot_index < len(expected):
+                candidates = resolve(expected[slot_index])
+            if not candidates:
+                report['unmatchedMaterials'].append({'prototype': prototype_id, 'material': material.name})
+                continue
+            if len(candidates) > 1:
+                report['ambiguousMaterials'].append({
+                    'prototype': prototype_id,
+                    'material': material.name,
+                    'sourcePaths': [candidate['sourcePath'] for candidate in candidates],
+                })
+            binding = candidates[0]
+            apply_binding(material, binding, output, image_cache)
+            report['matchedMaterials'].append({'prototype': prototype_id, 'material': material.name,
+                                               'sourcePath': binding['sourcePath']})
+
 def world_bounds(obj):
     corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
     transformed = [Vector((value.x, value.z, -value.y)) for value in corners]
@@ -121,7 +297,7 @@ def aggregate_bounds(objects):
     }
 
 
-def export_vegetation_prototypes(source, output):
+def export_vegetation_prototypes(source, output, plan, report):
     if not os.path.isdir(source):
         return []
     prototype_dir = os.path.join(source, 'vegetation_prototypes')
@@ -145,6 +321,8 @@ def export_vegetation_prototypes(source, output):
             obj.data.calc_loop_triangles()
         normalize_source_images(output)
         stem = re.sub(r'[^a-zA-Z0-9_.-]+', '-', os.path.splitext(filename)[0]).strip('-')
+        apply_material_bindings(objects, plan, output, report, stem)
+        # The stem is also the vegetation.json mesh_asset_name and the closure prototype id.
         relative_file = f'tiles/prototypes/{stem}.glb'
         export_objects(objects, os.path.join(output, relative_file))
         rows.append({'id': stem, 'file': relative_file, 'bounds': aggregate_bounds(objects),
@@ -159,6 +337,18 @@ def triangle_count(objects):
 
 def main():
     args = parse_args()
+    with open(args.material_bindings, 'r', encoding='utf8') as handle:
+        binding_plan = json.load(handle)
+    report = {
+        'schema': 'simforge.material-binding-report.v1',
+        'matchedMaterials': [],
+        'unmatchedMaterials': [],
+        'ambiguousMaterials': [],
+        'roleCounts': binding_plan['roleCounts'],
+        'ormChannels': binding_plan['ormChannels'],
+        'normalConversion': 'DirectX green-down to glTF/OpenGL green-up (G := 1-G)',
+        'fidelityLimitations': binding_plan['fidelityLimitations'],
+    }
     reset_scene()
     sources = source_files(args.source)
     if not sources:
@@ -173,6 +363,7 @@ def main():
         obj.data.calc_loop_triangles()
 
     converted_dir = normalize_source_images(args.output)
+    apply_material_bindings(objects, binding_plan, args.output, report)
     categories = {key: [] for key in ('road', 'static', 'vegetation')}
     for obj in objects:
         categories[classify(obj)].append(obj)
@@ -207,7 +398,7 @@ def main():
             rows.append({'kind': kind, 'file': f'tiles/{name}', 'gridX': grid_x, 'gridZ': grid_z,
                          'bounds': aggregate_bounds(members), 'triangles': triangle_count(members)})
 
-    prototypes = export_vegetation_prototypes(args.source, args.output)
+    prototypes = export_vegetation_prototypes(args.source, args.output, binding_plan, report)
     inventory = {
         'schema': 'simforge.fbx-tiles.v1',
         'cellSize': args.cell_size,
@@ -218,6 +409,13 @@ def main():
     }
     with open(os.path.join(args.output, 'inventory.json'), 'w', encoding='utf8', newline='\n') as handle:
         json.dump(inventory, handle, sort_keys=True, separators=(',', ':'))
+        handle.write('\n')
+    report['unmatchedMaterials'] = sorted(
+        report['unmatchedMaterials'], key=lambda row: ((row['prototype'] or ''), row['material']))
+    report['ambiguousMaterials'] = sorted(
+        report['ambiguousMaterials'], key=lambda row: ((row['prototype'] or ''), row['material']))
+    with open(os.path.join(args.output, 'material-binding-report.json'), 'w', encoding='utf8', newline='\n') as handle:
+        json.dump(report, handle, sort_keys=True, separators=(',', ':'))
         handle.write('\n')
     shutil.rmtree(converted_dir, ignore_errors=True)
 

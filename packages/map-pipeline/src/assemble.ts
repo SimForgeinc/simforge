@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -14,7 +15,7 @@ import type { MapTopologyIndex } from './ported/map-topology/types.js';
 import { buildClosure, canonicalJson, closureDigest, filesUnder, hashTree, sha256, writeClosure } from './closure.js';
 import type { MapClosure } from './closure.js';
 import type { StageResult } from './tiling.js';
-export const CLOSURE_ASSEMBLER_REVISION = 4;
+export const CLOSURE_ASSEMBLER_REVISION = 5;
 export const DEFAULT_SKY_PATH = path.join(os.homedir(), 'simforge-assets', 'hdri', 'clear-day-sky.hdr');
 
 type Bounds = { min: [number, number, number]; max: [number, number, number] };
@@ -308,6 +309,10 @@ export async function assembleClosure(options: AssembleClosureOptions): Promise<
   await cp(path.join(options.tiles.outputDir, 'tiles'), path.join(contentDir, '3d', 'tiles'), { recursive: true });
   const inventory = JSON.parse(await readFile(path.join(options.tiles.outputDir, 'inventory.json'), 'utf8')) as Inventory;
   const instanceTiles = await buildSourceMetadata(options.sourceDir, contentDir, inventory);
+  await cp(
+    path.join(options.tiles.outputDir, 'material-binding-report.json'),
+    path.join(contentDir, 'metadata', 'material-binding-report.json'),
+  );
   const manifest = sceneManifest(inventory, instanceTiles) as { staticLayers: Array<{ file: string; fileSize?: number }> };
   for (const row of inventory.objects) {
     const member = manifest.staticLayers.find((layer) => layer.file === row.file);

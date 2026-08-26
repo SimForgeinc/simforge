@@ -16,7 +16,7 @@ import type { StageResult } from './tiling.js';
 
 const BROWSER_OPTIMIZER_REVISION = 1;
 const KTX2_REPACK_REVISION = 1;
-const NATIVE_CORPUS_DECODER_REVISION = 3;
+const NATIVE_CORPUS_DECODER_REVISION = 4;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const SHARP_VERSION = '0.34.5';
 const MESHOPTIMIZER_VERSION = '1.2.0';
@@ -121,13 +121,9 @@ export async function nativeCorpus(source: DerivedStageResult, workDir: string):
       }
       if (mesh.listPrimitives().length === 0) mesh.dispose();
     }
-    for (const texture of document.getRoot().listTextures()) {
-      if (texture.getMimeType() !== 'image/webp') continue;
-      const image = texture.getImage();
-      if (image === null) continue;
-      texture.setImage(await sharp(image).png({ compressionLevel: 9 }).toBuffer());
-      texture.setMimeType('image/png');
-    }
+    // Native corpus keeps KTX2/UASTC images with full mip chains. Bevy
+    // transcodes these on load to the GPU's native BC format instead of
+    // expanding WebP/PNG to mipless RGBA8.
     return Buffer.from(await io.writeBinary(document));
   });
 }

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { NodeIO } from '@gltf-transform/core';
 
 import { assembleClosure, assignGridCell, fbxToTiles, materializeRegistryPayload, runMapPipeline } from '../src/index.js';
 
@@ -58,6 +59,20 @@ describe('FBX tiling and closure assembly', () => {
     const tilesA = await fbxToTiles({ sourceDir, workDir: workA, cellSize: 100 });
     const tilesB = await fbxToTiles({ sourceDir, workDir: workB, cellSize: 100 });
     const closureA = await assembleClosure({ tiles: tilesA, sourceDir, workDir: workA, mapName: 'synthetic-city' });
+    const inventory = JSON.parse(await readFile(path.join(tilesA.outputDir, 'inventory.json'), 'utf8')) as {
+      objects: Array<{ file: string }>;
+    };
+    let materialCount = 0;
+    let texturedMaterialCount = 0;
+    const io = new NodeIO();
+    for (const row of inventory.objects) {
+      const document = await io.read(path.join(tilesA.outputDir, row.file));
+      const materials = document.getRoot().listMaterials();
+      materialCount += materials.length;
+      texturedMaterialCount += materials.filter((material) => material.getBaseColorTexture() !== null).length;
+    }
+    expect(materialCount).toBeGreaterThan(0);
+    expect(texturedMaterialCount / materialCount).toBeGreaterThan(0.8);
     const closureB = await assembleClosure({ tiles: tilesB, sourceDir, workDir: workB, mapName: 'synthetic-city' });
 
     expect(tilesA.outputDigest).toBe(tilesB.outputDigest);

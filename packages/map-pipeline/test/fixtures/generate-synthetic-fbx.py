@@ -1,10 +1,13 @@
 import os
+import json
 import sys
 
 import bpy
 
 
 output = sys.argv[sys.argv.index('--') + 1]
+source_dir = os.path.dirname(output)
+os.makedirs(os.path.join(source_dir, 'textures'), exist_ok=True)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
 
@@ -15,7 +18,9 @@ for y in range(4):
         tone = 0.75 if (x + y) % 2 == 0 else 0.2
         pixels.extend((tone, 0.35, 0.15, 1.0))
 image.pixels = pixels
-image.pack()
+image.filepath_raw = os.path.join(source_dir, 'textures', 'checker_BaseColor.png')
+image.file_format = 'PNG'
+image.save()
 
 material = bpy.data.materials.new('Building_Checker')
 material.use_nodes = True
@@ -43,7 +48,25 @@ road_material = bpy.data.materials.new('Asphalt_Road')
 road_material.diffuse_color = (0.12, 0.12, 0.12, 1)
 ground.data.materials.append(road_material)
 
-os.makedirs(os.path.dirname(output), exist_ok=True)
+materials = []
+for name in ('Building_Checker', 'Asphalt_Road'):
+    ue_path = f'/Game/Synthetic/{name}.{name}'
+    texture_path = '/Game/Synthetic/checker_BaseColor.checker_BaseColor'
+    materials.append({
+        'path': ue_path,
+        'used_textures': [texture_path],
+        'texture_parameters': {'BaseColor': texture_path},
+        'render': {'blend_mode': 'Opaque', 'opacity_mask_clip_value': 0.3333, 'two_sided': False},
+        'tags': ['road'] if name == 'Asphalt_Road' else ['building'],
+    })
+with open(os.path.join(source_dir, 'materials.json'), 'w', encoding='utf8') as handle:
+    json.dump({
+        'textures_dir': 'textures',
+        'exported_textures': {'/Game/Synthetic/checker_BaseColor.checker_BaseColor': 'textures/checker_BaseColor.png'},
+        'materials': materials,
+    }, handle)
+with open(os.path.join(source_dir, 'vegetation.json'), 'w', encoding='utf8') as handle:
+    json.dump({'vegetation_prototypes': []}, handle)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.fbx(
     filepath=output,
