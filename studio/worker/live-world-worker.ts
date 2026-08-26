@@ -217,9 +217,7 @@ function applyTransport(message: Extract<LiveWorldWorkerRequest, { type: 'transp
     if (seconds === undefined || !Number.isFinite(seconds) || seconds < 0 || seconds > authoredInput.clipSeconds) {
       throw new RangeError(`seek time must be within 0..${authoredInput.clipSeconds} seconds`);
     }
-    if (seconds + 1e-9 < world.time()) {
-      throw new Error('Live authored worlds cannot seek backwards; reset rebuilds the world at t=0');
-    }
+    if (seconds + 1e-9 < world.time()) rebuildAuthoredWorld();
     playing = false;
     inspecting = true;
     advanceAuthoredTo(seconds, false);

@@ -175,9 +175,6 @@ class AuthoredWorkerWorldSource implements AuthoredWorldSource {
     if (!Number.isFinite(seconds) || seconds < 0 || seconds > this.transport.duration) {
       throw new RangeError(`seek time must be within 0..${this.transport.duration} seconds`);
     }
-    if (seconds + 1e-9 < this.transport.time) {
-      throw new Error('Live authored worlds cannot seek backwards; reset rebuilds the world at t=0');
-    }
     this.worker.postMessage({ type: 'transport', action: 'seek', seconds } satisfies LiveWorldWorkerRequest);
   }
 

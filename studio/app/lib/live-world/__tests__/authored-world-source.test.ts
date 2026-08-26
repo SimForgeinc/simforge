@@ -152,11 +152,11 @@ describe('authored world source', () => {
     document.dispose();
   });
 
-  it('rejects backwards seek instead of pretending the live world rewound', async () => {
+  it('supports backwards timeline inspection without pretending the live session rewound in place', async () => {
     const { source, document } = await createFixtureSource();
     source.transport.seek(8);
-    expect(() => source.transport.seek(3)).toThrow('cannot seek backwards');
-    expect(source.transport.time).toBe(8);
+    source.transport.seek(3);
+    expect(source.transport).toMatchObject({ playing: false, inspecting: true, time: 3 });
     source.close();
     document.dispose();
   });
