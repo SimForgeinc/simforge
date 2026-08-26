@@ -334,15 +334,25 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   ]);
 
   const exitDrive = useCallback(() => {
-    bridge?.setFollow(null);
-    if (source && egoActorId) {
-      source.control({ actorId: egoActorId, steer: 0, throttle: 0, brake: 0 });
+    // Clearing UI state happens in `finally` because any of these calls can
+    // throw -- the authored source rejects control once the ego is released or
+    // the clip has completed. A throw here previously aborted the rest of the
+    // teardown, leaving `driving` true, the button stuck on "Exit drive" and
+    // re-entry blocked until a reload.
+    try {
+      bridge?.setFollow(null);
+      if (source && egoActorId) {
+        source.control({ actorId: egoActorId, steer: 0, throttle: 0, brake: 0 });
+      }
+      authoredSource?.setEgo(null);
+    } catch (error) {
+      toast.warning("Drive released with a warning", { description: errorMessage(error) });
+    } finally {
+      setDriving(false);
+      setEgoActorId(null);
+      setEgoActorLabel(null);
+      setCameraNotice(null);
     }
-    authoredSource?.setEgo(null);
-    setDriving(false);
-    setEgoActorId(null);
-    setEgoActorLabel(null);
-    setCameraNotice(null);
   }, [authoredSource, bridge, egoActorId, source]);
   const switchView = useCallback((next: DriveView) => {
     if (next === "cameras" && driving) exitDrive();
