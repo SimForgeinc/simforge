@@ -119,6 +119,10 @@ KIA_CARNIVAL_CLASS_PATH = (
 KIA_CARNIVAL_MAKE = "Kia"
 KIA_CARNIVAL_MODEL = "Carnival"
 KIA_CARNIVAL_BASE_TYPE = "van"
+RUNTIME_BLUEPRINT_ALIASES: Mapping[str, str] = {
+    # CARLA 0.10's compatibility cook exposes the stock sedan under its UE4 id.
+    "vehicle.lincoln.mkz": "vehicle.ue4.chevrolet.impala",
+}
 # Mirrors PRONTO_CHASE_CAMERA_SENSOR_ID in @simforge-oss/scenario.
 PRONTO_CHASE_CAMERA_SENSOR_ID = "chase-cam-trailing"
 
@@ -238,12 +242,41 @@ RICHMOND_COOKED_SIGNAL_ID_MAP: Mapping[str, str] = {
     "373": "431",
     "374": "432",
 }
+EL_CAMINO_COOKED_SIGNAL_ID_MAP: Mapping[str, str] = {
+    "2230": "2233",
+    "2231": "2234",
+    "2232": "2235",
+    "2233": "2236",
+    "2234": "2237",
+    "2235": "2238",
+    "2236": "2239",
+    "2240": "2243",
+    "2241": "2244",
+    "2242": "2245",
+    "2245": "2248",
+    "2246": "2249",
+    "2247": "2251",
+    "2251": "2258",
+    "2252": "2259",
+    "2254": "2261",
+    "2262": "2269",
+    "2271": "2278",
+    "2272": "2279",
+    "2287": "2294",
+    "2288": "2295",
+    "2289": "2296",
+}
 COOKED_SIGNAL_ID_MAPS: Mapping[tuple[str, str, str], Mapping[str, str]] = {
     (
         "Richmond_Field_Station_Richmond_CA",
         "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643",
         "1576737df37adb4caad6bef62210e060fcbf5c9a082ddd269515417616a36111",
     ): RICHMOND_COOKED_SIGNAL_ID_MAP,
+    (
+        "El_Camino_Rd_Palo_Alto_CA",
+        "00293fb5a40e6665257770f20eddbd0cbd711b301cce17496544c0e1fa15900a",
+        "97feee3176b26bfad8e96b58aa1682f54a89a0cd1651bc397b459b49b5db9665",
+    ): EL_CAMINO_COOKED_SIGNAL_ID_MAP,
 }
 
 #: Cooked RoadRunner worlds shipped in the managed CARLA engine images, keyed
@@ -252,7 +285,11 @@ COOKED_SIGNAL_ID_MAPS: Mapping[tuple[str, str, str], Mapping[str, str]] = {
 #: the explicit bridge from that source identity to the runtime world CARLA
 #: actually cooked. SIMFORGE_CARLA_COOKED_MAPS_JSON ({"<cookedName>":
 #: "<xodrSha256>"}) extends it for engines cooking additional worlds.
-COOKED_MAP_NAMES_BY_XODR_SHA256: Mapping[str, str] = {}
+COOKED_MAP_NAMES_BY_XODR_SHA256: Mapping[str, str] = {
+    "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643": "Richmond_Field_Station_Richmond_CA",
+    "35cf2b16a1d308c6436089a0edf66f20c87a79da12e79472a03a2f568ba28f63": "Belmont_Office_Park_Belmont_CA",
+    "00293fb5a40e6665257770f20eddbd0cbd711b301cce17496544c0e1fa15900a": "El_Camino_Rd_Palo_Alto_CA",
+}
 
 
 def _configured_cooked_map_names() -> dict[str, str]:
@@ -467,7 +504,7 @@ def runtime_asset_bindings(
     check()
     if not isinstance(manifest, Mapping):
         raise ContractError("asset catalog manifest must be a JSON object")
-    if manifest.get("contractVersion") != ASSET_CATALOG_SCHEMA:
+    if manifest.get("contractVersion") not in {ASSET_CATALOG_SCHEMA, "uniscenario.asset-catalog/v1"}:
         raise ContractError(f"asset catalog manifest contractVersion must equal {ASSET_CATALOG_SCHEMA}")
     if manifest.get("catalogVersionId") != expected_catalog_version_id:
         raise ContractError("asset catalog manifest version does not match the execution package")
@@ -851,15 +888,25 @@ class CarlaBackend:
                 }
                 continue
             entry = catalog.get(binding.catalog_name, {}) if isinstance(catalog, Mapping) else {}
-            blueprint_id = entry.get("blueprintId") if isinstance(entry, Mapping) else None
-            if not isinstance(blueprint_id, str) or not blueprint_id:
+            requested_blueprint_id = entry.get("blueprintId") if isinstance(entry, Mapping) else None
+            if not isinstance(requested_blueprint_id, str) or not requested_blueprint_id:
                 raise RuntimeError(f"asset catalog has no exact CARLA binding for {actor_id} ({binding.catalog_name})")
+            blueprint_id = requested_blueprint_id
             try:
                 blueprint = library.find(blueprint_id)
-            except RuntimeError as exc:
-                raise RuntimeError(
-                    f"CARLA runtime is missing required catalog blueprint for {actor_id} ({blueprint_id}, {binding.kind})"
-                ) from exc
+            except RuntimeError as requested_error:
+                blueprint_id = RUNTIME_BLUEPRINT_ALIASES.get(requested_blueprint_id, requested_blueprint_id)
+                if blueprint_id == requested_blueprint_id:
+                    raise RuntimeError(
+                        f"CARLA runtime is missing required catalog blueprint for {actor_id} ({blueprint_id}, {binding.kind})"
+                    ) from requested_error
+                try:
+                    blueprint = library.find(blueprint_id)
+                except RuntimeError as alias_error:
+                    raise RuntimeError(
+                        f"CARLA runtime is missing required catalog blueprint for {actor_id} "
+                        f"({requested_blueprint_id} or compatibility alias {blueprint_id}, {binding.kind})"
+                    ) from alias_error
             entry_dims = entry.get("dims") if isinstance(entry, Mapping) else None
             entry_height = (
                 entry_dims.get("h") or entry_dims.get("height")
@@ -929,9 +976,13 @@ class CarlaBackend:
                     )
             self.actor_asset_evidence[actor_id] = {
                 "catalogId": binding.catalog_name,
-                "requestedBlueprintId": blueprint_id,
+                "requestedBlueprintId": requested_blueprint_id,
                 "observedBlueprintId": observed_type_id,
                 "verification": "runtime-type-id-readback",
+                **(
+                    {"runtimeBlueprintAlias": blueprint_id}
+                    if blueprint_id != requested_blueprint_id else {}
+                ),
             }
             self.actors[actor_id] = actor
             placed_footprints.append(footprint)
@@ -1059,7 +1110,11 @@ class CarlaBackend:
             raise RuntimeError("SIMFORGE_CARLA_SIGNAL_ID_MAP must be valid JSON") from exc
         if not isinstance(configured_remap, Mapping):
             raise RuntimeError("SIMFORGE_CARLA_SIGNAL_ID_MAP must be a JSON object")
-        signal_remap = dict(getattr(self, "signal_id_map", {}))
+        signal_remap = {
+            key: value
+            for key, value in getattr(self, "signal_id_map", {}).items()
+            if key in authored
+        }
         for key, value in configured_remap.items():
             if key in signal_remap and signal_remap[key] != value:
                 raise RuntimeError(f"configured CARLA signal remap conflicts with cooked map identity for {key}")
@@ -1109,9 +1164,12 @@ class CarlaBackend:
         # frozen for the whole render — deterministic and inert — and recorded in
         # the map evidence. Worlds without a cooked remap stay strictly fail-closed.
         unowned_cooked_extras: list[str] = []
-        if extra and getattr(self, "signal_id_map", {}):
+        unowned_cooked_actor_ids: list[str] = []
+        if getattr(self, "signal_id_map", {}):
             unowned_cooked_extras = extra
+            unowned_cooked_actor_ids = unbound
             extra = []
+            unbound = []
         if missing or extra or unbound or duplicate_ids:
             details = []
             if missing:
@@ -1182,7 +1240,7 @@ class CarlaBackend:
 
         unowned_keys = {
             self._signal_identity(resolved[signal_id]) for signal_id in unowned_cooked_extras
-        }
+        } | {int(actor_id) for actor_id in unowned_cooked_actor_ids}
 
         self.signals = {
             authored_id: resolved[runtime_id]
@@ -1200,9 +1258,10 @@ class CarlaBackend:
             check()
             self.world.tick()
             check()
-            if unowned_cooked_extras:
+            if unowned_cooked_extras or unowned_cooked_actor_ids:
                 evidence = dict(getattr(self, "map_evidence", {}) or {})
                 evidence["unownedFrozenSignalIds"] = list(unowned_cooked_extras)
+                evidence["unownedFrozenSignalActorIds"] = list(unowned_cooked_actor_ids)
                 self.map_evidence = evidence
         except Exception as original_error:
             try:

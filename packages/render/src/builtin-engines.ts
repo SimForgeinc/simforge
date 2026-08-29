@@ -65,6 +65,7 @@ class CarlaProcessEngine implements RenderEngineAdapter {
     await writeFile(intentPath, `${JSON.stringify(RenderIntentV1Schema.parse(context.intent))}\n`, { mode: 0o600 });
     await writeFile(packagePath, `${JSON.stringify({
       intentSha256: context.intentSha256,
+      executionPackageControlSha256: context.executionPackageControlSha256,
       inputs: [...context.inputs.values()],
     })}\n`, { mode: 0o600 });
 

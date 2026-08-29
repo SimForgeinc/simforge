@@ -63,6 +63,7 @@ export const JobLeasedResponseSchema = z.strictObject({
   }),
   intent: RenderIntentV1Schema,
   intentSha256: RenderSha256Schema,
+  executionPackageControlSha256: RenderSha256Schema,
   inputs: z.array(JobInputTransferSchema).max(4096),
 });
 export const JobClaimResponseSchema = z.discriminatedUnion('type', [NoJobResponseSchema, JobLeasedResponseSchema]);

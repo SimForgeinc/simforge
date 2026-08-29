@@ -541,10 +541,13 @@ def test_carla_spawn_preserves_absolute_xosc_elevation_and_coordinate_sign():
     class Carla: pass
     Carla.Location, Carla.Rotation, Carla.Transform = Location, Rotation, Transform
     class Library:
-        def find(self, blueprint_id): return blueprint_id
+        def find(self, blueprint_id):
+            if blueprint_id == "vehicle.lincoln.mkz":
+                raise RuntimeError("not cooked under the CARLA 0.10 id")
+            return blueprint_id
     class Actor:
         id = 1
-        type_id = "vehicle.lincoln.mkz"
+        type_id = "vehicle.ue4.chevrolet.impala"
         def destroy(self): return True
     class World:
         def __init__(self): self.transform = None
@@ -566,6 +569,13 @@ def test_carla_spawn_preserves_absolute_xosc_elevation_and_coordinate_sign():
     assert spawned.location.y == pytest.approx(338.977)
     assert spawned.location.z == pytest.approx(62.046)
     assert spawned.rotation.yaw == pytest.approx(5.782)
+    assert backend.actor_asset_evidence["ego"] == {
+        "catalogId": "vehicle.sedan",
+        "requestedBlueprintId": "vehicle.lincoln.mkz",
+        "observedBlueprintId": "vehicle.ue4.chevrolet.impala",
+        "verification": "runtime-type-id-readback",
+        "runtimeBlueprintAlias": "vehicle.ue4.chevrolet.impala",
+    }
 
 
 def test_native_prepare_settles_before_t0_and_resets_linear_and_angular_velocity():
@@ -1034,6 +1044,13 @@ def test_signed_manifest_shape_resolves_only_nested_exact_carla_bindings():
         malformed,
         expected_catalog_version_id="uscatalog-1",
     ) == {"vehicle.sedan": {}}
+
+
+def test_historical_asset_catalog_namespace_is_accepted_at_runtime_boundary():
+    manifest = {**json.loads(CATALOG), "contractVersion": "uniscenario.asset-catalog/v1"}
+    assert runtime_asset_bindings(manifest, expected_catalog_version_id="uscatalog-1") == {
+        "vehicle.sedan": {"blueprintId": "vehicle.lincoln.mkz"},
+    }
 
 def test_native_vehicle_keeps_authored_binding_for_any_sensor_rig() -> None:
     xosc = XOSC.replace(b"catalog:vehicle.sedan", b"catalog:vehicle.ambulance")

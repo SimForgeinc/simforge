@@ -39,8 +39,10 @@ def test_render_intent_digest_sorts_per_source_arrays_like_typescript(tmp_path) 
     input_path = tmp_path / "input"
     input_path.write_bytes(b"x")
     package_path = tmp_path / "input-package.json"
+    control_digest = "b" * 64
     package_path.write_text(json.dumps({
         "intentSha256": expected,
+        "executionPackageControlSha256": control_digest,
         "inputs": [{
             "inputId": "scenario.xosc",
             "path": "input",
@@ -49,8 +51,27 @@ def test_render_intent_digest_sorts_per_source_arrays_like_typescript(tmp_path) 
         }],
     }), "utf-8")
 
-    digest, _inputs = local._read_input_package(package_path, intent)
+    digest, package_control_digest, _inputs = local._read_input_package(package_path, intent)
     assert digest == expected
+    assert package_control_digest == control_digest
+
+
+def test_input_package_requires_claimed_execution_package_control_digest(tmp_path) -> None:
+    intent = {"schema": "simforge.render-intent/v1"}
+    intent_sha = hashlib.sha256(
+        local._canonical_render_intent_json(intent).encode("utf-8")
+    ).hexdigest()
+    package_path = tmp_path / "input-package.json"
+    package_path.write_text(json.dumps({
+        "intentSha256": intent_sha,
+        "inputs": [],
+    }), "utf-8")
+
+    with pytest.raises(
+        local.ContractError,
+        match="exactly intentSha256, executionPackageControlSha256, and inputs",
+    ):
+        local._read_input_package(package_path, intent)
 
 
 
@@ -64,12 +85,12 @@ def test_run_intent_records_named_preflight_failure_before_exit(
     monkeypatch.setattr(
         local,
         "_read_input_package",
-        lambda _package_path, _intent: ("a" * 64, {}),
+        lambda _package_path, _intent: ("a" * 64, "b" * 64, {}),
     )
     monkeypatch.setattr(
         local,
         "_intent_lease",
-        lambda _intent, _sha, _inputs, _output: (object(), {}),
+        lambda _intent, _sha, _control_sha, _inputs, _output: (object(), {}),
     )
 
     def fail(*_args, **_kwargs):
@@ -102,17 +123,6 @@ def test_run_intent_records_named_preflight_failure_before_exit(
         "code": "carla.execution_failed",
         "message": "vehicle actor has no same-class native CARLA fallback",
     }
-def test_render_control_lineage_digest_matches_simcloud_contract() -> None:
-    intent = {
-        "executionPackage": {
-            "id": "usepkg_1",
-            "sourceInputDigest": "b" * 64,
-        },
-    }
-
-    assert local._render_control_lineage_sha256(intent, "a" * 64) == (
-        "782f36b32a74e4ede8e570bc222bb5f70720db59344c8a12059d145cb4d3bdbe"
-    )
 
 
 

@@ -1,7 +1,8 @@
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
-import { parseRenderIntent, type RenderIntentV1 } from '@simforge-oss/scenario';
+import { canonicalize, parseRenderIntent, type RenderIntentV1 } from '@simforge-oss/scenario';
 import {
   RenderArtifactManifestSchema,
   RenderProgressRecordSchema,
@@ -78,6 +79,12 @@ export async function renderHash(intentPath: string, pretty: boolean): Promise<n
 export async function renderRun(options: RenderRunOptions): Promise<number> {
   const intent = parseRenderIntent(await readJson(options.intentPath));
   const intentSha256 = hashRenderIntent(intent);
+  const executionPackageControlSha256 = createHash('sha256').update(JSON.stringify(canonicalize({
+    schema: 'simforge.render-control-lineage/v1',
+    intentSha256,
+    executionPackageId: intent.executionPackage.id,
+    sourceInputDigest: intent.executionPackage.sourceInputDigest,
+  })), 'utf8').digest('hex');
   const inputs = await localInputs(options.inputsPath, intent);
   const engineOptionsRaw = options.engineOptionsPath ? await readJson(options.engineOptionsPath) : {};
   if (!engineOptionsRaw || typeof engineOptionsRaw !== 'object' || Array.isArray(engineOptionsRaw)) {
@@ -121,6 +128,7 @@ export async function renderRun(options: RenderRunOptions): Promise<number> {
       attempt: 1,
       intent,
       intentSha256,
+      executionPackageControlSha256,
       schedules: createFixedSchedules(intent),
       inputs,
       workspace,

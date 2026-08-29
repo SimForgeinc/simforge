@@ -44,7 +44,7 @@ INTENT_SCHEMA = "simforge.render-intent/v1"
 # historical name retained for stored-data compat
 HISTORICAL_INTENT_SCHEMA = "uniscenario.render-intent/v1"
 HISTORICAL_RENDER_SPEC_V3_SCHEMA = "uniscenario.render-spec/v3"
-INPUT_PACKAGE_SCHEMA_FIELDS = {"intentSha256", "inputs"}
+INPUT_PACKAGE_SCHEMA_FIELDS = {"intentSha256", "executionPackageControlSha256", "inputs"}
 
 
 def _probe(host: str, port: int) -> dict[str, object]:
@@ -239,13 +239,22 @@ def _canonical_render_intent_json(intent: Mapping[str, Any]) -> str:
     return canonical_json(normalized)
 
 
-def _read_input_package(path: Path, intent: Mapping[str, Any]) -> tuple[str, dict[str, Path]]:
+def _read_input_package(path: Path, intent: Mapping[str, Any]) -> tuple[str, str, dict[str, Path]]:
     package = json.loads(path.read_text("utf-8"))
     if not isinstance(package, Mapping) or set(package) != INPUT_PACKAGE_SCHEMA_FIELDS:
-        raise ContractError("input package must contain exactly intentSha256 and inputs")
+        raise ContractError(
+            "input package must contain exactly intentSha256, executionPackageControlSha256, and inputs"
+        )
     expected_intent_sha = hashlib.sha256(_canonical_render_intent_json(intent).encode("utf-8")).hexdigest()
     if package.get("intentSha256") != expected_intent_sha:
         raise ContractError("input package intentSha256 does not match canonical render intent bytes")
+    control_sha256 = package.get("executionPackageControlSha256")
+    if (
+        not isinstance(control_sha256, str)
+        or len(control_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in control_sha256)
+    ):
+        raise ContractError("input package executionPackageControlSha256 must be a SHA-256")
     raw_inputs = package.get("inputs")
     if not isinstance(raw_inputs, list) or not raw_inputs:
         raise ContractError("input package inputs must be a non-empty array")
@@ -270,7 +279,7 @@ def _read_input_package(path: Path, intent: Mapping[str, Any]) -> tuple[str, dic
         if len(body) != size or hashlib.sha256(body).hexdigest() != digest:
             raise ContractError(f"input package input {input_id} failed size/digest verification")
         paths[input_id] = source
-    return expected_intent_sha, paths
+    return expected_intent_sha, control_sha256, paths
 
 
 def _xosc_source_digest(xosc: bytes) -> str:
@@ -288,21 +297,6 @@ def _xosc_source_digest(xosc: bytes) -> str:
     return values[0]
 
 
-def _strip_control(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {key: _strip_control(item) for key, item in value.items() if key not in {"url", "controlSha256"}}
-    if isinstance(value, list):
-        return [_strip_control(item) for item in value]
-    return value
-
-def _render_control_lineage_sha256(intent: Mapping[str, Any], intent_sha256: str) -> str:
-    execution_package = intent["executionPackage"]
-    return canonical_sha256({
-        "schema": "simforge.render-control-lineage/v1",
-        "intentSha256": intent_sha256,
-        "executionPackageId": execution_package["id"],
-        "sourceInputDigest": execution_package["sourceInputDigest"],
-    })
 
 
 
@@ -535,6 +529,7 @@ def _validate_sensor_hosts(
 def _intent_lease(
     intent: Mapping[str, Any],
     intent_sha: str,
+    execution_package_control_sha256: str,
     inputs: Mapping[str, Path],
     output_dir: Path,
 ) -> tuple[Any, dict[str, Path]]:
@@ -613,7 +608,7 @@ def _intent_lease(
         catalog_json = json.loads(catalog_body)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ContractError("catalog input must be UTF-8 JSON") from exc
-    if not isinstance(catalog_json, Mapping) or catalog_json.get("contractVersion") != ASSET_CATALOG_SCHEMA:
+    if not isinstance(catalog_json, Mapping) or catalog_json.get("contractVersion") not in {ASSET_CATALOG_SCHEMA, "uniscenario.asset-catalog/v1"}:
         raise ContractError("catalog input is not a supported asset catalog")
     catalog_version = catalog_json.get("catalogVersionId")
     if not isinstance(catalog_version, str) or not catalog_version:
@@ -798,7 +793,7 @@ def _intent_lease(
         lease,
         execution_package=replace(
             lease.execution_package,
-            control_sha256=_render_control_lineage_sha256(intent, intent_sha),
+            control_sha256=execution_package_control_sha256,
         ),
     )
     return lease, {
@@ -961,9 +956,11 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
     intent = json.loads(intent_path.read_text("utf-8"))
     if not isinstance(intent, Mapping):
         raise ContractError("render intent must be an object")
-    intent_sha, inputs = _read_input_package(package_path, intent)
+    intent_sha, execution_package_control_sha256, inputs = _read_input_package(package_path, intent)
     output_dir = Path(args.output)
-    lease, asset_paths = _intent_lease(intent, intent_sha, inputs, output_dir)
+    lease, asset_paths = _intent_lease(
+        intent, intent_sha, execution_package_control_sha256, inputs, output_dir,
+    )
     progress_path = Path(args.progress)
     progress_path.parent.mkdir(parents=True, exist_ok=True)
     sequence = 0

@@ -942,7 +942,7 @@ def _parity_evidence(
         and artifacts_passed
     )
     return {
-        "schema": "simforge.parity-evidence/v1",
+        "schema": "uniscenario.parity-evidence/v1",
         "identity": {
             "revisionId": lease.execution_package.revision_id,
             "executionPackageId": lease.execution_package.id,
@@ -1676,7 +1676,7 @@ def execute_lease(
                 parity_body,
                 "application/json",
                 lease.artifact_uploads.get("parity-report"),
-                {"schema": "simforge.parity-evidence/v1"},
+                {"schema": "uniscenario.parity-evidence/v1"},
             ))
         if "manifest" in lease.render_spec.outputs:
             manifest_body = _manifest_to_path(

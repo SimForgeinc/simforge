@@ -157,6 +157,7 @@ async function executeClaim(
       attempt: job.attempt,
       intent: job.intent,
       intentSha256: job.intentSha256,
+      executionPackageControlSha256: job.executionPackageControlSha256,
       schedules: createFixedSchedules(job.intent),
       inputs,
       workspace,

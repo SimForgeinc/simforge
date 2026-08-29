@@ -17,6 +17,7 @@ export interface RenderExecutionContext {
   readonly attempt: number;
   readonly intent: RenderIntentV1;
   readonly intentSha256: string;
+  readonly executionPackageControlSha256: string;
   readonly schedules: readonly FixedSchedule[];
   readonly inputs: ReadonlyMap<string, RenderInputFile>;
   readonly workspace: string;
