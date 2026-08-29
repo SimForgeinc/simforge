@@ -75,6 +75,7 @@ import {
 import { DynamicActorCatalogIcon, isDynamicActorCatalogId } from '../regions/DynamicActorCatalogIcon';
 import { cn } from "@/app/lib/utils";
 import { isUnconfiguredSimpleTimedRoute } from "../simple-route-status";
+import { isCustomTimedRoute, setExclusiveCustomTimedRoute } from "../simple-timed-routes";
 import { TimelineCarlaCompatibilityMarker } from "./TimelineCarlaCompatibilityMarker";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTransportControls } from "./TimelineTransportControls";
@@ -166,9 +167,6 @@ type ContextMenuState = {
 
 type ClipPreview = { interactionId: string; range: AuthoredTimelineRange };
 
-function isSimpleTimedRouteInteraction(interaction: Interaction): boolean {
-  return interaction.verb === "route" && interaction.target.mode === "customTimedRoute";
-}
 
 const TIMELINE_HEADER_HEIGHT_PX = 48;
 const TIMELINE_LANE_HEIGHT_PX = 40;
@@ -539,7 +537,9 @@ export function V1TimelineRail({
           until: { kind: 'at', t: choreography.clipSeconds },
         }
       : { ...interaction, id };
-    document.addInteraction(next as Interaction);
+    if (!setExclusiveCustomTimedRoute(document, next as Interaction)) {
+      document.addInteraction(next as Interaction);
+    }
     selectInteraction(id, role.id);
     setContextMenu(null);
   };
@@ -579,7 +579,7 @@ export function V1TimelineRail({
   };
 
   const commitRange = (interaction: Interaction, range: AuthoredTimelineRange) => {
-    if (readOnly || (lockSimpleTimedRoutes && isSimpleTimedRouteInteraction(interaction))) return;
+    if (readOnly || isCustomTimedRoute(interaction)) return;
     const ranged = interactionWithAuthoredTimelineRange(interaction, range);
     document.replaceInteraction(
       interaction.id,
@@ -1489,10 +1489,11 @@ function InteractionBand({
   readOnly: boolean;
 }) {
   const interaction = resolved.interaction;
-  const simpleTimedRoute = lockSimpleTimedRoutes && isSimpleTimedRouteInteraction(interaction);
+  const customTimedRoute = isCustomTimedRoute(interaction);
+  const simpleTimedRoute = lockSimpleTimedRoutes && customTimedRoute;
   const routeNeedsSetup = simpleTimedRoute && isUnconfiguredSimpleTimedRoute(interaction);
-  const timingLocked = readOnly || simpleTimedRoute;
-  const endsWithScenario = interaction.verb === 'route' && (interaction.target.mode === 'customRoute' || interaction.target.mode === 'customTimedRoute');
+  const timingLocked = readOnly || customTimedRoute;
+  const endsWithScenario = interaction.verb === 'route' && (interaction.target.mode === 'customRoute' || customTimedRoute);
   const editable = authoredTimelineRange(interaction);
   const shownRange = preview
     ? { startMs: preview.startS * 1000, endMs: preview.endS * 1000 }

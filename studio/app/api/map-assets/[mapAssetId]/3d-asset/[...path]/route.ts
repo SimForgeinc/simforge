@@ -11,6 +11,7 @@ import {
 import { S3_BUCKET } from "@/app/lib/s3/s3-config";
 import { headS3ObjectInfo } from "@/app/lib/s3/s3-get-object";
 import { browserAssetRedirectCacheControl } from "@/app/api/simforge/maps/[mapVersionId]/browser-assets/[...assetPath]/route";
+import { objectRedirect } from "@/app/lib/s3/local-object-redirect";
 
 type RouteContext = { params: Promise<{ mapAssetId: string; path: string[] }> };
 
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       if (!object.exists) return new NextResponse(null, { status: 204 });
     }
     const url = await getBrowserAssetUrl({ key, allowedPrefix });
-    const response = NextResponse.redirect(url, 302);
+    const response = objectRedirect(url, 302);
     // Same policy as the scenario browser-assets route: development reuses
     // the redirect for most of the presign TTL so cold loads skip the
     // per-asset presign hop; shared environments keep the authenticated

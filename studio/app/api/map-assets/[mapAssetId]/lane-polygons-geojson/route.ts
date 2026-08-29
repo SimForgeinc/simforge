@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { AssetUrlServiceError, getBrowserAssetUrl } from "@/app/lib/assets/asset-url-service";
 import { getMapArtifactLocation } from "@/app/lib/db/map-asset-store";
 import { MapAssetIdParams } from "@/app/lib/api-schemas";
+import { objectRedirect } from "@/app/lib/s3/local-object-redirect";
 void MapAssetIdParams;
 
 type RouteContext = { params: Promise<{ mapAssetId: string }> };
@@ -36,7 +37,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       allowedPrefix: `maps/${mapAssetId}/`,
       responseContentType: "application/geo+json; charset=utf-8",
     });
-    return NextResponse.redirect(url, 302);
+    return objectRedirect(url, 302);
   } catch (e) {
     const err = e as { name?: string };
     if (e instanceof AssetUrlServiceError) {

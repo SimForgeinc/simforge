@@ -110,8 +110,8 @@ import {
   type SimulationIssue,
 } from "./simulation-issues";
 import { buildEditorDebugInformation } from "./debug-information";
-import { EditorExperienceChooser } from "./EditorExperienceChooser";
 import {
+  armActorSimpleTimedRoute,
   convertDocumentToSimpleTimedRoutes,
   hasAdvancedMotion,
   isCustomTimedRoute,
@@ -216,8 +216,7 @@ export function ScenarioEditorSurface({
     readonly message: string;
   }>>([]);
   const [transportError, setTransportError] = useState<string | null>(null);
-  const [experience, setExperience] = useState<EditorExperience | null>(null);
-  const [experienceReady, setExperienceReady] = useState(false);
+  const [experience, setExperience] = useState<EditorExperience>("simple");
   const [carlaCompatibilityTable, setCarlaCompatibilityTable] =
     useState<CarlaCompatibilityTable | null>(null);
 
@@ -238,7 +237,6 @@ export function ScenarioEditorSurface({
 
   useEffect(() => {
     setExperience(readEditorExperience(window.localStorage));
-    setExperienceReady(true);
   }, []);
 
   const externalWorld = injectedViewer !== undefined;
@@ -643,10 +641,28 @@ export function ScenarioEditorSurface({
 
   useEffect(() => {
     const current = state
-      ? { mode: state.mode, actorCount: state.actors.length }
+      ? {
+          mode: state.mode,
+          actorCount: state.actors.length,
+          actorIds: state.actors.map((actor) => actor.id),
+          placementSticky: state.placementSticky,
+        }
       : null;
     const previous = placementSnapshotRef.current;
     placementSnapshotRef.current = current;
+    const placedActorIds = experience === "simple"
+      && expandedTool !== null
+      && editorDocument
+      && previous
+      && current
+      && current.actorCount > previous.actorCount
+      ? current.actorIds.filter((actorId) => !previous.actorIds.includes(actorId))
+      : [];
+    if (editorDocument) {
+      for (const actorId of placedActorIds) {
+        armActorSimpleTimedRoute(editorDocument, actorId);
+      }
+    }
     if (!shouldFinishActorPlacement({
       experience,
       activeTool: expandedTool,
@@ -655,7 +671,7 @@ export function ScenarioEditorSurface({
     })) return;
     controller?.cancel();
     setExpandedTool(null);
-  }, [controller, experience, expandedTool, state]);
+  }, [controller, editorDocument, experience, expandedTool, state]);
 
   useEffect(() => {
     setSelectedSignalHeadId(null);
@@ -1093,9 +1109,6 @@ export function ScenarioEditorSurface({
         ready={sceneReady}
         scenarioKey={record?.id ?? null}
       />
-      {active && experienceReady && experience === null ? (
-        <EditorExperienceChooser onChoose={chooseExperience} />
-      ) : null}
       </EditorOverlayProvider>
     </EditorConfigurationBlockProvider>
   );

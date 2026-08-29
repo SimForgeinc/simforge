@@ -589,6 +589,9 @@ importers:
       '@simforge-oss/scenario':
         specifier: workspace:*
         version: link:../packages/scenario
+      '@simforge-oss/training-env':
+        specifier: workspace:*
+        version: link:../packages/training-env
       '@simforge-oss/viewer':
         specifier: workspace:*
         version: link:../packages/viewer
@@ -722,6 +725,9 @@ importers:
       typescript:
         specifier: 6.0.2
         version: 6.0.2
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@1.21.7)(tsx@4.23.12)
 
   tools/glb-ktx2-repack:
     dependencies:

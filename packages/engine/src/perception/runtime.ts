@@ -121,13 +121,17 @@ export class PerceptionRuntime {
   /** Latest reported status, read back by the `detected` trigger condition. */
   private readonly current = new Map<string, DetectionStatusCode>();
   private tickCount = 0;
+  private readonly recordHistory: boolean;
+  private readonly targetIds = new Set<string>();
 
   constructor(
     config: PerceptionConfig,
     observers: readonly PerceptionObserverSpec[],
     targetIds: readonly string[],
     dt: number,
+    options: { readonly recordHistory?: boolean } = {},
   ) {
+    this.recordHistory = options.recordHistory ?? true;
     this.config = config;
     this.dt = dt;
     this.observers = [...observers]
@@ -135,6 +139,7 @@ export class PerceptionRuntime {
       .sort((a, b) => cmp(a.actorId, b.actorId));
 
     const targets = [...targetIds].sort(cmp);
+    for (const target of targets) this.targetIds.add(target);
     for (const observer of this.observers) {
       for (const sensor of observer.sensors) {
         const key = sensorChannelKey(observer.actorId, sensor.id);
@@ -199,6 +204,63 @@ export class PerceptionRuntime {
       }
     }
   }
+  /** Add a live target without disturbing any existing sensor/policy state. */
+  addTarget(target: string): void {
+    if (this.targetIds.has(target)) return;
+    this.targetIds.add(target);
+    for (const observer of this.observers) {
+      if (observer.actorId === target) continue;
+      for (const sensor of observer.sensors) {
+        const key = sensorChannelKey(observer.actorId, sensor.id);
+        const sensorTrack = this.tracks.get(key)!;
+        const track: SensorTargetTrack = {
+          status: [],
+          reason: [],
+          confidence: [],
+          rangeM: [],
+          lineOfSight: [],
+        };
+        sensorTrack.targets[target] = track;
+        const acc: PairAccumulator = {
+          observer: observer.actorId,
+          sensorId: sensor.id,
+          target,
+          track,
+          firstLineOfSightT: null,
+          firstDetectionT: null,
+          detectedTicks: 0,
+          degradedTicks: 0,
+          missedTicks: 0,
+          reportedStatus: DETECTION_STATUS.absent,
+          pendingStatus: DETECTION_STATUS.absent,
+          pendingTicks: 0,
+          gapStartT: null,
+          gapReasonTicks: new Map(),
+          gaps: [],
+          lastT: 0,
+        };
+        this.pairs.push(acc);
+        this.pairIndex.set(pairKey(observer.actorId, sensor.id, target), acc);
+        this.current.set(pairKey(observer.actorId, sensor.id, target), DETECTION_STATUS.absent);
+      }
+    }
+    this.pairs.sort((a, b) =>
+      cmp(a.observer, b.observer) || cmp(a.sensorId, b.sensorId) || cmp(a.target, b.target)
+    );
+    for (const divergence of [...this.config.mapDivergences].sort((a, b) => cmp(a.id, b.id))) {
+      if (divergence.observers.length > 0) continue;
+      this.divergences.push({
+        divergence,
+        observer: target,
+        track: { id: divergence.id, kind: divergence.kind, observer: target, active: [] },
+        firstActiveT: null,
+        activeTicks: 0,
+      });
+    }
+    this.divergences.sort((a, b) =>
+      cmp(a.divergence.id, b.divergence.id) || cmp(a.observer, b.observer)
+    );
+  }
 
   /** `true` when any sensor is declared, i.e. when the pass has work to do. */
   get active(): boolean {
@@ -260,8 +322,8 @@ export class PerceptionRuntime {
     for (const acc of this.divergences) {
       const observer = byId.get(acc.observer);
       const active = observer !== undefined && observer.present && inExtent(acc.divergence, observer);
-      acc.track.active.push(active ? 1 : 0);
-      if (active) {
+      if (this.recordHistory) acc.track.active.push(active ? 1 : 0);
+      if (this.recordHistory && active) {
         acc.activeTicks += 1;
         if (acc.firstActiveT === null) acc.firstActiveT = t;
       }
@@ -377,6 +439,7 @@ export class PerceptionRuntime {
     if (acc.pendingTicks > latchTicks) acc.reportedStatus = acc.pendingStatus;
     const reported = acc.reportedStatus;
     this.current.set(pairKey(acc.observer, acc.sensorId, acc.target), reported);
+    if (!this.recordHistory) return;
 
     acc.track.status.push(reported);
     acc.track.reason.push(detectionReasonCode(reported >= DETECTION_STATUS.detected ? 'detected' : observation.reason));

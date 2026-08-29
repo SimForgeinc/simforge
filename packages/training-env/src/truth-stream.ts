@@ -231,9 +231,14 @@ const ACTOR_CLASS_BY_KIND: Readonly<Record<ActorKind, ActorClass>> = {
 
 /** Encode one TruthFrame as `u32le byteLength || msgpack(TruthFrame)`. */
 export function encodeTruthFrame(frame: TruthFrame): Uint8Array {
-  const payload = encode(frame);
-  const framed = Buffer.allocUnsafe(4 + payload.byteLength);
-  framed.writeUInt32LE(payload.byteLength, 0);
+  const encoded = encode(frame);
+  // @msgpack/msgpack 3.x returns Uint8Array in both Node and browsers. Copy
+  // into our own Uint8Array so callers never depend on a runtime-specific
+  // Buffer subclass or the encoder's backing-store offset.
+  const payload = new Uint8Array(encoded.byteLength);
+  payload.set(encoded);
+  const framed = new Uint8Array(4 + payload.byteLength);
+  new DataView(framed.buffer).setUint32(0, payload.byteLength, true);
   framed.set(payload, 4);
   return framed;
 }
@@ -243,20 +248,39 @@ export function encodeTruthFrame(frame: TruthFrame): Uint8Array {
  * accepts arbitrary transport chunks and returns every complete TruthFrame.
  */
 export class TruthStreamClient {
-  private buffered: Buffer<ArrayBufferLike> = Buffer.alloc(0);
+  private buffered = new Uint8Array(0);
 
   push(chunk: Uint8Array): TruthFrame[] {
-    const incoming = Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
-    this.buffered = this.buffered.length === 0 ? incoming : Buffer.concat([this.buffered, incoming]);
-    const frames: TruthFrame[] = [];
-    for (;;) {
-      if (this.buffered.length < 4) return frames;
-      const length = this.buffered.readUInt32LE(0);
-      if (length > 64 * 1024 * 1024) throw new Error(`truth frame of ${length} bytes exceeds 64 MiB`);
-      if (this.buffered.length < length + 4) return frames;
-      frames.push(decode(this.buffered.subarray(4, length + 4)) as TruthFrame);
-      this.buffered = this.buffered.subarray(length + 4);
+    if (chunk.byteLength > 0) {
+      const incoming = new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+      if (this.buffered.byteLength === 0) {
+        this.buffered = incoming.slice();
+      } else {
+        const combined = new Uint8Array(this.buffered.byteLength + incoming.byteLength);
+        combined.set(this.buffered);
+        combined.set(incoming, this.buffered.byteLength);
+        this.buffered = combined;
+      }
     }
+
+    const frames: TruthFrame[] = [];
+    let offset = 0;
+    for (;;) {
+      if (this.buffered.byteLength - offset < 4) break;
+      const length = new DataView(
+        this.buffered.buffer,
+        this.buffered.byteOffset + offset,
+        4,
+      ).getUint32(0, true);
+      if (length > 64 * 1024 * 1024) throw new Error(`truth frame of ${length} bytes exceeds 64 MiB`);
+      if (this.buffered.byteLength - offset < length + 4) break;
+      const payloadStart = offset + 4;
+      frames.push(decode(this.buffered.subarray(payloadStart, payloadStart + length)) as TruthFrame);
+      offset = payloadStart + length;
+    }
+
+    if (offset > 0) this.buffered = this.buffered.slice(offset);
+    return frames;
   }
 }
 

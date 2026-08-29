@@ -10,6 +10,7 @@ import {
 } from "@/app/lib/scenario/document-store";
 import { requireScenarioContext } from "@/app/lib/scenario/http";
 import { simforgeEnv } from "@/lib/compat-env";
+import { objectRedirect } from "@/app/lib/s3/local-object-redirect";
 
 type Context = {
   params: Promise<{ mapVersionId: string; assetPath: string[] }>;
@@ -76,7 +77,7 @@ async function redirectAsset(route: Context, headOnly: boolean): Promise<NextRes
       asset.asset.bucket,
       SIGNED_URL_TTL_SECONDS,
     );
-    const response = NextResponse.redirect(url, 307);
+    const response = objectRedirect(url, 307);
     response.headers.set("Cache-Control", browserAssetRedirectCacheControl());
     return response;
   } catch (error) {

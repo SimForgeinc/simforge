@@ -207,18 +207,37 @@ export async function seed(): Promise<void> {
   await seedIdentity();
   await seedPublicationBinding();
   await seedSumoRuntime();
+  let skipped = 0;
   for (const map of MAPS) {
-    const result = await publishDevAssetMap({
-      map,
-      assetsRoot,
-      assetCatalogVersionId: catalogVersionId,
-      activeReleaseId: editorReleaseId,
-    });
-    console.log(
-      `published ${map[0]}: ${result.objectCount} members, ${result.byteLength} bytes, `
-      + `SUMO ${result.sumoNetworkSha256 ? "ready" : "unavailable"}, thumbnail ${result.thumbnailBytes} bytes`,
-    );
+    // A dev checkout rarely holds the whole corpus. Skip absent bundles loudly
+    // rather than aborting the boot: one missing map must not deny the operator
+    // every other map, and a silent skip would look like a publish bug.
+    if (!existsSync(resolve(assetsRoot, map[0]))) {
+      console.warn(`skipped ${map[0]}: no bundle at ${resolve(assetsRoot, map[0])}`);
+      skipped += 1;
+      continue;
+    }
+    try {
+      const result = await publishDevAssetMap({
+        map,
+        assetsRoot,
+        assetCatalogVersionId: catalogVersionId,
+        activeReleaseId: editorReleaseId,
+      });
+      console.log(
+        `published ${map[0]}: ${result.objectCount} members, ${result.byteLength} bytes, `
+        + `SUMO ${result.sumoNetworkSha256 ? "ready" : "unavailable"}, thumbnail ${result.thumbnailBytes} bytes`,
+      );
+    } catch (error) {
+      // An incomplete bundle is normal in a dev checkout: map pipelines rewrite
+      // these directories in place, so members appear and vanish mid-session.
+      // Report it and keep whatever is already published rather than failing the
+      // whole boot, which would take the studio down for one bad map.
+      skipped += 1;
+      console.warn(`skipped ${map[0]}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
+  if (skipped > 0) console.warn(`${skipped}/${MAPS.length} dev asset maps skipped; set SCEN_DEV_ASSETS to a fuller corpus`);
   const maps = await queryRows<{ id: string; label: string }>(
     "SELECT id, label FROM simforge.map_versions WHERE retired_at IS NULL ORDER BY label",
   );

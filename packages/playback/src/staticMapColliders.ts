@@ -1,5 +1,6 @@
 import {
   createFixedStepSimulation,
+  sha256Bytes,
   type LaneGraph,
   type SimScenarioInput,
   type StaticColliderClass,
@@ -163,9 +164,21 @@ function validObb(obb: StaticMapCollider['obb'] | undefined): boolean {
     && Number.isFinite(obb.headingRad));
 }
 
+/**
+ * Digest collider bytes with the engine's pure-TS SHA-256, never `crypto.subtle`.
+ *
+ * `crypto.subtle` exists only in a secure context, so on a plain-HTTP origin
+ * that is not `localhost` — any LAN address or tunnelled host — it is
+ * `undefined` and this threw "Cannot read properties of undefined (reading
+ * 'digest')". The loader then reported the collider bundle as unavailable, the
+ * compile failed closed, and the editor could never start a world. Serving over
+ * HTTPS would also fix it, but requiring TLS to open a dev map is the wrong
+ * constraint, and `packages/engine/src/core/hash.ts` was written for exactly
+ * this reason: identical digests in the browser and in headless Node with no
+ * platform branch.
+ */
 async function sha256Hex(data: ArrayBuffer): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, '0')).join('');
+  return sha256Bytes(new Uint8Array(data));
 }
 
 function absoluteUrl(url: string): string {

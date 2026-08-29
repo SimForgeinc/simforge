@@ -2,8 +2,13 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { readRenderingPreference } from "@/app/components/rendering-preference"
+import {
+  readRenderingPreference,
+  saveRenderingPreference,
+  type RenderingPreference,
+} from "@/app/components/rendering-preference"
 import { installMapAssetFetchGateway } from "@/app/lib/maps/frontend/map-asset-cache";
+import { SCENARIO_AUTHORING_QUALITY_IDS } from "@/app/lib/scenario/contracts";
 
 installMapAssetFetchGateway();
 
@@ -25,6 +30,17 @@ export function RenderingPreferenceGate({ children }: { children: ReactNode }) {
       return;
     }
     if (readRenderingPreference()) {
+      setReady(true);
+      return;
+    }
+    // A deep link may state the rendering mode itself (`?quality=high`). An
+    // explicit choice from whoever built the link is as valid as a clicked one,
+    // and honouring it matters because first-run setup redirects here and never
+    // returns to the destination — so a shared link would otherwise always
+    // strand its recipient in onboarding.
+    const requested = new URLSearchParams(window.location.search).get("quality");
+    if (requested && (SCENARIO_AUTHORING_QUALITY_IDS as readonly string[]).includes(requested)) {
+      saveRenderingPreference(requested as RenderingPreference);
       setReady(true);
       return;
     }

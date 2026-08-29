@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AssetUrlServiceError, getBrowserAssetUrl } from "@/app/lib/assets/asset-url-service";
 import { MapAssetIdParams, MediaQueryParams } from "@/app/lib/api-schemas";
+import { objectRedirect } from "@/app/lib/s3/local-object-redirect";
 void MapAssetIdParams;
 void MediaQueryParams;
 
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
   try {
     const url = await getBrowserAssetUrl({ key, allowedPrefix: `maps/${mapAssetId}/` });
-    return NextResponse.redirect(url, 302);
+    return objectRedirect(url, 302);
   } catch (e) {
     const err = e as Error;
     if (e instanceof AssetUrlServiceError) {

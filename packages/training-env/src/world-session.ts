@@ -2,23 +2,13 @@
  * WorldSession — a multi-client, command-driven world over the fixed-step
  * engine (world-session server v1, F5).
  *
- * ## Design: world state is a pure function of the command log
+ * ## Design
  *
- * The engine has no runtime-mutation surface: actors are authored in
- * `SimScenarioInput`, and mid-clip presence is expressed with
- * `presentAtStart: false` + `exist` interactions. WorldSession therefore
- * implements arbitrary runtime spawn/despawn by **input mutation plus
- * deterministic rebuild**: a structural command produces a candidate input
- * (new actor spec, new `exist` interaction anchored at the current tick
- * boundary), validates it through the engine's own entry points, and — on
- * acceptance — rebuilds the simulation from t = -warmup and re-advances to
- * the current tick. The engine is deterministic, so every pre-existing actor
- * lands exactly where it was; the world continues seamlessly.
- *
- * Because every mutation is recorded in an ordered session log, replaying the
- * log against the same base input and lane graph reproduces the exact same
- * sequence of engine generations, tick frames, and therefore the same trace
- * digest. The log is the artifact; the digest is the proof.
+ * Clip sessions preserve the authored finite-trace behavior and rebuild after
+ * structural commands. Live sessions use the engine's opt-in incremental actor
+ * mutation surface: incumbent runtime state is untouched, the clip never ends,
+ * and per-tick trace history is not retained. In either mode the canonical
+ * input and ordered command log remain the deterministic replay artifact.
  *
  * ## Engine entry points used (never forked)
  *
@@ -31,11 +21,9 @@
  *
  * ## Digest
  *
- * Every live engine tick with `tS >= 0` is hashed (chained SHA-256 over the
- * canonical JSON of the sorted actor rows). Catch-up ticks replayed during a
- * rebuild are *not* re-hashed: the digest covers frames as first observed,
- * and a replayed log rebuilds at the same boundaries, so the hashed frame
- * sequence is identical by construction.
+ * Every engine tick with `tS >= 0` is hashed (chained SHA-256 over canonical
+ * sorted actor rows). Replaying the same mode and command log reproduces the
+ * same frame sequence and digest.
  */
 
 import {
@@ -72,7 +60,7 @@ import {
   type TruthSubscription,
 } from './truth-stream.js';
 /** Version tag of the session-log artifact; bumped on any breaking change. */
-export const WORLD_SESSION_LOG_VERSION = 1;
+export const WORLD_SESSION_LOG_VERSION = 2;
 
 const EPS_S = 1e-9;
 /** Ground-snap search radius; matches `LaneGraph.nearestLane`'s default. */
@@ -142,6 +130,7 @@ export interface WorldSessionLog {
   readonly version: typeof WORLD_SESSION_LOG_VERSION;
   /** `contentHash` of the normalized base input the session was built from. */
   readonly baseInputHash: string;
+  readonly mode: 'clip' | 'live';
   readonly horizonSeconds: number;
   readonly entries: readonly WorldLogEntry[];
   /** Chained frame digest at export time. */
@@ -182,10 +171,12 @@ export interface WorldSessionOptions {
   readonly input: SimScenarioInput;
   readonly graph: LaneGraph;
   /**
-   * The world's clip horizon, seconds. A world session is open-ended relative
-   * to the authored clip, so the default extends it to 120 s.
+   * Finite horizon in clip mode (default 120 s). Ignored in live mode, whose
+   * engine is unbounded and does not retain trace history.
    */
   readonly horizonSeconds?: number;
+  /** Opt-in continuously advancing world. Default keeps finite clip semantics. */
+  readonly mode?: 'clip' | 'live';
 }
 
 /* ---------------------------------------------------------------- helpers */
@@ -215,17 +206,18 @@ interface ActionEpoch {
 export class WorldSession {
   private readonly graph: LaneGraph;
   private readonly horizonSeconds: number;
+  private readonly mode: 'clip' | 'live';
   /** Canonical, normalized current input; swapped atomically on commit. */
   private input: SimScenarioInput;
   private sim: FixedStepSimulationSession;
 
-  /** Ticks advanced past t = 0 (requested; the engine clamps at `done`). */
+  /** Ticks requested past t = 0; live mode never clamps. */
   private tickCount = 0;
   private actorCounter = 0;
   private existCounter = 0;
   /** Per-actor zero-order-hold action timeline (append-only, time-ordered). */
   private readonly actionTimeline = new Map<string, ActionEpoch[]>();
-  /** Spawn/despawn events surfaced by a rebuild's catch-up, for the next advance. */
+  /** Spawn/despawn events surfaced by clip-mode rebuild catch-up. */
   private pendingEvents: SimEvent[] = [];
   private readonly entries: WorldLogEntry[] = [];
   private digestHex: string;
@@ -237,11 +229,14 @@ export class WorldSession {
 
   constructor(options: WorldSessionOptions) {
     this.graph = options.graph;
+    this.mode = options.mode ?? 'clip';
     this.horizonSeconds = options.horizonSeconds ?? 120;
-    this.input = normalizeSimScenarioInput({ ...options.input, clipSeconds: this.horizonSeconds });
+    this.input = normalizeSimScenarioInput(
+      this.mode === 'live' ? options.input : { ...options.input, clipSeconds: this.horizonSeconds },
+    );
     this.baseInputHash = contentHash(this.input);
     this.refreshActorCatalog();
-    this.digestHex = sha256(`world-session.v${WORLD_SESSION_LOG_VERSION}:${this.baseInputHash}`);
+    this.digestHex = sha256(`world-session.v${WORLD_SESSION_LOG_VERSION}:${this.baseInputHash}:${this.mode}`);
 
     const errors = checkFeasibility(this.input, this.graph).filter((i) => i.severity === 'error');
     if (errors.length > 0) {
@@ -260,6 +255,7 @@ export class WorldSession {
       graph: this.graph,
       guards: 'skip',
       actionHook: this.hook,
+      mode: this.mode,
     });
   }
 
@@ -377,6 +373,7 @@ export class WorldSession {
     return {
       version: WORLD_SESSION_LOG_VERSION,
       baseInputHash: this.baseInputHash,
+      mode: this.mode,
       horizonSeconds: this.horizonSeconds,
       entries: [...this.entries],
       digest: this.digestHex,
@@ -445,8 +442,8 @@ export class WorldSession {
 
   /**
    * Atomic structural mutation: resolve and validate every op against a
-   * candidate input; commit (swap input + rebuild) only when the whole batch
-   * is valid, otherwise reject and leave the world byte-identical.
+   * candidate input. Live mode commits through incremental engine mutation;
+   * clip mode retains deterministic rebuild semantics.
    */
   private applyStructural(ops: readonly BatchOp[]): CommandOutcome {
     const snap = this.sim.peek();
@@ -473,6 +470,9 @@ export class WorldSession {
       if (op.kind === 'spawn') {
         const req = op.spawn;
         if (!ACTOR_KINDS.includes(req.kind)) return { ok: false, error: `spawn: unknown actor kind ${String(req.kind)}` };
+        if (this.mode === 'live' && req.tags?.includes('ambient')) {
+          return { ok: false, error: 'spawn: live ambient actors are not supported' };
+        }
 
         let id = req.id;
         if (id !== undefined) {
@@ -548,13 +548,26 @@ export class WorldSession {
     );
     if (bad) return { ok: false, error: `batch rejected by feasibility: ${bad.code} at ${bad.path}` };
 
-    // Commit: swap the canonical input and its static truth catalog together,
-    // then rebuild at the boundary.
+    // Commit the canonical input and truth catalog first. A live engine accepts
+    // the same normalized actor specs directly and never replays elapsed ticks.
     this.input = candidate;
     this.refreshActorCatalog();
     this.actorCounter = actorCounter;
     this.existCounter = existCounter;
-    this.rebuild(touched, boundaryTS);
+    if (this.mode === 'live') {
+      let spawnedIndex = 0;
+      for (const op of ops) {
+        if (op.kind === 'spawn') {
+          const actorId = spawnedIds[spawnedIndex++]!;
+          const actor = candidate.actors.find((item) => item.id === actorId)!;
+          this.sim.addActor(actor);
+        } else {
+          this.sim.setActorPresence(op.actorId, false);
+        }
+      }
+    } else {
+      this.rebuild(touched, boundaryTS);
+    }
     return { ok: true, actorIds: spawnedIds };
   }
 
@@ -613,7 +626,12 @@ export function replayWorldSessionLog(
   if (log.version !== WORLD_SESSION_LOG_VERSION) {
     throw new Error(`unsupported world-session log version ${String(log.version)}`);
   }
-  const world = new WorldSession({ input: options.input, graph: options.graph, horizonSeconds: log.horizonSeconds });
+  const world = new WorldSession({
+    input: options.input,
+    graph: options.graph,
+    horizonSeconds: log.horizonSeconds,
+    mode: log.mode,
+  });
   if (world.baseInputHash !== log.baseInputHash) {
     throw new Error(`base input mismatch: log built from ${log.baseInputHash}, replay input is ${world.baseInputHash}`);
   }

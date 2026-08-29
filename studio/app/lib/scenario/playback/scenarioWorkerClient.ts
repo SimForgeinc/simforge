@@ -61,17 +61,29 @@ export class ScenarioWorkerClient {
     const revision = contentHash({ template, ambientTraffic, baseInstance: baseInstance?.manifest.inputHash ?? null });
     this.compileGate.begin(revision);
     this.activeCompile = id;
+    const timeoutMs = options.timeoutMs ?? 45_000;
     // The worker materialises against its own catalog instance, and the
     // editor's own priming races this call. Resolving both runtime catalogs
     // here is idempotent and makes a gallery or CARLA id impossible to
     // materialise as an unknown default model.
-    await Promise.all([
-      primeGalleryEntriesForDocument(template).catch(() => []),
-      primeCarlaObjectsForDocument(template).catch(() => []),
-    ]);
+    try {
+      await withPreparationTimeout(
+        Promise.all([
+          primeGalleryEntriesForDocument(template).catch(() => []),
+          primeCarlaObjectsForDocument(template).catch(() => []),
+        ]),
+        timeoutMs,
+        'asset catalog',
+      );
+    } catch (error) {
+      if (this.activeCompile === id) this.activeCompile = null;
+      throw error;
+    }
+    if (this.activeCompile !== id) {
+      throw new DOMException('Scenario preparation was canceled', 'AbortError');
+    }
     const worker = this.ensureWorker();
     return new Promise((resolve, reject) => {
-      const timeoutMs = options.timeoutMs ?? 45_000;
       let phase = 'starting';
       const pending: PendingRequest = { revision, reject, onMessage: (message) => {
         if (!this.compileGate.accepts(message.revision)) return;
@@ -257,6 +269,26 @@ function deepFreeze<T>(value: T): T {
   Object.freeze(value);
   for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child);
   return value;
+}
+
+async function withPreparationTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  phase: string,
+): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          reject(new Error(`Scenario preparation stopped making progress for ${timeoutMs} ms during ${phase}.`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /** Run the deterministic Off/Light/Moderate robustness matrix in an isolated browser worker. */
