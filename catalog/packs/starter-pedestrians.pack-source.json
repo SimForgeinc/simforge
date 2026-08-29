@@ -1,0 +1,56 @@
+{
+  "schema": "simforge-oss.asset-pack-source/v1",
+  "id": "simforge.starter-pedestrians",
+  "version": "1.0.0",
+  "title": "SimForge Starter Pedestrians",
+  "author": "CARLA Simulator contributors / SimForge",
+  "license": "CC-BY-4.0",
+  "lane": "browser",
+  "entries": [
+    {
+      "id": "pedestrian.adult",
+      "label": "Adult pedestrian",
+      "class": "pedestrian",
+      "dims": { "l": 0.32, "w": 0.5, "h": 1.75 },
+      "tags": ["vru", "occlusion:low", "sidewalk"],
+      "thumbnail": null,
+      "files": [
+        {
+          "source": "../pedestrians-carla/models/pedestrian_0015.glb",
+          "path": "models/pedestrian_0015.glb",
+          "mediaType": "model/gltf-binary"
+        }
+      ]
+    },
+    {
+      "id": "pedestrian.child",
+      "label": "Child pedestrian",
+      "class": "pedestrian",
+      "dims": { "l": 0.24, "w": 0.35, "h": 1.2 },
+      "tags": ["vru", "occlusion:low", "sidewalk"],
+      "thumbnail": null,
+      "files": [
+        {
+          "source": "../pedestrians-carla/models/pedestrian_0049.glb",
+          "path": "models/pedestrian_0049.glb",
+          "mediaType": "model/gltf-binary"
+        }
+      ]
+    },
+    {
+      "id": "pedestrian.traffic_marshal",
+      "label": "Traffic marshal / police director",
+      "class": "pedestrian",
+      "dims": { "l": 0.72, "w": 0.68, "h": 1.88 },
+      "tags": ["vru", "workzone", "occlusion:low", "roadway"],
+      "thumbnail": null,
+      "files": [
+        {
+          "source": "../pedestrians-carla/models/pedestrian_0020.glb",
+          "path": "models/pedestrian_0020.glb",
+          "mediaType": "model/gltf-binary"
+        }
+      ]
+    }
+  ]
+}
