@@ -65,7 +65,12 @@ async function handle(message: SumoWorkerRequest): Promise<void> {
   if (message.kind === 'init') {
     const started = performance.now();
     const moduleUrl = new URL(message.moduleUrl, scope.location.href).href;
-    const imported = await import(/* turbopackIgnore: true */ moduleUrl) as { default: SumoFactory };
+    // Both ignore comments are required: the module URL is only known at
+    // runtime, so a bundler that tries to resolve it statically fails with
+    // "Cannot find module 'http://…'". Turbopack was already handled; a webpack
+    // dev server (`next dev --webpack`) needs its own directive, which is why
+    // SUMO worked on a Turbopack host and failed here.
+    const imported = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ moduleUrl) as { default: SumoFactory };
     const instantiateWasm = await compileSumoRuntime(
       message.payload.wasmBinary,
       message.payload.wasmModule,
