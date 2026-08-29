@@ -5,10 +5,11 @@ import { createPortal } from "react-dom";
 import { Raycaster, Vector2, Vector3 } from "three";
 import type { CityViewer } from "@simforge-oss/viewer";
 import type { ActorRenderer } from "@simforge-oss/viewer";
-import type {
-  EditorDocument,
-  EditorState,
-  ScenarioMapEntry,
+import {
+  armActorSimpleTimedRoute,
+  type EditorDocument,
+  type EditorState,
+  type ScenarioMapEntry,
 } from "@simforge-oss/editor";
 import type { ScenarioDocumentRecord } from "@/app/lib/scenario/editor/api";
 import type {
@@ -111,7 +112,6 @@ import {
 } from "./simulation-issues";
 import { buildEditorDebugInformation } from "./debug-information";
 import {
-  armActorSimpleTimedRoute,
   convertDocumentToSimpleTimedRoutes,
   hasAdvancedMotion,
   isCustomTimedRoute,
@@ -825,6 +825,7 @@ export function ScenarioEditorSurface({
               ?? role.actor.class,
           ]),
         ),
+        interactions: editorDocument?.data.choreography.interactions,
         carlaCompatibilityTable,
         // Readiness text has to name actors the way the timeline and viewport
         // label them ("Fire truck 1"), not by catalog id: an author matching a

@@ -32,6 +32,7 @@ import { newTemplateId, type Interaction, type ReasoningTraceSegment } from "@si
 import {
   actionsForActor,
   interactionForAction,
+  setExclusiveCustomTimedRoute,
   type ActionDefinition,
   type EditorDocument,
   type EditorState,
@@ -75,7 +76,7 @@ import {
 import { DynamicActorCatalogIcon, isDynamicActorCatalogId } from '../regions/DynamicActorCatalogIcon';
 import { cn } from "@/app/lib/utils";
 import { isUnconfiguredSimpleTimedRoute } from "../simple-route-status";
-import { isCustomTimedRoute, setExclusiveCustomTimedRoute } from "../simple-timed-routes";
+import { isCustomTimedRoute } from "../simple-timed-routes";
 import { TimelineCarlaCompatibilityMarker } from "./TimelineCarlaCompatibilityMarker";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTransportControls } from "./TimelineTransportControls";

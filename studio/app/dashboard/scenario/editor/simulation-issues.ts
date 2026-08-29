@@ -1,3 +1,8 @@
+import {
+  emptyTimedRouteIssues,
+  isSimpleModeEngineIssueSuppressed,
+} from "@simforge-oss/editor";
+import type { Interaction } from "@simforge-oss/scenario";
 import { getEntry } from "@simforge-oss/asset-catalog";
 import {
   carlaCompatibilityFor,
@@ -81,6 +86,7 @@ export function solutionForSimulationIssue(issue: SimulationIssue): string {
 export function collectSimulationIssues(input: {
   experience?: "simple" | "advanced" | null;
   actorNames?: Readonly<Record<string, string>>;
+  interactions?: readonly Interaction[];
   preparationMessage?: string | null;
   preparationFailed?: boolean;
   playbackError?: string | null;
@@ -96,6 +102,7 @@ export function collectSimulationIssues(input: {
   }[];
 }): SimulationIssue[] {
   const issues: SimulationIssue[] = [];
+  issues.push(...emptyTimedRouteIssues(input.interactions ?? [], input.actorNames));
   const preparationFailed = Boolean(
     input.preparationFailed ||
       input.preparationMessage?.toLowerCase().includes("unavailable"),
@@ -147,13 +154,10 @@ export function collectSimulationIssues(input: {
     });
   }
   for (const [index, issue] of engineIssues(input.engineIssues).entries()) {
-    if (input.experience === "simple" && [
-      "traffic_control_route_unbound",
-      "timed_route_turn_unreachable",
-      "target_timing_infeasible",
-    ].includes(issue.code ?? "")) {
-      continue;
-    }
+    if (
+      input.experience === "simple"
+      && isSimpleModeEngineIssueSuppressed(issue.code)
+    ) continue;
     const actorName = actorNameForIssue(issue.path, input.actorNames);
     const timingWarning = issue.code === "timed_route_turn_unreachable"
       || issue.code === "target_timing_infeasible";
