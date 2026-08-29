@@ -103,7 +103,8 @@
     "./schema/*": "./schema/*"
   },
   "files": [
-    "dist"
+    "dist",
+    "schema"
   ],
   "scripts": {
     "build": "tsup src/index.ts src/import.ts src/export/index.ts src/export/types.ts src/export/xml-1.4.ts src/node/index.ts src/execution-plan.ts src/esmini/index.ts src/trace-diff/index.ts --format esm --dts --sourcemap --clean --out-dir dist",
