@@ -30,8 +30,8 @@ compatibility in both directions. Its portable deterministic core includes:
   frozen policy evaluation, and scenario-faithfulness examination.
 - **Automation** (`packages/cli`): the `simforge` binary and `sf` alias.
 
-All 13 TypeScript packages use the `@simforge-oss/*` scope and lockstep
-`0.1.0-rc.48` version.
+All 15 TypeScript packages use the `@simforge-oss/*` scope and lockstep
+`0.1.0-rc.49` version.
 
 ## Products and compatibility
 
