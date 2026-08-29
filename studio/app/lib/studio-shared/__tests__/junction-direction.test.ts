@@ -17,7 +17,7 @@ import {
   JUNCTION_TURN_FOR_AUTHORED_DIRECTION,
   TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
   type JunctionVec2,
-} from "../junction-direction";
+} from "@simforge-oss/maps/topology";
 
 function turnClip(direction: string, extra: Record<string, unknown> = {}) {
   return {

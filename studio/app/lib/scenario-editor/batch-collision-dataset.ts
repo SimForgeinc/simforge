@@ -18,10 +18,12 @@
  */
 import type { AppContext } from "@/app/lib/db/app-context";
 import {
-  TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
-  authoredJunctionTurn,
   type RuntimeScenarioEditorActor,
 } from "@simforge-oss/studio-shared";
+import {
+  TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
+  authoredJunctionTurn,
+} from "@simforge-oss/maps/topology";
 import { createDatasetScenario } from "@/app/lib/db/scenario-query-store";
 import { resolveScenarioMapReference } from "@/app/lib/scenario-editor/scenario-api-store";
 import { getMapTopologyIndex } from "@/app/lib/maps/topology/server/topology-index-service";

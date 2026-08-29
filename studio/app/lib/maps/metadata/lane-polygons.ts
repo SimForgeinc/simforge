@@ -12,7 +12,12 @@
  * The result is uploaded as a per-map sidecar artifact (`lane_polygons_geojson`)
  * during Phase 1 metadata population, mirroring the signals overlay sidecar.
  */
-import { MapProjection, buildLanePolygonsLocal } from "@simforge-oss/studio-shared";
+import {
+  MapProjection,
+} from "@simforge-oss/studio-shared";
+import {
+  buildLanePolygonsLocal,
+} from "@simforge-oss/maps/topology";
 import { extractCoordinateRefFromXodr } from "./xodr";
 
 type GeoJSONPolygon = { type: "Polygon"; coordinates: [number, number][][] };

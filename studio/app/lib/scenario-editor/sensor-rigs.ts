@@ -1,4 +1,6 @@
-import { type Sensor } from "@simforge-oss/studio-shared";
+import {
+  type Sensor,
+} from "@simforge-oss/scenario/contracts";
 
 export type SensorRig = {
   id: string;

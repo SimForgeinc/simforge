@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RuntimeTopologyProvenanceSchema } from "./map-topology/types";
+import { RuntimeTopologyProvenanceSchema } from "@simforge-oss/maps/topology";
 
 export const SEMANTIC_ACTOR_AUTHORING_SCHEMA_VERSION =
   "simforge.semantic-actor-authoring.v1" as const;

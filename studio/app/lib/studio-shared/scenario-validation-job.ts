@@ -1,13 +1,4 @@
-/**
- * Contracts for the esmini validation pipeline (plan:
- * plans/scenario-ingestion/2026-05-20-esmini-validation-loop.md). Each row in
- * `scenario_validation_jobs` (migration 20260520120000) represents one attempt
- * at compiling a draft to OpenSCENARIO XML, running esmini headless, and
- * judging whether the intended collision actually fires. The repair
- * orchestrator inserts subsequent attempts under the same `scenario_id` with
- * an incrementing `attempt` counter, optionally tagging the row with a
- * `repair_kind` to record what kind of adjustment produced this attempt.
- */
+/** Portable contracts for local esmini validation and repair attempts. */
 import { z } from "zod";
 import { ScenarioLintCompactReportSchema } from "./scenario-lint/summary";
 
@@ -125,11 +116,7 @@ export const EsminiCollisionEventSchema = z.object({
 });
 export type EsminiCollisionEvent = z.infer<typeof EsminiCollisionEventSchema>;
 
-/**
- * Aggregate metrics the validation Lambda writes to S3 and copies into the
- * job row's `metrics_jsonb` column. The shape is shared between the Lambda
- * parser (writer) and the orchestrator + frontend (readers).
- */
+/** Aggregate metrics produced by a local headless esmini validation run. */
 export const EsminiValidationMetricsSchema = z.object({
   duration_s: z.number(),
   actor_trajectories: z.array(EsminiActorTrajectorySchema),
@@ -180,11 +167,7 @@ export const EsminiValidationMetricsSchema = z.object({
 });
 export type EsminiValidationMetrics = z.infer<typeof EsminiValidationMetricsSchema>;
 
-/**
- * One row of `scenario_validation_jobs`, projected for client consumption.
- * Buckets/keys are nullable because intermediate states (pending/running)
- * haven't written the artifacts yet.
- */
+/** One local validation attempt projected for Studio consumption. */
 export const ScenarioValidationJobSchema = z.object({
   id: z.string(),
   scenario_id: z.string(),
@@ -193,57 +176,13 @@ export const ScenarioValidationJobSchema = z.object({
   status: ScenarioValidationJobStatusSchema,
   verdict: ScenarioValidationVerdictSchema.nullable(),
   repair_kind: ScenarioValidationRepairKindSchema.nullable(),
-  xosc_s3_bucket: z.string().nullable(),
-  xosc_s3_key: z.string().nullable(),
-  xodr_s3_bucket: z.string().nullable(),
-  xodr_s3_key: z.string().nullable(),
-  state_log_s3_bucket: z.string().nullable(),
-  state_log_s3_key: z.string().nullable(),
   metrics: EsminiValidationMetricsSchema.nullable(),
   error_message: z.string().nullable(),
-  sqs_message_id: z.string().nullable(),
-  requested_by: z.string().nullable(),
-  enqueued_at: z.string(),
+  created_at: z.string(),
   started_at: z.string().nullable(),
   completed_at: z.string().nullable(),
 });
 export type ScenarioValidationJob = z.infer<typeof ScenarioValidationJobSchema>;
 
-/**
- * SQS MessageBody envelope. The Lambda parses this directly. `attempt` is
- * included so the worker can write an idempotency-friendly state-log key
- * (`<scenario>/<attempt>.dat`) without consulting the DB.
- */
-/**
- * What the scripted esmini rollout is expected to produce, so the verdict
- * reflects the scenario's declared intent instead of a hardcoded assumption:
- *   - `collision` — the actors plant a collision course and should contact at
- *     the conflict point (every v1 collision family; the AV's job in CARLA is
- *     to avoid it). Pass = ego contact (or a grazing near-contact).
- *   - `near_miss` — the actors should form a tight conflict but not contact.
- *     Pass = came close, no contact.
- */
+/** Expected outcome of the scripted esmini rollout. */
 export type EsminiExpectedOutcome = "collision" | "near_miss";
-
-export interface ScenarioValidationQueueMessage {
-  job_id: string;
-  scenario_id: string;
-  /**
-   * The consumer intentionally treats both purposes identically. Optional so
-   * messages enqueued before purpose-aware jobs remain valid.
-   */
-  purpose?: ScenarioValidationJobPurpose;
-  attempt: number;
-  xosc_s3_bucket: string;
-  xosc_s3_key: string;
-  xodr_s3_bucket: string;
-  xodr_s3_key: string;
-  /**
-   * Declared validation intent, derived from the scenario's collision family
-   * at creation time and threaded through so the Lambda verdict is data-driven.
-   * Optional for backward compatibility; the Lambda defaults to `collision`.
-   */
-  expected_outcome?: EsminiExpectedOutcome;
-  /** Planned time-of-impact (seconds) the actors were back-calculated to. */
-  conflict_time_s?: number;
-}

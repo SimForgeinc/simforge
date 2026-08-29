@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RuntimeTopologyProvenanceSchema, Vec2Schema } from "../map-topology/types";
+import { RuntimeTopologyProvenanceSchema, Vec2Schema } from "@simforge-oss/maps/topology";
 
 export const SEMANTIC_FEATURE_GRAPH_SCHEMA_VERSION =
   "simforge.semantic-feature-graph.v1" as const;

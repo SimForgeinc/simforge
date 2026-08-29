@@ -2,9 +2,9 @@ import type {
   TopologyGate,
   TopologyLane,
   TurnRelation,
-} from "../map-topology/types";
-import type { TravelAwareTopologyIndex } from "../map-topology/lane-travel";
-import { turnRelationForHeadingChangeDeg } from "../map-topology/build-topology-index";
+} from "@simforge-oss/maps/topology";
+import type { TravelAwareTopologyIndex } from "@simforge-oss/maps/topology";
+import { turnRelationForHeadingChangeDeg } from "@simforge-oss/maps/topology";
 import {
   SEMANTIC_MAP_COMPILER_VERSION,
   SEMANTIC_MAP_SCHEMA_VERSION,

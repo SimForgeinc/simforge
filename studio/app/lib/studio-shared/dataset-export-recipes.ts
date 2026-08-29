@@ -132,7 +132,7 @@ function cloneSourceFilter(filter: DatasetExportSourceFilter | null) {
     scenarioIds: filter.scenarioIds ? [...filter.scenarioIds] : undefined,
     simulationIds: filter.simulationIds ? [...filter.simulationIds] : undefined,
     sensorIds: filter.sensorIds ? [...filter.sensorIds] : undefined,
-    s3Buckets: filter.s3Buckets ? [...filter.s3Buckets] : undefined,
+    storageScopes: filter.storageScopes ? [...filter.storageScopes] : undefined,
     sensorCategories: filter.sensorCategories ? [...filter.sensorCategories] : undefined,
     outputModalities: filter.outputModalities ? [...filter.outputModalities] : undefined,
     artifactClasses: filter.artifactClasses ? [...filter.artifactClasses] : undefined,

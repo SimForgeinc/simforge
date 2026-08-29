@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BboxSchema } from "./scenario-location";
+import { BboxSchema } from "@simforge-oss/scenario/contracts";
 
 // ── Source discriminator ────────────────────────────────────────────────────
 

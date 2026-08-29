@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RuntimeTopologyFamilySchema, Vec2Schema } from "./map-topology/types";
+import { RuntimeTopologyFamilySchema, Vec2Schema } from "@simforge-oss/maps/topology";
 
 const FormationVec3Schema = z.object({
   x: z.number().finite(),

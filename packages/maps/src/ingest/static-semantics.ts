@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 
 import { readGlb } from "./glb";
 
-export const STATIC_SEMANTICS_SCHEMA = "uniscenario.static-semantics/v1";
+export const STATIC_SEMANTICS_SCHEMA = "simforge.static-semantics/v1";
 export const STATIC_SEMANTIC_CLASSES = Object.freeze([
   "road", "sidewalk", "building", "vegetation", "pole", "traffic_light",
   "traffic_sign", "furniture", "terrain", "other",

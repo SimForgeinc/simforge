@@ -2,7 +2,7 @@ import { z } from "zod";
 import { CrossMapVariationRelaxationSchema } from "./carla-blueprint-substitution";
 import { JunctionSignalPlanSchema, type JunctionSignalPlan } from "./scenario-signals";
 import { ScenarioEditorActorDraftSchema } from "./scenario-editor";
-import { RuntimeTopologyFamilySchema, Vec2Schema } from "./map-topology/types";
+import { RuntimeTopologyFamilySchema, Vec2Schema } from "@simforge-oss/maps/topology";
 import {
   SceneFormationSchema,
   SceneFormationSolveReportSchema,

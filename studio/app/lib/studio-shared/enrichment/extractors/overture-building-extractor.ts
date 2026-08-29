@@ -67,7 +67,7 @@ export interface OvertureBuildingInput {
 export interface ExtractedBuilding {
   /** Aurora-row shape; address_count is filled in by the address extractor. */
   row: MapAssetBuilding;
-  /** GeoJSON Feature ready for the S3 enrichment.json `buildings` overlay. */
+  /** GeoJSON feature ready for the local enrichment `buildings` overlay. */
   feature: {
     type: "Feature";
     id: string;

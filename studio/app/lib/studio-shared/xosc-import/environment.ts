@@ -24,7 +24,7 @@ import type {
   EnvironmentPresetLighting,
   EnvironmentPresetRoadSurface,
   EnvironmentPresetWeather,
-} from "../environment-preset";
+} from "@simforge-oss/scenario/contracts";
 import { attrNumber, attrString, childEl, type XmlElement } from "../xosc/xml-dom";
 
 /** Clock → lighting band. The writer's `LIGHTING` table, keyed by its clock. */

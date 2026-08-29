@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildLanePolygonsLocal } from "../map-topology/build-topology-index";
+import { buildLanePolygonsLocal } from "@simforge-oss/maps/topology";
 
 // Minimal straight, 20 m road along +x with one driving lane each side of the
 // reference line. Each lane is a constant 3 m wide (`<width a="3" .../>`), so

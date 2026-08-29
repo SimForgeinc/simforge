@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   bindRuntimeTopology,
   buildRuntimeTopologyParity,
-} from "../map-topology/build-runtime-parity";
-import type { MapTopologyIndex } from "../map-topology/types";
+} from "@simforge-oss/maps/topology";
+import type { MapTopologyIndex } from "@simforge-oss/maps/topology";
 
 function topology(): MapTopologyIndex {
   return {

@@ -1,5 +1,7 @@
 import type { ScenarioEditorRoadAnchor } from "@simforge-oss/studio-shared";
-import { laneTravelIncreasesSByConvention } from "@simforge-oss/studio-shared";
+import {
+  laneTravelIncreasesSByConvention,
+} from "@simforge-oss/maps/topology";
 import type {
   RuntimeRoadOverlayCollection,
   RuntimeRoadOverlayFeature,

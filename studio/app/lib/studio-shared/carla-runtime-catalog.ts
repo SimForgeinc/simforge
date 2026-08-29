@@ -5,10 +5,9 @@ import {
   CARLA_UE5_VEHICLE_BLUEPRINTS,
 } from "./carla-ue5-vehicle-blueprints";
 
-const CatalogS3ObjectSchema = z.object({
-  bucket: z.string().min(1),
-  key: z.string().min(1),
+const CatalogObjectSchema = z.object({
   uri: z.string().min(1).optional(),
+  path: z.string().min(1).optional(),
   sha256: z.string().min(1).optional(),
   size_bytes: z.number().int().nonnegative().optional(),
 });
@@ -223,7 +222,7 @@ export const RuntimeCatalogMapSchema = z.object({
   dataset_map: z.boolean().default(true),
   bundle_ready: z.boolean(),
   bundle_key: z.string().nullable(),
-  bundle: CatalogS3ObjectSchema.nullable().optional(),
+  bundle: CatalogObjectSchema.nullable().optional(),
   drift: z.array(z.string()).default([]),
   auto_created: z.boolean().default(false),
 });

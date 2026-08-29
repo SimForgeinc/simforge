@@ -25,9 +25,9 @@ import type {
   EnvironmentPresetLighting,
   EnvironmentPresetWeather,
   EnvironmentPresetRoadSurface,
-} from "../environment-preset";
+} from "@simforge-oss/scenario/contracts";
 import type { ScenarioEditorTimelineAction } from "../scenario-editor";
-import { SCENARIO_TIMING } from "../scenario-timing";
+import { SCENARIO_TIMING } from "@simforge-oss/scenario/contracts";
 
 const DEFAULT_COLLISION_DURATION_SECONDS = SCENARIO_TIMING.defaultDurationSeconds;
 

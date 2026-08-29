@@ -1,5 +1,7 @@
 import { create } from "zustand";
-import type { Sensor } from "@simforge-oss/studio-shared";
+import type {
+  Sensor,
+} from "@simforge-oss/scenario/contracts";
 import type { NormalizedScenarioDraft } from "@/app/lib/scenario-editor/draft-normalization";
 import type { EditorActorRecord } from "@/app/lib/scenario-editor/types";
 import { TRAILING_CAMERA_SENSOR } from "@/app/lib/scenario-editor/sensor-rigs";

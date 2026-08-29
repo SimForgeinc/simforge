@@ -1,5 +1,7 @@
 import type { ScenarioEditorRoadAnchor } from "@simforge-oss/studio-shared";
-import { laneTravelIncreasesSByConvention } from "@simforge-oss/studio-shared";
+import {
+  laneTravelIncreasesSByConvention,
+} from "@simforge-oss/maps/topology";
 import type { RuntimeRoadSegment } from "@/app/lib/runtime/runtime-types";
 import { isDrivableSegment, rslFromWaypointRef } from "./graph";
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod-v3";
 import type { MapTopologyIndex } from "./types";
 import {
   ROADWAY_CONSISTENCY_FORMAT as CORE_FORMAT,

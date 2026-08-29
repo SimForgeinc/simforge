@@ -1,21 +1,21 @@
 /**
- * SimCloud provenance carried in an .xosc `FileHeader@description`.
+ * SimForge provenance carried in an .xosc `FileHeader@description`.
  *
  * ## The problem
  *
  * An OpenSCENARIO file names its OpenDRIVE map (`RoadNetwork/LogicFile`) and
  * nothing else about where it came from. That is not enough to reopen one of
  * OUR exports in the editor: the writer's `logicFile` is the basename of the
- * map asset's XODR object in S3 (`san-ramon-part-1_20260522-091430.xodr`),
- * which matches neither the map asset's display `name` nor its
- * `carla_map_name` / `ue5_carla_map_name`. Importing by LogicFile name alone
- * therefore fails to resolve the map for exactly the files we wrote ourselves.
+ * map asset's XODR artifact (`san-ramon-part-1_20260522-091430.xodr`), which
+ * matches neither the map asset's display `name` nor its runtime map name.
+ * Importing by LogicFile name alone therefore fails to resolve the map for
+ * exactly the files we wrote ourselves.
  *
  * ## The carrier, and why it is this one
  *
  * The id rides as a structured suffix on `FileHeader@description`:
  *
- *     description="dsc_f38689a3 [simcloud:map_asset=ma_123;map=San_Ramon_P1]"
+ *     description="dsc_f38689a3 [simforge:map_asset=ma_123;map=San_Ramon_P1]"
  *
  * Alternatives considered and rejected:
  *
@@ -36,7 +36,7 @@
  *
  * ## Format
  *
- * A single trailing ` [simcloud:<k>=<v>;<k>=<v>]` group. Values are
+ * A single trailing ` [simforge:<k>=<v>;<k>=<v>]` group. Values are
  * percent-encoded, so a `;`, `]` or `%` inside an id or map name round-trips.
  * Unknown keys are ignored on read, which is what makes the format extensible
  * without a version number: a reader older than the writer drops what it does
@@ -55,10 +55,10 @@ const MAP_NAME_KEY = "map";
  * The trailing group. `[^\]]*` keeps it to ONE bracket group anchored at the
  * end, so a description that itself contains brackets is not mistaken for one.
  */
-const GROUP_PATTERN = /\s*\[simcloud:([^\]]*)\]\s*$/;
+const GROUP_PATTERN = /\s*\[simforge:([^\]]*)\]\s*$/;
 
 export type XoscFileHeaderMetadata = {
-  /** The description with any SimCloud group stripped. Never null; may be "". */
+  /** The description with any SimForge group stripped. Never null; may be "". */
   description: string;
   /** The exported scenario's map asset id, or null when the file carries none. */
   mapAssetId: string | null;
@@ -86,7 +86,7 @@ function clean(value: string | null | undefined): string | null {
 }
 
 /**
- * Strip any SimCloud group from a description, returning the human half.
+ * Strip any SimForge group from a description, returning the human half.
  *
  * Exported for the writer, which re-encodes from the draft rather than from
  * whatever a caller handed it: without this, re-exporting an imported file
@@ -114,7 +114,7 @@ export function encodeXoscFileHeaderDescription(input: {
   if (mapAssetId) parts.push(`${MAP_ASSET_KEY}=${encodeValue(mapAssetId)}`);
   if (mapName) parts.push(`${MAP_NAME_KEY}=${encodeValue(mapName)}`);
   if (parts.length === 0) return base;
-  const group = `[simcloud:${parts.join(";")}]`;
+  const group = `[simforge:${parts.join(";")}]`;
   return base ? `${base} ${group}` : group;
 }
 

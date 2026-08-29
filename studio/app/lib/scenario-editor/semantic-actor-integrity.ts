@@ -2,9 +2,11 @@ import "server-only";
 
 import {
   SemanticActorAuthoringSchema,
-  type RuntimeTopologyProvenance,
   type ScenarioEditorActorDraft,
 } from "@simforge-oss/studio-shared";
+import {
+  type RuntimeTopologyProvenance,
+} from "@simforge-oss/maps/topology";
 import { semanticActorOutputHash } from "./semantic-actor-binding";
 
 export type SemanticActorIntegrityCode =

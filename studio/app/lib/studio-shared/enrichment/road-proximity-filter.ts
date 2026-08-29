@@ -248,7 +248,7 @@ export function filterByRoadProximityBbox<T>(
 import type { MapAssetEnrichmentSnapshot, MapOverlayLayer } from "../map-asset-enrichment";
 import { deriveEnrichmentTags } from "./derive-enrichment-tags";
 import { buildCandidateLocations } from "./build-candidate-locations";
-import type { Bbox } from "../scenario-location";
+import type { Bbox } from "@simforge-oss/scenario/contracts";
 
 type GeoJsonFeature = {
   geometry?: { coordinates?: unknown } | null;

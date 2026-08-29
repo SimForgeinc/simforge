@@ -1,11 +1,13 @@
 import {
-  EnvironmentPresetSchema,
   GeneratedScenarioMetadataSchema,
   environmentPresetToCarlaWeather,
   type GeneratedScenarioMetadata,
   type ScenarioEditorActorDraft,
   type ScenarioIntention,
 } from "@simforge-oss/studio-shared";
+import {
+  EnvironmentPresetSchema,
+} from "@simforge-oss/scenario/contracts";
 
 export type ScenarioMetadataSoftwareVersions =
   GeneratedScenarioMetadata["testCase"]["softwareVersions"];

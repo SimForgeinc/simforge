@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BboxSchema } from "./scenario-location";
+import { BboxSchema } from "@simforge-oss/scenario/contracts";
 import { MapEnrichmentSummarySchema } from "./map-asset-enrichment";
 import {
   MapCoordinateRefSchema,
@@ -52,7 +52,7 @@ export const MapAssetArtifactSchema = z.object({
   sha256: z.string(),
   /** Human-readable label for media artifacts (e.g. "north approach", "intersection overview"). */
   label: z.string().optional(),
-  /** File size in bytes (from S3 upload). */
+  /** File size in bytes (from local upload). */
   size_bytes: z.number().nullable().optional(),
   /** When this artifact was added to the map. */
   created_at: z.string().nullable().optional(),
@@ -90,7 +90,7 @@ export type MapAssetTags = z.infer<typeof MapAssetTagsSchema>;
 
 /**
  * Map asset: a single map asset representing a geographic area.
- * Scenario-independent; served by MapAssetCatalog (SimCloud backend proxies to it).
+ * Scenario-independent; served by MapAssetCatalog (SimForge backend proxies to it).
  * Includes generic representation (GeoJSON) and consumer-specific formats (XODR, RRData, FBX).
  */
 export const MapAssetSchema = z.object({

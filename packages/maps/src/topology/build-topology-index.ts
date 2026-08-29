@@ -23,7 +23,7 @@
  * permission metadata. The builder materializes conservative same-section,
  * same-direction adjacency and permission intervals from the XODR lane stack.
  */
-import { classifyJunctionTurn, type JunctionTurn } from "../junction-direction";
+import { classifyJunctionTurn, type JunctionTurn } from "./junction-direction";
 import { laneTravelIncreasesSByConvention } from "./lane-travel";
 import {
   CARLA_RUNTIME_ALLOWED_LANE_TYPES,

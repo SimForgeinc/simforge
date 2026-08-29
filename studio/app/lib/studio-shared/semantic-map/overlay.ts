@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RuntimeTopologyProvenanceSchema, TurnRelationSchema, Vec2Schema } from "../map-topology/types";
+import { RuntimeTopologyProvenanceSchema, TurnRelationSchema, Vec2Schema } from "@simforge-oss/maps/topology";
 import {
   SemanticMapAuthoringStatusSchema,
   SemanticMapDiagnosticCodeSchema,

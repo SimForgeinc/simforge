@@ -1,4 +1,7 @@
-import type { Scenario, ScenarioStatus } from "@simforge-oss/studio-shared";
+import type {
+  Scenario,
+  ScenarioStatus,
+} from "@simforge-oss/scenario/contracts";
 import { cache } from "react";
 import { getCurrentSession } from "./auth/session";
 import { getAppContext } from "./db/app-context";

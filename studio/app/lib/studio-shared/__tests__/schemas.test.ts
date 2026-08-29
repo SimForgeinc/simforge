@@ -4,10 +4,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { DatasetSchema, CreateDatasetInputSchema, VariationConfigSchema } from "../dataset";
-import { CanonicalArtifactSchema, ArtifactManifestSchema } from "../artifact";
+import { CanonicalArtifactSchema, ArtifactManifestSchema } from "@simforge-oss/scenario/contracts";
 import { BaseJobContractSchema, CanonicalJobStatusSchema, JobFamilySchema } from "../job-family";
-import { EntityObjectSchema, RenderOutputSpecSchema, SensorSchema, ManeuverActionSchema } from "../simulation-run";
-import { SimulationStatus, ScenarioStatus } from "../run-status";
+import { EntityObjectSchema, RenderOutputSpecSchema, SensorSchema, ManeuverActionSchema } from "@simforge-oss/scenario/contracts";
+import { SimulationStatus, ScenarioStatus } from "@simforge-oss/scenario/contracts";
 import { DatasetExportTaskInputSchema } from "../dataset-export-task-input";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -101,10 +101,9 @@ describe("VariationConfigSchema", () => {
 describe("CanonicalArtifactSchema", () => {
   const validArtifact = {
     id: "art-1",
-    workspaceId: "ws-1",
-    artifactFamily: "carla",
+    artifactFamily: "simulation",
     artifactType: "recording",
-    s3Bucket: "simforge-assets-dev",
+    uri: "file:///tmp/simforge/recording.mp4",
     createdAt: "2024-01-01T00:00:00Z",
   };
 
@@ -133,8 +132,8 @@ describe("CanonicalArtifactSchema", () => {
     ).toBe("model_output");
   });
 
-  it("rejects empty workspaceId", () => {
-    const bad = { ...validArtifact, workspaceId: "" };
+  it("rejects empty id", () => {
+    const bad = { ...validArtifact, id: "" };
     expect(CanonicalArtifactSchema.safeParse(bad).success).toBe(false);
   });
 
@@ -150,9 +149,8 @@ describe("CanonicalArtifactSchema", () => {
 describe("ArtifactManifestSchema", () => {
   const validManifest = {
     contractVersion: "simforge.artifact-manifest.v1",
-    workspaceId: "ws-1",
-    producerJobFamily: "openscenario_render",
-    producerJobId: "job-1",
+    producerKind: "openscenario_render",
+    producerId: "job-1",
     generatedAt: "2024-01-01T00:00:00Z",
     artifacts: [],
   };

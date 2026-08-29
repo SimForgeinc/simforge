@@ -4,7 +4,7 @@ const Sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 const ImageDigestSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/);
 
 export const SCENARIO_RENDER_RESOURCE_REQUEST_VERSION =
-  "uniscenario.render-resource-request/v1" as const;
+  "simforge.render-resource-request/v1" as const;
 
 /**
  * Provider-neutral admission envelope derived by the control plane from the
@@ -29,7 +29,7 @@ export type ScenarioRenderResourceRequest = z.infer<
 >;
 
 export const SCENARIO_PARITY_EVIDENCE_VERSION =
-  "uniscenario.parity-evidence/v1" as const;
+  "simforge.parity-evidence/v1" as const;
 
 /**
  * Hard acceptance ceiling for CARLA-owned vehicle motion. The tighter

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { SemanticFeatureKindSchema } from "./feature-graph";
 import { SemanticMapAuthoringStatusSchema, SemanticMapPointSchema } from "./types";
-import { TurnRelationSchema, Vec2Schema } from "../map-topology/types";
+import { TurnRelationSchema, Vec2Schema } from "@simforge-oss/maps/topology";
 
 export const SEMANTIC_SITE_QUERY_SCHEMA_VERSION =
   "simforge.semantic-site-query.v1" as const;

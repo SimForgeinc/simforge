@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod-v3";
 import type { SdgRecipeConfig, Sensor, SensorOutputModality } from "./simulation-run";
 import { SCENARIO_TIMING } from "./scenario-timing";
 

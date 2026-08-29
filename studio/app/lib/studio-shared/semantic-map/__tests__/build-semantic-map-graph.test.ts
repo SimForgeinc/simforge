@@ -4,7 +4,7 @@ import type {
   RuntimeTopologyParity,
   TopologyGate,
   TopologyLane,
-} from "../../map-topology/types";
+} from "@simforge-oss/maps/topology";
 import { buildSemanticMapGraph } from "../build-semantic-map-graph";
 import { SemanticMapGraphSchema, type RuntimeBoundLaneGeometry } from "../types";
 

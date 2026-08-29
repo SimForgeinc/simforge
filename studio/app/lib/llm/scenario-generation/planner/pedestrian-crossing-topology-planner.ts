@@ -38,8 +38,13 @@ import {
   walkerStepOffRamp,
   type WalkerGait,
   type WalkerProfile,
-} from "@/app/lib/llm/scenario-generation/walker-profile";
-import type { MapTopologyIndex, Vec2 } from "@simforge-oss/studio-shared";
+  } from "@/app/lib/llm/scenario-generation/walker-profile";
+import type {
+  MapTopologyIndex,
+} from "@simforge-oss/maps/topology";
+import {
+  Vec2,
+} from "@simforge-oss/maps/topology";
 import type {
   PlannedActor,
   PlannedCollision,

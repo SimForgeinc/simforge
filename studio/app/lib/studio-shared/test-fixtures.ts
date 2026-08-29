@@ -3,10 +3,10 @@
  * Each factory validates output against its Zod schema and accepts partial overrides.
  */
 
-import { SimulationArtifactSchema, SensorSchema } from "./simulation-run";
+import { SimulationArtifactSchema, SensorSchema } from "@simforge-oss/scenario/contracts";
 import { ScenarioEditorDraftSchema } from "./scenario-editor";
-import { SCENARIO_TIMING } from "./scenario-timing";
-import type { SimulationArtifact, Sensor } from "./simulation-run";
+import { SCENARIO_TIMING } from "@simforge-oss/scenario/contracts";
+import type { SimulationArtifact, Sensor } from "@simforge-oss/scenario/contracts";
 import type { ScenarioEditorDraft } from "./scenario-editor";
 
 // ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ export function createWebhookCompletionPayload(
     status: "COMPLETED",
     recordings: [
       {
-        uri: `s3://simforge-assets-dev/runs/${jobId}/recording.mp4`,
+        uri: `file:///tmp/simforge/runs/${jobId}/recording.mp4`,
         sizeBytes: 52428800,
         type: "MP4",
       },
@@ -167,7 +167,7 @@ export function createArtifactRecord(
     id,
     simulationId,
     type: "MP4" as const,
-    uri: `s3://simforge-assets-dev/runs/${simulationId}/recording.mp4`,
+    uri: `file:///tmp/simforge/runs/${simulationId}/recording.mp4`,
     sizeBytes: 52428800,
     createdAt: now,
     isAvailable: true,

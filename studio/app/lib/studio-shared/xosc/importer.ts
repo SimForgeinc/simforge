@@ -1,5 +1,5 @@
 /**
- * OpenSCENARIO 1.0 XML -> native SimCloud actor job_spec importer.
+ * OpenSCENARIO 1.0 XML -> native SimForge actor job_spec importer.
  *
  * This is the inverse of `apps/web/app/lib/scenario-editor/xosc-writer` and the
  * keystone that lets an `.xosc` file execute inside the REAL CARLA worker: the

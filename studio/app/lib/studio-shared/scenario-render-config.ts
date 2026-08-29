@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { SensorSchema } from "./simulation-run";
+import { SensorSchema } from "@simforge-oss/scenario/contracts";
 
 export const ActorSensorRigSchema = z
   .object({

@@ -1,8 +1,13 @@
 import type {
-  RuntimeBoundMapTopologyIndex,
   SemanticMapGraph,
 } from "@simforge-oss/studio-shared";
-import { laneTravelIncreasesS, travelOrderedPolyline } from "@simforge-oss/studio-shared";
+import type {
+  RuntimeBoundMapTopologyIndex,
+} from "@simforge-oss/maps/topology";
+import {
+  laneTravelIncreasesS,
+  travelOrderedPolyline,
+} from "@simforge-oss/maps/topology";
 import type {
   RuntimeRoadSegment,
   RuntimeWaypointRef,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RuntimeTopologyFamilySchema } from "../map-topology/types";
+import { RuntimeTopologyFamilySchema } from "@simforge-oss/maps/topology";
 
 export const SEMANTIC_GRAPH_PUBLICATION_SCHEMA_VERSION =
   "simforge.semantic-graph-publication.v2" as const;

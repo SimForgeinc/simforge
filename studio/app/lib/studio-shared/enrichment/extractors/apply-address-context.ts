@@ -99,7 +99,7 @@ function inheritBuildingAttrs(feature: AnyFeature, b: ExtractedBuilding): void {
  * downstream consumers (label placement, click hit-test) can still get a
  * deterministic anchor. The shared reference to b.feature.geometry is
  * fine — nothing mutates polygons after this pass; on serialization the
- * polygon coordinates are written once per consumer (overlay JSON, S3),
+ * polygon coordinates are written once per consumer (overlay JSON, local storage),
  * which is the duplication cost we already accepted.
  */
 function promotePointToBuildingFootprint(

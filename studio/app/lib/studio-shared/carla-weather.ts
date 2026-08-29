@@ -4,7 +4,7 @@ import type {
   EnvironmentPresetLighting,
   EnvironmentPresetWeather,
   EnvironmentPresetRoadSurface,
-} from "./environment-preset";
+} from "@simforge-oss/scenario/contracts";
 
 /**
  * Carla engine weather config.

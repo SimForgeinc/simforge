@@ -1,6 +1,4 @@
 import {
-  SCENARIO_TIMING,
-  SIMULATION_DEFAULTS,
   normalizePhysicsProfileId,
   type PhysicsProfileId,
   type ScenarioEditorActorDraft,
@@ -23,6 +21,10 @@ import {
   ScenarioIntentionSchema,
   type ScenarioMetadata,
   ScenarioMetadataSchema,
+} from "@simforge-oss/studio-shared";
+import {
+  SCENARIO_TIMING,
+  SIMULATION_DEFAULTS,
   SensorSchema,
   type Sensor,
   type SensorOutputModality,
@@ -33,8 +35,10 @@ import {
   type TrafficAggressiveness,
   type TrafficDensity,
   type VehicleMixPreset,
-} from "@simforge-oss/studio-shared";
-import type { EnvironmentPreset } from "@simforge-oss/studio-shared";
+} from "@simforge-oss/scenario/contracts";
+import type {
+  EnvironmentPreset,
+} from "@simforge-oss/scenario/contracts";
 import { z } from "zod";
 import { lenientEnvironmentPreset } from "@/app/lib/scenario-editor/environment-preset-input";
 import {

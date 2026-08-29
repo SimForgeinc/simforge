@@ -1,8 +1,10 @@
 import {
-  SIMULATION_DEFAULTS,
   TARGET_COLLISION_TIME_S,
   type CollisionFamilyId,
 } from "@simforge-oss/studio-shared";
+import {
+  SIMULATION_DEFAULTS,
+} from "@simforge-oss/scenario/contracts";
 import type { GeometryReport } from "@/app/lib/maps/search/server/inspect-location-geometry";
 import {
   loadCollisionLaneGraph,

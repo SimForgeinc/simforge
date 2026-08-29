@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { parseXodr } from "../map-topology/build-topology-index";
+import { parseXodr } from "@simforge-oss/maps/topology";
 import {
   approachIdFromLaneRsl,
   deriveJunctionMovements,

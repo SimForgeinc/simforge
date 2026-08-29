@@ -1,4 +1,4 @@
-import type { Bbox } from "../scenario-location";
+import type { Bbox } from "@simforge-oss/scenario/contracts";
 
 export type { Bbox };
 

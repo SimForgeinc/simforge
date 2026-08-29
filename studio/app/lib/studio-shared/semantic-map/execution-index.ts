@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RuntimeTopologyProvenanceSchema, TurnRelationSchema } from "../map-topology/types";
+import { RuntimeTopologyProvenanceSchema, TurnRelationSchema } from "@simforge-oss/maps/topology";
 import { SemanticMapAuthoringStatusSchema, SemanticMapGraphSchema, type SemanticMapGraph } from "./types";
 
 export const SEMANTIC_EXECUTION_INDEX_SCHEMA_VERSION = "simforge.semantic-execution-index.v1" as const;

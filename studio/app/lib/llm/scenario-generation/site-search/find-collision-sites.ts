@@ -17,7 +17,10 @@
  * families and the corpus-facts join (junction cleanliness term + constraint
  * filtering) layer on next without changing this contract.
  */
-import type { MapTopologyIndex, Vec2 } from "@simforge-oss/studio-shared";
+import type {
+  MapTopologyIndex,
+  Vec2,
+} from "@simforge-oss/maps/topology";
 import { selectPedestrianCrossingSite } from "@/app/lib/llm/scenario-generation/planner/pedestrian-crossing-site-selector";
 import {
   selectMidblockPedSites,

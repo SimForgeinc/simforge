@@ -15,9 +15,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  RuntimeTopologyFamilySchema,
   compileAutopilotRoute,
 } from "@simforge-oss/studio-shared";
+import {
+  RuntimeTopologyFamilySchema,
+} from "@simforge-oss/maps/topology";
 import { getCurrentSession } from "@/app/lib/auth/session";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";
 import {

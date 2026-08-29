@@ -2,10 +2,10 @@
  * Where the imported draft's map identity comes from.
  *
  * Three sources, in a fixed order: an explicit caller option, the
- * `[simcloud:...]` provenance our writer stamps into
+ * `[simforge:...]` provenance our writer stamps into
  * `FileHeader@description`, and last the LogicFile basename. The order is the
- * whole point — for one of OUR exports the LogicFile is the XODR object's
- * filename in S3, which is not a map name at all, so a reader that trusted it
+ * whole point — for one of OUR exports the LogicFile is the XODR artifact's
+ * filename, which is not a map name at all, so a reader that trusted it
  * would resolve the wrong map (or none) for exactly the files we wrote.
  */
 
@@ -17,7 +17,7 @@ const NOW = "2026-07-24T00:00:00Z";
 function xosc(description: string, logicFile = "san-ramon-part-1_20260522-091430.xodr"): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>
-  <FileHeader revMajor="1" revMinor="0" date="GOLDEN" description="${description}" author="SimCloud"/>
+  <FileHeader revMajor="1" revMinor="0" date="GOLDEN" description="${description}" author="SimForge"/>
   <RoadNetwork><LogicFile filepath="${logicFile}"/></RoadNetwork>
   <Entities>
     <ScenarioObject name="ego">
@@ -53,7 +53,7 @@ function xosc(description: string, logicFile = "san-ramon-part-1_20260522-091430
 </OpenSCENARIO>`;
 }
 
-const EMBEDDED = "dsc_123 [simcloud:map_asset=ma_san_ramon;map=San_Ramon_Phase_1_P1]";
+const EMBEDDED = "dsc_123 [simforge:map_asset=ma_san_ramon;map=San_Ramon_Phase_1_P1]";
 
 describe("embedded FileHeader provenance", () => {
   it("is surfaced separately from the resolved draft metadata", () => {
@@ -128,7 +128,7 @@ describe("precedence", () => {
   });
 
   it("takes an explicit map name over an embedded one even with no asset id", () => {
-    const result = importXoscToDraft(xosc("plain [simcloud:map=Embedded]"), {
+    const result = importXoscToDraft(xosc("plain [simforge:map=Embedded]"), {
       now: NOW,
       mapName: "Explicit",
     });

@@ -308,6 +308,12 @@ importers:
       three:
         specifier: ^0.185.0
         version: 0.185.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+      zod-v3:
+        specifier: npm:zod@3.25.76
+        version: zod@3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -432,6 +438,9 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+      zod-v3:
+        specifier: npm:zod@3.25.76
+        version: zod@3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.10.0

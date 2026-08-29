@@ -1,11 +1,11 @@
 import type {
   RuntimeBoundMapTopologyIndex,
   TopologyLane,
-} from "../map-topology/types";
+} from "@simforge-oss/maps/topology";
 import {
   laneTravelIncreasesS,
   travelOrderedPolyline,
-} from "../map-topology/lane-travel";
+} from "@simforge-oss/maps/topology";
 import type {
   RuntimeBoundLaneGeometry,
   SemanticMapPoint,

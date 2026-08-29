@@ -12,10 +12,12 @@
 import {
   CARLA_UE5_WALKER_BLUEPRINTS,
   DEFAULT_REACTION_AGGRESSIVENESS,
-  TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
   type ScenarioEditorActorDraft,
   type TimedInstructions,
 } from "@simforge-oss/studio-shared";
+import {
+  TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
+} from "@simforge-oss/maps/topology";
 import { PEDESTRIAN_LIMITS } from "@simforge-oss/engine";
 import {
   ADULT_RUN_SPEED_MPS,

@@ -1,4 +1,6 @@
-import { laneTravelIncreasesSByConvention } from "@simforge-oss/studio-shared";
+import {
+  laneTravelIncreasesSByConvention,
+} from "@simforge-oss/maps/topology";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRouteSession } from "@/app/lib/auth/route-session";

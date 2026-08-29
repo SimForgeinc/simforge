@@ -2,7 +2,7 @@ import {
   RoadwayConsistencyReportSchema,
   type RoadwayConsistencyIssue,
   type RoadwayConsistencyReport,
-} from "@simforge-oss/studio-shared";
+} from "@simforge-oss/maps/topology";
 
 export const ROADWAY_CONSISTENCY_ATTESTATION_SCHEMA_VERSION =
   "simforge.roadway-consistency-attestation.v1" as const;

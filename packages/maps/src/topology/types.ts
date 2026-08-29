@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod-v3";
 
 /**
  * Map topology index (schema v1) — **pure XODR**.

@@ -59,9 +59,9 @@ import type {
   SemanticMapGraph,
   SemanticMapPoint,
 } from "./types";
-import type { TurnRelation } from "../map-topology/types";
-import { JUNCTION_TURN_WEIGHTS } from "../junction-direction";
-import { junctionTurnForRelation } from "../map-topology/build-topology-index";
+import type { TurnRelation } from "@simforge-oss/maps/topology";
+import { JUNCTION_TURN_WEIGHTS } from "@simforge-oss/maps/topology";
+import { junctionTurnForRelation } from "@simforge-oss/maps/topology";
 
 /**
  * What an authored `turn` clip asks for at one junction.

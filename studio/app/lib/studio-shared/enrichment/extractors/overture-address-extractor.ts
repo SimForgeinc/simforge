@@ -19,7 +19,7 @@ export interface OvertureAddressInput {
 export interface ExtractedAddress {
   /** Aurora-row shape ready for batch insert. */
   row: MapAssetAddress;
-  /** GeoJSON Feature for the S3 `addresses` overlay layer. */
+  /** GeoJSON feature for the local `addresses` overlay layer. */
   feature: {
     type: "Feature";
     id: string;
