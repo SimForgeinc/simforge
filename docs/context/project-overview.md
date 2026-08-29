@@ -31,7 +31,7 @@ compatibility in both directions. Its portable deterministic core includes:
 - **Automation** (`packages/cli`): the `simforge` binary and `sf` alias.
 
 All 15 TypeScript packages use the `@simforge-oss/*` scope and lockstep
-`0.1.0-rc.51` version.
+`0.1.0-rc.52` version.
 
 ## Products and compatibility
 

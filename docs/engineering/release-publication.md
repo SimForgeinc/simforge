@@ -7,7 +7,7 @@ does not keep private copies of portable implementations.
 ## Release contract
 
 1. Every public package has the exact lockstep version in
-   `config/simforge-oss-stack.json`; the current stack version is `0.1.0-rc.51`.
+   `config/simforge-oss-stack.json`; the current stack version is `0.1.0-rc.52`.
 2. The config contains exactly 15 `@simforge-oss/*` packages.
 3. A release tag is exactly `v<stackVersion>` and identifies one immutable Git
    tree. Published versions are never overwritten or reused.
