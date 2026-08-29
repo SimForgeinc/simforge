@@ -79,7 +79,7 @@ wheels = [
 
 [[package]]
 name = "simforge-oss-carla-exec"
-version = "0.1.0rc49"
+version = "0.1.0rc50"
 source = { editable = "." }
 
 [package.optional-dependencies]
