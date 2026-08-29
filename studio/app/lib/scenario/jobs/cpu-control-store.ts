@@ -281,10 +281,6 @@ async function browserClaimPayload(source: BrowserRenderSource) {
         },
       },
     },
-    actors: template.roles.map((role) => ({
-      id: role.id,
-      sensors: role.actor.sensors ?? [],
-    })),
   });
 
   const mapInputs = await Promise.all(

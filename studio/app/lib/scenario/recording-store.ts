@@ -217,20 +217,7 @@ function recordingInputMatchesFrozenRevision(
       && candidate.sensorId === requestedSource.sensorId
       && candidate.modality === requestedSource.modality
     );
-    if (!resolvedSource) return false;
-    const { sensor: resolvedSensor, ...resolvedRequest } = resolvedSource;
-    if (!sameCanonicalValue(requestedSource, resolvedRequest)) return false;
-    const role = template.roles.find((candidate) => candidate.id === requestedSource.actorId);
-    const authoredSensor = role?.actor.sensors.find(
-      (candidate) => candidate.id === requestedSource.sensorId,
-    );
-    if (
-      !authoredSensor
-      || !authoredSensor.enabled
-      || !sameCanonicalValue(authoredSensor, resolvedSensor)
-    ) {
-      return false;
-    }
+    if (!resolvedSource || !sameCanonicalValue(requestedSource, resolvedSource)) return false;
   }
   return true;
 }
