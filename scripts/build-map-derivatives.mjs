@@ -47,7 +47,7 @@ const sourceBytes = sourceFiles.reduce((sum, file) => sum + fs.statSync(path.joi
 const outputRoot = path.join(mapRoot, 'variants');
 if (!outputRoot.startsWith(`${mapRoot}${path.sep}`)) throw new Error('Derivative output escaped the selected map');
 
-const localGltfTransform = process.env.UNISCENARIOS_GLTF_TRANSFORM
+const localGltfTransform = process.env.SIMFORGE_GLTF_TRANSFORM
   || path.join(repository, '.tools', 'map-derivatives', 'node_modules', '.bin', 'gltf-transform');
 const gltfTransformCommand = localGltfTransform;
 const tool = childProcess.spawnSync(gltfTransformCommand, ['--version'], { encoding: 'utf8' });

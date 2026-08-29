@@ -33,6 +33,7 @@
     "dev:all": "UNISCENARIOS_LOCAL_WORKER=1 pnpm --filter @simforge-oss/studio dev"
   },
   "devDependencies": {
+    "@simforge-oss/map-pipeline": "workspace:*",
     "playwright-core": "^1.62.1",
     "sharp": "0.34.5",
     "tsup": "^8.5.0",
