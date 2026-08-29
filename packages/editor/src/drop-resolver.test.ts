@@ -50,6 +50,14 @@ describe('resolveVehicleDrop', () => {
     expect(resolved.headingRad).toBe(0);
   });
 
+  it('normalizes a lane pose heading from negative zero to deterministic positive zero', () => {
+    const laneIndex = straightLaneIndex();
+    const poseAt = laneIndex.poseAt.bind(laneIndex);
+    laneIndex.poseAt = (lane, s, t) => ({ ...poseAt(lane, s, t), headingRad: -0 });
+
+    expect(resolveVehicleDrop(laneIndex, 40, 0).headingRad).toBe(0);
+  });
+
   it('clamps the preserved lateral offset to what the lane can hold', () => {
     const resolved = resolveVehicleDrop(straightLaneIndex(), 40, 0, {
       preferredLateralM: 5,

@@ -64,7 +64,7 @@ export function resolveVehicleDrop(
     outcome: 'free',
     x,
     z,
-    headingRad: options.fallbackHeadingRad ?? 0,
+    headingRad: options.fallbackHeadingRad === 0 ? 0 : options.fallbackHeadingRad ?? 0,
     laneRef: null,
   };
   const hit = laneIndex.nearestForVehiclePlacement(x, z, radius);
@@ -85,7 +85,7 @@ export function resolveVehicleDrop(
     outcome: 'snapped',
     x: pose.x,
     z: pose.z,
-    headingRad: pose.headingRad,
+    headingRad: pose.headingRad === 0 ? 0 : pose.headingRad,
     laneRef: anchor,
   };
 }

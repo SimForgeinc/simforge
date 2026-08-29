@@ -4,6 +4,7 @@ import {
   ACTOR_AUTHORING_POLICY,
   COLLISION_INFERENCE_MAX_CLOSEST_APPROACH_M,
   DEFAULT_AUTHORED_VEHICLE_SPEED_KPH,
+  DEFAULT_AUTHORED_VEHICLE_SPEED_MPS,
   isCollisionInferenceCandidate,
   CreepActionSchema,
   DEFAULT_BEHAVIOR_CLIP_END,
@@ -58,6 +59,7 @@ describe('legacy behavior compatibility defaults', () => {
       defaultVehicleColor: '230,200,40',
     });
     expect(DEFAULT_AUTHORED_VEHICLE_SPEED_KPH).toBe(48.28032);
+    expect(DEFAULT_AUTHORED_VEHICLE_SPEED_MPS).toBe(13.4112);
     expect(COLLISION_INFERENCE_MAX_CLOSEST_APPROACH_M).toBe(8);
     expect(isCollisionInferenceCandidate(8)).toBe(true);
     expect(isCollisionInferenceCandidate(8.001)).toBe(false);

@@ -5,6 +5,7 @@ export const VEHICLE_SPEED_CAP_KPH = 240;
 export const WALKER_SPEED_CAP_KPH = 25;
 
 /** Canonical initial speeds for newly authored actors. */
+export const DEFAULT_AUTHORED_VEHICLE_SPEED_MPS = 13.4112;
 export const DEFAULT_AUTHORED_VEHICLE_SPEED_KPH = 48.28032;
 export const DEFAULT_AUTHORED_WALKER_SPEED_KPH = 5;
 export const DEFAULT_AUTHORED_CYCLIST_SPEED_KPH = 18;
