@@ -3,7 +3,10 @@ import { EnvironmentPresetSchema } from "./environment-preset";
 import { ScenarioStatus } from "./run-status";
 import { ScenarioLocationSchema } from "./scenario-location";
 import { TrafficManagerSchema } from "./traffic-manager";
-import { SCENARIO_TIMING } from "./scenario-timing";
+import {
+  normalizeRenderDurationOverrideSeconds,
+  SCENARIO_TIMING,
+} from "./scenario-timing";
 
 /** Simulation engine identifier. */
 export const SimulationEngine = z.enum(["CARLA", "FALCON"]);
@@ -259,6 +262,237 @@ export const RenderOutputSpecSchema = z.object({
     .optional(),
 });
 export type RenderOutputSpec = z.infer<typeof RenderOutputSpecSchema>;
+
+export type RenderOutputPresetDefinition = {
+  label: string;
+  description: string;
+  annotations: RenderOutputAnnotation[];
+  metadata: RenderOutputMetadata[];
+  encodings: RenderOutputEncoding[];
+  modalities?: SensorOutputModality[];
+};
+
+export type PresetRenderOutputProfile = Exclude<RenderOutputProfile, "custom">;
+
+export const RENDER_OUTPUT_PRESETS = {
+  playback: {
+    label: "Standard Video",
+    description:
+      "Encode MP4 videos and a manifest from the configured RGB camera sensors.",
+    annotations: [],
+    metadata: ["manifest"],
+    encodings: ["mp4"],
+  },
+  training_basic: {
+    label: "Training Basic",
+    description:
+      "Keep raw camera/range outputs with calibration, timestamps, and 2D boxes.",
+    annotations: ["bbox_2d"],
+    metadata: ["manifest", "calibration", "timestamps"],
+    encodings: ["image_sequence"],
+  },
+  training_multimodal: {
+    label: "Training Multimodal",
+    description:
+      "Capture raw multisensor outputs, calibration, timestamps, map metadata, and derived playback.",
+    annotations: ["bbox_2d", "bbox_3d", "tracking"],
+    metadata: ["manifest", "calibration", "timestamps", "opendrive"],
+    encodings: ["image_sequence", "mp4"],
+  },
+  raw_multisensor: {
+    label: "Raw Multisensor",
+    description:
+      "Persist only raw sensor sequences and calibration from the configured rig.",
+    annotations: [],
+    metadata: ["manifest", "calibration", "timestamps"],
+    encodings: ["image_sequence"],
+  },
+  tao_detection: {
+    label: "TAO Detection",
+    description:
+      "Generate RGB image sequences, calibration, and 2D detection annotations for TAO-style training.",
+    annotations: ["bbox_2d", "tracking"],
+    metadata: ["manifest", "calibration", "timestamps"],
+    encodings: ["image_sequence"],
+    modalities: ["rgb"],
+  },
+  sdg: {
+    label: "SDG",
+    description:
+      "SDG recipe output: video, ODVG/object annotations, and map/calibration metadata for ground-truth bundles.",
+    annotations: ["odvg", "objects", "instances"],
+    metadata: ["manifest", "calibration", "timestamps", "opendrive"],
+    encodings: ["image_sequence", "mp4"],
+    modalities: [
+      "rgb",
+      "depth",
+      "semantic_segmentation",
+      "instance_segmentation",
+      "normals",
+    ],
+  },
+} satisfies Record<PresetRenderOutputProfile, RenderOutputPresetDefinition>;
+
+export const DEFAULT_RENDER_OUTPUT_PROFILE = "sdg" as const satisfies PresetRenderOutputProfile;
+
+export function buildRenderOutputPresetSpec(
+  profile: PresetRenderOutputProfile = DEFAULT_RENDER_OUTPUT_PROFILE,
+): RenderOutputSpec {
+  const preset = RENDER_OUTPUT_PRESETS[profile];
+  return RenderOutputSpecSchema.parse({
+    version: 1,
+    profile,
+    annotations: [...preset.annotations],
+    metadata: [...preset.metadata],
+    encodings: [...preset.encodings],
+    modalities: [...("modalities" in preset ? preset.modalities : [])],
+  });
+}
+
+export const DEFAULT_RENDER_OUTPUT_SPEC = buildRenderOutputPresetSpec();
+
+export const DEFAULT_BBOX_CATEGORIES = {
+  dynamicActors: true,
+  trafficLights: false,
+  trafficSigns: false,
+  emit2dVisiblePixel: true,
+  emit3dCamera: true,
+  emit3dWorld: true,
+  emit3dProjection: true,
+} as const;
+
+export type ScenarioSetupRenderConfig = {
+  renderOutputProfile: RenderOutputProfile;
+  renderOutputCustomModalities?: SensorOutputModality[];
+  renderOutputCustomAnnotations?: RenderOutputAnnotation[];
+  renderOutputCustomMetadata?: RenderOutputMetadata[];
+  renderOutputCustomEncodings?: RenderOutputEncoding[];
+  outputSpec: RenderOutputSpec;
+  sdgRenderDraft?: Record<string, unknown>;
+  sdgCameraMountIds?: string[];
+  environmentPreset?: Record<string, unknown>;
+  lidarCapture?: boolean;
+  lidarBevMp4?: boolean;
+  saveArtifacts?: boolean;
+  bboxCategories: {
+    dynamicActors: boolean;
+    trafficLights: boolean;
+    trafficSigns: boolean;
+    emit2dVisiblePixel: boolean;
+    emit3dCamera: boolean;
+    emit3dWorld: boolean;
+    emit3dProjection: boolean;
+  };
+  renderDurationOverrideSeconds?: number | null;
+};
+
+function asRenderConfigRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function hasOwnRenderConfigProperty(
+  record: Record<string, unknown>,
+  key: string,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key);
+}
+
+function asRenderConfigStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
+}
+
+export function parseScenarioSetupRenderConfig(
+  value: unknown,
+): ScenarioSetupRenderConfig | null {
+  const record = asRenderConfigRecord(value);
+  const parsedOutputSpec = RenderOutputSpecSchema.safeParse(
+    record.outputSpec ?? record.output_spec,
+  );
+  if (!parsedOutputSpec.success) return null;
+
+  const parsedProfile = RenderOutputProfile.safeParse(record.renderOutputProfile);
+  const bbox = asRenderConfigRecord(record.bboxCategories);
+
+  return {
+    renderOutputProfile: parsedProfile.success
+      ? parsedProfile.data
+      : parsedOutputSpec.data.profile,
+    renderOutputCustomModalities: asRenderConfigStringArray(
+      record.renderOutputCustomModalities,
+    ) as SensorOutputModality[],
+    renderOutputCustomAnnotations: asRenderConfigStringArray(
+      record.renderOutputCustomAnnotations,
+    ) as RenderOutputAnnotation[],
+    renderOutputCustomMetadata: asRenderConfigStringArray(
+      record.renderOutputCustomMetadata,
+    ) as RenderOutputMetadata[],
+    renderOutputCustomEncodings: asRenderConfigStringArray(
+      record.renderOutputCustomEncodings,
+    ) as RenderOutputEncoding[],
+    outputSpec: parsedOutputSpec.data,
+    sdgCameraMountIds: asRenderConfigStringArray(record.sdgCameraMountIds),
+    ...(hasOwnRenderConfigProperty(record, "sdgRenderDraft")
+      ? { sdgRenderDraft: asRenderConfigRecord(record.sdgRenderDraft) }
+      : {}),
+    ...(hasOwnRenderConfigProperty(record, "environmentPreset")
+      ? { environmentPreset: asRenderConfigRecord(record.environmentPreset) }
+      : {}),
+    lidarCapture:
+      typeof record.lidarCapture === "boolean"
+        ? record.lidarCapture
+        : parsedOutputSpec.data.lidar_capture,
+    lidarBevMp4:
+      typeof record.lidarBevMp4 === "boolean"
+        ? record.lidarBevMp4
+        : parsedOutputSpec.data.lidar_bev_mp4,
+    saveArtifacts:
+      typeof record.saveArtifacts === "boolean"
+        ? record.saveArtifacts
+        : parsedOutputSpec.data.save_artifacts,
+    bboxCategories: {
+      dynamicActors:
+        typeof bbox.dynamicActors === "boolean"
+          ? bbox.dynamicActors
+          : DEFAULT_BBOX_CATEGORIES.dynamicActors,
+      trafficLights:
+        typeof bbox.trafficLights === "boolean"
+          ? bbox.trafficLights
+          : DEFAULT_BBOX_CATEGORIES.trafficLights,
+      trafficSigns:
+        typeof bbox.trafficSigns === "boolean"
+          ? bbox.trafficSigns
+          : DEFAULT_BBOX_CATEGORIES.trafficSigns,
+      emit2dVisiblePixel:
+        typeof bbox.emit2dVisiblePixel === "boolean"
+          ? bbox.emit2dVisiblePixel
+          : DEFAULT_BBOX_CATEGORIES.emit2dVisiblePixel,
+      emit3dCamera:
+        typeof bbox.emit3dCamera === "boolean"
+          ? bbox.emit3dCamera
+          : DEFAULT_BBOX_CATEGORIES.emit3dCamera,
+      emit3dWorld:
+        typeof bbox.emit3dWorld === "boolean"
+          ? bbox.emit3dWorld
+          : DEFAULT_BBOX_CATEGORIES.emit3dWorld,
+      emit3dProjection:
+        typeof bbox.emit3dProjection === "boolean"
+          ? bbox.emit3dProjection
+          : DEFAULT_BBOX_CATEGORIES.emit3dProjection,
+    },
+    renderDurationOverrideSeconds: hasOwnRenderConfigProperty(
+      record,
+      "renderDurationOverrideSeconds",
+    )
+      ? normalizeRenderDurationOverrideSeconds(
+          record.renderDurationOverrideSeconds,
+        )
+      : null,
+  };
+}
 
 /**
  * Sensor pose: position (x,y,z) and orientation (roll, pitch, yaw).

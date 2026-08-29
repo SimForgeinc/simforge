@@ -1,5 +1,12 @@
 import { z } from "zod-v3";
-import type { SdgRecipeConfig, Sensor, SensorOutputModality } from "./simulation-run";
+import {
+  buildRenderOutputPresetSpec,
+  DEFAULT_BBOX_CATEGORIES,
+  type RenderOutputSpec,
+  type SdgRecipeConfig,
+  type Sensor,
+  type SensorOutputModality,
+} from "./simulation-run";
 import { SCENARIO_TIMING } from "./scenario-timing";
 
 export const DatasetRecipeIdSchema = z.enum([
@@ -84,6 +91,45 @@ export const SDG_OUTPUT_DEPENDENCIES = {
   videos: ["rgb"],
   rgb_bboxed: ["rgb", "semantic_segmentation", "instance_segmentation"],
 } as const satisfies Record<SdgOutput, readonly SdgOutput[]>;
+
+export const SDG_FRAME_OUTPUTS = [
+  "rgb",
+  "depth",
+  "semantic_segmentation",
+  "instance_segmentation",
+  "normals",
+  "edges",
+  "masks",
+] as const satisfies readonly SdgOutput[];
+
+export const SDG_ANNOTATION_OUTPUTS = [
+  "odvg",
+  "objects",
+  "instances",
+  "rgb_bboxed",
+] as const satisfies readonly SdgOutput[];
+
+export const SDG_MEDIA_OUTPUTS = ["videos"] as const satisfies readonly SdgOutput[];
+
+export const DEFAULT_SDG_DATASET_COMPILE_OUTPUTS = [
+  "rgb",
+  "odvg",
+  "rgb_bboxed",
+  "videos",
+] as const satisfies readonly SdgOutput[];
+
+export const DEFAULT_SDG_CAMERA_MOUNT_IDS = ["scenario_default"] as const;
+
+export const DEFAULT_SDG_RETENTION_POLICY = {
+  uploadStageInputs: true,
+  uploadRawBundle: false,
+} as const;
+
+export const DEFAULT_SDG_STAGE_POLICY = {
+  groundTruth: true,
+  cosmos: false,
+  postprocess: false,
+} as const;
 
 export function orderedSdgOutputs(values: Iterable<SdgOutput | string>) {
   const selected = new Set(values);
@@ -267,11 +313,11 @@ const SdgCameraMountDescriptorSchema = z.object({
   kind: z.enum(["actor", "world"]).optional(),
 }).strict();
 
-const SdgTrainingProfileSchema = z.object({
-  id: z.enum(["alpamayo_pai_sft"]),
+export const SdgTrainingProfileSchema = z.object({
+  id: z.literal("alpamayo_pai_sft").default("alpamayo_pai_sft"),
   datasetFormat: z.literal("PAI").default("PAI"),
   cameraMountIds: z.array(z.string().min(1)).min(1),
-  requiredLabels: z.array(z.enum(["egomotion"])).default(["egomotion"]),
+  requiredLabels: z.array(z.literal("egomotion")).default(["egomotion"]),
   clipDurationSeconds: z.literal(20).default(20),
   defaultKeyframeTimestampUs: z.literal(5_100_000).default(5_100_000),
   historySteps: z.literal(16).default(16),
@@ -301,19 +347,31 @@ export const SdgRenderOutputPlanSchema = z.object({
     detectCollisions: z.boolean().optional(),
   }).strict(),
   bbox: z.object({
-    dynamicActors: z.boolean(),
-    trafficLights: z.boolean(),
-    trafficSigns: z.boolean(),
-  }).strict(),
+    dynamicActors: z
+      .boolean()
+      .default(DEFAULT_BBOX_CATEGORIES.dynamicActors),
+    trafficLights: z
+      .boolean()
+      .default(DEFAULT_BBOX_CATEGORIES.trafficLights),
+    trafficSigns: z.boolean().default(DEFAULT_BBOX_CATEGORIES.trafficSigns),
+  }).strict().default({
+    dynamicActors: DEFAULT_BBOX_CATEGORIES.dynamicActors,
+    trafficLights: DEFAULT_BBOX_CATEGORIES.trafficLights,
+    trafficSigns: DEFAULT_BBOX_CATEGORIES.trafficSigns,
+  }),
   retention: z.object({
-    uploadStageInputs: z.boolean(),
-    uploadRawBundle: z.boolean(),
-  }).strict(),
+    uploadStageInputs: z
+      .boolean()
+      .default(DEFAULT_SDG_RETENTION_POLICY.uploadStageInputs),
+    uploadRawBundle: z
+      .boolean()
+      .default(DEFAULT_SDG_RETENTION_POLICY.uploadRawBundle),
+  }).strict().default({ ...DEFAULT_SDG_RETENTION_POLICY }),
   stagePolicy: z.object({
-    groundTruth: z.boolean().default(true),
-    cosmos: z.boolean().default(false),
-    postprocess: z.boolean().default(false),
-  }).strict().default({ groundTruth: true, cosmos: false, postprocess: false }),
+    groundTruth: z.boolean().default(DEFAULT_SDG_STAGE_POLICY.groundTruth),
+    cosmos: z.boolean().default(DEFAULT_SDG_STAGE_POLICY.cosmos),
+    postprocess: z.boolean().default(DEFAULT_SDG_STAGE_POLICY.postprocess),
+  }).strict().default({ ...DEFAULT_SDG_STAGE_POLICY }),
 }).strict();
 export type SdgRenderOutputPlan = z.infer<typeof SdgRenderOutputPlanSchema>;
 
@@ -347,6 +405,196 @@ export const DEFAULT_SDG_DIRECT_RENDER_DRAFT: SdgDirectRenderDraft = {
     detectCollisions: true,
   },
 };
+
+export const DEFAULT_SDG_DATASET_COMPILE_DRAFT: SdgDirectRenderDraft = {
+  ...DEFAULT_SDG_DIRECT_RENDER_DRAFT,
+  outputs: [...DEFAULT_SDG_DATASET_COMPILE_OUTPUTS],
+};
+
+export function getSdgDraftRequestedOutputs(
+  draft: SdgDirectRenderDraft,
+): SdgOutput[] {
+  const configured = expandSdgOutputs(draft.outputs);
+  return configured.length > 0 ? configured : [...SDG_OUTPUTS];
+}
+
+function removeSdgOutputAndDependents(
+  output: SdgOutput,
+  selected: Set<SdgOutput>,
+) {
+  selected.delete(output);
+  for (const candidate of SDG_OUTPUTS) {
+    if (!selected.has(candidate)) continue;
+    const dependencies = SDG_OUTPUT_DEPENDENCIES[candidate] as readonly SdgOutput[];
+    if (dependencies.includes(output)) {
+      removeSdgOutputAndDependents(candidate, selected);
+    }
+  }
+}
+
+export function setSdgOutputEnabled(
+  draft: SdgDirectRenderDraft,
+  output: SdgOutput,
+  enabled: boolean,
+): SdgDirectRenderDraft {
+  const selected = new Set(getSdgDraftRequestedOutputs(draft));
+
+  if (enabled) {
+    addSdgOutputWithDependencies(output, selected);
+  } else {
+    removeSdgOutputAndDependents(output, selected);
+  }
+
+  if (selected.size === 0) addSdgOutputWithDependencies("rgb", selected);
+
+  return {
+    ...draft,
+    outputs: orderedSdgOutputs(selected),
+  };
+}
+
+function ensureSdgPlanCompatibleOutputs(outputs: SdgOutput[]) {
+  const selected = new Set(outputs);
+  const fallbacks: SdgOutput[] = [];
+  if (!SDG_FRAME_OUTPUTS.some((output) => selected.has(output))) {
+    fallbacks.push("rgb");
+  }
+  if (!SDG_MEDIA_OUTPUTS.some((output) => selected.has(output))) {
+    fallbacks.push("videos");
+  }
+  return expandSdgOutputs([...outputs, ...fallbacks]);
+}
+
+function groupSdgPlanOutputs(
+  outputs: SdgOutput[],
+): SdgRenderOutputPlan["outputs"] {
+  const selected = new Set(ensureSdgPlanCompatibleOutputs(outputs));
+  return {
+    frames: SDG_FRAME_OUTPUTS.filter((output) => selected.has(output)),
+    annotations: SDG_ANNOTATION_OUTPUTS.filter((output) => selected.has(output)),
+    media: SDG_MEDIA_OUTPUTS.filter((output) => selected.has(output)),
+  };
+}
+
+function normalizeSdgCameraMountIds(cameraMountIds: string[] | undefined) {
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const rawId of cameraMountIds ?? []) {
+    const id = rawId.trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    normalized.push(id);
+  }
+  return normalized.length > 0
+    ? normalized
+    : [...DEFAULT_SDG_CAMERA_MOUNT_IDS];
+}
+
+function normalizeSdgCameraMounts(
+  cameraMounts: SdgRenderOutputPlan["cameraMounts"] | undefined,
+  cameraMountIds: string[],
+): SdgRenderOutputPlan["cameraMounts"] {
+  const selected = new Set(cameraMountIds);
+  const normalized: SdgRenderOutputPlan["cameraMounts"] = [];
+  const seen = new Set<string>();
+  for (const mount of cameraMounts ?? []) {
+    const id = mount.id.trim();
+    if (!id || !selected.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    normalized.push({
+      id,
+      ...(mount.label?.trim() ? { label: mount.label.trim() } : {}),
+      ...(mount.attachTo?.trim() ? { attachTo: mount.attachTo.trim() } : {}),
+      ...(mount.sensorId?.trim() ? { sensorId: mount.sensorId.trim() } : {}),
+      ...(mount.sourceSensorId?.trim()
+        ? { sourceSensorId: mount.sourceSensorId.trim() }
+        : {}),
+      ...(mount.kind ? { kind: mount.kind } : {}),
+    });
+  }
+  return normalized;
+}
+
+export function buildSdgRenderOutputSpec(
+  draft: SdgDirectRenderDraft,
+): RenderOutputSpec {
+  const outputs = getSdgDraftRequestedOutputs(draft);
+  const selected = new Set(outputs);
+  const preset = buildRenderOutputPresetSpec("sdg");
+  const includesAnnotations =
+    selected.has("odvg") ||
+    selected.has("objects") ||
+    selected.has("instances") ||
+    selected.has("rgb_bboxed");
+
+  return {
+    ...preset,
+    modalities: getRequiredSdgRawModalities(outputs),
+    annotations: includesAnnotations ? [...preset.annotations] : [],
+  };
+}
+
+export function buildSdgRenderOutputPlan(input: {
+  draft: SdgDirectRenderDraft;
+  cameraMountIds?: string[];
+  cameraMounts?: SdgRenderOutputPlan["cameraMounts"];
+  alpamayoCameraMountIds?: string[];
+  stagePolicy?: Partial<SdgRenderOutputPlan["stagePolicy"]>;
+  bbox?: Partial<SdgRenderOutputPlan["bbox"]>;
+  retention?: Partial<SdgRenderOutputPlan["retention"]>;
+}): SdgRenderOutputPlan {
+  const cameraMountIds = normalizeSdgCameraMountIds(input.cameraMountIds);
+  const alpamayoCameraMountIds = input.alpamayoCameraMountIds
+    ? normalizeSdgCameraMountIds(input.alpamayoCameraMountIds)
+    : undefined;
+
+  return SdgRenderOutputPlanSchema.parse({
+    schemaVersion: "simforge.render-output-plan.v1",
+    profile: "sdg",
+    cameraMountIds,
+    cameraMounts: normalizeSdgCameraMounts(input.cameraMounts, cameraMountIds),
+    ...(alpamayoCameraMountIds
+      ? {
+          trainingProfile: SdgTrainingProfileSchema.parse({
+            cameraMountIds: alpamayoCameraMountIds,
+          }),
+        }
+      : {}),
+    outputs: groupSdgPlanOutputs(getSdgDraftRequestedOutputs(input.draft)),
+    recorder: {
+      startTime: input.draft.recorder.startTime,
+      durationSeconds: input.draft.recorder.durationSeconds,
+      fps: SDG_RENDER_FPS,
+      resolution: { ...SDG_RENDER_RESOLUTION },
+      timeFactor: input.draft.recorder.timeFactor,
+      limitDistance: input.draft.recorder.limitDistance,
+      areaThreshold: input.draft.recorder.areaThreshold,
+      detectCollisions: input.draft.recorder.detectCollisions,
+    },
+    bbox: input.bbox,
+    retention: input.retention,
+    stagePolicy: input.stagePolicy,
+  });
+}
+
+export function buildSdgDatasetCompileOutputPlan(input: {
+  cameraMountIds?: string[];
+  cameraMounts?: SdgRenderOutputPlan["cameraMounts"];
+  alpamayoCameraMountIds?: string[];
+  outputs?: SdgOutput[];
+  stagePolicy?: Partial<SdgRenderOutputPlan["stagePolicy"]>;
+}): SdgRenderOutputPlan {
+  return buildSdgRenderOutputPlan({
+    draft: {
+      ...DEFAULT_SDG_DATASET_COMPILE_DRAFT,
+      ...(input.outputs ? { outputs: input.outputs } : {}),
+    },
+    cameraMountIds: input.cameraMountIds,
+    cameraMounts: input.cameraMounts,
+    alpamayoCameraMountIds: input.alpamayoCameraMountIds,
+    stagePolicy: input.stagePolicy,
+  });
+}
 
 export const SdgQualityStateSchema = z.enum(["pass", "warning", "fail"]);
 export type SdgQualityState = z.infer<typeof SdgQualityStateSchema>;
