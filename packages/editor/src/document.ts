@@ -37,6 +37,7 @@ import {
   type ValidationReport,
   type DriverProfile,
 } from '@simforge-oss/scenario';
+import { DEFAULT_AUTHORED_VEHICLE_SPEED_KPH } from '@simforge-oss/scenario/contracts';
 import { reconcileTemplateMapIdentity } from './map-identity';
 import { actorClassForCatalogEntry, getEntry, type CatalogActorClass, type CatalogId, type Dims } from '@simforge-oss/asset-catalog';
 import { editorMapVersionId, editorSourceMapId, type MapEntry } from './map';
@@ -403,9 +404,9 @@ function quantizeAnchor(anchor: LaneAnchor): LaneAnchor {
 
 const APP_VERSION = '0.1.0-editor';
 
-/** Exact SI conversion of the authored default: 30 mph = 13.4112 m/s. */
-export const DEFAULT_AUTHORED_VEHICLE_SPEED_MPS = 13.4112;
-export const DEFAULT_AUTHORED_VEHICLE_SPEED_KPH = 48.28032;
+/** Exact SI conversion of the canonical authored 30 mph vehicle speed. */
+export const DEFAULT_AUTHORED_VEHICLE_SPEED_MPS = DEFAULT_AUTHORED_VEHICLE_SPEED_KPH / 3.6;
+export { DEFAULT_AUTHORED_VEHICLE_SPEED_KPH };
 
 /** Autosave debounce. Long enough to coalesce a drag, short enough to trust. */
 const AUTOSAVE_DEBOUNCE_MS = 400;
