@@ -1,6 +1,7 @@
 export * from './errors.js';
 export * from './adapt.js';
 export * from './carla-fallback.js';
+export * from './carla-bundled-fallback.js';
 export * from './map-signals.js';
 export * from './signal-control.js';
 export * from './map-signal-plan-compiler.js';
@@ -9,6 +10,8 @@ export * from './map-bound.js';
 export * from './params.js';
 export * from './prop-dims.js';
 export * from './portable.js';
+export * from './template-axis-clamp.js';
+export * from './xodr-elevation.js';
 export type { MapBundle } from './types.js';
 export * from './map-context.js';
 export * from './anchor/index.js';
