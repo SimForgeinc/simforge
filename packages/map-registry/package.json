@@ -1,6 +1,26 @@
 {
   "name": "@simforge-oss/map-registry",
-  "version": "0.1.0",
+  "version": "0.1.0-rc.48",
+  "description": "Content-addressed map registry contracts and storage backends.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
+    "directory": "packages/map-registry"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "default": "./dist/schema.js"
+      }
+    }
+  },
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,11 +1,33 @@
 {
   "name": "@simforge-oss/map-pipeline",
-  "version": "0.1.0-rc.45",
+  "version": "0.1.0-rc.48",
   "description": "Deterministic source-map to registry-closure pipeline.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
     "directory": "packages/map-pipeline"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./map-derivatives": {
+        "types": "./dist/scripts/map-derivatives.d.mts",
+        "default": "./dist/scripts/map-derivatives.mjs"
+      },
+      "./static-map-colliders": {
+        "types": "./dist/scripts/static-map-colliders.d.mts",
+        "default": "./dist/scripts/static-map-colliders.mjs"
+      },
+      "./snow-cover": {
+        "types": "./dist/scripts/snow-cover.d.mts",
+        "default": "./dist/scripts/snow-cover.mjs"
+      }
+    }
   },
   "license": "Apache-2.0",
   "type": "module",
@@ -16,6 +38,21 @@
       "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./map-derivatives": {
+      "development": "./scripts/map-derivatives.mjs",
+      "types": "./dist/scripts/map-derivatives.d.mts",
+      "default": "./dist/scripts/map-derivatives.mjs"
+    },
+    "./static-map-colliders": {
+      "development": "./scripts/static-map-colliders.mjs",
+      "types": "./dist/scripts/static-map-colliders.d.mts",
+      "default": "./dist/scripts/static-map-colliders.mjs"
+    },
+    "./snow-cover": {
+      "development": "./scripts/snow-cover.mjs",
+      "types": "./dist/scripts/snow-cover.d.mts",
+      "default": "./dist/scripts/snow-cover.mjs"
     }
   },
   "files": ["dist", "scripts"],
@@ -37,7 +74,8 @@
     "vitest": "^3.0.0"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist && cp -r scripts dist/scripts",
+    "build": "tsup src/index.ts --format esm --dts --sourcemap --clean --out-dir dist && rm -rf dist/scripts && cp -r scripts dist/scripts",
+    "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   }

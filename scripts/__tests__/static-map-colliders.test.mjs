@@ -19,7 +19,7 @@ test('static collider artifact is byte-for-byte deterministic and schema-stable'
   const first = buildStaticColliderArtifact(input);
   const second = buildStaticColliderArtifact(input);
   assert.equal(serializeStaticColliderArtifact(first), serializeStaticColliderArtifact(second));
-  assert.equal(first.schema, 'uniscenarios.static-map-colliders/v1');
+  assert.equal(first.schema, 'simforge-oss.static-map-colliders/v1');
   assert.match(first.digest, /^sha256-[a-f0-9]{64}$/);
   assert.deepEqual(first.colliders, extractGlbColliders(bytes, 'yale-0-0').colliders.sort((a, b) => a.id.localeCompare(b.id)));
 });

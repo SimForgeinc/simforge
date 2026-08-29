@@ -35,6 +35,28 @@ export {
 export type { DerivedStageResult } from './derived.js';
 export { FBX_TILER_REVISION, assignGridCell, fbxToTiles } from './tiling.js';
 export type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from './tiling.js';
+export {
+  ROADWAY_CONSISTENCY_SCHEMA_VERSION,
+  ROADWAY_CONSISTENCY_VALIDATOR_VERSION,
+  assertRoadwayConsistencyPreparation,
+  buildRoadwayConsistencyReport,
+  parseRoadwayConsistencyReport,
+  roadwayConsistencyDigest,
+  serializeRoadwayConsistencyReport,
+  validateRoadwayConsistencyReport,
+} from './roadway-consistency.js';
+export type {
+  BuildRoadwayConsistencyReportInput,
+  ExpectedRoadwayConsistencyReport,
+  RoadwayConsistencyCoreOptions,
+  RoadwayConsistencyCoreReport,
+  RoadwayConsistencyInterval,
+  RoadwayConsistencyIssue,
+  RoadwayConsistencyReport,
+  RoadwayConsistencySourceDigests,
+  RoadwayConsistencyStats,
+  RoadwayConsistencyValidator,
+} from './roadway-consistency.js';
 
 export interface RunMapPipelineOptions {
   sourceDir: string;

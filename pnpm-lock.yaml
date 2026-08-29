@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@simforge-oss/map-pipeline':
+        specifier: workspace:*
+        version: link:packages/map-pipeline
       playwright-core:
         specifier: ^1.62.1
         version: 1.62.1
