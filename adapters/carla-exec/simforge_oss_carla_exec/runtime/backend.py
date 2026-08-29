@@ -891,22 +891,13 @@ class CarlaBackend:
             requested_blueprint_id = entry.get("blueprintId") if isinstance(entry, Mapping) else None
             if not isinstance(requested_blueprint_id, str) or not requested_blueprint_id:
                 raise RuntimeError(f"asset catalog has no exact CARLA binding for {actor_id} ({binding.catalog_name})")
-            blueprint_id = requested_blueprint_id
+            blueprint_id = RUNTIME_BLUEPRINT_ALIASES.get(requested_blueprint_id, requested_blueprint_id)
             try:
                 blueprint = library.find(blueprint_id)
-            except RuntimeError as requested_error:
-                blueprint_id = RUNTIME_BLUEPRINT_ALIASES.get(requested_blueprint_id, requested_blueprint_id)
-                if blueprint_id == requested_blueprint_id:
-                    raise RuntimeError(
-                        f"CARLA runtime is missing required catalog blueprint for {actor_id} ({blueprint_id}, {binding.kind})"
-                    ) from requested_error
-                try:
-                    blueprint = library.find(blueprint_id)
-                except RuntimeError as alias_error:
-                    raise RuntimeError(
-                        f"CARLA runtime is missing required catalog blueprint for {actor_id} "
-                        f"({requested_blueprint_id} or compatibility alias {blueprint_id}, {binding.kind})"
-                    ) from alias_error
+            except RuntimeError as exc:
+                raise RuntimeError(
+                    f"CARLA runtime is missing required catalog blueprint for {actor_id} ({blueprint_id}, {binding.kind})"
+                ) from exc
             entry_dims = entry.get("dims") if isinstance(entry, Mapping) else None
             entry_height = (
                 entry_dims.get("h") or entry_dims.get("height")
