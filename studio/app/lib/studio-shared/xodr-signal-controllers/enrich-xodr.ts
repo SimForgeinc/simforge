@@ -7,7 +7,7 @@
  * This is a pure string transform. It is NOT wired into the map-asset pipeline
  * and never rewrites a stored artifact: `maps/<id>/<id>.xodr` is content-hashed
  * into `map_asset_artifacts.checksum_sha256`, is the cache-invalidation signal
- * for `getMapArtifactRevision`, and is fetched by S3 pointer by the esmini
+ * for `getMapArtifactRevision`, and is fetched by artifact locator by the esmini
  * runner. Source artifacts are immutable house policy. Any consumer that wants
  * the enriched bytes must ask for them explicitly.
  *

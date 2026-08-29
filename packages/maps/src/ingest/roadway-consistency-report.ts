@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { gunzipSync, gzipSync } from "node:zlib";
 
-import type { RoadwayConsistencyCoreOptions } from "../map-topology/roadway-consistency-core.mjs";
+import type { RoadwayConsistencyCoreOptions } from "../topology/roadway-consistency-core.mjs";
 
 export const ROADWAY_CONSISTENCY_SCHEMA_VERSION = "simforge.roadway-consistency.v1";
 export const ROADWAY_CONSISTENCY_VALIDATOR_VERSION = "simforge-roadway-consistency/1.0.0";

@@ -23,6 +23,8 @@
       "@simforge-oss/evaluation": ["./packages/evaluation/src/index.ts"],
       "@simforge-oss/maps": ["./packages/maps/src/index.ts"],
       "@simforge-oss/maps/node": ["./packages/maps/src/node.ts"],
+      "@simforge-oss/maps/ingest": ["./packages/maps/src/ingest.ts"],
+      "@simforge-oss/maps/topology": ["./packages/maps/src/topology.ts"],
       "@simforge-oss/map-pipeline": ["./packages/map-pipeline/src/index.ts"],
       "@simforge-oss/map-registry": ["./packages/map-registry/src/index.ts"],
       "@simforge-oss/map-registry/schema": ["./packages/map-registry/src/schema.ts"],
@@ -42,6 +44,7 @@
       "@simforge-oss/render/native": ["./packages/render/src/native/index.ts"],
       "@simforge-oss/render/web": ["./packages/render/src/web/index.ts"],
       "@simforge-oss/scenario": ["./packages/scenario/src/index.ts"],
+      "@simforge-oss/scenario/contracts": ["./packages/scenario/src/contracts.ts"],
       "@simforge-oss/training-env": ["./packages/training-env/src/index.ts"],
       "@simforge-oss/viewer": ["./packages/viewer/src/index.ts"],
       "@simforge-oss/viewer/react": ["./packages/viewer/src/react.tsx"]

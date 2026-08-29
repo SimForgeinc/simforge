@@ -11,7 +11,7 @@
  * PROJ string per call. It also gives us a single seam to swap proj4 for
  * another library later (or stub it in tests) without touching call sites.
  *
- * Why proj4 instead of hand-rolled math: SimCloud is a geospatial product and
+ * Why proj4 instead of hand-rolled math: SimForge is a geospatial product and
  * the maps we ingest can in principle declare any PROJ-supported projection.
  * Hand-rolling the math (as we previously did with a Snyder series for TMerc)
  * works for one specific projection family but silently produces wrong

@@ -1,13 +1,16 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import {
+  createHash } from "node:crypto";
 import {
   bindRuntimeTopology,
+} from "@simforge-oss/maps/topology";
+import {
   buildMapTopologyIndex,
   type RuntimeBoundMapTopologyIndex,
   type RuntimeTopologyFamily,
   type RuntimeTopologyProvenance,
-} from "@simforge-oss/studio-shared";
+} from "@simforge-oss/maps/topology";
 import {
   getRuntimeMapArtifactVersion,
   headRuntimeMapArtifactManifest,

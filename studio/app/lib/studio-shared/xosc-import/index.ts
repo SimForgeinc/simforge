@@ -97,9 +97,9 @@ import {
   type OpenScenarioImportAnalysis,
 } from "@simforge-oss/openscenario/import";
 
-import type { EnvironmentPreset } from "../environment-preset";
-import { laneAtPose } from "../map-topology/lane-at-pose";
-import type { MapTopologyIndex } from "../map-topology/types";
+import type { EnvironmentPreset } from "@simforge-oss/scenario/contracts";
+import { laneAtPose } from "@simforge-oss/maps/topology";
+import type { MapTopologyIndex } from "@simforge-oss/maps/topology";
 import type {
   ActorBehaviorProgram,
   BehaviorActorRef,
@@ -168,7 +168,7 @@ export type XoscImportOptions = {
    */
   mapName?: string;
   /**
-   * Defaults to the FileHeader description with the `[simcloud:...]`
+   * Defaults to the FileHeader description with the `[simforge:...]`
    * provenance suffix stripped, which is what the writer puts there.
    */
   sourceScenarioId?: string;
@@ -203,7 +203,7 @@ export type XoscImportResult = {
   logicFile: string;
   /**
    * Provenance the FILE carries, before any caller option is applied — the
-   * `[simcloud:...]` suffix our writer puts on `FileHeader@description`. Both
+   * `[simforge:...]` suffix our writer puts on `FileHeader@description`. Both
    * fields are null for a foreign file. A caller resolving the map wants this
    * rather than `draft.metadata`, which cannot say whether an id came from the
    * file or from the caller's own option.
@@ -495,7 +495,7 @@ export function importXoscToDraft(
   if (options.mapAssetId === undefined && !header.mapAssetId) {
     diagnostics.add(
       "metadata_defaulted",
-      "an .xosc names its OpenDRIVE file but not the map asset it came from, and this one carries no SimCloud provenance in its FileHeader; the imported draft carries an empty mapAssetId until a caller supplies one",
+      "an .xosc names its OpenDRIVE file but not the map asset it came from, and this one carries no SimForge provenance in its FileHeader; the imported draft carries an empty mapAssetId until a caller supplies one",
     );
   }
 

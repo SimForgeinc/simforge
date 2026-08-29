@@ -1,5 +1,5 @@
 import type { MapCandidateLocation, MapOverlayLayer } from "../map-asset-enrichment";
-import type { Bbox } from "../scenario-location";
+import type { Bbox } from "@simforge-oss/scenario/contracts";
 import { clipBbox, expandBbox, featureBbox } from "./bbox-utils";
 
 type GeoJsonFeature = {

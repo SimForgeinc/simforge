@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod-v3";
 import { EnvironmentPresetSchema } from "./environment-preset";
 import { ScenarioStatus } from "./run-status";
 import { ScenarioLocationSchema } from "./scenario-location";
@@ -423,6 +423,7 @@ export type BoundingBox = z.infer<typeof BoundingBoxSchema>;
 
 /** Freeform key-value properties bag. */
 const PropertiesSchema = z.record(
+  z.string(),
   z.union([z.string(), z.number(), z.boolean()]),
 );
 
@@ -708,6 +709,7 @@ export const ScenarioSchema = z.object({
   }),
   /** Native scenario definition. */
   scenarioDefinition: ScenarioDefinitionSchema.default({
+    parameterDeclarations: [],
     entities: [],
     storyboard: { init: { actions: [] }, stories: [] },
   }),

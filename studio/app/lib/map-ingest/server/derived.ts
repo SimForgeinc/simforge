@@ -4,15 +4,15 @@ import { gzipSync } from "node:zlib";
 
 import { asMapId, buildMapIntel } from "@simforge-oss/maps";
 import { CoordinateFrame } from "@simforge-oss/maps/opendrive";
-import { readGlb } from "@simforge-oss/studio-shared/map-ingest/glb";
+import { readGlb } from "@simforge-oss/maps/ingest";
 import {
   buildRoadwayConsistencyReport,
   serializeRoadwayConsistencyReport,
-} from "@simforge-oss/studio-shared/map-ingest/roadway-consistency-report";
-import { validateRoadwayConsistency } from "@simforge-oss/studio-shared/map-topology/roadway-consistency-core.mjs";
+} from "@simforge-oss/maps/ingest";
+import { validateRoadwayConsistency } from "@simforge-oss/maps/topology";
 
 import type { MapSources } from "@simforge-oss/maps/node";
-import type { MapTopologyIndex } from "@simforge-oss/studio-shared/map-topology/types";
+import type { MapTopologyIndex } from "@simforge-oss/maps/topology";
 import type { CityManifestDocument } from "./city-manifest";
 
 import mapIntelPackageJson from "../../../../../packages/maps/package.json";

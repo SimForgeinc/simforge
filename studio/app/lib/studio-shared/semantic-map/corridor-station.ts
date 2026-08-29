@@ -20,7 +20,7 @@
 import {
   flipFractionForTravel,
   laneTravelIncreasesSByConvention,
-} from "../map-topology/lane-travel";
+} from "@simforge-oss/maps/topology";
 import type { LaneCorridor, SemanticMapPoint } from "./types";
 
 /** A `road:section:lane` key, split. `roadId` stays a string: it is an id. */

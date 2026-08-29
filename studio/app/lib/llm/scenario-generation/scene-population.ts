@@ -16,7 +16,12 @@
  * primary-only scenario.
  */
 import { plannedSubjectActor, walkerBlueprintAt } from "@simforge-oss/studio-shared";
-import type { ScenarioEditorActorDraft, Vec2 } from "@simforge-oss/studio-shared";
+import type {
+  ScenarioEditorActorDraft,
+} from "@simforge-oss/studio-shared";
+import type {
+  Vec2,
+} from "@simforge-oss/maps/topology";
 import type { RuntimeRoadSegment } from "@/app/lib/llm/scenario-generation/runtime-road-snap";
 import { withWorldAnchor, worldAnchorAtFraction } from "@/app/lib/scenario-editor/batch-scenario-generator/routing";
 import type { ParkingLaneRef } from "@/app/lib/maps/topology/parking-lanes";

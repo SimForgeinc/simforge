@@ -5,7 +5,7 @@ import type {
   TrafficDensity,
   TrafficManager,
   VehicleMixPreset,
-} from "@simforge-oss/studio-shared";
+} from "@simforge-oss/scenario/contracts";
 
 export const DENSITY_VEHICLE_COUNTS: Record<TrafficDensity, number> = {
   light: 10,

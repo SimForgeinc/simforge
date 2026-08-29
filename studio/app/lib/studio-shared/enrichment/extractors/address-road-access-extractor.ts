@@ -56,7 +56,7 @@ export function attachRoadAccessToAddresses(
       a.row.road_access_lng = snap.lng;
       a.row.road_access_distance_m = snap.distanceM;
       a.row.road_access_road_name = snap.roadName;
-      // Mirror onto the GeoJSON feature properties so the S3 overlay can
+      // Mirror onto the GeoJSON feature properties so the local overlay can
       // render the access link without needing a separate Aurora lookup.
       a.feature.properties.road_access_lat = snap.lat;
       a.feature.properties.road_access_lng = snap.lng;

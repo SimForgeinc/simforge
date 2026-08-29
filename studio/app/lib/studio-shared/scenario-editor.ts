@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { SIMULATION_DEFAULTS } from "./defaults";
-import { SensorSchema } from "./simulation-run";
+import { SIMULATION_DEFAULTS } from "@simforge-oss/scenario/contracts";
+import { SensorSchema } from "@simforge-oss/scenario/contracts";
 import {
   TrafficAggressiveness,
   TrafficCardSchema,
   TrafficDensity,
   TrafficManagerSchema,
   VehicleMixPreset,
-} from "./traffic-manager";
+} from "@simforge-oss/scenario/contracts";
 import { SemanticActorAuthoringSchema } from "./semantic-actor-authoring";
 import { SceneFormationSchema, SceneFormationSolutionSchema } from "./scene-formation";
 import {

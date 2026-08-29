@@ -1,6 +1,11 @@
 import "server-only";
 
-import type { JunctionMovementBinding, RuntimeTopologyFamily } from "@simforge-oss/studio-shared";
+import type {
+  JunctionMovementBinding,
+} from "@simforge-oss/studio-shared";
+import type {
+  RuntimeTopologyFamily,
+} from "@simforge-oss/maps/topology";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";
 import {
   getRuntimeBoundMapTopology,

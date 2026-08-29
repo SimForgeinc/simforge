@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { lanePolyline } from "../runtime-lane-geometry";
-import type { TopologyLane } from "../../map-topology/types";
+import type { TopologyLane } from "@simforge-oss/maps/topology";
 import type { RuntimeBoundLaneGeometry } from "../types";
 
 /**

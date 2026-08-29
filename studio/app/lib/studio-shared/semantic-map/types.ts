@@ -3,7 +3,7 @@ import {
   RuntimeBoundMapTopologyIndexSchema,
   RuntimeTopologyProvenanceSchema,
   TurnRelationSchema,
-} from "../map-topology/types";
+} from "@simforge-oss/maps/topology";
 
 export const SEMANTIC_MAP_SCHEMA_VERSION = "simforge.semantic-map.v1" as const;
 /**

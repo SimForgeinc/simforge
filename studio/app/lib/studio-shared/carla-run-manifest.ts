@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { SensorSchema } from "./simulation-run";
+import { SensorSchema } from "@simforge-oss/scenario/contracts";
 import { ScenarioEditorActorDraftSchema } from "./scenario-editor";
-import { ArtifactManifestItemSchema } from "./artifact";
+import { ArtifactManifestItemSchema } from "@simforge-oss/scenario/contracts";
 
 export const CarlaDeterminismSchema = z.object({
   synchronousMode: z.boolean(),

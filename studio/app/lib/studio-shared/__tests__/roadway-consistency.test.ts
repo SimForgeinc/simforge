@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { TopologyLane } from "../map-topology/types";
+import type { TopologyLane } from "@simforge-oss/maps/topology";
 import {
   RoadwayConsistencyReportSchema,
   validateRoadwayConsistency,
-} from "../map-topology/roadway-consistency";
+} from "@simforge-oss/maps/topology";
 
 function line(rsl: string, x: number, options: Partial<TopologyLane> = {}): TopologyLane {
   const [roadId, section, laneId] = rsl.split(":").map(Number);

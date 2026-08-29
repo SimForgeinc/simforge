@@ -12,7 +12,7 @@ const digest = "a".repeat(64);
 
 function acceptedEvidence() {
   return {
-    schema: "uniscenario.parity-evidence/v1" as const,
+    schema: "simforge.parity-evidence/v1" as const,
     identity: {
       revisionId: "usrv_1",
       executionPackageId: "usep_1",
@@ -101,7 +101,7 @@ describe("managed render control contracts", () => {
 
   it("keeps resource admission and worker identity provider neutral", () => {
     expect(ScenarioRenderResourceRequestSchema.parse({
-      schema: "uniscenario.render-resource-request/v1",
+      schema: "simforge.render-resource-request/v1",
       durationS: 10,
       sensors: 1,
       captureFrames: 300,

@@ -2,11 +2,13 @@ import type {
   JunctionApproach,
   JunctionMovement,
   JunctionMovementVariant,
-  MapTopologyIndex,
   SemanticMapGraph,
+} from "@simforge-oss/studio-shared";
+import type {
+  MapTopologyIndex,
   TopologyGate,
   Vec2,
-} from "@simforge-oss/studio-shared";
+} from "@simforge-oss/maps/topology";
 import {
   dist,
   projectOnPolyline,

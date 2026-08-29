@@ -1,4 +1,6 @@
-import type { RenderOutputSpec } from "@simforge-oss/studio-shared";
+import type {
+  RenderOutputSpec,
+} from "@simforge-oss/scenario/contracts";
 import type { HistoricalGalleryPreview as ScenarioRuntimeGalleryPreview } from "@/app/lib/scenario/render/gallery-preview-compat";
 
 /** Health-check response from the CARLA backend. */

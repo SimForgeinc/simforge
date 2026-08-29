@@ -1,6 +1,7 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import {
+  createHash } from "node:crypto";
 import {
   SEMANTIC_GRAPH_PUBLICATION_SCHEMA_VERSION,
   SemanticFeatureGraphSchema,
@@ -8,17 +9,19 @@ import {
   SemanticMapGraphSchema,
   SemanticExecutionIndexSchema,
   buildSemanticExecutionIndex,
-  RuntimeBoundMapTopologyIndexSchema,
-  type RuntimeBoundMapTopologyIndex,
-  type RuntimeTopologyFamily,
   type SemanticFeatureGraph,
   type SemanticGraphArtifactDescriptor,
   type SemanticGraphPublicationManifest,
   type SemanticMapGraph,
   type SemanticExecutionIndex,
   type SemanticExecutionRuntimeControls,
-  type RoadwayConsistencyReport,
 } from "@simforge-oss/studio-shared";
+import {
+  RuntimeBoundMapTopologyIndexSchema,
+  type RuntimeBoundMapTopologyIndex,
+  type RuntimeTopologyFamily,
+  type RoadwayConsistencyReport,
+} from "@simforge-oss/maps/topology";
 import { getRuntimeMapArtifactBucket } from "@/app/lib/editor-map/runtime-map-artifacts";
 import { getS3ObjectUtf8, getS3ObjectUtf8Bounded, headS3ObjectInfo } from "@/app/lib/s3/s3-get-object";
 import { putS3ObjectUtf8, putS3ObjectUtf8Gzipped } from "@/app/lib/s3/s3-put-object";

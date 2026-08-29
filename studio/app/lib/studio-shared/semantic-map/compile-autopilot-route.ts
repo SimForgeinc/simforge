@@ -16,7 +16,7 @@
 
 import { deriveRunway } from "./derive-runway";
 import type { SemanticMapGraph } from "./types";
-import type { TurnRelation } from "../map-topology/types";
+import type { TurnRelation } from "@simforge-oss/maps/topology";
 
 /** A route anchor: a world position the runtime steers through. */
 export type CompiledRouteAnchor = {

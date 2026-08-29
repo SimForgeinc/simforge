@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   laneTravelIncreasesS,
   travelOrderedPolyline,
-} from "./map-topology/lane-travel";
+} from "@simforge-oss/maps/topology";
 import {
   BehaviorClipEndSchema,
   BehaviorSignalStateSchema,

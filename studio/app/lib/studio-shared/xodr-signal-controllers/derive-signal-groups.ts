@@ -64,7 +64,7 @@ import {
   classifyTurn,
   junctionTurnForRelation,
   parseXodr,
-} from "../map-topology/build-topology-index";
+} from "@simforge-oss/maps/topology";
 
 // ---------------------------------------------------------------------------
 // Public types

@@ -21,6 +21,14 @@
       "./node": {
         "types": "./dist/node.d.ts",
         "default": "./dist/node.js"
+      },
+      "./topology": {
+        "types": "./dist/topology.d.ts",
+        "default": "./dist/topology.js"
+      },
+      "./ingest": {
+        "types": "./dist/ingest.d.ts",
+        "default": "./dist/ingest.js"
       }
     }
   },
@@ -44,6 +52,16 @@
       "types": "./dist/node.d.ts",
       "default": "./dist/node.js"
     },
+    "./topology": {
+      "development": "./src/topology.ts",
+      "types": "./dist/topology.d.ts",
+      "default": "./dist/topology.js"
+    },
+    "./ingest": {
+      "development": "./src/ingest.ts",
+      "types": "./dist/ingest.d.ts",
+      "default": "./dist/ingest.js"
+    },
     "./camera-rig": {
       "development": "./src/camera-rig.ts",
       "types": "./dist/camera-rig.d.ts",
@@ -65,7 +83,9 @@
   ],
   "dependencies": {
     "proj4": "^2.15.0",
-    "three": "^0.185.0"
+    "three": "^0.185.0",
+    "zod": "^4.4.3",
+    "zod-v3": "npm:zod@3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -76,7 +96,7 @@
     "vitest": "^3.0.0"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/opendrive.ts src/node.ts src/camera-rig.ts src/signals.ts src/coordinate-frame.ts --format esm --dts --sourcemap --clean --out-dir dist",
+    "build": "tsup src/index.ts src/opendrive.ts src/node.ts src/topology.ts src/ingest.ts src/camera-rig.ts src/signals.ts src/coordinate-frame.ts --format esm --dts --sourcemap --clean --out-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   }

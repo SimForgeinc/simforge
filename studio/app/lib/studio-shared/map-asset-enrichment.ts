@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BboxSchema, RegionBboxSchema } from "./scenario-location";
+import { BboxSchema, RegionBboxSchema } from "@simforge-oss/scenario/contracts";
 import {
   RegionLineStringSchema,
   RegionPolygonSchema,
@@ -168,11 +168,8 @@ export const MapAssetEnrichmentSnapshotSchema = z.object({
 export type MapAssetEnrichmentSnapshot = z.infer<typeof MapAssetEnrichmentSnapshotSchema>;
 
 /**
- * Wire shape returned by `GET /api/map-assets/{id}/enrichment`. The two heavy
- * payloads (overlay + candidate locations) live in S3 and ship as presigned
- * GET URLs; the client fetches them in parallel and stitches them back into a
- * `MapAssetEnrichmentSnapshot` for the rest of the UI. See the migration
- * `20260511120000_map_asset_enrichments_s3_blobs.sql` for the storage layout.
+ * Local API response. Large payloads are exposed as URLs so the client can
+ * fetch them in parallel and assemble a `MapAssetEnrichmentSnapshot`.
  */
 export const MapAssetEnrichmentManifestSchema = z.object({
   map_asset_id: z.string(),

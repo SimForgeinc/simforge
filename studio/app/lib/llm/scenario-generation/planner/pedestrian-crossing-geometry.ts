@@ -37,7 +37,11 @@
  * geometry via `MapProjection` before calling this. Returns `null` on degenerate
  * input so the planner can fall back to its legacy fixed crossing.
  */
-import type { MapTopologyIndex, TopologyLane, Vec2 } from "@simforge-oss/studio-shared";
+import type {
+  MapTopologyIndex,
+  TopologyLane,
+  Vec2,
+} from "@simforge-oss/maps/topology";
 
 const DRIVING_LANE_TYPES = new Set(["driving", "bidirectional"]);
 

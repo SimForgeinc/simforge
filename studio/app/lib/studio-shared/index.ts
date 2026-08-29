@@ -63,38 +63,6 @@ export type {
   ScenarioCatalogGroup,
   ScenarioCatalogStatus,
 } from "./scenario-catalog";
-/**
- * Only the PURE bundle contract is re-exported here. The builder, selection
- * and evidence modules read the filesystem and hash with node:crypto, and this
- * barrel is imported by browser code — re-exporting them drags node builtins
- * into the client bundle and fails `next build` with UnhandledSchemeError.
- * Node-side consumers import from "./autogen-import/index" directly.
- */
-export {
-  AUTOGEN_IMPORT_SCHEMA_VERSION,
-  ArtifactRoleSchema,
-  AutogenImportManifestSchema,
-  BundleArtifactSchema,
-  BundleExclusionsSchema,
-  BundleGatesSchema,
-  BundleSceneSchema,
-  EvaluationArtifactRoleSchema,
-  GateStateSchema,
-  IMPORT_LIMITS,
-  MANDATORY_ARTIFACT_ROLES,
-  SystemArtifactRoleSchema,
-  sceneEligibilityErrors,
-} from "./autogen-import/manifest";
-export type {
-  ArtifactRole,
-  AutogenImportManifest,
-  BundleArtifact,
-  BundleExclusions,
-  BundleGates,
-  BundleScene,
-  EvaluationArtifactRole,
-  GateState,
-} from "./autogen-import/manifest";
 export {
   DATASET_EXPORT_RECIPES,
   DatasetExportRecipeIdSchema,
@@ -118,103 +86,6 @@ export {
   ALPAMAYO_SFT_V3_TARGET_TASK,
   ALPAMAYO_STAGE1_NAV_CAMERA_IDS,
 } from "./alpamayo-sft-v3";
-export {
-  BILLING,
-  COSMOS_PRICE_MODEL,
-  CUSTOM_TOPUP,
-  DEFAULT_WORKSPACE_CREDITS_CENTS,
-  NORMAL_QUEUE_MULTIPLIER_BPS,
-  PRIORITY_QUEUE_MULTIPLIER_BPS,
-  RENDER_QUEUE_PRICE_MODEL,
-  RENDER_PRICE_MODEL,
-  TOP_UP_TIERS,
-  countRenderSensors,
-  estimateCosmosCostCents,
-  estimateRenderCostCents,
-  normalizeCarlaQueueTier,
-} from "./billing";
-export type {
-  BillingRates,
-  CarlaQueueTier,
-  CosmosCostEstimate,
-  RenderCostEstimate,
-  TopUpTier,
-} from "./billing";
-export {
-  DATASET_RECIPES,
-  DEFAULT_SDG_DIRECT_RENDER_DRAFT,
-  DatasetRecipeIdSchema,
-  getDatasetRecipe,
-  SDG_AUGMENTATION_MATRIX,
-  SDG_COSMOS,
-  SDG_OUTPUT_DEPENDENCIES,
-  SDG_OUTPUTS,
-  SDG_RAW_OUTPUT_MODALITIES,
-  SDG_RECIPE_CONFIG,
-  SDG_RENDER_FPS,
-  SDG_RENDER_RESOLUTION,
-  SDG_SENSOR_RIG,
-  SdgBbox2dVisiblePixelSchema,
-  SdgBbox3dSchema,
-  SdgBboxQualitySchema,
-  SdgManifestArtifactSchema,
-  SdgManifestSchema,
-  SdgOdvgDetectionSchema,
-  SdgOdvgFrameSchema,
-  SdgOutputSchema,
-  SdgQualityMetricsSchema,
-  SdgQualityStateSchema,
-  SdgRenderOutputPlanSchema,
-  expandSdgOutputs,
-  getRequiredSdgRawModalities,
-  orderedSdgOutputs,
-  PublicExportFormatSchema,
-} from "./recipes";
-export type {
-  DatasetRecipe,
-  DatasetRecipeId,
-  DatasetRecipeStages,
-  PublicExportFormat,
-  SdgBbox2dVisiblePixel,
-  SdgBbox3d,
-  SdgBboxQuality,
-  SdgManifest,
-  SdgManifestArtifact,
-  SdgOdvgDetection,
-  SdgOdvgFrame,
-  SdgOutput,
-  SdgQualityMetrics,
-  SdgQualityState,
-  SdgDirectRenderDraft,
-  SdgRenderOutputPlan,
-} from "./recipes";
-export {
-  RECORDING_DEFAULTS,
-  SIMULATION_DEFAULTS,
-  COSMOS_DEFAULTS,
-} from "./defaults";
-export {
-  SCENARIO_TIMING,
-  normalizeRenderDurationOverrideSeconds,
-  normalizeScenarioDurationSeconds,
-  resolveRenderDurationSeconds,
-} from "./scenario-timing";
-export {
-  EnvironmentPresetSchema,
-  EnvironmentPresetLighting,
-  EnvironmentPresetRoadSurface,
-  EnvironmentPresetWeather,
-  ENVIRONMENT_PRESET_LIGHTING_VALUES,
-  ENVIRONMENT_PRESET_ROAD_SURFACE_VALUES,
-  ENVIRONMENT_PRESET_WEATHER_VALUES,
-  environmentPresetToRef,
-} from "./environment-preset";
-export type {
-  EnvironmentPreset,
-  EnvironmentPresetLighting as EnvironmentPresetLightingType,
-  EnvironmentPresetRoadSurface as EnvironmentPresetRoadSurfaceType,
-  EnvironmentPresetWeather as EnvironmentPresetWeatherType,
-} from "./environment-preset";
 export {
   CarlaWeatherSchema,
   environmentPresetToCarlaWeather,
@@ -350,24 +221,6 @@ export type {
   SemanticMapGraph,
   BuildSemanticMapGraphInput,
 } from "./semantic-map/types";
-export {
-  JUNCTION_STRAIGHT_MAX_DEG,
-  JUNCTION_TURN_WEIGHTS,
-  JUNCTION_UTURN_MIN_DEG,
-  TIMED_INSTRUCTION_PRIMITIVE_FOR_JUNCTION_DIRECTION,
-  authoredJunctionTurn,
-  classifyJunctionTurn,
-  isGeneratedAmbientTraffic,
-  junctionBranchHeadingChangeDeg,
-  junctionDirectionPolicy,
-  junctionHeadingDeltaDeg,
-  junctionTurnForBranch,
-  type AuthoredJunctionDirection,
-  type JunctionDirectionActorRead,
-  type JunctionDirectionPolicy,
-  type JunctionTurn,
-  type JunctionVec2,
-} from "./junction-direction";
 export { buildSemanticMapGraph } from "./semantic-map/build-semantic-map-graph";
 export {
   corridorStationAnchor,
@@ -627,41 +480,6 @@ export type {
   ValidationPoint,
 } from "./scenario-validation";
 export {
-  CARLA_RUNTIME_ALLOWED_LANE_TYPES,
-  MAP_TOPOLOGY_SCHEMA_VERSION,
-  MapTopologyIndexSchema,
-  RuntimeBoundMapTopologyIndexSchema,
-  RuntimeTopologyFamilySchema,
-  RuntimeTopologyParityDiagnosticSchema,
-  RuntimeTopologyParitySchema,
-  RuntimeTopologyProvenanceSchema,
-  TopologyLaneSchema,
-  TopologyGateSchema,
-  TopologyJunctionSchema,
-  TopologyAdjacentLaneSchema,
-  TopologyLaneChangePermissionSchema,
-  TopologyStatsSchema,
-  TurnRelationSchema,
-  Vec2Schema,
-} from "./map-topology/types";
-export type {
-  MapTopologyIndex,
-  RuntimeBoundMapTopologyIndex,
-  RuntimeTopologyFamily,
-  RuntimeTopologyParityDiagnostic,
-  RuntimeTopologyParity,
-  RuntimeTopologyProvenance,
-  RuntimeTopologySegment,
-  TopologyLane,
-  TopologyGate,
-  TopologyJunction,
-  TopologyAdjacentLane,
-  TopologyLaneChangePermission,
-  TopologyStats,
-  TurnRelation,
-  Vec2,
-} from "./map-topology/types";
-export {
   SCENARIO_INTERACTION_RELOCATION_SCHEMA_VERSION,
   ScenarioInteractionRelocationStatusSchema,
   ScenarioInteractionRelocationDiagnosticCodeSchema,
@@ -737,70 +555,11 @@ export type {
   ScenarioInteractionRelocationResult,
 } from "./scenario-interaction-relocation";
 export {
-  buildMapTopologyIndex,
-  TOPOLOGY_CONTENT_EPOCH,
-  buildLanePolygonsLocal,
-  constrainTopologyToRuntimeLaneTypes,
-  parseXodr,
-  classifyTurn,
-  turnRelationForHeadingChangeDeg,
-  junctionTurnForRelation,
-} from "./map-topology/build-topology-index";
-export {
-  bindRuntimeTopology,
-  buildRuntimeTopologyParity,
-} from "./map-topology/build-runtime-parity";
-export type {
-  BuildTopologyArgs,
-  LanePolygonLocal,
-} from "./map-topology/build-topology-index";
-export type { TravelAwareTopologyIndex } from "./map-topology/lane-travel";
-export {
-  flipFractionForTravel,
-  laneTravelIncreasesS,
-  laneTravelIncreasesSByConvention,
-  laneTravelIncreasesSFromCenterline,
-  travelOrderedPolyline,
-} from "./map-topology/lane-travel";
-export { laneAtPose, DEFAULT_MAX_LANE_DISTANCE_M } from "./map-topology/lane-at-pose";
-export type { LaneAtPose, PoseXY } from "./map-topology/lane-at-pose";
-export {
-  ROADWAY_CONSISTENCY_FORMAT,
-  RoadwayConsistencyIntervalSchema,
-  RoadwayConsistencyIssueCodeSchema,
-  RoadwayConsistencyIssueSchema,
-  RoadwayConsistencyReportSchema,
-  validateRoadwayConsistency,
-} from "./map-topology/roadway-consistency";
-export type {
-  RoadwayConsistencyInterval,
-  RoadwayConsistencyIssue,
-  RoadwayConsistencyIssueCode,
-  RoadwayConsistencyOptions,
-  RoadwayConsistencyReport,
-} from "./map-topology/roadway-consistency";
-export {
-  ScenarioStatus,
-  SCENARIO_STATUS_VALUES,
-  SimulationStatus,
-  SIMULATION_STATUS_VALUES,
-} from "./run-status";
-export type {
-  ScenarioStatus as ScenarioStatusType,
-  SimulationStatus as SimulationStatusType,
-} from "./run-status";
-export {
   ActorSensorRigSchema,
 } from "./scenario-render-config";
 export type {
   ActorSensorRig,
 } from "./scenario-render-config";
-export {
-  BboxSchema,
-  RegionBboxSchema,
-  ScenarioLocationSchema,
-} from "./scenario-location";
-export type { Bbox, RegionBbox, ScenarioLocation } from "./scenario-location";
 export {
   EditorOffsetMSchema,
   EuclideanBboxMSchema,
@@ -994,137 +753,6 @@ export type {
   MapAssetDescriptorPriority,
   MapAssetDescriptorTag,
 } from "./map-asset-tags";
-export {
-  CarlaSpawnStrategySchema,
-  CarlaTrafficConfigSchema,
-  CarlaTrafficCardSchema,
-  TrafficCardLaneSelectionSchema,
-  TrafficCardSchema,
-  TrafficCardVehicleMixSchema,
-  TrafficEngine,
-  TrafficManagerIntentSchema,
-  TrafficManagerSchema,
-  TrafficDistributionEntrySchema,
-  TrafficPopulationSchema,
-  TRAFFIC_ENGINE_VALUES,
-  parseCarlaTrafficConfig,
-  parseEngineConfig,
-} from "./traffic-manager";
-export type {
-  CarlaSpawnStrategy,
-  CarlaTrafficConfig,
-  CarlaTrafficCard,
-  TrafficCard,
-  TrafficCardLaneSelection,
-  TrafficCardVehicleMix,
-  TrafficAggressiveness,
-  TrafficDensity,
-  TrafficManager,
-  TrafficManagerIntent,
-  TrafficDistributionEntry,
-  TrafficPopulation,
-  VehicleMixPreset,
-} from "./traffic-manager";
-export {
-  // Sensor types (unified, flat)
-  SensorCategory,
-  SensorOutputModality,
-  RenderOutputProfile,
-  RenderOutputAnnotation,
-  RenderOutputMetadata,
-  RenderOutputEncoding,
-  RenderOutputSpecSchema,
-  SdgCosmosConfigSchema,
-  SdgPostprocessConfigSchema,
-  SdgRecipeConfigSchema,
-  SdgRecipeStageConfigSchema,
-  SdgRecorderConfigSchema,
-  SensorAttachmentType,
-  SensorPoseSchema,
-  SensorSchema,
-  SimulationEngine,
-  // Native scenario definition types
-  FileHeaderSchema,
-  ParameterDeclarationSchema,
-  RoadNetworkSchema,
-  WorldPositionSchema,
-  VehicleCategory,
-  PedestrianCategory,
-  BoundingBoxSchema,
-  VehicleEntitySchema,
-  PedestrianEntitySchema,
-  MiscObjectEntitySchema,
-  EntityObjectSchema,
-  ObjectControllerSchema,
-  ScenarioObjectSchema,
-  EntityLifecycleSchema,
-  InitActionSchema,
-  ManeuverActionSchema,
-  TriggerConditionSchema,
-  TriggerSchema,
-  EventSchema,
-  ManeuverSchema,
-  ManeuverGroupSchema,
-  ActSchema,
-  StorySchema,
-  StoryboardSchema,
-  ScenarioDefinitionSchema,
-  // Helpers
-  isEgoEntity,
-  getEntityCategory,
-  blueprintToVehicleCategory,
-  // Output & Artifact — primary names
-  DEFAULT_OUTPUT_CONFIG,
-  GeneratedBy,
-  OutputConfigSchema,
-  OutputType,
-  SimulationArtifactSchema,
-  ScenarioSchema,
-} from "./simulation-run";
-export type {
-  Sensor,
-  RenderOutputProfile as RenderOutputProfileValue,
-  RenderOutputAnnotation as RenderOutputAnnotationValue,
-  RenderOutputMetadata as RenderOutputMetadataValue,
-  RenderOutputEncoding as RenderOutputEncodingValue,
-  RenderOutputSpec,
-  SdgCosmosConfig,
-  SdgPostprocessConfig,
-  SdgRecipeConfig,
-  SdgRecipeStageConfig,
-  SdgRecorderConfig,
-  SensorPose,
-  SensorAttachmentType as SensorAttachmentTypeValue,
-  // Native scenario definition types
-  FileHeader,
-  ParameterDeclaration,
-  RoadNetwork,
-  WorldPosition,
-  BoundingBox,
-  VehicleEntity,
-  PedestrianEntity,
-  MiscObjectEntity,
-  EntityObject,
-  ObjectController,
-  ScenarioObject,
-  EntityLifecycle,
-  InitAction,
-  ManeuverAction,
-  TriggerCondition,
-  Trigger,
-  Event,
-  Maneuver,
-  ManeuverGroup,
-  Act,
-  Story,
-  Storyboard,
-  ScenarioDefinition,
-  // Primary names
-  Scenario,
-  SimulationArtifact,
-  GeneratedBy as GeneratedByType,
-  OutputConfig,
-} from "./simulation-run";
 
 export {
   CANDIDATE_LOCATION_KINDS,
@@ -1150,20 +778,6 @@ export type {
   OcclusionSubtype,
   OcclusionSupportingFeatures,
 } from "./map-candidate-location";
-
-export {
-  ACCIDENT_DATASETS,
-  ACCIDENT_EVENTS_SCHEMA_VERSION,
-  ACCIDENT_SEVERITIES,
-  AccidentDatasetSchema,
-  AccidentEventSchema,
-  AccidentSeveritySchema,
-} from "./accident-events";
-export type {
-  AccidentDataset,
-  AccidentEvent,
-  AccidentSeverity,
-} from "./accident-events";
 
 // Enrichment utilities — pure functions shared across enrichment and metadata workflows
 export {
@@ -1318,7 +932,6 @@ export type {
   EnrichmentJobType,
   EnrichmentJobStatus,
   EnrichmentJob,
-  EnrichmentJobQueueMessage,
 } from "./map-asset-enrichment-job";
 
 export {
@@ -1338,7 +951,6 @@ export type {
   ScenarioValidationVerdict,
   ScenarioValidationRepairKind,
   ScenarioValidationJob,
-  ScenarioValidationQueueMessage,
   EsminiExpectedOutcome,
   EsminiTrajectoryPoint,
   EsminiActorTrajectory,
@@ -1417,50 +1029,7 @@ export type {
   JobPurpose,
 } from "./job-family";
 
-export {
-  ArtifactFamilySchema,
-  ArtifactManifestItemSchema,
-  ArtifactManifestSchema,
-  ArtifactRetentionClassSchema,
-  ArtifactStatusSchema,
-  CanonicalArtifactSchema,
-} from "./artifact";
-export type {
-  ArtifactFamily,
-  ArtifactManifest,
-  ArtifactManifestItem,
-  ArtifactRetentionClass,
-  ArtifactStatus,
-  CanonicalArtifact,
-} from "./artifact";
 
-export {
-  WorkspaceDatasetStorageRowSchema,
-  WorkspaceScenarioStorageRowSchema,
-  WorkspaceStorageArtifactGroupSchema,
-  WorkspaceStorageAvailabilitySchema,
-  WorkspaceStorageBlockerSchema,
-  WorkspaceStorageCleanupActionSchema,
-  WorkspaceStorageDeletionPreviewRequestSchema,
-  WorkspaceStorageDeletionPreviewSchema,
-  WorkspaceStoragePolicySchema,
-  WorkspaceStorageProtectionReasonSchema,
-  WorkspaceStorageSelectionSchema,
-  WorkspaceStorageSummarySchema,
-  WorkspaceTrashRowSchema,
-} from "./workspace-storage";
-export type {
-  WorkspaceDatasetStorageRow,
-  WorkspaceScenarioStorageRow,
-  WorkspaceStorageArtifactGroup,
-  WorkspaceStorageCleanupAction,
-  WorkspaceStorageDeletionPreview,
-  WorkspaceStorageDeletionPreviewRequest,
-  WorkspaceStoragePolicy,
-  WorkspaceStorageSelection,
-  WorkspaceStorageSummary,
-  WorkspaceTrashRow,
-} from "./workspace-storage";
 
 export {
   DatasetPublicationKindSchema,

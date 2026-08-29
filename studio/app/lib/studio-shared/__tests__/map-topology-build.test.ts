@@ -1,21 +1,21 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { describe, it, expect } from "vitest";
-import { classifyJunctionTurn } from "../junction-direction";
+import { classifyJunctionTurn } from "@simforge-oss/maps/topology";
 import {
   buildMapTopologyIndex,
   constrainTopologyToRuntimeLaneTypes,
   parseXodr,
   classifyTurn,
   TOPOLOGY_CONTENT_EPOCH,
-} from "../map-topology/build-topology-index";
+} from "@simforge-oss/maps/topology";
 import {
   CARLA_RUNTIME_ALLOWED_LANE_TYPES,
   MapTopologyIndexSchema,
   type MapTopologyIndex,
   type TopologyGate,
   type TopologyLane,
-} from "../map-topology/types";
+} from "@simforge-oss/maps/topology";
 
 const MAPS_DIR = "/home/ubuntu/data/maps";
 const HAVE_MAPS = existsSync(MAPS_DIR);

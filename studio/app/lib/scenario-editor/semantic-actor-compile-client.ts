@@ -1,15 +1,18 @@
 "use client";
 
-import { z } from "zod";
+import {
+  z } from "zod";
 import {
   ScenarioEditorRoadAnchorSchema,
   SemanticActorAuthoringSchema,
   SemanticActorIntentSchema,
-  type RuntimeTopologyFamily,
   type ScenarioEditorActorDraft,
   type SemanticActorIntent,
   type SemanticLaneRole,
 } from "@simforge-oss/studio-shared";
+import {
+  type RuntimeTopologyFamily,
+} from "@simforge-oss/maps/topology";
 import type { SemanticFeatureSelection } from "@/app/lib/editor-map/semantic-overlay";
 
 // Typed client for POST /api/map-assets/:mapAssetId/semantic-bindings/compile.

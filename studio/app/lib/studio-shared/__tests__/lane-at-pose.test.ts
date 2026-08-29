@@ -9,8 +9,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { laneAtPose } from "../map-topology/lane-at-pose";
-import type { TopologyLane } from "../map-topology/types";
+import { laneAtPose } from "@simforge-oss/maps/topology";
+import type { TopologyLane } from "@simforge-oss/maps/topology";
 
 function lane(rsl: string, laneId: number, points: [number, number][], laneType = "driving"): TopologyLane {
   const [roadId, section] = rsl.split(":").map(Number);

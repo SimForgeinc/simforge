@@ -16,9 +16,14 @@ import type {
   MapTopologyIndex,
   TopologyLane,
   Vec2,
-} from "@simforge-oss/studio-shared";
-import type { TravelAwareTopologyIndex } from "@simforge-oss/studio-shared";
-import { laneTravelIncreasesS, travelOrderedPolyline } from "@simforge-oss/studio-shared";
+} from "@simforge-oss/maps/topology";
+import type {
+  TravelAwareTopologyIndex,
+} from "@simforge-oss/maps/topology";
+import {
+  laneTravelIncreasesS,
+  travelOrderedPolyline,
+} from "@simforge-oss/maps/topology";
 import type { PlannedCollision } from "../collision-route-planner";
 import {
   buildPlannedActorFromTopology,

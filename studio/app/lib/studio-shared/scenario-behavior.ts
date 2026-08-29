@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DIVERT_TAIL_MAX_M, divertTailLengthM } from "./divert-tail";
-import { laneTravelIncreasesSByConvention } from "./map-topology/lane-travel";
+import { laneTravelIncreasesSByConvention } from "@simforge-oss/maps/topology";
 import type {
   ScenarioEditorActorDraft,
   ScenarioEditorRoadAnchor,

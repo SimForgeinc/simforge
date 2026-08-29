@@ -13,8 +13,10 @@ import type {
 } from "@simforge-oss/studio-shared";
 import {
   DEFAULT_CARLA_ACTOR_BLUEPRINTS,
-  SCENARIO_TIMING,
 } from "@simforge-oss/studio-shared";
+import {
+  SCENARIO_TIMING,
+} from "@simforge-oss/scenario/contracts";
 import type { ActorBlueprintLibrary } from "@/app/lib/runtime/runtime-types";
 import type { RuntimeRoadOverlayCollection } from "@/app/lib/editor-map/types";
 

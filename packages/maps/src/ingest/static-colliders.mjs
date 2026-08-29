@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-export const STATIC_COLLIDER_SCHEMA = 'uniscenarios.static-map-colliders/v1';
+export const STATIC_COLLIDER_SCHEMA = 'simforge.static-map-colliders/v1';
 const SOLID_CATEGORIES = new Set(['building']);
 const TRAVEL_LANE_TYPES = new Set(['driving', 'biking', 'parking', 'shoulder']);
 const ROAD_INDEX_CELL_M = 20;

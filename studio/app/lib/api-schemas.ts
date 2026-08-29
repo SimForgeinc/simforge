@@ -2,12 +2,15 @@
  * Zod schemas used for OpenAPI documentation.
  * Exported here so route files only export HTTP handlers (GET, POST, etc.) and stay valid Next.js routes.
  */
-import { z } from "zod";
+import {
+  z } from "zod";
 import {
   MapAssetSchema,
-  ScenarioSchema,
   CandidateLocationSchema,
 } from "@simforge-oss/studio-shared";
+import {
+  ScenarioSchema,
+} from "@simforge-oss/scenario/contracts";
 
 // ---- Path params ----
 export const ScenarioIdParams = z.object({ scenarioId: z.string().describe("Scenario identifier") });

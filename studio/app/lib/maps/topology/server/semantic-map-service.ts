@@ -3,9 +3,11 @@ import "server-only";
 import {
   buildSemanticMapGraph,
   type RuntimeBoundLaneGeometry,
-  type RuntimeTopologyFamily,
   type SemanticMapGraph,
 } from "@simforge-oss/studio-shared";
+import {
+  type RuntimeTopologyFamily,
+} from "@simforge-oss/maps/topology";
 import { readRuntimeTopologyBundleInput } from "@/app/lib/editor-map/runtime-topology-bundle";
 import { getRuntimeBoundMapTopologyIndex } from "./topology-index-service";
 import { readCompatibleSemanticGraphPublication } from "./semantic-graph-publication-store";

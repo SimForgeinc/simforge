@@ -23,7 +23,7 @@ describe("encodeXoscFileHeaderDescription", () => {
         mapAssetId: "map_golden",
         mapName: "Town03",
       }),
-    ).toBe("scn_golden [simcloud:map_asset=map_golden;map=Town03]");
+    ).toBe("scn_golden [simforge:map_asset=map_golden;map=Town03]");
   });
 
   it("leaves a description with no map metadata exactly as it was", () => {
@@ -42,16 +42,16 @@ describe("encodeXoscFileHeaderDescription", () => {
   it("emits only the keys it has", () => {
     expect(
       encodeXoscFileHeaderDescription({ description: "x", mapAssetId: "ma_1" }),
-    ).toBe("x [simcloud:map_asset=ma_1]");
+    ).toBe("x [simforge:map_asset=ma_1]");
     expect(
       encodeXoscFileHeaderDescription({ description: "x", mapName: "Town03" }),
-    ).toBe("x [simcloud:map=Town03]");
+    ).toBe("x [simforge:map=Town03]");
   });
 
   it("emits the group alone when there is no description", () => {
     expect(
       encodeXoscFileHeaderDescription({ description: "", mapAssetId: "ma_1" }),
-    ).toBe("[simcloud:map_asset=ma_1]");
+    ).toBe("[simforge:map_asset=ma_1]");
   });
 
   it("replaces an existing group rather than nesting one inside the next", () => {
@@ -65,7 +65,7 @@ describe("encodeXoscFileHeaderDescription", () => {
       mapAssetId: "ma_2",
       mapName: "B",
     });
-    expect(twice).toBe("scn [simcloud:map_asset=ma_2;map=B]");
+    expect(twice).toBe("scn [simforge:map_asset=ma_2;map=B]");
   });
 });
 
@@ -73,7 +73,7 @@ describe("parseXoscFileHeaderDescription", () => {
   it("splits the human description from the metadata", () => {
     expect(
       parseXoscFileHeaderDescription(
-        "scn_golden [simcloud:map_asset=map_golden;map=Town03]",
+        "scn_golden [simforge:map_asset=map_golden;map=Town03]",
       ),
     ).toEqual({
       description: "scn_golden",
@@ -105,18 +105,18 @@ describe("parseXoscFileHeaderDescription", () => {
   it("ignores unknown keys, which is what makes the format extensible", () => {
     expect(
       parseXoscFileHeaderDescription(
-        "scn [simcloud:map_asset=ma_1;future_key=whatever;map=Town03]",
+        "scn [simforge:map_asset=ma_1;future_key=whatever;map=Town03]",
       ),
     ).toEqual({ description: "scn", mapAssetId: "ma_1", mapName: "Town03" });
   });
 
   it("strips a group with nothing readable in it", () => {
-    expect(parseXoscFileHeaderDescription("scn [simcloud:]")).toEqual({
+    expect(parseXoscFileHeaderDescription("scn [simforge:]")).toEqual({
       description: "scn",
       mapAssetId: null,
       mapName: null,
     });
-    expect(parseXoscFileHeaderDescription("scn [simcloud:garbage]")).toEqual({
+    expect(parseXoscFileHeaderDescription("scn [simforge:garbage]")).toEqual({
       description: "scn",
       mapAssetId: null,
       mapName: null,
@@ -126,9 +126,9 @@ describe("parseXoscFileHeaderDescription", () => {
   it("only reads a group anchored at the end", () => {
     // Brackets earlier in the text are the author's, not ours.
     expect(
-      parseXoscFileHeaderDescription("[simcloud:map_asset=ma_1] trailing prose"),
+      parseXoscFileHeaderDescription("[simforge:map_asset=ma_1] trailing prose"),
     ).toEqual({
-      description: "[simcloud:map_asset=ma_1] trailing prose",
+      description: "[simforge:map_asset=ma_1] trailing prose",
       mapAssetId: null,
       mapName: null,
     });
@@ -136,7 +136,7 @@ describe("parseXoscFileHeaderDescription", () => {
 
   it("survives a stray percent rather than losing the field", () => {
     expect(
-      parseXoscFileHeaderDescription("scn [simcloud:map=100%pure]").mapName,
+      parseXoscFileHeaderDescription("scn [simforge:map=100%pure]").mapName,
     ).toBe("100%pure");
   });
 });
@@ -184,7 +184,7 @@ describe("round trip", () => {
 
 describe("stripXoscFileHeaderMetadata", () => {
   it("removes the group and trims", () => {
-    expect(stripXoscFileHeaderMetadata("scn  [simcloud:map=A]  ")).toBe("scn");
+    expect(stripXoscFileHeaderMetadata("scn  [simforge:map=A]  ")).toBe("scn");
   });
 
   it("leaves text with no group alone", () => {

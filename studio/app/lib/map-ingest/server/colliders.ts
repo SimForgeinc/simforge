@@ -14,9 +14,9 @@ import { createHash } from "node:crypto";
 import {
   buildStaticColliderArtifact,
   serializeStaticColliderArtifact,
-} from "@simforge-oss/studio-shared/map-ingest/static-colliders.mjs";
+} from "@simforge-oss/maps/ingest";
 
-import type { MapTopologyIndex } from "@simforge-oss/studio-shared/map-topology/types";
+import type { MapTopologyIndex } from "@simforge-oss/maps/topology";
 import type { CityManifestDocument } from "./city-manifest";
 
 export type ColliderSourceLayer = {

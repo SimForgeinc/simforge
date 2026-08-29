@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ScenarioEditorActorDraftSchema } from "./scenario-editor";
-import { TurnRelationSchema, Vec2Schema } from "./map-topology/types";
+import { TurnRelationSchema, Vec2Schema } from "@simforge-oss/maps/topology";
 
 export const SCENARIO_INTERACTION_RELOCATION_SCHEMA_VERSION =
   "simforge.scenario-interaction-relocation.v1" as const;

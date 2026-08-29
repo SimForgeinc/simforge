@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  RuntimeTopologyFamilySchema,
   ScenarioEditorActorDraftSchema,
   corridorStationAnchor,
   deriveRunway,
@@ -9,6 +8,9 @@ import {
   resolveTurnIntents,
   runwayBudgetM,
 } from "@simforge-oss/studio-shared";
+import {
+  RuntimeTopologyFamilySchema,
+} from "@simforge-oss/maps/topology";
 import type { SemanticMapGraph } from "@simforge-oss/studio-shared";
 import { getCurrentSession } from "@/app/lib/auth/session";
 import { getMapAssetByIdFromDb } from "@/app/lib/db/map-asset-store";

@@ -7,7 +7,7 @@ import {
   type RenderOutputProfile,
   type RenderOutputSpec,
   type SensorOutputModality,
-} from "@simforge-oss/studio-shared";
+} from "@simforge-oss/scenario/contracts";
 
 export type ScenarioSetupRenderConfig = {
   renderOutputProfile: RenderOutputProfile;

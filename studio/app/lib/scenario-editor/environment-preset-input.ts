@@ -36,7 +36,7 @@ import {
   type EnvironmentPresetLighting,
   type EnvironmentPresetRoadSurface,
   type EnvironmentPresetWeather,
-} from "@simforge-oss/studio-shared";
+} from "@simforge-oss/scenario/contracts";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
