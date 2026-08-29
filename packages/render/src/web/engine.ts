@@ -17,7 +17,7 @@ export interface BrowserRenderEngineOptions {
   /**
    * Extra Chromium switches appended after the safe defaults, e.g.
    * `--use-gl=angle --use-angle=gl-egl` to render on a real GPU instead of
-   * SwiftShader. Defaults to `UNISCENARIOS_CHROMIUM_EXTRA_ARGS` (whitespace
+   * SwiftShader. Defaults to `SIMFORGE_CHROMIUM_EXTRA_ARGS` (whitespace
    * separated) so hosts opt in without code changes.
    */
   readonly chromiumExtraArgs?: readonly string[];
@@ -129,7 +129,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
     async execute(context: RenderExecutionContext): Promise<RenderArtifactManifest> {
       const startedAt = new Date().toISOString();
       const harnessUrl = options.harnessUrl
-        ?? process.env.UNISCENARIOS_BROWSER_HARNESS_URL
+        ?? process.env.SIMFORGE_BROWSER_HARNESS_URL
         ?? await resolveBrowserHarnessUrl();
       await fs.mkdir(context.workspace, { recursive: true });
       const intent = resolveBrowserRenderIntent(context.intent);
@@ -155,7 +155,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
       };
       const outputs = new Map<string, OutputFile>();
       const chromiumExtraArgs = options.chromiumExtraArgs
-        ?? process.env.UNISCENARIOS_CHROMIUM_EXTRA_ARGS?.split(/\s+/).filter(Boolean)
+        ?? process.env.SIMFORGE_CHROMIUM_EXTRA_ARGS?.split(/\s+/).filter(Boolean)
         ?? [];
       const browser = await chromium.launch({
         headless: options.headless ?? true,
@@ -196,7 +196,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
           const progress = JSON.parse(line) as { event?: string; completedFrames?: number; totalFrames?: number };
           if (progress.event !== 'frame') return;
           await context.reportProgress({
-            schema: 'uniscenario.render-progress/v1', jobId: context.jobId, attempt: context.attempt, sequence: 0,
+            schema: 'simforge.render-progress/v1', jobId: context.jobId, attempt: context.attempt, sequence: 0,
             timestamp: new Date().toISOString(), event: 'stage.progress', stage: 'rendering',
             completed: progress.completedFrames ?? 0, total: progress.totalFrames ?? 0, unit: 'frames',
           });
@@ -233,7 +233,7 @@ export function createRenderEngine(options: BrowserRenderEngineOptions = {}): Re
             };
           });
           return {
-            schema: 'uniscenario.render-artifact-manifest/v1',
+            schema: 'simforge.render-artifact-manifest/v1',
             intentSha256: context.intentSha256,
             engine: { engineId: BROWSER_RENDER_ENGINE_ID, engineVersion: options.engineVersion ?? '0.1.0-rc.48', backend: 'browser' },
             startedAt,

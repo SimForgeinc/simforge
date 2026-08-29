@@ -18,7 +18,7 @@ export const BROWSER_RENDER_ENGINE_ID = 'browser' as const;
 export type RenderStage = 'worldUpdate' | 'scenePass' | 'readback' | 'encoding' | 'artifactWrite' | 'visualization';
 export type StageTiming = Readonly<{ count: number; totalMs: number; maxMs: number }>;
 export type BrowserRenderProgress = Readonly<{
-  schema: 'uniscenario.render-progress/v1';
+  schema: 'simforge.render-progress/v1';
   intentSha256: string;
   engine: typeof BROWSER_RENDER_ENGINE_ID;
   event: 'started' | 'frame' | 'artifact' | 'completed';
@@ -187,7 +187,7 @@ export async function captureBrowserArtifacts(input: BrowserCaptureInput): Promi
       }
     }
     const manifestSink = await hashedSink(input.createArtifactSink, { role: 'render-manifest', actorId: null, sensorId: null, modality: 'manifest' }, 'application/json');
-    const manifest = { schema: 'uniscenario.browser-render-manifest/v1', engine: BROWSER_RENDER_ENGINE_ID, intentSha256: input.intentSha256, frameMajor: true, schedule: input.schedule, videoEncodings, artifacts: receipts, omittedArtifacts, timings };
+    const manifest = { schema: 'simforge.browser-render-manifest/v1', engine: BROWSER_RENDER_ENGINE_ID, intentSha256: input.intentSha256, frameMajor: true, schedule: input.schedule, videoEncodings, artifacts: receipts, omittedArtifacts, timings };
     await manifestSink.write(encoder.encode(`${JSON.stringify(manifest)}\n`), input.signal);
     const manifestReceipt = await manifestSink.close(input.signal); receipts.push(manifestReceipt);
     emitProgress(input, timings, { event: 'completed', completedFrames: input.schedule.frameCount, artifact: manifestReceipt });
@@ -339,6 +339,6 @@ type MutableTimings = Record<RenderStage, { count: number; totalMs: number; maxM
 function createTimings(): MutableTimings { return { worldUpdate: { count: 0, totalMs: 0, maxMs: 0 }, scenePass: { count: 0, totalMs: 0, maxMs: 0 }, readback: { count: 0, totalMs: 0, maxMs: 0 }, encoding: { count: 0, totalMs: 0, maxMs: 0 }, artifactWrite: { count: 0, totalMs: 0, maxMs: 0 }, visualization: { count: 0, totalMs: 0, maxMs: 0 } }; }
 function addTiming(timings: MutableTimings, stage: RenderStage, ms: number): void { const value = timings[stage]; value.count += 1; value.totalMs += ms; value.maxMs = Math.max(value.maxMs, ms); }
 function emitProgress(input: { intentSha256: string; schedule: ResolvedFrameSchedule; onProgress?: (line: string, event: BrowserRenderProgress) => void }, timings: MutableTimings, value: Pick<BrowserRenderProgress, 'event' | 'completedFrames' | 'outputFrameIndex' | 'artifact'>): void {
-  const event: BrowserRenderProgress = { schema: 'uniscenario.render-progress/v1', intentSha256: input.intentSha256, engine: BROWSER_RENDER_ENGINE_ID, event: value.event, completedFrames: value.completedFrames, totalFrames: input.schedule.frameCount, ...(value.outputFrameIndex === undefined ? {} : { outputFrameIndex: value.outputFrameIndex }), ...(value.artifact === undefined ? {} : { artifact: value.artifact }), timings };
+  const event: BrowserRenderProgress = { schema: 'simforge.render-progress/v1', intentSha256: input.intentSha256, engine: BROWSER_RENDER_ENGINE_ID, event: value.event, completedFrames: value.completedFrames, totalFrames: input.schedule.frameCount, ...(value.outputFrameIndex === undefined ? {} : { outputFrameIndex: value.outputFrameIndex }), ...(value.artifact === undefined ? {} : { artifact: value.artifact }), timings };
   input.onProgress?.(`${JSON.stringify(event)}\n`, event);
 }

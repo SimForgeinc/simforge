@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { ArtifactIdentitySchema } from './artifacts.js';
 
-export const RENDER_PROGRESS_V1_SCHEMA = 'uniscenario.render-progress/v1' as const;
+export const RENDER_PROGRESS_V1_SCHEMA = 'simforge.render-progress/v1' as const;
 export const RenderStageSchema = z.enum([
   'downloading',
   'preparing',

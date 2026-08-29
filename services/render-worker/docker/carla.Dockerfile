@@ -31,26 +31,26 @@ COPY --from=python-build /wheels /tmp/wheels
 RUN python3 -m pip install --no-cache-dir /home/carla/PythonAPI/carla/dist/carla-*.whl /tmp/wheels/*.whl && rm -rf /tmp/wheels
 ENV NODE_ENV=production \
     PORT=8080 \
-    UNISCENARIOS_CARLA_BINARY=/usr/local/bin/simforge-oss-carla-api \
-    UNISCENARIOS_SCRATCH_DIR=/scratch \
-    UNISCENARIOS_CARLA_BLUEPRINT_ID=vehicle.kia.carnival \
-    UNISCENARIOS_CARLA_BLUEPRINT_CLASS=/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C \
-    UNISCENARIOS_CARLA_IMAGE_MANIFEST_SHA256=baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64 \
-    UNISCENARIOS_CACHE_DIR=/cache \
-    UNISCENARIOS_GPU_LOCK=/run/simforge/gpu.lock \
+    SIMFORGE_CARLA_BINARY=/usr/local/bin/simforge-oss-carla-api \
+    SIMFORGE_SCRATCH_DIR=/scratch \
+    SIMFORGE_CARLA_BLUEPRINT_ID=vehicle.kia.carnival \
+    SIMFORGE_CARLA_BLUEPRINT_CLASS=/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C \
+    SIMFORGE_CARLA_IMAGE_MANIFEST_SHA256=baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64 \
+    SIMFORGE_CACHE_DIR=/cache \
+    SIMFORGE_GPU_LOCK=/run/simforge/gpu.lock \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
 LABEL org.opencontainers.image.title="SimForge CARLA render worker" \
       org.opencontainers.image.version="$IMAGE_VERSION" \
       org.opencontainers.image.revision="$SOURCE_REVISION" \
       org.opencontainers.image.source="https://github.com/SimForgeinc/simforge-oss" \
-      io.uniscenarios.engine="carla" \
-      io.uniscenarios.carla.base.index-digest="sha256:f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5" \
-      io.uniscenarios.carla.base.manifest-digest="sha256:baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64" \
-      io.uniscenarios.sensor-host.catalog-asset-id="vehicle.kia.carnival" \
-      io.uniscenarios.sensor-host.carla-blueprint-id="vehicle.kia.carnival" \
-      io.uniscenarios.sensor-host.carla-class-path="/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C" \
-      io.uniscenarios.contract="uniscenario.render-worker-control/v2"
+      io.simforge.engine="carla" \
+      io.simforge.carla.base.index-digest="sha256:f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5" \
+      io.simforge.carla.base.manifest-digest="sha256:baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64" \
+      io.simforge.sensor-host.catalog-asset-id="vehicle.kia.carnival" \
+      io.simforge.sensor-host.carla-blueprint-id="vehicle.kia.carnival" \
+      io.simforge.sensor-host.carla-class-path="/Game/Carla/Blueprints/Vehicles/KiaCarnival2025/BP_KiaCarnival2025.BP_KiaCarnival2025_C" \
+      io.simforge.contract="simforge.render-worker-control/v2"
 USER carla
 WORKDIR /scratch
 VOLUME ["/scratch", "/cache", "/run/simforge"]
