@@ -7,3 +7,7 @@ export * from "./studio-contracts/scenario-location.js";
 export * from "./studio-contracts/scenario-timing.js";
 export * from "./studio-contracts/simulation-run.js";
 export * from "./studio-contracts/traffic-manager.js";
+export * from "./studio-contracts/actor-authoring.js";
+export * from "./studio-contracts/collision-inference.js";
+export * from "./studio-contracts/legacy-behavior-compat.js";
+export * from "./studio-contracts/sensor-materialization.js";
