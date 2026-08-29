@@ -2,7 +2,10 @@
 
 import { Input } from "@/app/components/ui/input";
 import { SelectMenu, SelectMenuField } from "@/app/components/ui/select-menu";
-import type { EditorDocument } from "@simforge-oss/editor";
+import {
+  setExclusiveCustomTimedRoute,
+  type EditorDocument,
+} from "@simforge-oss/editor";
 import {
   InteractionSchema,
   lookupSetKey,
@@ -10,7 +13,6 @@ import {
   type Interaction,
   type SetValue,
 } from "@simforge-oss/scenario";
-import { setExclusiveCustomTimedRoute } from "../simple-timed-routes";
 
 type SpeedInteraction = Extract<Interaction, { verb: "speed" }>;
 type ChangeLaneInteraction = Extract<Interaction, { verb: "changeLane" }>;

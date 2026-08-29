@@ -1,3 +1,5 @@
+export * from "./authoring-policy";
+export * from "./authoring-validation";
 export * from "./authoringRuntimeWarmup";
 export * from "./controller";
 export * from "./drop-resolver";

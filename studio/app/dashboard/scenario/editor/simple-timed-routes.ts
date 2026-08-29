@@ -1,5 +1,8 @@
 import type { Interaction } from "@simforge-oss/scenario";
-import type { EditorDocument } from "@simforge-oss/editor";
+import {
+  setExclusiveCustomTimedRoute,
+  type EditorDocument,
+} from "@simforge-oss/editor";
 import type { SceneTrace } from "@simforge-oss/engine";
 
 export type EditorExperience = "simple" | "advanced";
@@ -148,77 +151,6 @@ export function hasAdvancedMotion(document: EditorDocument): boolean {
   return document.data.choreography.interactions.some(
     (interaction) => isMotionVerb(interaction.verb) && !isCustomTimedRoute(interaction),
   );
-}
-
-/**
- * A custom timed route owns the actor's complete motion timeline. Normalizing
- * at the mutation boundary prevents the placement compiler's lane-following
- * route from continuing alongside the authored route.
- */
-export function setExclusiveCustomTimedRoute(
-  document: EditorDocument,
-  interaction: Interaction,
-): boolean {
-  if (!isCustomTimedRoute(interaction)) return false;
-  const normalized: Interaction = {
-    ...interaction,
-    trigger: { kind: "at", t: 0 },
-    until: { kind: "at", t: document.data.choreography.clipSeconds },
-  };
-  const existing = document.data.choreography.interactions.find(
-    (candidate) => candidate.id === interaction.id,
-  );
-  for (const candidate of document.data.choreography.interactions) {
-    if (
-      candidate.id !== interaction.id
-      && candidate.actor === interaction.actor
-      && isMotionVerb(candidate.verb)
-    ) {
-      document.removeInteraction(candidate.id);
-    }
-  }
-  if (existing) document.replaceInteraction(interaction.id, normalized);
-  else document.addInteraction(normalized);
-  return true;
-}
-
-/**
- * Replace one newly placed movable actor's compiler-provided motion with the
- * stationary two-point placeholder used by Simple mode.
- */
-export function armActorSimpleTimedRoute(
-  document: EditorDocument,
-  actorId: string,
-): boolean {
-  const role = document.data.roles.find((candidate) => candidate.id === actorId);
-  if (!role || role.actor.static) return false;
-  const authored = document.actor(role.id);
-  const pose = authored
-    ?? (role.kind === "scene_absolute" ? { x: role.pose.position.x, z: role.pose.position.z } : null);
-  if (!pose) return false;
-  const point = {
-    x: Number(pose.x.toFixed(3)),
-    z: Number(pose.z.toFixed(3)),
-  };
-  const second = Math.max(
-    0.1,
-    Math.min(1, Number(document.data.choreography.clipSeconds.toFixed(3))),
-  );
-  return setExclusiveCustomTimedRoute(document, {
-    id: routeId(role.id),
-    actor: role.id,
-    label: "Simple timed route",
-    trigger: { kind: "at", t: 0 },
-    until: { kind: "at", t: document.data.choreography.clipSeconds },
-    verb: "route",
-    target: {
-      mode: "customTimedRoute",
-      points: [
-        { timeS: 0, ...point },
-        { timeS: second, ...point },
-      ],
-    },
-  });
 }
 
 /**
