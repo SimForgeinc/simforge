@@ -35,6 +35,7 @@ import { materialize, templateId as canonicalTemplateId } from './materialize.js
 import { assertMatchableAnchor, catalogExactMatcherPolicy } from '@simforge-oss/compiler/node';
 import { readTemplate } from '@simforge-oss/compiler/node';
 
+// historical name retained for stored-data compat
 export const CATALOG_KIND = 'uniscenarios-scenario-catalog' as const;
 export const CATALOG_VERSION = 2 as const;
 export const CATALOG_GENERATOR_VERSION = '2.0.0' as const;

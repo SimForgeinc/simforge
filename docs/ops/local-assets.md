@@ -41,15 +41,15 @@ the existing env override:
 
 ```
 export SCEN_DEV_ASSETS=~/simforge-assets/map-bundles   # packages/compiler maps.ts
-export UNISCENARIOS_DEV_ASSETS=~/simforge-assets/map-bundles  # studio seed
+export SIMFORGE_DEV_ASSETS=~/simforge-assets/map-bundles  # studio seed
 ```
 
 (making that the *default* resolution is a pending patch to
 `packages/compiler/src/maps.ts` and `studio/scripts/seed.ts`; until it lands,
 set the env vars). Recovery sources when a map dir is absent:
 (a) `pnpm maps:derivatives -- --map <mapId>` rebuilds derivatives from source
-map data, (b) published bundles in the platform S3 uniscenario artifact
-buckets. Repo tests `describe.skipIf` on artifact absence, so `status` output
+map data, (b) published bundles in the platform S3 SimForge artifact buckets.
+Repo tests `describe.skipIf` on artifact absence, so `status` output
 tells you exactly which map suites will run.
 
 Rules:
@@ -100,7 +100,7 @@ pulling content on your behalf. It is not part of the product contract.
 scripts/assets/carla-up.sh        # once per boot; the container is long-lived
 # edit python in adapters/carla-exec/ ...
 python -m pytest adapters/carla-exec/tests -q        # pure-python, no server needed
-uniscenarios-carla <cmd> --host localhost --port 2000  # rerun against the live server
+simforge-oss-carla-api <cmd> --host localhost --port 2000  # rerun against the live server
 ```
 
 No image build, no container restart, no asset copy is ever part of the

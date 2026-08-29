@@ -58,9 +58,8 @@ has a reference-backed validation gate.
   walkers kinematically and does not present the posture yet, so a managed
   render shows the body sliding to rest upright while the trace, the metrics and
   the browser preview agree it is down. OpenSCENARIO carries the translation in the replay
-  polyline and declares the time in a
-  `uniscenarios.trajectoryReplay.knockedDownAtS.*` header property, because the
-  standard has no element for a body on the ground.
+  polyline and declares the time in the stored-data-compatible trajectory replay
+  header property, because the standard has no element for a body on the ground.
 - Performance: 10 dynamic actors for 20 simulated seconds in at most 1 second
   offline (at least 20x real time) on the declared benchmark machine.
 - Existing baked OpenSCENARIO replay: position RMSE at most 0.1 m, position p95

@@ -18,6 +18,7 @@ import random
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Mapping
+# historical name retained for stored-data compat
 
 from .runtime.compiler import ContractError, _entities
 
@@ -199,12 +200,12 @@ def build_intent(scenario_bytes: bytes, xodr_path: Path, catalog_path: Path,
     source_digests = [
         item.get("value")
         for item in root.findall("./FileHeader/Properties/Property")
-        if item.get("name") == "uniscenarios.provenance.inputHash"
+        if item.get("name") in {"simforge.provenance.inputHash", "uniscenarios.provenance.inputHash"}
     ]
     if len(source_digests) != 1 or not isinstance(source_digests[0], str) or len(source_digests[0]) != 64:
         raise ContractError("OpenSCENARIO must carry exactly one source input digest")
     return {
-        "schema": "uniscenario.render-intent/v1",
+        "schema": "simforge.render-intent/v1",
         "intentId": intent_id,
         "executionPackage": {
             "id": intent_id,
@@ -229,7 +230,7 @@ def build_intent(scenario_bytes: bytes, xodr_path: Path, catalog_path: Path,
             key=lambda item: item["sourceId"],
         ),
         "renderSpec": {
-            "schema": "uniscenario.render-spec/v3",
+            "schema": "simforge.render-spec/v3",
             "sources": sources,
             "clip": {"startSeconds": start_seconds, "endSeconds": end_seconds},
             "video": dict(VIDEO),

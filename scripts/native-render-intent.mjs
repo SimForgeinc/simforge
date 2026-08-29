@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build a `uniscenario.render-intent/v1` + input map + native camera schedule
+ * Build a `simforge.render-intent/v1` + input map + native camera schedule
  * for one catalog scenario, targeting the `native` engine.
  *
  * Usage:
@@ -203,7 +203,7 @@ const scheduleFrames = frameIndices.map((tickIndex) => {
 await fs.mkdir(outDir, { recursive: true });
 const schedulePath = path.join(outDir, 'native.camera-schedule.json');
 await fs.writeFile(schedulePath, `${JSON.stringify({
-  schema: 'uniscenario.native-camera-schedule/v1',
+  schema: 'simforge.native-camera-schedule/v1',
   profile: 'sensor',
   lighting: { sunElevDeg: 60, sunAzimDeg: 190, sunLux: 12000, ambient: 1.2 },
   frames: scheduleFrames,
@@ -213,7 +213,7 @@ await fs.writeFile(schedulePath, `${JSON.stringify({
 const xoscPath = path.join(outDir, 'scenario.xosc');
 // The export pipeline needs dev-assets/topology-index.json.gz, which lives in
 // the training-grade checkout; its CLI is version-compatible for xosc-1.4.
-const exportCli = process.env.UNISCENARIOS_EXPORT_CLI
+const exportCli = process.env.SIMFORGE_EXPORT_CLI
   ?? '/home/path/SimForge-training-grade/packages/cli/bin/simforge.js';
 const exportCwd = path.dirname(path.dirname(path.dirname(exportCli)));
 execFileSync(process.execPath, [
@@ -245,7 +245,7 @@ const scheduleAsset = {
 
 const revisionId = String(instanceDoc.manifest?.revisionId ?? slot.identity ?? 'revision').replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 100) || 'revision';
 const intent = {
-  schema: 'uniscenario.render-intent/v1',
+  schema: 'simforge.render-intent/v1',
   intentId: `native-e2e-${identity}`.slice(0, 120),
   scenarioRevision: {
     revisionId,
@@ -271,7 +271,7 @@ const intent = {
     },
   })).sort((left, right) => left.sourceId.localeCompare(right.sourceId)),
   renderSpec: {
-    schema: 'uniscenario.render-spec/v3',
+    schema: 'simforge.render-spec/v3',
     sources,
     clip: { startSeconds: 0, endSeconds: Number(clipEnd.toFixed(3)) },
     video,

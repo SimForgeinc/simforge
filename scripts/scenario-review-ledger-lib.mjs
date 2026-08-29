@@ -6,8 +6,8 @@ import {
   canonicalJson,
 } from './export-render-lib.mjs';
 
-export const SCENARIO_REVIEW_SCHEMA = 'uniscenarios.scenario-visual-review.v2';
-export const SCENARIO_REVIEW_LEDGER_SCHEMA = 'uniscenarios.scenario-visual-review-ledger.v2';
+export const SCENARIO_REVIEW_SCHEMA = 'simforge-oss.scenario-visual-review.v2';
+export const SCENARIO_REVIEW_LEDGER_SCHEMA = 'simforge-oss.scenario-visual-review-ledger.v2';
 
 /** Files whose bytes determine what a reviewer actually sees. */
 export const SCENARIO_REVIEW_PROVENANCE_FILES = [

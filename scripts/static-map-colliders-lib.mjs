@@ -1,6 +1,6 @@
 import { sha256 } from './map-derivatives-lib.mjs';
 
-export const STATIC_COLLIDER_SCHEMA = 'uniscenarios.static-map-colliders/v1';
+export const STATIC_COLLIDER_SCHEMA = 'simforge-oss.static-map-colliders/v1';
 
 const SOLID_CATEGORIES = new Set(['building']);
 const TRAVEL_LANE_TYPES = new Set(['driving', 'biking', 'parking', 'shoulder']);

@@ -5,8 +5,7 @@
  * Drives the Bevy headless spike binary (scripts/renderer-spike/bevy-spike,
  * later renderer/render-core) to record and verify golden pass hashes per GPU
  * fingerprint, with a frame-time regression budget. Evidence manifests extend
- * `uniscenarios.render-determinism-manifest.v1` (WSB4's schema — see
- * docs/determinism-claim.md); the additions are documented in
+ * `simforge-oss.render-determinism-manifest.v1`; the additions are documented in
  * docs/native-golden-ci.md.
  *
  * Commands:
@@ -224,7 +223,7 @@ function resolveBinary(args, scene) {
 
 function manifestBase({ mode, scene, hardware, binPath, invocation, versions }) {
   return {
-    schema: 'uniscenarios.render-determinism-manifest.v1',
+    schema: 'simforge-oss.render-determinism-manifest.v1',
     generatedAt: new Date().toISOString(),
     claim: 'byte-exactness of the native (Bevy/wgpu) sensor-profile pass hashes across renders of one fixed scene state on pinned hardware',
     mode,

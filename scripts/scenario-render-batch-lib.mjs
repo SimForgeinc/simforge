@@ -18,7 +18,7 @@ import {
   createScenarioReviewTemplate,
 } from './scenario-review-ledger-lib.mjs';
 
-export const SCENARIO_RENDER_BATCH_SCHEMA = 'uniscenarios.scenario-render-review-batch.v1';
+export const SCENARIO_RENDER_BATCH_SCHEMA = 'simforge-oss.scenario-render-review-batch.v1';
 
 export const REQUIRED_MACHINE_GATES = [
   'four-distinct-incident-phases',
@@ -64,6 +64,7 @@ function exactMapCounts(catalog) {
 /** Validate the scaling contract before any browser process is launched. */
 export function validateBatchCatalog(catalog) {
   const issues = [];
+  // historical name retained for stored-data compat
   if (catalog?.kind !== 'uniscenarios-scenario-catalog') issues.push('catalog kind is invalid');
   if (!Array.isArray(catalog?.maps) || catalog.maps.length !== 5) issues.push('exactly five maps are required');
   if (!Array.isArray(catalog?.slots) || catalog.slots.length !== 500) issues.push('exactly 500 slots are required');

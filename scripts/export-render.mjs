@@ -507,7 +507,7 @@ async function exportScenario(page) {
   // still disappears, and every captured frame would be empty. Fail loudly.
   const qualityState = await page.evaluate(() => {
     try {
-      const raw = window.localStorage.getItem('uniscenarios.studio.render-quality.v1');
+      const raw = window.localStorage.getItem('simforge-oss.studio.render-quality.v1');
       if (!raw) return { state: 'missing', raw: null };
       const parsed = JSON.parse(raw);
       return { state: typeof parsed?.preset === 'string' ? 'stored' : 'invalid', raw };
@@ -971,7 +971,7 @@ async function exportMap(page, map) {
     actors: window.__editor.state.actors.length,
   }));
   const manifest = {
-    schema: 'uniscenarios.map-render-diagnostic.v1',
+    schema: 'simforge-oss.map-render-diagnostic.v1',
     evidenceClass: 'map-render-diagnostic',
     countsTowardScenarioCoverage: false,
     cameraMode: 'orbit',
@@ -1020,7 +1020,7 @@ if (args.has('pin-page')) {
 }
 await context.addInitScript((preset) => {
   try {
-    const key = 'uniscenarios.studio.render-quality.v1';
+    const key = 'simforge-oss.studio.render-quality.v1';
     if (!window.localStorage.getItem(key)) {
       window.localStorage.setItem(key, JSON.stringify({ preset }));
     }
@@ -1070,7 +1070,7 @@ if (scenarioMode) {
   }, null, 2));
 } else {
   const rootManifest = {
-    schema: 'uniscenarios.multi-map-render-diagnostic.v1',
+    schema: 'simforge-oss.multi-map-render-diagnostic.v1',
     evidenceClass: 'multi-map-render-diagnostic',
     countsTowardScenarioCoverage: false,
     generatedAt: new Date().toISOString(),

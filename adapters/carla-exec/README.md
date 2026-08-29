@@ -1,7 +1,7 @@
 # SimForge CARLA bridge
 
 `simforge-oss-carla-exec` is the public CARLA renderer and sensor adapter
-owned by SimForge. It consumes `uniscenario.render-intent/v1` plus a
+owned by SimForge. It consumes the stored render-intent/v1 wire format plus a
 hash-closed local input package; the managed worker retains only leases,
 fencing, authorization, and transfer. The package owns OpenSCENARIO 1.4
 compilation, deterministic native execution, RGB/depth/semantic/instance/
@@ -51,14 +51,14 @@ simforge-oss-carla-api --host 127.0.0.1 --port 2000 run-intent \
 ```
 
 `run-intent` accepts strict render-spec/v3 sources, verifies `intentSha256` and
-every local input before CARLA starts, writes `uniscenario.render-progress/v1`
-JSONL, and closes with `uniscenario.render-artifact-manifest/v1`.
+every local input before CARLA starts, writes render-progress/v1 JSONL, and
+closes with render-artifact-manifest/v1.
 
-Set `UNISCENARIO_CARLA_COOKED_MAPS_JSON` to a JSON map of cooked map names to
+Set `SIMFORGE_CARLA_COOKED_MAPS_JSON` to a JSON map of cooked map names to
 their source XODR SHA-256 values; a digest or loaded-world identity mismatch is
-fatal. `UNISCENARIO_CARLA_SIGNAL_ID_MAP` supplies an explicit one-to-one authored
-to cooked OpenDRIVE signal-id map. `UNISCENARIO_SENSOR_WRITER_WORKERS` bounds
-parallel streaming writers. Set `UNISCENARIO_PRESENTATION_VIDEO_ENCODER=nvidia`
+fatal. `SIMFORGE_CARLA_SIGNAL_ID_MAP` supplies an explicit one-to-one authored
+to cooked OpenDRIVE signal-id map. `SIMFORGE_SENSOR_WRITER_WORKERS` bounds
+parallel streaming writers. Set `SIMFORGE_PRESENTATION_VIDEO_ENCODER=nvidia`
 to request `h264_nvenc` for the per-camera streaming encoders (default
 `software` = libx264). Camera frames stream directly into one H.264 MP4 per
 camera and never persist to disk; PLY/CSV frames remain the canonical output

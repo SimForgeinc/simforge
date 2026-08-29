@@ -85,6 +85,7 @@ function catalog() {
     };
   }));
   return {
+    // historical name retained for stored-data compat
     kind: 'uniscenarios-scenario-catalog',
     version: 2,
     maps,
@@ -249,7 +250,7 @@ async function writeAcceptedEvidence(repositoryRoot, entry) {
     requestedT: targetT,
   }));
   const manifest = {
-    schema: 'uniscenarios.scenario-visual-evidence.v1',
+    schema: 'simforge-oss.scenario-visual-evidence.v1',
     evidenceClass: 'scenario-instance-incident',
     scenarioId: entry.scenarioId,
     catalogSlot,

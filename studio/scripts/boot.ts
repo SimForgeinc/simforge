@@ -15,7 +15,7 @@ const server = spawn("pnpm", ["exec", "next", "dev", "--webpack", "-p", process.
 children.push(server);
 
 const withWorker =
-  process.env.UNISCENARIOS_LOCAL_WORKER === "1" || process.argv.includes("--with-worker");
+  process.env.SIMFORGE_LOCAL_WORKER === "1" || process.argv.includes("--with-worker");
 if (withWorker) {
   const port = process.env.PORT ?? "5199";
   const worker = spawn("pnpm", ["exec", "tsx", "worker/index.ts"], {

@@ -366,7 +366,7 @@ def _finalize(sc: dict) -> None:
             if c["perClass"][cls]["deletionRate"] is not None:
                 dele.append(c["perClass"][cls]["deletionRate"])
     sc["summary"] = {"perClass": summary_classes}
-    # Contract-facing top-level fields (uniscenarios.bridge-fidelity-scorecard.v1).
+    # Contract-facing top-level fields (simforge-oss.bridge-fidelity-scorecard.v1).
     sc["perClass"] = {
         cls: {
             "ap": summary_classes[cls]["apTranslatedMean"],

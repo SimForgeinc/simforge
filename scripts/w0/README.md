@@ -7,7 +7,7 @@ engine ground truth, staged for transfer to `simforge1:~/w0-data/`.
 ## Pipeline
 
 1. **Select** — one catalog slot per content class from
-   `catalog/uniscenarios-five-map-v2.catalog.json` (500 authored slots,
+   `catalog/simforge-oss-five-map-v2.catalog.json` (500 authored slots,
    template x site x seed identities).
 2. **Instantiate** — `simforge instantiate <template> --map --site --seed`
    using each slot's recorded matcher site + seed → `/home/path/w0-data/instances/`.
@@ -64,7 +64,7 @@ Every clip directory contains `frames/frame-00000..00059.png`, `video.mp4`
 ## GT format (`gt.jsonl`, one record per rendered frame)
 
 ```
-schema            "uniscenarios.w0-frame-gt.v1"
+schema            "simforge-oss.w0-frame-gt.v1"
 scenarioId        engine instanceId of the simulated pair
 mapId             five-map id
 frame / t         output frame index and exact trace time (tick-nearest)

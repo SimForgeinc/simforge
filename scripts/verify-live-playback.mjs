@@ -159,7 +159,7 @@ if (ffmpeg.status !== 0) throw new Error(`ffmpeg failed: ${ffmpeg.stderr}`);
 const instanceBytes = await readFile(instancePath);
 const traceBytes = await readFile(tracePath);
 const manifest = {
-  schema: 'uniscenarios.live-playback-evidence.v1',
+  schema: 'simforge-oss.live-playback-evidence.v1',
   generatedAt: new Date().toISOString(),
   url,
   repository: process.cwd(),

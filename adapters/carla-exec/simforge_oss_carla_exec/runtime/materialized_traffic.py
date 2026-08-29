@@ -17,7 +17,9 @@ from .compiler import (
 )
 from .contract import ContractError, MAX_ACTOR_COUNT, MAX_ACTOR_FRAME_STATES, SHA256, canonical_json
 
-SCHEMA = "uniscenarios.materialized-traffic.v1"
+SCHEMA = "simforge.materialized-traffic.v1"
+# historical name retained for stored-data compat
+HISTORICAL_SCHEMA = "uniscenarios.materialized-traffic.v1"
 PROVIDERS = {"disabled", "native", "sumo"}
 KINDS = {"vehicle", "pedestrian", "bicycle", "obstacle"}
 SIGNAL_STATES = {"green", "yellow", "red", "off"}
@@ -152,7 +154,7 @@ def parse_materialized_traffic(
     root = _object(value, {"schema", "sourceInputDigest", "map", "provider", "fixedStepSeconds", "durationSeconds", "actors", "signals"}, "materialized traffic")
     if canonical_json(root).encode("utf-8") != body:
         raise ContractError("materialized traffic bytes must be canonical JSON")
-    if root.get("schema") != SCHEMA:
+    if root.get("schema") not in {SCHEMA, HISTORICAL_SCHEMA}:
         raise ContractError(f"materialized traffic schema must equal {SCHEMA}")
     artifact_source = _string(root, "sourceInputDigest", "materialized traffic")
     if not SHA256.fullmatch(artifact_source) or artifact_source != source_input_digest:

@@ -104,7 +104,7 @@ function runRenderer(repositoryRoot, args, signal) {
 
 const args = argsOf(process.argv);
 const repositoryRoot = path.resolve(args.get('root') ?? '.');
-const catalogFile = path.resolve(repositoryRoot, args.get('catalog') ?? 'catalog/uniscenarios-five-map-v2.catalog.json');
+const catalogFile = path.resolve(repositoryRoot, args.get('catalog') ?? 'catalog/simforge-oss-five-map-v2.catalog.json');
 const ledgerFile = path.resolve(repositoryRoot, args.get('ledger') ?? 'artifacts/qa/scenario-render-review-batch.json');
 const reportFile = args.has('report') ? path.resolve(repositoryRoot, args.get('report')) : null;
 const catalogBytes = await readFile(catalogFile);
@@ -217,7 +217,7 @@ ledger = await reconcileBatchLedger(ledger, catalog, repositoryRoot);
 await writeJsonAtomic(ledgerFile, ledger);
 if (reportFile) {
   await writeJsonAtomic(reportFile, {
-    schema: 'uniscenarios.scenario-render-review-batch-report.v1',
+    schema: 'simforge-oss.scenario-render-review-batch-report.v1',
     ledger: path.relative(repositoryRoot, ledgerFile),
     provenance: ledger.provenance,
     config: ledger.config,

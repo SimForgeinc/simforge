@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const root = mkdtempSync(join(tmpdir(), "simforge-model-registry-"));
-process.env.UNISCENARIOS_CLOUD_ROOT = root;
+process.env.SIMFORGE_CLOUD_ROOT = root;
 process.env.SIMFORGE_RUNS_ROOT = join(root, "runs");
 delete process.env.DATABASE_URL;
 

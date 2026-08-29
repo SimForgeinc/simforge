@@ -23,7 +23,7 @@ export function checksumBoundPutRequiredHeaders(
 }
 
 function objectUrl(bucket: string, key: string): URL {
-  const base = process.env.UNISCENARIOS_API_BASE_URL?.trim()
+  const base = process.env.SIMFORGE_API_BASE_URL?.trim()
     ?? process.env.NEXT_PUBLIC_APP_URL?.trim()
     ?? `http://127.0.0.1:${process.env.PORT?.trim() || "5199"}`;
   const encoded = key.split("/").map(encodeURIComponent).join("/");

@@ -1,94 +1,52 @@
 {
-  "schema": "uniscenarios.simcloud-integration/v2",
+  "schema": "simforge-oss.simcloud-integration/v2",
   "platformRepository": "https://github.com/SimForgeinc/simcloud-platform",
   "sourceStackConfig": "config/simforge-oss-stack.json",
-  "vendorLock": "vendor/uniscenarios/stack-lock.json",
+  "vendorLock": "vendor/simforge-oss/stack-lock.json",
   "consumerManifest": "package.json",
   "consumerLock": "package-lock.json",
-  "pythonConsumerManifest": "services/uniscenario-render-worker/pyproject.toml",
-  "pythonConsumerLock": "services/uniscenario-render-worker/uv.lock",
+  "pythonConsumerManifest": "services/render-worker/pyproject.toml",
+  "pythonConsumerLock": "services/render-worker/uv.lock",
+  "platformServices": [
+    "services/scenario-compiler",
+    "services/render-worker"
+  ],
   "requireExactSourceRevision": true,
+  "forbiddenDuplicatePackages": [
+    "@simforge-oss/scenario",
+    "@simforge-oss/engine",
+    "@simforge-oss/maps",
+    "@simforge-oss/compiler",
+    "@simforge-oss/viewer",
+    "@simforge-oss/editor",
+    "@simforge-oss/playback",
+    "@simforge-oss/asset-catalog",
+    "@simforge-oss/render",
+    "@simforge-oss/openscenario",
+    "@simforge-oss/training-env",
+    "@simforge-oss/evaluation",
+    "@simforge-oss/cli",
+    "@simforge-oss/map-pipeline",
+    "@simforge-oss/map-registry"
+  ],
   "forbiddenPaths": [
-    "packages/uniscenario-model",
-    "packages/uniscenario-sim-engine",
-    "packages/uniscenario-materializer",
-    "packages/uniscenario-map-intel",
-    "packages/uniscenario-anchor-matcher",
-    "packages/uniscenario-xodr-tools",
-    "packages/uniscenario-openscenario",
-    "packages/shared/src/xosc/parser.ts",
-    "apps/web/app/lib/scenario-editor/xosc-writer",
-    "services/dataset-export-worker/src/xosc-parser.js",
-    "apps/web/app/dashboard/scenarios/editor-native",
-    "apps/web/app/lib/uniscenario/editor/core",
-    "apps/web/app/lib/uniscenario/editor/catalog",
-    "apps/web/app/lib/uniscenario/editor/renderer",
-    "apps/web/app/lib/uniscenario/openscenario/model.ts",
-    "apps/web/app/lib/uniscenario/session/StudioTransport.ts",
-    "apps/web/app/lib/uniscenario/ambient/candidatePool.ts",
-    "apps/web/app/lib/uniscenario/ambient/model.ts",
-    "apps/web/app/lib/uniscenario/ambient/provider.ts",
-    "apps/web/app/lib/uniscenario/ambient/robustnessGate.ts",
-    "apps/web/app/lib/uniscenario/cameras/companion.ts",
-    "apps/web/app/lib/uniscenario/cameras/controller.ts",
-    "apps/web/app/lib/uniscenario/cameras/helpers.ts",
-    "apps/web/app/lib/uniscenario/cameras/model.ts"
+    "packages/scenario",
+    "packages/engine",
+    "packages/maps",
+    "packages/compiler",
+    "packages/viewer",
+    "packages/editor",
+    "packages/playback",
+    "packages/asset-catalog",
+    "packages/render",
+    "packages/openscenario",
+    "packages/training-env",
+    "packages/evaluation",
+    "packages/cli",
+    "packages/map-pipeline",
+    "packages/map-registry"
   ],
-  "adapterSurfaces": [
-    {
-      "id": "editor-product-adapters",
-      "path": "apps/web/app/lib/uniscenario/editor",
-      "allowedFiles": [
-        "anchored-popover.ts",
-        "api.ts",
-        "profile-map-cache.ts",
-        "use-editor-runtime.ts"
-      ]
-    },
-    {
-      "id": "playback-product-adapters",
-      "path": "apps/web/app/lib/uniscenario/playback",
-      "allowedFiles": [
-        "PlaybackPanel.tsx",
-        "scenario-worker.ts",
-        "scenarioWorkerClient.ts",
-        "simulationPreview.ts",
-        "usePlayback.ts"
-      ]
-    },
-    {
-      "id": "ambient-traffic-product-adapters",
-      "path": "apps/web/app/lib/uniscenario/ambient",
-      "allowedFiles": [
-        "AmbientTrafficPanel.test.tsx",
-        "AmbientTrafficPanel.tsx",
-        "sumoAssets.test.ts",
-        "sumoAssets.ts",
-        "useAmbientTrafficPreview.test.ts",
-        "useAmbientTrafficPreview.ts",
-        "useSumoTraffic.test.ts",
-        "useSumoTraffic.ts"
-      ]
-    },
-    {
-      "id": "camera-product-adapters",
-      "path": "apps/web/app/lib/uniscenario/cameras",
-      "allowedFiles": [
-        "CameraPanel.tsx",
-        "index.ts",
-        "useCameras.ts"
-      ]
-    },
-    {
-      "id": "carla-cloud-control-plane-adapters",
-      "path": "services/uniscenario-render-worker/uniscenario_render_worker",
-      "allowedFiles": [
-        "__init__.py",
-        "api.py",
-        "main.py"
-      ]
-    }
-  ],
+  "adapterSurfaces": [],
   "sourceScanRoots": [
     "apps",
     "docker",
@@ -97,16 +55,8 @@
     "scripts",
     "services"
   ],
-  "importScanIgnoreFiles": [
-    "scripts/verify-uniscenarios-vendor.mjs",
-    "scripts/agent/check-legacy-carla-retired.mjs"
-  ],
+  "importScanIgnoreFiles": [],
   "forbiddenImportPatterns": [
-    "@simforge-oss/uniscenario-(model|sim-engine|materializer|map-intel|anchor-matcher|xodr-tools|openscenario)",
-    "@/app/lib/uniscenario/editor/(core|catalog|renderer)(/|[\"'])",
-    "@/app/lib/uniscenario/playback/(controller|model|physics|liveSimulationPlan|mapRuntime|site-selection|staticMapColliders|canonicalPreview|traffic-provider)",
-    "@/app/lib/uniscenario/ambient/(candidatePool|model|provider|robustnessGate)",
-    "@/app/lib/uniscenario/cameras/(companion|controller|helpers|model)",
-    "dashboard/scenarios/editor-native|NativeScenarioEditor"
+    "@simforge-oss/(scenario|engine|maps|compiler|viewer|editor|playback|asset-catalog|render|openscenario|training-env|evaluation|cli|map-pipeline|map-registry)/(src|dist)/"
   ]
 }

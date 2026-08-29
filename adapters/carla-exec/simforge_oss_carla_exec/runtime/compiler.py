@@ -8,6 +8,7 @@ from dataclasses import dataclass, field, replace
 from typing import Callable, Mapping
 
 from .contract import MAX_ACTOR_COUNT, MAX_ACTOR_FRAME_STATES, MAX_DURATION_SECONDS, ContractError, reject_unsafe_xml_envelope
+# historical name retained for stored-data compat
 
 STEP_SECONDS = 0.02
 MAX_FRAMES = int(MAX_DURATION_SECONDS / STEP_SECONDS) + 1
@@ -111,7 +112,9 @@ def _semantic_metadata(
     evidence. Once any v1 ledger property is present, the complete set is
     mandatory and malformed or identity-drifting metadata fails closed.
     """
-    prefix = "uniscenarios.trajectoryReplay."
+    canonical_prefix = "simforge.trajectoryReplay."
+    historical_prefix = "uniscenarios.trajectoryReplay."
+    prefix = canonical_prefix if any(name.startswith(canonical_prefix) for name in properties) else historical_prefix
     required = {
         "actorIds": f"{prefix}actorIds.v1",
         "authoredActorIds": f"{prefix}authoredActorIds.v1",
@@ -235,7 +238,7 @@ def _property_map(entity: ET.Element) -> dict[str, str]:
 
 
 def _kind(entity: ET.Element, properties: Mapping[str, str]) -> str:
-    explicit = properties.get("uniscenario.actorKind") or properties.get("uniscenarios.actorKind")
+    explicit = properties.get("simforge.actorKind") or properties.get("uniscenario.actorKind") or properties.get("uniscenarios.actorKind")
     if explicit:
         return explicit
     if entity.find("Vehicle") is not None:
@@ -253,8 +256,8 @@ def _entities(root: ET.Element, abort: Callable[[], None]) -> dict[str, ActorBin
         if not entity_ref:
             raise ContractError("ScenarioObject.name is required")
         properties = _property_map(entity)
-        catalog_tag = next((item.get("value", "")[len("catalog:"):] for item in entity.findall(".//Property") if item.get("name") in {"uniscenario.tag", "uniscenarios.tag"} and item.get("value", "").startswith("catalog:")), None)
-        actor_id = properties.get("uniscenario.actorId") or properties.get("uniscenarios.actorId")
+        catalog_tag = next((item.get("value", "")[len("catalog:"):] for item in entity.findall(".//Property") if item.get("name") in {"simforge.tag", "uniscenario.tag", "uniscenarios.tag"} and item.get("value", "").startswith("catalog:")), None)
+        actor_id = properties.get("simforge.actorId") or properties.get("uniscenario.actorId") or properties.get("uniscenarios.actorId")
         actor_id = actor_id or entity_ref.removeprefix("actor_")
         if actor_id in result:
             raise ContractError(f"duplicate actor identity {actor_id}")
@@ -272,7 +275,7 @@ def _entities(root: ET.Element, abort: Callable[[], None]) -> dict[str, ActorBin
             raise ContractError(f"actor {actor_id} has unsupported kind {actor_kind}")
         materialized_traffic_eligible = (
             actor_id.startswith("ambient:")
-            and properties.get("uniscenarios.actorOrigin") == "canonical-ambient"
+            and (properties.get("simforge.actorOrigin") or properties.get("uniscenarios.actorOrigin")) == "canonical-ambient"
         )
         result[actor_id] = ActorBinding(actor_id, entity_ref, actor_kind, catalog_name, materialized_traffic_eligible)
     if not result:
@@ -555,7 +558,7 @@ def _canonical_plan_sha256(
             digest.update(b"\n")
         digest.update(part.encode())
         first = False
-    add("uniscenario.execution-plan/v1")
+    add("simforge.execution-plan/v1")
     add(str(STEP_SECONDS))
     if semantic_metadata.get("complete"):
         add(f"M|{semantic_metadata['sha256']}")
@@ -629,13 +632,13 @@ def compile_xosc14(xml_bytes: bytes, abort: Callable[[], None] | None = None) ->
     if header is None or header.get("revMajor") != "1" or header.get("revMinor") != "4":
         raise ContractError("FileHeader must declare OpenSCENARIO XML 1.4")
     header_properties = _property_map(header)
-    execution_mode = header_properties.get("uniscenario.executionMode") or header_properties.get("uniscenarios.executionMode")
+    execution_mode = header_properties.get("simforge.executionMode") or header_properties.get("uniscenario.executionMode") or header_properties.get("uniscenarios.executionMode")
     # A knocked-down body is a simulation outcome with no OpenSCENARIO element,
     # so the exporter declares it per actor in the header. Absent for every
     # scenario where nobody was run over.
     knocked_down_at: dict[str, float] = {}
     for name, value in header_properties.items():
-        for prefix in ("uniscenario.trajectoryReplay.knockedDownAtS.", "uniscenarios.trajectoryReplay.knockedDownAtS."):
+        for prefix in ("simforge.trajectoryReplay.knockedDownAtS.", "uniscenario.trajectoryReplay.knockedDownAtS.", "uniscenarios.trajectoryReplay.knockedDownAtS."):
             if not name.startswith(prefix):
                 continue
             try:
@@ -738,7 +741,7 @@ def compile_xosc14(xml_bytes: bytes, abort: Callable[[], None] | None = None) ->
     check()
     digest = _canonical_plan_sha256(actors, immutable, semantic_metadata, check)
     return ExecutionPlan(
-        "uniscenario.execution-plan/v1",
+        "simforge.execution-plan/v1",
         STEP_SECONDS,
         actors,
         immutable,

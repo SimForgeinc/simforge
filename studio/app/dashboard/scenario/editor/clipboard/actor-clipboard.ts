@@ -19,7 +19,9 @@ import {
 import type { CatalogId } from "@simforge-oss/asset-catalog";
 import type { Interaction } from "@simforge-oss/scenario";
 
-export const UNISCENARIO_CLIPBOARD_SCHEMA = "simcloud.uniscenario-actors/v1";
+export const SIMFORGE_CLIPBOARD_SCHEMA = "simcloud.simforge-oss-actors/v1";
+// historical name retained for stored-data compat
+const HISTORICAL_CLIPBOARD_SCHEMA = "simcloud.uniscenario-actors/v1";
 
 export interface ClipboardRoutePoint {
   readonly timeS?: number;
@@ -48,8 +50,8 @@ export interface ClipboardActor {
   readonly routes: readonly ClipboardRouteClip[];
 }
 
-export interface UniScenarioClipboardPayload {
-  readonly schema: typeof UNISCENARIO_CLIPBOARD_SCHEMA;
+export interface SimForgeClipboardPayload {
+  readonly schema: typeof SIMFORGE_CLIPBOARD_SCHEMA;
   readonly sourceMapId: string;
   readonly sourceDocumentId: string | null;
   readonly anchor: { readonly x: number; readonly z: number };
@@ -72,11 +74,11 @@ export function buildClipboardPayload(options: {
   interactions: readonly Interaction[];
   sourceMapId: string;
   sourceDocumentId?: string | null;
-}): UniScenarioClipboardPayload | null {
+}): SimForgeClipboardPayload | null {
   if (options.actors.length === 0) return null;
   const anchor = selectionCentroid(options.actors);
   return {
-    schema: UNISCENARIO_CLIPBOARD_SCHEMA,
+    schema: SIMFORGE_CLIPBOARD_SCHEMA,
     sourceMapId: options.sourceMapId,
     sourceDocumentId: options.sourceDocumentId ?? null,
     anchor: { x: round3(anchor.x), z: round3(anchor.z) },
@@ -110,14 +112,17 @@ export function buildClipboardPayload(options: {
   };
 }
 
-export function parseClipboardPayload(text: string): UniScenarioClipboardPayload | null {
+export function parseClipboardPayload(text: string): SimForgeClipboardPayload | null {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch {
     return null;
   }
-  if (!isRecord(raw) || raw.schema !== UNISCENARIO_CLIPBOARD_SCHEMA) return null;
+  if (
+    !isRecord(raw)
+    || (raw.schema !== SIMFORGE_CLIPBOARD_SCHEMA && raw.schema !== HISTORICAL_CLIPBOARD_SCHEMA)
+  ) return null;
   if (typeof raw.sourceMapId !== "string" || !isRecord(raw.anchor) || !Array.isArray(raw.actors)) return null;
   if (typeof raw.anchor.x !== "number" || typeof raw.anchor.z !== "number") return null;
   for (const actor of raw.actors) {
@@ -135,7 +140,7 @@ export function parseClipboardPayload(text: string): UniScenarioClipboardPayload
       }
     }
   }
-  return raw as unknown as UniScenarioClipboardPayload;
+  return { ...raw, schema: SIMFORGE_CLIPBOARD_SCHEMA } as unknown as SimForgeClipboardPayload;
 }
 
 export interface PastePlanActor {
@@ -145,7 +150,7 @@ export interface PastePlanActor {
 }
 
 export function planPaste(
-  payload: UniScenarioClipboardPayload,
+  payload: SimForgeClipboardPayload,
   target: { x: number; z: number },
 ): PastePlanActor[] {
   return payload.actors.map((source) => ({
@@ -176,7 +181,7 @@ export interface ExecutedPaste {
   readonly unanchored: number;
 }
 
-export function pastePlacementActors(payload: UniScenarioClipboardPayload): GroupPlacementActor[] {
+export function pastePlacementActors(payload: SimForgeClipboardPayload): GroupPlacementActor[] {
   return payload.actors.map((actor) => ({
     catalogId: actor.catalogId as CatalogId,
     dx: actor.dx,
@@ -189,7 +194,7 @@ export function pastePlacementActors(payload: UniScenarioClipboardPayload): Grou
 export function executePaste(options: {
   controller: EditorController;
   document: EditorDocument;
-  payload: UniScenarioClipboardPayload;
+  payload: SimForgeClipboardPayload;
   placements: readonly GroupPlacementPose[];
 }): ExecutedPaste {
   const { controller, document, payload, placements } = options;

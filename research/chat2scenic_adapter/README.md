@@ -18,8 +18,8 @@ the value is never placed in source, arguments, logs, or browser storage:
 
 ```sh
 OPENAI_API_KEY='op://MichaelAgents/openai key/notesPlain' \
-UNISCENARIOS_SCENIC_PYTHON=/private/tmp/simforge-chat2scenic-venv/bin/python \
-UNISCENARIOS_COPILOT_MODEL=gpt-5.6-luna \
+SIMFORGE_SCENIC_PYTHON=/private/tmp/simforge-chat2scenic-venv/bin/python \
+SIMFORGE_COPILOT_MODEL=gpt-5.6-luna \
 OPENAI_SCENARIO_MODEL=gpt-5.6-luna \
 $HOME/bin/op-michaelagents run -- pnpm dev
 ```

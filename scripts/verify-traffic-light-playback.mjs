@@ -108,7 +108,7 @@ try {
   const instanceBytes = await readFile(instancePath);
   const traceBytes = await readFile(tracePath);
   const manifest = {
-    schema: 'uniscenarios.traffic-light-playback-evidence.v1',
+    schema: 'simforge-oss.traffic-light-playback-evidence.v1',
     generatedAt: new Date().toISOString(),
     url,
     scenarioId: await page.evaluate(() => window.__playback?.state.instanceId ?? null),

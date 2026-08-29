@@ -30,7 +30,7 @@
     "integration:audit": "node scripts/integration/audit-simcloud-divergence.mjs",
     "integration:compare-engine": "tsx scripts/integration/compare-engine-behavior.ts",
     "test:integration": "node --test scripts/integration/*.test.mjs",
-    "dev:all": "UNISCENARIOS_LOCAL_WORKER=1 pnpm --filter @simforge-oss/studio dev"
+    "dev:all": "SIMFORGE_LOCAL_WORKER=1 pnpm --filter @simforge-oss/studio dev"
   },
   "devDependencies": {
     "playwright-core": "^1.62.1",

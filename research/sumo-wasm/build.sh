@@ -60,8 +60,8 @@ emcmake cmake -S "$CACHE_DIR/sumo" -B "$CACHE_DIR/sumo-build" -G Ninja \
   -DCMAKE_EXE_LINKER_FLAGS=-fexceptions \
   -DXercesC_LIBRARY="$PREFIX_DIR/lib/libxerces-c.a" \
   -DXercesC_INCLUDE_DIR="$PREFIX_DIR/include" \
-  -DUNISCENARIOS_SUMO_WASM_TARGET="$SPIKE_DIR/cmake/wasm-target.cmake" \
-  -DUNISCENARIOS_SUMO_WASM_BRIDGE="$SPIKE_DIR/bridge/sumo_wasm_bridge.cpp" \
+  -DSIMFORGE_SUMO_WASM_TARGET="$SPIKE_DIR/cmake/wasm-target.cmake" \
+  -DSIMFORGE_SUMO_WASM_BRIDGE="$SPIKE_DIR/bridge/sumo_wasm_bridge.cpp" \
   -DENABLE_FMI=OFF \
   -DENABLE_NETEDIT=OFF \
   -DENABLE_PYTHON_BINDINGS=OFF \

@@ -10,7 +10,21 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, Mapping
 
-SCHEMA = "uniscenario.execution-package/v1"
+SCHEMA = "simforge.execution-package/v1"
+ASSET_CATALOG_SCHEMA = "simforge.asset-catalog/v1"
+RUNTIME_REQUIREMENTS_SCHEMA = "simforge.runtime-requirements/v1"
+RENDER_RESOURCE_REQUEST_SCHEMA = "simforge.render-resource-request/v1"
+INTERACTION_SPEC_SCHEMA = "simforge.interaction-spec/v1"
+RENDER_SPEC_SCHEMA = "simforge.render-spec/v1"
+# historical name retained for stored-data compat
+HISTORICAL_SCHEMAS = {
+    SCHEMA: "uniscenario.execution-package/v1",
+    ASSET_CATALOG_SCHEMA: "uniscenario.asset-catalog/v1",
+    RUNTIME_REQUIREMENTS_SCHEMA: "uniscenario.runtime-requirements/v1",
+    RENDER_RESOURCE_REQUEST_SCHEMA: "uniscenario.render-resource-request/v1",
+    INTERACTION_SPEC_SCHEMA: "uniscenario.interaction-spec/v1",
+    RENDER_SPEC_SCHEMA: "uniscenario.render-spec/v1",
+}
 OFFICIAL_XSD_SHA256 = "949fe2bcebd1f3fdb941a2cc56641482737ab48e3c5b0eed0ee5294b2355c0e9"
 SHA256 = re.compile(r"^[a-f0-9]{64}$")
 MAX_XOSC_BYTES = 16 * 1024 * 1024
@@ -25,9 +39,6 @@ MAX_CAPTURE_FRAMES = 18_000
 MAX_ACTOR_FRAME_STATES = 2_000_000
 MAX_ARTIFACT_BYTES = 4 * 1024 * 1024 * 1024
 MAX_OUTPUT_BYTES = 8 * 1024 * 1024 * 1024
-ASSET_CATALOG_SCHEMA = "uniscenario.asset-catalog/v1"
-RUNTIME_REQUIREMENTS_SCHEMA = "uniscenario.runtime-requirements/v1"
-RENDER_RESOURCE_REQUEST_SCHEMA = "uniscenario.render-resource-request/v1"
 CAPABILITY_PROFILE = "xml-1.4-trajectory-replay"
 EMPTY_AMBIENT_CONFIG_SHA256 = "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
 EMPTY_AMBIENT_RESULT_SHA256 = "1925590408012373ea3cc6b9d02703527531492efb52aa39689d541a0581f840"
@@ -210,7 +221,7 @@ class AssetCatalogAsset(Asset):
     def parse(cls, value: Any) -> "AssetCatalogAsset":
         base = Asset.parse(value, "assetCatalog", MAX_CATALOG_BYTES)
         assert isinstance(value, Mapping)
-        if value.get("contractVersion") != ASSET_CATALOG_SCHEMA:
+        if value.get("contractVersion") not in {ASSET_CATALOG_SCHEMA, HISTORICAL_SCHEMAS[ASSET_CATALOG_SCHEMA]}:
             raise ContractError(f"assetCatalog.contractVersion must equal {ASSET_CATALOG_SCHEMA}")
         return cls(
             base.url,
@@ -246,7 +257,7 @@ class RenderResourceRequest:
         }
         if set(value) != expected_fields:
             raise ContractError("runtimeRequirements.resources has invalid fields")
-        if value.get("schema") != RENDER_RESOURCE_REQUEST_SCHEMA:
+        if value.get("schema") not in {RENDER_RESOURCE_REQUEST_SCHEMA, HISTORICAL_SCHEMAS[RENDER_RESOURCE_REQUEST_SCHEMA]}:
             raise ContractError(
                 f"runtimeRequirements.resources.schema must equal {RENDER_RESOURCE_REQUEST_SCHEMA}"
             )
@@ -334,7 +345,7 @@ class RuntimeRequirements:
         }
         if set(value) != expected_fields:
             raise ContractError("executionPackage.runtimeRequirements has invalid fields")
-        if value.get("schema") != RUNTIME_REQUIREMENTS_SCHEMA:
+        if value.get("schema") not in {RUNTIME_REQUIREMENTS_SCHEMA, HISTORICAL_SCHEMAS[RUNTIME_REQUIREMENTS_SCHEMA]}:
             raise ContractError(f"runtimeRequirements.schema must equal {RUNTIME_REQUIREMENTS_SCHEMA}")
         if value.get("xoscVersion") != "1.4" or value.get("capabilityProfile") != CAPABILITY_PROFILE:
             raise ContractError("runtimeRequirements identifies an unsupported OpenSCENARIO capability profile")
@@ -493,7 +504,7 @@ class RenderSpec:
     def parse(cls, value: Any, allow_sensor_free: bool = False) -> "RenderSpec":
         if not isinstance(value, Mapping):
             raise ContractError("renderSpec must be an object")
-        expected_schema = "uniscenario.interaction-spec/v1" if allow_sensor_free else "uniscenario.render-spec/v1"
+        expected_schema = INTERACTION_SPEC_SCHEMA if allow_sensor_free else RENDER_SPEC_SCHEMA
         allowed_fields = {
             "schema", "fps", "sensors", "outputs", "executionMode", "quality",
             "environment", "formats",
@@ -501,7 +512,7 @@ class RenderSpec:
         required_fields = {"schema", "fps", "sensors", "outputs"}
         if set(value) - allowed_fields or not required_fields.issubset(value):
             raise ContractError("renderSpec has invalid fields")
-        if value.get("schema") != expected_schema:
+        if value.get("schema") not in {expected_schema, HISTORICAL_SCHEMAS[expected_schema]}:
             raise ContractError(f"renderSpec.schema must equal {expected_schema}")
         fps = _finite_number(value.get("fps"), "renderSpec.fps", 0.001, 240.0)
         raw_sensors = value.get("sensors")
@@ -632,7 +643,7 @@ class ExecutionPackage:
 
     @classmethod
     def parse(cls, value: Any) -> "ExecutionPackage":
-        if not isinstance(value, Mapping) or value.get("schema") != SCHEMA:
+        if not isinstance(value, Mapping) or value.get("schema") not in {SCHEMA, HISTORICAL_SCHEMAS[SCHEMA]}:
             raise ContractError(f"executionPackage.schema must equal {SCHEMA}")
         expected_fields = {
             "schema", "id", "revisionId", "sourceInputDigest", "materializedTrafficDigest", "mapAssetId", "mapVersionId", "manifest", "xosc", "xodr", "assetCatalog",

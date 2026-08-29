@@ -3,7 +3,7 @@
  * `simforge.hifi_preview_requests` and renders single Bevy frames via
  * native-render-service. Talks to the store directly, so it owns the local
  * PGlite — run it when the studio server is NOT running against the same
- * UNISCENARIOS_CLOUD_ROOT, or point both at Postgres via DATABASE_URL.
+ * SIMFORGE_CLOUD_ROOT, or point both at Postgres via DATABASE_URL.
  * (When the studio server runs, its API route drains the queue in-process.)
  */
 import { runHifiPreviewLoop } from "../worker/hifi-preview.js";

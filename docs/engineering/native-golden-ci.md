@@ -44,13 +44,13 @@ The file is a full evidence manifest (below); the gates read `passHashes` and
 
 ## Manifest schema
 
-Extends `uniscenarios.render-determinism-manifest.v1` (WSB4's schema — top-level
-keys `schema/generatedAt/claim/mode/scenario/rendererPath/hardware/verdict` kept
-compatible). Additions:
+Extends `simforge-oss.render-determinism-manifest.v1`; the top-level
+`schema/generatedAt/claim/mode/scenario/rendererPath/hardware/verdict` keys stay
+compatible. Additions:
 
 ```jsonc
 {
-  "schema": "uniscenarios.render-determinism-manifest.v1",
+  "schema": "simforge-oss.render-determinism-manifest.v1",
   "mode": "golden-record" | "golden-verify",
   "profile": "sensor",                    // render profile; only sensor is goldenable today
   "rendererPath": {

@@ -86,6 +86,7 @@ export interface CatalogExecutionCounts {
   readonly resumed: number;
 }
 
+// historical name retained for stored-data compat
 export interface CatalogExecutionLedger {
   readonly kind: 'uniscenarios-catalog-execution-ledger';
   readonly version: 1;

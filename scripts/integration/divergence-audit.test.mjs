@@ -22,10 +22,10 @@ async function fixture() {
   const wheelSha256 = createHash('sha256').update(wheel).digest('hex');
   const integrity = `sha512-${createHash('sha512').update(tarball).digest('base64')}`;
   const integration = {
-    schema: 'uniscenarios.simcloud-integration/v2',
+    schema: 'simforge-oss.simcloud-integration/v2',
     platformRepository: 'https://example.test/simcloud',
     sourceStackConfig: 'config/simforge-oss-stack.json',
-    vendorLock: 'vendor/uniscenarios/stack-lock.json',
+    vendorLock: 'vendor/simforge-oss/stack-lock.json',
     consumerManifest: 'package.json',
     consumerLock: 'package-lock.json',
     pythonConsumerManifest: 'services/worker/pyproject.toml',
@@ -38,7 +38,7 @@ async function fixture() {
     forbiddenImportPatterns: ['@private/engine'],
   };
   const stack = {
-    schema: 'uniscenarios.stack-config/v1',
+    schema: 'simforge-oss.stack-config/v1',
     stackVersion: '1.2.3',
     repository: 'https://example.test/simforge',
     packages: [{ path: 'packages/engine', role: 'simulation-kernel' }],
@@ -48,7 +48,7 @@ async function fixture() {
     }],
   };
   const vendorLock = {
-    schema: 'simcloud.uniscenarios-vendor/v1',
+    schema: 'simcloud.simforge-oss-vendor/v1',
     stackVersion: '1.2.3',
     source: { repository: stack.repository, revision: 'a'.repeat(40) },
     packages: [{
@@ -64,11 +64,11 @@ async function fixture() {
   await write(simforgeRoot, 'config/simcloud-integration.json', JSON.stringify(integration));
   await write(simforgeRoot, 'config/simforge-oss-stack.json', JSON.stringify(stack));
   await write(simforgeRoot, 'packages/engine/package.json', JSON.stringify({ name: '@simforge-oss/engine', version: '1.2.3' }));
-  await write(simcloudRoot, 'vendor/uniscenarios/stack-lock.json', JSON.stringify(vendorLock));
-  await write(simcloudRoot, 'vendor/uniscenarios/engine-1.2.3.tgz', tarball);
-  await write(simcloudRoot, 'vendor/uniscenarios/simforge_oss_carla_exec-1.2.3-py3-none-any.whl', wheel);
-  await write(simcloudRoot, 'package.json', JSON.stringify({ dependencies: { '@simforge-oss/engine': 'file:vendor/uniscenarios/engine-1.2.3.tgz' } }));
-  await write(simcloudRoot, 'package-lock.json', JSON.stringify({ packages: { 'node_modules/@simforge-oss/engine': { resolved: 'file:vendor/uniscenarios/engine-1.2.3.tgz', integrity } } }));
+  await write(simcloudRoot, 'vendor/simforge-oss/stack-lock.json', JSON.stringify(vendorLock));
+  await write(simcloudRoot, 'vendor/simforge-oss/engine-1.2.3.tgz', tarball);
+  await write(simcloudRoot, 'vendor/simforge-oss/simforge_oss_carla_exec-1.2.3-py3-none-any.whl', wheel);
+  await write(simcloudRoot, 'package.json', JSON.stringify({ dependencies: { '@simforge-oss/engine': 'file:vendor/simforge-oss/engine-1.2.3.tgz' } }));
+  await write(simcloudRoot, 'package-lock.json', JSON.stringify({ packages: { 'node_modules/@simforge-oss/engine': { resolved: 'file:vendor/simforge-oss/engine-1.2.3.tgz', integrity } } }));
   await write(simcloudRoot, 'services/worker/pyproject.toml', 'dependencies = ["simforge-oss-carla-exec==1.2.3"]');
   await write(simcloudRoot, 'services/worker/uv.lock', 'simforge_oss_carla_exec-1.2.3-py3-none-any.whl');
   await write(simcloudRoot, 'app/playback/adapter.ts', 'export const cloudAdapter = true;');

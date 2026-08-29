@@ -9,18 +9,10 @@ import { buildStackManifest, serializeStackManifest } from './stack-manifest-lib
 const SHA = 'a'.repeat(40);
 
 const PACKAGE_NAMES = [
-  'model', 'engine', 'maps', 'compiler', 'viewer', 'editor', 'playback',
+  'scenario', 'engine', 'maps', 'compiler', 'viewer', 'editor', 'playback',
   'asset-catalog', 'render', 'openscenario', 'training-env', 'evaluation', 'cli',
+  'map-pipeline', 'map-registry',
 ];
-const RETIRED_NAMES = [
-  'ambient-traffic', 'anchor-matcher', 'browser-renderer', 'camera-rig',
-  'city-renderer', 'cli', 'editor-core', 'editor-ui', 'esmini-runner',
-  'examiner', 'map-intel', 'native-renderer', 'openscenario', 'playback',
-  'policy-eval', 'prop-catalog', 'render-runtime', 'rl-env',
-  'scenario-materializer', 'scenario-model', 'scene-state', 'sim-engine',
-  'trace-comparator', 'xodr-tools',
-];
-const LEGACY_MODEL_PACKAGE = ['@simforge', 'model'].join('/');
 
 
 async function fixture(overrides = {}) {
@@ -36,9 +28,6 @@ async function fixture(overrides = {}) {
       path: `packages/${name}`,
       role: `${name}-role`,
     })),
-    renameManifest: Object.fromEntries(
-      RETIRED_NAMES.map((name) => [`@uniscenarios/${name}`, LEGACY_MODEL_PACKAGE]),
-    ),
   };
   await mkdir(path.join(root, 'config'), { recursive: true });
   await writeFile(path.join(root, 'config/simforge-oss-stack.json'), JSON.stringify(config));
@@ -51,7 +40,7 @@ async function fixture(overrides = {}) {
       exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } },
       publishConfig: { access: 'public', provenance: true },
       repository: { directory },
-      ...(name === 'engine' ? { dependencies: { '@simforge-oss/model': 'workspace:*' } } : {}),
+      ...(name === 'engine' ? { dependencies: { '@simforge-oss/scenario': 'workspace:*' } } : {}),
       ...overrides[name],
     }));
   }
@@ -62,15 +51,12 @@ test('builds a deterministic exact stack manifest', async () => {
   const repoRoot = await fixture();
   const manifest = await buildStackManifest({ repoRoot, sourceRevision: SHA });
   assert.equal(manifest.source.revision, SHA);
-  assert.equal(manifest.packages.length, 13);
+  assert.equal(manifest.packages.length, 15);
   assert.equal(manifest.schema, 'simforge-oss.stack/v1');
   assert.deepEqual(manifest.packages.slice(0, 2), [
-    { name: '@simforge-oss/model', version: '1.2.3', role: 'model-role' },
+    { name: '@simforge-oss/scenario', version: '1.2.3', role: 'scenario-role' },
     { name: '@simforge-oss/engine', version: '1.2.3', role: 'engine-role' },
   ]);
-  assert.deepEqual(manifest.renameManifest, Object.fromEntries(
-    RETIRED_NAMES.map((name) => [`@uniscenarios/${name}`, LEGACY_MODEL_PACKAGE]),
-  ));
   assert.deepEqual(manifest.pythonPackages, []);
   assert.equal(serializeStackManifest(manifest), `${JSON.stringify(manifest, null, 2)}\n`);
 });
@@ -108,16 +94,16 @@ test('binds PyPI adapters to the PEP 440 form of the stack version', async () =>
 });
 
 test('rejects private packages and version-skewed internal dependencies', async () => {
-  const privateRoot = await fixture({ model: { private: true } });
+  const privateRoot = await fixture({ scenario: { private: true } });
   await assert.rejects(
     buildStackManifest({ repoRoot: privateRoot, sourceRevision: SHA }),
     /private and cannot be part of the public stack/u,
   );
 
-  const skewedRoot = await fixture({ engine: { dependencies: { '@simforge-oss/model': '^1.2.3' } } });
+  const skewedRoot = await fixture({ engine: { dependencies: { '@simforge-oss/scenario': '^1.2.3' } } });
   await assert.rejects(
     buildStackManifest({ repoRoot: skewedRoot, sourceRevision: SHA }),
-    /must pin @simforge-oss\/model to the stack version 1.2.3/u,
+    /must pin @simforge-oss\/scenario to the stack version 1.2.3/u,
   );
 });
 
@@ -130,7 +116,7 @@ test('requires a full immutable source revision', async () => {
 });
 
 test('rejects packages that publish TypeScript source instead of release artifacts', async () => {
-  const repoRoot = await fixture({ model: {
+  const repoRoot = await fixture({ scenario: {
     main: './src/index.ts',
     types: './src/index.ts',
     files: ['src'],
