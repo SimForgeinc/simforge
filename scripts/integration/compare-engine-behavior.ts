@@ -109,7 +109,7 @@ const results = fixtures.map((fixture) => {
 });
 
 const report = {
-  schema: 'uniscenarios.engine-parity/v1',
+  schema: 'simforge-oss.engine-parity/v1',
   revisions: {
     simforge: (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
     simcloud: (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], { cwd: platformRoot, encoding: 'utf8' }).trim(),

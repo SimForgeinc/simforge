@@ -74,7 +74,7 @@ describe('deterministic checkers catch known corruptions (real trace)', () => {
 
   it('rejects unknown actors as hallucinations', () => {
     const verdict = checkClaim(s, {
-      schema: 'https://uniscenarios.dev/schemas/claims.v1.json',
+      schema: 'https://simforge-oss.dev/schemas/claims.v1.json',
       id: 'phantom',
       type: 'visibility',
       actorIds: ['ghost-pedestrian'],
@@ -88,7 +88,7 @@ describe('deterministic checkers catch known corruptions (real trace)', () => {
 
   it('marks extracted claims as deferred, never judged', () => {
     const verdict = checkClaim(s, {
-      schema: 'https://uniscenarios.dev/schemas/claims.v1.json',
+      schema: 'https://simforge-oss.dev/schemas/claims.v1.json',
       id: 'x',
       type: 'visibility',
       actorIds: [Object.keys(s.actorKinds)[0]!],

@@ -14,8 +14,8 @@ index fc734a649..074c93805 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -118,0 +119,4 @@ export(EXPORT SUMOConfig NAMESPACE SUMO:: FILE "${CMAKE_BINARY_DIR}/SUMOConfig.cmake")
-+if (UNISCENARIOS_SUMO_WASM_TARGET)
-+    include("${UNISCENARIOS_SUMO_WASM_TARGET}")
++if (SIMFORGE_SUMO_WASM_TARGET)
++    include("${SIMFORGE_SUMO_WASM_TARGET}")
 +endif ()
 +
 diff --git a/src/utils/iodevices/OutputDevice_File.cpp b/src/utils/iodevices/OutputDevice_File.cpp

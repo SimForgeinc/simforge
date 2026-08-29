@@ -158,7 +158,7 @@ XOSC = f'''<?xml version="1.0" encoding="UTF-8"?>
 </OpenSCENARIO>'''.encode()
 XODR = b'<OpenDRIVE><header revMajor="1" revMinor="7"/></OpenDRIVE>'
 CATALOG = json.dumps({
-    "contractVersion": "uniscenario.asset-catalog/v1",
+    "contractVersion": "simforge.asset-catalog/v1",
     "catalogVersionId": "uscatalog-1",
     "entries": [{
         "id": "vehicle.sedan",
@@ -170,7 +170,7 @@ CATALOG = json.dumps({
     }],
 }).encode()
 DISABLED_TRAFFIC = canonical_json({
-    "schema": "uniscenarios.materialized-traffic.v1",
+    "schema": "simforge.materialized-traffic.v1",
     "sourceInputDigest": SOURCE_INPUT_DIGEST,
     "map": {"assetId": "map-asset-1", "versionId": "map-version-1"},
     "provider": {"id": "disabled", "version": "none", "seed": ""},
@@ -192,7 +192,7 @@ def execution_manifest(xosc: bytes = XOSC, ambient=None, source_input_digest: st
         "sourceInputDigest": source_input_digest, "mapAssetId": "map-asset-1", "mapVersionId": "map-version-1",
     }
     return json.dumps({
-        "contract": "uniscenario.execution-package/v1",
+        "contract": "simforge.execution-package/v1",
         "openScenarioProfile": "ASAM OpenSCENARIO XML 1.4",
         "xsdSha256": OFFICIAL_XSD_SHA256,
         "revision": {"id": "revision-1", "sha256": "f" * 64},
@@ -235,7 +235,7 @@ def digest(value: bytes) -> str:
 def materialized_traffic(*, provider="native", version="carla-0.10.0", seed="native-1", duration=0.04, actors=True, signals=True):
     times = [round(index * 0.02, 9) for index in range(round(duration / 0.02) + 1)]
     value = {
-        "schema": "uniscenarios.materialized-traffic.v1",
+        "schema": "simforge.materialized-traffic.v1",
         "sourceInputDigest": SOURCE_INPUT_DIGEST,
         "map": {"assetId": "map-asset-1", "versionId": "map-version-1"},
         "provider": {"id": provider, "version": version, "seed": seed},
@@ -297,7 +297,7 @@ def seal_lease(value, manifest: bytes = MANIFEST):
         for sensor in sensors if "pointsPerSecond" in sensor["config"]
     )
     package["runtimeRequirements"] = {
-        "schema": "uniscenario.runtime-requirements/v1",
+        "schema": "simforge.runtime-requirements/v1",
         "xoscVersion": "1.4",
         "capabilityProfile": "xml-1.4-trajectory-replay",
         "fixedTimestepS": 0.02,
@@ -307,7 +307,7 @@ def seal_lease(value, manifest: bytes = MANIFEST):
         "sensorModalities": sorted({sensor["modality"] for sensor in sensors}),
         "outputs": sorted(set(job["renderSpec"]["outputs"])),
         "resources": {
-            "schema": "uniscenario.render-resource-request/v1",
+            "schema": "simforge.render-resource-request/v1",
             "durationS": 0.04,
             "sensors": len(sensors),
             "captureFrames": len(sensors),
@@ -368,7 +368,7 @@ def lease_value(outputs=None, uploads=None, sensors=None, formats=None):
         uploads = {kind: {
             "uploadId": kind,
             "uploadUrl": f"memory:upload:{kind}",
-            "artifactUrl": f"/api/uniscenario/artifact-uploads/{kind}",
+            "artifactUrl": f"/api/simforge/artifact-uploads/{kind}",
             "requiredHeaders": {"content-type": media_types.get(kind, "application/zip")},
         } for kind in upload_kinds}
     return seal_lease({
@@ -377,13 +377,13 @@ def lease_value(outputs=None, uploads=None, sensors=None, formats=None):
         "job": {
             "id": "job-1", "attempt": 1,
             "executionPackage": {
-                "schema": "uniscenario.execution-package/v1", "id": "package-1", "revisionId": "revision-1",
+                "schema": "simforge.execution-package/v1", "id": "package-1", "revisionId": "revision-1",
                 "sourceInputDigest": SOURCE_INPUT_DIGEST,
                 "materializedTrafficDigest": digest(DISABLED_TRAFFIC),
                 "mapAssetId": "map-asset-1", "mapVersionId": "map-version-1",
                 "xosc": {"url": "memory:xosc", "sha256": digest(XOSC), "sizeBytes": len(XOSC), "xsdSha256": OFFICIAL_XSD_SHA256},
                 "xodr": {"url": "memory:xodr", "sha256": digest(XODR), "sizeBytes": len(XODR), "mapName": "fixture"},
-                "assetCatalog": {"contractVersion": "uniscenario.asset-catalog/v1", "catalogVersionId": "uscatalog-1", "url": "memory:catalog", "sha256": digest(CATALOG), "sizeBytes": len(CATALOG)},
+                "assetCatalog": {"contractVersion": "simforge.asset-catalog/v1", "catalogVersionId": "uscatalog-1", "url": "memory:catalog", "sha256": digest(CATALOG), "sizeBytes": len(CATALOG)},
                 "ambient": {
                     "ambientMode": "disabled",
                     "ambientConfig": {},
@@ -394,7 +394,7 @@ def lease_value(outputs=None, uploads=None, sensors=None, formats=None):
             },
             "mode": "full_render",
             "renderSpec": {
-                "schema": "uniscenario.render-spec/v1",
+                "schema": "simforge.render-spec/v1",
                 "fps": 25,
                 "sensors": sensor_values,
                 "outputs": selected_outputs,
@@ -1012,7 +1012,7 @@ def test_compiles_xosc_to_deterministic_50hz_plan():
 
 def test_twenty_second_50hz_plan_schedules_exactly_600_unique_30fps_frames():
     frames = tuple(PlanFrame(index, index * 0.02, {}, {}) for index in range(1001))
-    plan = ExecutionPlan("uniscenario.execution-plan/v1", 0.02, {}, frames, "a" * 64)
+    plan = ExecutionPlan("simforge.execution-plan/v1", 0.02, {}, frames, "a" * 64)
     schedule = worker_runner._capture_schedule(plan, 30)
     assert len(schedule) == 600
     assert list(schedule.values())[0] == (0, 0.0)
@@ -1220,13 +1220,13 @@ def test_compiler_inner_vertex_sample_and_digest_loops_are_abortible():
 
 
 def test_executes_hash_closed_lease_and_uploads_trace():
-    uploads = {"trace": {"uploadId": "reservation-1", "uploadUrl": "memory:upload", "artifactUrl": "/api/uniscenario/artifact-uploads/reservation-1", "requiredHeaders": {"content-type": "application/gzip", "x-test": "1"}}}
+    uploads = {"trace": {"uploadId": "reservation-1", "uploadUrl": "memory:upload", "artifactUrl": "/api/simforge/artifact-uploads/reservation-1", "requiredHeaders": {"content-type": "application/gzip", "x-test": "1"}}}
     lease = parse_lease(lease_value(uploads=uploads))
     assets = {"memory:manifest": MANIFEST, "memory:xosc": XOSC, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
     uploaded = []
     events = []
     backend = FakeBackend()
-    backend.stability = {"schema": "uniscenario.native-stability/v1", "phases": []}
+    backend.stability = {"schema": "simforge.native-stability/v1", "phases": []}
     result = execute_lease(
         lease, backend,
         lambda body: {"valid": True, "xmlSha256": digest(body), "xsdSha256": OFFICIAL_XSD_SHA256},
@@ -1239,7 +1239,7 @@ def test_executes_hash_closed_lease_and_uploads_trace():
     assert result["artifacts"][0]["artifactUrl"].endswith("reservation-1")
     assert uploaded[0][0] == "memory:upload"
     trace = json.loads(gzip.decompress(uploaded[0][1]))
-    assert trace["schema"] == "uniscenario.render-trace/v1"
+    assert trace["schema"] == "simforge.render-trace/v1"
     assert trace["executionPackageControlSha256"] == lease.execution_package.control_sha256
     assert trace["sourceInputDigest"] == SOURCE_INPUT_DIGEST
     assert trace["frames"][0]["signals"] == {}
@@ -1273,11 +1273,11 @@ def test_mode_is_explicit_and_parity_tolerance_gates_result():
 
 def test_interaction_2d_is_camera_free_and_emits_trace_and_manifest():
     value = lease_value(outputs=["trace", "manifest"], uploads={
-        "trace": {"uploadId": "trace", "uploadUrl": "memory:trace", "artifactUrl": "/api/uniscenario/artifact-uploads/trace", "requiredHeaders": {"content-type": "application/gzip"}},
-        "manifest": {"uploadId": "manifest", "uploadUrl": "memory:manifest", "artifactUrl": "/api/uniscenario/artifact-uploads/manifest", "requiredHeaders": {"content-type": "application/json"}},
+        "trace": {"uploadId": "trace", "uploadUrl": "memory:trace", "artifactUrl": "/api/simforge/artifact-uploads/trace", "requiredHeaders": {"content-type": "application/gzip"}},
+        "manifest": {"uploadId": "manifest", "uploadUrl": "memory:manifest", "artifactUrl": "/api/simforge/artifact-uploads/manifest", "requiredHeaders": {"content-type": "application/json"}},
     })
     value["job"]["mode"] = "interaction_2d"
-    value["job"]["renderSpec"]["schema"] = "uniscenario.interaction-spec/v1"
+    value["job"]["renderSpec"]["schema"] = "simforge.interaction-spec/v1"
     value["job"]["renderSpec"]["sensors"] = []
     lease = parse_lease(seal_lease(value))
     backend = FakeBackend()
@@ -1560,15 +1560,15 @@ def test_manifest_annotations_and_cancellation_are_first_class_outputs():
     assert [item["kind"] for item in result["artifacts"]] == ["trace", "annotations", "manifest"]
     manifest = json.loads(uploaded["memory:upload:manifest"])
     trace = json.loads(gzip.decompress(uploaded["memory:upload:trace"]))
-    assert manifest["schema"] == "uniscenario.render-manifest/v1"
-    assert manifest["renderSpec"]["schema"] == "uniscenario.render-spec/v1"
+    assert manifest["schema"] == "simforge.render-manifest/v1"
+    assert manifest["renderSpec"]["schema"] == "simforge.render-spec/v1"
     assert manifest["sensorFrames"][0]["sensorId"] == "hero"
     assert manifest["executionPackageControlSha256"] == trace["executionPackageControlSha256"]
     assert manifest["sourceInputDigest"] == trace["sourceInputDigest"] == SOURCE_INPUT_DIGEST
     assert manifest["materializedTrafficDigest"] == trace["materializedTrafficDigest"] == digest(DISABLED_TRAFFIC)
     annotations = uploaded["memory:upload:annotations"].decode().splitlines()
     assert len(annotations) == 1
-    assert json.loads(annotations[0])["schema"] == "uniscenario.annotation-frame/v1"
+    assert json.loads(annotations[0])["schema"] == "simforge.annotation-frame/v1"
     backend = FakeBackend()
     with pytest.raises(CancellationRequested):
         execute_lease(
@@ -1838,20 +1838,20 @@ def test_camera_stream_encoder_absorbs_transient_burst():
 
 def test_presentation_video_encoder_selection(monkeypatch):
     from simforge_oss_carla_exec.runtime.backend import _presentation_video_codec_args
-    monkeypatch.delenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", raising=False)
+    monkeypatch.delenv("SIMFORGE_PRESENTATION_VIDEO_ENCODER", raising=False)
     assert "libx264" in _presentation_video_codec_args()
-    monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "software")
+    monkeypatch.setenv("SIMFORGE_PRESENTATION_VIDEO_ENCODER", "software")
     assert "libx264" in _presentation_video_codec_args()
-    monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "nvidia")
+    monkeypatch.setenv("SIMFORGE_PRESENTATION_VIDEO_ENCODER", "nvidia")
     assert "h264_nvenc" in _presentation_video_codec_args()
-    monkeypatch.setenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", "vhs")
+    monkeypatch.setenv("SIMFORGE_PRESENTATION_VIDEO_ENCODER", "vhs")
     with pytest.raises(RuntimeError, match="must be software or nvidia"):
         _presentation_video_codec_args()
 
 
 def test_camera_stream_encoder_round_trips_real_frames_through_ffmpeg(tmp_path, monkeypatch):
     from simforge_oss_carla_exec.runtime.backend import _CameraStreamEncoder
-    monkeypatch.delenv("UNISCENARIO_PRESENTATION_VIDEO_ENCODER", raising=False)
+    monkeypatch.delenv("SIMFORGE_PRESENTATION_VIDEO_ENCODER", raising=False)
     destination = tmp_path / "stream.mp4"
     class Frame:
         def __init__(self, payload): self.raw_data = payload
@@ -1908,8 +1908,8 @@ def test_executes_every_ambient_expanded_actor_carried_by_the_bound_xosc():
 
 
 def test_asset_transport_retries_transient_failures(monkeypatch):
-    monkeypatch.setenv("UNISCENARIO_ASSET_DOWNLOAD_HOSTS", "example.invalid")
-    monkeypatch.setenv("UNISCENARIO_ARTIFACT_UPLOAD_HOSTS", "example.invalid")
+    monkeypatch.setenv("SIMFORGE_ASSET_DOWNLOAD_HOSTS", "example.invalid")
+    monkeypatch.setenv("SIMFORGE_ARTIFACT_UPLOAD_HOSTS", "example.invalid")
     calls = []
     class Response:
         status = 200
@@ -1935,7 +1935,7 @@ def test_asset_transport_retries_transient_failures(monkeypatch):
 
 
 def test_upload_forwards_every_required_signed_header_unchanged(monkeypatch):
-    monkeypatch.setenv("UNISCENARIO_ARTIFACT_UPLOAD_HOSTS", "example.invalid")
+    monkeypatch.setenv("SIMFORGE_ARTIFACT_UPLOAD_HOSTS", "example.invalid")
     captured = []
     class Response:
         status = 200
@@ -1956,7 +1956,7 @@ def test_upload_forwards_every_required_signed_header_unchanged(monkeypatch):
 
 
 def test_upload_failure_captures_only_bounded_safe_s3_xml(monkeypatch):
-    monkeypatch.setenv("UNISCENARIO_ARTIFACT_UPLOAD_HOSTS", "signed.invalid")
+    monkeypatch.setenv("SIMFORGE_ARTIFACT_UPLOAD_HOSTS", "signed.invalid")
     body = (
         b"<Error><Code>SignatureDoesNotMatch</Code><Message>signed headers differ</Message>"
         b"<RequestId>request-123</RequestId><Key>private/secret-object-key</Key></Error>"
@@ -1992,7 +1992,7 @@ def test_path_upload_streams_without_read_bytes_and_checks_abort(monkeypatch, tm
     body = tmp_path / "large.zip"
     body.write_bytes(b"stream-me" * 200_000)
     monkeypatch.setattr(Path, "read_bytes", lambda _self: pytest.fail("large artifacts must never use read_bytes"))
-    monkeypatch.setenv("UNISCENARIO_ARTIFACT_UPLOAD_HOSTS", "uploads.example.test")
+    monkeypatch.setenv("SIMFORGE_ARTIFACT_UPLOAD_HOSTS", "uploads.example.test")
     captured = bytearray()
     aborts = []
 
@@ -2028,7 +2028,7 @@ def test_artifact_digest_is_bound_before_checksum_header_upload():
         bindings.append((kind, digest_value, size_bytes, media_type, reservation["uploadId"]))
         return {
             "uploadUrl": "memory:checksum-bound",
-            "artifactUrl": "/api/uniscenario/artifact-uploads/usup-1",
+            "artifactUrl": "/api/simforge/artifact-uploads/usup-1",
             "requiredHeaders": {
                 "content-type": "video/mp4",
                 "x-amz-checksum-sha256": digest_base64,
@@ -2580,13 +2580,13 @@ def test_streamed_camera_video_and_artifacts_share_one_peak_temp_budget(monkeypa
 def test_duration_frame_pixel_sensor_and_output_budgets(monkeypatch):
     lease = parse_lease(lease_value())
     too_long = ExecutionPlan(
-        "uniscenario.execution-plan/v1", 0.02, {},
+        "simforge.execution-plan/v1", 0.02, {},
         (PlanFrame(0, 0.0, {}, {}), PlanFrame(1, 300.02, {}, {})), "a" * 64,
     )
     with pytest.raises(ContractError, match="scenario duration"):
         worker_runner._enforce_render_budgets(lease, too_long, 1)
     short = ExecutionPlan(
-        "uniscenario.execution-plan/v1", 0.02, {},
+        "simforge.execution-plan/v1", 0.02, {},
         (PlanFrame(0, 0.0, {}, {}), PlanFrame(1, 1.0, {}, {})), "a" * 64,
     )
     with pytest.raises(ContractError, match="capture exceeds 18000 frames"):
@@ -2672,7 +2672,7 @@ def test_validator_has_a_bounded_timeout(monkeypatch):
     def timeout(*_args, **_kwargs):
         raise subprocess.TimeoutExpired("xmllint", 1)
     monkeypatch.setattr(worker_validation.subprocess, "run", timeout)
-    monkeypatch.setenv("UNISCENARIO_XML_VALIDATION_TIMEOUT_S", "1")
+    monkeypatch.setenv("SIMFORGE_XML_VALIDATION_TIMEOUT_S", "1")
     with pytest.raises(ContractError, match="exceeded 1 seconds"):
         validate_xosc14(XOSC, xsd)
 
@@ -2682,8 +2682,8 @@ def test_asset_allowlist_rejects_ssrf_and_redirect_destinations(monkeypatch):
         artifact_transport.download("http://169.254.169.254/latest/meta-data", 100)
     with pytest.raises(ValueError, match="not allowed"):
         artifact_transport.download("https://169.254.169.254/latest/meta-data", 100)
-    monkeypatch.setenv("UNISCENARIO_ASSET_DOWNLOAD_HOSTS", "assets.example.test")
-    handler = artifact_transport._AllowlistedRedirectHandler("UNISCENARIO_ASSET_DOWNLOAD_HOSTS")
+    monkeypatch.setenv("SIMFORGE_ASSET_DOWNLOAD_HOSTS", "assets.example.test")
+    handler = artifact_transport._AllowlistedRedirectHandler("SIMFORGE_ASSET_DOWNLOAD_HOSTS")
     with pytest.raises(ValueError, match="not allowed"):
         handler.redirect_request(None, None, 302, "redirect", {}, "https://169.254.169.254/latest/meta-data")
     class Redirected:
@@ -2700,8 +2700,8 @@ def test_independent_worker_has_no_legacy_runtime_dependency():
     package = Path(__file__).parents[1] / "simforge_oss_carla_exec"
     forbidden = (
         "WorkerApi",
-        "/api/uniscenario/internal",
-        "UNISCENARIO_API_URL",
+        "/api/simforge/internal",
+        "SIMFORGE_API_URL",
         "services/carla-worker",
         "carla_worker",
     )
@@ -3309,7 +3309,7 @@ def test_spawn_drops_execution_semantics_actors_with_a_recorded_reason():
 def test_knockdown_pose_drops_the_actor_instead_of_failing_the_render():
     lease = parse_lease(lease_value())
     plan = ExecutionPlan(
-        "uniscenario.execution-plan/v1", 0.02,
+        "simforge.execution-plan/v1", 0.02,
         {
             "ego": ActorBinding("ego", "actor_ego", "car", "vehicle.sedan"),
             "deer": ActorBinding("deer", "actor_deer", "animal", "animal.deer"),
@@ -3340,25 +3340,25 @@ def test_knockdown_pose_drops_the_actor_instead_of_failing_the_render():
 
 def test_cooked_map_registry_resolves_known_xodrs_and_env_extensions(monkeypatch):
     from simforge_oss_carla_exec.runtime.backend import cooked_map_name_for_xodr
-    monkeypatch.delenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", raising=False)
+    monkeypatch.delenv("SIMFORGE_CARLA_COOKED_MAPS_JSON", raising=False)
     richmond = "80704cd1bc2563a63d5d365a5b0c43936222cef811f513e89129a8205e464643"
     belmont = "35cf2b16a1d308c6436089a0edf66f20c87a79da12e79472a03a2f568ba28f63"
     assert cooked_map_name_for_xodr(richmond) == "Richmond_Field_Station_Richmond_CA"
     assert cooked_map_name_for_xodr(belmont) == "Belmont_Office_Park_Belmont_CA"
     assert cooked_map_name_for_xodr("f" * 64) is None
-    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", json.dumps({"Munich": "e" * 64}))
+    monkeypatch.setenv("SIMFORGE_CARLA_COOKED_MAPS_JSON", json.dumps({"Munich": "e" * 64}))
     assert cooked_map_name_for_xodr("e" * 64) == "Munich"
-    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", json.dumps({"NotRichmond": richmond}))
+    monkeypatch.setenv("SIMFORGE_CARLA_COOKED_MAPS_JSON", json.dumps({"NotRichmond": richmond}))
     with pytest.raises(RuntimeError, match="conflicts with the built-in cooked world"):
         cooked_map_name_for_xodr(richmond)
-    monkeypatch.setenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", "not json")
+    monkeypatch.setenv("SIMFORGE_CARLA_COOKED_MAPS_JSON", "not json")
     with pytest.raises(RuntimeError, match="must be valid JSON"):
         cooked_map_name_for_xodr(richmond)
 
 
 def test_cooked_xodr_never_falls_back_to_a_generated_world(monkeypatch):
-    monkeypatch.setenv("UNISCENARIO_CARLA_ALLOW_GENERATED_XODR", "1")
-    monkeypatch.delenv("UNISCENARIO_CARLA_COOKED_MAPS_JSON", raising=False)
+    monkeypatch.setenv("SIMFORGE_CARLA_ALLOW_GENERATED_XODR", "1")
+    monkeypatch.delenv("SIMFORGE_CARLA_COOKED_MAPS_JSON", raising=False)
     richmond_xodr = b"richmond-source-xodr"
     monkeypatch.setattr(
         "simforge_oss_carla_exec.runtime.backend.COOKED_MAP_NAMES_BY_XODR_SHA256",
@@ -3536,7 +3536,7 @@ def test_executor_records_spawn_drop_diagnostics_and_stays_frame_closed():
     lease, xosc, manifest = _two_vehicle_lease()
     assets = {"memory:manifest": manifest, "memory:xosc": xosc, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
     report = {
-        "schema": "uniscenario.spawn-placement/v1",
+        "schema": "simforge.spawn-placement/v1",
         "actors": {
             "ego": {"outcome": "placed"},
             "buddy": {
@@ -3571,7 +3571,7 @@ def test_executor_rejects_a_dropped_sensor_host_actor():
     lease, xosc, manifest = _two_vehicle_lease()
     assets = {"memory:manifest": manifest, "memory:xosc": xosc, "memory:xodr": XODR, "memory:catalog": CATALOG, "memory:traffic": DISABLED_TRAFFIC}
     report = {
-        "schema": "uniscenario.spawn-placement/v1",
+        "schema": "simforge.spawn-placement/v1",
         "actors": {"ego": {"outcome": "dropped"}, "buddy": {"outcome": "placed"}},
         "droppedActorIds": ["ego"],
         "nudgedActorIds": [],
@@ -3698,7 +3698,7 @@ def test_sensor_sample_cap_covers_pronto_20s_and_stays_fail_closed(monkeypatch):
     from simforge_oss_carla_exec.runtime import contract
 
     base = {
-        "schema": "uniscenario.render-resource-request/v1",
+        "schema": "simforge.render-resource-request/v1",
         "durationS": 20.0,
         "sensors": 9,
         "captureFrames": 480,
@@ -3718,12 +3718,12 @@ def test_sensor_sample_cap_covers_pronto_20s_and_stays_fail_closed(monkeypatch):
     with pytest.raises(contract.ContractError):
         contract.RenderResourceRequest.parse({**base, "sensorSamples": 6_000_000_001})
     # Env override is validated and fail-closed.
-    monkeypatch.setenv("UNISCENARIO_MAX_SENSOR_PIXELS", "123")
+    monkeypatch.setenv("SIMFORGE_MAX_SENSOR_PIXELS", "123")
     assert contract._configured_max_sensor_pixels() == 123
-    monkeypatch.setenv("UNISCENARIO_MAX_SENSOR_PIXELS", "-1")
+    monkeypatch.setenv("SIMFORGE_MAX_SENSOR_PIXELS", "-1")
     with pytest.raises(contract.ContractError):
         contract._configured_max_sensor_pixels()
-    monkeypatch.setenv("UNISCENARIO_MAX_SENSOR_PIXELS", "not-a-number")
+    monkeypatch.setenv("SIMFORGE_MAX_SENSOR_PIXELS", "not-a-number")
     with pytest.raises(contract.ContractError):
         contract._configured_max_sensor_pixels()
 
@@ -3773,7 +3773,7 @@ def test_cooked_map_remap_freezes_unauthored_extra_heads_red_and_records_evidenc
     backend.signals, backend.signal_snapshots = {}, {}
     backend.sensors, backend.actors = [], {}
     backend.signal_id_map = {"367": "421"}
-    backend.map_evidence = {"schema": "uniscenario.carla-map-evidence/v1"}
+    backend.map_evidence = {"schema": "simforge.carla-map-evidence/v1"}
 
     backend.bind_signals(("367",))
     assert backend.signals == {"367": owned}

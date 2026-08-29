@@ -38,8 +38,12 @@ from .runtime.contract import (
 )
 from .runtime.executor import execute_lease, filesystem_validator
 
+# historical name retained for stored-data compat
 DEFAULT_XSD = Path(__file__).parent / "assets" / "OpenSCENARIO.xsd"
-INTENT_SCHEMA = "uniscenario.render-intent/v1"
+INTENT_SCHEMA = "simforge.render-intent/v1"
+# historical name retained for stored-data compat
+HISTORICAL_INTENT_SCHEMA = "uniscenario.render-intent/v1"
+HISTORICAL_RENDER_SPEC_V3_SCHEMA = "uniscenario.render-spec/v3"
 INPUT_PACKAGE_SCHEMA_FIELDS = {"intentSha256", "inputs"}
 
 
@@ -50,7 +54,7 @@ def _probe(host: str, port: int) -> dict[str, object]:
         # answer version requests but fail every world operation.
         backend.client.get_world()
         return {
-            "schema": "uniscenarios.carla-probe/v2",
+            "schema": "simforge.carla-probe/v2",
             "clientVersion": str(getattr(backend.carla, "__version__", "unknown")),
             "serverVersion": str(backend.client.get_server_version()),
             "maxSimultaneousSensors": MAX_SENSOR_COUNT,
@@ -128,7 +132,7 @@ def _probe_tick_barrier(
             world.apply_settings(original)
         passed = empty_extra == 0 and populated_extra == 0 and abs(populated_ratio - 1.0) <= 0.1
         return {
-            "schema": "uniscenarios.carla-tick-barrier-probe/v1",
+            "schema": "simforge.carla-tick-barrier-probe/v1",
             "serverVersion": str(backend.client.get_server_version()),
             "fixedDeltaS": fixed_delta_s,
             "emptyWorld": {
@@ -277,7 +281,7 @@ def _xosc_source_digest(xosc: bytes) -> str:
     values = [
         item.get("value")
         for item in root.findall("./FileHeader/Properties/Property")
-        if item.get("name") == "uniscenarios.provenance.inputHash"
+        if item.get("name") in {"simforge.provenance.inputHash", "uniscenarios.provenance.inputHash"}
     ]
     if len(values) != 1 or not isinstance(values[0], str) or len(values[0]) != 64:
         raise ContractError("OpenSCENARIO must carry exactly one source input digest")
@@ -294,7 +298,7 @@ def _strip_control(value: Any) -> Any:
 def _render_control_lineage_sha256(intent: Mapping[str, Any], intent_sha256: str) -> str:
     execution_package = intent["executionPackage"]
     return canonical_sha256({
-        "schema": "uniscenario.render-control-lineage/v1",
+        "schema": "simforge.render-control-lineage/v1",
         "intentSha256": intent_sha256,
         "executionPackageId": execution_package["id"],
         "sourceInputDigest": execution_package["sourceInputDigest"],
@@ -306,8 +310,8 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec, s
     if not isinstance(value, Mapping) or set(value) not in (
         {"schema", "sources", "clip", "artifacts", "capabilityIntent", "authoredEnvironment"},
         {"schema", "sources", "clip", "video", "artifacts", "capabilityIntent", "authoredEnvironment"},
-    ) or value.get("schema") != "uniscenario.render-spec/v3":
-        raise ContractError("renderSpec must be a strict uniscenario.render-spec/v3")
+    ) or value.get("schema") not in {"simforge.render-spec/v3", HISTORICAL_RENDER_SPEC_V3_SCHEMA}:
+        raise ContractError("renderSpec must be a strict simforge.render-spec/v3")
     sources, clip, artifacts = value["sources"], value["clip"], value["artifacts"]
     if not isinstance(sources, list) or not 1 <= len(sources) <= MAX_SENSOR_COUNT:
         raise ContractError(f"renderSpec.sources must contain 1..{MAX_SENSOR_COUNT} sources")
@@ -481,7 +485,7 @@ def _render_spec_v3_to_native(value: Any) -> tuple[dict[str, Any], RenderSpec, s
         "draft": "preview", "standard": "standard", "high": "high", "lossless": "cinematic",
     }[video["quality"]]
     native_value = {
-        "schema": "uniscenario.render-spec/v1", "fps": video_fps,
+        "schema": "simforge.render-spec/v1", "fps": video_fps,
         "sensors": sensor_values, "outputs": outputs, "executionMode": "native-physics",
         "quality": quality, "environment": native_environment,
         "formats": ["png", "ply", "csv", "mp4-h264", "json", "jsonl"],
@@ -535,7 +539,7 @@ def _intent_lease(
     output_dir: Path,
 ) -> tuple[Any, dict[str, Path]]:
     expected_fields = {"schema", "intentId", "executionPackage", "scenarioRevision", "renderSpec", "sensorHosts", "assets", "seed"}
-    if set(intent) != expected_fields or intent.get("schema") != INTENT_SCHEMA:
+    if set(intent) != expected_fields or intent.get("schema") not in {INTENT_SCHEMA, HISTORICAL_INTENT_SCHEMA}:
         raise ContractError(f"render intent must use strict {INTENT_SCHEMA} fields")
     intent_id = intent.get("intentId")
     revision = intent.get("scenarioRevision")
@@ -637,7 +641,7 @@ def _intent_lease(
             candidate = json.loads(candidate_path.read_text("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError):
             continue
-        if isinstance(candidate, Mapping) and candidate.get("schema") == "uniscenarios.materialized-traffic.v1":
+        if isinstance(candidate, Mapping) and candidate.get("schema") == "simforge.materialized-traffic.v1":
             traffic_candidates.append((candidate_path, candidate))
     if len(traffic_candidates) > 1:
         raise ContractError("render intent contains multiple materialized traffic assets")
@@ -666,7 +670,7 @@ def _intent_lease(
         )
     else:
         traffic = canonical_json({
-            "schema": "uniscenarios.materialized-traffic.v1",
+            "schema": "simforge.materialized-traffic.v1",
             "sourceInputDigest": source_digest,
             "map": {"assetId": map_identity["mapId"], "versionId": map_identity["revisionId"]},
             "provider": {"id": "disabled", "version": "none", "seed": ""},
@@ -696,7 +700,7 @@ def _intent_lease(
         "mapAssetId": map_identity["mapId"], "mapVersionId": map_identity["revisionId"],
     }
     execution_manifest = {
-        "contract": "uniscenario.execution-package/v1",
+        "contract": "simforge.execution-package/v1",
         "openScenarioProfile": "ASAM OpenSCENARIO XML 1.4",
         "xsdSha256": OFFICIAL_XSD_SHA256,
         "revision": {"id": revision["revisionId"], "sha256": revision["scenarioSha256"]},
@@ -745,14 +749,14 @@ def _intent_lease(
             "artifactUrl": f"{safe_kind}.artifact", "headers": {},
         }
     runtime_requirements = {
-        "schema": "uniscenario.runtime-requirements/v1", "xoscVersion": "1.4",
+        "schema": "simforge.runtime-requirements/v1", "xoscVersion": "1.4",
         "capabilityProfile": "xml-1.4-trajectory-replay", "fixedTimestepS": 0.02,
         "jobMode": "full_render", "trafficMode": ambient_mode,
         "executionMode": parsed_spec.execution_mode,
         "sensorModalities": sorted({sensor.modality for sensor in parsed_spec.sensors}),
         "outputs": sorted(parsed_spec.outputs),
         "resources": {
-            "schema": "uniscenario.render-resource-request/v1", "durationS": duration,
+            "schema": "simforge.render-resource-request/v1", "durationS": duration,
             "sensors": len(parsed_spec.sensors), "captureFrames": capture_count,
             "actors": max(1, len(plan.actors)), "actorFrameStates": max(1, len(plan.actors) * len(plan.frames)),
             "sensorSamples": sensor_samples, "outputBytes": 8 * 1024 * 1024 * 1024,
@@ -762,7 +766,7 @@ def _intent_lease(
         },
     }
     package = {
-        "schema": "uniscenario.execution-package/v1", "id": execution_package["id"],
+        "schema": "simforge.execution-package/v1", "id": execution_package["id"],
         "revisionId": revision["revisionId"], "sourceInputDigest": execution_package["sourceInputDigest"],
         "materializedTrafficDigest": traffic_sha, "mapAssetId": map_identity["mapId"],
         "mapVersionId": map_identity["revisionId"],
@@ -934,7 +938,7 @@ def _preflight_intent(args: argparse.Namespace) -> dict[str, object]:
                 backend.cleanup()
 
     return {
-        "schema": "uniscenario.render-preflight/v1",
+        "schema": "simforge.render-preflight/v1",
         "status": "pass",
         "intentId": intent["intentId"],
         "checks": checks,
@@ -970,26 +974,26 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
             return
         if event == "progress":
             record = {
-                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "schema": "simforge.render-progress/v1", "jobId": intent["intentId"],
                 "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
                 "event": "stage.progress", "stage": "rendering",
                 "completed": payload["completedFrames"], "total": payload["totalFrames"], "unit": "frames",
             }
         elif event == "stage.started":
             record = {
-                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "schema": "simforge.render-progress/v1", "jobId": intent["intentId"],
                 "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
                 "event": "stage.started", "stage": payload["stage"],
             }
         elif event == "warning":
             record = {
-                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "schema": "simforge.render-progress/v1", "jobId": intent["intentId"],
                 "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
                 "event": "warning", "code": payload["code"], "message": payload["message"],
             }
         else:
             record = {
-                "schema": "uniscenario.render-progress/v1", "jobId": intent["intentId"],
+                "schema": "simforge.render-progress/v1", "jobId": intent["intentId"],
                 "attempt": 1, "sequence": sequence, "timestamp": datetime.now(timezone.utc).isoformat(),
                 "event": event,
             }
@@ -1013,10 +1017,10 @@ def _run_intent(args: argparse.Namespace) -> dict[str, object]:
         raise
     manifest_entries = _artifact_manifest_entries(result["artifacts"])
     artifact_manifest = {
-        "schema": "uniscenario.render-artifact-manifest/v1",
+        "schema": "simforge.render-artifact-manifest/v1",
         "intentSha256": intent_sha,
         "engine": {
-            "engineId": "uniscenarios-carla",
+            "engineId": "simforge-carla",
             "engineVersion": "native-v1",
             "backend": "carla",
         },
@@ -1045,7 +1049,7 @@ def main() -> None:
     )
     ticks.add_argument("--fixed-delta", type=float, default=0.02)
     ticks.add_argument("--ticks", type=int, default=120)
-    intent = commands.add_parser("run-intent", help="execute a local uniscenario.render-intent/v1")
+    intent = commands.add_parser("run-intent", help="execute a local simforge.render-intent/v1")
     intent.add_argument("--intent", required=True)
     intent.add_argument("--package", required=True)
     intent.add_argument("--output", required=True)
@@ -1084,7 +1088,7 @@ def main() -> None:
             result = _preflight_intent(args)
         except PreflightError as exc:
             print(json.dumps({
-                "schema": "uniscenario.render-preflight/v1",
+                "schema": "simforge.render-preflight/v1",
                 "status": "fail",
                 "blockingLayer": exc.layer,
                 "error": str(exc.cause),

@@ -35,7 +35,7 @@ export function startLocalWorker(baseUrl: string | URL): LocalWorkerHandle {
 }
 
 export function localWorkerEnabled(argv: readonly string[] = process.argv.slice(2)): boolean {
-  return process.env.UNISCENARIOS_LOCAL_WORKER === "1" || argv.includes("--with-worker");
+  return process.env.SIMFORGE_LOCAL_WORKER === "1" || argv.includes("--with-worker");
 }
 
 async function runClaimLoop(client: CpuJobsClient, signal: AbortSignal): Promise<void> {

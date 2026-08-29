@@ -4,7 +4,7 @@ const url = 'http://127.0.0.1:5199/?map=belmont-office-park-belmont-ca&dpr=1';
 const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--ignore-gpu-blocklist', '--window-size=1680,1080'] });
 const ctx = await browser.newContext({ viewport: { width: 1600, height: 960 }, deviceScaleFactor: 1 });
 await ctx.addInitScript(() => {
-  const key = 'uniscenarios.studio.render-quality.v1';
+  const key = 'simforge-oss.studio.render-quality.v1';
   window.localStorage.setItem(key, JSON.stringify({ preset: 'minimal' }));
 });
 const page = await ctx.newPage();
@@ -23,7 +23,7 @@ const dom = await page.evaluate(() => {
     canvasParentChain: (() => { const chain = []; let n = canvas; while (n && n !== document.body) { chain.push(n.tagName + '#' + (n.id||'') + '.' + (typeof n.className === 'string' ? n.className : '')); n = n.parentElement; } return chain; })(),
     canvasBox: canvas ? { w: canvas.clientWidth, h: canvas.clientHeight, dw: canvas.width, dh: canvas.height } : null,
     canvasCount: document.querySelectorAll('canvas').length,
-    quality: (() => { try { return JSON.parse(localStorage.getItem('uniscenarios.studio.render-quality.v1')); } catch { return null; } })(),
+    quality: (() => { try { return JSON.parse(localStorage.getItem('simforge-oss.studio.render-quality.v1')); } catch { return null; } })(),
   };
 });
 console.log('DOM', JSON.stringify(dom, null, 1));

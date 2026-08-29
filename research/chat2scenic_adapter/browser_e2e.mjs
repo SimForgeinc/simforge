@@ -1,8 +1,8 @@
 import { chromium } from 'playwright-core';
 
-const target = process.env.UNISCENARIOS_E2E_URL ?? 'http://127.0.0.1:5309/?map=richmond-field-station';
-const screenshotBefore = process.env.UNISCENARIOS_E2E_BEFORE ?? '/private/tmp/chat2scenic-upstream-before-apply.png';
-const screenshotAfter = process.env.UNISCENARIOS_E2E_AFTER ?? '/private/tmp/chat2scenic-upstream-after-apply.png';
+const target = process.env.SIMFORGE_E2E_URL ?? 'http://127.0.0.1:5309/?map=richmond-field-station';
+const screenshotBefore = process.env.SIMFORGE_E2E_BEFORE ?? '/private/tmp/chat2scenic-upstream-before-apply.png';
+const screenshotAfter = process.env.SIMFORGE_E2E_AFTER ?? '/private/tmp/chat2scenic-upstream-after-apply.png';
 const executablePath = process.env.CHROMIUM_EXECUTABLE_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const browser = await chromium.launch({ executablePath, headless: true });
 const context = await browser.newContext({ viewport: { width: 1600, height: 1000 }, permissions: ['clipboard-read', 'clipboard-write'] });

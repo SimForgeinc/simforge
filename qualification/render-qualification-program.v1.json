@@ -1,5 +1,5 @@
 {
-  "schema": "uniscenario.render-qualification-program/v1",
+  "schema": "simforge.render-qualification-program/v1",
   "selectionCount": 5,
   "sourceEnvironment": "dev",
   "eligibility": {
@@ -34,8 +34,8 @@
     "fps": 24,
     "clip": "full",
     "sensorConcurrency": "all",
-    "intentSchema": "uniscenario.render-intent/v1",
-    "workerControlSchema": "uniscenario.render-worker-control/v2"
+    "intentSchema": "simforge.render-intent/v1",
+    "workerControlSchema": "simforge.render-worker-control/v2"
   },
   "prontoRig": {
     "id": "pronto-port-e",

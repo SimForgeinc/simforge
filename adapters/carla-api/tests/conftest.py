@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 # Never render browser clips during tests.
-os.environ.setdefault("UNISCENARIO_FRAMES", "off")
+os.environ.setdefault("SIMFORGE_FRAMES", "off")
 
 ADAPTER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = ADAPTER_ROOT.parents[1]

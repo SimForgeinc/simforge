@@ -17,7 +17,7 @@ function hash(character) {
 
 function scenarioManifest() {
   return {
-    schema: 'uniscenarios.scenario-visual-evidence.v1',
+    schema: 'simforge-oss.scenario-visual-evidence.v1',
     evidenceClass: 'scenario-instance-incident',
     scenarioId: 'scenario-1',
     mapId: 'yale-st-palo-alto-ca',
@@ -100,7 +100,7 @@ function completeReview(review, verdict = 'accepted') {
 
 test('classifies map orbit and stress screenshots as diagnostic-only', () => {
   const orbit = {
-    schema: 'uniscenarios.render-export.v1',
+    schema: 'simforge-oss.render-export.v1',
     renderer: { cameraMode: 'incident-composition' },
     purpose: 'stress smoke',
     frames: [{ cameraMode: 'orbit' }],

@@ -16,7 +16,7 @@ def test_default_schema_is_bundled_and_digest_pinned() -> None:
 
 def test_render_intent_digest_sorts_per_source_arrays_like_typescript(tmp_path) -> None:
     intent = {
-        "schema": "uniscenario.render-intent/v1",
+        "schema": "simforge.render-intent/v1",
         "sensorHosts": [
             {"sourceId": "z-source", "actorId": "actor-z"},
             {"sourceId": "a-source", "actorId": "actor-a"},
@@ -111,7 +111,7 @@ def test_render_control_lineage_digest_matches_simcloud_contract() -> None:
     }
 
     assert local._render_control_lineage_sha256(intent, "a" * 64) == (
-        "778a97137de36a25e2fc215804ef86da8518dd282ed99a581ebdb88625ecb30c"
+        "782f36b32a74e4ede8e570bc222bb5f70720db59344c8a12059d145cb4d3bdbe"
     )
 
 
@@ -141,7 +141,7 @@ def test_probe_is_read_only_and_always_cleans_up(monkeypatch: pytest.MonkeyPatch
 
     monkeypatch.setattr(local, "CarlaBackend", Backend)
     assert local._probe("carla.test", 2000) == {
-        "schema": "uniscenarios.carla-probe/v2",
+        "schema": "simforge.carla-probe/v2",
         "clientVersion": "0.10.0-client",
         "serverVersion": "0.10.0-test",
         "maxSimultaneousSensors": 64,
@@ -237,7 +237,7 @@ def test_tick_barrier_probe_detects_un_commanded_engine_ticks(
 
     monkeypatch.setattr(local, "CarlaBackend", Backend)
     result = local._probe_tick_barrier("carla.test", 2000, 0.02, 40)
-    assert result["schema"] == "uniscenarios.carla-tick-barrier-probe/v1"
+    assert result["schema"] == "simforge.carla-tick-barrier-probe/v1"
     assert result["verdict"] == verdict
     if verdict == "fail":
         assert result["populatedWorld"]["unCommandedTicks"] > 0

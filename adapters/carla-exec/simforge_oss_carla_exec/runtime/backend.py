@@ -17,6 +17,7 @@ from typing import Any, Callable, Mapping, Protocol
 
 from .compiler import LIFECYCLE_ABSENT, ActorBinding, PlanFrame
 from .contract import ASSET_CATALOG_SCHEMA, CAMERA_MODALITIES, ContractError, Environment, RenderSpec
+# historical name retained for stored-data compat
 
 #: Period of one deterministic flash cycle, 50% duty, phase-locked to plan time.
 FLASH_PERIOD_S = 1.0
@@ -574,7 +575,7 @@ class CarlaBackend:
         self.visual_quality_stats: dict[str, dict[str, int]] = {}
         self.sensor_listen_retries: dict[str, int] = {}
         self.visual_quality_evidence: dict[str, Any] = {
-            "schema": "uniscenario.visual-quality-evidence/v1",
+            "schema": "simforge.visual-quality-evidence/v1",
             "verdict": "not-evaluated",
             "cameras": {},
         }
@@ -627,7 +628,7 @@ class CarlaBackend:
                     "the cooked custom map supports only its baked default clear-daylight environment"
                 )
             self.environment_evidence = {
-                "schema": "uniscenario.environment-evidence/v1",
+                "schema": "simforge.environment-evidence/v1",
                 "available": True,
                 "exact": False,
                 "requested": requested,
@@ -656,7 +657,7 @@ class CarlaBackend:
             }
             if not mismatches:
                 self.environment_evidence = {
-                    "schema": "uniscenario.environment-evidence/v1",
+                    "schema": "simforge.environment-evidence/v1",
                     "available": True,
                     "requested": requested,
                     "observed": observed,
@@ -704,7 +705,7 @@ class CarlaBackend:
             observed_name = _normalized_map_name(self.world.get_map().name)
             self.signal_id_map = {}
             self.map_evidence = {
-                "schema": "uniscenario.carla-map-evidence/v1",
+                "schema": "simforge.carla-map-evidence/v1",
                 "available": True,
                 "source": "generated-opendrive-world",
                 "identityMode": "generated-opendrive",
@@ -737,7 +738,7 @@ class CarlaBackend:
                 {},
             ))
             self.map_evidence = {
-                "schema": "uniscenario.carla-map-evidence/v1",
+                "schema": "simforge.carla-map-evidence/v1",
                 "available": True,
                 "source": "cooked-custom-map",
                 "identityMode": "cooked-map-name",
@@ -945,7 +946,7 @@ class CarlaBackend:
             raise RuntimeError("spawn placement dropped every scenario actor")
         self.static_actor_ids -= self.dropped_actor_ids
         self.spawn_placement = {
-            "schema": "uniscenario.spawn-placement/v1",
+            "schema": "simforge.spawn-placement/v1",
             "actors": placements,
             "droppedActorIds": sorted(self.dropped_actor_ids),
             "nudgedActorIds": sorted(
@@ -1330,7 +1331,7 @@ class CarlaBackend:
                 self.sensor_pending.clear()
                 self.sensor_last_frame.clear()
         return {
-            "schema": "uniscenario.native-stability/v1",
+            "schema": "simforge.native-stability/v1",
             "thresholds": {
                 **STABILITY_THRESHOLDS,
                 "consecutiveTicks": STABILITY_CONSECUTIVE_TICKS,
@@ -1507,7 +1508,7 @@ class CarlaBackend:
                         requested_grade,
                     )
                     self.camera_grade_evidence[key] = {
-                        "schema": "uniscenario.camera-grade-evidence/v1",
+                        "schema": "simforge.camera-grade-evidence/v1",
                         "profile": "rrmaps-accepted-v1",
                         "mapName": loaded_map_name,
                         "attributes": dict(sorted(applied_grade.items())),
@@ -1708,7 +1709,7 @@ class CarlaBackend:
                 "checks": checks,
             }
         return {
-            "schema": "uniscenario.visual-quality-evidence/v1",
+            "schema": "simforge.visual-quality-evidence/v1",
             "verdict": "pass" if overall and cameras else "fail",
             "cameras": cameras,
         }
@@ -2228,9 +2229,9 @@ class CarlaBackend:
         server_version = getattr(self.client, "get_server_version", lambda: "unavailable")()
         check()
         managed = os.environ.get("SIMFORGE_MANAGED_EXECUTION") == "1"
-        configured_manifest_sha256 = os.environ.get("UNISCENARIOS_CARLA_IMAGE_MANIFEST_SHA256")
-        configured_blueprint = os.environ.get("UNISCENARIOS_CARLA_BLUEPRINT_ID")
-        configured_class = os.environ.get("UNISCENARIOS_CARLA_BLUEPRINT_CLASS")
+        configured_manifest_sha256 = os.environ.get("SIMFORGE_CARLA_IMAGE_MANIFEST_SHA256")
+        configured_blueprint = os.environ.get("SIMFORGE_CARLA_BLUEPRINT_ID")
+        configured_class = os.environ.get("SIMFORGE_CARLA_BLUEPRINT_CLASS")
         image_exact = (
             configured_manifest_sha256
             == CARLA_IMAGE_AMD64_MANIFEST_DIGEST.removeprefix("sha256:")
@@ -2240,7 +2241,7 @@ class CarlaBackend:
                 "managed CARLA execution is not running the pinned runtime image manifest"
             )
         return {
-            "schema": "uniscenario.carla-runtime-evidence/v1",
+            "schema": "simforge.carla-runtime-evidence/v1",
             "available": True,
             "executionMode": self.execution_mode,
             "physicsAuthority": self.execution_mode == "native-physics",

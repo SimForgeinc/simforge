@@ -7,15 +7,6 @@ import { mkdtempSync } from 'node:fs';
 
 import { PACKAGE_NAMES, STACK_PACKAGE_NAMES, verifyRepositoryNaming } from '../verify-repository-naming.mjs';
 
-const RETIRED_PACKAGE_NAMES = [
-  'ambient-traffic', 'anchor-matcher', 'browser-renderer', 'camera-rig',
-  'city-renderer', 'cli', 'editor-core', 'editor-ui', 'esmini-runner',
-  'examiner', 'map-intel', 'native-renderer', 'openscenario', 'playback',
-  'policy-eval', 'prop-catalog', 'render-runtime', 'rl-env',
-  'scenario-materializer', 'scenario-model', 'scene-state', 'sim-engine',
-  'trace-comparator', 'xodr-tools',
-];
-const LEGACY_ENGINE_PACKAGE = ['@simforge', 'engine'].join('/');
 
 
 function fixture() {
@@ -37,9 +28,6 @@ function fixture() {
   writeFileSync(join(root, 'config', 'simforge-oss-stack.json'), JSON.stringify({
     stackVersion: '0.1.0-rc.45',
     packages: STACK_PACKAGE_NAMES.map((name) => ({ name: `@simforge-oss/${name}`, version: '0.1.0-rc.45' })),
-    renameManifest: Object.fromEntries(
-      RETIRED_PACKAGE_NAMES.map((name) => [`@uniscenarios/${name}`, LEGACY_ENGINE_PACKAGE]),
-    ),
   }));
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'simforge', private: true }));
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
@@ -54,8 +42,8 @@ test('accepts the consolidated SimForge layout', () => {
 test('rejects retired package imports', () => {
   const item = fixture();
   try {
-    writeFileSync(join(item.root, 'packages', 'cli', 'legacy.ts'), "import x from '@" + "uniscenarios/cli';\n");
-    assert.throws(() => verifyRepositoryNaming(item.root), /imports the retired @uniscenarios scope/);
+    writeFileSync(join(item.root, 'packages', 'cli', 'legacy.ts'), "import x from '@uni" + "scenarios/cli';\n");
+    assert.throws(() => verifyRepositoryNaming(item.root), /imports the retired package scope/);
   } finally { item.cleanup(); }
 });
 

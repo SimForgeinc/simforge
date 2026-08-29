@@ -18,6 +18,7 @@ from typing import Any, Callable, Mapping
 
 from .transport import download, upload
 from .backend import RenderBackend, runtime_asset_bindings
+# historical name retained for stored-data compat
 from .compiler import (
     LIFECYCLE_ABSENT,
     ExecutionPlan,
@@ -116,7 +117,7 @@ def _attestation(
     worker_image = os.environ.get("SIMFORGE_WORKER_IMAGE_DIGEST", "unavailable")
     worker_revision = os.environ.get("SIMFORGE_WORKER_REVISION", "unavailable")
     return {
-        "schema": "uniscenario.worker-attestation/v1",
+        "schema": "simforge.worker-attestation/v1",
         "workerImageDigest": worker_image,
         "workerRevision": worker_revision,
         "carlaVersion": os.environ.get("SIMFORGE_CARLA_VERSION", "0.10.0"),
@@ -155,7 +156,7 @@ def _trace_to_path(plan: ExecutionPlan, readbacks: list[Mapping[str, Mapping[str
                 encoded.write(json.dumps({"index": frame.index, "t": frame.t, "actors": readback, "signals": signals, "collisions": collisions}, sort_keys=True, separators=(",", ":")).encode())
             encoded.write(b'],"planSha256":')
             encoded.write(json.dumps(plan.sha256).encode())
-            encoded.write(b',"schema":"uniscenario.render-trace/v1","signalStateSource":"backend-verified"}')
+            encoded.write(b',"schema":"simforge.render-trace/v1","signalStateSource":"backend-verified"}')
             abort()
     return destination
 
@@ -364,7 +365,7 @@ def _annotations_to_path(plan: ExecutionPlan, readbacks: list[Mapping[str, Mappi
             abort()
             frame, actors = plan.frames[plan_index], readbacks[plan_index]
             bounded.write(json.dumps({
-            "schema": "uniscenario.annotation-frame/v1",
+            "schema": "simforge.annotation-frame/v1",
             "index": output_index,
             "scheduledTimeS": scheduled_time,
             "simulationFrameIndex": frame.index,
@@ -534,7 +535,7 @@ def _manifest_to_path(
     carla_vehicle_fallbacks: tuple[Mapping[str, object], ...],
 ) -> Path:
     value = {
-        "schema": "uniscenario.render-manifest/v1",
+        "schema": "simforge.render-manifest/v1",
         "jobId": lease.job_id,
         "attempt": lease.attempt,
         "executionPackageId": lease.execution_package.id,
@@ -660,7 +661,7 @@ def _environment_evidence_is_accepted(environment: object, requested: object) ->
     if not isinstance(environment, Mapping):
         return False
     expected = {field: float(getattr(requested, field)) for field in _ENVIRONMENT_FIELDS}
-    if environment.get("schema") != "uniscenario.environment-evidence/v1":
+    if environment.get("schema") != "simforge.environment-evidence/v1":
         return False
     if not _environment_values_match(environment.get("requested"), expected):
         return False
@@ -723,7 +724,7 @@ def _parity_evidence(
         )
         if (
             not isinstance(map_evidence, Mapping)
-            or map_evidence.get("schema") != "uniscenario.carla-map-evidence/v1"
+            or map_evidence.get("schema") != "simforge.carla-map-evidence/v1"
             or map_evidence.get("available") is not True
             or map_evidence.get("source") != "cooked-custom-map"
             or map_evidence.get("identityMode") != "cooked-map-name"
@@ -941,7 +942,7 @@ def _parity_evidence(
         and artifacts_passed
     )
     return {
-        "schema": "uniscenario.parity-evidence/v1",
+        "schema": "simforge.parity-evidence/v1",
         "identity": {
             "revisionId": lease.execution_package.revision_id,
             "executionPackageId": lease.execution_package.id,
@@ -1085,7 +1086,7 @@ def _verify_xosc_source_input_digest(lease: Lease, xosc: bytes) -> None:
     values = [
         item.get("value")
         for item in root.findall("./FileHeader/Properties/Property")
-        if item.get("name") == "uniscenarios.provenance.inputHash"
+        if item.get("name") in {"simforge.provenance.inputHash", "uniscenarios.provenance.inputHash"}
     ]
     if values != [lease.execution_package.source_input_digest]:
         raise ContractError("OpenSCENARIO source input digest does not match the control package")
@@ -1364,7 +1365,7 @@ def execute_lease(
     with tempfile.TemporaryDirectory(prefix="scenario-render-") as directory:
         output_dir = Path(directory) / "frames"
         runtime_evidence: Mapping[str, object] = {
-            "schema": "uniscenario.carla-runtime-evidence/v1",
+            "schema": "simforge.carla-runtime-evidence/v1",
             "available": False,
             "executionMode": lease.render_spec.execution_mode,
             "physicsAuthority": lease.render_spec.execution_mode == "native-physics",
@@ -1675,7 +1676,7 @@ def execute_lease(
                 parity_body,
                 "application/json",
                 lease.artifact_uploads.get("parity-report"),
-                {"schema": "uniscenario.parity-evidence/v1"},
+                {"schema": "simforge.parity-evidence/v1"},
             ))
         if "manifest" in lease.render_spec.outputs:
             manifest_body = _manifest_to_path(

@@ -1,5 +1,5 @@
 # Included at the end of SUMO src/CMakeLists.txt by build.sh.
-add_executable(simforge-sumo-wasm "${UNISCENARIOS_SUMO_WASM_BRIDGE}")
+add_executable(simforge-sumo-wasm "${SIMFORGE_SUMO_WASM_BRIDGE}")
 target_link_libraries(simforge-sumo-wasm ${sumolibs} libsumostatic)
 target_link_options(simforge-sumo-wasm PRIVATE
     # SUMO objects are compiled MinSizeRel. Avoid a multi-minute whole-module

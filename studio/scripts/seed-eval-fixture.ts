@@ -7,7 +7,7 @@
  *      one left QUEUED (promotion must refuse) and one driven to SUCCEEDED
  *      (promotion must pass).
  *
- * Run with the same UNISCENARIOS_CLOUD_ROOT / SIMFORGE_RUNS_ROOT as the dev
+ * Run with the same SIMFORGE_CLOUD_ROOT / SIMFORGE_RUNS_ROOT as the dev
  * server:  pnpm exec tsx scripts/seed-eval-fixture.ts
  */
 import { homedir } from "node:os";

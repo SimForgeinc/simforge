@@ -28,7 +28,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-export const MANIFEST_SCHEMA = 'uniscenarios.render-determinism-manifest.v1';
+export const MANIFEST_SCHEMA = 'simforge-oss.render-determinism-manifest.v1';
 
 function argsOf(argv) {
   const values = new Map();

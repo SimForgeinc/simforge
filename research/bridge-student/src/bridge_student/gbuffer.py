@@ -2,7 +2,7 @@
 
 Renders per-frame conditioning maps (depth, semantic, instance, valid mask)
 directly from the W0 engine ground truth (``gt.jsonl``,
-schema ``uniscenarios.w0-frame-gt.v1``) using the exact camera conventions of
+schema ``simforge-oss.w0-frame-gt.v1``) using the exact camera conventions of
 the W0 audit projection (three.js PerspectiveCamera: eye/target in scene coords
 (x, up, zScene), vertical FOV, up=+Y; actor boxes centered at
 yScene + h/2 with yaw = headingRad about +Y and forward (cos yaw, -sin yaw)).

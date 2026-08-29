@@ -1,5 +1,5 @@
 {
-  "schema": "uniscenario.render-eight-camera-conformance-plan/v1",
+  "schema": "simforge.render-eight-camera-conformance-plan/v1",
   "scope": "Pronto port-E cameras only; evaluated separately from the five full 18-sensor paired runs",
   "pairCount": 5,
   "pixelEqualityRequired": false,

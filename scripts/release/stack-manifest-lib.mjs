@@ -4,32 +4,6 @@ import path from 'node:path';
 
 const REVISION_PATTERN = /^[0-9a-f]{40}$/u;
 
-const RETIRED_PACKAGE_NAMES = [
-  '@uniscenarios/ambient-traffic',
-  '@uniscenarios/anchor-matcher',
-  '@uniscenarios/browser-renderer',
-  '@uniscenarios/camera-rig',
-  '@uniscenarios/city-renderer',
-  '@uniscenarios/cli',
-  '@uniscenarios/editor-core',
-  '@uniscenarios/editor-ui',
-  '@uniscenarios/esmini-runner',
-  '@uniscenarios/examiner',
-  '@uniscenarios/map-intel',
-  '@uniscenarios/native-renderer',
-  '@uniscenarios/openscenario',
-  '@uniscenarios/playback',
-  '@uniscenarios/policy-eval',
-  '@uniscenarios/prop-catalog',
-  '@uniscenarios/render-runtime',
-  '@uniscenarios/rl-env',
-  '@uniscenarios/scenario-materializer',
-  '@uniscenarios/scenario-model',
-  '@uniscenarios/scene-state',
-  '@uniscenarios/sim-engine',
-  '@uniscenarios/trace-comparator',
-  '@uniscenarios/xodr-tools',
-];
 
 async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));
@@ -100,23 +74,6 @@ function assertCompiledPackage(packageJson) {
   }
 }
 
-function assertRenameManifest(config, packageNames) {
-  const entries = Object.entries(config.renameManifest ?? {});
-  const sources = entries.map(([source]) => source).sort();
-  if (JSON.stringify(sources) !== JSON.stringify(RETIRED_PACKAGE_NAMES)) {
-    throw new Error('renameManifest must map exactly the 24 retired @uniscenarios package names');
-  }
-  for (const [source, target] of entries) {
-    if (typeof target !== 'string') {
-      throw new Error(`renameManifest target for ${source} must be a package or package subpath`);
-    }
-    const legacyTargetPackage = target.split('/').slice(0, 2).join('/');
-    const currentTargetPackage = legacyTargetPackage.replace(/^@simforge(?=\/)/u, '@simforge-oss');
-    if (legacyTargetPackage === currentTargetPackage || !packageNames.has(currentTargetPackage)) {
-      throw new Error(`historical renameManifest target ${target} has no package in the 13-package stack`);
-    }
-  }
-}
 
 export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   if (!repoRoot) throw new Error('repoRoot is required');
@@ -131,14 +88,13 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
     throw new Error(`source revision must be a full lowercase git SHA: ${revision}`);
   }
 
-  if (!Array.isArray(config.packages) || config.packages.length !== 13) {
-    throw new Error('stack config must contain exactly 13 npm packages');
+  if (!Array.isArray(config.packages) || config.packages.length !== 15) {
+    throw new Error('stack config must contain exactly 15 npm packages');
   }
   const configuredNames = new Set(config.packages.map((entry) => entry.name));
-  if (configuredNames.size !== 13) {
+  if (configuredNames.size !== 15) {
     throw new Error('stack config package names must be unique');
   }
-  assertRenameManifest(config, configuredNames);
 
   const packages = [];
   const versions = new Map();
@@ -195,7 +151,6 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
     contracts: config.contracts,
     packages,
     pythonPackages: await pythonPackages(repoRoot, config),
-    renameManifest: config.renameManifest,
   };
 }
 

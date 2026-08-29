@@ -10,7 +10,7 @@ goldens/<gpuFingerprint>/<scene>.json
   Current entry: `75b333b1506af34f` = NVIDIA GeForce RTX 5080, driver 595.84,
   vbios 98.03.6C.00.3E, PCI 00000000:02:00.0.
 - One file per scene; full evidence manifest (schema
-  `uniscenarios.render-determinism-manifest.v1`, extensions in
+  `simforge-oss.render-determinism-manifest.v1`, extensions in
   `docs/native-golden-ci.md`). Gates read `passHashes` + `timings.avgFrameMs`.
 
 ## Keying rules

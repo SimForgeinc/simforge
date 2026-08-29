@@ -63,7 +63,7 @@ def main(argv=None):
                    help="override training-cost model")
     args = p.parse_args(argv)
 
-    inv = {"schema": "uniscenarios.bridge-pair-inventory.v1", "sources": {}}
+    inv = {"schema": "simforge-oss.bridge-pair-inventory.v1", "sources": {}}
     total_render_frames = 0
     for r in args.clips_roots:
         clips = count_clips(r)

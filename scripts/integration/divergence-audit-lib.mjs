@@ -81,16 +81,17 @@ function violation(code, message, details = {}) {
 
 async function auditPackages({ simforgeRoot, simcloudRoot, config, sourceRevision, violations }) {
   const stack = await readJson(path.join(simforgeRoot, config.sourceStackConfig));
-  if (stack.schema !== 'uniscenarios.stack-config/v1') {
+  if (stack.schema !== 'simforge-oss.stack-config/v1') {
     throw new Error(`Unsupported stack config schema: ${String(stack.schema)}`);
   }
   const vendorLock = await readJson(path.join(simcloudRoot, config.vendorLock));
-  if (vendorLock.schema !== 'simcloud.uniscenarios-vendor/v1') {
+  if (vendorLock.schema !== 'simcloud.simforge-oss-vendor/v1') {
     throw new Error(`Unsupported SimCloud vendor lock schema: ${String(vendorLock.schema)}`);
   }
   const consumerManifest = await readJson(path.join(simcloudRoot, config.consumerManifest));
   const consumerLock = await readJson(path.join(simcloudRoot, config.consumerLock));
   const dependencies = allDependencies(consumerManifest);
+  const vendorDirectory = path.posix.dirname(config.vendorLock);
   const lockedByName = new Map(vendorLock.packages.map((entry) => [entry.name, entry]));
   const expectedNames = new Set();
   const packages = [];
@@ -120,10 +121,10 @@ async function auditPackages({ simforgeRoot, simcloudRoot, config, sourceRevisio
     }
     if (locked.version !== packageJson.version || locked.version !== vendorLock.stackVersion) packageViolations.push('version');
     if (locked.role !== packageEntry.role) packageViolations.push('role');
-    const expectedReference = `file:vendor/uniscenarios/${locked.tarball}`;
+    const expectedReference = `file:${vendorDirectory}/${locked.tarball}`;
     if (dependencies[name] !== expectedReference) packageViolations.push('consumer-reference');
 
-    const tarballPath = path.join(simcloudRoot, 'vendor/uniscenarios', locked.tarball);
+    const tarballPath = path.join(simcloudRoot, vendorDirectory, locked.tarball);
     if (!(await exists(tarballPath))) {
       packageViolations.push('missing-tarball');
     } else {
@@ -131,7 +132,7 @@ async function auditPackages({ simforgeRoot, simcloudRoot, config, sourceRevisio
       if (digest('sha256', bytes) !== locked.sha256) packageViolations.push('sha256');
       const installedLock = consumerLock.packages?.[`node_modules/${name}`];
       const expectedIntegrity = `sha512-${digest('sha512', bytes, 'base64')}`;
-      if (!installedLock?.resolved?.endsWith(`vendor/uniscenarios/${locked.tarball}`)) packageViolations.push('lock-resolution');
+      if (!installedLock?.resolved?.endsWith(`${vendorDirectory}/${locked.tarball}`)) packageViolations.push('lock-resolution');
       if (installedLock?.integrity !== expectedIntegrity) packageViolations.push('lock-integrity');
     }
     if (packageViolations.length > 0) {
@@ -174,7 +175,7 @@ async function auditPackages({ simforgeRoot, simcloudRoot, config, sourceRevisio
     }
     if (locked.version !== source.version || locked.version !== expectedPythonVersion) packageViolations.push('version');
     if (locked.role !== source.role || locked.registry !== source.registry) packageViolations.push('publication');
-    const wheelPath = path.join(simcloudRoot, 'vendor/uniscenarios', locked.wheel);
+    const wheelPath = path.join(simcloudRoot, vendorDirectory, locked.wheel);
     if (!(await exists(wheelPath))) {
       packageViolations.push('missing-wheel');
     } else if (digest('sha256', await readFile(wheelPath)) !== locked.sha256) {
@@ -260,7 +261,7 @@ async function auditImports({ simcloudRoot, config, violations }) {
 
 export async function auditDivergence({ simforgeRoot, simcloudRoot, includeGitRevisions = true }) {
   const config = await readJson(path.join(simforgeRoot, 'config/simcloud-integration.json'));
-  if (config.schema !== 'uniscenarios.simcloud-integration/v2') {
+  if (config.schema !== 'simforge-oss.simcloud-integration/v2') {
     throw new Error(`Unsupported integration config schema: ${String(config.schema)}`);
   }
   if (!(await stat(simcloudRoot)).isDirectory()) throw new Error('simcloudRoot must be a directory');
@@ -278,7 +279,7 @@ export async function auditDivergence({ simforgeRoot, simcloudRoot, includeGitRe
   const forbiddenImports = await auditImports({ simcloudRoot, config, violations });
 
   return {
-    schema: 'uniscenarios.simcloud-anti-drift/v2',
+    schema: 'simforge-oss.simcloud-anti-drift/v2',
     status: violations.length === 0 ? 'pass' : 'fail',
     repositories: {
       simforge: {

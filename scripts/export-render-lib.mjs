@@ -17,7 +17,7 @@ export const REQUIRED_INCIDENT_PHASES = [
   'aftermath',
 ];
 
-export const SCENARIO_EVIDENCE_SCHEMA = 'uniscenarios.scenario-visual-evidence.v1';
+export const SCENARIO_EVIDENCE_SCHEMA = 'simforge-oss.scenario-visual-evidence.v1';
 
 const KIND_DEFAULT_MODELS = {
   vehicle: 'vehicle.sedan',
@@ -618,7 +618,7 @@ export function buildIncidentRenderPreflight(trace, evidence) {
     },
   ];
   return {
-    schema: 'uniscenarios.scenario-render-preflight.v1',
+    schema: 'simforge-oss.scenario-render-preflight.v1',
     verdict: gates.every((gate) => gate.status === 'pass') ? 'pass' : 'reject',
     gates,
     selectedFrames,

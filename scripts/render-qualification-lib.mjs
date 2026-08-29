@@ -6,12 +6,12 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { simforgeEnv } from './compat-env.mjs';
 
-export const INVENTORY_SCHEMA = 'uniscenario.render-qualification-inventory/v1';
-export const MANIFEST_SCHEMA = 'uniscenario.render-qualification-manifest/v1';
-export const REQUEST_SET_SCHEMA = 'uniscenario.render-qualification-request-set/v1';
-export const BENCHMARK_SCHEMA = 'uniscenario.render-benchmark-report/v1';
-export const COMPARISON_SCHEMA = 'uniscenario.render-qualification-comparison/v1';
-export const MATRIX_SCHEMA = 'uniscenario.render-eight-camera-conformance/v1';
+export const INVENTORY_SCHEMA = 'simforge.render-qualification-inventory/v1';
+export const MANIFEST_SCHEMA = 'simforge.render-qualification-manifest/v1';
+export const REQUEST_SET_SCHEMA = 'simforge.render-qualification-request-set/v1';
+export const BENCHMARK_SCHEMA = 'simforge.render-benchmark-report/v1';
+export const COMPARISON_SCHEMA = 'simforge.render-qualification-comparison/v1';
+export const MATRIX_SCHEMA = 'simforge.render-eight-camera-conformance/v1';
 const DIGEST = /^[a-f0-9]{64}$/;
 const IMAGE_DIGEST = /^(?:sha256:)?[a-f0-9]{64}$/;
 const PROGRAM_PATH = resolve(dirname(fileURLToPath(import.meta.url)), '../qualification/render-qualification-program.v1.json');
@@ -49,7 +49,7 @@ export function writeJson(path, value) {
 
 export function program() {
   const value = readJson(PROGRAM_PATH);
-  if (value.schema !== 'uniscenario.render-qualification-program/v1') throw new Error('qualification program schema mismatch');
+  if (value.schema !== 'simforge.render-qualification-program/v1') throw new Error('qualification program schema mismatch');
   if (value.prontoRig?.sensors?.length !== 18) throw new Error('Pronto port-E rig must contain exactly 18 sensors');
   if (value.prontoRig.sensors.filter((sensor) => sensor.type === 'dash_camera').length !== 8
     || value.prontoRig.sensors.filter((sensor) => sensor.type === 'lidar').length !== 6
@@ -548,7 +548,7 @@ export function prepareQualificationRequests(manifest, { output } = {}) {
       },
       sensorHosts: makeIntentSensorHosts(actorId, p.qualificationHost, sources),
       renderSpec: {
-        schema: 'uniscenario.render-spec/v3',
+        schema: 'simforge.render-spec/v3',
         sources,
         clip: { startSeconds: 0, endSeconds: scenario.durationSeconds },
         video,
@@ -565,7 +565,7 @@ export function prepareQualificationRequests(manifest, { output } = {}) {
     };
     const intentSha256 = sha256(intent);
     const derivedCopyRequest = {
-      schema: 'uniscenario.qualification-derived-copy-request/v1',
+      schema: 'simforge.qualification-derived-copy-request/v1',
       lineage,
       titleSuffix: ' — render qualification',
       expectedSourceContentSha256: scenario.revision.contentSha256,
@@ -585,7 +585,7 @@ export function prepareQualificationRequests(manifest, { output } = {}) {
       sourceMutationAllowed: false,
     };
     const job = (backend) => ({
-      schema: 'uniscenario.qualification-render-request/v1',
+      schema: 'simforge.qualification-render-request/v1',
       backend,
       ...(backend === 'carla' ? { executionMode: 'native-controls-no-teleport-repair' } : {}),
       workerControlSchema: p.render.workerControlSchema,
@@ -641,7 +641,7 @@ export function materializeRunBundle(requestSet, outputDirectory) {
     }
   }
   const planBase = {
-    schema: 'uniscenario.render-qualification-local-run-plan/v1',
+    schema: 'simforge.render-qualification-local-run-plan/v1',
     requestSetSha256: requestSet.requestSetSha256,
     liveSubmissionPerformed: false,
     executionPolicy: { order: 'manifest-order', gpuConcurrency: 1, requiredGpuLock: '/tmp/scenario-rtx5080-render.lock' },
@@ -665,7 +665,7 @@ export function createBenchmarkSpec(requestSet, { pairId, engine, imageDigest, s
   writeJson(intentPath, pair[engine].intent);
   const resultDirectory = resolve(root, 'benchmark-results', pairId.replace(/[^A-Za-z0-9_.-]/g, '_'), engine);
   const spec = {
-    schema: 'uniscenario.local-render-benchmark/v1',
+    schema: 'simforge.local-render-benchmark/v1',
     id: `${pairId}-${engine}`,
     sourceRevision,
     imageDigest,
@@ -682,7 +682,7 @@ export function createBenchmarkSpec(requestSet, { pairId, engine, imageDigest, s
 
 
 export function acquireGpuLock(path = '/tmp/scenario-rtx5080-render.lock') {
-  const owner = { schema: 'uniscenario.local-gpu-lock/v1', pid: process.pid, hostname: hostname(), acquiredAt: new Date().toISOString(), gpuClass: 'RTX 5080' };
+  const owner = { schema: 'simforge.local-gpu-lock/v1', pid: process.pid, hostname: hostname(), acquiredAt: new Date().toISOString(), gpuClass: 'RTX 5080' };
   try {
     const fd = openSync(path, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600);
     writeFileSync(fd, canonicalJson(owner));
@@ -815,7 +815,7 @@ function median(values) {
 }
 
 export async function benchmark5080(spec, { output } = {}) {
-  if (spec.schema !== 'uniscenario.local-render-benchmark/v1') throw new Error('benchmark spec schema mismatch');
+  if (spec.schema !== 'simforge.local-render-benchmark/v1') throw new Error('benchmark spec schema mismatch');
   if (!Array.isArray(spec.command) || spec.command.length === 0) throw new Error('benchmark command is required');
   if (!IMAGE_DIGEST.test(spec.imageDigest ?? '')) throw new Error('benchmark imageDigest must be a sha256 digest');
   if (!spec.sourceRevision) throw new Error('benchmark sourceRevision is required');

@@ -72,7 +72,7 @@ denominator for every map.
 ```bash
 # Reconcile only. Missing instance/trace/result sets remain zero-credit missing-inputs.
 pnpm render:batch -- \
-  --catalog catalog/uniscenarios-five-map-v2.catalog.json \
+  --catalog catalog/simforge-oss-five-map-v2.catalog.json \
   --ledger artifacts/qa/scenario-render-review-batch.json \
   --report artifacts/qa/scenario-render-review-batch-report.json
 

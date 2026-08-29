@@ -24,7 +24,7 @@
 
 import { z } from 'zod';
 
-export const CLAIMS_SCHEMA_ID = 'https://uniscenarios.dev/schemas/claims.v1.json';
+export const CLAIMS_SCHEMA_ID = 'https://simforge-oss.dev/schemas/claims.v1.json';
 export const CLAIMS_SCHEMA_VERSION = 1;
 
 /* ------------------------------------------------------------------ shared */

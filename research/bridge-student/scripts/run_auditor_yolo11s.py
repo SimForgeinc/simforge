@@ -50,7 +50,7 @@ def main():
                   r["reasons"], flush=True)
         n = len(res)
         report = {
-            "schema": "uniscenarios.bridge-auditor.v1",
+            "schema": "simforge-oss.bridge-auditor.v1",
             "frozen_detector": {
                 "name": det["detector"],
                 "weights_sha256": det.get("weights_sha256"),

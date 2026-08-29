@@ -427,7 +427,7 @@ try {
   const qualityPreset = args.get('quality') ?? 'balanced';
   await context.addInitScript((preset) => {
     try {
-      const key = 'uniscenarios.studio.render-quality.v1';
+      const key = 'simforge-oss.studio.render-quality.v1';
       if (!window.localStorage.getItem(key)) {
         window.localStorage.setItem(key, JSON.stringify({ preset }));
       }
@@ -544,7 +544,7 @@ try {
       };
     }
     gtRecords.push({
-      schema: 'uniscenarios.w0-frame-gt.v1',
+      schema: 'simforge-oss.w0-frame-gt.v1',
       scenarioId: instanceDoc.manifest.instanceId,
       mapId: header.mapId,
       frame: frameNo,
@@ -600,7 +600,7 @@ try {
     : { unavailable: true, reason: ffmpeg.stderr || 'ffmpeg failed' };
 
   const manifest = {
-    schema: 'uniscenarios.w0-clip-manifest.v1',
+    schema: 'simforge-oss.w0-clip-manifest.v1',
     generatedAt: new Date().toISOString(),
     scenarioId: instanceDoc.manifest.instanceId,
     mapId: header.mapId,

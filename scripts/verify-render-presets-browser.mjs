@@ -45,7 +45,7 @@ try {
           return stats && stats.loading + stats.queued + stats.uploading === 0 && stats.streamingError === null;
         }, null, { timeout: 45_000 });
         const sample = await page.evaluate(() => ({
-          preference: JSON.parse(localStorage.getItem('uniscenarios.studio.render-quality.v1') ?? 'null'),
+          preference: JSON.parse(localStorage.getItem('simforge-oss.studio.render-quality.v1') ?? 'null'),
           stats: window.__viewer?.getStats(),
         }));
         if (sample.preference?.preset !== preset) errors.push(`selected ${preset}, persisted ${sample.preference?.preset}`);

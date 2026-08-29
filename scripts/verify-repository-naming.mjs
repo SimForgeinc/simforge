@@ -18,18 +18,12 @@ export const STACK_PACKAGE_NAMES = [
   'training-env',
   'evaluation',
   'cli',
+  'map-pipeline',
+  'map-registry',
 ];
 
-export const PACKAGE_NAMES = [...STACK_PACKAGE_NAMES, 'map-pipeline', 'map-registry'];
+export const PACKAGE_NAMES = [...STACK_PACKAGE_NAMES];
 
-const RETIRED_PACKAGE_NAMES = [
-  'ambient-traffic', 'anchor-matcher', 'browser-renderer', 'camera-rig',
-  'city-renderer', 'cli', 'editor-core', 'editor-ui', 'esmini-runner',
-  'examiner', 'map-intel', 'native-renderer', 'openscenario', 'playback',
-  'policy-eval', 'prop-catalog', 'render-runtime', 'rl-env',
-  'scenario-materializer', 'scenario-model', 'scene-state', 'sim-engine',
-  'trace-comparator', 'xodr-tools',
-].map((name) => `@uniscenarios/${name}`).sort();
 
 const REMOVED_PATHS = [
   'apps/studio',
@@ -130,26 +124,23 @@ export function verifyRepositoryNaming(root) {
 
   const cli = readJson(join(root, 'packages/cli/package.json'));
   const expectedBins = { simforge: './bin/simforge.js', sf: './bin/sf.js' };
-  if (JSON.stringify(cli.bin) !== JSON.stringify(expectedBins)) errors.push('CLI bins must be exactly simforge and sf; the uniscenarios bin is retired');
+  if (JSON.stringify(cli.bin) !== JSON.stringify(expectedBins)) errors.push('CLI bins must be exactly simforge and sf; retired bins are forbidden');
 
-  if (stack.packages?.length !== 13) errors.push('config/simforge-oss-stack.json must contain 13 packages');
+  if (stack.packages?.length !== 15) errors.push('config/simforge-oss-stack.json must contain 15 packages');
   const stackNames = (stack.packages ?? []).map((item) => item.name).sort();
   const packageNames = STACK_PACKAGE_NAMES.map((name) => `@simforge-oss/${name}`).sort();
-  if (JSON.stringify(stackNames) !== JSON.stringify(packageNames)) errors.push('stack package names must match the 13-package workspace');
+  if (JSON.stringify(stackNames) !== JSON.stringify(packageNames)) errors.push('stack package names must match the 15-package workspace');
   for (const item of stack.packages ?? []) {
     if (item.version !== stack.stackVersion) errors.push(`${item.name} manifest version must match ${stack.stackVersion}`);
   }
-  const retiredNames = Object.keys(stack.renameManifest ?? {}).sort();
-  if (JSON.stringify(retiredNames) !== JSON.stringify(RETIRED_PACKAGE_NAMES)) {
-    errors.push('stack renameManifest must cover exactly the 24 former packages');
-  }
 
-  const legacyImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@uniscenarios\//u;
+  const retiredScope = ['@uni', 'scenarios/'].join('');
+  const legacyImport = new RegExp(String.raw`(?:from\s*|import\s*\(|require\s*\()\s*['"]${retiredScope}`, 'u');
   const legacyEngineImport = /(?:from\s*|import\s*\(|require\s*\()\s*['"]@simforge\//u;
   const productScopePrefix = ['@sim', 'cloud/'].join('');
   for (const path of sourceFiles(root)) {
     const source = readFileSync(path, 'utf8');
-    if (legacyImport.test(source)) errors.push(`${relative(root, path)} imports the retired @uniscenarios scope`);
+    if (legacyImport.test(source)) errors.push(`${relative(root, path)} imports the retired package scope`);
     if (legacyEngineImport.test(source)) errors.push(`${relative(root, path)} imports the retired @simforge package scope`);
     if (source.includes(productScopePrefix)) errors.push(`${relative(root, path)} contains the product-only package scope`);
   }

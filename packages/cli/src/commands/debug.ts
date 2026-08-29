@@ -71,6 +71,7 @@ export interface DebugPathSample {
   readonly physics?: Record<string, number>;
 }
 
+// historical name retained for stored-data compat
 interface DebugReport {
   readonly schema: 'uniscenarios.scenario-debug.v1';
   readonly input: {

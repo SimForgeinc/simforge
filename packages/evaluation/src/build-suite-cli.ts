@@ -61,13 +61,13 @@ function parseArgs(argv: readonly string[]): Flags {
 /**
  * Episode banks live with the rl stack, which in a split-worktree setup may
  * not be this checkout. Each pattern resolves against the current directory
- * first, then against the rl checkout named by UNISCENARIOS_RL_ENV.
+ * first, then against the rl checkout named by SIMFORGE_RL_ENV.
  */
 function bankSources(pattern: string): string[] {
   const out: string[] = [];
-  const rlRepo = process.env['UNISCENARIOS_RL_ENV'] === undefined
+  const rlRepo = process.env['SIMFORGE_RL_ENV'] === undefined
     ? null
-    : path.resolve(process.env['UNISCENARIOS_RL_ENV'], '..', '..');
+    : path.resolve(process.env['SIMFORGE_RL_ENV'], '..', '..');
   for (const pat of pattern.split(',')) {
     const trimmed = pat.trim();
     if (!trimmed.includes('*')) {
@@ -89,9 +89,9 @@ async function main(): Promise<void> {
   const repoRoot = process.cwd();
   const catalogDoc = JSON.parse(await readFile(path.resolve(repoRoot, flags.catalog), 'utf8'));
   const slots: CatalogSlotView[] = slotsFromCatalog(catalogDoc);
-  const rlRepo = process.env['UNISCENARIOS_RL_ENV'] === undefined
+  const rlRepo = process.env['SIMFORGE_RL_ENV'] === undefined
     ? null
-    : path.resolve(process.env['UNISCENARIOS_RL_ENV'], '..', '..');
+    : path.resolve(process.env['SIMFORGE_RL_ENV'], '..', '..');
   const bankPaths = bankSources(flags.trainingGlob).map((s) => path.resolve(repoRoot, s));
   const banks = await loadTrainingBanks(bankPaths);
   // Provenance labels stay portable: relative to the rl checkout when the

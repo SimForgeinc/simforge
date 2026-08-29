@@ -52,7 +52,7 @@ function deriveVisibility(scenario: CorpusScenario): Claim[] {
       if (start === null || state === null) return;
       if (endTS - start < 1 / scenario.decisionHz) return;
       out.push({
-        schema: 'https://uniscenarios.dev/schemas/claims.v1.json',
+        schema: 'https://simforge-oss.dev/schemas/claims.v1.json',
         id: nextId('vis'),
         type: 'visibility',
         actorIds: [targetId],
@@ -132,7 +132,7 @@ function deriveCausalChains(scenario: CorpusScenario): Claim[] {
     if (effect.tS <= cause.tS + 1e-9) continue;
     const gap = effect.tS - cause.tS;
     out.push({
-      schema: 'https://uniscenarios.dev/schemas/claims.v1.json',
+      schema: 'https://simforge-oss.dev/schemas/claims.v1.json',
       id: nextId('trg'),
       type: 'causal-trigger',
       actorIds: [...cause.actors],
@@ -158,7 +158,7 @@ function deriveIntents(scenario: CorpusScenario): Claim[] {
   for (const it of scenario.interactions) {
     if (!executedIds.has(it.id)) continue;
     out.push({
-      schema: 'https://uniscenarios.dev/schemas/claims.v1.json',
+      schema: 'https://simforge-oss.dev/schemas/claims.v1.json',
       id: nextId('int'),
       type: 'intent',
       actorIds: [it.actorId],
@@ -197,7 +197,7 @@ function deriveSpatial(scenario: CorpusScenario): Claim[] {
       if (start === null || current === null) return;
       if (endTS - start < 1 / scenario.decisionHz) return;
       out.push({
-        schema: 'https://uniscenarios.dev/schemas/claims.v1.json',
+        schema: 'https://simforge-oss.dev/schemas/claims.v1.json',
         id: nextId('spa'),
         type: 'spatial',
         actorIds: [actorId],

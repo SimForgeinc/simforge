@@ -109,7 +109,7 @@ export async function renderRun(options: RenderRunOptions): Promise<number> {
 
   try {
     await reportProgress({
-      schema: 'uniscenario.render-progress/v1',
+      schema: RenderProgressRecordSchema.options[0].shape.schema.value,
       event: 'job.started',
       jobId: intent.intentId,
       attempt: 1,

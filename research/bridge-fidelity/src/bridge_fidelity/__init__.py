@@ -2,5 +2,5 @@
 
 __version__ = "0.1.0"
 
-SCHEMA_SCORECARD = "uniscenarios.bridge-fidelity-scorecard.v1"
-SCHEMA_CORPUS_MANIFEST = "uniscenarios.bridge-fidelity-corpus-manifest.v1"
+SCHEMA_SCORECARD = "simforge-oss.bridge-fidelity-scorecard.v1"
+SCHEMA_CORPUS_MANIFEST = "simforge-oss.bridge-fidelity-corpus-manifest.v1"

@@ -19,7 +19,7 @@ async function main(argv: readonly string[]): Promise<void> {
   const tracePath = resolve(args.trace ?? join(dirname(instancePath), "trace.json.gz"));
   const devAssets = resolve(args.devAssets ?? process.env.SCEN_DEV_ASSETS ?? "/home/path/simforge-assets/map-bundles");
   const output = resolve(args.output ?? "/tmp/simforge-cloud-worker-harness");
-  process.env.UNISCENARIOS_BROWSER_ENGINE_MODULE ??= pathToFileURL(
+  process.env.SIMFORGE_BROWSER_ENGINE_MODULE ??= pathToFileURL(
     resolve(REPOSITORY_ROOT, "packages/render/dist/index.js"),
   ).href;
   await rm(output, { recursive: true, force: true });

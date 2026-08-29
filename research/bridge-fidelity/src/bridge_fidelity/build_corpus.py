@@ -19,7 +19,7 @@ Strata (one per item, priority order):
   intersection traffic-light presence        (signalized-intersection proxy)
   baseline     clear daytime driving
 
-Output manifest schema: uniscenarios.bridge-fidelity-corpus-manifest.v1.
+Output manifest schema: simforge-oss.bridge-fidelity-corpus-manifest.v1.
 Raw images live OUTSIDE version control (see README); the manifest carries a
 sha256 per item so the corpus is verifiable/reconstructable.
 """
@@ -36,7 +36,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-MANIFEST_SCHEMA = "uniscenarios.bridge-fidelity-corpus-manifest.v1"
+MANIFEST_SCHEMA = "simforge-oss.bridge-fidelity-corpus-manifest.v1"
 
 # Priority order; first match wins. Night/weather first because they are the
 # rarest conditions and the W0 novel-content classes map onto them directly.

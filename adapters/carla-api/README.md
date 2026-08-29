@@ -26,12 +26,12 @@ uv venv && uv pip install -e '.[dev]' pillow   # pillow only to decode frames
 
 | Env var | Meaning |
 |---|---|
-| `UNISCENARIO_EPISODES` | episode spec JSON path (`instances:` form A). Required. |
-| `UNISCENARIO_DEV_ASSETS` | dev-assets root holding `<map>/browser/topology-index.json.gz` |
-| `UNISCENARIO_STUDIO_URL` | Studio viewer URL for frame rendering (default `http://localhost:5199/`) |
-| `UNISCENARIO_FRAMES` | `off` disables camera frames (sensors attach but never fire) |
-| `UNISCENARIO_FRAME_CACHE` | cache dir for rendered clips (default `/tmp/simforge-oss-carla-api-frames`) |
-| `UNISCENARIO_ENV_SERVER` | override the env-server launch command |
+| `SIMFORGE_EPISODES` | episode spec JSON path (`instances:` form A). Required. |
+| `SIMFORGE_DEV_ASSETS` | dev-assets root holding `<map>/browser/topology-index.json.gz` |
+| `SIMFORGE_STUDIO_URL` | Studio viewer URL for frame rendering (default `http://localhost:5199/`) |
+| `SIMFORGE_FRAMES` | `off` disables camera frames (sensors attach but never fire) |
+| `SIMFORGE_FRAME_CACHE` | cache dir for rendered clips (default `/tmp/simforge-oss-carla-api-frames`) |
+| `SIMFORGE_ENV_SERVER` | override the env-server launch command |
 
 ## Example
 

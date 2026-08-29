@@ -34,7 +34,7 @@ const DESCRIPTION =
 
 function validClaimSet(): ClaimSet {
   return {
-    schema: 'https://uniscenarios.dev/schemas/claims.v1.json',
+    schema: 'https://simforge-oss.dev/schemas/claims.v1.json',
     scenarioId: SCENARIO.id,
     claims: [
       {
@@ -71,7 +71,7 @@ describe('extraction harness', () => {
   });
 
   it('fails loudly when every attempt violates the schema', async () => {
-    const bad = '{"schema":"uniscenarios.claims.v1","scenarioId":"s","claims":[{"id":"x"}]}';
+    const bad = '{"schema":"simforge-oss.claims.v1","scenarioId":"s","claims":[{"id":"x"}]}';
     await expect(
       extractClaims(scripted([bad]), DESCRIPTION, { scenarioContext: CONTEXT, maxRepairs: 1 }),
     ).rejects.toBeInstanceOf(ExtractionError);

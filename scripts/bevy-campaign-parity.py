@@ -331,7 +331,7 @@ def prepare(args) -> None:
                "vegGlbs": veg_glbs, "vegSidecars": veg_sidecars,
                "vehicleModels": str((repo / "catalog/vehicles-carla").resolve()),
                "rigProgram": str((repo / "qualification/render-qualification-program.v1.json").resolve()),
-               "xodr": str((Path("/home/path/local-uniscenarios/maps") / map_id / "xodr.xodr").resolve()),
+               "xodr": str((Path("/home/path/simforge-assets/maps") / map_id / "xodr.xodr").resolve()),
                "jobDir": str(job_dir.resolve())}
         dump(job_dir / "job.json", job)
     shards = [[] for _ in HOSTS]

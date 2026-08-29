@@ -17,7 +17,7 @@ const results = await Promise.all(entries.map((file) => auditXml14Instance(file,
 const counts = summarizeAuditResults(results);
 const expectationMismatches = auditExpectationMismatches(results);
 const report = {
-  schema: 'uniscenarios.openscenario-1.4-suite-audit/v2',
+  schema: 'simforge-oss.openscenario-1.4-suite-audit/v2',
   suite: 'examples/edge-cases/*/scenario.instance.json',
   topologySource: 'production-dev-assets',
   supportBaseline: 'xml14-curated-suite/v2',

@@ -9,9 +9,9 @@
  * does with `createRequire`.
  *
  * Resolution order for the rl-env root:
- *   1. `UNISCENARIOS_RL_ENV` environment variable;
+ *   1. `SIMFORGE_RL_ENV` environment variable;
  *   2. `<repoRoot>/packages/training-env` (normal monorepo layout);
- *   3. `$UNISCENARIOS_TRAINING_GRADE/packages/training-env` when that variable
+ *   3. `$SIMFORGE_TRAINING_GRADE/packages/training-env` when that variable
  *      names the training-grade checkout that carries the built rl stack.
  */
 
@@ -56,16 +56,16 @@ export function resolveRlRuntime(): Promise<RlRuntime> {
   if (cached) return cached;
   cached = (async (): Promise<RlRuntime> => {
     const roots = [
-      process.env['UNISCENARIOS_RL_ENV'],
+      process.env['SIMFORGE_RL_ENV'],
       path.resolve(HERE, '..', '..', '..', 'packages', 'rl-env'),
-      process.env['UNISCENARIOS_TRAINING_GRADE'] === undefined
+      process.env['SIMFORGE_TRAINING_GRADE'] === undefined
         ? undefined
-        : path.join(process.env['UNISCENARIOS_TRAINING_GRADE'], 'packages', 'rl-env'),
+        : path.join(process.env['SIMFORGE_TRAINING_GRADE'], 'packages', 'rl-env'),
     ].filter((r): r is string => r !== undefined && existsSync(path.join(r, 'dist', 'index.js')));
     const rlEnvRoot = roots[0];
     if (rlEnvRoot === undefined) {
       throw new Error(
-        'no @simforge-oss/training-env dist found; set UNISCENARIOS_RL_ENV to a checkout with packages/training-env/dist',
+        'no @simforge-oss/training-env dist found; set SIMFORGE_RL_ENV to a checkout with packages/training-env/dist',
       );
     }
     const req = createRequire(path.join(rlEnvRoot, 'package.json'));

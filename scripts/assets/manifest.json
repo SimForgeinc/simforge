@@ -221,7 +221,7 @@
         "sumo.wasm",
         "runtime-manifest.json"
       ],
-      "note": "Headless SUMO wasm runtime (schema uniscenarios.sumo-runtime.v1, SUMO 1.27.1) formerly at dev-assets/sumo-runtime; the old symlink target is deleted. Recovery: platform S3 uniscenario artifact buckets or rebuild per packages/cli README. Per-file sha256 from runtime-manifest.json once re-fetched."
+      "note": "Headless SUMO wasm runtime (schema simforge-oss.sumo-runtime.v1, SUMO 1.27.1) formerly at dev-assets/sumo-runtime; the old symlink target is deleted. Recovery: platform S3 SimForge artifact buckets or rebuild per packages/cli README. Per-file sha256 from runtime-manifest.json once re-fetched."
     }
   ]
 }

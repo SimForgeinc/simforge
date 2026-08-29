@@ -184,7 +184,7 @@ def main(argv=None):
     cfg = Cfg()
     suffix = f"trans{args.set_tag}_"
     report = {
-        "schema": "uniscenarios.bridge-auditor.v1",
+        "schema": "simforge-oss.bridge-auditor.v1",
         "frozen_detector": {},
         "thresholds": DEFAULTS,
         "clips": {},

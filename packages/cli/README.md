@@ -94,8 +94,8 @@ node packages/cli/bin/simforge.js debug scenario.json \
   --position-tolerance-m 0.001 --speed-tolerance-mps 0.001
 ```
 
-Without `--out`, stdout is the complete `uniscenarios.scenario-debug.v1`
-report. With `--out`, stdout is a concise JSON summary and the directory
+Without `--out`, stdout is the complete stored scenario-debug/v1 wire report.
+With `--out`, stdout is a concise JSON summary and the directory
 contains:
 
 - `report.json` — complete paths, actions, diagnostics, metrics and acceptance;
@@ -345,7 +345,7 @@ wrapper first:
 
 ```bash
 node packages/cli/bin/simforge.js catalog batch \
-  catalog/uniscenarios-five-map-v2.catalog.json \
+  catalog/simforge-oss-five-map-v2.catalog.json \
   --ledger catalog/catalog-execution-ledger.json \
   --attempts 3 --concurrency 4 --filter all --pretty
 ```
