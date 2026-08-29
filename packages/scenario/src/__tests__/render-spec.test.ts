@@ -12,7 +12,6 @@ import {
   resolveCaptureManifest,
   type RenderSpecV3,
 } from '../render-spec.js';
-import { ActorSensorSchema } from '../schema/v2/sensors.js';
 
 const authoredEnvironment = {
   weather: 'cloudy' as const,
@@ -264,18 +263,8 @@ describe('render spec adapters', () => {
 });
 
 describe('multi-source resolved capture manifest', () => {
-  it('resolves one immutable sensor record per v3 source', () => {
+  it('accepts submitted v3 source identities and transforms without an authored-sensor snapshot', () => {
     const spec = parseRenderSpecV3(baseSpec([cameraSource(), lidarSource]));
-    const camera = ActorSensorSchema.parse({
-      id: 'camera',
-      type: 'dash_camera',
-      mount: transform,
-    });
-    const lidar = ActorSensorSchema.parse({
-      id: 'lidar',
-      type: 'lidar',
-      mount: transform,
-    });
     const manifest = resolveCaptureManifest(spec, {
       createdAt: '2026-08-18T12:00:00.000Z',
       scenarioRevision: { id: 'revision-1', contentSha256: 'a'.repeat(64) },
@@ -312,7 +301,6 @@ describe('multi-source resolved capture manifest', () => {
           effects: { visibilityRangeM: 1_000, frictionScale: 1, trafficSpeedFactor: 1 },
         },
       },
-      actors: [{ id: 'ego', sensors: [camera, lidar] }],
       captureSource: {
         kind: 'execution-package',
         executionPackageId: 'usepkg_1',
@@ -322,16 +310,7 @@ describe('multi-source resolved capture manifest', () => {
     });
     expect(manifest.renderSpec.schema).toBe(RENDER_SPEC_V3_SCHEMA);
     expect(manifest.resolvedSources).toHaveLength(2);
-    expect(manifest.resolvedSources.map((source) => ({
-      sensorId: source.sensorId,
-      outputName: source.outputName,
-      modality: source.modality,
-      transform: 'transform' in source ? source.transform : source.sensor.mount,
-      sensorType: source.sensor.type,
-    }))).toEqual([
-      { sensorId: 'camera', outputName: 'camera-rgb', modality: 'rgb', transform, sensorType: 'dash_camera' },
-      { sensorId: 'lidar', outputName: 'lidar-points', modality: 'lidar', transform, sensorType: 'lidar' },
-    ]);
+    expect(manifest.resolvedSources).toEqual(spec.sources);
     expect(Object.isFrozen(manifest.resolvedSources[0])).toBe(true);
     // A package-sourced capture must name the immutable bytes it replayed; that claim is the only
     // thing that distinguishes it from a recording of the live editor simulation.
@@ -358,11 +337,6 @@ describe('multi-source resolved capture manifest', () => {
       },
       artifacts: ['video', 'manifest'],
       authoredEnvironment,
-    });
-    const camera = ActorSensorSchema.parse({
-      id: 'camera',
-      type: 'dash_camera',
-      mount: transform,
     });
     const manifest = resolveCaptureManifest(v2, {
       createdAt: '2026-08-18T12:00:00.000Z',
@@ -397,14 +371,8 @@ describe('multi-source resolved capture manifest', () => {
           effects: { visibilityRangeM: 1_000, frictionScale: 1, trafficSpeedFactor: 1 },
         },
       },
-      actors: [{ id: 'ego', sensors: [camera] }],
     });
     expect(manifest.renderSpec).toEqual(v2);
-    expect(manifest.resolvedSources).toEqual([{
-      actorId: 'ego',
-      sensorId: 'camera',
-      modality: 'rgb',
-      sensor: camera,
-    }]);
+    expect(manifest.resolvedSources).toEqual(v2.sources);
   });
 });
