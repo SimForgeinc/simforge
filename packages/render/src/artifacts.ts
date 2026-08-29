@@ -2,12 +2,13 @@ import { z } from 'zod';
 
 import { RenderSha256Schema } from '@simforge-oss/scenario';
 
-export const ARTIFACT_MANIFEST_V1_SCHEMA = 'uniscenario.render-artifact-manifest/v1' as const;
+export const ARTIFACT_MANIFEST_V1_SCHEMA = 'simforge.render-artifact-manifest/v1' as const;
 
 export const ArtifactRoleSchema = z.enum([
   'video',
   'frames',
   'sensorArchive',
+  'sensorData',
   'manifest',
   'trace',
   'annotations',
@@ -32,7 +33,8 @@ export const ArtifactIdentitySchema = z.strictObject({
   const sensorFields = [ctx.value.actorId, ctx.value.sensorId, ctx.value.modality];
   const sensorScoped = ctx.value.role === 'video'
     || ctx.value.role === 'frames'
-    || ctx.value.role === 'sensorArchive';
+    || ctx.value.role === 'sensorArchive'
+    || ctx.value.role === 'sensorData';
   if (sensorScoped && sensorFields.some((field) => field === null)) {
     ctx.issues.push({ code: 'custom', message: 'sensor-scoped artifacts require actorId, sensorId, and modality', input: ctx.value });
   }

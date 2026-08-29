@@ -23,5 +23,8 @@ export async function withBoundedRetry<T>(
       }
     }
   }
-  throw new Error(`${operation} failed after ${config.maxAttempts} attempts`, { cause: lastError });
+  const detail = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`${operation} failed after ${config.maxAttempts} attempts: ${detail}`, {
+    cause: lastError,
+  });
 }

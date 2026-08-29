@@ -28,12 +28,12 @@ COPY --from=build --chown=renderer:renderer /out/browser-renderer /opt/simforge/
 # renders back to SwiftShader CPU rendering.
 ENV NODE_ENV=production \
     PORT=8080 \
-    UNISCENARIOS_BROWSER_ENGINE_MODULE=/opt/simforge/browser-renderer/dist/index.js \
-    UNISCENARIOS_SCRATCH_DIR=/scratch \
-    UNISCENARIOS_CACHE_DIR=/cache \
-    UNISCENARIOS_GPU_LOCK=/run/simforge/gpu.lock \
+    SIMFORGE_BROWSER_ENGINE_MODULE=/opt/simforge/browser-renderer/dist/index.js \
+    SIMFORGE_SCRATCH_DIR=/scratch \
+    SIMFORGE_CACHE_DIR=/cache \
+    SIMFORGE_GPU_LOCK=/run/simforge/gpu.lock \
     CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium \
-    UNISCENARIOS_CHROMIUM_EXTRA_ARGS="--use-gl=angle --use-angle=gl-egl" \
+    SIMFORGE_CHROMIUM_EXTRA_ARGS="--use-gl=angle --use-angle=gl-egl" \
     __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
@@ -41,8 +41,8 @@ LABEL org.opencontainers.image.title="SimForge browser render worker" \
       org.opencontainers.image.version="$IMAGE_VERSION" \
       org.opencontainers.image.revision="$SOURCE_REVISION" \
       org.opencontainers.image.source="https://github.com/SimForgeinc/simforge-oss" \
-      io.uniscenarios.engine="browser" \
-      io.uniscenarios.contract="uniscenario.render-worker-control/v2"
+      io.simforge.engine="browser" \
+      io.simforge.contract="simforge.render-worker-control/v2"
 USER 10001:10001
 WORKDIR /scratch
 VOLUME ["/scratch", "/cache", "/run/simforge"]

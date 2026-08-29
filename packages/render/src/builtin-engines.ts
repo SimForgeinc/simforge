@@ -13,7 +13,7 @@ export type BuiltinRenderEngineId = 'browser' | 'carla' | 'native';
 
 const CARLA_CAPABILITIES: EngineCapabilityDeclaration = {
   schema: ENGINE_CAPABILITIES_V1_SCHEMA,
-  engineId: 'uniscenarios-carla',
+  engineId: 'simforge-carla',
   engineVersion: 'native-v1',
   backend: 'carla',
   protocolVersion: 1,
@@ -139,7 +139,7 @@ export async function loadBuiltinRenderEngine(
   if (engineId === 'browser') {
     const moduleSpecifier = typeof options.module === 'string'
       ? options.module
-      : process.env.UNISCENARIOS_BROWSER_ENGINE_MODULE ?? './web/index.js';
+      : process.env.SIMFORGE_BROWSER_ENGINE_MODULE ?? './web/index.js';
     const { module: _module, ...engineOptions } = options;
     return loadRenderEngine(moduleSpecifier, engineOptions);
   }
@@ -152,7 +152,7 @@ export async function loadBuiltinRenderEngine(
   }
   const binary = typeof options.binary === 'string'
     ? options.binary
-    : process.env.UNISCENARIOS_CARLA_BINARY ?? 'simforge-oss-carla-api';
+    : process.env.SIMFORGE_CARLA_BINARY ?? 'simforge-oss-carla-api';
   const host = typeof options.host === 'string'
     ? options.host
     : process.env.CARLA_HOST ?? '127.0.0.1';

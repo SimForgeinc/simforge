@@ -33,10 +33,10 @@ import { parseRenderIntent, type RenderIntentV1 } from '@simforge-oss/scenario';
 
 import { createTar, type TarEntry } from './tar.js';
 
-export const NATIVE_RENDER_ENGINE_ID = 'uniscenarios-native';
-export const NATIVE_CAMERA_SCHEDULE_SCHEMA = 'uniscenario.native-camera-schedule/v1';
-const JOB_SCHEMA = 'uniscenario.native-render-job/v1';
-const RESULTS_SCHEMA = 'uniscenario.native-render-results/v1';
+export const NATIVE_RENDER_ENGINE_ID = 'simforge-native';
+export const NATIVE_CAMERA_SCHEDULE_SCHEMA = 'simforge.native-camera-schedule/v1';
+const JOB_SCHEMA = 'simforge.native-render-job/v1';
+const RESULTS_SCHEMA = 'simforge.native-render-results/v1';
 
 export interface NativeRenderEngineOptions {
   /** Path to the native-render-job binary. */
@@ -79,7 +79,7 @@ const CAPABILITIES: EngineCapabilityDeclaration = {
 /** Resolve the batch renderer binary. */
 export function resolveBinary(options: NativeRenderEngineOptions): string {
   if (options.binary) return options.binary;
-  if (process.env.UNISCENARIOS_NATIVE_RENDER_BINARY) return process.env.UNISCENARIOS_NATIVE_RENDER_BINARY;
+  if (process.env.SIMFORGE_NATIVE_RENDER_BINARY) return process.env.SIMFORGE_NATIVE_RENDER_BINARY;
   const candidates = [
     path.resolve('renderer/target/release/native-render-job'),
     path.resolve('renderer/target/debug/native-render-job'),
@@ -280,7 +280,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
       const diagnosticsRelative = 'diagnostics/native-run.json';
       await fs.mkdir(path.dirname(path.join(context.workspace, diagnosticsRelative)), { recursive: true });
       const diagnostics = {
-        schema: 'uniscenario.native-run-diagnostics/v1',
+        schema: 'simforge.native-run-diagnostics/v1',
         intentSha256: context.intentSha256,
         engineVersion: capabilities.engineVersion,
         legend: results.legend,
@@ -302,7 +302,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
       if (artifacts.length === 0) throw new Error('native renderer produced no artifacts');
 
       return {
-        schema: 'uniscenario.render-artifact-manifest/v1',
+        schema: 'simforge.render-artifact-manifest/v1',
         intentSha256: context.intentSha256,
         engine: { engineId: NATIVE_RENDER_ENGINE_ID, engineVersion: capabilities.engineVersion, backend: 'native' },
         startedAt,

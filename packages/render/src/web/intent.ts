@@ -1,8 +1,8 @@
 import { parseRenderSpecV3, RenderSensorSourceHostSchema, type RenderSensorSourceHost, type RenderSpecV3, type ResolvedFrameSchedule } from '@simforge-oss/scenario';
 import type { PlaybackBundle } from '@simforge-oss/playback';
 
-export const RENDER_INTENT_V1_SCHEMA = 'uniscenario.render-intent/v1' as const;
-export const BROWSER_RENDER_REQUEST_V1_SCHEMA = 'uniscenario.browser-render-request/v1' as const;
+export const RENDER_INTENT_V1_SCHEMA = 'simforge.render-intent/v1' as const;
+export const BROWSER_RENDER_REQUEST_V1_SCHEMA = 'simforge.browser-render-request/v1' as const;
 
 export interface PortableRenderAsset {
   readonly assetId: string;

@@ -25,6 +25,7 @@ describe('sensor rigs', () => {
       'tesla-hw3',
       'waymo-5th-gen',
       'nvidia-sdg-av',
+      'pronto',
       'alpamayo-pai',
       'alpamayo-2cam',
       'alpamayo-4cam',
@@ -39,6 +40,44 @@ describe('sensor rigs', () => {
       );
       expect(sensors).toHaveLength(preset.sensors.length);
       expect(sensors.every((sensor) => 'position' in sensor.mount)).toBe(true);
+    }
+  });
+
+  it('preserves the complete Pronto configuration E calibration', () => {
+    const preset = sensorRigPreset('pronto');
+    expect(preset?.sensors).toHaveLength(18);
+    expect(preset?.sensors.map((sensor) => sensor.id)).toEqual([
+      'pronto-cam0',
+      'pronto-cam1',
+      'pronto-cam2',
+      'pronto-cam3',
+      'pronto-cam4',
+      'pronto-cam5',
+      'pronto-cam6',
+      'pronto-cam7',
+      'pronto-lidar-front-left',
+      'pronto-lidar-front-left-wide',
+      'pronto-lidar-front-right',
+      'pronto-lidar-front-right-wide',
+      'pronto-lidar-rear-left',
+      'pronto-lidar-rear-right',
+      'pronto-rad-01',
+      'pronto-rad-02',
+      'pronto-rad-03',
+      'pronto-rad-04',
+    ]);
+
+    const sensors = instantiateSensorRig(preset!, { class: 'car' }, (template) => template.id);
+    expect(sensors[0]?.mount).toMatchObject({
+      position: { x: -0.1509, y: 0.0517, z: 0.7958 },
+    });
+    expect(sensors[0]?.mount.rotation.yawRad).toBeCloseTo(122 * Math.PI / 180);
+    expect(sensors[0]?.mount.rotation.pitchRad).toBeCloseTo(25 * Math.PI / 180);
+    const frontLeftLidar = sensors[8];
+    expect(frontLeftLidar?.type).toBe('lidar');
+    if (frontLeftLidar?.type === 'lidar') {
+      expect(frontLeftLidar.field.horizontalFovDeg).toBe(120);
+      expect(frontLeftLidar.field.verticalFovDeg).toBe(25);
     }
   });
 

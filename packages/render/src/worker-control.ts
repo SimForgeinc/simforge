@@ -6,7 +6,7 @@ import { ArtifactIdentitySchema } from './artifacts.js';
 import { EngineCapabilityDeclarationSchema } from './capabilities.js';
 import { RenderProgressRecordSchema } from './progress.js';
 
-export const RENDER_WORKER_CONTROL_V2_SCHEMA = 'uniscenario.render-worker-control/v2' as const;
+export const RENDER_WORKER_CONTROL_V2_SCHEMA = 'simforge.render-worker-control/v2' as const;
 
 const ControlBaseShape = {
   schema: z.literal(RENDER_WORKER_CONTROL_V2_SCHEMA),

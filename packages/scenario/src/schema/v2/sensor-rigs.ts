@@ -112,7 +112,14 @@ function rounded(value: number): number {
 
 function mountFromV1(
   anchor: VehicleAnchor,
-  pose: { x: number; lateralRight: number; up: number; yawDeg?: number },
+  pose: {
+    x: number;
+    lateralRight: number;
+    up: number;
+    yawDeg?: number;
+    pitchDeg?: number;
+    rollDeg?: number;
+  },
 ): SensorRigMount {
   const base = anchorPosition(anchor, REFERENCE_CAR_DIMS);
   return {
@@ -124,8 +131,33 @@ function mountFromV1(
     },
     rotation: {
       yawRad: (pose.yawDeg ?? 0) * Math.PI / 180,
-      pitchRad: 0,
-      rollRad: 0,
+      pitchRad: (pose.pitchDeg ?? 0) * Math.PI / 180,
+      rollRad: (pose.rollDeg ?? 0) * Math.PI / 180,
+    },
+  };
+}
+
+/** Preserve a calibrated vehicle-local pose without scaling it to a carrier box. */
+function fixedMountFromV1(
+  pose: {
+    x: number;
+    lateralRight: number;
+    up: number;
+    yawDeg?: number;
+    pitchDeg?: number;
+    rollDeg?: number;
+  },
+): SensorRigMount {
+  return {
+    position: {
+      x: pose.x,
+      y: pose.up,
+      z: -pose.lateralRight,
+    },
+    rotation: {
+      yawRad: (pose.yawDeg ?? 0) * Math.PI / 180,
+      pitchRad: (pose.pitchDeg ?? 0) * Math.PI / 180,
+      rollRad: (pose.rollDeg ?? 0) * Math.PI / 180,
     },
   };
 }
@@ -163,7 +195,12 @@ function lidar(
   id: string,
   label: string,
   mount: SensorRigMount,
-  options: { range?: number; upperFov?: number; lowerFov?: number } = {},
+  options: {
+    range?: number;
+    horizontalFov?: number;
+    upperFov?: number;
+    lowerFov?: number;
+  } = {},
 ): SensorRigLidarTemplate {
   return SensorRigLidarTemplateSchema.parse({
     id,
@@ -172,7 +209,7 @@ function lidar(
     enabled: true,
     mount,
     field: {
-      horizontalFovDeg: 360,
+      horizontalFovDeg: options.horizontalFov ?? 360,
       verticalFovDeg: options.upperFov !== undefined && options.lowerFov !== undefined
         ? options.upperFov - options.lowerFov
         : 40,
@@ -348,6 +385,74 @@ const NVIDIA_SDG_AV = SensorRigPresetSchema.parse({
   ],
 });
 
+/**
+ * Pronto port configuration E.
+ *
+ * The supplied calibration is expressed in millimetres in a vehicle-relative
+ * frame. These poses are its metre conversion, with platform lateral-right/up
+ * coordinates converted to the canonical forward/up/left frame.
+ */
+const PRONTO = SensorRigPresetSchema.parse({
+  id: 'pronto',
+  name: 'Pronto Rig',
+  sensors: [
+    camera('pronto-cam0', 'CAM0', fixedMountFromV1({
+      x: -0.1509, lateralRight: -0.7958, up: 0.0517, yawDeg: 122, pitchDeg: 25,
+    }), { fov: 120 }),
+    camera('pronto-cam1', 'CAM1', fixedMountFromV1({
+      x: -0.1508, lateralRight: 0, up: 0.0517, pitchDeg: 10,
+    }), { fov: 120 }),
+    camera('pronto-cam2', 'CAM2', fixedMountFromV1({
+      x: -2.4603, lateralRight: -0.7958, up: 0.0517, yawDeg: 60, pitchDeg: 25,
+    }), { fov: 120 }),
+    camera('pronto-cam3', 'CAM3', fixedMountFromV1({
+      x: -0.0484, lateralRight: -0.5953, up: 0.0727,
+    }), { fov: 30 }),
+    camera('pronto-cam4', 'CAM4', fixedMountFromV1({
+      x: -2.4603, lateralRight: 0.7958, up: 0.0517, yawDeg: -60, pitchDeg: 25,
+    }), { fov: 120 }),
+    camera('pronto-cam5', 'CAM5', fixedMountFromV1({
+      x: -2.4603, lateralRight: 0, up: 0.0517, yawDeg: 180, pitchDeg: 10,
+    }), { fov: 120 }),
+    camera('pronto-cam6', 'CAM6', fixedMountFromV1({
+      x: -0.1508, lateralRight: 0.7985, up: 0.0517, yawDeg: -122, pitchDeg: 25,
+    }), { fov: 120 }),
+    camera('pronto-cam7', 'CAM7', fixedMountFromV1({
+      x: -0.0616, lateralRight: 0.5927, up: 0.0727, pitchDeg: 5,
+    }), { fov: 60 }),
+    lidar('pronto-lidar-front-left', 'Front left — Seyond Falcon', fixedMountFromV1({
+      x: -0.1159, lateralRight: -0.4772, up: 0.1278,
+    }), { horizontalFov: 120, upperFov: 12.5, lowerFov: -12.5 }),
+    lidar('pronto-lidar-front-left-wide', 'Front left wide — Seyond Robin W', fixedMountFromV1({
+      x: -0.1343, lateralRight: -0.7671, up: 0.0786, yawDeg: 120,
+    }), { horizontalFov: 120, upperFov: 35, lowerFov: -35 }),
+    lidar('pronto-lidar-front-right', 'Front right — Seyond Falcon', fixedMountFromV1({
+      x: -0.1159, lateralRight: 0.4798, up: 0.1278,
+    }), { horizontalFov: 120, upperFov: 12.5, lowerFov: -12.5 }),
+    lidar('pronto-lidar-front-right-wide', 'Front right wide — Seyond Robin W', fixedMountFromV1({
+      x: -0.1342, lateralRight: 0.7698, up: 0.0786, yawDeg: -120,
+    }), { horizontalFov: 120, upperFov: 35, lowerFov: -35 }),
+    lidar('pronto-lidar-rear-left', 'Rear left — Seyond Robin W', fixedMountFromV1({
+      x: -2.4769, lateralRight: -0.7671, up: 0.0786, yawDeg: 60,
+    }), { horizontalFov: 120, upperFov: 35, lowerFov: -35 }),
+    lidar('pronto-lidar-rear-right', 'Rear right — Seyond Robin W', fixedMountFromV1({
+      x: -2.4769, lateralRight: 0.7671, up: 0.0786, yawDeg: -60,
+    }), { horizontalFov: 120, upperFov: 35, lowerFov: -35 }),
+    radar('pronto-rad-01', 'RAD-01 — Altos V4', fixedMountFromV1({
+      x: -0.0593, lateralRight: -0.4871, up: 0.0748,
+    })),
+    radar('pronto-rad-02', 'RAD-02 — Altos V4', fixedMountFromV1({
+      x: -0.0593, lateralRight: 0.4699, up: 0.0748,
+    })),
+    radar('pronto-rad-03', 'RAD-03 — Altos RF6', fixedMountFromV1({
+      x: -2.5871, lateralRight: -0.461, up: 0.0315, yawDeg: 160,
+    })),
+    radar('pronto-rad-04', 'RAD-04 — Altos RF6', fixedMountFromV1({
+      x: -2.5374, lateralRight: 0.5142, up: 0.0315, yawDeg: -160,
+    })),
+  ],
+});
+
 const ALPAMAYO_PAI = SensorRigPresetSchema.parse({
   id: 'alpamayo-pai',
   name: 'Alpamayo PAI 4-Camera',
@@ -491,6 +596,7 @@ export const BUILT_IN_SENSOR_RIGS: readonly SensorRigPreset[] = Object.freeze([
   TESLA_HW3,
   WAYMO_5TH_GEN,
   NVIDIA_SDG_AV,
+  PRONTO,
   ALPAMAYO_PAI,
   ALPAMAYO_2CAM,
   ALPAMAYO_4CAM,
@@ -501,6 +607,7 @@ const BUILT_IN_SENSOR_RIGS_BY_ID: Readonly<Record<string, SensorRigPreset>> = {
   'tesla-hw3': TESLA_HW3,
   'waymo-5th-gen': WAYMO_5TH_GEN,
   'nvidia-sdg-av': NVIDIA_SDG_AV,
+  pronto: PRONTO,
   'alpamayo-pai': ALPAMAYO_PAI,
   'alpamayo-2cam': ALPAMAYO_2CAM,
   'alpamayo-4cam': ALPAMAYO_4CAM,

@@ -9,7 +9,7 @@ describe('browser render engine registration', () => {
     const engine = createRenderEngine({ engineVersion: 'test-build' });
 
     expect(EngineCapabilityDeclarationSchema.parse(engine.capabilities)).toMatchObject({
-      schema: 'uniscenario.render-engine-capabilities/v1',
+      schema: 'simforge.render-engine-capabilities/v1',
       engineId: 'browser',
       engineVersion: 'test-build',
       backend: 'browser',
@@ -40,7 +40,7 @@ describe('browser worker harness boot', () => {
 describe('browser render intent adapter', () => {
   it('derives the browser engine and fixed-step schedule from the portable intent', () => {
     const resolved = resolveBrowserRenderIntent({
-      schema: 'uniscenario.render-intent/v1',
+      schema: 'simforge.render-intent/v1',
       intentId: 'intent-1',
       executionPackage: { id: 'package-1', sourceInputDigest: 'a'.repeat(64) },
       scenarioRevision: {
@@ -55,7 +55,7 @@ describe('browser render intent adapter', () => {
         vehicleAsset: { catalogAssetId: 'vehicle.generic.sedan' },
       }],
       renderSpec: {
-        schema: 'uniscenario.render-spec/v3',
+        schema: 'simforge.render-spec/v3',
         sources: [{
           actorId: 'ego',
           sensorId: 'camera-front',
@@ -117,7 +117,7 @@ describe('browser render intent adapter', () => {
 
 describe('browser playback materialization', () => {
   it('decodes the persisted gzip playback bundle before rendering', async () => {
-    const bundle = { schema: 'uniscenario.simulation-preview/v1', draftVersion: 5 };
+    const bundle = { schema: 'simforge.simulation-preview/v1', draftVersion: 5 };
     await expect(decodePlaybackArchive(gzipSync(JSON.stringify(bundle)))).resolves.toEqual(bundle);
   });
 

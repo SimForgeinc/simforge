@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import type { RenderIntentV1, RenderSourceV3 } from '@simforge-oss/scenario';
 
-export const FIXED_SCHEDULE_V1_SCHEMA = 'uniscenario.render-fixed-schedule/v1' as const;
+export const FIXED_SCHEDULE_V1_SCHEMA = 'simforge.render-fixed-schedule/v1' as const;
 
 export const FixedScheduleSchema = z.strictObject({
   schema: z.literal(FIXED_SCHEDULE_V1_SCHEMA),

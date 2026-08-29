@@ -144,7 +144,7 @@ async function executeClaim(
     }
     await rm(workspace, { recursive: true, force: true });
     await mkdir(workspace, { recursive: true, mode: 0o700 });
-    await forward({ schema: 'uniscenario.render-progress/v1', event: 'job.started', jobId: job.jobId, attempt: job.attempt, sequence: 0, timestamp: new Date().toISOString() });
+    await forward({ schema: 'simforge.render-progress/v1', event: 'job.started', jobId: job.jobId, attempt: job.attempt, sequence: 0, timestamp: new Date().toISOString() });
     const inputs = await withBoundedRetry('input download', config.retries, state.controller.signal, () => downloadInputs(
       job.inputs,
       workspace,
@@ -232,7 +232,7 @@ async function executeClaim(
     const reportingSignal = AbortSignal.timeout(30_000);
     if (failure.code === 'render.canceled') {
       const canceled = RenderProgressRecordSchema.parse({
-        schema: 'uniscenario.render-progress/v1',
+        schema: 'simforge.render-progress/v1',
         event: 'job.canceled',
         jobId: job.jobId,
         attempt: job.attempt,
