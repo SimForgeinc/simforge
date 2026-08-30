@@ -14,6 +14,13 @@ Omit `--only` to process the full catalog. `--dry-run` validates the catalog and
 
 Do not put an API key in a repository file or command committed to shell history. Retrieve it from the approved secrets manager and inject it into the process environment.
 
+## Texture prompt contract
+
+Meshy's current [Text to 3D API](https://docs.meshy.ai/en/api/text-to-3d) accepts `texture_prompt` only on the refine request. `texture_richness` has no functional effect, and `art_style` is deprecated and ignored by current Meshy models, so the generator sends neither legacy field. The preview `prompt` carries the complete catalog description, and the refine `texture_prompt` repeats that description while making every stated color, material, and pattern mandatory. This repetition is intentional: an API task inspection showed that refine inherits the preview prompt, but a generic texture prompt asking only for “realistic base color” produced a charcoal traffic cone despite the preview prompt specifying orange with reflective bands.
+
+The offline smoke asserts that the built refine request contains the generated `texture_prompt`. When resuming, prompts are refreshed from the current catalog until their corresponding Meshy task has been submitted; submitted tasks retain their recorded prompt/task pairing.
+
+
 ## Smoke checks
 
 The offline contract smoke is part of the repository test command and spends no credits:

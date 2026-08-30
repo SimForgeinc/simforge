@@ -170,8 +170,7 @@ function buildDimensionRetryPrompt(entry) {
 
 
 function buildTexturePrompt(entry) {
-  const color = entry.defaultParams?.color ? `Use ${entry.defaultParams.color} as the principal authored color where suitable.` : '';
-  return `Photorealistic clean PBR game-asset texturing with realistic base color, roughness, metallic and normal detail. ${color} Neutral even albedo with no baked lighting or shadows, no dirt that obscures shape, no logos, text, labels, watermark, or background.`.slice(0, 600);
+  return `Match this catalog appearance exactly: ${entry.label}. ${entry.description} Treat every stated color, material, and pattern as mandatory, with strong clearly visible color separation. Photorealistic clean PBR game-asset texturing with realistic base color, roughness, metallic and normal detail. Neutral even albedo with no baked lighting or shadows, no dirt that obscures shape, no logos, text, labels, watermark, or background.`.slice(0, 600);
 }
 
 function buildPreviewRequest(entry, asset) {
@@ -738,7 +737,12 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
   const { entries: allEntries, source } = await loadCatalog();
   const state = await loadState(source);
-  for (const entry of allEntries) state.assets[entry.id] ??= freshAssetState(entry);
+  for (const entry of allEntries) {
+    state.assets[entry.id] ??= freshAssetState(entry);
+    const asset = state.assets[entry.id];
+    if (!asset.tasks.preview?.id) asset.prompt = buildPrompt(entry);
+    if (!asset.tasks.refine?.id) asset.texturePrompt = buildTexturePrompt(entry);
+  }
   for (const catalogId of Object.keys(state.assets)) {
     if (!allEntries.some((entry) => entry.id === catalogId)) delete state.assets[catalogId];
   }
@@ -778,6 +782,7 @@ export {
   apiRequest,
   assetPaths,
   creditUsage,
+  buildTexturePrompt,
   buildPreviewRequest,
   buildRefineRequest,
   download,

@@ -9,6 +9,7 @@ import {
   assetPaths,
   buildPreviewRequest,
   buildRefineRequest,
+  buildTexturePrompt,
   creditUsage,
   download,
   manifestEntry,
@@ -19,12 +20,12 @@ const entry = {
   id: 'hazard.smoke_test',
   class: 'hazard',
   label: 'smoke-test road marker',
-  description: 'A small neutral road marker.',
+  description: 'A safety-orange road marker with two white reflective bands.',
   dims: { l: 0.4, w: 0.4, h: 0.6 },
 };
 const asset = {
-  prompt: 'A small neutral road marker.',
-  texturePrompt: 'Neutral orange PBR material.',
+  prompt: 'A safety-orange road marker with two white reflective bands.',
+  texturePrompt: buildTexturePrompt(entry),
 };
 
 test('builds the documented Meshy preview and refine request contract', () => {
@@ -52,6 +53,9 @@ test('builds the documented Meshy preview and refine request contract', () => {
     remove_lighting: true,
     target_formats: ['glb'],
   });
+  assert.match(asset.texturePrompt, /safety-orange road marker with two white reflective bands/);
+  assert.match(asset.texturePrompt, /every stated color, material, and pattern as mandatory/);
+  assert.ok(buildRefineRequest('preview-task-id', asset).texture_prompt.length > 0);
 });
 
 test('validates catalog identifiers before using them as downloader paths', () => {
