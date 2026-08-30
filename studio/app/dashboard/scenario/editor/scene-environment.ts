@@ -8,10 +8,10 @@ import type {
   TimeOfDay,
   Weather,
 } from "@simforge-oss/scenario";
+import { resolveEditorLightingRenderScales } from "@simforge-oss/scenario/contracts";
 import type { DirectionalLight } from "three";
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
 import { resolveEditorWeatherControls } from "./weather-controls";
-import { resolveEditorLightingOverrides } from "./lighting-controls";
 import {
   resolveExactSceneMinutes,
   sunAnglesForSceneMinutes,
@@ -347,7 +347,7 @@ export function resolveEditorSceneEnvironment(
       }
     : selectedSnowSurface;
 
-  const overrides = resolveEditorLightingOverrides(environment);
+  const overrides = resolveEditorLightingRenderScales(environment);
   const hazeOverride = overrides.haze;
   const visibilityOverride = overrides.visibilityM;
   // An authored visibility or haze creates fog the preset never asked for, so

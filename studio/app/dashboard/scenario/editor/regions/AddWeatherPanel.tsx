@@ -18,6 +18,13 @@ import {
 import type { CSSProperties } from "react";
 import type { EditorDocument } from "@simforge-oss/editor";
 import type { Weather } from "@simforge-oss/scenario";
+import {
+  LIGHTING_FIELDS,
+  LIGHTING_RANGES,
+  resolveEditorLightingOverrides,
+  withEditorLightingOverrides,
+  type LightingField,
+} from "@simforge-oss/scenario/contracts";
 
 import {
   resolveEditorWeatherControls,
@@ -31,13 +38,6 @@ import {
   resolveSceneSliderMinutes,
   withSceneMinutes,
 } from "../scene-time";
-import {
-  LIGHTING_FIELDS,
-  LIGHTING_RANGES,
-  resolveEditorLightingOverrides,
-  withEditorLightingOverrides,
-  type LightingField,
-} from "../lighting-controls";
 import {
   matchesSearch,
   PanelSection,

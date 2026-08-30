@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { TemplateDocument } from "@simforge-oss/scenario";
 import {
+  FRESH_SCENARIO_MINUTES,
+  withFreshEditorEnvironmentDefaults,
+} from "@simforge-oss/scenario/contracts";
+import {
   DEFAULT_SCENARIO_AUTHORING_QUALITY_ID,
   SCENARIO_SCHEMA_VERSION,
 } from "@/app/lib/scenario/contracts";
@@ -14,14 +18,7 @@ import {
   requireScenarioMutationOrigin,
   SCENARIO_PRIVATE_CACHE_HEADERS,
 } from "@/app/lib/scenario/http";
-import {
-  FRESH_SCENARIO_MINUTES,
-  withSceneMinutes,
-} from "@/app/dashboard/scenario/editor/scene-time";
-import {
-  DEFAULT_VISIBILITY_M,
-  withEditorLightingOverrides,
-} from "@/app/dashboard/scenario/editor/lighting-controls";
+import { withSceneMinutes } from "@/app/dashboard/scenario/editor/scene-time";
 
 const EDITOR_APP_VERSION = "0.1.0-editor";
 
@@ -59,9 +56,8 @@ export async function POST(
   template.setClip(undefined, 0);
   const content = {
     ...template.data,
-    environment: withEditorLightingOverrides(
+    environment: withFreshEditorEnvironmentDefaults(
       withSceneMinutes(template.data.environment, FRESH_SCENARIO_MINUTES),
-      { visibilityM: DEFAULT_VISIBILITY_M },
     ),
   };
   const document = await createScenarioDocument(auth.context, {

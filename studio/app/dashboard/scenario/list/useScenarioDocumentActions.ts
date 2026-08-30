@@ -4,6 +4,10 @@ import { useCallback, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { TemplateDocument } from "@simforge-oss/scenario";
 import {
+  FRESH_SCENARIO_MINUTES,
+  withFreshEditorEnvironmentDefaults,
+} from "@simforge-oss/scenario/contracts";
+import {
   DEFAULT_SCENARIO_AUTHORING_QUALITY_ID,
   SCENARIO_SCHEMA_VERSION,
   type ScenarioDocumentSummaryDto,
@@ -22,14 +26,7 @@ import type { ScenarioMapOption } from "./document-map-groups";
 import { scenarioListCache } from "./scenarioListCache";
 import { rememberScenarioSelection } from "./scenarioViewState";
 import { reconcileTemplateMapIdentity } from "@/app/lib/scenario/map-identity";
-import {
-  FRESH_SCENARIO_MINUTES,
-  withSceneMinutes,
-} from "@/app/dashboard/scenario/editor/scene-time";
-import {
-  DEFAULT_VISIBILITY_M,
-  withEditorLightingOverrides,
-} from "@/app/dashboard/scenario/editor/lighting-controls";
+import { withSceneMinutes } from "@/app/dashboard/scenario/editor/scene-time";
 
 const APP_VERSION = "0.1.0-editor";
 
@@ -139,9 +136,8 @@ export function useScenarioDocumentActions({
         template.setClip(undefined, 0);
         const content = {
           ...template.data,
-          environment: withEditorLightingOverrides(
+          environment: withFreshEditorEnvironmentDefaults(
             withSceneMinutes(template.data.environment, FRESH_SCENARIO_MINUTES),
-            { visibilityM: DEFAULT_VISIBILITY_M },
           ),
         };
         const created = await api.createDocument({
