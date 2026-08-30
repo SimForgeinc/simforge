@@ -598,7 +598,9 @@ class CarlaBackend:
         self.capture_disk_bytes = 0
         self.max_capture_disk_bytes = 0
         self.map_load_timeout_s = 180.0
-        self.sensor_timeout_s = float(simforge_env("SENSOR_FRAME_TIMEOUT_S", "10"))
+        # RTX 3080 workers can take tens of seconds to deliver the first frame
+        # after a cold CARLA launch; 10s caused healthy renders to be aborted.
+        self.sensor_timeout_s = float(simforge_env("SENSOR_FRAME_TIMEOUT_S", "60"))
         self.sensor_writer_workers = max(
             1, min(32, int(simforge_env("SENSOR_WRITER_WORKERS", "8"))),
         )

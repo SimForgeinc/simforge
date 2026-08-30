@@ -27,6 +27,7 @@ import type { WorkerHealth } from './health.js';
 import { withBoundedRetry } from './retry.js';
 import { downloadInputs, uploadFile } from './transfers.js';
 import type { RenderControlTransport } from './transport.js';
+import { chownWorkspace, configuredContainerIdentity } from './workspace.js';
 
 interface ActiveJobState {
   progressSequence: number;
@@ -151,6 +152,8 @@ async function executeClaim(
       config.cacheDir,
       state.controller.signal,
     ));
+    const containerIdentity = configuredContainerIdentity(config);
+    if (containerIdentity) await chownWorkspace(workspace, containerIdentity);
     if (engine.capabilities.requiresGpu) gpuLock = await acquireGpuJobLock(config.gpuLockPath, job.jobId);
     const manifest = RenderArtifactManifestSchema.parse(await engine.execute({
       jobId: job.jobId,

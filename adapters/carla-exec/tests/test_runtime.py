@@ -9,9 +9,11 @@ import json
 import inspect
 from pathlib import Path
 import subprocess
+import sys
 from threading import Condition, Lock, Thread
 import time
 import textwrap
+from types import SimpleNamespace
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -45,6 +47,22 @@ from simforge_oss_carla_exec.runtime.parity import ParityAccumulator
 from simforge_oss_carla_exec.runtime.materialized_traffic import merge_materialized_traffic, parse_materialized_traffic
 from simforge_oss_carla_exec.runtime.executor import CancellationRequested, LeaseDeadlineExceeded, execute_lease
 from simforge_oss_carla_exec.runtime.validation import validate_xosc14
+
+
+def test_sensor_frame_timeout_defaults_to_cold_start_safe_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeClient:
+        def __init__(self, _host: str, _port: int):
+            pass
+
+        def set_timeout(self, _timeout: float) -> None:
+            pass
+
+    monkeypatch.delenv("SIMFORGE_SENSOR_FRAME_TIMEOUT_S", raising=False)
+    monkeypatch.setitem(sys.modules, "carla", SimpleNamespace(Client=FakeClient))
+
+    backend = CarlaBackend()
+
+    assert backend.sensor_timeout_s == 60.0
 
 
 def artifact_bytes(body: bytes | Path) -> bytes:

@@ -62,12 +62,12 @@ class CarlaProcessEngine implements RenderEngineAdapter {
     const packagePath = join(context.workspace, 'input-package.json');
     const progressPath = join(context.workspace, 'carla-progress.jsonl');
     const manifestPath = join(context.workspace, 'render-artifact-manifest.json');
-    await writeFile(intentPath, `${JSON.stringify(RenderIntentV1Schema.parse(context.intent))}\n`, { mode: 0o600 });
+    await writeFile(intentPath, `${JSON.stringify(RenderIntentV1Schema.parse(context.intent))}\n`, { mode: 0o644 });
     await writeFile(packagePath, `${JSON.stringify({
       intentSha256: context.intentSha256,
       executionPackageControlSha256: context.executionPackageControlSha256,
       inputs: [...context.inputs.values()],
-    })}\n`, { mode: 0o600 });
+    })}\n`, { mode: 0o644 });
 
     const child = spawn(this.binary, [
       '--host', this.host,
