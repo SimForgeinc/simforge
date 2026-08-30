@@ -1,6 +1,6 @@
 {
   "name": "@simforge-oss/playback",
-  "version": "0.1.0-rc.55",
+  "version": "0.1.0-rc.56",
   "description": "Deterministic SimForge trace loading, sampling, playback control, map runtime, collider, and browser traffic runtime.",
   "repository": {
     "type": "git",

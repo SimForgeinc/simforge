@@ -1,6 +1,6 @@
 {
   "schema": "simforge-oss.stack-config/v1",
-  "stackVersion": "0.1.0-rc.55",
+  "stackVersion": "0.1.0-rc.56",
   "repository": "https://github.com/SimForgeinc/simforge-oss",
   "contracts": {
     "scenarioTemplate": "2",
@@ -10,25 +10,25 @@
     "carlaExecution": "simforge-oss.carla-execution/v1"
   },
   "packages": [
-    { "name": "@simforge-oss/scenario", "version": "0.1.0-rc.55", "path": "packages/scenario", "role": "scenario-format" },
-    { "name": "@simforge-oss/engine", "version": "0.1.0-rc.55", "path": "packages/engine", "role": "simulation-engine" },
-    { "name": "@simforge-oss/maps", "version": "0.1.0-rc.55", "path": "packages/maps", "role": "map-pipeline" },
-    { "name": "@simforge-oss/compiler", "version": "0.1.0-rc.55", "path": "packages/compiler", "role": "scenario-compiler" },
-    { "name": "@simforge-oss/viewer", "version": "0.1.0-rc.55", "path": "packages/viewer", "role": "interactive-viewer" },
-    { "name": "@simforge-oss/editor", "version": "0.1.0-rc.55", "path": "packages/editor", "role": "authoring-core" },
-    { "name": "@simforge-oss/playback", "version": "0.1.0-rc.55", "path": "packages/playback", "role": "playback-runtime" },
-    { "name": "@simforge-oss/asset-catalog", "version": "0.1.0-rc.55", "path": "packages/asset-catalog", "role": "asset-catalog" },
-    { "name": "@simforge-oss/render", "version": "0.1.0-rc.55", "path": "packages/render", "role": "render-runtime" },
-    { "name": "@simforge-oss/openscenario", "version": "0.1.0-rc.55", "path": "packages/openscenario", "role": "openscenario-interop" },
-    { "name": "@simforge-oss/training-env", "version": "0.1.0-rc.55", "path": "packages/training-env", "role": "training-environment" },
-    { "name": "@simforge-oss/evaluation", "version": "0.1.0-rc.55", "path": "packages/evaluation", "role": "evaluation-harness" },
-    { "name": "@simforge-oss/cli", "version": "0.1.0-rc.55", "path": "packages/cli", "role": "command-line-interface" },
-    { "name": "@simforge-oss/map-pipeline", "version": "0.1.0-rc.55", "path": "packages/map-pipeline", "role": "map-derivative-pipeline" },
-    { "name": "@simforge-oss/map-registry", "version": "0.1.0-rc.55", "path": "packages/map-registry", "role": "map-registry" }
+    { "name": "@simforge-oss/scenario", "version": "0.1.0-rc.56", "path": "packages/scenario", "role": "scenario-format" },
+    { "name": "@simforge-oss/engine", "version": "0.1.0-rc.56", "path": "packages/engine", "role": "simulation-engine" },
+    { "name": "@simforge-oss/maps", "version": "0.1.0-rc.56", "path": "packages/maps", "role": "map-pipeline" },
+    { "name": "@simforge-oss/compiler", "version": "0.1.0-rc.56", "path": "packages/compiler", "role": "scenario-compiler" },
+    { "name": "@simforge-oss/viewer", "version": "0.1.0-rc.56", "path": "packages/viewer", "role": "interactive-viewer" },
+    { "name": "@simforge-oss/editor", "version": "0.1.0-rc.56", "path": "packages/editor", "role": "authoring-core" },
+    { "name": "@simforge-oss/playback", "version": "0.1.0-rc.56", "path": "packages/playback", "role": "playback-runtime" },
+    { "name": "@simforge-oss/asset-catalog", "version": "0.1.0-rc.56", "path": "packages/asset-catalog", "role": "asset-catalog" },
+    { "name": "@simforge-oss/render", "version": "0.1.0-rc.56", "path": "packages/render", "role": "render-runtime" },
+    { "name": "@simforge-oss/openscenario", "version": "0.1.0-rc.56", "path": "packages/openscenario", "role": "openscenario-interop" },
+    { "name": "@simforge-oss/training-env", "version": "0.1.0-rc.56", "path": "packages/training-env", "role": "training-environment" },
+    { "name": "@simforge-oss/evaluation", "version": "0.1.0-rc.56", "path": "packages/evaluation", "role": "evaluation-harness" },
+    { "name": "@simforge-oss/cli", "version": "0.1.0-rc.56", "path": "packages/cli", "role": "command-line-interface" },
+    { "name": "@simforge-oss/map-pipeline", "version": "0.1.0-rc.56", "path": "packages/map-pipeline", "role": "map-derivative-pipeline" },
+    { "name": "@simforge-oss/map-registry", "version": "0.1.0-rc.56", "path": "packages/map-registry", "role": "map-registry" }
   ],
   "pythonPackages": [
-    { "name": "simforge-oss-gym", "version": "0.1.0rc55", "path": "adapters/gym", "role": "gym-adapter", "registry": "pypi" },
-    { "name": "simforge-oss-carla-exec", "version": "0.1.0rc55", "path": "adapters/carla-exec", "role": "carla-execution-adapter", "registry": "pypi" },
-    { "name": "simforge-oss-carla-api", "version": "0.1.0rc55", "path": "adapters/carla-api", "role": "carla-api-compatibility", "registry": "pypi" }
+    { "name": "simforge-oss-gym", "version": "0.1.0rc56", "path": "adapters/gym", "role": "gym-adapter", "registry": "pypi" },
+    { "name": "simforge-oss-carla-exec", "version": "0.1.0rc56", "path": "adapters/carla-exec", "role": "carla-execution-adapter", "registry": "pypi" },
+    { "name": "simforge-oss-carla-api", "version": "0.1.0rc56", "path": "adapters/carla-api", "role": "carla-api-compatibility", "registry": "pypi" }
   ]
 }

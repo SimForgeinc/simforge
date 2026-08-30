@@ -22,7 +22,9 @@ ARG SOURCE_REVISION
 ARG IMAGE_VERSION
 RUN test -n "$SOURCE_REVISION" && test -n "$IMAGE_VERSION" \
  && apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates ffmpeg libasound2 libudev1 libvulkan1 libx11-6 libxkbcommon0 tini vulkan-tools \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates ffmpeg libasound2 libegl1 libgl1 libudev1 libvulkan1 libx11-6 libxkbcommon0 tini vulkan-tools \
+ && install -d /usr/share/vulkan/icd.d \
+ && printf '%s\n' '{"file_format_version":"1.0.1","ICD":{"library_path":"libGLX_nvidia.so.0","api_version":"1.4.0"}}' > /usr/share/vulkan/icd.d/nvidia_icd.json \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /opt/simforge /scratch /cache /run/simforge \
  && chown -R node:node /scratch /cache /run/simforge

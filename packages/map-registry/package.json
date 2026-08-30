@@ -1,6 +1,6 @@
 {
   "name": "@simforge-oss/map-registry",
-  "version": "0.1.0-rc.55",
+  "version": "0.1.0-rc.56",
   "description": "Content-addressed map registry contracts and storage backends.",
   "repository": {
     "type": "git",
@@ -37,7 +37,9 @@
       "default": "./dist/schema.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts src/schema.ts --format esm --dts --sourcemap --clean --out-dir dist",
     "prepack": "pnpm run build",

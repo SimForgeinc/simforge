@@ -1,6 +1,6 @@
 [project]
 name = "simforge-oss-gym"
-version = "0.1.0rc55"
+version = "0.1.0rc56"
 description = "Gymnasium client for the SimForge deterministic env-server (simforge-env-server)"
 readme = "README.md"
 requires-python = ">=3.10"

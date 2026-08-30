@@ -44,6 +44,41 @@ function failureOf(error: unknown): { code: string; message: string; retryable: 
   return { code: 'render.execution_failed', message, retryable: true };
 }
 
+const NATIVE_CORPUS_ASSET_ID = 'map.native-corpus';
+const NATIVE_TILE_INPUT_PATTERN = /^map\.tile\.[A-Za-z0-9._-]+$/;
+
+export function validateClaimedInputs(job: Pick<JobLeasedResponse, 'intent' | 'inputs'>): void {
+  const expectedInputs = new Map<string, { sha256: string; sizeBytes: number }>([
+    ['scenario.xosc', job.intent.scenarioRevision.openScenario],
+    ...job.intent.assets
+      .filter((asset) => asset.assetId !== NATIVE_CORPUS_ASSET_ID)
+      .map((asset) => [asset.assetId, asset] as const),
+  ]);
+  const expectsNativeCorpus = job.intent.assets.some((asset) => asset.assetId === NATIVE_CORPUS_ASSET_ID);
+  const claimedInputIds = new Set<string>();
+  let nativeTileCount = 0;
+
+  for (const input of job.inputs) {
+    if (claimedInputIds.has(input.inputId)) throw new Error(`invalid duplicate claimed input ${input.inputId}`);
+    claimedInputIds.add(input.inputId);
+    if (expectsNativeCorpus && NATIVE_TILE_INPUT_PATTERN.test(input.inputId)) {
+      nativeTileCount += 1;
+      continue;
+    }
+    const expected = expectedInputs.get(input.inputId);
+    if (!expected) throw new Error(`invalid unreferenced claimed input ${input.inputId}`);
+    if (expected.sha256 !== input.sha256 || expected.sizeBytes !== input.sizeBytes) {
+      throw new Error(`invalid claimed input metadata for ${input.inputId}`);
+    }
+  }
+  for (const inputId of expectedInputs.keys()) {
+    if (!claimedInputIds.has(inputId)) throw new Error(`invalid missing claimed input ${inputId}`);
+  }
+  if (expectsNativeCorpus && nativeTileCount === 0) {
+    throw new Error('invalid missing claimed map.tile.* inputs for map.native-corpus');
+  }
+}
+
 async function loadConfiguredEngine(config: RenderWorkerConfig): Promise<RenderEngineAdapter> {
   if ('id' in config.engine) return loadBuiltinRenderEngine(config.engine.id, config.engine.options);
   return loadRenderEngine(config.engine.module, config.engine.options);
@@ -126,23 +161,7 @@ async function executeClaim(
       throw new Error(`intent hash mismatch: claim=${job.intentSha256} computed=${actualIntentSha256}`);
     }
     assertEngineSupportsIntent(engine.capabilities, job.intent);
-    const expectedInputs = new Map<string, { sha256: string; sizeBytes: number }>([
-      ['scenario.xosc', job.intent.scenarioRevision.openScenario],
-      ...job.intent.assets.map((asset) => [asset.assetId, asset] as const),
-    ]);
-    const claimedInputIds = new Set<string>();
-    for (const input of job.inputs) {
-      if (claimedInputIds.has(input.inputId)) throw new Error(`invalid duplicate claimed input ${input.inputId}`);
-      claimedInputIds.add(input.inputId);
-      const expected = expectedInputs.get(input.inputId);
-      if (!expected) throw new Error(`invalid unreferenced claimed input ${input.inputId}`);
-      if (expected.sha256 !== input.sha256 || expected.sizeBytes !== input.sizeBytes) {
-        throw new Error(`invalid claimed input metadata for ${input.inputId}`);
-      }
-    }
-    for (const inputId of expectedInputs.keys()) {
-      if (!claimedInputIds.has(inputId)) throw new Error(`invalid missing claimed input ${inputId}`);
-    }
+    validateClaimedInputs(job);
     await rm(workspace, { recursive: true, force: true });
     await mkdir(workspace, { recursive: true, mode: 0o700 });
     await forward({ schema: 'simforge.render-progress/v1', event: 'job.started', jobId: job.jobId, attempt: job.attempt, sequence: 0, timestamp: new Date().toISOString() });

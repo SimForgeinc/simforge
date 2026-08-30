@@ -1,6 +1,6 @@
 {
   "name": "@simforge-oss/editor",
-  "version": "0.1.0-rc.55",
+  "version": "0.1.0-rc.56",
   "description": "Framework-neutral SimForge v2 authoring document, interaction controller, route overlays, and editor contracts.",
   "repository": {
     "type": "git",
