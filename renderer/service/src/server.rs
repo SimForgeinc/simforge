@@ -380,25 +380,19 @@ fn resolve_actor_model(state: &ServiceState, actor: &ActorState) -> Option<Vehic
             tintable: false,
             scale_to_dims: false,
             model_length_m: None,
+            uniform_scale: None,
+            yaw_offset_rad: 0.0,
+            ground_offset_m: 0.0,
+            animations: HashMap::new(),
         });
     }
     let catalog_id = actor.catalog_id.as_deref()?;
-    if actor.actor_class.as_deref() == Some("pedestrian") {
-        let catalog = state.pedestrian_models.as_ref()?;
-        return catalog
-            .resolve(catalog_id)
-            .cloned()
-            .or_else(|| {
-                catalog
-                    .resolve_deterministic(&actor.id)
-                    .map(|(_, entry)| entry.clone())
-            });
-    }
-    state
-        .vehicle_models
-        .as_ref()?
-        .resolve(catalog_id)
-        .cloned()
+    let catalog = if actor.actor_class.as_deref() == Some("pedestrian") {
+        state.pedestrian_models.as_ref()?
+    } else {
+        state.vehicle_models.as_ref()?
+    };
+    catalog.resolve(catalog_id).cloned()
 }
 
 /// Apply scene-state frame `index` to the world (spawn/update/despawn).
@@ -416,13 +410,17 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                 let color = actor_color(actor, &class)?;
                 let dims = actor_dims(&class);
                 let model = resolve_actor_model(state, actor);
-                let yaw = quat_yaw(&actor.transform.rotation);
+                let mut yaw = quat_yaw(&actor.transform.rotation);
                 let mut position = actor.transform.position;
                 position[1] = actor_base_y(
                     position[1],
                     frame.ground_y,
                     state.app.ground_at(position[0], position[2]),
                 );
+                if let Some(model) = &model {
+                    yaw += model.yaw_offset_rad;
+                    position[1] += model.ground_offset_m;
+                }
                 state.app.upsert_actor(
                     &actor.id,
                     &class,
@@ -433,32 +431,54 @@ fn apply_scene_tick(state: &mut ServiceState, index: u32) -> Result<(), String> 
                     false,
                 );
                 if let Some(model) = model {
+                    let moving = actor.velocity.iter().map(|value| value * value).sum::<f32>().sqrt() > 0.2
+                        || actor.catalog_id.as_deref().is_some_and(|id| id.ends_with("_walking"));
+                    let animation = model.animations.get(if moving { "walk" } else { "idle" });
+                    let (glb_path, clip) = animation
+                        .map(|(path, clip)| (path, Some(clip.as_str())))
+                        .unwrap_or((&model.glb_path, None));
+                    let animation_time_s = if frame.tick_hz > 0.0 {
+                        frame.tick as f32 / frame.tick_hz
+                    } else {
+                        0.0
+                    };
                     if !state.app.actor_has_model(&actor.id) {
-                        if !model.glb_path.is_file() {
-                            return Err(format!(
-                                "catalog model for {} is missing: {}",
+                        if !glb_path.is_file() {
+                            eprintln!(
+                                "catalog model for {} is missing; retaining proxy: {}",
                                 actor.id,
-                                model.glb_path.display()
-                            ));
+                                glb_path.display()
+                            );
+                            continue;
                         }
-                        let scale = if model.scale_to_dims {
-                            model
-                                .model_length_m
-                                .filter(|length| *length > 0.1)
-                                .map(|length| dims[0] / length as f32)
-                                .unwrap_or(1.0)
-                        } else {
-                            1.0
-                        };
-                        state
+                        let scale = model.uniform_scale.unwrap_or_else(|| {
+                            if model.scale_to_dims {
+                                model
+                                    .model_length_m
+                                    .filter(|length| *length > 0.1)
+                                    .map(|length| dims[0] / length as f32)
+                                    .unwrap_or(1.0)
+                            } else {
+                                1.0
+                            }
+                        });
+                        if let Err(error) = state.app.attach_actor_asset(
+                            &actor.id,
+                            glb_path,
+                            scale,
+                            model.tintable.then_some(color),
+                            clip,
+                            animation_time_s,
+                        ) {
+                            eprintln!(
+                                "catalog model for {} failed to load; retaining proxy: {error:#}",
+                                actor.id
+                            );
+                        }
+                    } else if clip.is_some() {
+                        let _ = state
                             .app
-                            .attach_actor_model(
-                                &actor.id,
-                                &model.glb_path,
-                                scale,
-                                model.tintable.then_some(color),
-                            )
-                            .map_err(|error| format!("load actor model {}: {error:#}", actor.id))?;
+                            .set_actor_animation_time(&actor.id, animation_time_s);
                     }
                 }
             }

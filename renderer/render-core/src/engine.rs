@@ -280,6 +280,11 @@ struct IdClone;
 struct InstanceId(u32);
 #[derive(Component)]
 struct ActorModelRoot;
+#[derive(Clone)]
+struct ActorAnimationBinding {
+    players: Vec<Entity>,
+    node: AnimationNodeIndex,
+}
 
 
 /// One legend entry: instance-ID value -> source mesh name.
@@ -381,6 +386,11 @@ pub struct SceneApp {
     /// Per-actor cloned tint material handles. Catalog materials are shared
     /// assets, so tinting must never mutate the source GLB material.
     actor_tint_materials: HashMap<String, Vec<Handle<StandardMaterial>>>,
+    /// Asset handles are retained by absolute path so repeated actor spawns
+    /// instantiate an already-resident GLB rather than reloading it.
+    actor_asset_cache: HashMap<String, Handle<Gltf>>,
+    /// Deterministic, simulation-time-indexed skeletal animation bindings.
+    actor_animations: HashMap<String, ActorAnimationBinding>,
     /// Instance id -> semantic class name for dynamically spawned actors.
     actor_classes: HashMap<u32, String>,
     /// Next instance id for dynamic actors (beyond the static legend range).
@@ -509,6 +519,8 @@ impl SceneApp {
             actors: HashMap::new(),
             actor_models: HashMap::new(),
             actor_tint_materials: HashMap::new(),
+            actor_asset_cache: HashMap::new(),
+            actor_animations: HashMap::new(),
             actor_classes: HashMap::new(),
             next_instance_id: 0,
             ground: GroundField::default(),
@@ -799,6 +811,21 @@ impl SceneApp {
         uniform_scale: f32,
         tint: Option<[f32; 3]>,
     ) -> Result<()> {
+        self.attach_actor_asset(actor_id, glb_path, uniform_scale, tint, None, 0.0)
+    }
+
+    /// Attach a static or skinned GLB. Animated poses are sought from
+    /// simulation time and paused, so wall-clock scheduling cannot affect
+    /// rendered frames.
+    pub fn attach_actor_asset(
+        &mut self,
+        actor_id: &str,
+        glb_path: &std::path::Path,
+        uniform_scale: f32,
+        tint: Option<[f32; 3]>,
+        animation_clip: Option<&str>,
+        animation_time_s: f32,
+    ) -> Result<()> {
         let mesh_count_before = {
             let world = self.app.world_mut();
             let mut query = world.query::<&Mesh3d>();
@@ -815,20 +842,41 @@ impl SceneApp {
             .get(actor_id)
             .copied()
             .ok_or_else(|| anyhow::anyhow!("attach model before actor spawn: {actor_id}"))?;
-        let asset_path = glb_path.to_string_lossy().trim_start_matches('/').to_string();
-        let server = self.app.world().resource::<AssetServer>().clone();
-        let handle: Handle<Gltf> = server.load(asset_path);
+        let cache_key = glb_path.to_string_lossy().into_owned();
+        let handle = if let Some(handle) = self.actor_asset_cache.get(&cache_key) {
+            handle.clone()
+        } else {
+            let asset_path = cache_key.trim_start_matches('/').to_string();
+            let server = self.app.world().resource::<AssetServer>().clone();
+            let handle: Handle<Gltf> = server.load(asset_path);
+            self.actor_asset_cache.insert(cache_key, handle.clone());
+            handle
+        };
         let deadline = Instant::now() + Duration::from_secs(300);
-        let scene = loop {
+        let (scene, animation) = loop {
             self.app.update();
-            let scene = self
+            let loaded = self
                 .app
                 .world()
                 .resource::<Assets<Gltf>>()
                 .get(&handle)
-                .and_then(|gltf| gltf.default_scene.clone());
-            if let Some(scene) = scene {
-                break scene;
+                .and_then(|gltf| {
+                    let scene = gltf.default_scene.clone()?;
+                    let animation = animation_clip
+                        .map(|name| {
+                            gltf.named_animations
+                                .get(name)
+                                .cloned()
+                                .ok_or_else(|| anyhow::anyhow!(
+                                    "actor model {} has no animation clip {name:?}",
+                                    glb_path.display()
+                                ))
+                        })
+                        .transpose();
+                    Some(animation.map(|animation| (scene, animation)))
+                });
+            if let Some(loaded) = loaded {
+                break loaded?;
             }
             if Instant::now() > deadline {
                 bail!("actor model failed to load: {}", glb_path.display());
@@ -871,6 +919,51 @@ impl SceneApp {
             if Instant::now() > deadline {
                 bail!("actor model scene failed to instantiate: {}", glb_path.display());
             }
+        }
+        if let Some(clip) = animation {
+            let (graph, node) = AnimationGraph::from_clip(clip);
+            let graph = self
+                .app
+                .world_mut()
+                .resource_mut::<Assets<AnimationGraph>>()
+                .add(graph);
+            let players = {
+                let world = self.app.world_mut();
+                let mut stack = vec![model_root];
+                let mut players = Vec::new();
+                while let Some(entity) = stack.pop() {
+                    if let Some(children) = world.get::<Children>(entity) {
+                        stack.extend(children.iter());
+                    }
+                    if world.get::<AnimationPlayer>(entity).is_some() {
+                        players.push(entity);
+                    }
+                }
+                players.sort_by_key(|entity| entity.index());
+                for entity in &players {
+                    let mut entity_mut = world.entity_mut(*entity);
+                    entity_mut.insert(AnimationGraphHandle(graph.clone()));
+                    entity_mut
+                        .get_mut::<AnimationPlayer>()
+                        .expect("animation player disappeared")
+                        .play(node)
+                        .seek_to(animation_time_s.max(0.0))
+                        .pause();
+                }
+                players
+            };
+            if players.is_empty() {
+                bail!(
+                    "actor model {} clip {animation_clip:?} has no animation player",
+                    glb_path.display()
+                );
+            }
+            self.actor_animations.insert(
+                actor_id.to_string(),
+                ActorAnimationBinding { players, node },
+            );
+            self.app.update();
+            while self.receiver.try_recv().is_ok() {}
         }
         let tint_materials = if let Some(color) = tint {
             let targets = {
@@ -938,6 +1031,24 @@ impl SceneApp {
         );
         self.actor_tint_materials
             .insert(actor_id.to_string(), tint_materials);
+        Ok(())
+    }
+    /// Seek a bound actor animation to an explicit simulation timestamp.
+    pub fn set_actor_animation_time(&mut self, actor_id: &str, time_s: f32) -> Result<()> {
+        let binding = self
+            .actor_animations
+            .get(actor_id)
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("actor {actor_id} has no animation binding"))?;
+        for entity in binding.players {
+            let Some(mut player) = self.app.world_mut().get_mut::<AnimationPlayer>(entity) else {
+                continue;
+            };
+            player
+                .play(binding.node)
+                .seek_to(time_s.max(0.0))
+                .pause();
+        }
         Ok(())
     }
 
@@ -1021,6 +1132,7 @@ impl SceneApp {
                 world.despawn(model);
             }
             self.actor_tint_materials.remove(id);
+            self.actor_animations.remove(id);
         }
     }
 

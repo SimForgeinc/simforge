@@ -33,6 +33,14 @@ pub struct VehicleModelEntry {
     /// Authored model length in metres (manifest `dims_lwh_m[0]`), the
     /// denominator for `scale_to_dims`.
     pub model_length_m: Option<f64>,
+    /// Manifest-authored uniform scale for raw asset-space geometry.
+    pub uniform_scale: Option<f32>,
+    /// Model-space yaw correction in radians (+Y).
+    pub yaw_offset_rad: f32,
+    /// Grounding offset added to the actor's authored Y coordinate.
+    pub ground_offset_m: f32,
+    /// Motion-state animation GLBs and their named clips.
+    pub animations: HashMap<String, (PathBuf, String)>,
 }
 
 /// Catalog-id keyed model table. The sorted fallback list supports stable
@@ -160,6 +168,32 @@ impl VehicleModelCatalog {
                         .and_then(|v| v.as_bool())
                         .unwrap_or(false),
                     model_length_m: lengths.get(&file_stem).copied(),
+                    uniform_scale: value
+                        .get("uniformScale")
+                        .and_then(|v| v.as_f64())
+                        .map(|v| v as f32),
+                    yaw_offset_rad: value
+                        .get("yawOffsetRad")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(0.0) as f32,
+                    ground_offset_m: value
+                        .get("groundOffsetM")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(0.0) as f32,
+                    animations: value
+                        .get("animations")
+                        .and_then(|v| v.as_object())
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|(name, value)| {
+                            let path = value.get("glbPath")?.as_str()?;
+                            let clip = value.get("clip")?.as_str()?;
+                            Some((
+                                name.clone(),
+                                (resolve_glb_path(dir, path), clip.to_string()),
+                            ))
+                        })
+                        .collect(),
                 },
             );
         }
@@ -222,6 +256,10 @@ impl VehicleModelCatalog {
                         .and_then(|v| v.as_array())
                         .and_then(|a| a.first())
                         .and_then(|v| v.as_f64()),
+                    uniform_scale: None,
+                    yaw_offset_rad: 0.0,
+                    ground_offset_m: 0.0,
+                    animations: HashMap::new(),
                 },
             );
         }
@@ -284,4 +322,46 @@ fn manifest_lengths(manifest: &Path) -> HashMap<String, f64> {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::VehicleModelCatalog;
+    use std::fs;
+
+    #[test]
+    fn meshy_sidecar_resolves_scale_grounding_yaw_and_animation() {
+        let root = std::env::temp_dir().join(format!("simforge-actor-catalog-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("models/vehicle.sedan/animations")).unwrap();
+        fs::write(root.join("models/vehicle.sedan/model.glb"), b"glb").unwrap();
+        fs::write(root.join("models/vehicle.sedan/animations/walk.glb"), b"glb").unwrap();
+        fs::write(
+            root.join("catalog-models.json"),
+            r#"{
+              "vehicle.sedan": {
+                "model": {"glbPath":"models/vehicle.sedan/model.glb","source":"meshy"},
+                "tintable":false,
+                "scaleToDims":false,
+                "uniformScale":2.5,
+                "yawOffsetRad":1.5707964,
+                "groundOffsetM":0.72,
+                "animations":{"walk":{"glbPath":"models/vehicle.sedan/animations/walk.glb","clip":"Walk"}}
+              }
+            }"#,
+        )
+        .unwrap();
+
+        let catalog = VehicleModelCatalog::load(&root).unwrap();
+        let entry = catalog.resolve("vehicle.sedan").unwrap();
+        assert_eq!(entry.uniform_scale, Some(2.5));
+        assert!((entry.yaw_offset_rad - std::f32::consts::FRAC_PI_2).abs() < 1e-6);
+        assert_eq!(entry.ground_offset_m, 0.72);
+        assert_eq!(
+            entry.animations.get("walk").map(|(_, clip)| clip.as_str()),
+            Some("Walk")
+        );
+        assert!(catalog.resolve("vehicle.unmapped").is_none());
+        fs::remove_dir_all(root).unwrap();
+    }
 }

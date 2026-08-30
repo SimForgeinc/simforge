@@ -87,6 +87,13 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
   if (!REVISION_PATTERN.test(revision)) {
     throw new Error(`source revision must be a full lowercase git SHA: ${revision}`);
   }
+  if (
+    config.actorAssets?.schema !== 'simforge.actor-assets-closure/v1'
+    || !/^[0-9a-f]{64}$/u.test(config.actorAssets.digest ?? '')
+    || !URL.canParse(config.actorAssets.baseUrl ?? '')
+  ) {
+    throw new Error('stack config must pin a valid actor asset closure');
+  }
 
   if (!Array.isArray(config.packages) || config.packages.length !== 15) {
     throw new Error('stack config must contain exactly 15 npm packages');
@@ -149,6 +156,7 @@ export async function buildStackManifest({ repoRoot, sourceRevision } = {}) {
       revision,
     },
     contracts: config.contracts,
+    actorAssets: config.actorAssets,
     packages,
     pythonPackages: await pythonPackages(repoRoot, config),
   };

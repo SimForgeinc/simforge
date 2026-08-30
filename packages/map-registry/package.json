@@ -1,6 +1,6 @@
 {
   "name": "@simforge-oss/map-registry",
-  "version": "0.1.0-rc.58",
+  "version": "0.1.0-rc.59",
   "description": "Content-addressed map registry contracts and storage backends.",
   "repository": {
     "type": "git",

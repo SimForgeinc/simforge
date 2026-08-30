@@ -22,6 +22,11 @@ async function fixture(overrides = {}) {
     stackVersion: '1.2.3',
     repository: 'https://example.test/simforge',
     contracts: { scenarioTemplate: '2', simulationStepSeconds: 0.02 },
+    actorAssets: {
+      schema: 'simforge.actor-assets-closure/v1',
+      digest: 'b'.repeat(64),
+      baseUrl: 'https://assets.example.test',
+    },
     packages: PACKAGE_NAMES.map((name) => ({
       name: `@simforge-oss/${name}`,
       version: '1.2.3',
@@ -58,6 +63,11 @@ test('builds a deterministic exact stack manifest', async () => {
     { name: '@simforge-oss/engine', version: '1.2.3', role: 'engine-role' },
   ]);
   assert.deepEqual(manifest.pythonPackages, []);
+  assert.deepEqual(manifest.actorAssets, {
+    schema: 'simforge.actor-assets-closure/v1',
+    digest: 'b'.repeat(64),
+    baseUrl: 'https://assets.example.test',
+  });
   assert.equal(serializeStackManifest(manifest), `${JSON.stringify(manifest, null, 2)}\n`);
 });
 

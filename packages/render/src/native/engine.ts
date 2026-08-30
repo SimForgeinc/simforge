@@ -20,9 +20,10 @@ import { parseRenderIntent, type RenderSourceV3 } from '@simforge-oss/scenario';
 import { lowerOpenScenarioToNative } from './lowering.js';
 import { createNativeCameraSchedule } from './camera-schedule.js';
 import { NativeServiceClient, stripRgbaPadding, type NativeFrameRecord } from './service-client.js';
+import { ensureActorAssets } from './actor-assets.js';
 
 export const NATIVE_RENDER_ENGINE_ID = 'bevy-retained';
-const NATIVE_ENGINE_VERSION = '0.1.0-rc.58';
+const NATIVE_ENGINE_VERSION = '0.1.0-rc.59';
 
 export interface NativeRenderEngineOptions {
   /** Path to the retained native-render-service binary. */
@@ -162,6 +163,12 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
         .filter((input) => /^map\.tile\.[A-Za-z0-9._-]+$/.test(input.inputId))
         .sort((left, right) => left.inputId.localeCompare(right.inputId));
       if (tileInputs.length === 0) throw new Error('native render requires map.tile.* native-corpus GLBs');
+      let actorAssets: string | undefined;
+      try {
+        actorAssets = await ensureActorAssets();
+      } catch (error) {
+        process.stderr.write(`[simforge-native] actor asset closure unavailable; using proxy actors: ${error instanceof Error ? error.message : String(error)}\n`);
+      }
 
       const xosc = await fs.readFile(xoscInput.path);
       const lowering = lowerOpenScenarioToNative(xosc.toString('utf8'), xoscInput.sha256, rgbSchedules);
@@ -191,6 +198,10 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
         nearM: Math.min(...sources.map((source) => source.modality === 'rgb' ? source.attributes.nearM : 0.05)),
         farM: Math.max(...sources.map((source) => source.modality === 'rgb' ? source.attributes.farM : 1_000)),
         warmupFrames: 20,
+        ...(actorAssets === undefined ? {} : {
+          vehicleModels: actorAssets,
+          pedestrianModels: actorAssets,
+        }),
       });
       const serviceLog = await fs.open(serviceLogPath, 'w', 0o644);
       const service = spawn(binary, [
