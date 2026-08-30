@@ -18,10 +18,11 @@ import {
 import { parseRenderIntent, type RenderSourceV3 } from '@simforge-oss/scenario';
 
 import { lowerOpenScenarioToNative } from './lowering.js';
+import { createNativeCameraSchedule } from './camera-schedule.js';
 import { NativeServiceClient, stripRgbaPadding, type NativeFrameRecord } from './service-client.js';
 
 export const NATIVE_RENDER_ENGINE_ID = 'bevy-retained';
-const NATIVE_ENGINE_VERSION = '0.1.0-rc.56';
+const NATIVE_ENGINE_VERSION = '0.1.0-rc.57';
 
 export interface NativeRenderEngineOptions {
   /** Path to the retained native-render-service binary. */
@@ -69,10 +70,6 @@ export function resolveBinary(options: NativeRenderEngineOptions): string {
   return 'native-render-service';
 }
 
-function verticalFov(horizontalDegrees: number, width: number, height: number): number {
-  const horizontal = horizontalDegrees * Math.PI / 180;
-  return 2 * Math.atan(Math.tan(horizontal / 2) * height / width) * 180 / Math.PI;
-}
 
 async function waitForSocket(socketPath: string, child: ChildProcess, timeoutMs: number, signal: AbortSignal): Promise<void> {
   const deadline = performance.now() + timeoutMs;
@@ -168,6 +165,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
 
       const xosc = await fs.readFile(xoscInput.path);
       const lowering = lowerOpenScenarioToNative(xosc.toString('utf8'), xoscInput.sha256, rgbSchedules);
+      const cameraSchedule = createNativeCameraSchedule(sources, intent.sensorHosts, lowering.states);
       const traceRelative = 'trace/native-trace.json';
       const tracePath = path.join(context.workspace, traceRelative);
       await writeJson(tracePath, {
@@ -210,23 +208,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
         await waitForSocket(socketPath, service, options.startupTimeoutMs ?? 300_000, context.signal);
         client = await NativeServiceClient.connect(socketPath);
         await client.rpc({ op: 'load_scene_state', states: lowering.states });
-        const cameras = sources.map((source) => {
-          if (source.modality !== 'rgb') throw new Error(`unsupported native modality ${source.modality}`);
-          return {
-            sensorId: source.outputName,
-            width: source.attributes.width,
-            height: source.attributes.height,
-            fovDeg: verticalFov(source.attributes.horizontalFovDeg, source.attributes.width, source.attributes.height),
-            eye: [0, 0, 0], target: [1, 0, 0],
-            attach: {
-              actorId: source.actorId,
-              offsetM: [source.transform.position.x, -source.transform.position.z, source.transform.position.y],
-              yawDeg: -source.transform.rotation.yawRad * 180 / Math.PI,
-              pitchDeg: source.transform.rotation.pitchRad * 180 / Math.PI,
-              rollDeg: source.transform.rotation.rollRad * 180 / Math.PI,
-            },
-          };
-        });
+        const cameras = cameraSchedule;
         await fs.mkdir(path.join(context.workspace, 'video'), { recursive: true });
         for (const source of sources) {
           const outputPath = path.join(context.workspace, 'video', `${source.outputName}.mp4`);
@@ -245,7 +227,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
           if (context.signal.aborted) throw context.signal.reason instanceof Error ? context.signal.reason : new Error('native render aborted');
           const response = await client.rpc({
             op: 'render_bundle', sim_tick: tick, tick_index: tick,
-            ...(tick === 0 ? { cameras } : {}), passes: ['rgb'],
+            cameras: cameras[tick], passes: ['rgb'],
           });
           serverMs += response.server_ms ?? 0;
           const frameMicros = Math.round(lowering.frameTimes[tick]! * 1_000_000);

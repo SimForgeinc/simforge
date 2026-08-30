@@ -1,6 +1,6 @@
 {
   "name": "@simforge-oss/asset-packer",
-  "version": "0.1.0-rc.47",
+  "version": "0.1.0-rc.57",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SimForgeinc/simforge-oss.git",
@@ -24,7 +24,10 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "bin"],
+  "files": [
+    "dist",
+    "bin"
+  ],
   "scripts": {
     "build": "tsup src/index.ts src/main.ts --format esm --dts --sourcemap --clean --out-dir dist",
     "prepack": "pnpm run build",
