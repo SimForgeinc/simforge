@@ -16,8 +16,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-pub const NATIVE_RENDER_JOB_SCHEMA_V1: &str = "uniscenario.native-render-job/v1";
-pub const NATIVE_RENDER_RESULTS_SCHEMA_V1: &str = "uniscenario.native-render-results/v1";
+pub const NATIVE_RENDER_JOB_SCHEMA_V1: &str = "simforge.native-render-job/v1";
+pub const NATIVE_RENDER_RESULTS_SCHEMA_V1: &str = "simforge.native-render-results/v1";
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

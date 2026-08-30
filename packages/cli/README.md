@@ -357,6 +357,19 @@ reconciles a ledger left by a hard process loss: stale `running` records become
 `pending`, completed evidence is hash-checked, and the interrupted attempt
 number and deterministic seed are retried rather than consumed.
 
+## Native render-worker map inputs
+
+`simforge maps pull <name>@<version>` materializes every published derived
+closure by default, including `native-corpus`, under
+`$XDG_DATA_HOME/simforge/maps/.corpus/<name>` (or `--native-corpus-root`).
+The JSON result includes `nativeWorkerInputs`, the sorted GLB closure with
+verified `sha256`/`sizeBytes`, materialized paths, and deterministic lease
+input IDs. IDs are exactly `map.tile.000000`, `map.tile.000001`, and so on in
+native-corpus member-path order. A native render lease contains
+`scenario.xosc` plus this complete `map.tile.*` set; source, browser-optimized,
+or arbitrary GLBs are not interchangeable with decoded/dequantized
+`native-corpus` tiles.
+
 ## Current execution boundaries
 
 Stated plainly, because they bound what a number from `simforge` means:

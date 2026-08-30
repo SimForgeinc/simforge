@@ -13,7 +13,7 @@ variable "IMAGE_VERSION" {
 }
 
 group "default" {
-  targets = ["browser-worker", "carla-worker"]
+  targets = ["browser-worker", "carla-worker", "native-worker"]
 }
 
 target "common" {
@@ -38,4 +38,10 @@ target "carla-worker" {
   inherits = ["common"]
   dockerfile = "carla.Dockerfile"
   tags = ["simforge/carla-render-worker:${IMAGE_VERSION}"]
+}
+
+target "native-worker" {
+  inherits = ["common"]
+  dockerfile = "native.Dockerfile"
+  tags = ["simforge/native-render-worker:${IMAGE_VERSION}"]
 }

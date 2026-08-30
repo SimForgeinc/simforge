@@ -1,34 +1,39 @@
 import { describe, expect, it } from 'vitest';
 
 import { createRenderEngine, resolveBinary } from './engine.js';
-import { createTar } from './tar.js';
+import { stripRgbaPadding } from './service-client.js';
 
-describe('deterministic tar', () => {
-  it('produces byte-identical archives across invocations', () => {
-    const entries = [
-      { name: 'frame-00000.rgb.png', data: new Uint8Array([1, 2, 3]) },
-      { name: 'frame-00001.rgb.png', data: new Uint8Array(700) },
-    ];
-    const first = Buffer.from(createTar(entries));
-    const second = Buffer.from(createTar(entries));
-    expect(first.equals(second)).toBe(true);
-    expect(first.subarray(257, 263).toString()).toBe('ustar\0');
-    // Size field is octal with NUL padding.
-    expect(Number.parseInt(first.subarray(124, 136).toString().replace(/\0.*/, ''), 8)).toBe(3);
-    // Archive length is a whole number of 512-byte blocks including terminator.
-    expect(first.length % 512).toBe(0);
-  });
-});
-
-describe('native engine adapter', () => {
-  it('declares a valid capability set', () => {
+describe('native retained engine adapter', () => {
+  it('declares only the observable RGB and artifact contract', () => {
     const engine = createRenderEngine({ binary: '/bin/true' });
-    expect(engine.capabilities.backend).toBe('native');
-    expect(engine.capabilities.capabilities.length).toBeGreaterThan(0);
-    expect(new Set(engine.capabilities.modalities).size).toBe(engine.capabilities.modalities.length);
+    expect(engine.capabilities).toMatchObject({
+      engineId: 'bevy-retained',
+      backend: 'native',
+      modalities: ['rgb'],
+      requiresGpu: true,
+    });
+    expect(engine.capabilities.capabilities).toEqual(expect.arrayContaining([
+      'sensor.rgb', 'artifact.video', 'artifact.manifest', 'artifact.trace',
+    ]));
+    expect(engine.capabilities.capabilities).not.toEqual(expect.arrayContaining([
+      'sensor.depth', 'sensor.semantic', 'sensor.instance', 'sensor.lidar', 'sensor.radar',
+    ]));
   });
 
-  it('resolves the binary from options over env over defaults', () => {
-    expect(resolveBinary({ binary: '/opt/native-render-job' })).toBe('/opt/native-render-job');
+  it('resolves the retained service binary from explicit options', () => {
+    expect(resolveBinary({ binary: '/opt/native-render-service' })).toBe('/opt/native-render-service');
+  });
+
+  it('removes wgpu row padding before rawvideo encoding', () => {
+    const width = 65;
+    const height = 2;
+    const stride = 512;
+    const padded = Buffer.alloc(stride * height, 0xee);
+    padded.fill(1, 0, width * 4);
+    padded.fill(2, stride, stride + width * 4);
+    const packed = stripRgbaPadding(padded, width, height);
+    expect(packed).toHaveLength(width * height * 4);
+    expect([...packed.subarray(0, width * 4)]).toEqual(new Array(width * 4).fill(1));
+    expect([...packed.subarray(width * 4)]).toEqual(new Array(width * 4).fill(2));
   });
 });

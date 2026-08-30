@@ -278,6 +278,13 @@ export interface PullResult {
   version: MapVersion;
   closureDigest: string;
   materialized: Record<string, string>;
+  nativeWorkerInputs: Array<{
+    inputId: `map.tile.${string}`;
+    memberPath: string;
+    materializedPath: string;
+    sha256: string;
+    sizeBytes: number;
+  }>;
 }
 
 export async function listDerivedClosures(
@@ -308,6 +315,7 @@ export async function pullVersion(
   const devDestination = join(options.layouts.devAssetsRoot, resolvedVersion.name);
   await materializeClosure(backend, resolvedVersion.closure, devDestination);
   const materialized: Record<string, string> = { canonical: devDestination };
+  const nativeWorkerInputs: PullResult['nativeWorkerInputs'] = [];
   const derivedClosures =
     options.derivedClosures ??
     (await listDerivedClosures(backend, resolvedVersion.name, resolvedVersion.record.version));
@@ -323,12 +331,27 @@ export async function pullVersion(
     }
     await materializeClosure(backend, closure, destination);
     materialized[closure.kind] = destination;
+    if (closure.kind === 'native-corpus') {
+      const glbs = Object.entries(closure.members)
+        .filter(([memberPath]) => memberPath.toLowerCase().endsWith('.glb'))
+        .sort(([left], [right]) => left.localeCompare(right));
+      glbs.forEach(([memberPath, member], index) => {
+        nativeWorkerInputs.push({
+          inputId: `map.tile.${String(index).padStart(6, '0')}`,
+          memberPath,
+          materializedPath: join(destination, ...memberPath.split('/')),
+          sha256: member.sha256,
+          sizeBytes: member.bytes,
+        });
+      });
+    }
   }
   return {
     name: resolvedVersion.name,
     version: resolvedVersion.record.version,
     closureDigest: resolvedVersion.record.closureDigest,
     materialized,
+    nativeWorkerInputs,
   };
 }
 

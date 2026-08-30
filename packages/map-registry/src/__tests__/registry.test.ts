@@ -157,20 +157,35 @@ describe('file registry', () => {
     await writeFile(join(source, 'map.xodr'), Buffer.from([0, 1, 2, 255]));
     await writeFile(join(source, 'nested', 'manifest.json'), '{"map":"test"}\n');
     const built = await closureFromDirectory(source);
+    const nativeSource = join(root, 'native');
+    await mkdir(join(nativeSource, 'tiles'), { recursive: true });
+    await writeFile(join(nativeSource, 'tiles', 'road.glb'), Buffer.from([4, 5, 6]));
+    await writeFile(join(nativeSource, 'scene-manifest.json'), '{}\n');
+    const native = await closureFromDirectory(nativeSource, 'native-corpus', 'decoder-v1');
     const backend = new FileRegistryBackend(`file://${join(root, 'registry')}`);
-    await publishVersion(backend, { name: 'test-map', version: 'v1', closure: built.closure, files: built.files });
+    await publishVersion(backend, {
+      name: 'test-map', version: 'v1', closure: built.closure, files: built.files,
+      derived: [{ closure: native.closure, files: native.files }],
+    });
     const layouts = {
       browserBundlesRoot: join(root, 'cache', 'map-bundles'),
       devAssetsRoot: join(root, 'cache', 'dev-assets'),
       nativeCorpusRoot: join(root, 'cache', '.corpus'),
     };
-    await pullVersion(backend, 'test-map@v1', { layouts });
+    const result = await pullVersion(backend, 'test-map@v1', { layouts });
     expect(await readFile(join(layouts.devAssetsRoot, 'test-map', 'map.xodr'))).toEqual(
       await readFile(join(source, 'map.xodr')),
     );
     expect(await readFile(join(layouts.devAssetsRoot, 'test-map', 'nested', 'manifest.json'))).toEqual(
       await readFile(join(source, 'nested', 'manifest.json')),
     );
+    expect(result.nativeWorkerInputs).toEqual([{
+      inputId: 'map.tile.000000',
+      memberPath: 'tiles/road.glb',
+      materializedPath: join(layouts.nativeCorpusRoot, 'test-map', 'tiles', 'road.glb'),
+      sha256: sha256(Buffer.from([4, 5, 6])),
+      sizeBytes: 3,
+    }]);
   });
 
   it('fails pull when a blob is corrupt', async () => {
