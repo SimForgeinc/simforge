@@ -1,6 +1,12 @@
 node_modules/
 dist/
 /dev-assets
+
+# Meshy generation is resumable local work; source and smoke checks stay tracked.
+/tools/meshy/cache/
+/tools/meshy/state.json
+/tools/meshy/manifest.json
+/tools/meshy/REPORT.md
 # Versioned local map derivatives are reproducible and may be many gigabytes.
 **/3d/variants/
 *.local
