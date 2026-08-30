@@ -22,7 +22,7 @@ import { createNativeCameraSchedule } from './camera-schedule.js';
 import { NativeServiceClient, stripRgbaPadding, type NativeFrameRecord } from './service-client.js';
 
 export const NATIVE_RENDER_ENGINE_ID = 'bevy-retained';
-const NATIVE_ENGINE_VERSION = '0.1.0-rc.57';
+const NATIVE_ENGINE_VERSION = '0.1.0-rc.58';
 
 export interface NativeRenderEngineOptions {
   /** Path to the retained native-render-service binary. */

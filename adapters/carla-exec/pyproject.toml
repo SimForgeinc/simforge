@@ -1,6 +1,6 @@
 [project]
 name = "simforge-oss-carla-exec"
-version = "0.1.0rc57"
+version = "0.1.0rc58"
 description = "Optional local CARLA renderer, sensor, and deterministic conformance adapter for SimForge"
 readme = "README.md"
 requires-python = ">=3.10"

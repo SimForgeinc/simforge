@@ -965,6 +965,40 @@ impl SceneApp {
             .map(|material| material.base_color.to_srgba().to_f32_array())
             .collect()
     }
+    /// Actor ids currently represented by visible scene geometry.
+    pub fn actor_ids(&self) -> Vec<String> {
+        self.actors.keys().cloned().collect()
+    }
+
+    /// Exclude or restore one actor's RGB geometry without touching its
+    /// scene state or layer-1 instance-ID proxy.
+    ///
+    /// Catalog-backed actors keep their fallback cuboid hidden when restored;
+    /// actors without a catalog model restore that cuboid instead.
+    pub fn set_actor_visual_hidden(&mut self, actor_id: &str, hidden: bool) {
+        let Some((actor, _)) = self.actors.get(actor_id).copied() else {
+            return;
+        };
+        let model = self.actor_models.get(actor_id).map(|(entity, _, _)| *entity);
+        let world = self.app.world_mut();
+        if let Some(mut visibility) = world.get_mut::<Visibility>(actor) {
+            *visibility = if hidden || model.is_some() {
+                Visibility::Hidden
+            } else {
+                Visibility::Inherited
+            };
+        }
+        if let Some(model) = model {
+            if let Some(mut visibility) = world.get_mut::<Visibility>(model) {
+                *visibility = if hidden {
+                    Visibility::Hidden
+                } else {
+                    Visibility::Inherited
+                };
+            }
+        }
+    }
+
 
     /// Remove a despawned scene-state actor (both the visible box and its
     /// layer-1 ID clone).

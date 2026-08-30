@@ -25,7 +25,7 @@ use render_core::engine::{
 use render_core::profiles::RenderProfileConfig;
 use render_core::vehicle_model::{VehicleModelCatalog, VehicleModelEntry};
 use sensors::bvh::{Hit, Raycast, RaycastScene, Tri};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
@@ -963,6 +963,19 @@ fn publish_sensor_payload(
     Ok(())
 }
 
+fn camera_host_actor_ids(
+    rig: &[ServiceCamera],
+    available_actor_ids: &[String],
+) -> HashSet<String> {
+    let available: HashSet<&str> = available_actor_ids.iter().map(String::as_str).collect();
+    rig.iter()
+        .filter_map(|camera| camera.attach.as_ref())
+        .map(|attach| attach.actor_id.as_str())
+        .filter(|actor_id| available.contains(actor_id))
+        .map(str::to_owned)
+        .collect()
+}
+
 /// bundle (frames first, then the bundle table record, then the meta-page
 /// latest-bundle pointer flip). Cameras keep rig registration order and
 /// passes are canonical (rgb, id, depth, semantic) within each camera, so
@@ -1027,6 +1040,16 @@ fn render_bundle_op(
     let rig = state.rig.clone();
     let lidar_rig = state.lidars.clone();
     let radar_rig = state.radars.clone();
+    // RGB sensors mounted to an actor must not render their own host. Reset
+    // the retained scene first so a later rig change cannot leave a former
+    // host hidden; layer-1 ID proxies and scene state remain untouched.
+    let actor_ids = state.app.actor_ids();
+    let hidden_hosts = camera_host_actor_ids(&rig, &actor_ids);
+    for actor_id in &actor_ids {
+        state
+            .app
+            .set_actor_visual_hidden(actor_id, hidden_hosts.contains(actor_id));
+    }
     for cam in &rig {
         ensure_camera(state, cam, want);
         let (eye, target) = match resolve_pose(state, cam) {
@@ -1326,10 +1349,13 @@ fn async_export_pngs(dir: &str, tick_id: u64, payloads: &[(String, String, u32, 
 #[cfg(test)]
 mod tests {
     use super::{
-        actor_base_y, actor_color, instance_coverage, row_stride, CombinedSensorScene,
+        actor_base_y, actor_color, camera_host_actor_ids, instance_coverage, row_stride,
+        CombinedSensorScene,
     };
+    use crate::proto::{CameraAttach, ServiceCamera};
     use crate::scene::{ActorState, ActorTransform};
     use bevy::math::{Quat, Vec3};
+    use std::collections::HashSet;
     use sensors::bvh::{RaycastScene, Tri};
     use sensors::taxonomy::SemanticClass;
 
@@ -1342,6 +1368,40 @@ mod tests {
         data[row_stride(2, 4) + 8] = 9; // Padding must not count.
         assert_eq!(instance_coverage(&data, 2, 2), 0.5);
     }
+    #[test]
+    fn mounted_camera_excludes_its_host_and_keeps_other_actors_visible() {
+        let camera = ServiceCamera {
+            sensor_id: "front-camera".into(),
+            width: 1280,
+            height: 720,
+            fov_deg: 58.0,
+            eye: [0.0; 3],
+            target: [1.0, 0.0, 0.0],
+            semantic: false,
+            depth_encoding: None,
+            attach: Some(CameraAttach {
+                actor_id: "ego".into(),
+                offset_m: [1.8, 0.0, 1.35],
+                yaw_deg: 0.0,
+                pitch_deg: 0.0,
+                roll_deg: 0.0,
+                look_at_actor: false,
+            }),
+            profile: None,
+        };
+        let actors = vec!["ego".to_string(), "lead".to_string(), "pedestrian".to_string()];
+
+        let hidden = camera_host_actor_ids(&[camera], &actors);
+        let visible: Vec<&str> = actors
+            .iter()
+            .map(String::as_str)
+            .filter(|actor_id| !hidden.contains(*actor_id))
+            .collect();
+
+        assert_eq!(hidden, HashSet::from(["ego".to_string()]));
+        assert_eq!(visible, vec!["lead", "pedestrian"]);
+    }
+
 
     #[test]
     fn authored_actor_height_precedes_mesh_ground() {
