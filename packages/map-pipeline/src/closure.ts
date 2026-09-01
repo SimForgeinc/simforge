@@ -51,6 +51,13 @@ export async function readWholeFile(file: string): Promise<Buffer> {
   }
 }
 
+/** `Hash.update` rejects single chunks above 2 GiB; feed large buffers in slices. */
+export function sha256Large(bytes: Buffer): string {
+  const hash = createHash('sha256');
+  for (let offset = 0; offset < bytes.length; offset += 1 << 30) hash.update(bytes.subarray(offset, offset + (1 << 30)));
+  return hash.digest('hex');
+}
+
 async function hashFile(file: string): Promise<{ sha256: string; bytes: number }> {
   const hash = createHash('sha256');
   let bytes = 0;

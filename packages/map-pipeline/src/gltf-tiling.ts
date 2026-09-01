@@ -10,7 +10,7 @@ import { copyToDocument, createDefaultPropertyResolver, dedup, getBounds, listTe
 
 import { parseGlb } from '../../../tools/glb-ktx2-repack/src/glb.mjs';
 
-import { canonicalJson, hashTree, readWholeFile, sha256 } from './closure.js';
+import { canonicalJson, hashTree, readWholeFile, sha256, sha256Large } from './closure.js';
 import type { StageResult } from './tiling.js';
 
 /**
@@ -290,7 +290,7 @@ async function loadSource(io: NodeIO, file: string): Promise<LoadedSource> {
   if (materialsJson.length !== materials.length) throw new Error(`${file}: serialized ${materialsJson.length} materials for ${materials.length} document materials`);
   const materialDigests = new Map<Material, string>();
   materials.forEach((material, index) => materialDigests.set(material, materialSignature(json, materialsJson[index]!, digests)));
-  return { file, bytes: bytes.byteLength, sha256: sha256(bytes), document, materialDigests, imageCount: document.getRoot().listTextures().length };
+  return { file, bytes: bytes.byteLength, sha256: sha256Large(bytes), document, materialDigests, imageCount: document.getRoot().listTextures().length };
 }
 
 function collectObjects(source: LoadedSource, sourceIndex: number, skipped: GltfTilingReport['skippedNodes']): SourceObject[] {
