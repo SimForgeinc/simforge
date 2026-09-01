@@ -141,6 +141,7 @@ describe('glTF-native tiling', () => {
 
     const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
     const tile = await io.read(path.join(stage.outputDir, 'tiles', 'tile_6_1.lod0.glb'));
+    expect(tile.getRoot().getDefaultScene()).toBe(tile.getRoot().listScenes()[0]!);
     const [node] = tile.getRoot().listScenes()[0]!.listChildren();
     expect(node!.getName()).toBe('Building_A');
     expect(node!.getTranslation()).toEqual([510, 0, 10]);

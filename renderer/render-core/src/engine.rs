@@ -1456,8 +1456,10 @@ fn spawn_loaded_tiles(
         let Some(gltf) = gltfs.get(&tile.0) else {
             continue;
         };
-        let Some(scene) = gltf.default_scene.clone() else {
-            panic!("GLB without default scene");
+        // glTF makes `scene` optional; a file without a default scene is
+        // still valid, so fall back to its first scene.
+        let Some(scene) = gltf.default_scene.clone().or_else(|| gltf.scenes.first().cloned()) else {
+            panic!("GLB without any scene");
         };
         commands.entity(e).insert(SceneSpawned);
         commands.spawn((WorldAssetRoot(scene),));

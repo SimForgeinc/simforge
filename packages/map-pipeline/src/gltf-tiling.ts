@@ -39,7 +39,7 @@ import type { StageResult } from './tiling.js';
  * Any mismatch aborts the stage. `tiling-report.json` records the proof plus
  * per-map material/UV/transform/image-multiplicity facts for downstream QA.
  */
-export const GLTF_TILER_REVISION = 1;
+export const GLTF_TILER_REVISION = 2;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const CLASSIFY_VEGETATION = /veg|tree|bush|grass|foliage|plant/;
 const CLASSIFY_ROAD = /road|asphalt|ground|terrain|pavement|marking|lane/;
@@ -327,6 +327,7 @@ function tileDocument(sources: LoadedSource[], members: SourceObject[]): Documen
   const tile = new Document();
   const resolvers = new Map<number, PropertyResolver<Property>>();
   const scene = tile.createScene('scene');
+  tile.getRoot().setDefaultScene(scene);
   const declared = new Set<string>();
   for (const member of members) {
     const source = sources[member.sourceIndex]!;
