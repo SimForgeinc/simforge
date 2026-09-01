@@ -18,7 +18,7 @@ import type { ClosureStageResult } from './assemble.js';
 import type { StageResult } from './tiling.js';
 
 const BROWSER_OPTIMIZER_REVISION = 3;
-const KTX2_REPACK_REVISION = 4;
+const KTX2_REPACK_REVISION = 5;
 const NATIVE_CORPUS_DECODER_REVISION = 6;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const SHARP_VERSION = '0.34.5';

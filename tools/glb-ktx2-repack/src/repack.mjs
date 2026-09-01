@@ -14,7 +14,8 @@
  * derivative: UASTC is lossy on its own and should be the only lossy step.
  */
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -34,6 +35,7 @@ const ENCODABLE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
  */
 const COLOR_EXTENSION_SLOTS = new Set(['specularColorTexture', 'sheenColorTexture', 'diffuseTexture']);
 
+const execFileAsync = promisify(execFile);
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 const align4 = (n) => (n + 3) & ~3;
 
@@ -168,7 +170,9 @@ function imageViewSet(json) {
  *   KTX2Loader transcodes BasisLZ fine and transfer size is ~4x smaller.
  */
 export function toktxArgs(cls, { colorCodec = 'uastc', etc1sQuality = 160, uastcQuality = 2, uastcRdo = 1.0, zstdLevel = 9 } = {}) {
-  const common = ['--t2', '--genmipmap', '--assign_primaries', 'bt709'];
+  // One encoder thread per toktx: output is independent of the host's core
+  // count, and parallelism comes from encoding many images at once instead.
+  const common = ['--t2', '--genmipmap', '--assign_primaries', 'bt709', '--threads', '1'];
   if (cls === 'color' && colorCodec === 'etc1s') {
     return [...common, '--encode', 'etc1s', '--clevel', '2', '--qlevel', String(etc1sQuality), '--assign_oetf', 'srgb'];
   }
@@ -190,6 +194,13 @@ export function resolveKtxBinDir(explicit) {
   return candidate;
 }
 
+/** Concurrent toktx processes per repack; each is single-threaded. */
+export function encodeConcurrency() {
+  const requested = Number(process.env.SIMFORGE_KTX2_JOBS);
+  if (Number.isInteger(requested) && requested > 0) return requested;
+  return Math.max(1, os.availableParallelism() - 2);
+}
+
 async function encodeKtx2(sourceBytes, cls, name, { ktxBinDir, tmpDir, options }) {
   const sharp = (await import('sharp')).default;
   const image = sharp(sourceBytes);
@@ -207,7 +218,7 @@ async function encodeKtx2(sourceBytes, cls, name, { ktxBinDir, tmpDir, options }
   const cacheDir = process.env.SIMFORGE_KTX2_CACHE;
   const cacheKey = sha256(Buffer.concat([
     sourceBytes,
-    Buffer.from(`\0${cls}\0uastc2-rdo1-zstd9-block4-v2\0${JSON.stringify(options ?? {})}`),
+    Buffer.from(`\0${cls}\0uastc2-rdo1-zstd9-block4-threads1-v3\0${JSON.stringify(options ?? {})}`),
   ]));
   const cachePath = cacheDir ? path.join(cacheDir, `${cacheKey}.ktx2`) : undefined;
   if (cachePath && fs.existsSync(cachePath)) {
@@ -220,20 +231,22 @@ async function encodeKtx2(sourceBytes, cls, name, { ktxBinDir, tmpDir, options }
       hasAlpha: meta.hasAlpha ?? false,
     };
   }
-  const safe = String(name ?? 'image').replace(/[^\w.-]+/g, '_');
-  const pngPath = path.join(tmpDir, `${safe}.png`);
-  const ktxPath = path.join(tmpDir, `${safe}.ktx2`);
+  // Names collide (RoadRunner reuses them); key temp files by cache digest.
+  const pngPath = path.join(tmpDir, `${cacheKey}.png`);
+  const ktxPath = path.join(tmpDir, `${cacheKey}.ktx2`);
   const prepared = width === meta.width && height === meta.height
     ? image
     : image.resize(width, height, { fit: 'fill', kernel: sharp.kernel.lanczos3 });
   await prepared.png().toFile(pngPath);
   const args = [...toktxArgs(cls, options), ktxPath, pngPath];
-  const run = spawnSync(path.join(ktxBinDir, 'toktx'), args, {
-    encoding: 'utf8',
-    env: { ...process.env, TOKTX_OPTIONS: '' },
-  });
-  if (run.status !== 0) {
-    throw new Error(`toktx failed for ${name}: ${run.stderr || run.stdout}`);
+  try {
+    await execFileAsync(path.join(ktxBinDir, 'toktx'), args, {
+      encoding: 'utf8',
+      env: { ...process.env, TOKTX_OPTIONS: '' },
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  } catch (error) {
+    throw new Error(`toktx failed for ${name}: ${error.stderr || error.stdout || error.message}`);
   }
   const ktx2 = fs.readFileSync(ktxPath);
   if (cachePath) {
@@ -283,24 +296,32 @@ export async function repackGlb(srcBuf, opts = {}) {
   const preDigests = digestRanges(srcJson, srcBin, srcImageViews);
   const classes = classifyImages(srcJson);
 
-  // Encode every raster image.
+  // Encode every raster image, `encodeConcurrency()` toktx processes at a
+  // time. Results are keyed by image index so the report order is stable.
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'glb-ktx2-'));
   const encoded = new Map(); // image index -> { ktx2, ... }
   const textureRows = [];
   try {
+    const queue = [...rasterImages];
+    const worker = async () => {
+      for (let i = queue.shift(); i !== undefined; i = queue.shift()) {
+        const view = srcJson.bufferViews[images[i].bufferView];
+        const sourceBytes = srcBin.subarray(
+          view.byteOffset ?? 0,
+          (view.byteOffset ?? 0) + view.byteLength,
+        );
+        encoded.set(i, await encodeKtx2(sourceBytes, classes.get(i), images[i].name ?? `image_${i}`, {
+          ktxBinDir,
+          tmpDir,
+          options: opts,
+        }));
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(encodeConcurrency(), queue.length) }, worker));
     for (const i of rasterImages) {
       const view = srcJson.bufferViews[images[i].bufferView];
-      const sourceBytes = srcBin.subarray(
-        view.byteOffset ?? 0,
-        (view.byteOffset ?? 0) + view.byteLength,
-      );
       const cls = classes.get(i);
-      const result = await encodeKtx2(sourceBytes, cls, images[i].name ?? `image_${i}`, {
-        ktxBinDir,
-        tmpDir,
-        options: opts,
-      });
-      encoded.set(i, result);
+      const result = encoded.get(i);
       textureRows.push({
         image: i,
         name: images[i].name ?? null,
