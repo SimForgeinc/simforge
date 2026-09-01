@@ -2,17 +2,22 @@
 /**
  * Prepare a repacked (KTX2) production tile for Bevy render-core.
  *
- * bevy_gltf 0.19 supports neither EXT_meshopt_compression nor
- * KHR_mesh_quantization nor the KHR_texture_basisu *syntax* (it does decode
- * raw KTX2 referenced from texture.source — bevyengine/bevy#19104). This is
+ * bevy_gltf supports neither EXT_meshopt_compression nor
+ * KHR_mesh_quantization, so geometry must be decoded asset-side. This is
  * the sensor-corpus geometry decode (scripts/renderer-spike/FINDINGS.md §1)
  * minus the WebP->PNG step, which the KTX2 repack makes unnecessary:
  *
  *   1. gltf-transform optimize  — decodes EXT_meshopt, no re-compression,
  *      no texture work, no instancing/join/simplify/weld.
  *   2. gltf-transform dequantize — int16 -> f32 vertex attributes.
- *   3. flatten KHR_texture_basisu.source into texture.source and drop the
- *      extension so bevy_gltf resolves the KTX2 images.
+ *   3. gltf-transform unweld     — permit splits at tangent discontinuities.
+ *   4. gltf-transform tangents   — bake MikkTSpace tangents so normal-map
+ *      shading is not dependent on renderer-specific runtime generation.
+ *   5. gltf-transform weld       — re-index only identical tangent vertices.
+ *
+ * Output keeps standards-compliant KHR_texture_basisu references: the
+ * renderer's vendored bevy_gltf (renderer/vendor/bevy_gltf) loads that
+ * syntax natively, so no flattened texture.source cache copy exists.
  *
  *   node tools/glb-ktx2-repack/scripts/bevy-decode.mjs <in.ktx2.glb> <out.glb>
  */
@@ -20,8 +25,6 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
-import { parseGlb, writeGlb } from '../src/glb.mjs';
 
 const GLTF_TRANSFORM_VERSION = '4.4.2'; // matches .corpus manifest + config/map-derivative-toolchain.json family
 
@@ -34,6 +37,8 @@ if (!input || !output) {
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bevy-decode-'));
 const step1 = path.join(tmpDir, 'step1.glb');
 const step2 = path.join(tmpDir, 'step2.glb');
+const step3 = path.join(tmpDir, 'step3.glb');
+const step4 = path.join(tmpDir, 'step4.glb');
 const run = (args) => {
   const result = spawnSync('npx', ['-y', `@gltf-transform/cli@${GLTF_TRANSFORM_VERSION}`, ...args], {
     stdio: 'inherit',
@@ -54,27 +59,11 @@ try {
     '--weld', 'false',
   ]);
   run(['dequantize', step1, step2]);
-
-  const { json, bin } = parseGlb(fs.readFileSync(step2));
-  let flattened = 0;
-  for (const texture of json.textures ?? []) {
-    const source = texture.extensions?.KHR_texture_basisu?.source;
-    if (Number.isInteger(source)) {
-      texture.source = source;
-      delete texture.extensions.KHR_texture_basisu;
-      if (Object.keys(texture.extensions).length === 0) delete texture.extensions;
-      flattened++;
-    }
-  }
-  for (const key of ['extensionsUsed', 'extensionsRequired']) {
-    if (json[key]) {
-      json[key] = json[key].filter((e) => e !== 'KHR_texture_basisu');
-      if (json[key].length === 0) delete json[key];
-    }
-  }
+  run(['unweld', step2, step3]);
+  run(['tangents', step3, step4]);
   fs.mkdirSync(path.dirname(path.resolve(output)), { recursive: true });
-  fs.writeFileSync(output, writeGlb(json, bin));
-  console.log(`${path.basename(output)}: geometry decoded, ${flattened} textures flattened to core source`);
+  run(['weld', step4, output]);
+  console.log(`${path.basename(output)}: geometry decoded, MikkTSpace tangents authored, KHR_texture_basisu references preserved`);
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }

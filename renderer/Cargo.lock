@@ -1045,8 +1045,6 @@ dependencies = [
 [[package]]
 name = "bevy_gltf"
 version = "0.19.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d17df73b26adfb8be89f0716b8667c60660bdd2d589863b8901caca58c99841"
 dependencies = [
  "async-lock",
  "base64",

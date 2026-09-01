@@ -271,6 +271,13 @@ def classify(obj):
 
 
 def export_objects(objects, filename):
+    for obj in objects:
+        if obj.name not in bpy.context.view_layer.objects:
+            bpy.context.scene.collection.objects.link(obj)
+        obj.hide_select = False
+        obj.hide_viewport = False
+        obj.hide_set(False)
+    bpy.context.view_layer.update()
     bpy.ops.object.select_all(action='DESELECT')
     ordered = sorted(objects, key=lambda value: value.name)
     for obj in ordered:

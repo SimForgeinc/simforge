@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process';
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { hashTree, sha256 } from './closure.js';
+import { gltfToTiles } from './gltf-tiling.js';
 import { buildMaterialBindingPlan } from './material-binding.js';
 
 const execFileAsync = promisify(execFile);
@@ -104,7 +105,7 @@ export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResul
   const bindingPlan = await buildMaterialBindingPlan(sourceDir);
   const bindingPlanPath = path.join(outputDir, 'material-bindings.json');
   await writeFile(bindingPlanPath, `${JSON.stringify(bindingPlan)}\n`);
-  await execFileAsync(blender, [
+  const { stdout, stderr } = await execFileAsync(blender, [
     '--background',
     '--factory-startup',
     '--python',
@@ -119,10 +120,26 @@ export async function fbxToTiles(options: FbxToTilesOptions): Promise<StageResul
   try {
     await access(path.join(outputDir, 'inventory.json'));
   } catch {
-    throw new Error(`Blender tiler exited without producing inventory.json for ${sourceDir}`);
+    const output = `${stdout}\n${stderr}`.trim().slice(-8 * 1024);
+    throw new Error(`Blender tiler exited without producing inventory.json for ${sourceDir}${output ? `:\n${output}` : ''}`);
   }
   const outputDigest = await hashTree(outputDir);
   const receipt = { schema: 'simforge.map-pipeline-stage.v1', stage: 'fbx-to-tiles', inputDigest, toolFingerprint, outputDigest };
   await writeFile(receiptPath, `${JSON.stringify(receipt)}\n`);
   return { inputDigest, toolFingerprint, outputDigest, outputDir, cacheKey };
+}
+
+/**
+ * Tile a map source by what it is. FBX/UE exports need the Blender tiler and
+ * its material-binding plan; authored glTF/GLB exports go through the lossless
+ * glTF-native tiler so no material, UV set, or image is reinterpreted.
+ */
+export async function sourceToTiles(options: FbxToTilesOptions): Promise<StageResult> {
+  const sourceDir = path.resolve(options.sourceDir);
+  const names = (await readdir(sourceDir)).map((name) => name.toLowerCase());
+  const hasFbx = names.some((name) => name.endsWith('.fbx'));
+  const hasGltf = names.some((name) => name.endsWith('.glb') || name.endsWith('.gltf'));
+  if (hasFbx) return fbxToTiles(options);
+  if (hasGltf) return gltfToTiles({ sourceDir, workDir: options.workDir, ...(options.cellSize ? { cellSize: options.cellSize } : {}) });
+  throw new Error(`${sourceDir} contains no top-level FBX, GLB, or glTF files`);
 }

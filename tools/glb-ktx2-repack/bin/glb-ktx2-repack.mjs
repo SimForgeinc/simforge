@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 /**
- * WebP -> KTX2 image-only GLB repacker.
- *
+ * PNG/JPEG/WebP -> KTX2 image-only GLB repacker.
  *   node tools/glb-ktx2-repack/bin/glb-ktx2-repack.mjs repack <in.glb> <out.glb> \
- *     [--ktx-bin <dir>] [--no-core-source] [--report <path.json>]
+ *     [--ktx-bin <dir>] [--color-codec uastc|etc1s] [--report <path.json>]
  *   node tools/glb-ktx2-repack/bin/glb-ktx2-repack.mjs verify <src.glb> <out.glb>
  *
- * `repack` converts every embedded image/webp payload to KTX2 (ETC1S for
+ * `repack` converts every embedded PNG, JPEG, or WebP payload to KTX2 (ETC1S for
  * color, UASTC+zstd for normal/data) and rewrites texture/image references;
  * geometry bytes are proven identical before the output is written.
  * `verify` re-proves geometry identity between any source/output pair and
@@ -23,8 +22,7 @@ function parseArgs(argv) {
   const flags = new Map();
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--no-core-source') flags.set('core-source', false);
-    else if (arg.startsWith('--')) flags.set(arg.slice(2), argv[++i]);
+    if (arg.startsWith('--')) flags.set(arg.slice(2), argv[++i]);
     else positional.push(arg);
   }
   return { positional, flags };
@@ -36,7 +34,7 @@ const { positional, flags } = parseArgs(rest);
 if (command === 'repack') {
   const [input, output] = positional;
   if (!input || !output) {
-    console.error('usage: glb-ktx2-repack repack <in.glb> <out.glb> [--ktx-bin dir] [--color-codec uastc|etc1s] [--no-core-source] [--report path]');
+    console.error('usage: glb-ktx2-repack repack <in.glb> <out.glb> [--ktx-bin dir] [--color-codec uastc|etc1s] [--report path]');
     process.exit(2);
   }
   const colorCodec = flags.get('color-codec') ?? 'uastc';
@@ -47,7 +45,6 @@ if (command === 'repack') {
   const src = fs.readFileSync(input);
   const { glb, report } = await repackGlb(src, {
     ktxBinDir: flags.get('ktx-bin'),
-    keepCoreSource: flags.get('core-source') !== false,
     colorCodec,
   });
   fs.mkdirSync(path.dirname(path.resolve(output)), { recursive: true });
@@ -55,10 +52,10 @@ if (command === 'repack') {
   if (report.skipped) {
     console.log(`SKIP ${input}: ${report.reason}`);
   } else {
-    const webp = report.images.reduce((sum, r) => sum + r.webpBytes, 0);
+    const sourceBytes = report.images.reduce((sum, r) => sum + r.sourceBytes, 0);
     const ktx2 = report.images.reduce((sum, r) => sum + r.ktx2Bytes, 0);
     console.log(
-      `${path.basename(input)}: ${report.images.length} images webp ${(webp / 1e6).toFixed(2)}MB -> ktx2 ${(ktx2 / 1e6).toFixed(2)}MB | file ${(report.bytes.src / 1e6).toFixed(2)}MB -> ${(report.bytes.out / 1e6).toFixed(2)}MB | geometry ranges ${report.geometry.ranges} identical=${report.geometry.identical}`,
+      `${path.basename(input)}: ${report.images.length} images source ${(sourceBytes / 1e6).toFixed(2)}MB -> ktx2 ${(ktx2 / 1e6).toFixed(2)}MB | file ${(report.bytes.src / 1e6).toFixed(2)}MB -> ${(report.bytes.out / 1e6).toFixed(2)}MB | geometry ranges ${report.geometry.ranges} identical=${report.geometry.identical}`,
     );
   }
   const reportPath = flags.get('report');

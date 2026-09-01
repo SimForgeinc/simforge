@@ -1,7 +1,8 @@
 export interface RepackOptions {
   ktxBinDir?: string;
-  keepCoreSource?: boolean;
   colorCodec?: 'uastc' | 'etc1s';
+  /** Longest-edge cap applied before block alignment and encoding. */
+  maxDimension?: number;
 }
 
 export function repackGlb(

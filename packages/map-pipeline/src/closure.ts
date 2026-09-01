@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { canonicalJson, sha256 } from '@simforge-oss/map-registry';
 import type { ClosureMember, MapClosure } from '@simforge-oss/map-registry';
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
@@ -28,10 +30,20 @@ export async function filesUnder(root: string): Promise<string[]> {
   return output;
 }
 
+async function hashFile(file: string): Promise<{ sha256: string; bytes: number }> {
+  const hash = createHash('sha256');
+  let bytes = 0;
+  for await (const chunk of createReadStream(file)) {
+    hash.update(chunk);
+    bytes += chunk.length;
+  }
+  return { sha256: hash.digest('hex'), bytes };
+}
+
 export async function hashTree(root: string): Promise<string> {
   const rows: string[] = [];
   for (const relativePath of await filesUnder(root)) {
-    rows.push(`${relativePath}\0${sha256(await readFile(path.join(root, relativePath)))}`);
+    rows.push(`${relativePath}\0${(await hashFile(path.join(root, relativePath))).sha256}`);
   }
   return sha256(rows.join('\n'));
 }
@@ -43,8 +55,7 @@ export async function buildClosure(
 ): Promise<MapClosure> {
   const members: Record<string, ClosureMember> = {};
   for (const relativePath of await filesUnder(root)) {
-    const bytes = await readFile(path.join(root, relativePath));
-    members[relativePath] = { sha256: sha256(bytes), bytes: bytes.byteLength };
+    members[relativePath] = await hashFile(path.join(root, relativePath));
   }
   return {
     schema: 'map-closure.v1',

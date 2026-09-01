@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 
 import {
   TOPOLOGY_CONTENT_EPOCH,
@@ -112,7 +113,7 @@ function sceneManifest(inventory: Inventory, instanceTiles: VegetationInstanceTi
 }
 
 async function buildSemantics(tilesDir: string, rows: InventoryRow[]): Promise<unknown> {
-  const io = new NodeIO();
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
   const objects: Array<{ id: string; source: string; node: string }> = [];
   for (const row of [...rows].sort((left, right) => left.file.localeCompare(right.file))) {
     const document = await io.read(path.join(tilesDir, row.file.replace(/^tiles\//, '')));
@@ -309,10 +310,13 @@ export async function assembleClosure(options: AssembleClosureOptions): Promise<
   await cp(path.join(options.tiles.outputDir, 'tiles'), path.join(contentDir, '3d', 'tiles'), { recursive: true });
   const inventory = JSON.parse(await readFile(path.join(options.tiles.outputDir, 'inventory.json'), 'utf8')) as Inventory;
   const instanceTiles = await buildSourceMetadata(options.sourceDir, contentDir, inventory);
-  await cp(
-    path.join(options.tiles.outputDir, 'material-binding-report.json'),
-    path.join(contentDir, 'metadata', 'material-binding-report.json'),
-  );
+  for (const report of ['material-binding-report.json', 'tiling-report.json']) {
+    try {
+      await cp(path.join(options.tiles.outputDir, report), path.join(contentDir, 'metadata', report));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
   const manifest = sceneManifest(inventory, instanceTiles) as { staticLayers: Array<{ file: string; fileSize?: number }> };
   for (const row of inventory.objects) {
     const member = manifest.staticLayers.find((layer) => layer.file === row.file);

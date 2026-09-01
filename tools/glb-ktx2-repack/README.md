@@ -1,10 +1,14 @@
 # glb-ktx2-repack
 
-Image-only WebP → KTX2 repacker for production GLB tiles (asset-gap-analysis
+Image-only PNG/JPEG/WebP → KTX2 repacker for production GLB tiles (asset-gap-analysis
 item 5 / L5). Unblocks native Bevy decode of the tiles and cuts texture VRAM
 4× — **without touching geometry**: every mesh/accessor byte range, including
 `EXT_meshopt_compression` streams and KHR-quantized attributes, is
 byte-identical after repacking, and the tool proves it before writing output.
+
+The map pipeline feeds this tool the canonical closure's authored PNG/JPEG
+bytes, never the lossy WebP browser derivative, so UASTC is the only lossy
+encoding step between the source export and the GPU.
 
 Map-wide KTX2 was previously blocked because glTF-Transform 4.3's UASTC
 command skips WebP inputs *and* decodes/re-encodes meshopt, breaking geometry
@@ -19,13 +23,13 @@ Samplers and every geometry-bearing JSON node are untouched.
 ```sh
 # repack (writes out.glb only after geometry identity is proven)
 node tools/glb-ktx2-repack/bin/glb-ktx2-repack.mjs repack in.glb out.glb \
-  [--ktx-bin <dir>] [--color-codec uastc|etc1s] [--no-core-source] [--report r.json]
+  [--ktx-bin <dir>] [--color-codec uastc|etc1s] [--report r.json]
 
 # re-prove geometry identity between any source/output pair
 node tools/glb-ktx2-repack/bin/glb-ktx2-repack.mjs verify in.glb out.glb
 
 # prepare a repacked tile for Bevy render-core (meshopt decode + dequantize +
-# KHR_texture_basisu -> texture.source flatten; sensor-corpus decode minus WebP->PNG)
+# MikkTSpace tangents; sensor-corpus decode minus WebP->PNG)
 node tools/glb-ktx2-repack/scripts/bevy-decode.mjs out.ktx2.glb out.bevy.glb
 
 # focused tests: geometry-identity assertion + KTX2 decode smoke on the real
@@ -37,9 +41,9 @@ pnpm --filter @simforge-oss/glb-ktx2-repack test
 
 | Class | Slots | Codec | Transfer | Rationale |
 |---|---|---|---|---|
-| `color` | baseColor, emissive | **UASTC + RDO λ=1 + zstd-18** | sRGB | see below |
-| `normal` | normalTexture | UASTC + zstd-18, **no RDO** | linear | RDO causes directional artifacts on normals (pinned-toolchain doc); ETC1S endpoint sharing bends normals |
-| `data` | occlusion, metallicRoughness, other `*Texture` | UASTC + RDO λ=1 + zstd-18 | linear | ETC1S cross-contaminates independent packed channels |
+| `color` | baseColor, emissive, specularColor, sheenColor, diffuse | **UASTC + RDO λ=1 + zstd-9** | sRGB | see below |
+| `normal` | normalTexture, clearcoatNormalTexture | UASTC + zstd-9, **no RDO** | linear | RDO causes directional artifacts on normals (pinned-toolchain doc); ETC1S endpoint sharing bends normals |
+| `data` | occlusion, metallicRoughness, specular, clearcoat, transmission, other `*Texture` | UASTC + RDO λ=1 + zstd-9 | linear | ETC1S cross-contaminates independent packed channels |
 
 ETC1S would be acceptable *quality-wise* for albedo, but **bevy_image 0.19.1
 cannot decode it**: BasisLZ supercompression is rejected outright
@@ -51,19 +55,18 @@ lane). `--color-codec etc1s` remains for web-only derivatives — Three's
 KTX2Loader transcodes BasisLZ fine and it cuts the color payload ~4×
 (tiles_road: 16.6 MB → with etc1s colors vs 27.9 MB all-UASTC).
 
-An image referenced by both a color and a non-color slot is encoded as the
-non-color (linear UASTC) variant.
+An image referenced by both a color and a non-color slot is rejected. The
+exporter must duplicate it because one KTX2 image has one transfer function.
 
 ## Reference rewrite
 
 - `images[*].mimeType` → `image/ktx2`; payload replaced in place.
 - `textures[*].extensions.KHR_texture_basisu.source` set (spec route, Three);
   `EXT_texture_webp`/`EXT_texture_avif` dropped.
-- `textures[*].source` also points at the KTX2 image by default. Core-spec
-  non-compliant (exactly like the source tiles' bare `image/webp` sources),
-  but required by Bevy, which ignores the basisu syntax and reads only
-  `texture.source` (bevyengine/bevy#19104). `--no-core-source` emits strictly
-  spec-compliant output instead.
+- `textures[*].source` is absent, producing standards-compliant
+  `KHR_texture_basisu` output. The renderer's vendored bevy_gltf
+  (renderer/vendor/bevy_gltf, bevyengine/bevy#19104) resolves that syntax
+  natively, so a single conforming artifact serves web and native consumers.
 - `KHR_texture_basisu` added to `extensionsUsed` + `extensionsRequired`.
 
 ## Geometry-identity guarantee

@@ -7,7 +7,7 @@ import { canonicalJson, filesUnder } from './closure.js';
 import type { MapClosure } from './closure.js';
 import { browserOptimize, ktx2Variant, nativeCorpus } from './derived.js';
 import type { DerivedStageResult } from './derived.js';
-import { fbxToTiles } from './tiling.js';
+import { sourceToTiles } from './tiling.js';
 import type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from './tiling.js';
 
 export { assembleClosure } from './assemble.js';
@@ -33,8 +33,10 @@ export {
   nativeCorpusToolFingerprint,
 } from './derived.js';
 export type { DerivedStageResult } from './derived.js';
-export { FBX_TILER_REVISION, assignGridCell, fbxToTiles } from './tiling.js';
+export { FBX_TILER_REVISION, assignGridCell, fbxToTiles, sourceToTiles } from './tiling.js';
 export type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from './tiling.js';
+export { GLTF_TILER_REVISION, gltfToTiles } from './gltf-tiling.js';
+export type { GltfTilingReport, GltfToTilesOptions } from './gltf-tiling.js';
 export {
   ROADWAY_CONSISTENCY_SCHEMA_VERSION,
   ROADWAY_CONSISTENCY_VALIDATOR_VERSION,
@@ -109,7 +111,7 @@ export async function runMapPipeline(options: RunMapPipelineOptions): Promise<Ma
   if (!/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(options.name)) {
     throw new Error(`map name must be a lowercase registry slug: ${options.name}`);
   }
-  const tiles = await fbxToTiles({
+  const tiles = await sourceToTiles({
     sourceDir: options.sourceDir,
     workDir: options.workDir,
     ...(options.blender ? { blender: options.blender } : {}),
@@ -126,7 +128,7 @@ export async function runMapPipeline(options: RunMapPipelineOptions): Promise<Ma
     return { name: options.name, canonical: registryArtifact(canonical), derived: [], stages: { tiles, canonical } };
   }
   const browser = await browserOptimize(canonical, options.workDir);
-  const ktx2 = await ktx2Variant(browser, options.workDir, options.ktxBinDir);
+  const ktx2 = await ktx2Variant(canonical, options.workDir, options.ktxBinDir);
   const corpus = await nativeCorpus(ktx2, options.workDir);
   return {
     name: options.name,
