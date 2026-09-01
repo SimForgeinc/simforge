@@ -10,7 +10,7 @@ import { copyToDocument, createDefaultPropertyResolver, dedup, getBounds, listTe
 
 import { parseGlb } from '../../../tools/glb-ktx2-repack/src/glb.mjs';
 
-import { canonicalJson, hashTree, sha256 } from './closure.js';
+import { canonicalJson, hashTree, readWholeFile, sha256 } from './closure.js';
 import type { StageResult } from './tiling.js';
 
 /**
@@ -277,7 +277,7 @@ interface LoadedSource {
 }
 
 async function loadSource(io: NodeIO, file: string): Promise<LoadedSource> {
-  const bytes = await readFile(file);
+  const bytes = await readWholeFile(file);
   const document = file.toLowerCase().endsWith('.glb') ? await io.readBinary(bytes) : await io.read(file);
   // Content-identical accessors, meshes, textures, and materials collapse
   // into one property each. Purely referential; no values change.

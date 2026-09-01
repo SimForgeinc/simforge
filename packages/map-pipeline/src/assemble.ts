@@ -1,5 +1,5 @@
 import { gzipSync } from 'node:zlib';
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -320,7 +320,7 @@ export async function assembleClosure(options: AssembleClosureOptions): Promise<
   const manifest = sceneManifest(inventory, instanceTiles) as { staticLayers: Array<{ file: string; fileSize?: number }> };
   for (const row of inventory.objects) {
     const member = manifest.staticLayers.find((layer) => layer.file === row.file);
-    if (member) member.fileSize = (await readFile(path.join(options.tiles.outputDir, row.file))).byteLength;
+    if (member) member.fileSize = (await stat(path.join(options.tiles.outputDir, row.file))).size;
   }
   await writeFile(path.join(contentDir, '3d', 'manifest.json'), `${canonicalJson(manifest)}\n`);
   await writeFile(path.join(contentDir, '3d', 'semantics.json'), `${canonicalJson(await buildSemantics(path.join(options.tiles.outputDir, 'tiles'), inventory.objects))}\n`);

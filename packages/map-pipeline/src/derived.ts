@@ -11,7 +11,7 @@ import sharp from 'sharp';
 
 import { repackGlb } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 
-import { buildClosure, filesUnder, hashTree, sha256, writeClosure } from './closure.js';
+import { buildClosure, filesUnder, hashTree, readWholeFile, sha256, writeClosure } from './closure.js';
 import { assertBevyRepresentableSampling, bakeDivergentTextureTransforms } from './uv-transform-bake.js';
 import type { ClosureKind, MapClosure } from './closure.js';
 import type { ClosureStageResult } from './assemble.js';
@@ -57,7 +57,7 @@ async function deriveClosure(
   for (const relativePath of await filesUnder(contentDir)) {
     if (!relativePath.toLowerCase().endsWith('.glb')) continue;
     const absolute = path.join(contentDir, relativePath);
-    await writeFile(absolute, await transformGlb(await readFile(absolute)));
+    await writeFile(absolute, await transformGlb(await readWholeFile(absolute)));
   }
   const closure = await buildClosure(contentDir, kind, { toolFingerprint, viewerOnly: source.closure.metadata?.viewerOnly === true });
   const written = await writeClosure(stageRoot, closure);
