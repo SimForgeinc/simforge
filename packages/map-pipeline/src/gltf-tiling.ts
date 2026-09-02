@@ -39,7 +39,7 @@ import type { StageResult } from './tiling.js';
  * Any mismatch aborts the stage. `tiling-report.json` records the proof plus
  * per-map material/UV/transform/image-multiplicity facts for downstream QA.
  */
-export const GLTF_TILER_REVISION = 4;
+export const GLTF_TILER_REVISION = 5;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const CLASSIFY_VEGETATION = /veg|tree|bush|grass|foliage|plant/;
 const CLASSIFY_ROAD = /road|asphalt|ground|terrain|pavement|marking|lane/;
@@ -126,10 +126,13 @@ export interface GltfTilingReport {
 
 function classify(node: Node): Kind {
   const mesh = node.getMesh();
-  const names = [node.getName(), ...(mesh ? mesh.listPrimitives().map((primitive) => primitive.getMaterial()?.getName() ?? '') : [])];
-  const text = names.join(' ').toLowerCase();
-  if (CLASSIFY_VEGETATION.test(text)) return 'vegetation';
-  if (CLASSIFY_ROAD.test(text)) return 'road';
+  const materials = (mesh ? mesh.listPrimitives().map((primitive) => primitive.getMaterial()?.getName() ?? '') : []).join(' ').toLowerCase();
+  // Vegetation is decided by the node alone: a RoadRunner terrain node carries
+  // a "Grass1_Ground_Terrain" material among its asphalt, dirt and concrete
+  // layers, and classifying it by materials sent whole terrains into veg tiles
+  // (which native renderers treat as instancing plans, not placed geometry).
+  if (CLASSIFY_VEGETATION.test(node.getName().toLowerCase())) return 'vegetation';
+  if (CLASSIFY_ROAD.test(`${node.getName().toLowerCase()} ${materials}`)) return 'road';
   return 'static';
 }
 

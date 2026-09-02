@@ -147,6 +147,16 @@ pub fn load_veg_roots(
             commands.entity(e).insert(VegFailed);
             continue;
         };
+        // The glTF-native tiler writes `veg_*.glb` tiles as already-placed
+        // geometry (RoadRunner/UE exports carry no instancing plan), so a
+        // missing sidecar means "this is a static tile", not a broken one.
+        // Dropping it silently lost whole terrains from every native render.
+        if !load.1.is_file() {
+            info!("veg {}: no instances sidecar; spawning as placed geometry", load.1.display());
+            commands.entity(e).insert(VegSceneSpawned);
+            commands.spawn((WorldAssetRoot(scene),));
+            continue;
+        }
         let data: VegInstances = match std::fs::read_to_string(&load.1)
             .map_err(|e| e.to_string())
             .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
