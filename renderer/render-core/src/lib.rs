@@ -13,8 +13,12 @@
 //! - `scen-play`: scene-state.v1 trace playback with actors + motion vectors.
 
 pub mod actor_lights;
+pub mod atmosphere;
 pub mod calibration;
 pub mod catalog;
+pub mod cloud_noise;
+pub mod clouds;
+pub mod facade_windows;
 pub mod fixture;
 pub mod motion_vector;
 pub mod playback;
@@ -23,9 +27,12 @@ pub mod scene_state;
 pub mod engine;
 pub mod job;
 pub mod lighting;
+pub mod night;
+pub mod sky_pass;
 pub mod road_detail;
 pub mod post_grain;
 pub mod profiles;
+pub mod sky_texture;
 pub mod veg;
 pub mod vehicle_model;
 pub mod weather;

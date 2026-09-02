@@ -35,12 +35,18 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use render_core::lighting::{self, LightingRung};
-use render_core::profiles::RenderProfile;
+use render_core::profiles::{AntiAlias, RenderProfile};
 use render_core::weather::{self as weather_mod, Weather};
 
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
+
+/// clap value parser for `--aa`. Reuses the one canonical vocabulary in
+/// `render_core::profiles` so the CLI can never drift from the wire names.
+fn parse_anti_alias(raw: &str) -> Result<AntiAlias, String> {
+    AntiAlias::parse(raw).map_err(|error| error.to_string())
+}
 
 #[derive(clap::Parser, Debug, Clone)]
 #[derive(Resource)]
@@ -118,9 +124,11 @@ struct Args {
     /// Cinematic: screen-space reflections (deferred path).
     #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     ssr: bool,
-    /// Cinematic: temporal anti-aliasing.
-    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
-    taa: bool,
+    /// Cinematic: anti-aliasing mode — one of
+    /// `off | fxaa | smaa-low | smaa-medium | smaa-high | smaa-ultra | taa`.
+    /// Mutually exclusive by construction; clap rejects anything else.
+    #[arg(long, default_value = "taa", value_parser = parse_anti_alias)]
+    aa: AntiAlias,
     /// Cinematic film-grain intensity (0 disables).
     #[arg(long, default_value_t = 0.06)]
     grain: f32,
@@ -440,6 +448,9 @@ fn startup_setup(
         sun_direction(args.sun_elev, args.sun_azim),
         400.0,
         args.sky.as_deref(),
+        // The spike CLI keeps the legacy cubemap sky; the physical
+        // atmosphere is driven through `engine::Lighting::atmosphere`.
+        lighting::SkyMode::Cubemap,
         (args.lux, if rung.ibl() { 0.0 } else { args.ambient }),
     )
     .unwrap_or_else(|e| panic!("WSB4 lighting/sky setup failed: {e:#}"));
@@ -513,7 +524,7 @@ fn startup_setup(
             plan.skybox_brightness,
             render_core::profiles::CinematicFx {
                 ssr: args.ssr,
-                taa: args.taa,
+                aa: args.aa,
                 chromatic_aberration: args.ca,
                 dof_aperture_f_stops: args.dof_fstops,
                 dof_enabled: !args.no_dof,

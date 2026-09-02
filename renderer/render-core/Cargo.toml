@@ -19,10 +19,14 @@ path = "src/bin/native-render-job.rs"
 name = "parity-check"
 path = "src/bin/parity-check.rs"
 
+[[bin]]
+name = "sky-bench"
+path = "src/bin/sky-bench.rs"
+
 [dependencies]
 crossbeam-channel = "0.5"
 # `basis-universal` transcodes UASTC/ETC1S KTX2 (glb-ktx2-repack output) to GPU formats at load.
-bevy = { version = "0.19.1", default-features = true, features = ["png", "jpeg", "hdr", "ktx2", "basis-universal", "debug", "tonemapping_luts"] }
+bevy = { version = "0.19.1", default-features = true, features = ["png", "jpeg", "hdr", "ktx2", "basis-universal", "debug", "tonemapping_luts", "pbr_light_textures"] }
 image = "0.25"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }

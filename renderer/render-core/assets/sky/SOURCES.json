@@ -1,0 +1,60 @@
+{
+  "schema": "simforge.sky-assets/v1",
+  "generator": "tools/prepare_sky_assets.py",
+  "sources": [
+    {
+      "id": "nasa-svs-4851-deep-star-maps-2020",
+      "title": "Deep Star Maps 2020",
+      "authority": "NASA/Goddard Space Flight Center Scientific Visualization Studio",
+      "credit": "NASA/Goddard Space Flight Center Scientific Visualization Studio; Gaia DR2, Hipparcos-2, Tycho-2, Yale Bright Star Catalog",
+      "url": "https://svs.gsfc.nasa.gov/4851/",
+      "file_url": "https://svs.gsfc.nasa.gov/vis/a000000/a004800/a004851/starmap_2020_8k.exr",
+      "license": "Public domain (NASA media usage guidelines)",
+      "download": "starmap_2020_8k.exr",
+      "download_sha256": "dc6c4f413e85707a29a25a9451148154554ecca2c996f84fa8f47b65ef9ff7c4",
+      "download_bytes": 130530278,
+      "product": "starmap_2020_8k.skytex",
+      "product_sha256": "65d9f686f1b54c881963d0d60690b826f7646edec24a4cf182bd7d58d3a6052f",
+      "product_bytes": 268435480,
+      "width": 8192,
+      "height": 4096,
+      "format": "Rgba16Float",
+      "verification": {
+        "convention": "u = frac(0.5 - RA/360), v = (90 - Dec)/180",
+        "anchor_peaks": {
+          "Sirius": 1.0,
+          "Canopus": 1.0,
+          "Vega": 1.0,
+          "Arcturus": 1.0,
+          "Betelgeuse": 1.0,
+          "Rigel": 1.0,
+          "Antares": 0.97536,
+          "Altair": 1.0,
+          "LMC": 0.0456,
+          "SMC": 0.03148
+        },
+        "blank_field_peak": 0.00538,
+        "solid_angle_mean_luminance": 0.00462027
+      }
+    },
+    {
+      "id": "nasa-svs-4720-cgi-moon-kit",
+      "title": "CGI Moon Kit - LROC colour albedo",
+      "authority": "NASA/Goddard Space Flight Center Scientific Visualization Studio",
+      "credit": "NASA/Goddard Space Flight Center Scientific Visualization Studio; Lunar Reconnaissance Orbiter Camera (LROC) WAC colour, LOLA topography",
+      "url": "https://svs.gsfc.nasa.gov/4720/",
+      "file_url": "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_poles_4k.tif",
+      "license": "Public domain (NASA media usage guidelines)",
+      "download": "lroc_color_poles_4k.tif",
+      "download_sha256": "918649a7f8ed2f1329b2cd95bb0d25483befdcb60ae1a66db681a637cc21344f",
+      "download_bytes": 13095388,
+      "product": "moon_lroc_4k.skytex",
+      "product_sha256": "7962e189104de7431c026915128f08e2e14a156534612107d812b055ea7db67c",
+      "product_bytes": 33554456,
+      "width": 4096,
+      "height": 2048,
+      "format": "Rgba8UnormSrgb",
+      "projection": "simple cylindrical, lon 0 at texture centre, +90 lat at top row"
+    }
+  ]
+}

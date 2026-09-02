@@ -84,12 +84,20 @@ pub fn prewarm(spec: &SceneSpec) -> Result<SceneApp> {
         SceneApp::new_with_profile_config(&spec.lighting, spec.profile_config)?;
     app.load_tiles(&spec.glbs)?;
     app.load_vegetation(&spec.veg_glbs)?;
-    // Warm both profile pipelines because campaign service scenes normally
-    // inherit `sensor` while one per-camera override is cinematic.
-    for (sensor_id, profile) in [
-        ("__prewarm_sensor__", Profile::Sensor),
-        ("__prewarm_cinematic__", Profile::Cinematic),
-    ] {
+    // Bevy's atmosphere bindings are a per-view mesh layout. Mixing a
+    // sensor view (which intentionally strips cinematic atmosphere) with an
+    // atmosphere cinematic view during the same prewarm produces incompatible
+    // bind groups and permanently poisons the render pipelines. Prewarm only
+    // the actual cinematic layout for physical-atmosphere scenes.
+    let prewarm_profiles: &[(&str, Profile)] = if spec.lighting.atmosphere {
+        &[("__prewarm_cinematic__", Profile::Cinematic)]
+    } else {
+        &[
+            ("__prewarm_sensor__", Profile::Sensor),
+            ("__prewarm_cinematic__", Profile::Cinematic),
+        ]
+    };
+    for &(sensor_id, profile) in prewarm_profiles {
         app.add_camera(
             CameraSpec {
                 sensor_id: sensor_id.into(),
@@ -184,6 +192,9 @@ pub struct ServiceState {
     pub shm: ShmRing,
     pub near_m: f32,
     pub far_m: f32,
+    /// Cinematic settings currently in force; `set_lighting` updates it so
+    /// a lighting-only change keeps the look the scene was prewarmed with.
+    pub profile_config: render_core::profiles::RenderProfileConfig,
     /// Static instance legend (id -> mesh name), frozen at readiness.
     legend: HashMap<u32, String>,
     /// Loaded scene-state stream (V2 `load_scene_state`).
@@ -236,6 +247,7 @@ impl ServiceState {
             shm,
             near_m: spec.near_m,
             far_m: spec.far_m,
+            profile_config: spec.profile_config,
             legend,
             scene: Vec::new(),
             current_tick: None,
@@ -350,6 +362,44 @@ fn dispatch(state: &mut ServiceState, request: WireRequest) -> WireResponse {
             state.lidars.clear();
             state.radars.clear();
             WireResponse { i, body: ResponseBody::ResetCameras { ok: true } }
+        }
+        RequestBody::SetLighting { lighting, profile_config } => {
+            let started = std::time::Instant::now();
+            let profile_config = profile_config.unwrap_or(state.profile_config);
+            match state.app.apply_lighting(&lighting, profile_config) {
+                Ok(resolved) => {
+                    state.profile_config = profile_config;
+                    // Frames cached against the previous look are stale.
+                    state.cache.clear();
+                    WireResponse {
+                        i,
+                        body: ResponseBody::SetLighting {
+                            ok: true,
+                            resolved,
+                            // Requested mode, and what the live views
+                            // actually carry after the strip/apply cycle.
+                            anti_alias: profile_config.cinematic.aa.as_str().to_string(),
+                            camera_anti_alias: state.app.camera_anti_alias(),
+                            server_ms: started.elapsed().as_secs_f64() * 1000.0,
+                        },
+                    }
+                }
+                Err(error) => WireResponse::error(i, format!("set_lighting failed: {error:#}")),
+            }
+        }
+        RequestBody::GetState => {
+            let camera_anti_alias = state.app.camera_anti_alias();
+            WireResponse {
+                i,
+                body: ResponseBody::GetState {
+                    ok: true,
+                    protocol: crate::proto::NATIVE_SERVICE_PROTOCOL_VERSION,
+                    resolved: state.app.resolved_lighting(),
+                    anti_alias: state.profile_config.cinematic.aa.as_str().to_string(),
+                    cameras: camera_anti_alias.len(),
+                    camera_anti_alias,
+                },
+            }
         }
         RequestBody::Render { tick_id, cameras, export_dir, tick_index } => {
             render_tick(state, i, tick_id, cameras, export_dir, tick_index)

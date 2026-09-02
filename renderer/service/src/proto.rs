@@ -11,7 +11,19 @@ use serde::{Deserialize, Serialize};
 /// `encode_jpeg`; extends `render` with optional `tickIndex`; extends
 /// cameras with optional rigid `attach`, `semantic`, and CARLA
 /// `depthEncoding`. All V2 additions are optional; V1 clients keep working.
-pub const NATIVE_SERVICE_PROTOCOL_VERSION: u32 = 2;
+///
+/// V3 (lookdev): adds `set_lighting`, which re-lights a prewarmed scene in
+/// place. Purely additive; V1/V2 clients keep working.
+///
+/// V4 (lookdev AA): **breaking.** `profileConfig.cinematic.taa: bool` is
+/// replaced by `profileConfig.cinematic.aa: "off" | "fxaa" | "smaa-low" |
+/// "smaa-medium" | "smaa-high" | "smaa-ultra" | "taa"`, because FXAA, SMAA
+/// and TAA are alternatives rather than layers. `CinematicFx` is
+/// `#[serde(default)]`, so a V3 client's `taa` key would be *silently*
+/// ignored and fall back to the `taa` default — hence a version bump
+/// rather than a quiet alias. `set_lighting` also now answers with
+/// `anti_alias` and per-camera `camera_anti_alias` component readback.
+pub const NATIVE_SERVICE_PROTOCOL_VERSION: u32 = 4;
 
 /// Rigid attachment of a camera to a scene-state actor (CARLA
 /// `AttachmentType.Rigid` analogue): the pose is re-resolved from the
@@ -183,6 +195,24 @@ pub enum RequestBody {
         #[serde(default)]
         passes: Option<Vec<String>>,
     },
+    /// V3 (lookdev): re-light the prewarmed scene in place. The tiles and
+    /// the instance-ID pass stay loaded; the lighting ladder, the cinematic
+    /// stack on every registered camera, distance fog and the wet-road ramp
+    /// are rebuilt from these settings. Answers with the engine values that
+    /// were actually applied.
+    SetLighting {
+        lighting: render_core::engine::Lighting,
+        #[serde(default)]
+        profile_config: Option<render_core::profiles::RenderProfileConfig>,
+    },
+    /// V4 (lookdev): read back the current look without changing anything.
+    ///
+    /// Exists because `set_lighting` can only report the AA components of
+    /// cameras that are already registered, and the first camera is
+    /// registered by the first `render`/`render_bundle` — i.e. after the
+    /// first `set_lighting`. A lookdev surface that wants to *prove* what
+    /// its live views carry needs a read that is not tied to a write.
+    GetState,
     Close,
 }
 
@@ -225,6 +255,30 @@ pub enum ResponseBody {
     /// V2: all cameras dropped.
     ResetCameras {
         ok: bool,
+    },
+    /// V3: scene re-lit in place.
+    SetLighting {
+        ok: bool,
+        /// Engine values the renderer resolved from the request.
+        resolved: render_core::engine::ResolvedLighting,
+        /// Anti-aliasing mode the applied `profile_config` asked for.
+        anti_alias: String,
+        /// `(sensorId, mode)` read back off every live RGB view's actual
+        /// components. A `conflict:` prefix means two AA components are on
+        /// one camera, i.e. the strip/apply cycle failed. Empty before the
+        /// first camera registration.
+        camera_anti_alias: Vec<(String, String)>,
+        /// Server-side re-light wall time, milliseconds.
+        server_ms: f64,
+    },
+    /// V4: current look, read without writing.
+    GetState {
+        ok: bool,
+        protocol: u32,
+        resolved: render_core::engine::ResolvedLighting,
+        anti_alias: String,
+        camera_anti_alias: Vec<(String, String)>,
+        cameras: usize,
     },
     /// V2: JPEG records published into the shm ring.
     EncodeJpeg {
