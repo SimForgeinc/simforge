@@ -796,22 +796,23 @@ pub const STARLIGHT_SHARE: f32 = 0.25;
 /// the visible sky is now a per-pixel pass and this map only has to integrate
 /// correctly.
 ///
-/// `twilight_sky` is the radiance of the residual daylight sky, cd/m^2 per
-/// channel, nominal units: the probe takes over from the atmosphere's IBL
-/// past civil dusk, and carrying that term keeps the ambient continuous
-/// across the handover.
+/// `daylight` gives the residual daylight sky's radiance in a direction,
+/// cd/m^2 per channel, nominal units, above the horizon; the probe takes
+/// over from the atmosphere's IBL at the handover, and carrying that term
+/// keeps the ambient continuous across it. Below the horizon the ground
+/// reflects a quarter of `daylight_ground`.
 pub fn celestial_ibl_cubemap(
     env: &NightEnvironment,
     field: &crate::clouds::CloudField,
     cloud: &crate::clouds::CloudParams,
-    twilight_sky: Vec3,
+    daylight: &dyn Fn(Vec3) -> Vec3,
+    daylight_ground: Vec3,
     face_size: u32,
     internal_scale: f32,
 ) -> Image {
     let n = face_size;
     let natural = env.natural_ambient_lux / PI as f32 * internal_scale;
     let urban = env.urban_skyglow_lux / PI as f32 * internal_scale;
-    let twilight = twilight_sky * internal_scale;
     let moon_dir = Vec3::from_array(env.frame.moon_dir);
     let moon_lux = env.celestial.direct_normal_lux * internal_scale;
     let mut texels: Vec<f32> = Vec::with_capacity((n * n * 6 * 4) as usize);
@@ -820,26 +821,20 @@ pub fn celestial_ibl_cubemap(
             for x in 0..n {
                 let s = 2.0 * (x as f32 + 0.5) / n as f32 - 1.0;
                 let t = 2.0 * (y as f32 + 0.5) / n as f32 - 1.0;
-                let dir = match f {
-                    0 => Vec3::new(1.0, -t, -s),
-                    1 => Vec3::new(-1.0, -t, s),
-                    2 => Vec3::new(s, 1.0, -t),
-                    3 => Vec3::new(s, -1.0, t),
-                    4 => Vec3::new(s, -t, 1.0),
-                    _ => Vec3::new(-s, -t, -1.0),
-                }
-                .normalize();
+                let dir = crate::atmosphere::cube_direction(f, s, t);
                 let horizon = (1.0 - dir.y.max(0.0)).powf(3.0);
-                // The twilight sky is brightest low in the sky and absent
-                // below the horizon, where the ground reflects a quarter of it.
+                // The daylight term is the model's own sky, already closed
+                // against the two-stream diffuse (deck included), so the
+                // deck is *not* applied to it again below: attenuating it a
+                // second time under-lit cloudy dusk by the deck's
+                // transmittance.
                 let twilight_here = if dir.y >= 0.0 {
-                    twilight * (0.6 + 0.4 * horizon)
+                    daylight(dir) * internal_scale
                 } else {
-                    twilight * 0.25
+                    daylight_ground * (0.25 * internal_scale)
                 };
                 let mut col = Vec3::new(0.50, 0.62, 0.82) * natural
-                    + Vec3::new(0.78, 0.80, 0.88) * urban * (0.22 + 1.9 * horizon)
-                    + twilight_here;
+                    + Vec3::new(0.78, 0.80, 0.88) * urban * (0.22 + 1.9 * horizon);
                 if cloud.cover > 0.001 && dir.y > 0.01 {
                     let tau = field.optical_depth(Vec2::ZERO, 0.0, dir, cloud, 10);
                     let transmit = (-tau).exp();
@@ -852,6 +847,7 @@ pub fn celestial_ibl_cubemap(
                         + Vec3::new(0.78, 0.80, 0.88) * urban * 2.2;
                     col = col * transmit + lit * (1.0 - transmit);
                 }
+                col += twilight_here;
                 texels.extend_from_slice(&[col.x, col.y, col.z, 1.0]);
             }
         }

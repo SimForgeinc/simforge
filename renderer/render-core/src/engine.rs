@@ -356,6 +356,7 @@ impl Lighting {
             cloud_beam_transmittance,
             ground_albedo: crate::atmosphere::GROUND_ALBEDO,
             meter_view: self.meter_view,
+            sky_cube: self.sun_elev_deg <= PROBE_HANDOVER_ELEVATION_DEG,
         }
     }
 
@@ -897,15 +898,25 @@ fn local_fixture_illuminance_lx(
             let distance = distance_sq.sqrt();
             let unit = to_light / distance;
             // Luminaires point straight down; matched to `spawn_night_sources`.
+            // The cone edge is soft (full at 70 deg off-axis, gone at 85 deg):
+            // a hard 80 deg cut made the lower-quartile reading jump between
+            // zero and a pool's worth as a dolly crept past a pole, which
+            // read as a one-stop exposure flash in a clip metered per frame.
             let cos_off_axis = unit.y;
-            let half_angle = 80.0_f32.to_radians();
-            if cos_off_axis < half_angle.cos() {
+            let cone = {
+                let lo = 85.0_f32.to_radians().cos();
+                let hi = 70.0_f32.to_radians().cos();
+                let x = ((cos_off_axis - lo) / (hi - lo)).clamp(0.0, 1.0);
+                x * x * (3.0 - 2.0 * x)
+            };
+            if cone <= 0.0 {
                 continue;
             }
+            let half_angle = 80.0_f32.to_radians();
             let solid_angle = std::f32::consts::TAU * (1.0 - half_angle.cos());
             let intensity = fixture.lumens.clamp(2_000.0, 8_000.0) / solid_angle.max(0.1);
             // Cosine of incidence on a horizontal road surface.
-            e += intensity * unit.y.max(0.0) / distance_sq;
+            e += intensity * cone * unit.y.max(0.0) / distance_sq;
         }
         readings.push(e);
     }
@@ -1073,9 +1084,101 @@ fn build_sky_pass(
 /// Sun elevation at or below which the celestial `LightProbe` replaces the
 /// atmosphere's view IBL. The probe carries the twilight sky closed against
 /// the same diffuse illuminance the meter read, so the handover does not
-/// step the ambient; it sits past civil dusk so the LUT's own twilight
-/// gradient lights the scene for as long as it is the better model.
-pub const PROBE_HANDOVER_ELEVATION_DEG: f32 = -4.0;
+/// step the ambient.
+///
+/// Measured (Yale Street, clear, road patch of albedo 0.1 read back in
+/// linear, rev22): the LUT's own IBL delivers 0.83x the model's diffuse
+/// illuminance at 4.8 deg, 1.35x at 2.2 deg, 2.6x at sunset, 3.4x at
+/// -1.4 deg and 5.3x at -3.6 deg — Hillaire's isotropic multiple
+/// scattering keeps the sky-view LUT bright long after the direct beam has
+/// gone, while the meter follows the twilight law. Left on the LUT, a
+/// sunset time-lapse brightened for three degrees after sunset and then
+/// dropped 2x at the old -4 deg handover. So the probe takes over where
+/// the two still agree, and the last two degrees of LUT IBL are tapered
+/// towards the measured ratio ([`atmosphere_ibl_gain`]).
+pub const PROBE_HANDOVER_ELEVATION_DEG: f32 = 2.0;
+
+/// Gain on the atmosphere IBL above the probe handover: 1 down to
+/// [`IBL_TAPER_START_ELEVATION_DEG`], then linear to `1 / 1.18` at the
+/// handover. The LUT's excess at the handover is view-dependent — 1.0x on
+/// a road facing away from the low sun, 1.36x on one facing its glow —
+/// so the taper lands on the geometric mean and either view meets the
+/// probe within ±15 %.
+fn atmosphere_ibl_gain(sun_elev_deg: f32) -> f32 {
+    const AT_HANDOVER: f32 = 1.0 / 1.18;
+    let t = ((sun_elev_deg - PROBE_HANDOVER_ELEVATION_DEG)
+        / (IBL_TAPER_START_ELEVATION_DEG - PROBE_HANDOVER_ELEVATION_DEG))
+        .clamp(0.0, 1.0);
+    AT_HANDOVER + (1.0 - AT_HANDOVER) * t
+}
+
+/// Sun elevation where the atmosphere IBL starts tapering towards the
+/// probe's value.
+pub const IBL_TAPER_START_ELEVATION_DEG: f32 = 4.0;
+
+/// Which set of light sources a sun elevation calls for. Within one tier
+/// the clock only moves what is already spawned (see
+/// [`SceneApp::advance_lighting`]); crossing a tier respawns the ladder.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LadderTier {
+    /// Sun and the atmosphere's own IBL.
+    Day,
+    /// The celestial probe carries the ambient (sunset through civil
+    /// twilight); no night sources yet.
+    Twilight,
+    /// Luminaires, windows and the Moon are on as well.
+    Night,
+}
+
+fn ladder_tier(sun_elev_deg: f32) -> LadderTier {
+    if sun_elev_deg > PROBE_HANDOVER_ELEVATION_DEG {
+        LadderTier::Day
+    } else if sun_elev_deg > NIGHT_SOURCES_ELEVATION_DEG {
+        LadderTier::Twilight
+    } else {
+        LadderTier::Night
+    }
+}
+
+/// Residual daylight the celestial probe carries below the handover: the
+/// model's directional sky (`AtmosphereReadback::sky_cube`, closed against
+/// the two-stream diffuse) when it was built, else a uniform hemisphere of
+/// the diffuse illuminance (radiance `E / pi`) in the zenith's own
+/// chromaticity. Either way the horizontal irradiance is the meter's
+/// diffuse reading, so the ambient does not step where the probe takes
+/// over from the IBL.
+///
+/// `PROBE_IRRADIANCE_CALIBRATION` is the read-back correction for Bevy's
+/// diffuse convolution of a raw cubemap. With the directional cube a road
+/// patch of albedo 0.1 reads back 0.98-1.01 of the closed irradiance
+/// (Yale Street, clear and 45 % cloud, rev23), so no correction is needed;
+/// the constant stays as the place to put one.
+const PROBE_IRRADIANCE_CALIBRATION: f32 = 1.0;
+
+fn probe_daylight(
+    a: Option<&crate::atmosphere::AtmosphereReadback>,
+) -> (Box<dyn Fn(Vec3) -> Vec3>, Vec3) {
+    let Some(a) = a else {
+        return (Box::new(|_| Vec3::ZERO), Vec3::ZERO);
+    };
+    let chroma = Vec3::from_array(a.zenith_radiance);
+    let chroma = if chroma.max_element() > 0.0 {
+        chroma / chroma.max_element()
+    } else {
+        Vec3::new(0.55, 0.68, 1.0)
+    };
+    let luma = chroma.dot(Vec3::new(0.2126, 0.7152, 0.0722)).max(1.0e-3);
+    let uniform = chroma / luma
+        * (a.diffuse_horizontal_illuminance_lx / std::f32::consts::PI)
+        * PROBE_IRRADIANCE_CALIBRATION;
+    match a.sky_cube.clone() {
+        Some(cube) => (
+            Box::new(move |dir| cube.sample(dir) * PROBE_IRRADIANCE_CALIBRATION),
+            uniform,
+        ),
+        None => (Box::new(move |_| uniform), uniform),
+    }
+}
 
 /// Sun elevation at or below which luminaires and windows come on. Street
 /// lighting photocells trip at roughly 20-30 lx, which a clear sky delivers
@@ -1086,6 +1189,10 @@ pub const NIGHT_SOURCES_ELEVATION_DEG: f32 = -3.0;
 /// before tonemapping: a deep, readable grey that leaves the stars and the
 /// Moon well above it.
 pub const NIGHT_SKY_TARGET: f32 = 0.035;
+
+/// Time constant, in cloud-clock seconds, of the low-pass on the sun's
+/// cloud transmittance between in-place look advances.
+pub const CLOUD_BEAM_SMOOTHING_S: f32 = 2.0;
 
 
 fn spawn_night_sources(
@@ -1194,17 +1301,20 @@ fn update_physical_windows(world: &mut World, enabled: bool, internal_scale: f32
     let mut applied = 0u32;
     world.resource_scope(|world, mut materials: Mut<Assets<StandardMaterial>>| {
         for (ordinal, (entity, source, _)) in targets.into_iter().enumerate() {
-            // 42% deterministic occupancy at primitive granularity.
-            if (ordinal * 73 + entity.to_bits() as usize * 17) % 100 >= 42 {
+            // 30% deterministic occupancy at primitive granularity: a
+            // residential street around 22:00, not an office block.
+            if (ordinal * 73 + entity.to_bits() as usize * 17) % 100 >= 30 {
                 continue;
             }
             let Some(mut material) = materials.get(&source).cloned() else { continue };
             let cct = 2_200.0 + ((ordinal * 317) % 1_800) as f32;
-            // 12-120 cd/m2: a lit room seen through glass from the street.
-            let luminance = 12.0 + ((ordinal * 47) % 109) as f32;
+            // Same street-side luminance model as the synthetic façades.
+            let roll = ((ordinal * 47) % 100) as f32 / 100.0;
+            let luminance = crate::facade_windows::WINDOW_LUMINANCE_CDM2
+                [crate::facade_windows::window_luminance_bin(roll)];
             let color = lighting::kelvin_to_rgb(cct);
             // `StandardMaterial::emissive` is luminance in cd/m2; the view's
-            // `Exposure` converts it. The rev19 1e-4 fudge is gone.
+            // `Exposure` converts it.
             material.emissive = color.to_linear() * (luminance * internal_scale);
             material.base_color = Color::BLACK;
             let handle = materials.add(material);
@@ -1733,6 +1843,7 @@ impl SceneApp {
         &mut self,
         lighting: &Lighting,
         profile_config: &RenderProfileConfig,
+        smooth_beam: bool,
     ) -> Relight {
         let camera_eye = {
             let world = self.app.world_mut();
@@ -1771,11 +1882,26 @@ impl SceneApp {
         // `sun_direction` is the direction light travels; the field wants
         // the direction *towards* the source.
         let to_sun = -Vec3::from(sun_dir);
-        let sun_cloud_t = if clouds_drawn && to_sun.y > 0.004 {
+        let sampled_t = if clouds_drawn && to_sun.y > 0.004 {
             let field = self.app.world().resource::<crate::clouds::CloudField>();
             field.transmittance(Vec2::ZERO, 0.0, to_sun, &cloud_params, 48)
         } else {
             1.0
+        };
+        // The beam is one sample of the drifting field at the observer,
+        // applied uniformly (the cloud shadow is not spatial). Re-read every
+        // frame of a clip it flickered — a 48-step sample of a moving
+        // field is noisy — so between in-place advances it is low-passed
+        // with a two-second cloud-time constant; a full relight starts
+        // from the fresh sample.
+        let sun_cloud_t = match (smooth_beam, self.cloud_beam_t) {
+            (true, Some(previous)) => {
+                let dt = night_controls.cloud_fixed_step_s.clamp(0.0, 1.0);
+                let dt = if dt > 0.0 { dt } else { 1.0 / 30.0 };
+                let alpha = (dt / CLOUD_BEAM_SMOOTHING_S).clamp(0.0, 1.0);
+                previous + (sampled_t - previous) * alpha
+            }
+            _ => sampled_t,
         };
         self.cloud_beam_t = lighting.atmosphere.then_some(sun_cloud_t);
 
@@ -1799,7 +1925,7 @@ impl SceneApp {
         let env_gain = if lighting.sun_elev_deg <= PROBE_HANDOVER_ELEVATION_DEG {
             0.0
         } else {
-            plan.env_intensity * deck_diffuse_gain
+            plan.env_intensity * deck_diffuse_gain * atmosphere_ibl_gain(lighting.sun_elev_deg)
         };
         let moon_shadows = matches!(night_controls.cloud_quality, crate::night::CloudQuality::Lookdev);
         let mut night_environment = crate::night::resolve_night(
@@ -1905,7 +2031,7 @@ impl SceneApp {
             env_gain,
             internal_scale,
             camera_eye,
-        } = self.resolve_relight(lighting, &profile_config);
+        } = self.resolve_relight(lighting, &profile_config, false);
         let use_atmosphere = atmosphere_view_active(lighting);
         let sky_mode = if lighting.atmosphere {
             lighting::SkyMode::Physical
@@ -1948,28 +2074,14 @@ impl SceneApp {
         let probe_cubemap = (lighting.atmosphere
             && lighting.sun_elev_deg <= PROBE_HANDOVER_ELEVATION_DEG)
             .then(|| {
-                let twilight_sky = resolved
-                    .atmosphere
-                    .as_ref()
-                    .map(|a| {
-                        let chroma = Vec3::from_array(a.zenith_radiance);
-                        let chroma = if chroma.max_element() > 0.0 {
-                            chroma / chroma.max_element()
-                        } else {
-                            Vec3::new(0.55, 0.68, 1.0)
-                        };
-                        // A uniform hemisphere of illuminance E has radiance
-                        // E / pi; keep the sky's own chromaticity.
-                        let luma = chroma.dot(Vec3::new(0.2126, 0.7152, 0.0722)).max(1.0e-3);
-                        chroma / luma * (a.diffuse_horizontal_illuminance_lx / std::f32::consts::PI)
-                    })
-                    .unwrap_or(Vec3::ZERO);
+                let (daylight, ground) = probe_daylight(resolved.atmosphere.as_ref());
                 let field = self.app.world().resource::<crate::clouds::CloudField>();
                 crate::night::celestial_ibl_cubemap(
                     &night_environment,
                     field,
                     &cloud_params,
-                    twilight_sky,
+                    daylight.as_ref(),
+                    ground,
                     64,
                     internal_scale,
                 )
@@ -2226,18 +2338,23 @@ impl SceneApp {
     /// scattering medium does not depend on the sun (the GPU medium is
     /// deck-free), so it is left alone.
     ///
-    /// Only the daylight ladder is updatable in place: luminaires, windows,
-    /// the Moon's light and the celestial probe are spawned by the full
-    /// relight. When the request crosses the night-source handover, or
-    /// changes anything but the sun's position, this falls back to
-    /// [`Self::apply_lighting`] and reports it in the result so a recorder
-    /// can flag the frame.
+    /// Three ladders exist, keyed on sun elevation: day (atmosphere IBL),
+    /// twilight (the celestial probe carries the ambient from the probe
+    /// handover down) and night (luminaires, windows and the Moon as well).
+    /// Within one ladder everything the clock moves is updated in place —
+    /// by night that is also the Moon's light and the probe cubemap, which
+    /// is regenerated into the existing image handle. Crossing a ladder, or
+    /// changing anything but the clock and the camera, falls back to
+    /// [`Self::apply_lighting`] and says so in the result, so a recorder can
+    /// mark the frame: a time-lapse from afternoon to midnight pays exactly
+    /// two full relights, one at each handover, which is also when the
+    /// street lights come on.
     pub fn advance_lighting(
         &mut self,
         lighting: &Lighting,
         profile_config: RenderProfileConfig,
     ) -> Result<(ResolvedLighting, bool)> {
-        let day = |l: &Lighting| l.sun_elev_deg > NIGHT_SOURCES_ELEVATION_DEG;
+        let tier = ladder_tier(lighting.sun_elev_deg);
         let same_ladder = {
             // Everything the clock and the camera move is neutralised; the
             // rest must match exactly. The fixture ledger arrives sorted by
@@ -2264,8 +2381,7 @@ impl SceneApp {
         };
         if !(lighting.atmosphere
             && same_ladder
-            && day(&self.lighting)
-            && day(lighting)
+            && tier == ladder_tier(self.lighting.sun_elev_deg)
             && self.profile_config == profile_config
             && !self.groups.is_empty())
         {
@@ -2284,11 +2400,32 @@ impl SceneApp {
             env_gain,
             internal_scale,
             ..
-        } = self.resolve_relight(lighting, &profile_config);
+        } = self.resolve_relight(lighting, &profile_config, true);
+
+        // The night ladder's Moon: exactly one directional light carries the
+        // night marker (fixtures are spot/point lights). A Moon that rises
+        // after the ladder was spawned has no light to move, so that case
+        // takes the full relight.
+        if tier == LadderTier::Night {
+            let moon = &night_environment.celestial;
+            let world = self.app.world_mut();
+            let mut moons = world.query_filtered::<
+                (&mut DirectionalLight, &mut Transform),
+                With<NightLightMarker>,
+            >();
+            if moons.iter(world).next().is_none() && moon.direct_normal_lux > 0.0 {
+                return Ok((self.apply_lighting(lighting, profile_config)?, true));
+            }
+            let dir = sun_direction(moon.elevation_deg, moon.azimuth_deg);
+            for (mut light, mut transform) in moons.iter_mut(world) {
+                light.illuminance = moon.direct_normal_lux * internal_scale;
+                *transform = Transform::IDENTITY.looking_to(dir, Vec3::Y);
+            }
+        }
 
         // Sun: direction, extraterrestrial illuminance, colour. The ladder
-        // never spawns a sun below the horizon and we are above it on both
-        // sides, so there is exactly one to move.
+        // spawns one (down to the astronomical-night seed) whenever the
+        // plan has any, so there is at most one to move.
         {
             let world = self.app.world_mut();
             let mut suns = world.query_filtered::<
@@ -2302,6 +2439,29 @@ impl SceneApp {
             }
         }
         self.apply_sun_cookie(sun_cloud_t);
+
+        // The celestial probe carries the twilight sky, the Moon and the
+        // lit cloud; all of it moves with the clock, so the cubemap is
+        // rebuilt into the handle the `LightProbe` already holds.
+        if let Some(handle) = self.probe_cubemap.clone() {
+            let (daylight, ground) = probe_daylight(resolved.atmosphere.as_ref());
+            let image = {
+                let field = self.app.world().resource::<crate::clouds::CloudField>();
+                crate::night::celestial_ibl_cubemap(
+                    &night_environment,
+                    field,
+                    &cloud_params,
+                    daylight.as_ref(),
+                    ground,
+                    64,
+                    internal_scale,
+                )
+            };
+            self.app
+                .world_mut()
+                .resource_mut::<Assets<Image>>()
+                .insert(handle.id(), image);
+        }
 
         self.ev100_fixed = resolved.ev100;
         self.env_gain = env_gain;
@@ -3787,6 +3947,28 @@ mod tests {
         };
         let plain = Lighting { meter_view: None, ..noon.clone() };
         assert!((noon.resolve().1.ev100 - plain.resolve().1.ev100).abs() < 1.0e-4);
+    }
+
+    #[test]
+    fn atmosphere_ibl_tapers_into_the_probe_without_a_step() {
+        assert_eq!(atmosphere_ibl_gain(10.0), 1.0);
+        assert_eq!(atmosphere_ibl_gain(IBL_TAPER_START_ELEVATION_DEG), 1.0);
+        let at_handover = atmosphere_ibl_gain(PROBE_HANDOVER_ELEVATION_DEG);
+        assert!((at_handover - 1.0 / 1.18).abs() < 1.0e-6);
+        let mid = atmosphere_ibl_gain(
+            0.5 * (IBL_TAPER_START_ELEVATION_DEG + PROBE_HANDOVER_ELEVATION_DEG),
+        );
+        assert!(mid > at_handover && mid < 1.0);
+    }
+
+    #[test]
+    fn ladder_tiers_follow_the_two_handovers() {
+        assert_eq!(ladder_tier(30.0), LadderTier::Day);
+        assert_eq!(ladder_tier(PROBE_HANDOVER_ELEVATION_DEG + 0.01), LadderTier::Day);
+        assert_eq!(ladder_tier(PROBE_HANDOVER_ELEVATION_DEG), LadderTier::Twilight);
+        assert_eq!(ladder_tier(NIGHT_SOURCES_ELEVATION_DEG + 0.01), LadderTier::Twilight);
+        assert_eq!(ladder_tier(NIGHT_SOURCES_ELEVATION_DEG), LadderTier::Night);
+        assert_eq!(ladder_tier(-30.0), LadderTier::Night);
     }
 
     #[test]

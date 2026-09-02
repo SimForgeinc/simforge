@@ -13,7 +13,7 @@
 //!    footprint is covered by that raster, are clear of the ground, and are
 //!    clear of the plane's top edge.
 //! 4. Light them with deterministic per-building clusters, 2200-4000 K,
-//!    20-300 cd/m^2, offset 60 mm along the façade normal.
+//!    [`WINDOW_LUMINANCE_CDM2`], offset 60 mm along the façade normal.
 //!
 //! [`WindowMode::SyntheticFacadeDebug`] additionally emits the recovered
 //! façade rectangles as flat cyan quads lying *on* the wall, so a screenshot
@@ -54,6 +54,31 @@ const FLOOR_PITCH: f32 = 3.4;
 const BAY_PITCH: f32 = 3.0;
 const WINDOW_W: f32 = 1.25;
 const WINDOW_H: f32 = 1.45;
+
+/// Luminance of a lit window as seen from the street, cd/m^2, by bin.
+///
+/// Light-pollution surveys put curtained residential windows at a few
+/// cd/m^2 and an uncurtained lit room at 10-50; offices reach higher but
+/// this corpus is residential and light commercial. The rev21 12-120
+/// range read as floodlights: at a street-metered night EV (0-2) even the
+/// lowest bin sat five stops over middle grey, so every window clipped to
+/// the same white. Shared with the physical-window path in `engine.rs` so
+/// both populations print alike.
+pub const WINDOW_LUMINANCE_CDM2: [f32; 4] = [2.0, 5.0, 12.0, 30.0];
+
+/// Bin index for a uniform roll in [0, 1): most rooms are curtained or
+/// dim, a few are bright.
+pub fn window_luminance_bin(roll: f32) -> usize {
+    if roll > 0.94 {
+        3
+    } else if roll > 0.72 {
+        2
+    } else if roll > 0.34 {
+        1
+    } else {
+        0
+    }
+}
 const SILL_MIN: f32 = 2.0;
 const SURFACE_OFFSET: f32 = 0.06;
 const MAX_WINDOWS: usize = 4_500;
@@ -475,16 +500,7 @@ pub fn spawn(
                 lit_here += 1;
                 let cct_bin = (hash32(key ^ 0x51) % CCT_BINS as u32) as usize;
                 // Most rooms are warm; a few are cool LED/fluorescent.
-                let lum_roll = hash01(key ^ 0xA37);
-                let lum_bin = if lum_roll > 0.94 {
-                    3
-                } else if lum_roll > 0.72 {
-                    2
-                } else if lum_roll > 0.34 {
-                    1
-                } else {
-                    0
-                };
+                let lum_bin = window_luminance_bin(hash01(key ^ 0xA37));
                 let centre = facade.origin
                     + facade.right * u
                     + Vec3::Y * (v - facade.origin.y)
@@ -530,7 +546,7 @@ pub fn spawn(
                 let cct_bin = index / LUM_BINS;
                 let lum_bin = index % LUM_BINS;
                 let cct = 2_200.0 + (4_000.0 - 2_200.0) * (cct_bin as f32 / (CCT_BINS - 1) as f32);
-                let luminance = [12.0_f32, 30.0, 65.0, 120.0][lum_bin];
+                let luminance = WINDOW_LUMINANCE_CDM2[lum_bin];
                 let colour = crate::lighting::kelvin_to_rgb(cct);
                 let material = materials.add(StandardMaterial {
                     base_color: Color::BLACK,

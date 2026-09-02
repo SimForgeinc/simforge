@@ -291,6 +291,10 @@ pub struct AtmosphereInputs {
     pub ground_albedo: f32,
     /// Camera for the view-dependent sky probe (`ViewSky`). `None` skips it.
     pub meter_view: Option<MeterView>,
+    /// Build [`AtmosphereReadback::sky_cube`], the model's directional sky
+    /// for the celestial probe. Costs ~20-60 ms; the engine asks for it only
+    /// below the probe handover.
+    pub sky_cube: bool,
 }
 
 /// The camera the exposure meter reads the sky through.
@@ -334,6 +338,7 @@ impl Default for AtmosphereInputs {
             cloud_beam_transmittance: None,
             ground_albedo: GROUND_ALBEDO,
             meter_view: None,
+            sky_cube: false,
         }
     }
 }
@@ -360,6 +365,7 @@ impl AtmosphereInputs {
                     && v.fov_y_deg.is_finite()
                     && v.aspect.is_finite()
             }),
+            sky_cube: self.sky_cube,
         }
     }
 
@@ -679,6 +685,11 @@ pub struct AtmosphereReadback {
     /// Sky luminance in the metering camera's field, when one was given.
     #[serde(default)]
     pub view_sky: Option<ViewSky>,
+    /// The model's directional sky for the celestial probe, when asked for
+    /// (`AtmosphereInputs::sky_cube`). Not serialised: it is a texture, not
+    /// a reading.
+    #[serde(skip)]
+    pub sky_cube: Option<SkyRadianceCube>,
     /// Peak luminance of the solar disc as composited, cd/m^2.
     pub solar_disc_luminance_cdm2: f32,
     /// Solid angle of the composited disc, sr.
@@ -1010,6 +1021,157 @@ fn single_scattered_radiance_n(
         }
     }
     radiance
+}
+
+/// The model's sky radiance on a low-resolution cube, cd/m^2 per channel:
+/// what the celestial probe carries as its daylight/twilight term once it
+/// has replaced the atmosphere's own IBL. A uniform hemisphere at
+/// `E_diff / pi` closes the energy but loses the sky's structure — the
+/// glow around a low sun and the bright horizon — which a road or a window
+/// reflects, so handing over from the LUT to a uniform probe stepped every
+/// glossy surface. This keeps the structure and is then scaled so its
+/// horizontal irradiance equals the two-stream diffuse, so the meter's
+/// closure holds exactly.
+#[derive(Clone, Debug)]
+pub struct SkyRadianceCube {
+    pub face: u32,
+    /// `6 * face * face` texels in the Bevy cubemap face order (+X, -X,
+    /// +Y, -Y, +Z, -Z), row-major within a face.
+    pub texels: Vec<Vec3>,
+}
+
+/// Direction through the centre of cube texel `(face, s, t)`, with `s`,
+/// `t` in [-1, 1] across the face. Same layout as the probe cubemap.
+pub fn cube_direction(face: u32, s: f32, t: f32) -> Vec3 {
+    match face {
+        0 => Vec3::new(1.0, -t, -s),
+        1 => Vec3::new(-1.0, -t, s),
+        2 => Vec3::new(s, 1.0, -t),
+        3 => Vec3::new(s, -1.0, t),
+        4 => Vec3::new(s, -t, 1.0),
+        _ => Vec3::new(-s, -t, -1.0),
+    }
+    .normalize()
+}
+
+impl SkyRadianceCube {
+    /// Face index and in-face coordinates `(s, t)` in [-1, 1] of a direction.
+    fn locate(dir: Vec3) -> (u32, f32, f32) {
+        let a = dir.abs();
+        if a.x >= a.y && a.x >= a.z {
+            if dir.x > 0.0 {
+                (0, -dir.z / a.x, -dir.y / a.x)
+            } else {
+                (1, dir.z / a.x, -dir.y / a.x)
+            }
+        } else if a.y >= a.z {
+            if dir.y > 0.0 {
+                (2, dir.x / a.y, -dir.z / a.y)
+            } else {
+                (3, dir.x / a.y, dir.z / a.y)
+            }
+        } else if dir.z > 0.0 {
+            (4, dir.x / a.z, -dir.y / a.z)
+        } else {
+            (5, -dir.x / a.z, -dir.y / a.z)
+        }
+    }
+
+    /// Radiance in a direction, bilinear within the face.
+    pub fn sample(&self, dir: Vec3) -> Vec3 {
+        let n = self.face as usize;
+        let (face, s, t) = Self::locate(dir.normalize());
+        let fx = ((s + 1.0) * 0.5 * n as f32 - 0.5).clamp(0.0, (n - 1) as f32);
+        let fy = ((t + 1.0) * 0.5 * n as f32 - 0.5).clamp(0.0, (n - 1) as f32);
+        let x0 = fx.floor() as usize;
+        let y0 = fy.floor() as usize;
+        let x1 = (x0 + 1).min(n - 1);
+        let y1 = (y0 + 1).min(n - 1);
+        let wx = fx - x0 as f32;
+        let wy = fy - y0 as f32;
+        let at = |x: usize, y: usize| self.texels[face as usize * n * n + y * n + x];
+        at(x0, y0) * ((1.0 - wx) * (1.0 - wy))
+            + at(x1, y0) * (wx * (1.0 - wy))
+            + at(x0, y1) * ((1.0 - wx) * wy)
+            + at(x1, y1) * (wx * wy)
+    }
+
+    /// Photometric irradiance on an upward-facing surface, lx.
+    pub fn horizontal_irradiance_lx(&self) -> f32 {
+        let n = self.face as usize;
+        let mut e = 0.0f32;
+        for face in 0..6u32 {
+            for y in 0..n {
+                for x in 0..n {
+                    let s = 2.0 * (x as f32 + 0.5) / n as f32 - 1.0;
+                    let t = 2.0 * (y as f32 + 0.5) / n as f32 - 1.0;
+                    let dir = cube_direction(face, s, t);
+                    if dir.y <= 0.0 {
+                        continue;
+                    }
+                    // Solid angle of a cube texel: (2/n)^2 / (1 + s^2 + t^2)^1.5.
+                    let d_omega = (4.0 / (n * n) as f32) / (1.0 + s * s + t * t).powf(1.5);
+                    e += luma(self.texels[face as usize * n * n + y * n + x]) * dir.y * d_omega;
+                }
+            }
+        }
+        e
+    }
+}
+
+/// [`SkyRadianceCube`] from the same single-scatter + diffuse model as the
+/// probes, scaled so that `horizontal_irradiance_lx == diffuse_lx`.
+fn sky_radiance_cube(
+    terms: &[ScatteringTerm],
+    sun_dir: Vec3,
+    sun_mu: f32,
+    diffuse_lx: f32,
+    floor_luminance: f32,
+    face: u32,
+) -> SkyRadianceCube {
+    const VIEW_STEPS: usize = 48;
+    const SUN_STEPS: usize = 24;
+    let n = face as usize;
+    let mut texels = Vec::with_capacity(6 * n * n);
+    for f in 0..6u32 {
+        for y in 0..n {
+            for x in 0..n {
+                let s = 2.0 * (x as f32 + 0.5) / n as f32 - 1.0;
+                let t = 2.0 * (y as f32 + 0.5) / n as f32 - 1.0;
+                let dir = cube_direction(f, s, t);
+                if dir.y <= 0.0 {
+                    texels.push(Vec3::ZERO);
+                    continue;
+                }
+                // Keep the view ray just above the horizon so the slant
+                // path stays finite; the horizon band is where the model
+                // is brightest anyway.
+                let view_mu = dir.y.max(0.015);
+                let single = single_scattered_radiance_n(
+                    terms,
+                    view_mu,
+                    dir.dot(sun_dir),
+                    sun_mu,
+                    SOLAR_CONSTANT_LX,
+                    VIEW_STEPS,
+                    SUN_STEPS,
+                );
+                let tau = scattering_optical_depth_along_n(terms, view_mu, VIEW_STEPS);
+                texels.push(
+                    single + Vec3::splat(diffuse_sky_luminance(diffuse_lx, tau) + floor_luminance),
+                );
+            }
+        }
+    }
+    let mut cube = SkyRadianceCube { face, texels };
+    let e = cube.horizontal_irradiance_lx();
+    if e > 1.0e-6 && diffuse_lx > 0.0 {
+        let k = diffuse_lx / e;
+        for texel in &mut cube.texels {
+            *texel *= k;
+        }
+    }
+    cube
 }
 
 /// Sky luminance the camera actually frames.
@@ -1368,6 +1530,9 @@ pub fn resolve(
             floor_luminance,
         )
     });
+    let sky_cube = inputs.sky_cube.then(|| {
+        sky_radiance_cube(&terms, sun_dir, sun_mu, diffuse_budget, floor_luminance, 8)
+    });
     let zenith = zenith_single
         + zenith_moon
         + Vec3::splat(zenith_diffuse + floor_luminance);
@@ -1441,6 +1606,7 @@ pub fn resolve(
         zenith_luminance_cdm2: luma(zenith),
         horizon_luminance_cdm2: luma(horizon),
         view_sky,
+        sky_cube,
         solar_disc_luminance_cdm2: if solid_angle > 0.0 {
             SOLAR_CONSTANT_LX * t_luma / solid_angle
         } else {
