@@ -66,6 +66,9 @@ interface SourceObject {
   sourceIndex: number;
   order: number;
   node: Node;
+  /** The node's mesh, or its rest-pose bake when the node is skinned. */
+  mesh: Mesh;
+  skinned: boolean;
   name: string;
   kind: Kind;
   bounds: Bounds;
@@ -100,6 +103,8 @@ export interface GltfTilingReport {
   sources: Array<{ file: string; bytes: number; sha256: string }>;
   extensionsUsed: string[];
   skippedNodes: Array<{ source: string; node: string; reason: string }>;
+  /** Skinned nodes baked at rest pose into static geometry. */
+  skinnedNodesBaked: number;
   objects: number;
   tiles: number;
   materials: { source: number; tileInstances: number; verified: number };
@@ -218,11 +223,17 @@ function jsonImageDigests(json: Record<string, unknown>, bin: Buffer, resources?
   });
 }
 
-function objectSignatures(nodes: Node[], materialDigest: (material: Material | null) => string | null): ObjectSignature[] {
-  return nodes.map((node) => ({
-    name: node.getName(),
-    matrix: [...node.getWorldMatrix()],
-    primitives: (node.getMesh()?.listPrimitives() ?? []).map((primitive) => {
+interface PlacedMesh {
+  name: string;
+  matrix: number[];
+  mesh: Mesh;
+}
+
+function objectSignatures(entries: PlacedMesh[], materialDigest: (material: Material | null) => string | null): ObjectSignature[] {
+  return entries.map((entry) => ({
+    name: entry.name,
+    matrix: entry.matrix,
+    primitives: entry.mesh.listPrimitives().map((primitive) => {
       const indices = primitive.getIndices();
       const attributes: Record<string, string> = {};
       for (const semantic of [...primitive.listSemantics()].sort()) {
@@ -293,27 +304,148 @@ async function loadSource(io: NodeIO, file: string): Promise<LoadedSource> {
   return { file, bytes: bytes.byteLength, sha256: sha256Large(bytes), document, materialDigests, imageCount: document.getRoot().listTextures().length };
 }
 
+const IDENTITY_MATRIX = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as const;
+
+/** Column-major 4x4 product `a * b`. */
+function mat4Multiply(a: ArrayLike<number>, b: ArrayLike<number>): number[] {
+  const out = new Array<number>(16);
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      out[column * 4 + row] = a[row]! * b[column * 4]! + a[4 + row]! * b[column * 4 + 1]! + a[8 + row]! * b[column * 4 + 2]! + a[12 + row]! * b[column * 4 + 3]!;
+    }
+  }
+  return out;
+}
+
+/**
+ * Bakes a skinned mesh at its rest pose into a new static mesh in the source
+ * document: POSITION/NORMAL/TANGENT are transformed by the per-vertex skin
+ * matrix (joint world transform × inverse bind matrix, blended by weights),
+ * JOINTS_n/WEIGHTS_n are dropped, every other attribute, the indices, the
+ * material, and the mode are shared with the source primitive. Positions come
+ * out in world space, so the caller places the mesh with an identity matrix.
+ */
+function bakeRestPose(document: Document, node: Node): Mesh {
+  const skin = node.getSkin()!;
+  const sourceMesh = node.getMesh()!;
+  const joints = skin.listJoints();
+  const inverseBind = skin.getInverseBindMatrices();
+  const jointMatrices = joints.map((joint, index) => {
+    const bind = new Array<number>(16) as unknown as mat4;
+    if (inverseBind) inverseBind.getElement(index, bind);
+    else bind.splice(0, 16, ...IDENTITY_MATRIX);
+    return mat4Multiply(joint.getWorldMatrix(), bind);
+  });
+  const buffer = document.getRoot().listBuffers()[0] ?? document.createBuffer();
+  const baked = document.createMesh(sourceMesh.getName()).setExtras(structuredClone(sourceMesh.getExtras()));
+  for (const primitive of sourceMesh.listPrimitives()) {
+    const position = primitive.getAttribute('POSITION');
+    if (!position) throw new Error(`skinned node ${JSON.stringify(node.getName())} has a primitive without POSITION`);
+    const count = position.getCount();
+    const skinMatrices: number[][] = [];
+    for (let v = 0; v < count; v += 1) skinMatrices.push(new Array<number>(16).fill(0));
+    const jointIndex: number[] = [0, 0, 0, 0];
+    const weight: number[] = [0, 0, 0, 0];
+    for (let set = 0; ; set += 1) {
+      const jointsAccessor = primitive.getAttribute(`JOINTS_${set}`);
+      const weightsAccessor = primitive.getAttribute(`WEIGHTS_${set}`);
+      if (!jointsAccessor || !weightsAccessor) break;
+      for (let v = 0; v < count; v += 1) {
+        jointsAccessor.getElement(v, jointIndex);
+        weightsAccessor.getElement(v, weight);
+        const accumulator = skinMatrices[v]!;
+        for (let k = 0; k < 4; k += 1) {
+          if (weight[k] === 0) continue;
+          const matrix = jointMatrices[jointIndex[k]!];
+          if (!matrix) throw new Error(`skinned node ${JSON.stringify(node.getName())} references joint ${jointIndex[k]} outside its skin`);
+          for (let i = 0; i < 16; i += 1) accumulator[i]! += weight[k]! * matrix[i]!;
+        }
+      }
+    }
+    const transformPoints = (accessor: Accessor, isDirection: boolean): Accessor => {
+      const size = accessor.getElementSize();
+      const out = new Float32Array(count * size);
+      const element = new Array<number>(size).fill(0);
+      for (let v = 0; v < count; v += 1) {
+        accessor.getElement(v, element);
+        const m = skinMatrices[v]!;
+        const [x, y, z] = element as [number, number, number];
+        let tx = m[0]! * x + m[4]! * y + m[8]! * z;
+        let ty = m[1]! * x + m[5]! * y + m[9]! * z;
+        let tz = m[2]! * x + m[6]! * y + m[10]! * z;
+        if (isDirection) {
+          const length = Math.hypot(tx, ty, tz) || 1;
+          tx /= length;
+          ty /= length;
+          tz /= length;
+        } else {
+          tx += m[12]!;
+          ty += m[13]!;
+          tz += m[14]!;
+        }
+        out[v * size] = tx;
+        out[v * size + 1] = ty;
+        out[v * size + 2] = tz;
+        if (size === 4) out[v * size + 3] = element[3]!;
+      }
+      return document.createAccessor(accessor.getName()).setType(accessor.getType()).setArray(out).setBuffer(buffer);
+    };
+    const bakedPrimitive = document.createPrimitive().setMode(primitive.getMode()).setMaterial(primitive.getMaterial()).setIndices(primitive.getIndices()).setExtras(structuredClone(primitive.getExtras()));
+    for (const semantic of primitive.listSemantics()) {
+      if (/^(JOINTS|WEIGHTS)_\d+$/.test(semantic)) continue;
+      const accessor = primitive.getAttribute(semantic)!;
+      if (semantic === 'POSITION') bakedPrimitive.setAttribute(semantic, transformPoints(accessor, false));
+      else if (semantic === 'NORMAL' || semantic === 'TANGENT') bakedPrimitive.setAttribute(semantic, transformPoints(accessor, true));
+      else bakedPrimitive.setAttribute(semantic, accessor);
+    }
+    baked.addPrimitive(bakedPrimitive);
+  }
+  return baked;
+}
+
+function meshBounds(mesh: Mesh): Bounds {
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  const element = [0, 0, 0];
+  for (const primitive of mesh.listPrimitives()) {
+    const position = primitive.getAttribute('POSITION')!;
+    for (let v = 0; v < position.getCount(); v += 1) {
+      position.getElement(v, element);
+      for (let axis = 0; axis < 3; axis += 1) {
+        min[axis] = Math.min(min[axis]!, element[axis]!);
+        max[axis] = Math.max(max[axis]!, element[axis]!);
+      }
+    }
+  }
+  return { min, max };
+}
+
 function collectObjects(source: LoadedSource, sourceIndex: number, skipped: GltfTilingReport['skippedNodes']): SourceObject[] {
   const objects: SourceObject[] = [];
   let order = 0;
   const visit = (node: Node): void => {
     order += 1;
-    const mesh = node.getMesh();
-    if (mesh !== null) {
-      const reason = node.getSkin() ? 'skinned meshes are not tiled' : node.listExtensions().length > 0 ? `node extensions ${node.listExtensions().map((e) => e.extensionName).join(',')} are not tiled` : null;
-      if (reason) {
-        skipped.push({ source: path.basename(source.file), node: node.getName(), reason });
+    const sourceMesh = node.getMesh();
+    if (sourceMesh !== null) {
+      if (node.listExtensions().length > 0) {
+        skipped.push({ source: path.basename(source.file), node: node.getName(), reason: `node extensions ${node.listExtensions().map((e) => e.extensionName).join(',')} are not tiled` });
       } else {
-        const primitives = mesh.listPrimitives();
+        // A skinned mesh (rigged prop with no animation in a static map export)
+        // is baked at its rest pose into world-space static geometry.
+        const skinned = node.getSkin() !== null;
+        const mesh = skinned ? bakeRestPose(source.document, node) : sourceMesh;
+        const worldMatrix = skinned ? [...IDENTITY_MATRIX] : [...node.getWorldMatrix()];
         objects.push({
           sourceIndex,
           order,
           node,
+          mesh,
+          skinned,
           name: node.getName(),
           kind: classify(node),
-          bounds: boundsOf(node),
-          triangles: primitives.reduce((sum, primitive) => sum + primitiveTriangles(primitive), 0),
-          worldMatrix: [...node.getWorldMatrix()],
+          bounds: skinned ? meshBounds(mesh) : boundsOf(node),
+          triangles: mesh.listPrimitives().reduce((sum, primitive) => sum + primitiveTriangles(primitive), 0),
+          worldMatrix,
         });
       }
     }
@@ -342,7 +474,7 @@ function tileDocument(sources: LoadedSource[], members: SourceObject[]): Documen
       resolve = createDefaultPropertyResolver(tile, source.document);
       resolvers.set(member.sourceIndex, resolve);
     }
-    const mesh = member.node.getMesh()!;
+    const mesh = member.mesh;
     const copied = copyToDocument(tile, source.document, [mesh], resolve).get(mesh) as Mesh | undefined;
     if (!copied) throw new Error(`failed to copy mesh for node ${JSON.stringify(member.name)}`);
     const node = tile
@@ -372,7 +504,7 @@ function textureFacts(objects: SourceObject[]): Pick<GltfTilingReport, 'textureT
   let divergent = 0;
   const seen = new Set<Material>();
   for (const object of objects) {
-    for (const primitive of object.node.getMesh()!.listPrimitives()) {
+    for (const primitive of object.mesh.listPrimitives()) {
       for (const semantic of primitive.listSemantics()) {
         if (semantic.startsWith('TEXCOORD_')) vertexTexcoordAttributes[semantic] = (vertexTexcoordAttributes[semantic] ?? 0) + 1;
       }
@@ -481,7 +613,7 @@ export async function gltfToTiles(options: GltfToTilesOptions): Promise<StageRes
   let tileImageBytes = 0;
   const sourceMaterialDigest = (sourceIndex: number) => (material: Material | null) => (material === null ? null : sources[sourceIndex]!.materialDigests.get(material) ?? null);
   for (const tile of tiles) {
-    const expected = tile.members.map((member) => objectSignatures([member.node], sourceMaterialDigest(member.sourceIndex))[0]!);
+    const expected = tile.members.map((member) => objectSignatures([{ name: member.name, matrix: member.worldMatrix, mesh: member.mesh }], sourceMaterialDigest(member.sourceIndex))[0]!);
     const document = tileDocument(sources, tile.members);
     const glb = Buffer.from(await io.writeBinary(document));
     await writeFile(path.join(outputDir, tile.row.file), glb);
@@ -495,7 +627,10 @@ export async function gltfToTiles(options: GltfToTilesOptions): Promise<StageRes
     const materialsJson = (json['materials'] ?? []) as Array<Record<string, unknown>>;
     const writtenDigest = new Map<Material, string>();
     writtenMaterials.forEach((material, index) => writtenDigest.set(material, materialSignature(json, materialsJson[index]!, digests)));
-    const actual = objectSignatures(written.getRoot().listScenes()[0]!.listChildren(), (material) => (material === null ? null : writtenDigest.get(material) ?? null));
+    const actual = objectSignatures(
+      written.getRoot().listScenes()[0]!.listChildren().map((node) => ({ name: node.getName(), matrix: [...node.getWorldMatrix()], mesh: node.getMesh()! })),
+      (material) => (material === null ? null : writtenDigest.get(material) ?? null),
+    );
     assertEquivalent(tile.row.file, expected, actual);
 
     materialInstances += writtenMaterials.length;
@@ -527,10 +662,11 @@ export async function gltfToTiles(options: GltfToTilesOptions): Promise<StageRes
     sources: sources.map((source) => ({ file: path.basename(source.file), bytes: source.bytes, sha256: source.sha256 })),
     extensionsUsed: [...new Set(sources.flatMap((source) => source.document.getRoot().listExtensionsUsed().map((e) => e.extensionName)))].sort(),
     skippedNodes,
+    skinnedNodesBaked: objects.filter((object) => object.skinned).length,
     objects: objects.length,
     tiles: tiles.length,
     materials: { source: sources.reduce((sum, source) => sum + source.materialDigests.size, 0), tileInstances: materialInstances, verified: verifiedMaterials },
-    primitives: { source: objects.reduce((sum, object) => sum + object.node.getMesh()!.listPrimitives().length, 0), verified: verifiedPrimitives },
+    primitives: { source: objects.reduce((sum, object) => sum + object.mesh.listPrimitives().length, 0), verified: verifiedPrimitives },
     images: {
       source: sources.reduce((sum, source) => sum + source.imageCount, 0),
       distinct: imageMultiplicity.size,

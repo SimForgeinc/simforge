@@ -79,6 +79,16 @@ async function writeSyntheticSource(directory: string): Promise<void> {
   scene.addChild(district);
   scene.addChild(document.createNode('Building_B').setMesh(buildingMesh).setTranslation([250, 0, 0]));
   scene.addChild(document.createNode('Tree_01').setMesh(treeMesh).setTranslation([-50, 0, -50]));
+  // A rigged prop: one joint placed at x=+700, identity inverse bind matrix,
+  // fully weighted. Rest pose therefore translates the quad by +700 on x.
+  const joint = document.createNode('WorkerRig_Root').setTranslation([700, 0, 0]);
+  scene.addChild(joint);
+  const skin = document.createSkin('WorkerRig').addJoint(joint);
+  const vest = document.createMaterial('Worker_Vest').setBaseColorFactor([1, 0.5, 0, 1]);
+  const worker = quad(document, buffer, 1).setMaterial(vest);
+  worker.setAttribute('JOINTS_0', document.createAccessor().setType('VEC4').setBuffer(buffer).setArray(new Uint8Array(16)));
+  worker.setAttribute('WEIGHTS_0', document.createAccessor().setType('VEC4').setBuffer(buffer).setArray(new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0])));
+  scene.addChild(document.createNode('Worker_Figure').setMesh(document.createMesh('worker').addPrimitive(worker)).setSkin(skin));
 
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
   await mkdir(directory, { recursive: true });
@@ -117,13 +127,16 @@ describe('glTF-native tiling', () => {
       ['road', 'tiles/road.glb', undefined, undefined, 2],
       ['static', 'tiles/tile_3_1.lod0.glb', 3, 1, 2],
       ['static', 'tiles/tile_6_1.lod0.glb', 6, 1, 2],
+      ['static', 'tiles/tile_8_1.lod0.glb', 8, 1, 2],
       ['vegetation', 'tiles/veg_0_0.lod0.glb', 0, 0, 2],
     ]);
 
     const report = JSON.parse(await readFile(path.join(stage.outputDir, 'tiling-report.json'), 'utf8')) as GltfTilingReport;
-    expect(report.objects).toBe(4);
+    expect(report.objects).toBe(5);
+    expect(report.skinnedNodesBaked).toBe(1);
+    expect(report.skippedNodes).toEqual([]);
     expect(report.materials.verified).toBe(report.materials.tileInstances);
-    expect(report.primitives).toEqual({ source: 4, verified: 4 });
+    expect(report.primitives).toEqual({ source: 5, verified: 5 });
     // The facade albedo is embedded in both building tiles and the road tile.
     expect(report.images.distinct).toBe(2);
     expect(report.images.tileInstances).toBe(5);
@@ -163,6 +176,15 @@ describe('glTF-native tiling', () => {
     expect(node!.getMesh()!.listPrimitives()[0]!.listSemantics().sort()).toEqual(['NORMAL', 'POSITION', 'TEXCOORD_0', 'TEXCOORD_1', 'TEXCOORD_2']);
     // The tile declares only extensions it actually uses.
     expect(tile.getRoot().listExtensionsUsed().map((e) => e.extensionName).sort()).toEqual(report.extensionsUsed);
+
+    const workerTile = await io.read(path.join(stage.outputDir, 'tiles', 'tile_8_1.lod0.glb'));
+    const [workerNode] = workerTile.getRoot().listScenes()[0]!.listChildren();
+    expect(workerNode!.getName()).toBe('Worker_Figure');
+    expect(workerNode!.getTranslation()).toEqual([0, 0, 0]);
+    const workerPrimitive = workerNode!.getMesh()!.listPrimitives()[0]!;
+    expect(workerPrimitive.listSemantics().sort()).toEqual(['NORMAL', 'POSITION', 'TEXCOORD_0', 'TEXCOORD_1', 'TEXCOORD_2']);
+    expect([...(workerPrimitive.getAttribute('POSITION')!.getArray() as Float32Array)]).toEqual([700, 0, 0, 710, 0, 0, 710, 0, 10, 700, 0, 10]);
+    expect(workerTile.getRoot().listSkins()).toEqual([]);
 
     const otherWorkDir = await mkdtemp(path.join(os.tmpdir(), 'simforge-gltf-tiling-work2-'));
     temporaryRoots.push(otherWorkDir);
