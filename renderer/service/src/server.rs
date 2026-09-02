@@ -60,6 +60,16 @@ pub struct SceneSpec {
     /// Optional actor-id -> absolute GLB override.
     #[serde(default)]
     pub actor_model_refs: HashMap<String, String>,
+    /// Meter the sky through the first RGB camera of every render when the
+    /// authored lighting names no `meter_view` (the Lookdev Lab's per-frame
+    /// metering: a sunward low sun stops the camera down instead of
+    /// printing a white sky). Off, the incident meter alone sets exposure.
+    #[serde(default = "default_true")]
+    pub auto_meter: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 fn default_near() -> f32 {
@@ -213,6 +223,12 @@ pub struct ServiceState {
     vehicle_models: Option<VehicleModelCatalog>,
     pedestrian_models: Option<VehicleModelCatalog>,
     actor_model_refs: HashMap<String, PathBuf>,
+    /// Lighting as the caller authored it (scene spec, then every
+    /// `set_lighting`), before the service adds a metering camera.
+    lighting_authored: Lighting,
+    auto_meter: bool,
+    /// Metering camera the service last applied on the caller's behalf.
+    auto_meter_view: Option<render_core::atmosphere::MeterView>,
 }
 
 impl ServiceState {
@@ -263,7 +279,54 @@ impl ServiceState {
                 .iter()
                 .map(|(actor, path)| (actor.clone(), PathBuf::from(path)))
                 .collect(),
+            lighting_authored: spec.lighting.clone(),
+            auto_meter: spec.auto_meter,
+            auto_meter_view: None,
         })
+    }
+}
+
+/// Re-meter the live look through `cam` at `eye -> target` when the caller
+/// left the metering camera to the service and the heading, field or aspect
+/// moved since the last reading. An in-place advance (see
+/// `SceneApp::advance_lighting`): ~25 ms by day, and the TAA history is kept.
+fn auto_meter(state: &mut ServiceState, cam: &ServiceCamera, eye: &[f32; 3], target: &[f32; 3]) {
+    if !state.auto_meter
+        || !state.lighting_authored.atmosphere
+        || state.lighting_authored.meter_view.is_some()
+    {
+        return;
+    }
+    let forward = [target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]];
+    let len = (forward[0] * forward[0] + forward[1] * forward[1] + forward[2] * forward[2]).sqrt();
+    if len <= 1.0e-6 {
+        return;
+    }
+    let view = render_core::atmosphere::MeterView {
+        forward: [forward[0] / len, forward[1] / len, forward[2] / len],
+        fov_y_deg: cam.fov_deg,
+        aspect: cam.width.max(1) as f32 / cam.height.max(1) as f32,
+    };
+    if let Some(previous) = &state.auto_meter_view {
+        let cos = previous.forward[0] * view.forward[0]
+            + previous.forward[1] * view.forward[1]
+            + previous.forward[2] * view.forward[2];
+        let same_heading = cos >= 0.5f32.to_radians().cos();
+        if same_heading
+            && (previous.fov_y_deg - view.fov_y_deg).abs() < 1.0e-3
+            && (previous.aspect - view.aspect).abs() < 1.0e-3
+        {
+            return;
+        }
+    }
+    let mut lighting = state.lighting_authored.clone();
+    lighting.meter_view = Some(view);
+    match state.app.advance_lighting(&lighting, state.profile_config) {
+        Ok(_) => {
+            state.auto_meter_view = Some(view);
+            state.cache.clear();
+        }
+        Err(error) => eprintln!("auto meter: {error:#}"),
     }
 }
 
@@ -374,6 +437,8 @@ fn dispatch(state: &mut ServiceState, request: WireRequest) -> WireResponse {
             match outcome {
                 Ok((resolved, full_relight)) => {
                     state.profile_config = profile_config;
+                    state.lighting_authored = lighting.clone();
+                    state.auto_meter_view = None;
                     // Frames cached against the previous look are stale.
                     state.cache.clear();
                     WireResponse {
@@ -786,6 +851,9 @@ fn render_tick(
         if let Err(error) = state.app.set_pose(&cam.sensor_id, &eye, &target) {
             return WireResponse::error(i, format!("set pose: {error:#}"));
         }
+        if cam.sensor_id == cameras[0].sensor_id {
+            auto_meter(state, cam, &eye, &target);
+        }
     }
     let _ = any_new_camera;
     // Readback returns the PREVIOUS render's buffer: pose/scene updates lag
@@ -1134,6 +1202,9 @@ fn render_bundle_op(
         };
         if let Err(error) = state.app.set_pose(&cam.sensor_id, &eye, &target) {
             return WireResponse::error(i, format!("set pose: {error:#}"));
+        }
+        if cam.sensor_id == rig[0].sensor_id {
+            auto_meter(state, cam, &eye, &target);
         }
     }
     // Same double-render flush as `render`: readback lags one render_once.

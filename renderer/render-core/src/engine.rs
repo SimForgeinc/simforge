@@ -196,11 +196,13 @@ pub const FOG_DISABLED_VISIBILITY_M: f32 = 15_000.0;
 /// any camera has registered. Matches the render service's `default_far`.
 pub const DEFAULT_FAR_PLANE_M: f32 = 900.0;
 
+// The Lookdev Lab's canonical hour: 06:25 PDT on day 172 at the corpus
+// site, NOAA solar position (`lab/server/settings.py::solar_position`).
 fn default_sun_elev() -> f32 {
-    60.0
+    5.758
 }
 fn default_sun_azim() -> f32 {
-    190.0
+    115.248
 }
 fn default_lux() -> f32 {
     12000.0
@@ -1419,12 +1421,14 @@ struct GroupEntities {
 struct GroundField {
     cell_m: f32,
     min_y: HashMap<(i64, i64), f32>,
+    /// Median per-cell height, fixed at build; the far fallback of `sample`.
+    median: Option<f32>,
 }
 
 impl GroundField {
     fn build(app: &mut App, cell_m: f32) -> GroundField {
         let world = app.world_mut();
-        let mut field = GroundField { cell_m, min_y: HashMap::new() };
+        let mut field = GroundField { cell_m, min_y: HashMap::new(), median: None };
         let mut q = world.query::<(&Mesh3d, &GlobalTransform)>();
         let meshes = world.resource::<Assets<Mesh>>();
         for (mesh, gt) in q.iter(world) {
@@ -1445,13 +1449,43 @@ impl GroundField {
                     .or_insert(p.y);
             }
         }
+        field.median = field.median_y();
         field
     }
 
-    /// Ground height under (x, z); 0.0 where the scene has no geometry.
+    /// Ground height under (x, z).
+    ///
+    /// The field is per-vertex, so a road drawn as large triangles leaves
+    /// most 2 m cells empty; those used to read as 0.0, which put a
+    /// ground-snapped actor (and its mounted camera) eleven metres under a
+    /// street at y = 13 on every other tick. An empty cell now takes the
+    /// nearest populated cell within 20 m, then the scene median, and only
+    /// then 0.0 (a scene with no geometry at all).
     fn sample(&self, x: f32, z: f32) -> f32 {
-        let key = ((x / self.cell_m).floor() as i64, (z / self.cell_m).floor() as i64);
-        self.min_y.get(&key).copied().unwrap_or(0.0)
+        let (cx, cz) = ((x / self.cell_m).floor() as i64, (z / self.cell_m).floor() as i64);
+        if let Some(y) = self.min_y.get(&(cx, cz)) {
+            return *y;
+        }
+        for ring in 1..=10i64 {
+            let mut best: Option<(i64, f32)> = None;
+            for dz in -ring..=ring {
+                for dx in -ring..=ring {
+                    if dx.abs() != ring && dz.abs() != ring {
+                        continue;
+                    }
+                    if let Some(y) = self.min_y.get(&(cx + dx, cz + dz)) {
+                        let d2 = dx * dx + dz * dz;
+                        if best.is_none_or(|(bd, _)| d2 < bd) {
+                            best = Some((d2, *y));
+                        }
+                    }
+                }
+            }
+            if let Some((_, y)) = best {
+                return y;
+            }
+        }
+        self.median.unwrap_or(0.0)
     }
 
     /// Median per-cell ground height across the whole scene, or `None` for

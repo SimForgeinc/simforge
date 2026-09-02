@@ -141,9 +141,11 @@ impl Weather {
 /// The physical atmosphere a weather label implies.
 ///
 /// These are the *defaults* a label seeds; every one of them is an
-/// independently authorable control on `engine::Lighting`, so a lookdev
-/// surface can dial turbidity or visibility away from the label without
-/// leaving the label.
+/// independently authorable control on `engine::Lighting` /
+/// `night::NightControls`, so a lookdev surface can dial turbidity or
+/// visibility away from the label without leaving the label. The values are
+/// the Lookdev Lab's weather presets (rev23), so a platform render of
+/// "cloudy" is the lab's "cloudy".
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct WeatherAtmosphere {
     /// Cloud deck type for the medium's slab term.
@@ -154,6 +156,17 @@ pub struct WeatherAtmosphere {
     pub turbidity: f32,
     /// Meteorological visibility, m (Koschmieder).
     pub visibility_m: f32,
+    /// Extra aerosol on top of turbidity, [0, 1] (`Lighting::haze`).
+    pub haze: f32,
+    /// Road-surface wetness ramp, [0, 1].
+    pub wetness: f32,
+    /// Volumetric deck morphology (`NightControls::cloud_*`): 0 stratiform
+    /// sheet, 1 cumuliform towers; base and top altitude, m; density
+    /// multiplier.
+    pub cloud_type: f32,
+    pub cloud_base_m: f32,
+    pub cloud_top_m: f32,
+    pub cloud_density: f32,
 }
 
 impl Weather {
@@ -171,14 +184,26 @@ impl Weather {
                 deck: CloudDeck::None,
                 cloud_cover: 0.0,
                 turbidity: 2.4,
-                visibility_m: 45_000.0,
+                visibility_m: 80_000.0,
+                haze: 0.0,
+                wetness: 0.0,
+                cloud_type: 0.85,
+                cloud_base_m: 1_200.0,
+                cloud_top_m: 2_800.0,
+                cloud_density: 1.0,
             },
             // Broken fair-weather cumulus over a slightly hazier column.
             Weather::Cloudy => WeatherAtmosphere {
                 deck: CloudDeck::Cumulus,
                 cloud_cover: 0.45,
-                turbidity: 2.9,
-                visibility_m: 25_000.0,
+                turbidity: 2.8,
+                visibility_m: 30_000.0,
+                haze: 0.03,
+                wetness: 0.0,
+                cloud_type: 0.85,
+                cloud_base_m: 1_200.0,
+                cloud_top_m: 2_800.0,
+                cloud_density: 1.0,
             },
             // Continuous stratus sheet: tau ~ 22, beam gone.
             Weather::Overcast => WeatherAtmosphere {
@@ -186,6 +211,12 @@ impl Weather {
                 cloud_cover: 0.95,
                 turbidity: 3.2,
                 visibility_m: 12_000.0,
+                haze: 0.10,
+                wetness: 0.05,
+                cloud_type: 0.15,
+                cloud_base_m: 700.0,
+                cloud_top_m: 1_900.0,
+                cloud_density: 1.4,
             },
             // Radiation fog under a low stratus lid.
             Weather::Fog => WeatherAtmosphere {
@@ -193,6 +224,12 @@ impl Weather {
                 cloud_cover: 0.75,
                 turbidity: 3.0,
                 visibility_m: 150.0,
+                haze: 0.20,
+                wetness: 0.15,
+                cloud_type: 0.10,
+                cloud_base_m: 400.0,
+                cloud_top_m: 1_200.0,
+                cloud_density: 1.4,
             },
             // Nimbostratus with rain-washed (hence clean) sub-cloud air.
             Weather::Rain => WeatherAtmosphere {
@@ -200,13 +237,25 @@ impl Weather {
                 cloud_cover: 0.90,
                 turbidity: 2.6,
                 visibility_m: 3_000.0,
+                haze: 0.10,
+                wetness: 0.85,
+                cloud_type: 0.30,
+                cloud_base_m: 500.0,
+                cloud_top_m: 2_600.0,
+                cloud_density: 1.8,
             },
             // Night is a clock state, not an air-mass state.
             Weather::Night => WeatherAtmosphere {
                 deck: CloudDeck::None,
                 cloud_cover: 0.0,
                 turbidity: 2.4,
-                visibility_m: 45_000.0,
+                visibility_m: 80_000.0,
+                haze: 0.0,
+                wetness: 0.0,
+                cloud_type: 0.85,
+                cloud_base_m: 1_200.0,
+                cloud_top_m: 2_800.0,
+                cloud_density: 1.0,
             },
         }
     }

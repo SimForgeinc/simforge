@@ -34,7 +34,8 @@ const LUNAR_EQUATOR_INCLINATION_DEG: f64 = 1.54242;
 
 fn default_year() -> i32 { 2026 }
 fn default_day() -> u16 { 172 }
-fn default_minutes() -> f32 { 720.0 }
+// 06:25 PDT at the corpus site, the Lookdev Lab's canonical hour.
+fn default_minutes() -> f32 { 805.0 }
 fn default_lat() -> f64 { 37.4419 }
 fn default_lon() -> f64 { -122.1430 }
 fn default_natural_lux() -> f32 { 0.002 }
@@ -44,9 +45,9 @@ fn default_fixture_budget() -> usize { 12 }
 fn default_cloud_quality() -> CloudQuality { CloudQuality::Scalable }
 fn default_wind() -> [f32; 2] { [12.0, 4.0] }
 fn default_cloud_density() -> f32 { 1.0 }
-fn default_cloud_kind() -> f32 { 0.6 }
-fn default_cloud_base() -> f32 { 1_100.0 }
-fn default_cloud_top() -> f32 { 3_000.0 }
+fn default_cloud_kind() -> f32 { 0.85 }
+fn default_cloud_base() -> f32 { 1_200.0 }
+fn default_cloud_top() -> f32 { 2_800.0 }
 fn default_sky_lift() -> f32 { 120.0 }
 fn default_exposure_offset() -> f32 { 0.0 }
 fn default_window_mode() -> WindowMode { WindowMode::SyntheticFacade }
@@ -189,7 +190,7 @@ impl Default for NightControls {
             utc_minutes: default_minutes(),
             latitude_deg: default_lat(),
             longitude_deg: default_lon(),
-            elevation_m: 0.0,
+            elevation_m: 15.0,
             natural_ambient_lux: default_natural_lux(),
             urban_skyglow_lux: default_skyglow_lux(),
             limiting_magnitude: default_star_mag(),

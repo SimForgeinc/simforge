@@ -233,7 +233,9 @@ impl Default for CinematicFx {
             dof_aperture_f_stops: 8.0,
             dof_focal_distance_m: 28.0,
             dof_enabled: false,
-            motion_shutter_angle: 90.0,
+            // Off by default: the lab records with a sharp shutter; callers
+            // that want blur set an angle per camera.
+            motion_shutter_angle: 0.0,
             motion_samples: 8,
             bloom_intensity: 0.10,
             // Subtle UE5-filmic approximation on top of AgX: protect bright
