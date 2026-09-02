@@ -44,6 +44,12 @@ Env equivalents: `NEXT_PUBLIC_DRIVE_MAP_MANIFEST_URL`,
 `NEXT_PUBLIC_DRIVE_TWIN_URL`. Camera feeds are proxied same-origin through
 `SIMFORGE_TWIN_HTTP_ORIGIN`.
 
+Set `NEXT_PUBLIC_DRIVE_STANDALONE` to a non-empty value to remove the Studio
+app switcher and route `/` directly to Drive. In standalone mode,
+`NEXT_PUBLIC_DRIVE_HOME_URL` optionally adds a single plain `Home` link to the
+Drive header. Both `NEXT_PUBLIC_*` values are compiled into the client bundle,
+so set them before building Studio.
+
 Direct bundles must have the same complete sidecar closure as published maps.
 The `manifest` must end in `/3d/manifest.json`; `lanes` overrides the topology
 used by the live world. Missing compiler sidecars or invalid digests are surfaced

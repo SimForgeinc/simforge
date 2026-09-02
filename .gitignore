@@ -1,6 +1,7 @@
 node_modules/
 dist/
 /dev-assets
+/studio/public/map-bundles/
 
 # Meshy generation is resumable local work; source and smoke checks stay tracked.
 /tools/meshy/cache/
