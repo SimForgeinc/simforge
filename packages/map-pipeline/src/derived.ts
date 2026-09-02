@@ -12,13 +12,14 @@ import sharp from 'sharp';
 import { repackGlb } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 
 import { buildClosure, filesUnder, hashTree, readWholeFile, sha256, writeClosure } from './closure.js';
+import { neutralizeExportErrorMaterials } from './export-error-materials.js';
 import { assertBevyRepresentableSampling, bakeDivergentTextureTransforms } from './uv-transform-bake.js';
 import type { ClosureKind, MapClosure } from './closure.js';
 import type { ClosureStageResult } from './assemble.js';
 import type { StageResult } from './tiling.js';
 
-const BROWSER_OPTIMIZER_REVISION = 3;
-const KTX2_REPACK_REVISION = 5;
+const BROWSER_OPTIMIZER_REVISION = 4;
+const KTX2_REPACK_REVISION = 6;
 const NATIVE_CORPUS_DECODER_REVISION = 6;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const SHARP_VERSION = '0.34.5';
@@ -94,6 +95,7 @@ export async function browserOptimize(source: ClosureStageResult, workDir: strin
   const io = optimizerIo();
   return deriveClosure(source, workDir, 'browser-optimized', browserToolFingerprint(), async (input) => {
     const document = await io.readBinary(input);
+    neutralizeExportErrorMaterials(document);
     await document.transform(
       ...geometryTransforms(),
       textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 90, resize: [MAX_TEXTURE_DIMENSION, MAX_TEXTURE_DIMENSION], slots: COLOR_SLOTS }),
@@ -119,6 +121,7 @@ export async function ktx2Variant(source: ClosureStageResult, workDir: string, k
   const io = optimizerIo();
   return deriveClosure(source, workDir, 'ktx2', ktx2ToolFingerprint(), async (input) => {
     const document = await io.readBinary(input);
+    neutralizeExportErrorMaterials(document);
     await document.transform(...geometryTransforms());
     const result = await repackGlb(Buffer.from(await io.writeBinary(document)), { ktxBinDir, maxDimension: MAX_TEXTURE_DIMENSION });
     return result.glb;
