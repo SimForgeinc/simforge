@@ -39,7 +39,7 @@ import type { StageResult } from './tiling.js';
  * Any mismatch aborts the stage. `tiling-report.json` records the proof plus
  * per-map material/UV/transform/image-multiplicity facts for downstream QA.
  */
-export const GLTF_TILER_REVISION = 2;
+export const GLTF_TILER_REVISION = 3;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const CLASSIFY_VEGETATION = /veg|tree|bush|grass|foliage|plant/;
 const CLASSIFY_ROAD = /road|asphalt|ground|terrain|pavement|marking|lane/;
