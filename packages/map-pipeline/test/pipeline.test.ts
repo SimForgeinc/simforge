@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { NodeIO } from '@gltf-transform/core';
 
 import { assembleClosure, assignGridCell, fbxToTiles, materializeRegistryPayload, runMapPipeline } from '../src/index.js';
+import { resolveKtxBinDir } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 
 const temporaryRoots: string[] = [];
 let sourceDir: string;
@@ -101,7 +102,7 @@ describe('FBX tiling and closure assembly', () => {
       sourceDir,
       name: 'synthetic-city',
       workDir,
-      ktxBinDir: '/home/path/simforge-assets/tools/KTX-Software-4.4.2-Linux-x86_64/bin',
+      ktxBinDir: resolveKtxBinDir(process.env['SIMFORGE_KTX_BIN_DIR']),
     });
     expect(result.derived.map((artifact) => artifact.kind)).toEqual([
       'browser-optimized',

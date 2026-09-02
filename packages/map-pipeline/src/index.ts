@@ -85,12 +85,19 @@ export interface MapPipelineResult {
   canonical: RegistryClosureArtifact;
   derived: RegistryClosureArtifact[];
   stages: {
-    tiles: StageResult;
+    /** Absent when the canonical closure came from a registry, not a tiler. */
+    tiles?: StageResult;
     canonical: ClosureStageResult;
     browser?: DerivedStageResult;
     ktx2?: DerivedStageResult;
     nativeCorpus?: DerivedStageResult;
   };
+}
+
+export interface DeriveClosuresOptions {
+  name: string;
+  workDir: string;
+  ktxBinDir?: string;
 }
 
 function registryArtifact(stage: ClosureStageResult | DerivedStageResult): RegistryClosureArtifact {
@@ -127,6 +134,16 @@ export async function runMapPipeline(options: RunMapPipelineOptions): Promise<Ma
   if (options.derived === false) {
     return { name: options.name, canonical: registryArtifact(canonical), derived: [], stages: { tiles, canonical } };
   }
+  const result = await deriveClosures(canonical, { name: options.name, workDir: options.workDir, ...(options.ktxBinDir ? { ktxBinDir: options.ktxBinDir } : {}) });
+  result.stages.tiles = tiles;
+  return result;
+}
+
+/**
+ * Presentation derivatives (browser, KTX2, native corpus) for a canonical
+ * closure stage - whether it was just tiled or materialized from a registry.
+ */
+export async function deriveClosures(canonical: ClosureStageResult, options: DeriveClosuresOptions): Promise<MapPipelineResult> {
   const browser = await browserOptimize(canonical, options.workDir);
   const ktx2 = await ktx2Variant(canonical, options.workDir, options.ktxBinDir);
   const corpus = await nativeCorpus(ktx2, options.workDir);
@@ -134,8 +151,18 @@ export async function runMapPipeline(options: RunMapPipelineOptions): Promise<Ma
     name: options.name,
     canonical: registryArtifact(canonical),
     derived: [registryArtifact(browser), registryArtifact(ktx2), registryArtifact(corpus)],
-    stages: { tiles, canonical, browser, ktx2, nativeCorpus: corpus },
+    stages: { canonical, browser, ktx2, nativeCorpus: corpus },
   };
+}
+
+/**
+ * Canonical stage for a closure whose content already sits in `contentDir`
+ * (a registry pull). `closureDigest` must be the registry's digest so derived
+ * cache keys and published derived closures line up with tiler-built runs.
+ */
+export function canonicalStageFromDirectory(closure: MapClosure, contentDir: string, closureDigest: string): ClosureStageResult {
+  if (closure.kind !== 'canonical') throw new Error(`expected a canonical closure, got ${closure.kind}`);
+  return { inputDigest: closureDigest, toolFingerprint: closure.toolFingerprint ?? '', outputDigest: closureDigest, outputDir: contentDir, cacheKey: closureDigest, closure, closureDigest, viewerOnly: closure.metadata?.viewerOnly === true };
 }
 
 /**

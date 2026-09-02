@@ -11,8 +11,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { gltfToTiles, runMapPipeline } from '../src/index.js';
 import type { GltfTilingReport } from '../src/index.js';
+import { resolveKtxBinDir } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 
-const KTX_BIN_DIR = '/home/path/simforge-assets/tools/KTX-Software-4.4.2-Linux-x86_64/bin';
+const KTX_BIN_DIR = resolveKtxBinDir(process.env['SIMFORGE_KTX_BIN_DIR']);
 const temporaryRoots: string[] = [];
 let sourceDir: string;
 let albedoPng: Buffer;
