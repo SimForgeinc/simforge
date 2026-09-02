@@ -8,6 +8,9 @@ import { useTopBarSlotContext } from "@/app/components/TopBarSlot";
 import { activeNavItem } from "@/app/lib/dashboard-nav";
 import { cn } from "@/app/lib/utils";
 
+const driveStandalone = Boolean(process.env.NEXT_PUBLIC_DRIVE_STANDALONE);
+const driveHomeUrl = process.env.NEXT_PUBLIC_DRIVE_HOME_URL?.trim();
+
 export function AppTopBar() {
   const pathname = usePathname();
   const switcherTriggerRef = useRef<HTMLButtonElement>(null);
@@ -47,22 +50,33 @@ export function AppTopBar() {
           data-testid="app-topbar-clouds"
         />
         <div className="relative z-10 flex h-full w-full items-center gap-3 px-3">
-          <button
-            ref={switcherTriggerRef}
-            type="button"
-            onClick={() => setSwitcherOpen(true)}
-            aria-label="Open app switcher"
-            aria-haspopup="dialog"
-            aria-expanded={switcherOpen}
-            className="group flex size-10 shrink-0 items-center justify-center bg-transparent text-primary transition-colors hover:bg-transparent hover:text-[#f4ed55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <span
-              className="flex items-center justify-center transition-[transform,filter] duration-200 ease-out [filter:drop-shadow(0_0_0_transparent)] group-hover:scale-[1.18] group-hover:[filter:drop-shadow(0_0_1px_#E8E044)_drop-shadow(0_0_8px_rgba(232,224,68,0.32))] group-focus-visible:scale-[1.18] motion-reduce:transition-none"
-              data-testid="app-topbar-logo"
+          {driveStandalone ? (
+            driveHomeUrl ? (
+              <a
+                className="flex h-10 shrink-0 items-center px-2 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                href={driveHomeUrl}
+              >
+                Home
+              </a>
+            ) : null
+          ) : (
+            <button
+              ref={switcherTriggerRef}
+              type="button"
+              onClick={() => setSwitcherOpen(true)}
+              aria-label="Open app switcher"
+              aria-haspopup="dialog"
+              aria-expanded={switcherOpen}
+              className="group flex size-10 shrink-0 items-center justify-center bg-transparent text-primary transition-colors hover:bg-transparent hover:text-[#f4ed55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <SimForgeLogo size={30} />
-            </span>
-          </button>
+              <span
+                className="flex items-center justify-center transition-[transform,filter] duration-200 ease-out [filter:drop-shadow(0_0_0_transparent)] group-hover:scale-[1.18] group-hover:[filter:drop-shadow(0_0_1px_#E8E044)_drop-shadow(0_0_8px_rgba(232,224,68,0.32))] group-focus-visible:scale-[1.18] motion-reduce:transition-none"
+                data-testid="app-topbar-logo"
+              >
+                <SimForgeLogo size={30} />
+              </span>
+            </button>
+          )}
 
           <div className="flex min-w-0 flex-1 items-center gap-4">
             {unbrandedPageTitle ? (
@@ -112,12 +126,14 @@ export function AppTopBar() {
         </div>
       </header>
 
-      <AppSwitcherOverlay
-        open={switcherOpen}
-        onOpenChange={setSwitcherOpen}
-        pathname={pathname}
-        triggerRef={switcherTriggerRef}
-      />
+      {!driveStandalone ? (
+        <AppSwitcherOverlay
+          open={switcherOpen}
+          onOpenChange={setSwitcherOpen}
+          pathname={pathname}
+          triggerRef={switcherTriggerRef}
+        />
+      ) : null}
     </>
   );
 }

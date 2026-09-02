@@ -13,6 +13,7 @@ import { SCENARIO_AUTHORING_QUALITY_IDS } from "@/app/lib/scenario/contracts";
 installMapAssetFetchGateway();
 
 const RENDER_SETTINGS_PATH = "/dashboard/render-settings";
+const driveStandalone = Boolean(process.env.NEXT_PUBLIC_DRIVE_STANDALONE);
 
 /**
  * Keeps first-run setup out of the pages it configures. Render settings used to
@@ -22,10 +23,10 @@ export function RenderingPreferenceGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isSettingsPage = pathname === RENDER_SETTINGS_PATH;
-  const [ready, setReady] = useState(isSettingsPage);
+  const [ready, setReady] = useState(driveStandalone || isSettingsPage);
 
   useEffect(() => {
-    if (isSettingsPage) {
+    if (driveStandalone || isSettingsPage) {
       setReady(true);
       return;
     }
