@@ -78,7 +78,8 @@ test('decode smoke: every repacked image is a valid KTX2 with expected codec, tr
   assert.ok(json.extensionsUsed.includes('KHR_texture_basisu'));
   assert.ok(json.extensionsRequired.includes('KHR_texture_basisu'));
   for (const texture of json.textures) {
-    assert.equal(texture.extensions?.KHR_texture_basisu?.source, texture.source);
+    assert.equal(Number.isInteger(texture.extensions?.KHR_texture_basisu?.source), true);
+    assert.equal(texture.source, undefined);
   }
   for (const [i, image] of json.images.entries()) {
     const view = json.bufferViews[image.bufferView];
@@ -93,6 +94,8 @@ test('decode smoke: every repacked image is a valid KTX2 with expected codec, tr
     assert.equal(vkFormat, 0, `image ${i} must be Basis-encoded (VK_FORMAT_UNDEFINED)`);
     const width = bytes.readUInt32LE(20);
     const height = bytes.readUInt32LE(24);
+    assert.equal(width % 4, 0, `image ${i} width is not BC block-aligned`);
+    assert.equal(height % 4, 0, `image ${i} height is not BC block-aligned`);
     const levelCount = bytes.readUInt32LE(40);
     const supercompression = bytes.readUInt32LE(44);
     assert.equal(levelCount, Math.floor(Math.log2(Math.max(width, height))) + 1, `image ${i} mip chain incomplete`);
@@ -118,6 +121,64 @@ test('classification maps material slots to codecs', () => {
     }
   }
 });
+test('classification rejects one image shared by color and data slots', () => {
+  assert.throws(
+    () => classifyImages({
+      images: [{}],
+      textures: [{ source: 0 }],
+      materials: [{
+        pbrMetallicRoughness: {
+          baseColorTexture: { index: 0 },
+          metallicRoughnessTexture: { index: 0 },
+        },
+      }],
+    }),
+    /shared by color and non-color/,
+  );
+});
+test('classification: color-valued extension slots are sRGB, other extension slots linear', () => {
+  const classes = classifyImages({
+    images: [{}, {}, {}, {}],
+    textures: [{ source: 0 }, { source: 1 }, { source: 2 }, { source: 3 }],
+    materials: [{
+      extensions: {
+        KHR_materials_specular: { specularColorTexture: { index: 0 }, specularTexture: { index: 1 } },
+        KHR_materials_clearcoat: { clearcoatTexture: { index: 2 }, clearcoatNormalTexture: { index: 3 } },
+      },
+    }],
+  });
+  assert.equal(classes.get(0), 'color');
+  assert.equal(classes.get(1), 'data');
+  assert.equal(classes.get(2), 'data');
+  assert.equal(classes.get(3), 'normal');
+});
+
+test('repack encodes embedded PNG images and honours maxDimension', { skip: !ktxAvailable && 'toktx unavailable' }, async () => {
+  const sharp = (await import('sharp')).default;
+  const png = await sharp({ create: { width: 300, height: 150, channels: 4, background: { r: 200, g: 40, b: 40, alpha: 255 } } }).png().toBuffer();
+  const bin = Buffer.concat([png, Buffer.alloc((4 - (png.length % 4)) % 4)]);
+  const json = {
+    asset: { version: '2.0' },
+    buffers: [{ byteLength: bin.length }],
+    bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: png.length }],
+    images: [{ mimeType: 'image/png', bufferView: 0, name: 'albedo' }],
+    textures: [{ source: 0 }],
+    materials: [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }],
+  };
+  const { writeGlb } = await import('../src/glb.mjs');
+  const { glb, report } = await repackGlb(writeGlb(json, bin), { maxDimension: 128 });
+  const out = parseGlb(glb);
+  assert.equal(out.json.images[0].mimeType, 'image/ktx2');
+  assert.equal(out.json.textures[0].extensions.KHR_texture_basisu.source, 0);
+  assert.equal(report.images[0].sourceMimeType, 'image/png');
+  assert.equal(report.images[0].width, 128);
+  assert.equal(report.images[0].height, 64);
+  const view = out.json.bufferViews[out.json.images[0].bufferView];
+  const bytes = out.bin.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength);
+  assert.equal(bytes.readUInt32LE(20), 128);
+  assert.equal(bytes.readUInt32LE(24), 64);
+});
+
 
 test('toktx argv policy: etc1s only when explicitly requested, normals never RDO', () => {
   const color = toktxArgs('color');

@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { canonicalJson, sha256 } from '@simforge-oss/map-registry';
 import type { ClosureMember, MapClosure } from '@simforge-oss/map-registry';
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export type ClosureKind = MapClosure['kind'];
@@ -28,10 +30,48 @@ export async function filesUnder(root: string): Promise<string[]> {
   return output;
 }
 
+/**
+ * `fs.readFile` refuses files above 2 GiB; the RoadRunner exports run to
+ * 3.4 GB. Stream the file into one Buffer (Node's Buffer limit is 2^53-1).
+ */
+export async function readWholeFile(file: string): Promise<Buffer> {
+  const handle = await open(file, 'r');
+  try {
+    const size = (await handle.stat()).size;
+    const bytes = Buffer.allocUnsafe(size);
+    let offset = 0;
+    while (offset < size) {
+      const { bytesRead } = await handle.read(bytes, offset, Math.min(1 << 30, size - offset), offset);
+      if (bytesRead === 0) throw new Error(`${file}: short read at ${offset} of ${size}`);
+      offset += bytesRead;
+    }
+    return bytes;
+  } finally {
+    await handle.close();
+  }
+}
+
+/** `Hash.update` rejects single chunks above 2 GiB; feed large buffers in slices. */
+export function sha256Large(bytes: Buffer): string {
+  const hash = createHash('sha256');
+  for (let offset = 0; offset < bytes.length; offset += 1 << 30) hash.update(bytes.subarray(offset, offset + (1 << 30)));
+  return hash.digest('hex');
+}
+
+async function hashFile(file: string): Promise<{ sha256: string; bytes: number }> {
+  const hash = createHash('sha256');
+  let bytes = 0;
+  for await (const chunk of createReadStream(file)) {
+    hash.update(chunk);
+    bytes += chunk.length;
+  }
+  return { sha256: hash.digest('hex'), bytes };
+}
+
 export async function hashTree(root: string): Promise<string> {
   const rows: string[] = [];
   for (const relativePath of await filesUnder(root)) {
-    rows.push(`${relativePath}\0${sha256(await readFile(path.join(root, relativePath)))}`);
+    rows.push(`${relativePath}\0${(await hashFile(path.join(root, relativePath))).sha256}`);
   }
   return sha256(rows.join('\n'));
 }
@@ -43,8 +83,7 @@ export async function buildClosure(
 ): Promise<MapClosure> {
   const members: Record<string, ClosureMember> = {};
   for (const relativePath of await filesUnder(root)) {
-    const bytes = await readFile(path.join(root, relativePath));
-    members[relativePath] = { sha256: sha256(bytes), bytes: bytes.byteLength };
+    members[relativePath] = await hashFile(path.join(root, relativePath));
   }
   return {
     schema: 'map-closure.v1',

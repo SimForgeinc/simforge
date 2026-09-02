@@ -63,9 +63,10 @@
     "@gltf-transform/core": "4.4.2",
     "@gltf-transform/extensions": "4.4.2",
     "@gltf-transform/functions": "4.4.2",
-    "@simforge-oss/maps": "workspace:*",
     "@simforge-oss/map-registry": "workspace:*",
+    "@simforge-oss/maps": "workspace:*",
     "meshoptimizer": "1.2.0",
+    "mikktspace": "1.1.1",
     "sharp": "0.34.5",
     "zod": "^4.4.3"
   },

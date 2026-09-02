@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { NodeIO } from '@gltf-transform/core';
 
 import { assembleClosure, assignGridCell, fbxToTiles, materializeRegistryPayload, runMapPipeline } from '../src/index.js';
+import { resolveKtxBinDir } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 
 const temporaryRoots: string[] = [];
 let sourceDir: string;
@@ -101,7 +102,7 @@ describe('FBX tiling and closure assembly', () => {
       sourceDir,
       name: 'synthetic-city',
       workDir,
-      ktxBinDir: '/home/path/simforge-assets/tools/KTX-Software-4.4.2-Linux-x86_64/bin',
+      ktxBinDir: resolveKtxBinDir(process.env['SIMFORGE_KTX_BIN_DIR']),
     });
     expect(result.derived.map((artifact) => artifact.kind)).toEqual([
       'browser-optimized',
@@ -115,12 +116,16 @@ describe('FBX tiling and closure assembly', () => {
     }
     const nativeStage = result.stages.nativeCorpus;
     if (!nativeStage) throw new Error('native corpus stage was not built');
+    let sawAuthoredTangent = false;
     for (const memberPath of Object.keys(nativeStage.closure.members)) {
       if (!memberPath.endsWith('.glb')) continue;
       const bytes = await readFile(path.join(nativeStage.outputDir, memberPath));
       expect(bytes.includes(Buffer.from('EXT_texture_webp'))).toBe(false);
       expect(bytes.includes(Buffer.from('EXT_meshopt_compression'))).toBe(false);
+      expect(bytes.includes(Buffer.from('KHR_texture_basisu'))).toBe(true);
+      sawAuthoredTangent ||= bytes.includes(Buffer.from('TANGENT'));
     }
+    expect(sawAuthoredTangent).toBe(true);
     await materializeRegistryPayload(result, payloadDir);
     for (const artifact of [result.canonical, ...result.derived]) {
       await expect(stat(path.join(payloadDir, artifact.registryPath))).resolves.toBeDefined();

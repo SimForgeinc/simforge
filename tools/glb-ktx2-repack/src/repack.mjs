@@ -1,17 +1,21 @@
 /**
- * Image-only WebP -> KTX2 repacker core.
+ * Image-only PNG/JPEG/WebP -> KTX2 repacker core.
  *
  * Contract (docs/product/runtime-surface-materials.md, asset-gap-analysis §4/§6):
- * decode each embedded WebP, encode KTX2 via the pinned KTX-Software toktx,
- * rewrite ONLY texture/image references, and rebuild the BIN chunk so that
- * every non-image byte range (plain geometry bufferViews AND
+ * decode each embedded raster image, encode KTX2 via the pinned KTX-Software
+ * toktx, rewrite ONLY texture/image references, and rebuild the BIN chunk so
+ * that every non-image byte range (plain geometry bufferViews AND
  * EXT_meshopt_compression streams) is byte-identical to the source. Accessors,
  * meshes, and geometry bufferView definitions are never edited; the only JSON
  * mutation on geometry is the byteOffset shift caused by resized image
  * payloads, which `verifyGeometryIdentity` proves is content-preserving.
+ *
+ * Feed it the authored PNG/JPEG bytes (canonical closure), not a lossy WebP
+ * derivative: UASTC is lossy on its own and should be the only lossy step.
  */
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -23,7 +27,15 @@ const TEXTURE_SOURCE_EXTENSIONS = [
   'EXT_texture_webp',
   'EXT_texture_avif',
 ];
+const ENCODABLE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+/**
+ * Extension texture slots that carry sRGB-encoded color. Every other
+ * extension slot (specularTexture, clearcoat*, transmission, thickness,
+ * anisotropy, iridescence, sheenRoughness) is linear data.
+ */
+const COLOR_EXTENSION_SLOTS = new Set(['specularColorTexture', 'sheenColorTexture', 'diffuseTexture']);
 
+const execFileAsync = promisify(execFile);
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 const align4 = (n) => (n + 3) & ~3;
 
@@ -39,16 +51,16 @@ function textureImageIndex(texture) {
 /**
  * Classify every image by material slot usage.
  *
- * - `color`  (sRGB): baseColorTexture, emissiveTexture, and any spec/gloss maps
- *   mis-wired into those slots by the UE export (asset-gap-analysis §3).
- * - `normal` (linear): normalTexture.
- * - `data`   (linear): occlusionTexture, metallicRoughnessTexture, clearcoat &
- *   friends — channel-packed non-color data.
+ * - `color`  (sRGB): baseColorTexture, emissiveTexture, and the color-valued
+ *   extension slots (KHR_materials_specular.specularColorTexture,
+ *   KHR_materials_sheen.sheenColorTexture, pbrSpecularGlossiness.diffuseTexture).
+ * - `normal` (linear): normalTexture and clearcoatNormalTexture.
+ * - `data`   (linear): occlusionTexture, metallicRoughnessTexture, and every
+ *   other extension slot — channel-packed non-color data.
  *
- * An image referenced from both a color and a non-color slot is classified as
- * the non-color variant (linear + UASTC) because sRGB transfer or ETC1S
- * channel crosstalk would corrupt the data use; the color use merely loses
- * ETC1S rate savings.
+ * An image cannot safely serve both color and non-color slots because KTX2
+ * stores one transfer function per image. Such input is rejected so the
+ * exporter can duplicate the image with the correct semantics.
  */
 export function classifyImages(json) {
   const roles = new Map(); // image index -> Set<'color'|'normal'|'data'>
@@ -70,6 +82,7 @@ export function classifyImages(json) {
       for (const [key, value] of Object.entries(ext)) {
         if (!value || !Number.isInteger(value.index)) continue;
         if (/normalTexture$/i.test(key)) mark(value, 'normal');
+        else if (COLOR_EXTENSION_SLOTS.has(key)) mark(value, 'color');
         else if (/Texture$/i.test(key)) mark(value, 'data');
       }
     }
@@ -77,6 +90,9 @@ export function classifyImages(json) {
   const classes = new Map();
   for (let i = 0; i < (json.images?.length ?? 0); i++) {
     const set = roles.get(i);
+    if (set?.has('color') && (set.has('normal') || set.has('data'))) {
+      throw new Error(`image ${i} is shared by color and non-color texture slots`);
+    }
     if (!set || set.size === 0) classes.set(i, 'color'); // unreferenced: safe default
     else if (set.has('normal')) classes.set(i, 'normal');
     else if (set.has('data')) classes.set(i, 'data');
@@ -154,7 +170,9 @@ function imageViewSet(json) {
  *   KTX2Loader transcodes BasisLZ fine and transfer size is ~4x smaller.
  */
 export function toktxArgs(cls, { colorCodec = 'uastc', etc1sQuality = 160, uastcQuality = 2, uastcRdo = 1.0, zstdLevel = 9 } = {}) {
-  const common = ['--t2', '--genmipmap', '--assign_primaries', 'bt709'];
+  // One encoder thread per toktx: output is independent of the host's core
+  // count, and parallelism comes from encoding many images at once instead.
+  const common = ['--t2', '--genmipmap', '--assign_primaries', 'bt709', '--threads', '1'];
   if (cls === 'color' && colorCodec === 'etc1s') {
     return [...common, '--encode', 'etc1s', '--clevel', '2', '--qlevel', String(etc1sQuality), '--assign_oetf', 'srgb'];
   }
@@ -176,35 +194,59 @@ export function resolveKtxBinDir(explicit) {
   return candidate;
 }
 
-async function encodeKtx2(webpBytes, cls, name, { ktxBinDir, tmpDir, options }) {
+/** Concurrent toktx processes per repack; each is single-threaded. */
+export function encodeConcurrency() {
+  const requested = Number(process.env.SIMFORGE_KTX2_JOBS);
+  if (Number.isInteger(requested) && requested > 0) return requested;
+  return Math.max(1, os.availableParallelism() - 2);
+}
+
+async function encodeKtx2(sourceBytes, cls, name, { ktxBinDir, tmpDir, options }) {
   const sharp = (await import('sharp')).default;
-  const image = sharp(webpBytes);
+  const image = sharp(sourceBytes);
   const meta = await image.metadata();
+  if (!meta.width || !meta.height) throw new Error(`could not read dimensions for ${name}`);
+  // Bevy transcodes UASTC to BC7. wgpu requires every BC7 base dimension to
+  // align to its 4x4 block, so normalize NPOT source dimensions before
+  // encoding instead of producing a KTX2 that passes repack validation but
+  // fails Device::create_texture at runtime. `maxDimension` caps oversized
+  // authored textures (aspect preserved) before alignment.
+  const cap = options?.maxDimension;
+  const scale = cap && Math.max(meta.width, meta.height) > cap ? cap / Math.max(meta.width, meta.height) : 1;
+  const width = align4(Math.max(1, Math.round(meta.width * scale)));
+  const height = align4(Math.max(1, Math.round(meta.height * scale)));
   const cacheDir = process.env.SIMFORGE_KTX2_CACHE;
   const cacheKey = sha256(Buffer.concat([
-    webpBytes,
-    Buffer.from(`\0${cls}\0uastc2-rdo1-zstd9\0${JSON.stringify(options ?? {})}`),
+    sourceBytes,
+    Buffer.from(`\0${cls}\0uastc2-rdo1-zstd9-block4-threads1-v3\0${JSON.stringify(options ?? {})}`),
   ]));
   const cachePath = cacheDir ? path.join(cacheDir, `${cacheKey}.ktx2`) : undefined;
   if (cachePath && fs.existsSync(cachePath)) {
     return {
       ktx2: fs.readFileSync(cachePath),
-      width: meta.width,
-      height: meta.height,
+      width,
+      height,
+      sourceWidth: meta.width,
+      sourceHeight: meta.height,
       hasAlpha: meta.hasAlpha ?? false,
     };
   }
-  const safe = String(name ?? 'image').replace(/[^\w.-]+/g, '_');
-  const pngPath = path.join(tmpDir, `${safe}.png`);
-  const ktxPath = path.join(tmpDir, `${safe}.ktx2`);
-  await image.png().toFile(pngPath);
+  // Names collide (RoadRunner reuses them); key temp files by cache digest.
+  const pngPath = path.join(tmpDir, `${cacheKey}.png`);
+  const ktxPath = path.join(tmpDir, `${cacheKey}.ktx2`);
+  const prepared = width === meta.width && height === meta.height
+    ? image
+    : image.resize(width, height, { fit: 'fill', kernel: sharp.kernel.lanczos3 });
+  await prepared.png().toFile(pngPath);
   const args = [...toktxArgs(cls, options), ktxPath, pngPath];
-  const run = spawnSync(path.join(ktxBinDir, 'toktx'), args, {
-    encoding: 'utf8',
-    env: { ...process.env, TOKTX_OPTIONS: '' },
-  });
-  if (run.status !== 0) {
-    throw new Error(`toktx failed for ${name}: ${run.stderr || run.stdout}`);
+  try {
+    await execFileAsync(path.join(ktxBinDir, 'toktx'), args, {
+      encoding: 'utf8',
+      env: { ...process.env, TOKTX_OPTIONS: '' },
+      maxBuffer: 16 * 1024 * 1024,
+    });
+  } catch (error) {
+    throw new Error(`toktx failed for ${name}: ${error.stderr || error.stdout || error.message}`);
   }
   const ktx2 = fs.readFileSync(ktxPath);
   if (cachePath) {
@@ -215,64 +257,82 @@ async function encodeKtx2(webpBytes, cls, name, { ktxBinDir, tmpDir, options }) 
   }
   fs.rmSync(pngPath, { force: true });
   fs.rmSync(ktxPath, { force: true });
-  return { ktx2, width: meta.width, height: meta.height, hasAlpha: meta.hasAlpha ?? false };
+  return {
+    ktx2,
+    width,
+    height,
+    sourceWidth: meta.width,
+    sourceHeight: meta.height,
+    hasAlpha: meta.hasAlpha ?? false,
+  };
 }
 
 /**
- * Repack one GLB: WebP images -> KTX2, geometry bytes untouched.
+ * Repack one GLB: embedded PNG/JPEG/WebP images -> KTX2, geometry bytes untouched.
+ *
+ * Output is standards-compliant glTF: textures reference their KTX2 image
+ * exclusively through `extensions.KHR_texture_basisu.source` (the renderer's
+ * vendored bevy_gltf loads that syntax natively).
  *
  * @param {Buffer} srcBuf source GLB bytes
  * @param {object} opts
  * @param {string} [opts.ktxBinDir]
- * @param {boolean} [opts.keepCoreSource=true] also point texture.source at the
- *   KTX2 image. Non-compliant with core glTF (like the source tiles' bare
- *   image/webp), but required by Bevy, whose loader reads only texture.source
- *   (bevyengine/bevy#19104). Three's GLTFLoader prefers KHR_texture_basisu.
+ * @param {number} [opts.maxDimension] longest-edge cap applied before encoding
  * @returns {Promise<{ glb: Buffer, report: object }>}
  */
 export async function repackGlb(srcBuf, opts = {}) {
-  const { keepCoreSource = true } = opts;
   const ktxBinDir = resolveKtxBinDir(opts.ktxBinDir);
   const { json: srcJson, bin: srcBin } = parseGlb(srcBuf);
   const json = structuredClone(srcJson);
 
   const images = json.images ?? [];
-  const webpImages = images.flatMap((img, i) =>
-    img.mimeType === 'image/webp' && Number.isInteger(img.bufferView) ? [i] : [],
+  const rasterImages = images.flatMap((img, i) =>
+    ENCODABLE_MIME_TYPES.has(img.mimeType) && Number.isInteger(img.bufferView) ? [i] : [],
   );
-  if (webpImages.length === 0) {
-    return { glb: srcBuf, report: { skipped: true, reason: 'no embedded WebP images' } };
+  if (rasterImages.length === 0) {
+    return { glb: srcBuf, report: { skipped: true, reason: 'no embedded PNG, JPEG, or WebP images' } };
   }
   const srcImageViews = imageViewSet(srcJson);
   const preDigests = digestRanges(srcJson, srcBin, srcImageViews);
   const classes = classifyImages(srcJson);
 
-  // Encode every WebP image.
+  // Encode every raster image, `encodeConcurrency()` toktx processes at a
+  // time. Results are keyed by image index so the report order is stable.
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'glb-ktx2-'));
   const encoded = new Map(); // image index -> { ktx2, ... }
   const textureRows = [];
   try {
-    for (const i of webpImages) {
+    const queue = [...rasterImages];
+    const worker = async () => {
+      for (let i = queue.shift(); i !== undefined; i = queue.shift()) {
+        const view = srcJson.bufferViews[images[i].bufferView];
+        const sourceBytes = srcBin.subarray(
+          view.byteOffset ?? 0,
+          (view.byteOffset ?? 0) + view.byteLength,
+        );
+        encoded.set(i, await encodeKtx2(sourceBytes, classes.get(i), images[i].name ?? `image_${i}`, {
+          ktxBinDir,
+          tmpDir,
+          options: opts,
+        }));
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(encodeConcurrency(), queue.length) }, worker));
+    for (const i of rasterImages) {
       const view = srcJson.bufferViews[images[i].bufferView];
-      const webpBytes = srcBin.subarray(
-        view.byteOffset ?? 0,
-        (view.byteOffset ?? 0) + view.byteLength,
-      );
       const cls = classes.get(i);
-      const result = await encodeKtx2(webpBytes, cls, images[i].name ?? `image_${i}`, {
-        ktxBinDir,
-        tmpDir,
-        options: opts,
-      });
-      encoded.set(i, result);
+      const result = encoded.get(i);
       textureRows.push({
         image: i,
         name: images[i].name ?? null,
         class: cls,
         codec: cls === 'color' && opts.colorCodec === 'etc1s' ? 'etc1s' : 'uastc+zstd',
+        sourceMimeType: images[i].mimeType,
         width: result.width,
         height: result.height,
-        webpBytes: view.byteLength,
+        sourceWidth: result.sourceWidth,
+        sourceHeight: result.sourceHeight,
+        sourceBytes: view.byteLength,
         ktx2Bytes: result.ktx2.length,
       });
     }
@@ -283,7 +343,7 @@ export async function repackGlb(srcBuf, opts = {}) {
   // Rebuild buffer 0: walk every byte-carrying range in original offset order;
   // image views get their new KTX2 payload, everything else is copied verbatim.
   const convertedViews = new Map(); // view index -> image index
-  for (const i of webpImages) convertedViews.set(images[i].bufferView, i);
+  for (const i of rasterImages) convertedViews.set(images[i].bufferView, i);
   const segments = [];
   (srcJson.bufferViews ?? []).forEach((view, i) => {
     const meshopt = view.extensions?.EXT_meshopt_compression;
@@ -327,18 +387,17 @@ export async function repackGlb(srcBuf, opts = {}) {
   json.buffers[0].byteLength = newBin.length;
 
   // Rewrite image + texture references.
-  for (const i of webpImages) {
+  for (const i of rasterImages) {
     json.images[i].mimeType = 'image/ktx2';
   }
-  const convertedImages = new Set(webpImages);
+  const convertedImages = new Set(rasterImages);
   for (const texture of json.textures ?? []) {
     const image = textureImageIndex(texture);
     if (image === null || !convertedImages.has(image)) continue;
     delete texture.extensions?.EXT_texture_webp;
     delete texture.extensions?.EXT_texture_avif;
     texture.extensions = { ...texture.extensions, KHR_texture_basisu: { source: image } };
-    if (keepCoreSource) texture.source = image;
-    else delete texture.source;
+    delete texture.source;
   }
   const dropExts = new Set(['EXT_texture_webp', 'EXT_texture_avif']);
   json.extensionsUsed = [

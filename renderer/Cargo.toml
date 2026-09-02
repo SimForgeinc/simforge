@@ -1,10 +1,17 @@
 [workspace]
 resolver = "2"
 members = ["render-core", "sensors", "service"]
+exclude = ["vendor/bevy_gltf"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
+
+# Native KHR_texture_basisu support (bevyengine/bevy#19104): bevy_gltf 0.19.1
+# vendored with a four-hunk patch (see vendor/bevy_gltf/src/lib.rs header).
+# Every other Bevy crate stays pinned to crates.io 0.19.1.
+[patch.crates-io]
+bevy_gltf = { path = "vendor/bevy_gltf" }
 
 [profile.dev]
 opt-level = 1
