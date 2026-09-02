@@ -363,11 +363,16 @@ fn dispatch(state: &mut ServiceState, request: WireRequest) -> WireResponse {
             state.radars.clear();
             WireResponse { i, body: ResponseBody::ResetCameras { ok: true } }
         }
-        RequestBody::SetLighting { lighting, profile_config } => {
+        RequestBody::SetLighting { lighting, profile_config, advance } => {
             let started = std::time::Instant::now();
             let profile_config = profile_config.unwrap_or(state.profile_config);
-            match state.app.apply_lighting(&lighting, profile_config) {
-                Ok(resolved) => {
+            let outcome = if advance {
+                state.app.advance_lighting(&lighting, profile_config)
+            } else {
+                state.app.apply_lighting(&lighting, profile_config).map(|r| (r, false))
+            };
+            match outcome {
+                Ok((resolved, full_relight)) => {
                     state.profile_config = profile_config;
                     // Frames cached against the previous look are stale.
                     state.cache.clear();
@@ -381,6 +386,7 @@ fn dispatch(state: &mut ServiceState, request: WireRequest) -> WireResponse {
                             anti_alias: profile_config.cinematic.aa.as_str().to_string(),
                             camera_anti_alias: state.app.camera_anti_alias(),
                             server_ms: started.elapsed().as_secs_f64() * 1000.0,
+                            full_relight,
                         },
                     }
                 }

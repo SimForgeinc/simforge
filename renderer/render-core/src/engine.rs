@@ -177,6 +177,13 @@ pub struct Lighting {
     /// own ground field once tiles are loaded.
     #[serde(default)]
     pub ground_y: Option<f32>,
+    /// The camera the meter reads the sky through (world forward, vertical
+    /// FOV, aspect). With it, the applied EV never lets the brightest sky
+    /// the camera frames — the solar aureole on a sunward shot — rise more
+    /// than [`SKY_HIGHLIGHT_STOPS`] above middle grey. `None` meters on
+    /// incident light alone.
+    #[serde(default)]
+    pub meter_view: Option<crate::atmosphere::MeterView>,
     /// UTC/site-resolved celestial, sky, fixture and honest fallback controls.
     #[serde(default)]
     pub night: crate::night::NightControls,
@@ -234,6 +241,7 @@ impl Default for Lighting {
             air_density: None,
             cloud_deck: None,
             ground_y: None,
+            meter_view: None,
             night: crate::night::NightControls::default(),
         }
     }
@@ -253,6 +261,15 @@ pub struct AppliedPhysicalLighting {
     pub meter_illuminance_lx: f32,
     /// The night ledger's share of that reading, lx.
     pub night_ledger_illuminance_lx: f32,
+    /// Incident reading with dark adaptation, before the night offset and
+    /// bias.
+    #[serde(default)]
+    pub incident_ev100: f32,
+    /// Highlight-priority reading from the framed sky (`atmosphere.view_sky`),
+    /// `None` when no metering camera was given. The applied EV is the
+    /// larger of the two, plus offset and bias.
+    #[serde(default)]
+    pub sky_highlight_ev100: Option<f32>,
     pub atmosphere_environment_gain: f32,
     pub global_ambient_enabled: bool,
     pub camera_headlamp_enabled: bool,
@@ -338,6 +355,7 @@ impl Lighting {
             cloud_base_m: self.night.cloud_base_m,
             cloud_beam_transmittance,
             ground_albedo: crate::atmosphere::GROUND_ALBEDO,
+            meter_view: self.meter_view,
         }
     }
 
@@ -402,10 +420,21 @@ impl Lighting {
         // (`dark_adaptation_stops`) on top of the reading. The floor is a
         // real camera limit (EV -4.5 at ISO 100 is f/1.4 at about 1/2 s);
         // the operator's night offset and bias come after.
+        //
+        // An incident meter is blind to what the camera frames. Pointed at
+        // a low sun it exposes the street correctly and prints the aureole
+        // and the sky around it several stops over white — the classic
+        // washed-out sunset. So the sky the camera actually frames
+        // (`view_sky`, from the same model) is read as a highlight and the
+        // EV is raised until that highlight sits no more than
+        // `SKY_HIGHLIGHT_STOPS` above middle grey: matrix metering's
+        // highlight priority, deterministic and view-dependent. It only
+        // bites when the framed sky is bright relative to the ground, i.e.
+        // sunward at low sun; at noon the incident reading already sits
+        // above it.
         let night_lx = night_ledger_illuminance_lx(self);
-        let meter_lx = readback.total_horizontal_illuminance_lx + night_lx;
-        let ev100 = (incident_meter_ev100(meter_lx)
-            + dark_adaptation_stops(meter_lx)
+        let (incident_ev, highlight_ev) = meter_readings(&readback, night_lx);
+        let ev100 = (incident_ev.max(highlight_ev.unwrap_or(f32::NEG_INFINITY))
             + self.night.exposure_offset_stops.clamp(-6.0, 12.0)
             + self.ev100_bias)
             .clamp(CAMERA_EV100_FLOOR, 20.0);
@@ -566,6 +595,21 @@ impl Lighting {
 /// Marker for the planet entity carrying [`bevy::light::Atmosphere`].
 #[derive(Component)]
 struct AtmosphereMarker;
+
+/// Output of [`SceneApp::resolve_relight`].
+struct Relight {
+    plan: crate::lighting::LightingPlan,
+    resolved: ResolvedLighting,
+    night_controls: crate::night::NightControls,
+    night_environment: crate::night::NightEnvironment,
+    cloud_params: crate::clouds::CloudParams,
+    sun_dir: Dir3,
+    sun_cloud_t: f32,
+    moon_direct_precloud: f32,
+    env_gain: f32,
+    internal_scale: f32,
+    camera_eye: Option<Vec3>,
+}
 
 /// Per-view components the physical atmosphere needs.
 ///
@@ -783,6 +827,36 @@ pub const CAMERA_EV100_FLOOR: f32 = -4.5;
 /// Incident-light meter, ISO 100, C = 250: `EV100 = log2(E * 100 / 250)`.
 fn incident_meter_ev100(illuminance_lx: f32) -> f32 {
     (illuminance_lx.max(1.0e-5) / 2.5).log2()
+}
+
+/// EV100 that places a sky luminance `SKY_HIGHLIGHT_STOPS` above middle
+/// grey. Bevy's exposure maps `L = 0.18 * 1.2 * 2^EV` cd/m^2 to the 0.18
+/// display-linear middle grey.
+fn sky_highlight_ev100(luminance_cdm2: f32) -> f32 {
+    (luminance_cdm2.max(1.0e-3) / (0.18 * 1.2)).log2() - SKY_HIGHLIGHT_STOPS
+}
+
+/// Stops above middle grey the brightest framed sky is allowed to reach.
+/// AgX holds colour to about +2.5 stops and goes white past +4; the aureole
+/// just outside the solar disc is placed here so it prints as a bright
+/// warm glow rather than a white hole, with the disc itself still clipping.
+pub const SKY_HIGHLIGHT_STOPS: f32 = 2.5;
+
+/// The meter's two readings: the incident EV with dark adaptation, and the
+/// highlight-priority EV from the framed sky when a metering camera was
+/// given. The applied EV is the larger, then the operator's offset and
+/// bias.
+fn meter_readings(
+    readback: &crate::atmosphere::AtmosphereReadback,
+    night_lx: f32,
+) -> (f32, Option<f32>) {
+    let meter_lx = readback.total_horizontal_illuminance_lx + night_lx;
+    let incident = incident_meter_ev100(meter_lx) + dark_adaptation_stops(meter_lx);
+    let highlight = readback
+        .view_sky
+        .as_ref()
+        .map(|v| sky_highlight_ev100(v.max_cdm2));
+    (incident, highlight)
 }
 
 /// Average maintained illuminance the camera is standing in, by direct
@@ -1650,22 +1724,16 @@ impl SceneApp {
         }
     }
 
-    /// Re-light a live scene in place.
+    /// Everything a relight resolves before it touches the world.
     ///
-    /// Respawns the lighting ladder, rebuilds every registered RGB camera's
-    /// profile stack, retunes the atmosphere (or the legacy distance fog)
-    /// and drives the wet-road ramp. Tiles, vegetation, the instance-ID pass
-    /// and the render targets are left alone, so the cost is one medium LUT
-    /// rebuild plus one update — not a scene reload. Returns the engine
-    /// values that were applied.
-    pub fn apply_lighting(
+    /// Shared by [`Self::apply_lighting`] (full respawn) and
+    /// [`Self::advance_lighting`] (in-place update for time-lapses), so the
+    /// two can never disagree about the sun, the exposure or the clouds.
+    fn resolve_relight(
         &mut self,
         lighting: &Lighting,
-        profile_config: RenderProfileConfig,
-    ) -> Result<ResolvedLighting> {
-        let mut profile_config = profile_config;
-        profile_config.cinematic.validate()?;
-        let rung = LightingRung(lighting.rung.min(3));
+        profile_config: &RenderProfileConfig,
+    ) -> Relight {
         let camera_eye = {
             let world = self.app.world_mut();
             let mut views = world.query_filtered::<&GlobalTransform, With<Camera3d>>();
@@ -1711,7 +1779,7 @@ impl SceneApp {
         };
         self.cloud_beam_t = lighting.atmosphere.then_some(sun_cloud_t);
 
-        let (mut plan, mut resolved) =
+        let (plan, mut resolved) =
             lighting.resolve_for(self.far_plane_m, self.cloud_beam_t);
         // One camera EV exposes everything (see `resolve_atmosphere`), so
         // every source is spawned at its nominal physical value: the
@@ -1770,6 +1838,11 @@ impl SceneApp {
             ));
         }
         let night_lx = night_ledger_illuminance_lx(lighting);
+        let (incident_ev100, sky_highlight_ev100) = resolved
+            .atmosphere
+            .as_ref()
+            .map(|a| meter_readings(a, night_lx))
+            .unwrap_or((resolved.ev100, None));
         resolved.applied_physical = lighting.atmosphere.then_some(AppliedPhysicalLighting {
             applied_grading_exposure_ev: profile_config.cinematic.grading_exposure,
             scene_ev100: resolved.ev100,
@@ -1780,6 +1853,8 @@ impl SceneApp {
                 .unwrap_or(0.0)
                 + night_lx,
             night_ledger_illuminance_lx: night_lx,
+            incident_ev100,
+            sky_highlight_ev100,
             atmosphere_environment_gain: env_gain,
             global_ambient_enabled: false,
             camera_headlamp_enabled: false,
@@ -1787,6 +1862,51 @@ impl SceneApp {
             gpu_dark_lut_seed_lx: if resolved.sun_lux == 0.0 { 1.0e-8 } else { 0.0 },
         });
         resolved.night_environment = Some(night_environment.clone());
+        Relight {
+            plan,
+            resolved,
+            night_controls,
+            night_environment,
+            cloud_params,
+            sun_dir,
+            sun_cloud_t,
+            moon_direct_precloud,
+            env_gain,
+            internal_scale,
+            camera_eye,
+        }
+    }
+
+    /// Re-light a live scene in place.
+    ///
+    /// Respawns the lighting ladder, rebuilds every registered RGB camera's
+    /// profile stack, retunes the atmosphere (or the legacy distance fog)
+    /// and drives the wet-road ramp. Tiles, vegetation, the instance-ID pass
+    /// and the render targets are left alone, so the cost is one medium LUT
+    /// rebuild plus one update — not a scene reload. Returns the engine
+    /// values that were applied.
+    pub fn apply_lighting(
+        &mut self,
+        lighting: &Lighting,
+        profile_config: RenderProfileConfig,
+    ) -> Result<ResolvedLighting> {
+        let profile_config = profile_config;
+        profile_config.cinematic.validate()?;
+        let rung = LightingRung(lighting.rung.min(3));
+        let Relight {
+            plan,
+            mut resolved,
+            night_controls,
+            mut night_environment,
+            cloud_params,
+            sun_dir,
+            sun_cloud_t,
+            moon_direct_precloud,
+            env_gain,
+            internal_scale,
+            camera_eye,
+        } = self.resolve_relight(lighting, &profile_config);
+        let use_atmosphere = atmosphere_view_active(lighting);
         let sky_mode = if lighting.atmosphere {
             lighting::SkyMode::Physical
         } else {
@@ -2091,6 +2211,131 @@ impl SceneApp {
             self.warmup(if atmosphere_changed { 3 } else { 2 });
         }
         Ok(resolved)
+    }
+
+    /// Advance a live look in place, for time-lapses.
+    ///
+    /// A full [`Self::apply_lighting`] respawns every light and rebuilds
+    /// every view's post-process stack, which re-inserts
+    /// `TemporalAntiAliasing` with `reset: true` and drops the TAA history:
+    /// one visibly unfiltered frame. A recording that moves the sun a
+    /// fraction of a degree per frame cannot afford that, so this path
+    /// updates only what the clock moves — the sun's direction, illuminance
+    /// and cloud cookie, the camera EV, the atmosphere IBL gain and the sky
+    /// pass parameters — on the entities already in the world. The
+    /// scattering medium does not depend on the sun (the GPU medium is
+    /// deck-free), so it is left alone.
+    ///
+    /// Only the daylight ladder is updatable in place: luminaires, windows,
+    /// the Moon's light and the celestial probe are spawned by the full
+    /// relight. When the request crosses the night-source handover, or
+    /// changes anything but the sun's position, this falls back to
+    /// [`Self::apply_lighting`] and reports it in the result so a recorder
+    /// can flag the frame.
+    pub fn advance_lighting(
+        &mut self,
+        lighting: &Lighting,
+        profile_config: RenderProfileConfig,
+    ) -> Result<(ResolvedLighting, bool)> {
+        let day = |l: &Lighting| l.sun_elev_deg > NIGHT_SOURCES_ELEVATION_DEG;
+        let same_ladder = {
+            // Everything the clock and the camera move is neutralised; the
+            // rest must match exactly. The fixture ledger arrives sorted by
+            // distance to the camera, so it is compared as a set.
+            let neutral = |l: &Lighting| -> Result<String> {
+                let mut l = l.clone();
+                l.sun_elev_deg = 0.0;
+                l.sun_azim_deg = 0.0;
+                l.night.utc_minutes = 0.0;
+                l.night.utc_day_of_year = 0;
+                l.night.observer_position = [0.0; 3];
+                l.meter_view = None;
+                let mut fixtures: Vec<String> = l
+                    .night
+                    .fixtures
+                    .iter()
+                    .map(serde_json::to_string)
+                    .collect::<std::result::Result<_, _>>()?;
+                fixtures.sort_unstable();
+                l.night.fixtures.clear();
+                Ok(format!("{}\n{}", serde_json::to_string(&l)?, fixtures.join("\n")))
+            };
+            neutral(&self.lighting)? == neutral(lighting)?
+        };
+        if !(lighting.atmosphere
+            && same_ladder
+            && day(&self.lighting)
+            && day(lighting)
+            && self.profile_config == profile_config
+            && !self.groups.is_empty())
+        {
+            return Ok((self.apply_lighting(lighting, profile_config)?, true));
+        }
+
+        let Relight {
+            plan,
+            resolved,
+            night_controls,
+            night_environment,
+            cloud_params,
+            sun_dir,
+            sun_cloud_t,
+            moon_direct_precloud,
+            env_gain,
+            internal_scale,
+            ..
+        } = self.resolve_relight(lighting, &profile_config);
+
+        // Sun: direction, extraterrestrial illuminance, colour. The ladder
+        // never spawns a sun below the horizon and we are above it on both
+        // sides, so there is exactly one to move.
+        {
+            let world = self.app.world_mut();
+            let mut suns = world.query_filtered::<
+                (&mut DirectionalLight, &mut Transform),
+                With<lighting::VolumetricLightMarker>,
+            >();
+            for (mut sun, mut transform) in suns.iter_mut(world) {
+                sun.illuminance = plan.sun_lux;
+                sun.color = plan.sun_color;
+                *transform = Transform::IDENTITY.looking_to(sun_dir, Vec3::Y);
+            }
+        }
+        self.apply_sun_cookie(sun_cloud_t);
+
+        self.ev100_fixed = resolved.ev100;
+        self.env_gain = env_gain;
+        let template = build_sky_pass(
+            &resolved,
+            &night_environment,
+            &night_controls,
+            &cloud_params,
+            internal_scale,
+            self.ev100_fixed,
+            moon_direct_precloud,
+        );
+        self.sky_pass = Some(template);
+        let views: Vec<(Entity, Profile, f32, u32)> = self
+            .groups
+            .iter()
+            .map(|g| (g.rgb_entity, g.profile, g.spec.fov_y_deg, g.spec.height))
+            .collect();
+        let world = self.app.world_mut();
+        for (entity, profile, fov_y_deg, height) in views {
+            if let Some(mut exposure) = world.get_mut::<bevy::camera::Exposure>(entity) {
+                exposure.ev100 = resolved.ev100;
+            }
+            if profile == Profile::Cinematic {
+                set_view_env_gain(world, entity, env_gain);
+                if let Some(mut sky) = world.get_mut::<crate::sky_pass::SkyPass>(entity) {
+                    let pixel_angle = fov_y_deg.to_radians() / height.max(1) as f32;
+                    *sky = template;
+                    sky.pixel_angle = pixel_angle;
+                }
+            }
+        }
+        self.lighting = lighting.clone();
+        Ok((resolved, false))
     }
 
     /// Engine values currently in force.
@@ -3473,6 +3718,100 @@ mod tests {
         // 250 lx is EV100 6.64 on a C = 250 incident meter.
         assert!((incident_meter_ev100(250.0) - 6.643856).abs() < 1.0e-4);
         assert!((incident_meter_ev100(2.5) - 0.0).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn sky_highlight_meter_places_the_luminance_at_the_ceiling() {
+        // Middle grey at EV 10 is 0.216 * 2^10 cd/m^2; the same luminance
+        // read as a highlight sits SKY_HIGHLIGHT_STOPS below that EV.
+        let mid_grey = 0.18 * 1.2 * 2f32.powi(10);
+        assert!((sky_highlight_ev100(mid_grey) - (10.0 - SKY_HIGHLIGHT_STOPS)).abs() < 1.0e-4);
+    }
+
+    fn towards(azimuth_deg: f32, elevation_deg: f32) -> [f32; 3] {
+        let e = elevation_deg.to_radians();
+        let a = azimuth_deg.to_radians();
+        [e.cos() * a.sin(), e.sin(), e.cos() * a.cos()]
+    }
+
+    #[test]
+    fn sunward_low_sun_is_metered_on_the_aureole_and_noon_is_not() {
+        let sunset = Lighting {
+            atmosphere: true,
+            sun_elev_deg: 5.7,
+            sun_azim_deg: 245.0,
+            ..Default::default()
+        };
+        let incident_only = sunset.resolve().1.ev100;
+        let sunward = Lighting {
+            meter_view: Some(crate::atmosphere::MeterView {
+                forward: towards(245.0, -3.0),
+                fov_y_deg: 55.0,
+                aspect: 16.0 / 9.0,
+            }),
+            ..sunset.clone()
+        };
+        let (_, resolved) = sunward.resolve();
+        let view = resolved.atmosphere.as_ref().unwrap().view_sky.unwrap();
+        assert!(view.sun_in_field > 0.99, "sun framed: {view:?}");
+        assert!(view.max_cdm2 > 4.0 * view.mean_cdm2, "aureole dominates: {view:?}");
+        assert!(
+            resolved.ev100 > incident_only + 1.0,
+            "sunward sunset stops down: {} vs {incident_only}",
+            resolved.ev100
+        );
+        // Facing away, the framed sky is the dim anti-solar side: the
+        // incident meter wins and the picture is unchanged.
+        let away = Lighting {
+            meter_view: Some(crate::atmosphere::MeterView {
+                forward: towards(65.0, -3.0),
+                fov_y_deg: 55.0,
+                aspect: 16.0 / 9.0,
+            }),
+            ..sunset.clone()
+        };
+        let (_, away_resolved) = away.resolve();
+        assert!((away_resolved.ev100 - incident_only).abs() < 1.0e-4);
+        assert_eq!(away_resolved.atmosphere.unwrap().view_sky.unwrap().sun_in_field, 0.0);
+
+        let noon = Lighting {
+            atmosphere: true,
+            sun_elev_deg: 69.5,
+            sun_azim_deg: 180.0,
+            meter_view: Some(crate::atmosphere::MeterView {
+                forward: towards(180.0, -3.0),
+                fov_y_deg: 55.0,
+                aspect: 16.0 / 9.0,
+            }),
+            ..Default::default()
+        };
+        let plain = Lighting { meter_view: None, ..noon.clone() };
+        assert!((noon.resolve().1.ev100 - plain.resolve().1.ev100).abs() < 1.0e-4);
+    }
+
+    #[test]
+    fn sun_membership_fades_across_the_field_edge() {
+        let probe = |azimuth_offset: f32| {
+            let lighting = Lighting {
+                atmosphere: true,
+                sun_elev_deg: 8.0,
+                sun_azim_deg: 200.0,
+                meter_view: Some(crate::atmosphere::MeterView {
+                    forward: towards(200.0 + azimuth_offset, 0.0),
+                    fov_y_deg: 40.0,
+                    aspect: 1.0,
+                }),
+                ..Default::default()
+            };
+            lighting.resolve().1.atmosphere.unwrap().view_sky.unwrap().sun_in_field
+        };
+        // Half-field is 20 deg (tan 0.364): fully inside, on the ramp
+        // (tangent between 0.8 and 1.25 of the half-field), fully outside.
+        assert_eq!(probe(0.0), 1.0);
+        assert_eq!(probe(10.0), 1.0);
+        let edge = probe(20.0);
+        assert!(edge > 0.0 && edge < 1.0, "soft edge: {edge}");
+        assert_eq!(probe(30.0), 0.0);
     }
 
     #[test]

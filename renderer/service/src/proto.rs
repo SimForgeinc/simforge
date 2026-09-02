@@ -204,6 +204,12 @@ pub enum RequestBody {
         lighting: render_core::engine::Lighting,
         #[serde(default)]
         profile_config: Option<render_core::profiles::RenderProfileConfig>,
+        /// V4: update the live look in place instead of respawning it, so
+        /// TAA history survives (time-lapse recording). Falls back to the
+        /// full relight when the change is more than the sun's position;
+        /// the response says which happened.
+        #[serde(default)]
+        advance: bool,
     },
     /// V4 (lookdev): read back the current look without changing anything.
     ///
@@ -270,6 +276,11 @@ pub enum ResponseBody {
         camera_anti_alias: Vec<(String, String)>,
         /// Server-side re-light wall time, milliseconds.
         server_ms: f64,
+        /// V4: `true` when the request asked for an in-place advance but
+        /// the renderer had to fall back to a full relight (TAA history
+        /// reset). Always `false` for a plain `set_lighting`.
+        #[serde(default)]
+        full_relight: bool,
     },
     /// V4: current look, read without writing.
     GetState {

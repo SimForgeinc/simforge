@@ -289,6 +289,35 @@ pub struct AtmosphereInputs {
     pub cloud_beam_transmittance: Option<f32>,
     /// Ground albedo for the multiple-scattering LUT.
     pub ground_albedo: f32,
+    /// Camera for the view-dependent sky probe (`ViewSky`). `None` skips it.
+    pub meter_view: Option<MeterView>,
+}
+
+/// The camera the exposure meter reads the sky through.
+///
+/// World frame is the sun's (+X east, +Y up, +Z north). `forward` is where
+/// the camera looks; the field is `fov_y_deg` tall and `fov_y_deg * aspect`
+/// wide in tangent space.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct MeterView {
+    pub forward: [f32; 3],
+    pub fov_y_deg: f32,
+    pub aspect: f32,
+}
+
+/// Sky luminance inside a [`MeterView`], cd/m^2.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ViewSky {
+    /// Brightest clear-sky patch in the field, including the solar aureole
+    /// when the sun is framed (the disc itself is excluded).
+    pub max_cdm2: f32,
+    /// Mean over the sky patches in the field.
+    pub mean_cdm2: f32,
+    /// How much of the field is sky, [0, 1].
+    pub sky_fraction: f32,
+    /// Frustum membership of the sun, [0, 1]: 1 inside 80 % of the
+    /// half-field, 0 beyond 125 %, so a pan onto the sun ramps the meter.
+    pub sun_in_field: f32,
 }
 
 impl Default for AtmosphereInputs {
@@ -304,6 +333,7 @@ impl Default for AtmosphereInputs {
             cloud_base_m: 1_100.0,
             cloud_beam_transmittance: None,
             ground_albedo: GROUND_ALBEDO,
+            meter_view: None,
         }
     }
 }
@@ -325,6 +355,11 @@ impl AtmosphereInputs {
             cloud_base_m: self.cloud_base_m.clamp(0.0, 20_000.0),
             cloud_beam_transmittance: self.cloud_beam_transmittance.map(|t| t.clamp(0.0, 1.0)),
             ground_albedo: self.ground_albedo.clamp(0.0, 1.0),
+            meter_view: self.meter_view.filter(|v| {
+                Vec3::from_array(v.forward).length_squared() > 1.0e-6
+                    && v.fov_y_deg.is_finite()
+                    && v.aspect.is_finite()
+            }),
         }
     }
 
@@ -641,6 +676,9 @@ pub struct AtmosphereReadback {
     pub zenith_luminance_cdm2: f32,
     /// Sky luminance 10 deg above the horizon, away from the sun, cd/m^2.
     pub horizon_luminance_cdm2: f32,
+    /// Sky luminance in the metering camera's field, when one was given.
+    #[serde(default)]
+    pub view_sky: Option<ViewSky>,
     /// Peak luminance of the solar disc as composited, cd/m^2.
     pub solar_disc_luminance_cdm2: f32,
     /// Solid angle of the composited disc, sr.
@@ -752,7 +790,16 @@ fn intersects_ground(r: f32, mu: f32) -> bool {
 /// LUT builder uses, so the numbers in the status panel are the numbers the
 /// shader sees (to within step count).
 fn transmittance_to_space(terms: &[ScatteringTerm], altitude_m: f32, mu: f32) -> Vec3 {
-    const STEPS: usize = 256;
+    transmittance_to_space_n(terms, altitude_m, mu, 256)
+}
+
+/// [`transmittance_to_space`] at a chosen step count.
+fn transmittance_to_space_n(
+    terms: &[ScatteringTerm],
+    altitude_m: f32,
+    mu: f32,
+    steps: usize,
+) -> Vec3 {
     let r = INNER_RADIUS_M + altitude_m;
     if intersects_ground(r, mu) {
         return Vec3::ZERO;
@@ -761,9 +808,9 @@ fn transmittance_to_space(terms: &[ScatteringTerm], altitude_m: f32, mu: f32) ->
     if t_max <= 0.0 {
         return Vec3::ONE;
     }
-    let dt = t_max / STEPS as f32;
+    let dt = t_max / steps as f32;
     let mut optical_depth = Vec3::ZERO;
-    for i in 0..STEPS {
+    for i in 0..steps {
         let t = (i as f32 + 0.5) * dt;
         // Law of cosines in the spherical shell.
         let r_i = (r * r + t * t + 2.0 * r * t * mu).max(INNER_RADIUS_M * INNER_RADIUS_M).sqrt();
@@ -875,13 +922,29 @@ fn single_scattered_radiance(
     sun_mu: f32,
     sun_illuminance_lx: f32,
 ) -> Vec3 {
+    single_scattered_radiance_n(terms, view_mu, cos_scatter, sun_mu, sun_illuminance_lx, 384, 256)
+}
+
+/// [`single_scattered_radiance`] at chosen step counts along the view ray
+/// and along each sun ray. The reference probes use (384, 256); the
+/// metering grid, which evaluates dozens of directions per relight, uses a
+/// coarser pair that agrees to a few percent.
+fn single_scattered_radiance_n(
+    terms: &[ScatteringTerm],
+    view_mu: f32,
+    cos_scatter: f32,
+    sun_mu: f32,
+    sun_illuminance_lx: f32,
+    view_steps: usize,
+    sun_steps: usize,
+) -> Vec3 {
     // Quadratic step spacing. A uniform march cannot resolve this medium:
     // the boundary-layer fog term has a 300 m scale height and the cloud
     // slab is ~1 km thick, while the zenith ray is 100 km long and a
     // 10-degree ray is ~480 km. Concentrating samples near the camera puts
     // sub-metre steps at the ground and ~50 m steps through the layers that
     // matter.
-    const STEPS: usize = 384;
+    let steps = view_steps.max(8);
     let r0 = INNER_RADIUS_M;
     let t_max = distance_to_top(r0, view_mu);
     if t_max <= 0.0 || sun_illuminance_lx <= 0.0 {
@@ -891,8 +954,8 @@ fn single_scattered_radiance(
     let mut transmittance = Vec3::ONE;
 
     let mut t_prev = 0.0f32;
-    for i in 1..=STEPS {
-        let frac = i as f32 / STEPS as f32;
+    for i in 1..=steps {
+        let frac = i as f32 / steps as f32;
         let t_next = t_max * frac * frac;
         let dt = t_next - t_prev;
         let t = t_prev + dt * 0.5;
@@ -924,7 +987,7 @@ fn single_scattered_radiance(
         // `transmittance_to_space` returns zero once the ray does hit the
         // planet.
         let mu_light = ((sun_mu * r0 + t * cos_scatter) / r_i).clamp(-1.0, 1.0);
-        let sun_t = transmittance_to_space(terms, altitude, mu_light);
+        let sun_t = transmittance_to_space_n(terms, altitude, mu_light, sun_steps);
         if luma(sun_t) > 0.0 {
             // Phase-weighted scattering coefficient, exactly as the GPU
             // scattering LUT stores it: sum over terms of beta_s * phase.
@@ -949,9 +1012,116 @@ fn single_scattered_radiance(
     radiance
 }
 
+/// Sky luminance the camera actually frames.
+///
+/// A 9 x 5 grid of directions across the field, each above the horizon
+/// scored by the same single-scatter + diffuse model as the zenith and
+/// horizon probes, plus the solar aureole (0.6 deg off the disc centre,
+/// i.e. the sky just outside the disc) when the sun is framed. The aureole
+/// is what a sunward sunset clips on, and it is far narrower than the grid,
+/// so it is sampled explicitly and faded by frustum membership rather than
+/// switched.
+fn view_sky_luminance(
+    terms: &[ScatteringTerm],
+    view: &MeterView,
+    sun_dir: Vec3,
+    sun_mu: f32,
+    diffuse_budget_lx: f32,
+    floor_luminance: f32,
+) -> ViewSky {
+    const COLS: usize = 9;
+    const ROWS: usize = 5;
+    const VIEW_STEPS: usize = 96;
+    const SUN_STEPS: usize = 48;
+    const HORIZON_MU: f32 = 0.015;
+
+    let forward = Vec3::from_array(view.forward).normalize();
+    let right = forward.cross(Vec3::Y);
+    let right = if right.length_squared() < 1.0e-6 {
+        Vec3::X
+    } else {
+        right.normalize()
+    };
+    let up = right.cross(forward).normalize();
+    let tan_y = (view.fov_y_deg.clamp(5.0, 170.0) * 0.5).to_radians().tan();
+    let tan_x = tan_y * view.aspect.clamp(0.1, 10.0);
+
+    let radiance = |dir: Vec3, cos_scatter: f32| -> f32 {
+        let single = single_scattered_radiance_n(
+            terms,
+            dir.y,
+            cos_scatter,
+            sun_mu,
+            SOLAR_CONSTANT_LX,
+            VIEW_STEPS,
+            SUN_STEPS,
+        );
+        let tau = scattering_optical_depth_along_n(terms, dir.y, VIEW_STEPS);
+        luma(single) + diffuse_sky_luminance(diffuse_budget_lx, tau) + floor_luminance
+    };
+
+    let mut max = 0.0f32;
+    let mut sum = 0.0f32;
+    let mut sky = 0usize;
+    for j in 0..ROWS {
+        for i in 0..COLS {
+            let x = ((i as f32 + 0.5) / COLS as f32) * 2.0 - 1.0;
+            let y = ((j as f32 + 0.5) / ROWS as f32) * 2.0 - 1.0;
+            let dir = (forward + right * (x * tan_x) + up * (y * tan_y)).normalize();
+            if dir.y <= HORIZON_MU {
+                continue;
+            }
+            let l = radiance(dir, dir.dot(sun_dir));
+            max = max.max(l);
+            sum += l;
+            sky += 1;
+        }
+    }
+
+    // Sun membership in tangent space: 1 inside 80 % of the half-field,
+    // 0 beyond 125 %, linear between. A camera panning onto the sun then
+    // ramps its exposure over ~12 deg of travel at a 55 deg field, the way
+    // an auto-exposure with a time constant would, instead of stepping.
+    let sun_in_field = if sun_mu > HORIZON_MU {
+        let depth = sun_dir.dot(forward);
+        if depth <= 1.0e-3 {
+            0.0
+        } else {
+            let sx = (sun_dir.dot(right) / depth / tan_x).abs();
+            let sy = (sun_dir.dot(up) / depth / tan_y).abs();
+            let edge = |s: f32| ((1.25 - s) / 0.45).clamp(0.0, 1.0);
+            edge(sx) * edge(sy)
+        }
+    } else {
+        0.0
+    };
+    if sun_in_field > 0.0 {
+        // The sky just outside the disc: rotate the sun direction by the
+        // disc's angular radius plus a third of it, towards the zenith
+        // (or the horizon when the sun is high).
+        let off = (SUN_ANGULAR_DIAMETER_DEG * 0.5 * 1.35).to_radians();
+        let axis = if sun_dir.y < 0.95 { Vec3::Y } else { Vec3::X };
+        let tangent = (axis - sun_dir * sun_dir.dot(axis)).normalize();
+        let dir = (sun_dir * off.cos() + tangent * off.sin()).normalize();
+        let aureole = radiance(dir, dir.dot(sun_dir));
+        max = max.max(aureole * sun_in_field);
+    }
+
+    ViewSky {
+        max_cdm2: max,
+        mean_cdm2: if sky > 0 { sum / sky as f32 } else { 0.0 },
+        sky_fraction: sky as f32 / (COLS * ROWS) as f32,
+        sun_in_field,
+    }
+}
+
 /// Scattering optical depth along a view ray from the ground (photometric).
 fn scattering_optical_depth_along(terms: &[ScatteringTerm], view_mu: f32) -> f32 {
-    const STEPS: usize = 384;
+    scattering_optical_depth_along_n(terms, view_mu, 384)
+}
+
+/// [`scattering_optical_depth_along`] at a chosen step count.
+fn scattering_optical_depth_along_n(terms: &[ScatteringTerm], view_mu: f32, steps: usize) -> f32 {
     let r0 = INNER_RADIUS_M;
     let t_max = distance_to_top(r0, view_mu);
     if t_max <= 0.0 {
@@ -959,8 +1129,8 @@ fn scattering_optical_depth_along(terms: &[ScatteringTerm], view_mu: f32) -> f32
     }
     let mut tau = 0.0;
     let mut t_prev = 0.0f32;
-    for i in 1..=STEPS {
-        let frac = i as f32 / STEPS as f32;
+    for i in 1..=steps {
+        let frac = i as f32 / steps as f32;
         let t_next = t_max * frac * frac;
         let dt = t_next - t_prev;
         let t = t_prev + dt * 0.5;
@@ -1185,6 +1355,19 @@ pub fn resolve(
     );
     // The night floor is an illuminance; as a uniform hemisphere it is E/pi.
     let floor_luminance = night_floor / std::f32::consts::PI;
+    // What the metering camera frames, when the caller said where it looks.
+    // The direct beam is what makes the aureole, so below the horizon the
+    // grid still runs (twilight sky) but the aureole term is inert.
+    let view_sky = inputs.meter_view.as_ref().map(|view| {
+        view_sky_luminance(
+            &terms,
+            view,
+            sun_dir,
+            sun_mu,
+            diffuse_budget,
+            floor_luminance,
+        )
+    });
     let zenith = zenith_single
         + zenith_moon
         + Vec3::splat(zenith_diffuse + floor_luminance);
@@ -1257,6 +1440,7 @@ pub fn resolve(
         sun_cct_k: if t_luma > 0.0 { cct_k(sun_color_norm) } else { 0.0 },
         zenith_luminance_cdm2: luma(zenith),
         horizon_luminance_cdm2: luma(horizon),
+        view_sky,
         solar_disc_luminance_cdm2: if solid_angle > 0.0 {
             SOLAR_CONSTANT_LX * t_luma / solid_angle
         } else {
