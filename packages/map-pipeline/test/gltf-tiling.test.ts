@@ -90,6 +90,11 @@ async function writeSyntheticSource(directory: string): Promise<void> {
   worker.setAttribute('WEIGHTS_0', document.createAccessor().setType('VEC4').setBuffer(buffer).setArray(new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0])));
   scene.addChild(document.createNode('Worker_Figure').setMesh(document.createMesh('worker').addPrimitive(worker)).setSkin(skin));
 
+  // Orphan subtree (not in any scene), as RoadRunner/UE exports produce for
+  // roads and terrain: must still be tiled.
+  const orphan = document.createNode('Tile_0_0').setTranslation([0, 0, 300]);
+  orphan.addChild(document.createNode('Roads_Road_Layer0').setMesh(roadMesh).setTranslation([0, -2, 0]));
+
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
   await mkdir(directory, { recursive: true });
   await writeFile(path.join(directory, 'synthetic.glb'), await io.writeBinary(document));
@@ -124,7 +129,7 @@ describe('glTF-native tiling', () => {
     };
     expect(inventory.origin[0]).toBe(-100);
     expect(inventory.objects.map((row) => [row.kind, row.file, row.gridX, row.gridZ, row.triangles])).toEqual([
-      ['road', 'tiles/road.glb', undefined, undefined, 2],
+      ['road', 'tiles/road.glb', undefined, undefined, 4],
       ['static', 'tiles/tile_3_1.lod0.glb', 3, 1, 2],
       ['static', 'tiles/tile_6_1.lod0.glb', 6, 1, 2],
       ['static', 'tiles/tile_8_1.lod0.glb', 8, 1, 2],
@@ -132,15 +137,18 @@ describe('glTF-native tiling', () => {
     ]);
 
     const report = JSON.parse(await readFile(path.join(stage.outputDir, 'tiling-report.json'), 'utf8')) as GltfTilingReport;
-    expect(report.objects).toBe(5);
+    expect(report.objects).toBe(6);
+    expect(report.orphanRootNodes).toEqual(['Tile_0_0']);
     expect(report.skinnedNodesBaked).toBe(1);
     expect(report.skippedNodes).toEqual([]);
     expect(report.materials.verified).toBe(report.materials.tileInstances);
-    expect(report.primitives).toEqual({ source: 5, verified: 5 });
+    expect(report.primitives).toEqual({ source: 6, verified: 6 });
     // The facade albedo is embedded in both building tiles and the road tile.
     expect(report.images.distinct).toBe(2);
     expect(report.images.tileInstances).toBe(5);
     expect(report.images.duplicatedBytes).toBe(2 * albedoPng.byteLength + normalPng.byteLength);
+    const road = await new NodeIO().registerExtensions(ALL_EXTENSIONS).read(path.join(stage.outputDir, 'tiles', 'road.glb'));
+    expect(road.getRoot().listScenes()[0]!.listChildren().map((n) => [n.getName(), n.getTranslation()])).toEqual([['Road_Main', [500, -1, 0]], ['Roads_Road_Layer0', [0, -2, 300]]]);
     expect(report.textureTexcoords).toEqual({ TEXCOORD_0: 3, TEXCOORD_2: 1 });
     expect(report.materialsWithTextureTransform).toBe(1);
     expect(report.materialsWithDivergentSlotTransforms).toBe(1);

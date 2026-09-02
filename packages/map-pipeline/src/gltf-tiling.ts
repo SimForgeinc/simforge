@@ -39,7 +39,7 @@ import type { StageResult } from './tiling.js';
  * Any mismatch aborts the stage. `tiling-report.json` records the proof plus
  * per-map material/UV/transform/image-multiplicity facts for downstream QA.
  */
-export const GLTF_TILER_REVISION = 3;
+export const GLTF_TILER_REVISION = 4;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const CLASSIFY_VEGETATION = /veg|tree|bush|grass|foliage|plant/;
 const CLASSIFY_ROAD = /road|asphalt|ground|terrain|pavement|marking|lane/;
@@ -105,6 +105,8 @@ export interface GltfTilingReport {
   skippedNodes: Array<{ source: string; node: string; reason: string }>;
   /** Skinned nodes baked at rest pose into static geometry. */
   skinnedNodesBaked: number;
+  /** Root nodes outside every scene that were adopted (names). */
+  orphanRootNodes: string[];
   objects: number;
   tiles: number;
   materials: { source: number; tileInstances: number; verified: number };
@@ -420,7 +422,7 @@ function meshBounds(mesh: Mesh): Bounds {
   return { min, max };
 }
 
-function collectObjects(source: LoadedSource, sourceIndex: number, skipped: GltfTilingReport['skippedNodes']): SourceObject[] {
+function collectObjects(source: LoadedSource, sourceIndex: number, skipped: GltfTilingReport['skippedNodes'], orphanRoots: string[]): SourceObject[] {
   const objects: SourceObject[] = [];
   let order = 0;
   const visit = (node: Node): void => {
@@ -452,6 +454,15 @@ function collectObjects(source: LoadedSource, sourceIndex: number, skipped: Gltf
     for (const child of node.listChildren()) visit(child);
   };
   for (const scene of source.document.getRoot().listScenes()) for (const child of scene.listChildren()) visit(child);
+  // RoadRunner/Unreal map exports leave whole subtrees (roads, terrain,
+  // markings) outside every scene. glTF says such nodes are not rendered,
+  // but the export's intent is unambiguous and Blender's importer adopts
+  // them; do the same so the map is complete.
+  for (const node of source.document.getRoot().listNodes()) {
+    if (node.listParents().some((parent) => parent.propertyType === 'Node' || parent.propertyType === 'Scene')) continue;
+    orphanRoots.push(node.getName());
+    visit(node);
+  }
   return objects;
 }
 
@@ -555,7 +566,8 @@ export async function gltfToTiles(options: GltfToTilesOptions): Promise<StageRes
   if (sources.length === 0) throw new Error(`${sourceDir} contains no top-level GLB or glTF files`);
 
   const skippedNodes: GltfTilingReport['skippedNodes'] = [];
-  const objects = sources.flatMap((source, index) => collectObjects(source, index, skippedNodes));
+  const orphanRootNodes: string[] = [];
+  const objects = sources.flatMap((source, index) => collectObjects(source, index, skippedNodes, orphanRootNodes));
   if (objects.length === 0) throw new Error(`${sourceDir} contains no mesh nodes`);
   objects.sort((left, right) => left.name.localeCompare(right.name) || left.sourceIndex - right.sourceIndex || left.order - right.order);
 
@@ -663,6 +675,7 @@ export async function gltfToTiles(options: GltfToTilesOptions): Promise<StageRes
     extensionsUsed: [...new Set(sources.flatMap((source) => source.document.getRoot().listExtensionsUsed().map((e) => e.extensionName)))].sort(),
     skippedNodes,
     skinnedNodesBaked: objects.filter((object) => object.skinned).length,
+    orphanRootNodes,
     objects: objects.length,
     tiles: tiles.length,
     materials: { source: sources.reduce((sum, source) => sum + source.materialDigests.size, 0), tileInstances: materialInstances, verified: verifiedMaterials },
