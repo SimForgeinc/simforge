@@ -322,8 +322,10 @@ const LIGHTING_CONTROLS: readonly LightingControl[] = [
   {
     field: "visibilityM",
     label: "Visibility",
-    detail: "Distance at which the scene fades out",
-    format: (value) => (value >= LIGHTING_RANGES.visibilityM.max ? "Unlimited" : `${Math.round(value)} m`),
+    detail: "Meteorological (Koschmieder) range; clear air is 80 km",
+    format: (value) => (value >= LIGHTING_RANGES.visibilityM.max
+      ? "Unlimited"
+      : value >= 1_000 ? `${(value / 1_000).toFixed(value >= 10_000 ? 0 : 1)} km` : `${Math.round(value)} m`),
   },
 ];
 

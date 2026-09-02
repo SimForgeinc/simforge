@@ -19,9 +19,13 @@ path = "src/bin/native-render-job.rs"
 name = "parity-check"
 path = "src/bin/parity-check.rs"
 
+[[bin]]
+name = "sky-bench"
+path = "src/bin/sky-bench.rs"
+
 [dependencies]
 crossbeam-channel = "0.5"
-# `basis-universal` transcodes UASTC KTX2 (glb-ktx2-repack output) to GPU formats at load.
+# `basis-universal` transcodes UASTC/ETC1S KTX2 (glb-ktx2-repack output) to GPU formats at load.
 # The source map GLBs use specular, anisotropy, clearcoat, and (potentially) transmission
 # textures. Bevy gates those texture bindings behind explicit features; omitting them
 # silently drops authored PBR inputs.
@@ -33,6 +37,7 @@ bevy = { version = "0.19.1", default-features = true, features = [
   "basis-universal",
   "debug",
   "tonemapping_luts",
+  "pbr_light_textures",
   "pbr_specular_textures",
   "pbr_anisotropy_texture",
   "pbr_multi_layer_material_textures",

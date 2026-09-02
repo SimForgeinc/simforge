@@ -1,0 +1,3 @@
+# NASA sky plates (289 MB) are regenerated from the public downloads by
+# renderer/tools/prepare_sky_assets.py; SOURCES.json records their digests.
+*.skytex

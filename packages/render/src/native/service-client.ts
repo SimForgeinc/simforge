@@ -50,7 +50,10 @@ export class NativeServiceClient {
     await once(socket, 'connect');
     const client = new NativeServiceClient(socket);
     const hello = await client.rpc({ op: 'hello' });
-    if (hello.protocol !== 2 || !hello.shm?.path) {
+    // V2 is the floor this client speaks (`load_scene_state`, bundles);
+    // V3 (`set_lighting`) and V4 (lookdev AA readback, `advance`) only add
+    // ops and reply fields, so any later revision serves a V2 client.
+    if (typeof hello.protocol !== 'number' || hello.protocol < 2 || !hello.shm?.path) {
       await client.close();
       throw new Error(`native render service protocol mismatch: ${String(hello.protocol)}`);
     }

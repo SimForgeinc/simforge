@@ -78,7 +78,7 @@ pub fn kelvin_to_rgb(kelvin: f32) -> Color {
             ((c + 0.055) / 1.055).powf(2.4)
         }
     };
-    Color::srgb(lin(r), lin(g), lin(b))
+    Color::linear_rgb(lin(r), lin(g), lin(b))
 }
 
 /// Float RGB cubemap held CPU-side: six `n×n` faces in wgpu order
@@ -403,6 +403,21 @@ pub fn load_sky_cubemap(path: &str, face_size: u32) -> Result<Cubemap> {
     }))
 }
 
+/// Which sky the lighting ladder should build.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SkyMode {
+    /// Legacy: a static cubemap (loaded HDRI or the analytic gradient) used
+    /// both as `Skybox` and as the `EnvironmentMapLight` source. Retained
+    /// only as the A/B baseline for the atmosphere benchmark.
+    Cubemap,
+    /// Physical: `crate::atmosphere` owns the sky, the IBL and the aerial
+    /// perspective. No cubemap is built at all, the directional light
+    /// carries a [`bevy::light::SunDisk`] and its illuminance is the
+    /// *extraterrestrial* value, because `pbr_lighting.wgsl` applies the
+    /// transmittance LUT to it under `#ifdef ATMOSPHERE`.
+    Physical,
+}
+
 /// Per-rung lighting parameters resolved against weather (set by weather.rs
 /// before spawning lights).
 pub struct LightingPlan {
@@ -415,7 +430,9 @@ pub struct LightingPlan {
 }
 
 /// Spawn/apply the lighting ladder. Called once at Startup after weather
-/// modifiers are known. Returns nothing; entities are spawned directly.
+/// modifiers are known. Entities are spawned directly; the returned handle
+/// is the sky cubemap, and is always `None` under [`SkyMode::Physical`].
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_lighting(
     commands: &mut bevy::prelude::Commands,
     images: &mut bevy::asset::Assets<Image>,
@@ -424,11 +441,14 @@ pub fn spawn_lighting(
     sun_dir: Dir3,
     cascade_max_distance: f32,
     // HDRI path for the sky/IBL; `None` generates the deterministic analytic
-    // gradient sky from `sun_dir` (`synthetic_sky_cubemap`).
+    // gradient sky from `sun_dir` (`synthetic_sky_cubemap`). Ignored under
+    // [`SkyMode::Physical`].
     sky_hdr_path: Option<&str>,
+    sky_mode: SkyMode,
     legacy_args: (f32, f32), // (spike lux, spike ambient) used only at rung 0
 ) -> Result<Option<bevy::asset::Handle<Image>>> {
-    if !rung.ibl() {
+    let physical = sky_mode == SkyMode::Physical;
+    if !rung.ibl() && !physical {
         // Rung 0 — the documented "too dark" baseline: flat constant ambient.
         commands.spawn(GlobalAmbientLight {
             color: Color::srgb(1.0, 0.98, 0.94),
@@ -437,38 +457,51 @@ pub fn spawn_lighting(
         });
     }
 
-    commands.spawn((
-        DirectionalLight {
-            illuminance: if rung.physical_sun() {
-                plan.sun_lux
-            } else {
-                legacy_args.0
+    let sun_lux = if rung.physical_sun() || physical {
+        plan.sun_lux
+    } else {
+        legacy_args.0
+    };
+    // Do not leave a nominal zero-lux directional source in the atmosphere
+    // light array at astronomical night. Bevy's LUT solve still evaluates
+    // each listed source's multiple-scattering term; absence is the only
+    // truthful representation of a solar source below the planet.
+    if sun_lux > 0.0 {
+        let mut sun = commands.spawn((
+            DirectionalLight {
+                illuminance: sun_lux,
+                color: plan.sun_color,
+                shadow_maps_enabled: Vec3::from(*sun_dir).y < 0.0,
+                contact_shadows_enabled: rung.ao_contact() && Vec3::from(*sun_dir).y < 0.0,
+                soft_shadow_size: if rung.pcss() {
+                    Some(SUN_ANGULAR_DIAMETER_DEG.to_radians())
+                } else {
+                    None
+                },
+                ..Default::default()
             },
-            color: plan.sun_color,
-            shadow_maps_enabled: true,
-            contact_shadows_enabled: rung.ao_contact(),
-            soft_shadow_size: if rung.pcss() {
-                // Angular size converted by bevy internally; supply the sun's
-                // angular diameter so penumbras widen realistically.
-                Some(SUN_ANGULAR_DIAMETER_DEG.to_radians())
-            } else {
-                None
-            },
-            ..Default::default()
-        },
-        bevy::light::cascade::CascadeShadowConfigBuilder {
-            minimum_distance: 1.0,
-            maximum_distance: cascade_max_distance,
-            num_cascades: 4,
-            ..Default::default()
+            bevy::light::cascade::CascadeShadowConfigBuilder {
+                minimum_distance: 1.0,
+                maximum_distance: cascade_max_distance,
+                num_cascades: 4,
+                ..Default::default()
+            }
+            .build(),
+            VolumetricLightMarker,
+            bevy::prelude::Transform::IDENTITY.looking_to(sun_dir, Vec3::Y),
+        ));
+        if physical {
+            // The disc is composited by the atmosphere's sky pass at exactly
+            // this angular size: a real 0.53 degree sun, not a sprite.
+            sun.insert(bevy::light::SunDisk {
+                angular_size: SUN_ANGULAR_DIAMETER_DEG.to_radians(),
+                intensity: 1.0,
+            });
         }
-        .build(),
-        VolumetricLightMarker,
-        bevy::prelude::Transform::IDENTITY.looking_to(sun_dir, Vec3::Y),
-    ));
+    }
 
     let mut sky_handle = None;
-    if rung.ibl() {
+    if rung.ibl() && !physical {
         let sky = match sky_hdr_path {
             Some(path) => load_sky_cubemap(path, 512)?,
             None => synthetic_sky_cubemap(sun_dir, 512),
@@ -498,6 +531,7 @@ pub fn spawn_lighting(
     }
     Ok(sky_handle)
 }
+
 
 /// Marker so weather.rs can attach `VolumetricLight` to the sun when fog is
 /// active without lighting.rs depending on the weather module.

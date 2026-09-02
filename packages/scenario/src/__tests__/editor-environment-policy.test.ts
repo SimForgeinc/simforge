@@ -24,10 +24,11 @@ describe("editor environment policy", () => {
     const fresh = withFreshEditorEnvironmentDefaults(BASE_ENVIRONMENT);
 
     expect(FRESH_SCENARIO_MINUTES).toBe(385);
+    expect(fresh.weather).toBe("clear");
     expect(resolveEditorLightingOverrides(fresh)).toEqual({
       ambient: 1,
       sun: 1,
-      visibilityM: 200,
+      visibilityM: 80_000,
     });
     expect(fresh.extensions?.[LIGHTING_EXTENSION_KEY]).toMatchObject({
       ambient: 1,
@@ -37,7 +38,7 @@ describe("editor environment policy", () => {
     });
   });
 
-  it("applies the 200 m visibility default on initial resolution", () => {
+  it("applies the 80 km visibility default on initial resolution", () => {
     expect(resolveEditorLightingRenderScales(BASE_ENVIRONMENT)).toMatchObject({
       ambient: DEFAULT_AMBIENT_RENDER_SCALE,
       sun: DEFAULT_SUN_RENDER_SCALE,

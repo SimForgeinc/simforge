@@ -32,6 +32,10 @@ pub use crate::calibration::HDRI_TO_CDM2;
 pub enum Weather {
     #[default]
     Clear,
+    /// Broken cumulus: the solar disc is still the dominant key, softened.
+    Cloudy,
+    /// Full stratus deck: the sky becomes the key light, sun is a glow.
+    Overcast,
     Fog,
     Rain,
     Night,
@@ -41,10 +45,14 @@ impl Weather {
     pub fn parse(s: &str) -> anyhow::Result<Self> {
         match s.to_ascii_lowercase().as_str() {
             "clear" => Ok(Weather::Clear),
+            "cloudy" | "partly-cloudy" => Ok(Weather::Cloudy),
+            "overcast" => Ok(Weather::Overcast),
             "fog" | "mist" => Ok(Weather::Fog),
             "rain" | "wet" => Ok(Weather::Rain),
             "night" | "dusk" => Ok(Weather::Night),
-            other => anyhow::bail!("unknown weather '{other}' (clear|fog|rain|night)"),
+            other => anyhow::bail!(
+                "unknown weather '{other}' (clear|cloudy|overcast|fog|rain|night)"
+            ),
         }
     }
 
@@ -55,6 +63,14 @@ impl Weather {
     pub fn sensor_ev100(&self, sun_elev_deg: f32) -> f32 {
         match self {
             Weather::Clear => ev100_for_sun_elevation(sun_elev_deg),
+            // Cloud decks cost roughly 0.6 / 1.4 stops of scene luminance
+            // relative to the clear sky at the same elevation.
+            Weather::Cloudy => {
+                (ev100_for_sun_elevation(sun_elev_deg) - 0.6).max(SENSOR_EV100_NIGHT)
+            }
+            Weather::Overcast => {
+                (ev100_for_sun_elevation(sun_elev_deg) - 1.4).max(SENSOR_EV100_NIGHT)
+            }
             Weather::Fog => SENSOR_EV100_FOG,
             Weather::Rain => SENSOR_EV100_RAIN,
             Weather::Night => SENSOR_EV100_NIGHT,
@@ -79,6 +95,22 @@ impl Weather {
                 env_intensity: HDRI_TO_CDM2 * daylight,
                 skybox_brightness: HDRI_TO_CDM2 * daylight,
             },
+            Weather::Cloudy => LightingPlan {
+                // Broken cloud: direct beam survives, diffuse sky lifts.
+                sun_lux: sun_lux * 0.62,
+                sun_color,
+                ev100_fixed: Some(self.sensor_ev100(sun_elev_deg)),
+                env_intensity: HDRI_TO_CDM2 * 1.08 * daylight,
+                skybox_brightness: HDRI_TO_CDM2 * 0.95 * daylight,
+            },
+            Weather::Overcast => LightingPlan {
+                // Stratus deck: the beam is a soft glow, the sky is the key.
+                sun_lux: sun_lux * 0.18,
+                sun_color: Color::srgb(0.93, 0.95, 1.0),
+                ev100_fixed: Some(self.sensor_ev100(sun_elev_deg)),
+                env_intensity: HDRI_TO_CDM2 * 1.3 * daylight,
+                skybox_brightness: HDRI_TO_CDM2 * 0.82 * daylight,
+            },
             Weather::Fog => LightingPlan {
                 // Heavy overcast: direct sun mostly scattered away.
                 sun_lux: sun_lux * 0.25,
@@ -101,6 +133,129 @@ impl Weather {
                 ev100_fixed: Some(self.sensor_ev100(sun_elev_deg)),
                 env_intensity: HDRI_TO_CDM2 * 0.004,
                 skybox_brightness: HDRI_TO_CDM2 * 0.004,
+            },
+        }
+    }
+}
+
+/// The physical atmosphere a weather label implies.
+///
+/// These are the *defaults* a label seeds; every one of them is an
+/// independently authorable control on `engine::Lighting` /
+/// `night::NightControls`, so a lookdev surface can dial turbidity or
+/// visibility away from the label without leaving the label. The values are
+/// the Lookdev Lab's weather presets (rev23), so a platform render of
+/// "cloudy" is the lab's "cloudy".
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WeatherAtmosphere {
+    /// Cloud deck type for the medium's slab term.
+    pub deck: crate::atmosphere::CloudDeck,
+    /// Fractional cover, scaling the deck's vertical optical depth.
+    pub cloud_cover: f32,
+    /// Linke turbidity of the tropospheric aerosol column.
+    pub turbidity: f32,
+    /// Meteorological visibility, m (Koschmieder).
+    pub visibility_m: f32,
+    /// Extra aerosol on top of turbidity, [0, 1] (`Lighting::haze`).
+    pub haze: f32,
+    /// Road-surface wetness ramp, [0, 1].
+    pub wetness: f32,
+    /// Volumetric deck morphology (`NightControls::cloud_*`): 0 stratiform
+    /// sheet, 1 cumuliform towers; base and top altitude, m; density
+    /// multiplier.
+    pub cloud_type: f32,
+    pub cloud_base_m: f32,
+    pub cloud_top_m: f32,
+    pub cloud_density: f32,
+}
+
+impl Weather {
+    /// Physical atmosphere state this label seeds.
+    ///
+    /// Nothing here is a brightness multiplier: cloud decks darken the beam
+    /// because the transmittance LUT integrates through them, and haze
+    /// desaturates distance because the aerial-perspective LUT integrates
+    /// through it. See `crate::atmosphere`.
+    pub fn atmosphere(&self) -> WeatherAtmosphere {
+        use crate::atmosphere::CloudDeck;
+        match self {
+            // Clean maritime-continental air: AOD(550) ~ 0.08.
+            Weather::Clear => WeatherAtmosphere {
+                deck: CloudDeck::None,
+                cloud_cover: 0.0,
+                turbidity: 2.4,
+                visibility_m: 80_000.0,
+                haze: 0.0,
+                wetness: 0.0,
+                cloud_type: 0.85,
+                cloud_base_m: 1_200.0,
+                cloud_top_m: 2_800.0,
+                cloud_density: 1.0,
+            },
+            // Broken fair-weather cumulus over a slightly hazier column.
+            Weather::Cloudy => WeatherAtmosphere {
+                deck: CloudDeck::Cumulus,
+                cloud_cover: 0.45,
+                turbidity: 2.8,
+                visibility_m: 30_000.0,
+                haze: 0.03,
+                wetness: 0.0,
+                cloud_type: 0.85,
+                cloud_base_m: 1_200.0,
+                cloud_top_m: 2_800.0,
+                cloud_density: 1.0,
+            },
+            // Continuous stratus sheet: tau ~ 22, beam gone.
+            Weather::Overcast => WeatherAtmosphere {
+                deck: CloudDeck::Stratus,
+                cloud_cover: 0.95,
+                turbidity: 3.2,
+                visibility_m: 12_000.0,
+                haze: 0.10,
+                wetness: 0.05,
+                cloud_type: 0.15,
+                cloud_base_m: 700.0,
+                cloud_top_m: 1_900.0,
+                cloud_density: 1.4,
+            },
+            // Radiation fog under a low stratus lid.
+            Weather::Fog => WeatherAtmosphere {
+                deck: CloudDeck::Stratus,
+                cloud_cover: 0.75,
+                turbidity: 3.0,
+                visibility_m: 150.0,
+                haze: 0.20,
+                wetness: 0.15,
+                cloud_type: 0.10,
+                cloud_base_m: 400.0,
+                cloud_top_m: 1_200.0,
+                cloud_density: 1.4,
+            },
+            // Nimbostratus with rain-washed (hence clean) sub-cloud air.
+            Weather::Rain => WeatherAtmosphere {
+                deck: CloudDeck::Nimbostratus,
+                cloud_cover: 0.90,
+                turbidity: 2.6,
+                visibility_m: 3_000.0,
+                haze: 0.10,
+                wetness: 0.85,
+                cloud_type: 0.30,
+                cloud_base_m: 500.0,
+                cloud_top_m: 2_600.0,
+                cloud_density: 1.8,
+            },
+            // Night is a clock state, not an air-mass state.
+            Weather::Night => WeatherAtmosphere {
+                deck: CloudDeck::None,
+                cloud_cover: 0.0,
+                turbidity: 2.4,
+                visibility_m: 80_000.0,
+                haze: 0.0,
+                wetness: 0.0,
+                cloud_type: 0.85,
+                cloud_base_m: 1_200.0,
+                cloud_top_m: 2_800.0,
+                cloud_density: 1.0,
             },
         }
     }
