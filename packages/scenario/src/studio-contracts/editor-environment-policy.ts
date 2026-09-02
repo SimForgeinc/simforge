@@ -6,8 +6,14 @@ export const LIGHTING_EXTENSION_KEY = "org.simforge.lighting.v1" as const;
 
 /** Canonical clock time for every newly-authored scenario: 6:25 AM. */
 export const FRESH_SCENARIO_MINUTES = 6 * 60 + 25;
-/** Canonical authored visibility for every newly-authored scenario. */
-export const DEFAULT_VISIBILITY_M = 200;
+/**
+ * Canonical authored visibility for every newly-authored scenario: the
+ * Lookdev Lab's clear-air default. Under the physical atmosphere this is a
+ * real Koschmieder range, so 200 m (the pre-rev23 default) is dense fog.
+ */
+export const DEFAULT_VISIBILITY_M = 80_000;
+/** Above this the atmosphere's own ~250 km Rayleigh visibility takes over. */
+export const MAX_VISIBILITY_M = 120_000;
 
 /**
  * Revision 2 makes the calibrated direct-sun and sky-fill levels the 100% point.
@@ -23,7 +29,7 @@ export const LIGHTING_RANGES = {
   sunWarmth: { min: -1, max: 1, neutral: 0, step: 0.02 },
   exposure: { min: 0.1, max: 3, neutral: 1, step: 0.02 },
   sky: { min: 0, max: 3, neutral: 1, step: 0.05 },
-  visibilityM: { min: 20, max: 500, neutral: DEFAULT_VISIBILITY_M, step: 20 },
+  visibilityM: { min: 20, max: MAX_VISIBILITY_M, neutral: DEFAULT_VISIBILITY_M, step: 10 },
   haze: { min: 0, max: 1, neutral: 0, step: 0.02 },
 } as const;
 
@@ -169,11 +175,21 @@ export function editorLightingSignature(environment: Environment): string {
     .join(":");
 }
 
-/** Canonical normalized lighting block for every newly-authored scenario. */
+/** Canonical weather for every newly-authored scenario. */
+export const FRESH_SCENARIO_WEATHER = "clear" as const;
+
+/**
+ * Canonical environment for every newly-authored scenario: clear air at
+ * 80 km, neutral sun and ambient — the Lookdev Lab's default look. The
+ * clock is set separately (`FRESH_SCENARIO_MINUTES`).
+ */
 export function withFreshEditorEnvironmentDefaults(environment: Environment): Environment {
-  return withEditorLightingOverrides(environment, {
-    ambient: 1,
-    sun: 1,
-    visibilityM: DEFAULT_VISIBILITY_M,
-  });
+  return withEditorLightingOverrides(
+    { ...environment, weather: FRESH_SCENARIO_WEATHER },
+    {
+      ambient: 1,
+      sun: 1,
+      visibilityM: DEFAULT_VISIBILITY_M,
+    },
+  );
 }

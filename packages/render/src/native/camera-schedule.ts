@@ -7,8 +7,25 @@ export interface NativeScheduledCamera {
   readonly width: number;
   readonly height: number;
   readonly fovDeg: number;
+  /** Mount pose at the host's *authored* transform (y as the trajectory says). */
   readonly eye: readonly [number, number, number];
   readonly target: readonly [number, number, number];
+  /**
+   * Rigid attachment the service resolves itself every tick, against the
+   * host as it actually stands on the map: trajectories author y = 0 and
+   * the service snaps the actor to the sampled ground, so an explicit
+   * `eye` at the authored y would put the camera under the road wherever
+   * the map is not at sea level. With `attach` present the service ignores
+   * `eye`/`target`.
+   */
+  readonly attach: {
+    readonly actorId: string;
+    /** Actor-local mount, metres: x forward, y right, z up. */
+    readonly offsetM: readonly [number, number, number];
+    /** Degrees, CARLA sense (clockwise from above); the service subtracts it. */
+    readonly yawDeg: number;
+    readonly pitchDeg: number;
+  };
 }
 
 const TARGET_DISTANCE_M = 50;
@@ -74,6 +91,14 @@ export function createNativeCameraSchedule(
         eye[1] + TARGET_DISTANCE_M * direction[1],
         eye[2] + TARGET_DISTANCE_M * direction[2],
       ],
+      attach: {
+        actorId,
+        offsetM: [forward, right, up],
+        // Authored mount yaw is CCW; the service's attach yaw is CARLA's
+        // clockwise sense, so the sign flips here and nowhere else.
+        yawDeg: -source.transform.rotation.yawRad * 180 / Math.PI,
+        pitchDeg: source.transform.rotation.pitchRad * 180 / Math.PI,
+      },
     };
   }));
 }

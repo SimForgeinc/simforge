@@ -21,6 +21,7 @@ import { lowerOpenScenarioToNative } from './lowering.js';
 import { createNativeCameraSchedule } from './camera-schedule.js';
 import { NativeServiceClient, stripRgbaPadding, type NativeFrameRecord } from './service-client.js';
 import { ensureActorAssets } from './actor-assets.js';
+import { resolveNativeLighting } from './lighting.js';
 
 export const NATIVE_RENDER_ENGINE_ID = 'bevy-retained';
 const NATIVE_ENGINE_VERSION = '0.1.0-rc.60';
@@ -32,6 +33,13 @@ export interface NativeRenderEngineOptions {
   readonly engineVersion?: string;
   readonly startupTimeoutMs?: number;
   readonly shmSizeMb?: number;
+  /**
+   * Meter the sky through each frame's camera (the Lookdev Lab's
+   * highlight-priority meter), so a sunward low sun stops the camera down
+   * instead of printing a white sky. Default on; off leaves the incident
+   * meter alone, which is what the pre-rev23 platform did.
+   */
+  readonly autoMeter?: boolean;
 }
 
 const CAPABILITIES: EngineCapabilityDeclaration = {
@@ -192,9 +200,19 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
       const shmPath = path.join(context.workspace, 'native-render.shm');
       const serviceLogPath = path.join(context.workspace, 'native-render-service.log');
       await Promise.all([fs.rm(socketPath, { force: true }), fs.rm(shmPath, { force: true })]);
+      // The scenario's environment as the renderer's physical lighting and
+      // the Lookdev Lab's cinematic look: same weather presets, same solar
+      // model, same profile. The service meters the sky through each
+      // frame's camera on top (`autoMeter`).
+      const look = resolveNativeLighting(intent.renderSpec.authoredEnvironment, {
+        cloudFixedStepS: 1 / Math.max(1, ...rgbSchedules.map((schedule) => schedule.framesPerSecond)),
+      });
       await writeJson(scenePath, {
         glbs: tileInputs.map((tile) => tile.path),
-        profile: 'sensor',
+        profile: 'cinematic',
+        lighting: look.lighting,
+        profileConfig: look.profileConfig,
+        autoMeter: options.autoMeter ?? true,
         nearM: Math.min(...sources.map((source) => source.modality === 'rgb' ? source.attributes.nearM : 0.05)),
         farM: Math.max(...sources.map((source) => source.modality === 'rgb' ? source.attributes.farM : 1_000)),
         warmupFrames: 20,
@@ -298,6 +316,13 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
         sourceXoscSha256: xoscInput.sha256,
         loweringSha256: lowering.sha256,
         frameCount: lowering.states.length,
+        look: {
+          profile: 'cinematic',
+          lighting: look.lighting,
+          profileConfig: look.profileConfig,
+          autoMeter: options.autoMeter ?? true,
+          provenance: look.provenance,
+        },
         videos: videoRecords,
       });
       const nativeManifestDigest = await hashFile(nativeManifestPath);
