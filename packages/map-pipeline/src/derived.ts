@@ -14,13 +14,14 @@ import { repackGlb } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 import { dilateAlphaEdges } from './alpha-dilate.js';
 import { buildClosure, filesUnder, hashTree, readWholeFile, sha256, writeClosure } from './closure.js';
 import { neutralizeExportErrorMaterials } from './export-error-materials.js';
+import { borrowTerrainLayerTextures, collectTerrainLayerDonors, type TerrainDonorPool } from './terrain-layer-textures.js';
 import { assertBevyRepresentableSampling, bakeDivergentTextureTransforms } from './uv-transform-bake.js';
 import type { ClosureKind, MapClosure } from './closure.js';
 import type { ClosureStageResult } from './assemble.js';
 import type { StageResult } from './tiling.js';
-const BROWSER_OPTIMIZER_REVISION = 6;
-const KTX2_REPACK_REVISION = 8;
-const NATIVE_CORPUS_DECODER_REVISION = 6;
+const BROWSER_OPTIMIZER_REVISION = 7;
+const KTX2_REPACK_REVISION = 9;
+const NATIVE_CORPUS_DECODER_REVISION = 7;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const SHARP_VERSION = '0.34.5';
 const MESHOPTIMIZER_VERSION = '1.2.0';
@@ -32,7 +33,7 @@ export interface DerivedStageResult extends StageResult {
   closureDigest: string;
 }
 
-type GlbTransform = (input: Buffer, relativePath: string) => Promise<Buffer>;
+type GlbTransform = (input: Buffer, relativePath: string, donors: TerrainDonorPool) => Promise<Buffer>;
 
 async function deriveClosure(
   source: ClosureStageResult | DerivedStageResult,
@@ -55,10 +56,13 @@ async function deriveClosure(
 
   await mkdir(contentDir, { recursive: true });
   await cp(source.outputDir, contentDir, { recursive: true });
+  // Presentation fixes apply where the canonical is the input; later stages
+  // inherit already-fixed tiles and need no donor scan.
+  const donors = source.closure.kind === 'canonical' ? await collectTerrainLayerDonors(source.outputDir) : new Map();
   for (const relativePath of await filesUnder(contentDir)) {
     if (!relativePath.toLowerCase().endsWith('.glb')) continue;
     const absolute = path.join(contentDir, relativePath);
-    await writeFile(absolute, await transformGlb(await readWholeFile(absolute), relativePath));
+    await writeFile(absolute, await transformGlb(await readWholeFile(absolute), relativePath, donors));
   }
   const closure = await buildClosure(contentDir, kind, { toolFingerprint, viewerOnly: source.closure.metadata?.viewerOnly === true });
   const written = await writeClosure(stageRoot, closure);
@@ -100,8 +104,9 @@ const VEGETATION_TILE = /(^|\/)veg_[^/]*\.glb$/i;
  *   bark material instances (channel-packing mismatch in the source assets);
  *   foliage is never metal, and metal leaves mirror the sky as pale frost.
  */
-async function applyPresentationFixes(document: Document, relativePath: string): Promise<void> {
+async function applyPresentationFixes(document: Document, relativePath: string, donors: TerrainDonorPool): Promise<void> {
   neutralizeExportErrorMaterials(document);
+  borrowTerrainLayerTextures(document, donors);
   if (VEGETATION_TILE.test(relativePath)) {
     for (const material of document.getRoot().listMaterials()) material.setMetallicFactor(0);
   }
@@ -114,9 +119,9 @@ export function browserToolFingerprint(): string {
 export async function browserOptimize(source: ClosureStageResult, workDir: string): Promise<DerivedStageResult> {
   await MeshoptEncoder.ready;
   const io = optimizerIo();
-  return deriveClosure(source, workDir, 'browser-optimized', browserToolFingerprint(), async (input, relativePath) => {
+  return deriveClosure(source, workDir, 'browser-optimized', browserToolFingerprint(), async (input, relativePath, donors) => {
     const document = await io.readBinary(input);
-    await applyPresentationFixes(document, relativePath);
+    await applyPresentationFixes(document, relativePath, donors);
     await document.transform(
       ...geometryTransforms(),
       textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 90, resize: [MAX_TEXTURE_DIMENSION, MAX_TEXTURE_DIMENSION], slots: COLOR_SLOTS }),
@@ -140,9 +145,9 @@ export function ktx2ToolFingerprint(): string {
 export async function ktx2Variant(source: ClosureStageResult, workDir: string, ktxBinDir?: string): Promise<DerivedStageResult> {
   await MeshoptEncoder.ready;
   const io = optimizerIo();
-  return deriveClosure(source, workDir, 'ktx2', ktx2ToolFingerprint(), async (input, relativePath) => {
+  return deriveClosure(source, workDir, 'ktx2', ktx2ToolFingerprint(), async (input, relativePath, donors) => {
     const document = await io.readBinary(input);
-    await applyPresentationFixes(document, relativePath);
+    await applyPresentationFixes(document, relativePath, donors);
     await document.transform(...geometryTransforms());
     const result = await repackGlb(Buffer.from(await io.writeBinary(document)), { ktxBinDir, maxDimension: MAX_TEXTURE_DIMENSION });
     return result.glb;
