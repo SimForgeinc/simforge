@@ -2,7 +2,7 @@ import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { NodeIO } from '@gltf-transform/core';
-import type { Transform } from '@gltf-transform/core';
+import type { Document, Transform } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, dequantize, meshopt, prune, reorder, tangents, textureCompress, unweld, weld } from '@gltf-transform/functions';
 import { MeshoptDecoder, MeshoptEncoder } from 'meshoptimizer';
@@ -18,9 +18,8 @@ import { assertBevyRepresentableSampling, bakeDivergentTextureTransforms } from 
 import type { ClosureKind, MapClosure } from './closure.js';
 import type { ClosureStageResult } from './assemble.js';
 import type { StageResult } from './tiling.js';
-
-const BROWSER_OPTIMIZER_REVISION = 5;
-const KTX2_REPACK_REVISION = 7;
+const BROWSER_OPTIMIZER_REVISION = 6;
+const KTX2_REPACK_REVISION = 8;
 const NATIVE_CORPUS_DECODER_REVISION = 6;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const SHARP_VERSION = '0.34.5';
@@ -33,7 +32,7 @@ export interface DerivedStageResult extends StageResult {
   closureDigest: string;
 }
 
-type GlbTransform = (input: Buffer) => Promise<Buffer>;
+type GlbTransform = (input: Buffer, relativePath: string) => Promise<Buffer>;
 
 async function deriveClosure(
   source: ClosureStageResult | DerivedStageResult,
@@ -59,7 +58,7 @@ async function deriveClosure(
   for (const relativePath of await filesUnder(contentDir)) {
     if (!relativePath.toLowerCase().endsWith('.glb')) continue;
     const absolute = path.join(contentDir, relativePath);
-    await writeFile(absolute, await transformGlb(await readWholeFile(absolute)));
+    await writeFile(absolute, await transformGlb(await readWholeFile(absolute), relativePath));
   }
   const closure = await buildClosure(contentDir, kind, { toolFingerprint, viewerOnly: source.closure.metadata?.viewerOnly === true });
   const written = await writeClosure(stageRoot, closure);
@@ -88,16 +87,36 @@ function optimizerIo(): NodeIO {
     .registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
 }
 
+/** Vegetation tiles as written by the tilers (`veg_<x>_<z>.lod0.glb`). */
+const VEGETATION_TILE = /(^|\/)veg_[^/]*\.glb$/i;
+
+/**
+ * Source-defect mitigations shared by every presentation derivative. The
+ * canonical closure stays verbatim; these only make the authored data
+ * renderable without surprises:
+ * - Unreal export-error (magenta) materials -> neutral fallback;
+ * - cutout textures -> opaque colour flooded under invisible texels;
+ * - vegetation -> dielectric. The exports carry metallic 0.7-1.0 on leaf and
+ *   bark material instances (channel-packing mismatch in the source assets);
+ *   foliage is never metal, and metal leaves mirror the sky as pale frost.
+ */
+async function applyPresentationFixes(document: Document, relativePath: string): Promise<void> {
+  neutralizeExportErrorMaterials(document);
+  if (VEGETATION_TILE.test(relativePath)) {
+    for (const material of document.getRoot().listMaterials()) material.setMetallicFactor(0);
+  }
+  await dilateAlphaEdges(document);
+}
+
 export function browserToolFingerprint(): string {
   return sha256(`browser-optimize\0${BROWSER_OPTIMIZER_REVISION}\0gltf-transform=${GLTF_TRANSFORM_VERSION}\0sharp=${SHARP_VERSION}\0meshoptimizer=${MESHOPTIMIZER_VERSION}`);
 }
 export async function browserOptimize(source: ClosureStageResult, workDir: string): Promise<DerivedStageResult> {
   await MeshoptEncoder.ready;
   const io = optimizerIo();
-  return deriveClosure(source, workDir, 'browser-optimized', browserToolFingerprint(), async (input) => {
+  return deriveClosure(source, workDir, 'browser-optimized', browserToolFingerprint(), async (input, relativePath) => {
     const document = await io.readBinary(input);
-    neutralizeExportErrorMaterials(document);
-    await dilateAlphaEdges(document);
+    await applyPresentationFixes(document, relativePath);
     await document.transform(
       ...geometryTransforms(),
       textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 90, resize: [MAX_TEXTURE_DIMENSION, MAX_TEXTURE_DIMENSION], slots: COLOR_SLOTS }),
@@ -121,10 +140,9 @@ export function ktx2ToolFingerprint(): string {
 export async function ktx2Variant(source: ClosureStageResult, workDir: string, ktxBinDir?: string): Promise<DerivedStageResult> {
   await MeshoptEncoder.ready;
   const io = optimizerIo();
-  return deriveClosure(source, workDir, 'ktx2', ktx2ToolFingerprint(), async (input) => {
+  return deriveClosure(source, workDir, 'ktx2', ktx2ToolFingerprint(), async (input, relativePath) => {
     const document = await io.readBinary(input);
-    neutralizeExportErrorMaterials(document);
-    await dilateAlphaEdges(document);
+    await applyPresentationFixes(document, relativePath);
     await document.transform(...geometryTransforms());
     const result = await repackGlb(Buffer.from(await io.writeBinary(document)), { ktxBinDir, maxDimension: MAX_TEXTURE_DIMENSION });
     return result.glb;
