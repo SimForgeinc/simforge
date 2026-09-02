@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, link, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { assembleClosure } from './assemble.js';
@@ -153,7 +153,15 @@ export async function materializeRegistryPayload(result: MapPipelineResult, outp
       const destination = path.join(outputDir, 'blobs', 'sha256', member.sha256.slice(0, 2), member.sha256);
       await mkdir(path.dirname(destination), { recursive: true });
       try {
-        await readFile(destination);
+        await stat(destination);
+        continue;
+      } catch {
+        // Blob absent; materialize it below.
+      }
+      // Blobs are immutable and content-addressed: hardlink when the work
+      // directory shares a filesystem, copy otherwise.
+      try {
+        await link(path.join(artifact.contentDir, relativePath), destination);
       } catch {
         await cp(path.join(artifact.contentDir, relativePath), destination);
       }
