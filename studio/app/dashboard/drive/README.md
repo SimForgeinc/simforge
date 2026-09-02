@@ -50,6 +50,9 @@ app switcher and route `/` directly to Drive. In standalone mode,
 Drive header. Both `NEXT_PUBLIC_*` values are compiled into the client bundle,
 so set them before building Studio.
 
+When exposing `next dev` through another hostname, include that hostname in the
+comma-separated `SIMFORGE_ALLOWED_DEV_ORIGINS` server environment variable.
+
 Direct bundles must have the same complete sidecar closure as published maps.
 The `manifest` must end in `/3d/manifest.json`; `lanes` overrides the topology
 used by the live world. Missing compiler sidecars or invalid digests are surfaced
