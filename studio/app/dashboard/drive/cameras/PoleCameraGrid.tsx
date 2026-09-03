@@ -45,7 +45,11 @@ import {
   type CameraAdjustments,
 } from "./camera-adjustments";
 import {
+  archiveClipAt,
   archiveVideoUrl,
+  CLIP_LAG_TOLERANCE_SECONDS,
+  clipStartupLagSeconds,
+  MAX_CLIP_LEAD_MS,
   resolveArchiveClip,
   type ArchiveClipWindow,
   shouldCorrectVideoDrift,
@@ -225,6 +229,10 @@ function ArchiveCameraFeed({
   const clockMs = clock.timeIso === null ? Number.NaN : Date.parse(clock.timeIso);
   const [clip, setClip] = useState<ArchiveClipWindow | null>(null);
   const previousClockMs = useRef(Number.NaN);
+  // Measured start-up latency of this feed's clips; MediaMTX playback is not
+  // seekable, so the next request is led by this much instead of being seeked.
+  const leadMs = useRef(0);
+  const leadCorrections = useRef(0);
 
   useEffect(() => {
     if (!Number.isFinite(clockMs)) {
@@ -232,7 +240,11 @@ function ArchiveCameraFeed({
       setClip(null);
       return;
     }
-    setClip((current) => resolveArchiveClip(current, previousClockMs.current, clockMs, clock.speed));
+    setClip((current) => {
+      const next = resolveArchiveClip(current, previousClockMs.current, clockMs, clock.speed, leadMs.current);
+      if (next !== current) leadCorrections.current = 0;
+      return next;
+    });
     previousClockMs.current = clockMs;
   }, [clockMs, clock.speed]);
 
@@ -252,8 +264,18 @@ function ArchiveCameraFeed({
       return;
     }
     const targetTime = (clockMs - clip.startMs) / 1_000;
-    if (shouldCorrectVideoDrift(video.currentTime, targetTime) && isVideoTimeSeekable(video, targetTime)) {
-      video.currentTime = targetTime;
+    if (shouldCorrectVideoDrift(video.currentTime, targetTime)) {
+      if (isVideoTimeSeekable(video, targetTime)) {
+        video.currentTime = targetTime;
+      } else if (clock.speed > 0 && !video.paused && leadCorrections.current < 2) {
+        const lagSeconds = clipStartupLagSeconds(clip, clockMs, video.currentTime);
+        if (lagSeconds > CLIP_LAG_TOLERANCE_SECONDS) {
+          leadCorrections.current += 1;
+          leadMs.current = Math.min(MAX_CLIP_LEAD_MS, leadMs.current + lagSeconds * 1_000);
+          setClip(archiveClipAt(clockMs, leadMs.current));
+          return;
+        }
+      }
     }
     if (clock.speed === 0) {
       video.pause();

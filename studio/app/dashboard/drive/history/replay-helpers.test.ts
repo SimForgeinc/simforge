@@ -4,6 +4,8 @@ import {
   ARCHIVE_CLIP_MS,
   archiveClipAt,
   archiveVideoUrl,
+  clipStartupLagSeconds,
+  MAX_CLIP_LEAD_MS,
   resolveArchiveClip,
   coverageTrackBackground,
   latestActivityMs,
@@ -43,6 +45,18 @@ describe('archive replay helpers', () => {
     expect(resolveArchiveClip(clip, start + ARCHIVE_CLIP_MS - 250, start + ARCHIVE_CLIP_MS, 1).startMs)
       .toBe(start + ARCHIVE_CLIP_MS);
     expect(resolveArchiveClip(null, Number.NaN, start, 1).startMs).toBe(start);
+  });
+
+  it('leads a clip request by the measured start-up latency, capped', () => {
+    const start = Date.parse('2026-09-02T12:00:00.000Z');
+    expect(archiveClipAt(start, 4_300).startMs).toBe(start + 4_000);
+    expect(archiveClipAt(start, 60_000).startMs).toBe(start + MAX_CLIP_LEAD_MS);
+    expect(archiveClipAt(start, -5).startMs).toBe(start);
+    const led = archiveClipAt(start, 4_000);
+    // The clock is briefly behind a led clip; that is not a reason to re-anchor.
+    expect(resolveArchiveClip(led, start, start + 250, 1)).toBe(led);
+    expect(clipStartupLagSeconds(archiveClipAt(start), start + 9_000, 1.2)).toBeCloseTo(7.8);
+    expect(clipStartupLagSeconds(archiveClipAt(start), start + 1_000, 3)).toBe(0);
   });
 
   it('corrects only drift beyond half a second', () => {
