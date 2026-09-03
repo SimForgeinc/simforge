@@ -15,8 +15,20 @@ export interface ArchiveClipWindow {
   durationSeconds: number;
 }
 
-export function archiveClipWindow(clockMs: number): ArchiveClipWindow {
-  const startMs = Math.floor(clockMs / ARCHIVE_CLIP_MS) * ARCHIVE_CLIP_MS;
+/**
+ * A clock sample that departs from the previous one by more than this (after
+ * accounting for playback speed) is a seek, not playback.
+ */
+export const CLIP_SEEK_JUMP_MS = 2_000;
+
+/**
+ * Archive clips are anchored where playback (re)starts rather than on a fixed
+ * grid: MediaMTX serves progressive MP4 without range support, so a clip can
+ * only play from its beginning. Anchoring at the seek instant keeps the video
+ * aligned with the replay clock from the first frame.
+ */
+export function archiveClipAt(clockMs: number): ArchiveClipWindow {
+  const startMs = Math.floor(clockMs / 1_000) * 1_000;
   return {
     startMs,
     endMs: startMs + ARCHIVE_CLIP_MS,
@@ -25,13 +37,30 @@ export function archiveClipWindow(clockMs: number): ArchiveClipWindow {
   };
 }
 
+/**
+ * Keep the current clip while the clock plays through it; start a new clip when
+ * the clock leaves it or jumps (a seek), or when nothing is loaded yet.
+ */
+export function resolveArchiveClip(
+  current: ArchiveClipWindow | null,
+  previousClockMs: number,
+  clockMs: number,
+  speed: number,
+): ArchiveClipWindow {
+  if (!current || clockMs < current.startMs || clockMs >= current.endMs) return archiveClipAt(clockMs);
+  if (Number.isFinite(previousClockMs)) {
+    const expectedAdvanceMs = Math.max(0, speed) * 1_000;
+    if (Math.abs(clockMs - previousClockMs) > CLIP_SEEK_JUMP_MS + expectedAdvanceMs) return archiveClipAt(clockMs);
+  }
+  return current;
+}
+
 export function archiveVideoUrl(
   template: string,
   channel: string,
-  clockMs: number,
+  clip: ArchiveClipWindow,
   archiveOffsetSeconds = 0,
 ): string {
-  const clip = archiveClipWindow(clockMs);
   const archiveStartIso = new Date(clip.startMs + archiveOffsetSeconds * 1_000).toISOString();
   return template
     .replaceAll('{channel}', encodeURIComponent(channel))

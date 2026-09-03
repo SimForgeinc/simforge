@@ -93,13 +93,16 @@ and `tracks`. Studio sends `twin_replay { start, speed }` to seek, pause, or
 resume, and `twin_live {}` to return to the live world.
 
 When replay mode and `archive_url_template` are available, each camera replaces
-the live mux canvas with a muted inline video. `{start}` is the detection clock
-aligned down to a five-minute UTC boundary plus `archive_offset_seconds`
-(default `0` for older servers), and `{duration}` is `300`. Video playback time
-remains relative to the unshifted detection-clock boundary and seeks when it
-differs from the authoritative clock by more than 0.5 seconds. The
-camera mux remains connected in the background so returning to Live restores
-the canvases immediately.
+the live mux canvas with a muted inline video. A clip is anchored where playback
+starts: `{start}` is the detection clock at the seek, rounded down to a whole
+second, plus `archive_offset_seconds` (default `0` for older servers), and
+`{duration}` is `300`. Playback continues through the clip; a new clip is
+requested when the clock leaves it, jumps (a seek), or the served clip ends
+early because of a recording gap. Anchoring at the seek keeps a progressive
+(non-seekable) MP4 aligned with the clock from its first frame; when the
+browser can seek, drift beyond 0.5 seconds is corrected. The camera mux
+remains connected in the background so returning to Live restores the canvases
+immediately.
 
 ## Aiming a pole camera
 

@@ -45,8 +45,9 @@ import {
   type CameraAdjustments,
 } from "./camera-adjustments";
 import {
-  archiveClipWindow,
   archiveVideoUrl,
+  resolveArchiveClip,
+  type ArchiveClipWindow,
   shouldCorrectVideoDrift,
 } from "../history/replay-helpers";
 
@@ -222,8 +223,20 @@ function ArchiveCameraFeed({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [unavailable, setUnavailable] = useState(false);
   const clockMs = clock.timeIso === null ? Number.NaN : Date.parse(clock.timeIso);
-  const clip = Number.isFinite(clockMs) ? archiveClipWindow(clockMs) : null;
-  const src = clip ? archiveVideoUrl(archiveUrlTemplate, camera.id, clockMs, archiveOffsetSeconds) : null;
+  const [clip, setClip] = useState<ArchiveClipWindow | null>(null);
+  const previousClockMs = useRef(Number.NaN);
+
+  useEffect(() => {
+    if (!Number.isFinite(clockMs)) {
+      previousClockMs.current = Number.NaN;
+      setClip(null);
+      return;
+    }
+    setClip((current) => resolveArchiveClip(current, previousClockMs.current, clockMs, clock.speed));
+    previousClockMs.current = clockMs;
+  }, [clockMs, clock.speed]);
+
+  const src = clip ? archiveVideoUrl(archiveUrlTemplate, camera.id, clip, archiveOffsetSeconds) : null;
 
   useEffect(() => setUnavailable(false), [src]);
 
@@ -288,6 +301,8 @@ function ArchiveCameraFeed({
             }
           }}
           onError={() => setUnavailable(true)}
+          // A recording gap shortens the served clip; re-anchor at the clock.
+          onEnded={() => setClip(null)}
         />
       ) : null}
       {unavailable || !src ? (
