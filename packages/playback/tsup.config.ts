@@ -1,7 +1,13 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/traffic/index.ts', 'src/traffic-provider/sumoWasmWorker.ts'],
+  // The SUMO worker is emitted beside index.js so sumoWasmProvider can load it
+  // with one relative URL in both the source tree and the packed bundle.
+  entry: {
+    index: 'src/index.ts',
+    'traffic/index': 'src/traffic/index.ts',
+    sumoWasmWorker: 'src/traffic-provider/sumoWasmWorker.ts',
+  },
   format: ['esm'],
   dts: true,
   sourcemap: true,
