@@ -10,7 +10,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <TopBarSlotProvider>
       <DashboardLoadingProvider>
         <div className="flex h-svh flex-col overflow-hidden bg-background">
-          <AppTopBar />
+          {/* AppTopBar reads usePathname(); Suspense lets the static shell prerender. */}
+          <Suspense fallback={<div className="h-14 shrink-0" />}>
+            <AppTopBar />
+          </Suspense>
           <main className="flex-1 min-h-0 overflow-y-auto">
             <div className="h-full min-h-0">
               <Suspense fallback={<DashboardLoading />}>

@@ -33,6 +33,18 @@ pnpm dev
 
 SimForge Studio is then available at <http://localhost:5199>.
 
+For a production deployment build the packages and Studio once, then serve the
+build (migrations and seed run on every start, as in development):
+
+```sh
+pnpm -r --filter './packages/**' build
+pnpm --filter @simforge-oss/studio build
+PORT=5199 HOSTNAME=127.0.0.1 pnpm --filter @simforge-oss/studio start
+```
+
+`NEXT_PUBLIC_*` variables are inlined at build time, so export them before
+`build`, not only before `start`.
+
 On first boot, Studio generates a compact Starter Road from checked-in source
 assets when the optional full development map library is not installed. No
 separate map download or environment variable is required for the quickstart.

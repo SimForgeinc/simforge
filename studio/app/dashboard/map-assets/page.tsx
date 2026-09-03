@@ -6,7 +6,7 @@ import { listScenarioMapDescriptors } from "@/app/lib/scenario/document-store";
 import { MapGalleryPageClient } from "@/app/dashboard/map-assets/catalog/MapGalleryPageClient";
 import MapAssetsLoading from "./loading";
 
-export async function MapAssetsContent() {
+async function MapAssetsContent() {
   await connection();
   // Authenticate before touching Aurora rather than inheriting the gate in
   // `app/dashboard/layout.tsx`. Both catalogs are read only after the page has

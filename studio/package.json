@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "tsx scripts/boot.ts",
     "dev:next": "next dev --webpack -p ${PORT:-5199}",
+    "build": "next build --webpack",
+    "start": "tsx scripts/start.ts",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
     "worker": "tsx worker/index.ts",
