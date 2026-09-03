@@ -100,7 +100,10 @@ second, plus `archive_offset_seconds` (default `0` for older servers), and
 requested when the clock leaves it, jumps (a seek), or the served clip ends
 early because of a recording gap. Anchoring at the seek keeps a progressive
 (non-seekable) MP4 aligned with the clock from its first frame; when the
-browser can seek, drift beyond 0.5 seconds is corrected. The camera mux
+browser can seek, drift beyond 0.5 seconds is corrected. A non-seekable clip
+that starts more than 1.5 seconds behind the clock is re-requested once or
+twice with its start led by the measured start-up latency (at most 15 seconds),
+so the first frame of the new clip lands on the clock. The camera mux
 remains connected in the background so returning to Live restores the canvases
 immediately.
 

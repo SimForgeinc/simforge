@@ -27,8 +27,17 @@ export const CLIP_SEEK_JUMP_MS = 2_000;
  * only play from its beginning. Anchoring at the seek instant keeps the video
  * aligned with the replay clock from the first frame.
  */
-export function archiveClipAt(clockMs: number): ArchiveClipWindow {
-  const startMs = Math.floor(clockMs / 1_000) * 1_000;
+/** Largest lead applied to a clip request to absorb start-up latency. */
+export const MAX_CLIP_LEAD_MS = 15_000;
+/** Start-up lag below this is accepted rather than re-requested. */
+export const CLIP_LAG_TOLERANCE_SECONDS = 1.5;
+
+/**
+ * `leadMs` shifts the request ahead of the clock by the clip's measured
+ * start-up latency so that, when the first frame arrives, it matches the clock.
+ */
+export function archiveClipAt(clockMs: number, leadMs = 0): ArchiveClipWindow {
+  const startMs = Math.floor((clockMs + Math.min(MAX_CLIP_LEAD_MS, Math.max(0, leadMs))) / 1_000) * 1_000;
   return {
     startMs,
     endMs: startMs + ARCHIVE_CLIP_MS,
@@ -46,13 +55,25 @@ export function resolveArchiveClip(
   previousClockMs: number,
   clockMs: number,
   speed: number,
+  leadMs = 0,
 ): ArchiveClipWindow {
-  if (!current || clockMs < current.startMs || clockMs >= current.endMs) return archiveClipAt(clockMs);
+  if (!current || clockMs < current.startMs - MAX_CLIP_LEAD_MS || clockMs >= current.endMs) {
+    return archiveClipAt(clockMs, leadMs);
+  }
   if (Number.isFinite(previousClockMs)) {
     const expectedAdvanceMs = Math.max(0, speed) * 1_000;
-    if (Math.abs(clockMs - previousClockMs) > CLIP_SEEK_JUMP_MS + expectedAdvanceMs) return archiveClipAt(clockMs);
+    if (Math.abs(clockMs - previousClockMs) > CLIP_SEEK_JUMP_MS + expectedAdvanceMs) return archiveClipAt(clockMs, leadMs);
   }
   return current;
+}
+
+/**
+ * Start-up lag of a playing clip: how far the clock has moved past the clip
+ * start while the video is still near its beginning. Only meaningful while the
+ * video cannot seek (progressive MP4); a seekable video is corrected directly.
+ */
+export function clipStartupLagSeconds(clip: ArchiveClipWindow, clockMs: number, currentTime: number): number {
+  return Math.max(0, (clockMs - clip.startMs) / 1_000 - currentTime);
 }
 
 export function archiveVideoUrl(
