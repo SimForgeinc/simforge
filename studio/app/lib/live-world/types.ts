@@ -37,6 +37,7 @@ export interface TrajectoryPlaybackStatus {
 
 export interface WorldReplayCapabilities {
   retentionHours: number;
+  archiveOffsetSeconds: number;
   archiveUrlTemplate: string | null;
   coverageUrl: string | null;
   historyUrl: string | null;

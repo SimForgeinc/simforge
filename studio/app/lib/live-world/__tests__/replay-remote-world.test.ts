@@ -89,12 +89,14 @@ describe('replay request normalization', () => {
       type: 'twin_hello',
       replay: {
         retention_hours: 72,
+        archive_offset_seconds: 2.6,
         archive_url_template: 'https://twin.example/archive/{channel}?start={start}&duration={duration}',
         coverage_url: 'https://twin.example/detections/coverage',
         history_url: 'https://twin.example/detections/history',
       },
     })).toEqual({
       retentionHours: 72,
+      archiveOffsetSeconds: 2.6,
       archiveUrlTemplate: 'https://twin.example/archive/{channel}?start={start}&duration={duration}',
       coverageUrl: 'https://twin.example/detections/coverage',
       historyUrl: 'https://twin.example/detections/history',
@@ -124,7 +126,7 @@ describe('remote replay protocol', () => {
     const { source, truth } = connectedSource();
     const clocks: Array<{ mode: string; timeIso: string | null; speed: number; tracks: number }> = [];
     source.subscribeClock!((clock) => clocks.push(clock));
-    const replayStates: Array<{ retentionHours: number } | null> = [];
+    const replayStates: Array<{ retentionHours: number; archiveOffsetSeconds: number } | null> = [];
     source.subscribeReplay!((capabilities) => replayStates.push(capabilities));
     truth.receive({
       type: 'twin_hello',
@@ -135,7 +137,7 @@ describe('remote replay protocol', () => {
         history_url: null,
       },
     });
-    expect(replayStates.at(-1)).toEqual(expect.objectContaining({ retentionHours: 72 }));
+    expect(replayStates.at(-1)).toEqual(expect.objectContaining({ retentionHours: 72, archiveOffsetSeconds: 0 }));
 
     const replay = source.setReplay!({ startIso: new Date(Date.now() - 60_000).toISOString(), speed: 4 });
     expect(JSON.parse(truth.sent[0]!)).toEqual(expect.objectContaining({ type: 'twin_replay', speed: 4 }));

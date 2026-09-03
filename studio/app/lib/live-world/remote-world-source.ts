@@ -61,6 +61,7 @@ export function parseTwinReplayCapabilities(message: JsonRecord): WorldReplayCap
     return null;
   }
   const retentionHours = replay.retention_hours;
+  const archiveOffsetSeconds = 'archive_offset_seconds' in replay ? replay.archive_offset_seconds : 0;
   const archiveUrlTemplate = replay.archive_url_template;
   const coverageUrl = replay.coverage_url;
   const historyUrl = replay.history_url;
@@ -68,13 +69,15 @@ export function parseTwinReplayCapabilities(message: JsonRecord): WorldReplayCap
     typeof retentionHours !== 'number'
     || !Number.isFinite(retentionHours)
     || retentionHours <= 0
+    || typeof archiveOffsetSeconds !== 'number'
+    || !Number.isFinite(archiveOffsetSeconds)
     || (archiveUrlTemplate !== null && typeof archiveUrlTemplate !== 'string')
     || (coverageUrl !== null && typeof coverageUrl !== 'string')
     || (historyUrl !== null && typeof historyUrl !== 'string')
   ) {
     return null;
   }
-  return { retentionHours, archiveUrlTemplate, coverageUrl, historyUrl };
+  return { retentionHours, archiveOffsetSeconds, archiveUrlTemplate, coverageUrl, historyUrl };
 }
 
 export function parseTwinClockMessage(message: JsonRecord): WorldClock | null {

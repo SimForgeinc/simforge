@@ -540,6 +540,7 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
                     viewer={viewer}
                     clock={clock}
                     archiveUrlTemplate={replay?.archiveUrlTemplate}
+                    archiveOffsetSeconds={replay?.archiveOffsetSeconds}
                   />
                 </div>
               ) : null}
