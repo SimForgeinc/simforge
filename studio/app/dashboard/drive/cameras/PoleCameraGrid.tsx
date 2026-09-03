@@ -236,7 +236,9 @@ function ArchiveCameraFeed({
       return;
     }
     const targetTime = (clockMs - clip.startMs) / 1_000;
-    if (shouldCorrectVideoDrift(video.currentTime, targetTime)) video.currentTime = targetTime;
+    if (shouldCorrectVideoDrift(video.currentTime, targetTime) && isVideoTimeSeekable(video, targetTime)) {
+      video.currentTime = targetTime;
+    }
     if (clock.speed === 0) {
       video.pause();
       return;
@@ -271,7 +273,10 @@ function ArchiveCameraFeed({
           data-archive-camera={camera.id}
           onLoadedMetadata={(event) => {
             if (!clip || !Number.isFinite(clockMs)) return;
-            event.currentTarget.currentTime = (clockMs - clip.startMs) / 1_000;
+            const targetTime = (clockMs - clip.startMs) / 1_000;
+            if (isVideoTimeSeekable(event.currentTarget, targetTime)) {
+              event.currentTarget.currentTime = targetTime;
+            }
             if (clock.speed > 0) {
               event.currentTarget.playbackRate = clock.speed;
               void event.currentTarget.play().catch(() => {
@@ -293,6 +298,13 @@ function ArchiveCameraFeed({
       ) : null}
     </div>
   );
+}
+
+function isVideoTimeSeekable(video: HTMLVideoElement, targetTime: number): boolean {
+  for (let index = 0; index < video.seekable.length; index += 1) {
+    if (video.seekable.start(index) <= targetTime && targetTime <= video.seekable.end(index)) return true;
+  }
+  return false;
 }
 
 function MultiplexedCameraFeed({
