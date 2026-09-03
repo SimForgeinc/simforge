@@ -1441,8 +1441,13 @@ fn load_material(
         base_color: Color::linear_rgba(color[0], color[1], color[2], color[3]),
         base_color_channel,
         base_color_texture,
-        perceptual_roughness: pbr.roughness_factor(),
-        metallic: pbr.metallic_factor(),
+        // glTF bounds both factors to [0, 1]; Unreal's exporter writes
+        // RoadRunner grass with `roughnessFactor: 2`, which the direct-light
+        // BRDF clamps but the split-sum `F_AB` lookup does not, turning the
+        // material into a white sheet. Clamp here so an out-of-spec asset
+        // degrades to "fully rough" instead of blowing up.
+        perceptual_roughness: pbr.roughness_factor().clamp(0.0, 1.0),
+        metallic: pbr.metallic_factor().clamp(0.0, 1.0),
         metallic_roughness_channel,
         metallic_roughness_texture,
         normal_map_channel,

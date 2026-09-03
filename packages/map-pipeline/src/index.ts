@@ -11,6 +11,10 @@ import { sourceToTiles } from './tiling.js';
 import type { FbxToTilesOptions, GridCell, GridDefinition, StageResult } from './tiling.js';
 
 export { assembleClosure } from './assemble.js';
+export { clampPbrFactors } from './material-ranges.js';
+export type { MaterialRangeReport } from './material-ranges.js';
+export { borrowTerrainLayerTextures, collectTerrainLayerDonors, terrainDonorLibraryDirs, terrainDonorPoolDigest, terrainLayerBase } from './terrain-layer-textures.js';
+export type { TerrainDonor, TerrainDonorPool, TerrainLayerReport } from './terrain-layer-textures.js';
 export { writeRoadSidecars } from './assemble.js';
 export type { AssembleClosureOptions, ClosureStageResult } from './assemble.js';
 export { canonicalJson, closureBytes, closureDigest, sha256 } from './closure.js';

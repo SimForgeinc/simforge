@@ -14,14 +14,15 @@ import { repackGlb } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 import { dilateAlphaEdges } from './alpha-dilate.js';
 import { buildClosure, filesUnder, hashTree, readWholeFile, sha256, writeClosure } from './closure.js';
 import { neutralizeExportErrorMaterials } from './export-error-materials.js';
+import { clampPbrFactors } from './material-ranges.js';
 import { borrowTerrainLayerTextures, collectTerrainLayerDonors, terrainDonorPoolDigest, type TerrainDonorPool } from './terrain-layer-textures.js';
 import { assertBevyRepresentableSampling, bakeDivergentTextureTransforms } from './uv-transform-bake.js';
 import type { ClosureKind, MapClosure } from './closure.js';
 import type { ClosureStageResult } from './assemble.js';
 import type { StageResult } from './tiling.js';
-const BROWSER_OPTIMIZER_REVISION = 7;
-const KTX2_REPACK_REVISION = 9;
-const NATIVE_CORPUS_DECODER_REVISION = 7;
+const BROWSER_OPTIMIZER_REVISION = 8;
+const KTX2_REPACK_REVISION = 10;
+const NATIVE_CORPUS_DECODER_REVISION = 8;
 const GLTF_TRANSFORM_VERSION = '4.4.2';
 const SHARP_VERSION = '0.34.5';
 const MESHOPTIMIZER_VERSION = '1.2.0';
@@ -107,6 +108,7 @@ const VEGETATION_TILE = /(^|\/)veg_[^/]*\.glb$/i;
  */
 async function applyPresentationFixes(document: Document, relativePath: string, donors: TerrainDonorPool): Promise<void> {
   neutralizeExportErrorMaterials(document);
+  clampPbrFactors(document);
   borrowTerrainLayerTextures(document, donors);
   if (VEGETATION_TILE.test(relativePath)) {
     for (const material of document.getRoot().listMaterials()) material.setMetallicFactor(0);

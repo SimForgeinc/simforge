@@ -24,6 +24,9 @@
 //!    `KHR_materials_transmission.transmissionTexture`, and
 //!    `KHR_materials_volume.thicknessTexture` are linear data, matching the
 //!    clearcoat/anisotropy handling. `specularColorTexture` stays sRGB.
+//! 3. `roughnessFactor` / `metallicFactor` are clamped to the spec range
+//!    [0, 1]; out-of-range values reached the split-sum environment lookup
+//!    unclamped and rendered as a white specular sheet.
 //!
 //! Diff surface: `Cargo.toml`, `src/lib.rs` (docs), `src/loader/mod.rs`,
 //! `src/loader/gltf_ext/mod.rs`, `src/loader/gltf_ext/texture.rs`. Rebase by
