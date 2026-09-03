@@ -2,37 +2,47 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ARCHIVE_CLIP_MS,
-  archiveClipWindow,
+  archiveClipAt,
   archiveVideoUrl,
+  resolveArchiveClip,
   coverageTrackBackground,
   latestActivityMs,
   shouldCorrectVideoDrift,
 } from './replay-helpers';
 
 describe('archive replay helpers', () => {
-  it('aligns clips to five-minute UTC windows and fills the archive template', () => {
+  const template = 'https://twin.example/archive/get?path={channel}&start={start}&duration={duration}&format=mp4';
+
+  it('anchors a clip on the whole second where playback starts', () => {
     const clock = Date.parse('2026-09-02T12:07:31.250Z');
-    expect(archiveClipWindow(clock)).toEqual({
-      startMs: Date.parse('2026-09-02T12:05:00.000Z'),
-      endMs: Date.parse('2026-09-02T12:10:00.000Z'),
-      startIso: '2026-09-02T12:05:00.000Z',
+    expect(archiveClipAt(clock)).toEqual({
+      startMs: Date.parse('2026-09-02T12:07:31.000Z'),
+      endMs: Date.parse('2026-09-02T12:12:31.000Z'),
+      startIso: '2026-09-02T12:07:31.000Z',
       durationSeconds: 300,
     });
-    expect(archiveVideoUrl(
-      'https://twin.example/archive/get?path={channel}&start={start}&duration={duration}&format=mp4',
-      'ch1',
-      clock,
-    )).toBe('https://twin.example/archive/get?path=ch1&start=2026-09-02T12%3A05%3A00.000Z&duration=300&format=mp4');
+    expect(archiveVideoUrl(template, 'ch1', archiveClipAt(clock)))
+      .toBe('https://twin.example/archive/get?path=ch1&start=2026-09-02T12%3A07%3A31.000Z&duration=300&format=mp4');
   });
 
-  it('adds a fractional server offset to the aligned archive clip request', () => {
-    const clock = Date.parse('2026-09-02T12:02:31.250Z');
-    expect(archiveVideoUrl(
-      'https://twin.example/archive/get?path={channel}&start={start}&duration={duration}&format=mp4',
-      'ch1',
-      clock,
-      2.6,
-    )).toBe('https://twin.example/archive/get?path=ch1&start=2026-09-02T12%3A00%3A02.600Z&duration=300&format=mp4');
+  it('adds a fractional server offset to the archive clip request', () => {
+    const clip = archiveClipAt(Date.parse('2026-09-02T12:02:31.250Z'));
+    expect(archiveVideoUrl(template, 'ch1', clip, 2.6))
+      .toBe('https://twin.example/archive/get?path=ch1&start=2026-09-02T12%3A02%3A33.600Z&duration=300&format=mp4');
+  });
+
+  it('keeps the clip while the clock plays through it and re-anchors on seeks', () => {
+    const start = Date.parse('2026-09-02T12:00:00.000Z');
+    const clip = archiveClipAt(start);
+    expect(resolveArchiveClip(clip, start, start + 250, 1)).toBe(clip);
+    expect(resolveArchiveClip(clip, start, start + 4 * 250, 4)).toBe(clip);
+    expect(resolveArchiveClip(clip, start + 10_000, start + 10_000, 0)).toBe(clip);
+    const seeked = resolveArchiveClip(clip, start + 10_000, start + 60_000, 1);
+    expect(seeked.startMs).toBe(start + 60_000);
+    expect(resolveArchiveClip(clip, start + 10_000, start - 5_000, 1).startMs).toBe(start - 5_000);
+    expect(resolveArchiveClip(clip, start + ARCHIVE_CLIP_MS - 250, start + ARCHIVE_CLIP_MS, 1).startMs)
+      .toBe(start + ARCHIVE_CLIP_MS);
+    expect(resolveArchiveClip(null, Number.NaN, start, 1).startMs).toBe(start);
   });
 
   it('corrects only drift beyond half a second', () => {
