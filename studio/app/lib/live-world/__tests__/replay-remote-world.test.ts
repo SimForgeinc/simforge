@@ -13,6 +13,7 @@ import {
   createRemoteWorldSource,
   normalizeReplayRequest,
   parseTwinClockMessage,
+  parseTwinReplayCapabilities,
   REPLAY_WINDOW_MS,
 } from '../remote-world-source';
 
@@ -66,59 +67,89 @@ afterEach(() => {
 });
 
 describe('replay request normalization', () => {
-  it('accepts the exact 24-hour boundary, refuses either side, and clamps speed', () => {
+  it('accepts the exact 72-hour boundary, refuses either side, and preserves pause', () => {
     const now = Date.parse('2026-08-25T20:00:00.000Z');
     const boundary = new Date(now - REPLAY_WINDOW_MS).toISOString();
 
     expect(normalizeReplayRequest({ startIso: boundary, speed: 0 }, now)).toEqual({
       start: boundary,
-      speed: 0.25,
+      speed: 0,
     });
+    expect(clampReplaySpeed(0.1)).toBe(0.25);
     expect(clampReplaySpeed(20)).toBe(8);
     expect(clampReplaySpeed(Number.NaN)).toBe(1);
     expect(() => normalizeReplayRequest({ startIso: new Date(now - REPLAY_WINDOW_MS - 1).toISOString() }, now))
-      .toThrow('Replay start must be within the past 24 hours');
+      .toThrow('Replay start must be within the past 72 hours');
     expect(() => normalizeReplayRequest({ startIso: new Date(now + 1).toISOString() }, now))
-      .toThrow('Replay start must be within the past 24 hours');
+      .toThrow('Replay start must be within the past 72 hours');
   });
 
-  it('parses only authoritative twin clock and mode payloads', () => {
+  it('parses server-authoritative replay capabilities and clock speed', () => {
+    expect(parseTwinReplayCapabilities({
+      type: 'twin_hello',
+      replay: {
+        retention_hours: 72,
+        archive_url_template: 'https://twin.example/archive/{channel}?start={start}&duration={duration}',
+        coverage_url: 'https://twin.example/detections/coverage',
+        history_url: 'https://twin.example/detections/history',
+      },
+    })).toEqual({
+      retentionHours: 72,
+      archiveUrlTemplate: 'https://twin.example/archive/{channel}?start={start}&duration={duration}',
+      coverageUrl: 'https://twin.example/detections/coverage',
+      historyUrl: 'https://twin.example/detections/history',
+    });
     expect(parseTwinClockMessage({
       type: 'twin_clock',
       mode: 'replay',
       replay_clock: '2026-08-25T19:12:13.456Z',
-    }, 4)).toEqual({
+      replay_speed: 4,
+      tracks: 12,
+    })).toEqual({
       mode: 'replay',
       timeIso: '2026-08-25T19:12:13.456Z',
       speed: 4,
+      tracks: 12,
     });
-    expect(parseTwinClockMessage({ type: 'twin_mode', mode: 'live', replay_clock: null }, 8))
-      .toEqual({ mode: 'live', timeIso: null, speed: 1 });
+    expect(parseTwinClockMessage({ type: 'twin_mode', mode: 'live', replay_clock: null, replay_speed: 1 }))
+      .toEqual({ mode: 'live', timeIso: null, speed: 1, tracks: 0 });
     expect(parseTwinClockMessage({ type: 'twin_clock', mode: 'off', replay_clock: null })).toBeNull();
-    expect(parseTwinClockMessage({ type: 'twin_clock', mode: 'replay', replay_clock: 'invalid' }))
-      .toEqual({ mode: 'replay', timeIso: null, speed: 1 });
+    expect(parseTwinClockMessage({ type: 'twin_clock', mode: 'replay', replay_clock: 'invalid', replay_speed: 0 }))
+      .toEqual({ mode: 'replay', timeIso: null, speed: 0, tracks: 0 });
   });
 });
 
 describe('remote replay protocol', () => {
   it('maps replay/live to /twin without consuming unsolicited clocks', async () => {
     const { source, truth } = connectedSource();
-    const clocks: Array<{ mode: string; timeIso: string | null; speed: number }> = [];
+    const clocks: Array<{ mode: string; timeIso: string | null; speed: number; tracks: number }> = [];
     source.subscribeClock!((clock) => clocks.push(clock));
+    const replayStates: Array<{ retentionHours: number } | null> = [];
+    source.subscribeReplay!((capabilities) => replayStates.push(capabilities));
+    truth.receive({
+      type: 'twin_hello',
+      replay: {
+        retention_hours: 72,
+        archive_url_template: null,
+        coverage_url: 'https://twin.example/detections/coverage',
+        history_url: null,
+      },
+    });
+    expect(replayStates.at(-1)).toEqual(expect.objectContaining({ retentionHours: 72 }));
 
     const replay = source.setReplay!({ startIso: new Date(Date.now() - 60_000).toISOString(), speed: 4 });
     expect(JSON.parse(truth.sent[0]!)).toEqual(expect.objectContaining({ type: 'twin_replay', speed: 4 }));
 
-    truth.receive({ type: 'twin_clock', mode: 'live', replay_clock: null });
-    truth.receive({ type: 'twin_mode', mode: 'replay', replay_clock: '2026-08-25T19:00:00Z' });
+    truth.receive({ type: 'twin_clock', mode: 'live', replay_clock: null, replay_speed: 1 });
+    truth.receive({ type: 'twin_mode', mode: 'replay', replay_clock: '2026-08-25T19:00:00Z', replay_speed: 4, tracks: 9 });
     await expect(replay).resolves.toBeUndefined();
-    expect(clocks.at(-1)).toEqual({ mode: 'replay', timeIso: '2026-08-25T19:00:00.000Z', speed: 4 });
+    expect(clocks.at(-1)).toEqual({ mode: 'replay', timeIso: '2026-08-25T19:00:00.000Z', speed: 4, tracks: 9 });
 
     const live = source.setLive!();
     expect(JSON.parse(truth.sent[1]!)).toEqual({ type: 'twin_live' });
-    truth.receive({ type: 'twin_mode', mode: 'live', replay_clock: null });
+    truth.receive({ type: 'twin_mode', mode: 'live', replay_clock: null, replay_speed: 1 });
     await expect(live).resolves.toBeUndefined();
-    expect(clocks.at(-1)).toEqual({ mode: 'live', timeIso: null, speed: 1 });
+    expect(clocks.at(-1)).toEqual({ mode: 'live', timeIso: null, speed: 1, tracks: 0 });
     source.close();
   });
 
