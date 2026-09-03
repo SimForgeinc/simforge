@@ -226,7 +226,15 @@ function ArchiveCameraFeed({
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !clip || !Number.isFinite(clockMs) || video.readyState < HTMLMediaElement.HAVE_METADATA) return;
+    if (
+      !video
+      || !clip
+      || !Number.isFinite(clockMs)
+      || video.seeking
+      || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+      return;
+    }
     const targetTime = (clockMs - clip.startMs) / 1_000;
     if (shouldCorrectVideoDrift(video.currentTime, targetTime)) video.currentTime = targetTime;
     if (clock.speed === 0) {
