@@ -25,11 +25,17 @@ export function archiveClipWindow(clockMs: number): ArchiveClipWindow {
   };
 }
 
-export function archiveVideoUrl(template: string, channel: string, clockMs: number): string {
+export function archiveVideoUrl(
+  template: string,
+  channel: string,
+  clockMs: number,
+  archiveOffsetSeconds = 0,
+): string {
   const clip = archiveClipWindow(clockMs);
+  const archiveStartIso = new Date(clip.startMs + archiveOffsetSeconds * 1_000).toISOString();
   return template
     .replaceAll('{channel}', encodeURIComponent(channel))
-    .replaceAll('{start}', encodeURIComponent(clip.startIso))
+    .replaceAll('{start}', encodeURIComponent(archiveStartIso))
     .replaceAll('{duration}', String(clip.durationSeconds));
 }
 

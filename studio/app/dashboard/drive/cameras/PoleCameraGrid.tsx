@@ -58,6 +58,7 @@ export interface PoleCameraGridProps {
   viewer: CityViewer | null;
   clock?: WorldClock | null;
   archiveUrlTemplate?: string | null;
+  archiveOffsetSeconds?: number;
   feeds?: CameraFeeds | null;
   onFeedStatus?: (cameraId: string, mode: CameraFeedState) => void;
 }
@@ -209,18 +210,20 @@ function ArchiveCameraFeed({
   camera,
   clock,
   archiveUrlTemplate,
+  archiveOffsetSeconds,
   fill = false,
 }: {
   camera: PoleCamera;
   clock: WorldClock;
   archiveUrlTemplate: string;
+  archiveOffsetSeconds: number;
   fill?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [unavailable, setUnavailable] = useState(false);
   const clockMs = clock.timeIso === null ? Number.NaN : Date.parse(clock.timeIso);
   const clip = Number.isFinite(clockMs) ? archiveClipWindow(clockMs) : null;
-  const src = clip ? archiveVideoUrl(archiveUrlTemplate, camera.id, clockMs) : null;
+  const src = clip ? archiveVideoUrl(archiveUrlTemplate, camera.id, clockMs, archiveOffsetSeconds) : null;
 
   useEffect(() => setUnavailable(false), [src]);
 
@@ -708,6 +711,7 @@ function Comparison({
   feeds,
   clock,
   archiveUrlTemplate,
+  archiveOffsetSeconds,
   feedStatus,
   active,
   mode,
@@ -724,6 +728,7 @@ function Comparison({
   feeds?: CameraFeeds | null;
   clock?: WorldClock | null;
   archiveUrlTemplate?: string | null;
+  archiveOffsetSeconds: number;
   feedStatus: CameraFeedState;
   active: boolean;
   mode: ComparisonMode;
@@ -736,6 +741,7 @@ function Comparison({
       camera={camera}
       clock={clock}
       archiveUrlTemplate={archiveUrlTemplate}
+      archiveOffsetSeconds={archiveOffsetSeconds}
       fill={mode === "overlay"}
     />
   ) : feeds ? (
@@ -824,6 +830,7 @@ export function PoleCameraGrid({
   viewer,
   clock = null,
   archiveUrlTemplate = null,
+  archiveOffsetSeconds = 0,
   feeds = null,
   onFeedStatus,
 }: PoleCameraGridProps) {
@@ -1071,6 +1078,7 @@ export function PoleCameraGrid({
                       feeds={feeds}
                       clock={clock}
                       archiveUrlTemplate={archiveUrlTemplate}
+                      archiveOffsetSeconds={archiveOffsetSeconds}
                       feedStatus={feedStatus}
                       active={focused}
                       mode={focused ? comparisonMode : "split"}

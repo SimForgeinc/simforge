@@ -79,6 +79,7 @@ archive URL. The `/twin` WebSocket advertises it in `twin_hello.replay`:
 ```json
 {
   "retention_hours": 72,
+  "archive_offset_seconds": 0,
   "archive_url_template": "https://twin.example/archive/get?path={channel}&start={start}&duration={duration}&format=mp4",
   "coverage_url": "https://twin.example/detections/coverage",
   "history_url": "https://twin.example/detections/history"
@@ -92,9 +93,11 @@ and `tracks`. Studio sends `twin_replay { start, speed }` to seek, pause, or
 resume, and `twin_live {}` to return to the live world.
 
 When replay mode and `archive_url_template` are available, each camera replaces
-the live mux canvas with a muted inline video. `{start}` is the clock aligned
-down to a five-minute UTC boundary and `{duration}` is `300`; the video seeks
-when it differs from the authoritative clock by more than 0.5 seconds. The
+the live mux canvas with a muted inline video. `{start}` is the detection clock
+aligned down to a five-minute UTC boundary plus `archive_offset_seconds`
+(default `0` for older servers), and `{duration}` is `300`. Video playback time
+remains relative to the unshifted detection-clock boundary and seeks when it
+differs from the authoritative clock by more than 0.5 seconds. The
 camera mux remains connected in the background so returning to Live restores
 the canvases immediately.
 

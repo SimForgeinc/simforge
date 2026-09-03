@@ -25,6 +25,16 @@ describe('archive replay helpers', () => {
     )).toBe('https://twin.example/archive/get?path=ch1&start=2026-09-02T12%3A05%3A00.000Z&duration=300&format=mp4');
   });
 
+  it('adds a fractional server offset to the aligned archive clip request', () => {
+    const clock = Date.parse('2026-09-02T12:02:31.250Z');
+    expect(archiveVideoUrl(
+      'https://twin.example/archive/get?path={channel}&start={start}&duration={duration}&format=mp4',
+      'ch1',
+      clock,
+      2.6,
+    )).toBe('https://twin.example/archive/get?path=ch1&start=2026-09-02T12%3A00%3A02.600Z&duration=300&format=mp4');
+  });
+
   it('corrects only drift beyond half a second', () => {
     expect(shouldCorrectVideoDrift(31, 31.5)).toBe(false);
     expect(shouldCorrectVideoDrift(31, 31.501)).toBe(true);
