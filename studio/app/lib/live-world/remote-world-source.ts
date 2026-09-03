@@ -7,12 +7,14 @@ import type {
   WorldClock,
   WorldSource,
   WorldSourceStatus,
+  WorldReplayCapabilities,
 } from './types';
 
 const INITIAL_RECONNECT_DELAY_MS = 250;
 const MAX_RECONNECT_DELAY_MS = 8_000;
 const TRAJECTORY_STATUS_INTERVAL_MS = 1_000;
-export const REPLAY_WINDOW_MS = 24 * 60 * 60 * 1_000;
+export const DEFAULT_REPLAY_RETENTION_HOURS = 72;
+export const REPLAY_WINDOW_MS = DEFAULT_REPLAY_RETENTION_HOURS * 60 * 60 * 1_000;
 export const REPLAY_MIN_SPEED = 0.25;
 export const REPLAY_MAX_SPEED = 8;
 
@@ -22,36 +24,76 @@ type PendingReply = {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
 } | null;
-type PendingTwinReply = Exclude<PendingReply, null> & { speedHint: number };
+type PendingTwinReply = Exclude<PendingReply, null>;
 
 export function clampReplaySpeed(speed: number): number {
   if (!Number.isFinite(speed)) return 1;
+  if (speed === 0) return 0;
   return Math.max(REPLAY_MIN_SPEED, Math.min(REPLAY_MAX_SPEED, speed));
 }
 
 export function normalizeReplayRequest(
   opts: { startIso: string; speed?: number },
   nowMs = Date.now(),
+  retentionHours = DEFAULT_REPLAY_RETENTION_HOURS,
 ): { start: string; speed: number } {
   const startMs = Date.parse(opts.startIso);
   if (!Number.isFinite(startMs)) throw new Error("twin_replay requires ISO 'start'");
-  if (startMs > nowMs || nowMs - startMs > REPLAY_WINDOW_MS) {
-    throw new Error('Replay start must be within the past 24 hours');
+  const windowMs = retentionHours * 60 * 60 * 1_000;
+  if (startMs > nowMs || nowMs - startMs > windowMs) {
+    throw new Error(`Replay start must be within the past ${retentionHours} hours`);
   }
   return { start: new Date(startMs).toISOString(), speed: clampReplaySpeed(opts.speed ?? 1) };
 }
 
-export function parseTwinClockMessage(message: JsonRecord, speedHint = 1): WorldClock | null {
+export function parseTwinReplayCapabilities(message: JsonRecord): WorldReplayCapabilities | null {
+  if (message.type !== 'twin_hello') return null;
+  const replay = message.replay;
+  if (
+    typeof replay !== 'object'
+    || replay === null
+    || Array.isArray(replay)
+    || !('retention_hours' in replay)
+    || !('archive_url_template' in replay)
+    || !('coverage_url' in replay)
+    || !('history_url' in replay)
+  ) {
+    return null;
+  }
+  const retentionHours = replay.retention_hours;
+  const archiveUrlTemplate = replay.archive_url_template;
+  const coverageUrl = replay.coverage_url;
+  const historyUrl = replay.history_url;
+  if (
+    typeof retentionHours !== 'number'
+    || !Number.isFinite(retentionHours)
+    || retentionHours <= 0
+    || (archiveUrlTemplate !== null && typeof archiveUrlTemplate !== 'string')
+    || (coverageUrl !== null && typeof coverageUrl !== 'string')
+    || (historyUrl !== null && typeof historyUrl !== 'string')
+  ) {
+    return null;
+  }
+  return { retentionHours, archiveUrlTemplate, coverageUrl, historyUrl };
+}
+
+export function parseTwinClockMessage(message: JsonRecord): WorldClock | null {
   if (message.type !== 'twin_clock' && message.type !== 'twin_mode') return null;
   if (message.mode !== 'live' && message.mode !== 'replay') return null;
   const replayClock = message.replay_clock;
   const timeIso = typeof replayClock === 'string' && Number.isFinite(Date.parse(replayClock))
     ? new Date(Date.parse(replayClock)).toISOString()
     : null;
+  const replaySpeed = typeof message.replay_speed === 'number'
+    ? clampReplaySpeed(message.replay_speed)
+    : message.mode === 'live' ? 1 : 0;
   return {
     mode: message.mode,
     timeIso: message.mode === 'replay' ? timeIso : null,
-    speed: message.mode === 'replay' ? clampReplaySpeed(speedHint) : 1,
+    speed: message.mode === 'replay' ? replaySpeed : 1,
+    tracks: typeof message.tracks === 'number' && Number.isFinite(message.tracks)
+      ? Math.max(0, Math.floor(message.tracks))
+      : 0,
   };
 }
 
@@ -63,6 +105,7 @@ class RemoteWorldSource implements WorldSource {
   private readonly frameListeners = new Set<Parameters<WorldSource['subscribeFrames']>[0]>();
   private readonly statusListeners = new Set<Parameters<WorldSource['subscribeStatus']>[0]>();
   private readonly clockListeners = new Set<(clock: WorldClock) => void>();
+  private readonly replayListeners = new Set<(capabilities: WorldReplayCapabilities | null, error: string | null) => void>();
   private readonly trajectoryListeners = new Set<(status: TrajectoryPlaybackStatus) => void>();
   private readonly replies: PendingReply[] = [];
   private readonly twinReplies: PendingTwinReply[] = [];
@@ -76,9 +119,10 @@ class RemoteWorldSource implements WorldSource {
   private generation = 0;
   private currentStatus: WorldSourceStatus = 'idle';
   private currentError: string | null = null;
-  private currentClock: WorldClock = { mode: 'live', timeIso: null, speed: 1 };
+  private currentClock: WorldClock = { mode: 'live', timeIso: null, speed: 1, tracks: 0 };
+  private currentReplay: WorldReplayCapabilities | null = null;
+  private currentReplayError: string | null = null;
   private currentTrajectoryStatus: TrajectoryPlaybackStatus = { active: false };
-  private lastReplayClockSample: { clockMs: number; receivedAtMs: number } | null = null;
   private controlledActorId: string | null = null;
   private sessionActive = false;
 
@@ -94,6 +138,10 @@ class RemoteWorldSource implements WorldSource {
     return this.currentError;
   }
 
+  get replay(): WorldReplayCapabilities | null {
+    return this.currentReplay;
+  }
+
   subscribeFrames(fn: Parameters<WorldSource['subscribeFrames']>[0]): () => void {
     this.frameListeners.add(fn);
     return () => this.frameListeners.delete(fn);
@@ -103,6 +151,12 @@ class RemoteWorldSource implements WorldSource {
     this.statusListeners.add(fn);
     fn(this.currentStatus, this.currentError);
     return () => this.statusListeners.delete(fn);
+  }
+
+  subscribeReplay(fn: (capabilities: WorldReplayCapabilities | null, error: string | null) => void): () => void {
+    this.replayListeners.add(fn);
+    fn(this.currentReplay, this.currentReplayError);
+    return () => this.replayListeners.delete(fn);
   }
 
   subscribeClock(fn: (clock: WorldClock) => void): () => void {
@@ -126,10 +180,9 @@ class RemoteWorldSource implements WorldSource {
   // method loses `this` the moment that happens, failing at the call with
   // "cannot read properties of undefined".
   setReplay = async (opts: { startIso: string; speed?: number }): Promise<void> => {
-    const replay = normalizeReplayRequest(opts);
+    const replay = normalizeReplayRequest(opts, Date.now(), this.currentReplay?.retentionHours);
     await this.requestTwin(
       { type: 'twin_replay', start: replay.start, speed: replay.speed },
-      replay.speed,
       (message) => {
         if (message.type !== 'twin_mode' || message.mode !== 'replay') {
           throw responseError(message, 'replay');
@@ -139,7 +192,7 @@ class RemoteWorldSource implements WorldSource {
   };
 
   setLive = async (): Promise<void> => {
-    await this.requestTwin({ type: 'twin_live' }, 1, (message) => {
+    await this.requestTwin({ type: 'twin_live' }, (message) => {
       if (message.type !== 'twin_mode' || message.mode !== 'live') {
         throw responseError(message, 'return to live');
       }
@@ -262,6 +315,7 @@ class RemoteWorldSource implements WorldSource {
     this.frameListeners.clear();
     this.statusListeners.clear();
     this.clockListeners.clear();
+    this.replayListeners.clear();
     this.trajectoryListeners.clear();
   }
 
@@ -322,14 +376,27 @@ class RemoteWorldSource implements WorldSource {
   private onTwinMessage(generation: number, data: string): void {
     const message = this.parseMessage(generation, data, 'twin');
     if (!message) return;
-    const pending = this.twinReplies[0];
+    if (message.type === 'twin_hello') {
+      const capabilities = parseTwinReplayCapabilities(message);
+      this.currentReplay = capabilities;
+      this.currentReplayError = null;
+      for (const listener of this.replayListeners) listener(capabilities, null);
+      return;
+    }
     if (message.type === 'twin_clock') {
-      this.updateClock(message, pending?.speedHint);
+      this.updateClock(message);
       return;
     }
     if (message.type !== 'twin_mode' && message.type !== 'twin_error') return;
 
-    if (message.type === 'twin_mode') this.updateClock(message, pending?.speedHint);
+    if (message.type === 'twin_mode') this.updateClock(message);
+    if (message.type === 'twin_error') {
+      this.currentReplayError = typeof message.message === 'string' ? message.message : 'Twin replay failed';
+      for (const listener of this.replayListeners) listener(this.currentReplay, this.currentReplayError);
+    } else if (this.currentReplayError !== null) {
+      this.currentReplayError = null;
+      for (const listener of this.replayListeners) listener(this.currentReplay, null);
+    }
     const reply = this.twinReplies.shift();
     if (!reply) return;
     if (message.type === 'twin_error') {
@@ -373,22 +440,10 @@ class RemoteWorldSource implements WorldSource {
     }
   }
 
-  private updateClock(message: JsonRecord, speedHint?: number): void {
-    let speed = speedHint ?? this.currentClock.speed;
-    const clockText = typeof message.replay_clock === 'string' ? message.replay_clock : null;
-    const clockMs = clockText === null ? Number.NaN : Date.parse(clockText);
-    const receivedAtMs = Date.now();
-    if (speedHint === undefined && message.mode === 'replay' && Number.isFinite(clockMs) && this.lastReplayClockSample) {
-      const wallDelta = receivedAtMs - this.lastReplayClockSample.receivedAtMs;
-      const clockDelta = clockMs - this.lastReplayClockSample.clockMs;
-      if (wallDelta > 0 && clockDelta >= 0) speed = clampReplaySpeed(clockDelta / wallDelta);
-    }
-    const parsed = parseTwinClockMessage(message, speed);
+  private updateClock(message: JsonRecord): void {
+    const parsed = parseTwinClockMessage(message);
     if (!parsed) return;
     this.currentClock = parsed;
-    this.lastReplayClockSample = parsed.mode === 'replay' && parsed.timeIso !== null
-      ? { clockMs: Date.parse(parsed.timeIso), receivedAtMs }
-      : null;
     for (const listener of this.clockListeners) listener(parsed);
   }
 
@@ -445,7 +500,6 @@ class RemoteWorldSource implements WorldSource {
 
   private requestTwin<T>(
     message: JsonRecord,
-    speedHint: number,
     parse: (message: JsonRecord) => T,
   ): Promise<T> {
     if (this.currentStatus === 'closed') return Promise.reject(new Error('remote world source is closed'));
@@ -455,7 +509,6 @@ class RemoteWorldSource implements WorldSource {
     return new Promise<T>((resolve, reject) => {
       this.twinReplies.push({
         parse,
-        speedHint,
         resolve: resolve as (value: unknown) => void,
         reject,
       });

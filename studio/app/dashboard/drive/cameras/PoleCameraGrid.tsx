@@ -29,6 +29,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
+import type { WorldClock } from "@/app/lib/live-world/types";
 import { Separator } from "@/app/components/ui/separator";
 import type { CameraFeedState, CameraFeeds } from "@/app/lib/live-world/camera-feeds";
 import { cn } from "@/app/lib/utils";
@@ -43,6 +44,11 @@ import {
   type CameraAdjustment,
   type CameraAdjustments,
 } from "./camera-adjustments";
+import {
+  archiveClipWindow,
+  archiveVideoUrl,
+  shouldCorrectVideoDrift,
+} from "../history/replay-helpers";
 
 
 export interface PoleCameraGridProps {
@@ -50,6 +56,8 @@ export interface PoleCameraGridProps {
   features: readonly SignalFeature[];
   /** The surface's sole CityViewer. Camera panes render this viewer's scene. */
   viewer: CityViewer | null;
+  clock?: WorldClock | null;
+  archiveUrlTemplate?: string | null;
   feeds?: CameraFeeds | null;
   onFeedStatus?: (cameraId: string, mode: CameraFeedState) => void;
 }
@@ -193,6 +201,88 @@ function FocusedCameraFeed({
           onError={() => report("unavailable")}
         />
       )}
+    </div>
+  );
+}
+
+function ArchiveCameraFeed({
+  camera,
+  clock,
+  archiveUrlTemplate,
+  fill = false,
+}: {
+  camera: PoleCamera;
+  clock: WorldClock;
+  archiveUrlTemplate: string;
+  fill?: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const clockMs = clock.timeIso === null ? Number.NaN : Date.parse(clock.timeIso);
+  const clip = Number.isFinite(clockMs) ? archiveClipWindow(clockMs) : null;
+  const src = clip ? archiveVideoUrl(archiveUrlTemplate, camera.id, clockMs) : null;
+
+  useEffect(() => setUnavailable(false), [src]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !clip || !Number.isFinite(clockMs) || video.readyState < HTMLMediaElement.HAVE_METADATA) return;
+    const targetTime = (clockMs - clip.startMs) / 1_000;
+    if (shouldCorrectVideoDrift(video.currentTime, targetTime)) video.currentTime = targetTime;
+    if (clock.speed === 0) {
+      video.pause();
+      return;
+    }
+    video.playbackRate = clock.speed;
+    void video.play().catch(() => {
+      // Autoplay can still be gated while metadata loads. The next
+      // authoritative clock sample retries once the muted video is ready.
+    });
+  }, [clip, clock.speed, clockMs]);
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-md border border-border bg-muted",
+        fill && "h-full w-full",
+      )}
+      style={fill ? undefined : { aspectRatio: `${camera.intrinsics.width} / ${camera.intrinsics.height}` }}
+    >
+      <div className="absolute end-2 top-2 z-10">
+        <StatusBadge status={clock.speed === 0 ? "paused" : "replay"} />
+      </div>
+      {src ? (
+        <video
+          ref={videoRef}
+          key={src}
+          src={src}
+          className="block h-full w-full object-contain"
+          muted
+          playsInline
+          preload="auto"
+          data-archive-camera={camera.id}
+          onLoadedMetadata={(event) => {
+            if (!clip || !Number.isFinite(clockMs)) return;
+            event.currentTarget.currentTime = (clockMs - clip.startMs) / 1_000;
+            if (clock.speed > 0) {
+              event.currentTarget.playbackRate = clock.speed;
+              void event.currentTarget.play().catch(() => {
+                // A later clock sample retries muted autoplay.
+              });
+            }
+          }}
+          onError={() => setUnavailable(true)}
+        />
+      ) : null}
+      {unavailable || !src ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/90 p-4 text-center">
+          <div>
+            <VideoOff className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+            <p className="mt-2 text-xs font-medium text-foreground">No recording</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">No archived video covers this time.</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -596,6 +686,8 @@ function Comparison({
   onAdjustmentChange,
   registerPane,
   feeds,
+  clock,
+  archiveUrlTemplate,
   feedStatus,
   active,
   mode,
@@ -610,6 +702,8 @@ function Comparison({
   onAdjustmentChange: (adjustment: CameraAdjustment) => void;
   registerPane: (key: string, pane: CameraPane | null) => void;
   feeds?: CameraFeeds | null;
+  clock?: WorldClock | null;
+  archiveUrlTemplate?: string | null;
   feedStatus: CameraFeedState;
   active: boolean;
   mode: ComparisonMode;
@@ -617,7 +711,14 @@ function Comparison({
   onOverlayOpacityChange: (opacity: number) => void;
   onFeedStatus?: PoleCameraGridProps["onFeedStatus"];
 }) {
-  const real = feeds ? (
+  const real = clock?.mode === "replay" && archiveUrlTemplate ? (
+    <ArchiveCameraFeed
+      camera={camera}
+      clock={clock}
+      archiveUrlTemplate={archiveUrlTemplate}
+      fill={mode === "overlay"}
+    />
+  ) : feeds ? (
     <MultiplexedCameraFeed camera={camera} feeds={feeds} status={feedStatus} fill={mode === "overlay"} />
   ) : (
     <FocusedCameraFeed camera={camera} active={active} onStatus={onFeedStatus} fill={mode === "overlay"} />
@@ -701,6 +802,8 @@ export function PoleCameraGrid({
   rigs,
   features,
   viewer,
+  clock = null,
+  archiveUrlTemplate = null,
   feeds = null,
   onFeedStatus,
 }: PoleCameraGridProps) {
@@ -946,6 +1049,8 @@ export function PoleCameraGrid({
                       onAdjustmentChange={(nextAdjustment) => persist({ ...adjustments, [key]: nextAdjustment })}
                       registerPane={registerPane}
                       feeds={feeds}
+                      clock={clock}
+                      archiveUrlTemplate={archiveUrlTemplate}
                       feedStatus={feedStatus}
                       active={focused}
                       mode={focused ? comparisonMode : "split"}

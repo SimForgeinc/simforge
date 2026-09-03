@@ -71,6 +71,33 @@ locally:
   every channel, tagged per channel with its honest feed state. Construct it in
   an effect with cleanup because the class connects in its constructor.
 
+### Historical replay
+
+History is capability-driven; Studio does not contain a deployment-specific
+archive URL. The `/twin` WebSocket advertises it in `twin_hello.replay`:
+
+```json
+{
+  "retention_hours": 72,
+  "archive_url_template": "https://twin.example/archive/get?path={channel}&start={start}&duration={duration}&format=mp4",
+  "coverage_url": "https://twin.example/detections/coverage",
+  "history_url": "https://twin.example/detections/history"
+}
+```
+
+All three URLs may be `null`. The history dock is shown only when
+`coverage_url` is non-null. Its UTC epoch clock comes exclusively from
+`twin_mode` and `twin_clock`; both include `replay_speed` (`0` means paused)
+and `tracks`. Studio sends `twin_replay { start, speed }` to seek, pause, or
+resume, and `twin_live {}` to return to the live world.
+
+When replay mode and `archive_url_template` are available, each camera replaces
+the live mux canvas with a muted inline video. `{start}` is the clock aligned
+down to a five-minute UTC boundary and `{duration}` is `300`; the video seeks
+when it differs from the authoritative clock by more than 0.5 seconds. The
+camera mux remains connected in the background so returning to Live restores
+the canvases immediately.
+
 ## Aiming a pole camera
 
 A rig's numbers rarely match a real installation on the first try, so the

@@ -22,6 +22,7 @@ export interface WorldClock {
   mode: 'live' | 'replay';
   timeIso: string | null;
   speed: number;
+  tracks: number;
 }
 
 export interface TrajectoryPlaybackStatus {
@@ -34,12 +35,21 @@ export interface TrajectoryPlaybackStatus {
   error?: string;
 }
 
+export interface WorldReplayCapabilities {
+  retentionHours: number;
+  archiveUrlTemplate: string | null;
+  coverageUrl: string | null;
+  historyUrl: string | null;
+}
+
 
 export interface WorldSource {
   readonly status: WorldSourceStatus;
   readonly lastError: string | null;
+  readonly replay?: WorldReplayCapabilities | null;
   subscribeFrames(fn: (frame: TruthFrame) => void): () => void;
   subscribeStatus(fn: (status: WorldSourceStatus, error: string | null) => void): () => void;
+  subscribeReplay?(fn: (capabilities: WorldReplayCapabilities | null, error: string | null) => void): () => void;
   /**
    * Non-fatal notices about a world that is running but will behave in a way the
    * operator would otherwise misread — e.g. no lane graph, so every road actor
