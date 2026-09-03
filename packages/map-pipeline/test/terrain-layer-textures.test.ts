@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Document, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, KHRTextureTransform, type Transform as TextureTransform } from '@gltf-transform/extensions';
 import { afterAll, describe, expect, it } from 'vitest';
-import { borrowTerrainLayerTextures, collectTerrainLayerDonors, terrainLayerBase } from '../src/terrain-layer-textures.js';
+import { borrowTerrainLayerTextures, collectTerrainLayerDonors, terrainDonorPoolDigest, terrainLayerBase } from '../src/terrain-layer-textures.js';
 
 const PNG_STUB = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
@@ -51,9 +51,9 @@ describe('terrain layer texture donors', () => {
     for (const material of [flat, otherFlat, prop]) quad(targetDoc, material);
     await io.write(path.join(tiles, 'veg_11_10.lod0.glb'), targetDoc);
 
-    const pool = await collectTerrainLayerDonors(root);
+    const pool = await collectTerrainLayerDonors(root, []);
     expect([...pool.keys()]).toEqual(['Grass1_Ground_Terrain_Ground']);
-    expect(pool.get('Grass1_Ground_Terrain_Ground')!.source).toBe('veg_0_4.lod0.glb');
+    expect(pool.get('Grass1_Ground_Terrain_Ground')!.source).toBe(path.join(tiles, 'veg_0_4.lod0.glb'));
 
     const document = await io.read(path.join(tiles, 'veg_11_10.lod0.glb'));
     const report = borrowTerrainLayerTextures(document, pool);
@@ -76,5 +76,36 @@ describe('terrain layer texture donors', () => {
     // Round-trips as a valid GLB with the transform extension declared.
     const written = await io.readBinary(await io.writeBinary(document));
     expect(written.getRoot().listExtensionsUsed().map((e) => e.extensionName)).toContain('KHR_texture_transform');
+  });
+
+  it('falls back to a library directory for bases the map cannot donate itself', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'simforge-terrain-library-'));
+    roots.push(root);
+    const tiles = path.join(root, 'map', '3d', 'tiles');
+    const library = path.join(root, 'library');
+    await mkdir(tiles, { recursive: true });
+    await mkdir(library, { recursive: true });
+
+    const libraryDoc = new Document();
+    const concrete = libraryDoc.createTexture('concrete').setMimeType('image/png').setImage(new Uint8Array([...PNG_STUB, 7]));
+    quad(libraryDoc, libraryDoc.createMaterial('Concrete1_Ground_Terrain_Ground_Layer0_2').setBaseColorTexture(concrete));
+    // The library also carries an untextured layer: library gaps never count as demand.
+    quad(libraryDoc, libraryDoc.createMaterial('Dirt1_Ground_Terrain_Ground_Layer0_9').setBaseColorFactor([0.3, 0.2, 0.1, 1]));
+    await io.write(path.join(library, 'other-map-tile.glb'), libraryDoc);
+
+    const mapDoc = new Document();
+    quad(mapDoc, mapDoc.createMaterial('Concrete1_Ground_Terrain_Ground_Layer0_5').setBaseColorFactor([0.46, 0.44, 0.42, 1]));
+    await io.write(path.join(tiles, 'veg_0_0.lod0.glb'), mapDoc);
+
+    const without = await collectTerrainLayerDonors(path.join(root, 'map'), []);
+    expect(without.size).toBe(0);
+    const pool = await collectTerrainLayerDonors(path.join(root, 'map'), [library]);
+    expect([...pool.keys()]).toEqual(['Concrete1_Ground_Terrain_Ground']);
+    expect(pool.get('Concrete1_Ground_Terrain_Ground')!.source).toBe(path.join(library, 'other-map-tile.glb'));
+    expect(terrainDonorPoolDigest(pool)).not.toBe(terrainDonorPoolDigest(without));
+
+    const document = await io.read(path.join(tiles, 'veg_0_0.lod0.glb'));
+    expect(borrowTerrainLayerTextures(document, pool).retextured).toBe(1);
+    expect(Array.from(document.getRoot().listMaterials()[0]!.getBaseColorTexture()!.getImage()!)).toEqual([...PNG_STUB, 7]);
   });
 });

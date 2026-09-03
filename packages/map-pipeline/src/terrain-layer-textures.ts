@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { open, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Document, GLTF, Material, Texture, TextureInfo } from '@gltf-transform/core';
@@ -48,6 +49,29 @@ export interface TerrainDonor {
 
 export type TerrainDonorPool = Map<string, TerrainDonor>;
 
+/** `SIMFORGE_TERRAIN_DONOR_DIRS`: path-separated tile directories used as a donor library. */
+export function terrainDonorLibraryDirs(): string[] {
+  const raw = process.env.SIMFORGE_TERRAIN_DONOR_DIRS;
+  if (!raw) return [];
+  return raw.split(path.delimiter).map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+}
+
+/** Content identity of a pool: what was retextured with which bytes. Feeds the derive cache key. */
+export function terrainDonorPoolDigest(pool: TerrainDonorPool): string {
+  const hash = createHash('sha256');
+  for (const base of [...pool.keys()].sort()) {
+    const donor = pool.get(base)!;
+    hash.update(base).update('\0').update(donor.material).update('\0');
+    for (const slot of DONOR_SLOTS) {
+      const ref = donor.slots[slot];
+      if (!ref) continue;
+      hash.update(slot).update('\0').update(createHash('sha256').update(ref.image.bytes).digest()).update(JSON.stringify([ref.texCoord, ref.transform ?? null, ref.image.sampler])).update('\0');
+    }
+    hash.update(JSON.stringify([donor.metallicFactor, donor.roughnessFactor])).update('\0');
+  }
+  return hash.digest('hex');
+}
+
 export function terrainLayerBase(name: string): string | null {
   if (!TERRAIN_MATERIAL.test(name)) return null;
   return name.replace(LAYER_SUFFIX, '');
@@ -89,31 +113,39 @@ function textureInfoOf(material: Record<string, unknown>, slot: DonorSlot): Reco
  * path, then material index - deterministic) becomes the donor for its base
  * name. Returns only bases that also have at least one untextured layer, so
  * maps without the export gap allocate nothing.
+ *
+ * `libraryDirs` are extra tile directories (other maps' canonical closures)
+ * consulted, in order, for bases the map itself has no textured layer for:
+ * RoadRunner library materials share one texture set across every export,
+ * so a `Concrete1_Ground_Terrain_Ground` donor from another map is the same
+ * texture the missing layer would have carried. In-map donors win.
  */
-export async function collectTerrainLayerDonors(contentDir: string): Promise<TerrainDonorPool> {
+export async function collectTerrainLayerDonors(contentDir: string, libraryDirs: readonly string[] = terrainDonorLibraryDirs()): Promise<TerrainDonorPool> {
   const tilesDir = path.join(contentDir, '3d', 'tiles');
-  const files = (await readdir(tilesDir).catch(() => [] as string[])).filter((name) => name.toLowerCase().endsWith('.glb')).sort();
-  const candidates = new Map<string, { file: string; json: GlbJson; binOffset: number; index: number }>();
+  const candidates = new Map<string, { dir: string; file: string; json: GlbJson; binOffset: number; index: number }>();
   const untextured = new Set<string>();
-  for (const file of files) {
-    const parsed = await readGlbJson(path.join(tilesDir, file));
-    if (!parsed) continue;
-    (parsed.json.materials ?? []).forEach((material, index) => {
-      const base = terrainLayerBase(String(material.name ?? ''));
-      if (base === null) return;
-      if (textureInfoOf(material, 'baseColorTexture') === undefined) {
-        untextured.add(base);
-      } else if (!candidates.has(base)) {
-        candidates.set(base, { file, json: parsed.json, binOffset: parsed.binOffset, index });
-      }
-    });
+  for (const dir of [tilesDir, ...libraryDirs]) {
+    const files = (await readdir(dir).catch(() => [] as string[])).filter((name) => name.toLowerCase().endsWith('.glb')).sort();
+    for (const file of files) {
+      const parsed = await readGlbJson(path.join(dir, file));
+      if (!parsed) continue;
+      (parsed.json.materials ?? []).forEach((material, index) => {
+        const base = terrainLayerBase(String(material.name ?? ''));
+        if (base === null) return;
+        if (textureInfoOf(material, 'baseColorTexture') === undefined) {
+          if (dir === tilesDir) untextured.add(base);
+        } else if (!candidates.has(base)) {
+          candidates.set(base, { dir, file, json: parsed.json, binOffset: parsed.binOffset, index });
+        }
+      });
+    }
   }
   const pool: TerrainDonorPool = new Map();
-  for (const base of untextured) {
+  for (const base of [...untextured].sort()) {
     const candidate = candidates.get(base);
     if (!candidate) continue;
     const material = candidate.json.materials![candidate.index]!;
-    const handle = await open(path.join(tilesDir, candidate.file), 'r');
+    const handle = await open(path.join(candidate.dir, candidate.file), 'r');
     try {
       const slots: TerrainDonor['slots'] = {};
       const imageCache = new Map<number, DonorImage>();
@@ -137,7 +169,7 @@ export async function collectTerrainLayerDonors(contentDir: string): Promise<Ter
       if (slots.baseColorTexture === undefined) continue;
       const pbr = (material.pbrMetallicRoughness ?? {}) as Record<string, number | undefined>;
       pool.set(base, {
-        source: candidate.file,
+        source: path.join(candidate.dir, candidate.file),
         material: String(material.name),
         slots,
         metallicFactor: pbr.metallicFactor ?? 1,

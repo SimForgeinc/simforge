@@ -652,16 +652,23 @@ fn detach_atmosphere_view(commands: &mut bevy::prelude::Commands, entity: Entity
 
 /// Drive the resolved IBL gain onto a live view.
 ///
-/// Re-inserting `AtmosphereEnvironmentMapLight` is not enough: Bevy only
-/// reads its `intensity` when it first derives the
-/// `GeneratedEnvironmentMapLight`, so the derived component has to be
-/// written directly or the `ambient` override would be a no-op on every
-/// relight after the first.
+/// Re-inserting `AtmosphereEnvironmentMapLight` is not enough: Bevy copies
+/// its `intensity` once when it derives the `GeneratedEnvironmentMapLight`,
+/// and copies *that* once more when the filtered `EnvironmentMapLight` is
+/// created (`generate_environment_map_light`). Only the last component is
+/// what the PBR shader reads, so every relight has to write all three or the
+/// view keeps whatever gain it had on its first frame - which for a view
+/// created before the physical ladder resolved is 0, i.e. black shadows.
+/// The view-level `EnvironmentMapLight` is only ever the atmosphere's
+/// derived probe; the cubemap path's probe is a separate `LightProbe` entity.
 fn set_view_env_gain(world: &mut bevy::ecs::world::World, entity: Entity, gain: f32) {
     if let Some(mut light) = world.get_mut::<bevy::light::AtmosphereEnvironmentMapLight>(entity) {
         light.intensity = gain;
     }
     if let Some(mut light) = world.get_mut::<bevy::light::GeneratedEnvironmentMapLight>(entity) {
+        light.intensity = gain;
+    }
+    if let Some(mut light) = world.get_mut::<bevy::light::EnvironmentMapLight>(entity) {
         light.intensity = gain;
     }
 }

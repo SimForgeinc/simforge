@@ -14,7 +14,7 @@ import { repackGlb } from '../../../tools/glb-ktx2-repack/src/repack.mjs';
 import { dilateAlphaEdges } from './alpha-dilate.js';
 import { buildClosure, filesUnder, hashTree, readWholeFile, sha256, writeClosure } from './closure.js';
 import { neutralizeExportErrorMaterials } from './export-error-materials.js';
-import { borrowTerrainLayerTextures, collectTerrainLayerDonors, type TerrainDonorPool } from './terrain-layer-textures.js';
+import { borrowTerrainLayerTextures, collectTerrainLayerDonors, terrainDonorPoolDigest, type TerrainDonorPool } from './terrain-layer-textures.js';
 import { assertBevyRepresentableSampling, bakeDivergentTextureTransforms } from './uv-transform-bake.js';
 import type { ClosureKind, MapClosure } from './closure.js';
 import type { ClosureStageResult } from './assemble.js';
@@ -43,7 +43,11 @@ async function deriveClosure(
   transformGlb: GlbTransform,
 ): Promise<DerivedStageResult> {
   const inputDigest = source.closureDigest;
-  const cacheKey = sha256(`${inputDigest}\0${toolFingerprint}`);
+  // Presentation fixes apply where the canonical is the input; later stages
+  // inherit already-fixed tiles and need no donor scan. The donor pool is
+  // part of the output identity: a different library retextures differently.
+  const donors: TerrainDonorPool = source.closure.kind === 'canonical' ? await collectTerrainLayerDonors(source.outputDir) : new Map();
+  const cacheKey = sha256(`${inputDigest}\0${toolFingerprint}\0${terrainDonorPoolDigest(donors)}`);
   const stageRoot = path.resolve(workDir, kind, cacheKey);
   const contentDir = path.join(stageRoot, 'content');
   const closurePath = path.join(stageRoot, 'closure.json');
@@ -56,9 +60,6 @@ async function deriveClosure(
 
   await mkdir(contentDir, { recursive: true });
   await cp(source.outputDir, contentDir, { recursive: true });
-  // Presentation fixes apply where the canonical is the input; later stages
-  // inherit already-fixed tiles and need no donor scan.
-  const donors = source.closure.kind === 'canonical' ? await collectTerrainLayerDonors(source.outputDir) : new Map();
   for (const relativePath of await filesUnder(contentDir)) {
     if (!relativePath.toLowerCase().endsWith('.glb')) continue;
     const absolute = path.join(contentDir, relativePath);
