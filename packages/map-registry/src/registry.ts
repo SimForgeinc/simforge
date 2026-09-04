@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { copyFile, link, mkdir, mkdtemp, open, readdir, rename, rm } from 'node:fs/promises';
+import { copyFile, link, mkdir, mkdtemp, open, readFile, readdir, rename, rm } from 'node:fs/promises';
 import { basename, dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -740,6 +740,18 @@ export async function closureFromDirectory(
     const sourcePath = join(root, memberPath);
     members[memberPath] = await hashFile(sourcePath);
     files[memberPath] = sourcePath;
+  }
+  let recorded: MapClosure | undefined;
+  try {
+    recorded = JSON.parse(await readFile(join(dirname(root), 'closure.json'), 'utf8')) as MapClosure;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  if (recorded) {
+    assertClosure(recorded);
+    if (recorded.kind !== kind || (toolFingerprint !== undefined && recorded.toolFingerprint !== toolFingerprint)
+      || canonicalJson(recorded.members) !== canonicalJson(members)) throw new Error('prebuilt_closure_changed: rebuild the source stage');
+    return { closure: recorded, files };
   }
   const closure: MapClosure = {
     schema: 'map-closure.v1',

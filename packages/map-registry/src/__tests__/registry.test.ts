@@ -172,6 +172,19 @@ function emptyGlb(): Buffer {
 }
 
 describe('file registry', () => {
+  it('keeps a prebuilt stage identity and rejects changed content beneath it', async () => {
+    const root = await temporaryRoot('prebuilt-identity');
+    const directory = join(root, 'content');
+    await mkdir(directory);
+    const source = masterInput();
+    const recorded = { ...source.closure, metadata: { master: true, viewerOnly: true } };
+    await writeFile(join(directory, 'master.gltf'), source.files['master.gltf']);
+    await writeFile(join(root, 'closure.json'), canonicalJson(recorded));
+    expect(closureDigest((await closureFromDirectory(directory)).closure)).toBe(closureDigest(recorded));
+    await writeFile(join(directory, 'master.gltf'), masterInput('changed').files['master.gltf']);
+    await expect(closureFromDirectory(directory)).rejects.toThrow('prebuilt_closure_changed');
+  });
+
   it('publishes a master and pulls it into native, web and sidecar profiles', async () => {
     const root = await temporaryRoot('roundtrip');
     const source = join(root, 'source');
