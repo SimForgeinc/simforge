@@ -14,7 +14,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three';
-import type { Material, Texture } from 'three';
+import type { InstancedMesh, Material, Texture } from 'three';
 import { CameraRig, type CameraMode } from './camera-controls';
 import type { CameraView } from './camera-controls';
 import type { CameraControlPreferences } from './camera-drag';
@@ -26,6 +26,7 @@ import {
   disposeResources,
   estimateResourceBytes,
   getGLTFLoader,
+  resourceDirectory,
 } from './gltf';
 import { createSun } from './environment';
 import {
@@ -431,9 +432,10 @@ export class CityViewer {
       ),
       maxConcurrentDerivatives: 2,
       loadDerivative: async (derivative, signal) => {
-        const loader = getGLTFLoader(this.renderer);
-        const buffer = await this.fetchBuffer(resolveUrl(this.assetBase, derivative.file), signal, derivative.bytes);
-        const gltf = await loader.parseAsync(buffer, '');
+        const loader = getGLTFLoader(this.renderer, this.options.ktx2TranscoderPath);
+        const derivativeUrl = resolveUrl(this.assetBase, derivative.file);
+        const buffer = await this.fetchBuffer(derivativeUrl, signal, derivative.bytes);
+        const gltf = await loader.parseAsync(buffer, resourceDirectory(derivativeUrl));
         const root = gltf.scene;
         this.prepareTree(root);
         const resources = collectResources(root);
@@ -863,7 +865,7 @@ export class CityViewer {
     const selected = selectAssetVariant(this.variantManifest, sourceFile, this.options.assetVariant, {
       ultraLow: this.ultraLowFidelity,
       roadsOnly: this.roadsOnlyFidelity,
-      ktx2Ready: Boolean(ktx2TranscoderPath),
+      ktx2Ready: true,
     });
     const selectedBytes = selected.variant === 'original'
       ? sourceBytes
@@ -875,20 +877,18 @@ export class CityViewer {
     }
     const loader = getGLTFLoader(this.renderer, ktx2TranscoderPath);
     try {
-      const buffer = await this.fetchBuffer(
-        resolveUrl(this.assetBase, selected.file),
-        signal,
-        selectedBytes,
-      );
-      const parsed = await loader.parseAsync(buffer, '');
+      const selectedUrl = resolveUrl(this.assetBase, selected.file);
+      const buffer = await this.fetchBuffer(selectedUrl, signal, selectedBytes);
+      const parsed = await loader.parseAsync(buffer, resourceDirectory(selectedUrl));
       this.variantLoads[selected.variant]++;
       this.canvas.dataset.assetVariant = selected.variant;
       return parsed;
     } catch (error) {
       if (selected.variant === 'roads-only' && selected.fallbackFile
         && (error as { name?: string } | null)?.name !== 'AbortError') {
-        const fallback = await this.fetchBuffer(resolveUrl(this.assetBase, selected.fallbackFile), signal);
-        const parsed = await loader.parseAsync(fallback, '');
+        const fallbackUrl = resolveUrl(this.assetBase, selected.fallbackFile);
+        const fallback = await this.fetchBuffer(fallbackUrl, signal);
+        const parsed = await loader.parseAsync(fallback, resourceDirectory(fallbackUrl));
         this.variantFallbacks++;
         this.variantLoads['roads-only']++;
         this.canvas.dataset.assetVariant = 'roads-only-v1-fallback';
@@ -897,8 +897,9 @@ export class CityViewer {
       if (!allowsSourceAssetFallback(selected.variant, this.ultraLowFidelity)
         || (error as { name?: string } | null)?.name === 'AbortError') throw error;
       this.variantFallbacks++;
-      const source = await this.fetchBuffer(resolveUrl(this.assetBase, sourceFile), signal, sourceBytes);
-      const parsed = await loader.parseAsync(source, '');
+      const sourceUrl = resolveUrl(this.assetBase, sourceFile);
+      const source = await this.fetchBuffer(sourceUrl, signal, sourceBytes);
+      const parsed = await loader.parseAsync(source, resourceDirectory(sourceUrl));
       this.variantLoads.original++;
       this.canvas.dataset.assetVariant = 'original-fallback';
       return parsed;
@@ -916,8 +917,9 @@ export class CityViewer {
     const ktx2TranscoderPath = this.options.ktx2TranscoderPath
       || (declaredKtxPath ? resolveUrl(this.assetBase, declaredKtxPath) : '');
     const loader = getGLTFLoader(this.renderer, ktx2TranscoderPath);
-    const buffer = await this.fetchBuffer(resolveUrl(this.assetBase, file), signal, expectedBytes);
-    const parsed = await loader.parseAsync(buffer, '');
+    const fileUrl = resolveUrl(this.assetBase, file);
+    const buffer = await this.fetchBuffer(fileUrl, signal, expectedBytes);
+    const parsed = await loader.parseAsync(buffer, resourceDirectory(fileUrl));
     this.variantLoads[variant]++;
     this.canvas.dataset.assetVariant = variant;
     return parsed;
@@ -944,6 +946,13 @@ export class CityViewer {
       mesh.receiveShadow = true;
       if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
       if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      // EXT_mesh_gpu_instancing batches: frustum culling must cover every
+      // instance, not the prototype's own bounds.
+      const instanced = mesh as unknown as InstancedMesh & { isInstancedMesh?: boolean };
+      if (instanced.isInstancedMesh) {
+        instanced.computeBoundingSphere();
+        instanced.computeBoundingBox();
+      }
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const mat of mats) {
         for (const value of Object.values(mat as unknown as Record<string, unknown>)) {
@@ -1102,6 +1111,7 @@ export class CityViewer {
     const tiles = manifest.vegetationTiles ?? [];
     await Promise.all(
       tiles.map(async (tile) => {
+        if (!tile.instanceFile) return;
         try {
           const res = await fetch(resolveUrl(this.assetBase, tile.instanceFile), {
             signal: this.abort.signal,
@@ -1119,13 +1129,15 @@ export class CityViewer {
     if (this.vegLayer) return;
     const tiles = manifest.vegetationTiles ?? [];
     if (tiles.length === 0) return;
-    const defs: StreamTileDef[] = tiles
-      .filter((tile) => this.vegetationData.has(tile.id))
-      .map((tile) => ({
-        id: tile.id,
-        box: boxOf(tile.bounds.min, tile.bounds.max),
-        lods: normalizeLods(tile.lods),
-      }));
+    // Two shapes of vegetation tile: prototype GLBs placed through an
+    // `instances.json` sidecar (bands thin the instances by distance), and
+    // web-tier cells whose GLB already carries the placed batches
+    // (EXT_mesh_gpu_instancing) and needs no sidecar.
+    const defs: StreamTileDef[] = tiles.map((tile) => ({
+      id: tile.id,
+      box: boxOf(tile.bounds.min, tile.bounds.max),
+      lods: normalizeLods(tile.lods),
+    }));
 
     this.vegLayer = new TileStreamLayer({
       name: 'vegetation-layer',
@@ -1138,13 +1150,12 @@ export class CityViewer {
       want: (_def, distance) => !this.roadsOnlyFidelity && distance <= this.options.vegetationMaxDistance,
       build: async (def, lod, signal) => {
         const data = this.vegetationData.get(def.id);
-        if (!data) throw new Error(`no instance data for ${def.id}`);
         const gltf = await this.parseAsset(lod.file, signal, lod.fileSize);
         this.prepareTree(gltf.scene);
-        const built = buildVegetation(gltf.scene, data, VEG_BAND_KEEP_ROW);
+        const built = data ? buildVegetation(gltf.scene, data, VEG_BAND_KEEP_ROW) : { object: gltf.scene, prototypes: [] as VegPrototypeGroup[] };
         applyStaticSemantics(built.object, this.staticSemantics);
         built.object.name = `${def.id}.lod${lod.level}`;
-        built.object.userData.prototypes = built.prototypes;
+        built.object.userData.prototypes = data ? built.prototypes : null;
         if (this.visualResourcesStarted && !this.ultraLowFidelity) patchTree(built.object, this.shadowOptions(def.box, 6, 14));
         this.surfaceMaterials.registerTree(built.object, 'vegetation');
         const resources = collectResources(built.object);
@@ -1157,14 +1168,20 @@ export class CityViewer {
           dispose: () => {
             this.surfaceMaterials.unregisterTree(built.object);
             this.releaseSimplifiedTree(built.object);
-            for (const proto of built.prototypes) for (const mesh of proto.meshes) mesh.dispose();
-            built.object.clear();
+            if (data) {
+              for (const proto of built.prototypes) for (const mesh of proto.meshes) mesh.dispose();
+              built.object.clear();
+            } else {
+              disposeResources(resources);
+            }
           },
         } satisfies PreparedAsset;
       },
       onTick: (_def, asset, distance) => {
+        const visible = distance <= this.options.vegetationMaxDistance;
+        asset.object.visible = visible;
         const prototypes = (asset.object.userData.prototypes ?? null) as VegPrototypeGroup[] | null;
-        if (!prototypes) return;
+        if (!visible || !prototypes) return;
         let band = VEG_BAND_DISTANCES.length;
         for (let i = 0; i < VEG_BAND_DISTANCES.length; i++) {
           if (distance <= (VEG_BAND_DISTANCES[i] ?? 0)) {
@@ -1172,9 +1189,6 @@ export class CityViewer {
             break;
           }
         }
-        const visible = distance <= this.options.vegetationMaxDistance;
-        asset.object.visible = visible;
-        if (!visible) return;
         for (const proto of prototypes) {
           const count = proto.keepPerBand[band] ?? proto.keepPerBand[proto.keepPerBand.length - 1];
           for (const mesh of proto.meshes) mesh.count = count ?? mesh.instanceMatrix.count;

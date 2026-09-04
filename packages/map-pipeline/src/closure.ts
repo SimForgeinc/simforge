@@ -58,7 +58,7 @@ export function sha256Large(bytes: Buffer): string {
   return hash.digest('hex');
 }
 
-async function hashFile(file: string): Promise<{ sha256: string; bytes: number }> {
+export async function hashFile(file: string): Promise<{ sha256: string; bytes: number }> {
   const hash = createHash('sha256');
   let bytes = 0;
   for await (const chunk of createReadStream(file)) {
@@ -79,18 +79,22 @@ export async function hashTree(root: string): Promise<string> {
 export async function buildClosure(
   root: string,
   kind: ClosureKind,
-  options: { toolFingerprint?: string; viewerOnly?: boolean } = {},
+  options: { toolFingerprint?: string; viewerOnly?: boolean; master?: boolean } = {},
 ): Promise<MapClosure> {
   const members: Record<string, ClosureMember> = {};
   for (const relativePath of await filesUnder(root)) {
     members[relativePath] = await hashFile(path.join(root, relativePath));
   }
+  const metadata: NonNullable<MapClosure['metadata']> = {
+    ...(options.viewerOnly ? { viewerOnly: true } : {}),
+    ...(options.master ? { master: true } : {}),
+  };
   return {
     schema: 'map-closure.v1',
     members,
     kind,
     ...(options.toolFingerprint ? { toolFingerprint: options.toolFingerprint } : {}),
-    ...(options.viewerOnly ? { metadata: { viewerOnly: true } } : {}),
+    ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
   };
 }
 

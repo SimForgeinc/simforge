@@ -8,6 +8,8 @@
 //! as plain file paths ("home/path/...").
 use anyhow::{bail, Context as _, Result};
 use bevy::app::{AppExit, ScheduleRunnerPlugin};
+use bevy::asset::RecursiveDependencyLoadState;
+use render_core::readiness::{GpuPending, GpuReadinessPlugin, GPU_IDLE_FRAMES};
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera::RenderTarget;
 use bevy::gltf::Gltf;
@@ -261,6 +263,10 @@ struct SpikeState {
     load_start: Instant,
     build_ready_at: Option<Instant>,
     id_clones_done: bool,
+    /// Consecutive updates with no pipeline compiling and every material bound.
+    gpu_idle_frames: u32,
+    /// Set once the GPU idle gate has been satisfied; frames count from here.
+    gpu_ready_at: Option<Instant>,
     capture_start: Option<Instant>,
     last_capture_at: Option<Instant>,
     frame_period_ms: Vec<f64>,
@@ -330,6 +336,14 @@ fn main() -> Result<()> {
             serde_json::from_str(&std::fs::read_to_string(args.poses.as_ref().unwrap()).unwrap())
                 .expect("parse poses json");
         println!("SEQ {} poses", poses.len());
+        // Pre-roll from pose 0. The GPU idle gate only sees pipeline variants
+        // requested by meshes visible from the startup camera; a startup pose
+        // outside the map leaves the sequence's variants uncompiled and the
+        // first captured frames sky-only while they build asynchronously.
+        if let Some(first) = poses.first() {
+            args.eye = first.eye.clone();
+            args.target = first.target.clone();
+        }
         seq_frames = Some((poses.clone(), args.seq_out_dir.clone().unwrap()));
         // drive exactly `warmup + n` frames; capture starts at pose 0
         frames_override = Some(poses.len() as u32);
@@ -362,6 +376,7 @@ fn main() -> Result<()> {
         .insert_resource(profile)
         .insert_resource(DirectionalLightShadowMap { size: 2048 })
         .add_plugins(bevy::post_process::auto_exposure::AutoExposurePlugin)
+        .add_plugins(GpuReadinessPlugin)
         .insert_resource(MainReceiver(rx))
         .insert_resource(args.clone())
         .init_resource::<WetnessApplied>()
@@ -387,6 +402,8 @@ fn main() -> Result<()> {
                 load_start: Instant::now(),
                 build_ready_at: None,
                 id_clones_done: false,
+                gpu_idle_frames: 0,
+                gpu_ready_at: None,
                 capture_start: None,
                 last_capture_at: None,
                 frame_period_ms: Vec::new(),
@@ -602,17 +619,28 @@ fn startup_setup(
 
 fn check_assets(
     mut commands: Commands,
+    server: Res<AssetServer>,
     gltfs: Res<Assets<Gltf>>,
     loads: Query<(Entity, &TileLoad), Without<SceneSpawned>>,
     mut state: ResMut<SpikeState>,
 ) {
     if state.loaded_at.is_none() {
         let loaded_count = state.total_glbs;
-        // All handles resolve?
-        let all_loaded = loads
-            .iter()
-            .all(|(_, t)| gltfs.contains(&t.0))
-            && gltfs.len() >= loaded_count as usize;
+        // Every glTF document *and* every asset it references (external
+        // images, buffers) must be loaded: master glTFs keep their textures
+        // as external .ktx2 files that land after the document itself, and a
+        // frame captured before then shows fallback materials.
+        let all_loaded = loads.iter().all(|(_, t)| {
+            gltfs.contains(&t.0)
+                && match server.recursive_dependency_load_state(t.0.id()) {
+                    RecursiveDependencyLoadState::Loaded => true,
+                    RecursiveDependencyLoadState::Failed(error) => {
+                        panic!("glTF dependency failed to load: {error}")
+                    }
+                    RecursiveDependencyLoadState::NotLoaded
+                    | RecursiveDependencyLoadState::Loading => false,
+                }
+        }) && gltfs.len() >= loaded_count as usize;
         if all_loaded {
             state.loaded_at = Some(Instant::now());
         }
@@ -744,15 +772,52 @@ fn advance_seq_pose(
 /// (ScheduleRunner ZERO), so without a settle window, capture can outrun
 /// lazy GLB mesh/material upload and produce sky-only frames. Default 0
 /// preserves the legacy hash-stable behavior.
-fn tick_frames(args: Res<Args>, mut frame: ResMut<GlobalFrame>, state: Res<SpikeState>) {
+fn tick_frames(
+    args: Res<Args>,
+    pending: Res<GpuPending>,
+    mut frame: ResMut<GlobalFrame>,
+    mut state: ResMut<SpikeState>,
+) {
+    if !state.id_clones_done {
+        return;
+    }
+    // Frames only count once the render world has compiled every pipeline
+    // and bound every material for GPU_IDLE_FRAMES consecutive updates;
+    // before that, draws are silently skipped and a capture would be missing
+    // primitives. `--settle-ms` then applies on top of that point.
+    if state.gpu_ready_at.is_none() {
+        if pending.is_idle() {
+            state.gpu_idle_frames += 1;
+        } else {
+            state.gpu_idle_frames = 0;
+        }
+        if state.gpu_idle_frames >= GPU_IDLE_FRAMES {
+            state.gpu_ready_at = Some(Instant::now());
+        } else {
+            if let Some(ready) = state.build_ready_at {
+                if ready.elapsed() > GPU_READY_DEADLINE {
+                    error!(
+                        "GPU never settled: {} pipelines compiling, {} materials unbound; capturing anyway",
+                        pending.pipelines(),
+                        pending.materials()
+                    );
+                    state.gpu_ready_at = Some(Instant::now());
+                }
+            }
+            return;
+        }
+    }
     let settled = state
-        .build_ready_at
+        .gpu_ready_at
         .map(|t| t.elapsed().as_millis() as u64 >= args.settle_ms.max(0) as u64)
         .unwrap_or(false);
-    if settled && state.id_clones_done {
+    if settled {
         frame.0 += 1;
     }
 }
+
+/// Upper bound on waiting for the GPU idle gate after the scene is spawned.
+const GPU_READY_DEADLINE: Duration = Duration::from_secs(300);
 
 fn collect_passes(
     receiver: Res<MainReceiver>,
@@ -1000,12 +1065,19 @@ fn write_timings(args: &Args, state: &SpikeState) {
         .zip(state.build_ready_at)
         .map(|(c, b)| c.duration_since(b).as_secs_f64() * 1000.0)
         .unwrap_or(-1.0);
+    // Scene spawned -> every pipeline compiled and every material bound.
+    let gpu_ready_ms = state
+        .gpu_ready_at
+        .zip(state.build_ready_at)
+        .map(|(g, b)| g.duration_since(b).as_secs_f64() * 1000.0)
+        .unwrap_or(-1.0);
     let timings = json!({
         "width": args.width,
         "height": args.height,
         "cameras": args.cameras.max(1),
         "passes": args.expected_keys(),
         "tiles": args.glbs.len(),
+        "gpu_ready_ms": gpu_ready_ms,
         "coverage": state.coverage,
         "asset_load_ms": load_ms,
         "scene_build_ms": build_ms,

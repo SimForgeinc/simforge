@@ -81,7 +81,7 @@ export async function downloadInputs(
       await Promise.all([rm(cachePath, { force: true }), rm(localPath, { force: true })]);
       throw error;
     }
-    result.set(transfer.inputId, { inputId: transfer.inputId, path: localPath, sha256: transfer.sha256, sizeBytes: transfer.sizeBytes });
+    result.set(transfer.inputId, { inputId: transfer.inputId, path: localPath, sha256: transfer.sha256, sizeBytes: transfer.sizeBytes, ...(transfer.relativePath === undefined ? {} : { relativePath: transfer.relativePath }) });
   }
   return result;
 }

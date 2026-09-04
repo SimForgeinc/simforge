@@ -25,7 +25,7 @@ path = "src/bin/sky-bench.rs"
 
 [dependencies]
 crossbeam-channel = "0.5"
-# `basis-universal` transcodes UASTC/ETC1S KTX2 (glb-ktx2-repack output) to GPU formats at load.
+# `basis-universal` transcodes the map masters' UASTC KTX2 images to GPU formats at load.
 # The source map GLBs use specular, anisotropy, clearcoat, and (potentially) transmission
 # textures. Bevy gates those texture bindings behind explicit features; omitting them
 # silently drops authored PBR inputs.

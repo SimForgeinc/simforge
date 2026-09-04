@@ -1,11 +1,12 @@
-import { access, mkdtemp, rm } from 'node:fs/promises';
-import { homedir, tmpdir } from 'node:os';
+import { access, readFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { runMapPipeline } from '@simforge-oss/map-pipeline';
 import type { RegistryClosureArtifact } from '@simforge-oss/map-pipeline';
 import {
   closureFromDirectory,
   createRegistryBackend,
   listMaps,
+  listDerivedClosures,
   loadDerivedClosure,
   promoteVersion,
   publishVersion,
@@ -14,7 +15,6 @@ import {
   resolveVersion,
   type MapClosure,
   type DerivedClosureInput,
-  type DerivedClosureKind,
   type MapVersion,
   type RegistryBackend,
 } from '@simforge-oss/map-registry';
@@ -27,7 +27,7 @@ function defaultRegistryUrl(): string {
 }
 
 export function registryUrl(explicit?: string): string {
-  return explicit ?? process.env['SIMFORGE_MAPS_REGISTRY'] ?? process.env['SIMFORGE_MAPS_PUBLIC_URL'] ?? defaultRegistryUrl();
+  return explicit ?? process.env['SIMFORGE_MAPS_REGISTRY'] ?? process.env['SIMFORGE_MAPS_PUBLIC_URL'] ?? 'https://da3tufozhdsvl.cloudfront.net';
 }
 
 function writableBackend(url: string): RegistryBackend {
@@ -54,31 +54,67 @@ export async function registryMapsList(options: RegistryListOptions): Promise<nu
   return EXIT.ok;
 }
 
+export interface MapBuildOptions {
+  directory: string;
+  name: string;
+  xodrPath?: string;
+  sourcePath?: string;
+  sourceManifest?: string;
+  reuseMasterDir?: string;
+  workDir: string;
+  cellSize?: number;
+  donorLibrary?: readonly string[];
+  pretty: boolean;
+}
+
+/**
+ * Build a map master and its web tier into `workDir` without publishing;
+ * `maps ingest` publishes the same stages. Prints where the stage content
+ * landed and the master/web reports.
+ */
+export async function registryMapsBuild(options: MapBuildOptions): Promise<number> {
+  const started = Date.now();
+  const pipeline = await runMapPipeline({
+    sourceDir: resolve(options.directory),
+    ...(options.xodrPath ? { xodrPath: resolve(options.xodrPath) } : {}),
+    ...(options.sourcePath ? { sourcePath: resolve(options.sourcePath) } : {}),
+    ...(options.sourceManifest ? { sourceManifest: resolve(options.sourceManifest) } : {}),
+    ...(options.reuseMasterDir ? { reuseMasterDir: resolve(options.reuseMasterDir) } : {}),
+    name: options.name,
+    workDir: resolve(options.workDir),
+    ...(options.cellSize ? { cellSize: options.cellSize } : {}),
+    ...(options.donorLibrary ? { donorLibrary: options.donorLibrary } : {}),
+  });
+  emit({
+    name: options.name,
+    seconds: (Date.now() - started) / 1000,
+    master: { contentDir: pipeline.stages.master.outputDir, closureDigest: pipeline.canonical.digest, report: pipeline.stages.master.report },
+    web: pipeline.stages.web === undefined ? null : { contentDir: pipeline.stages.web.outputDir, closureDigest: pipeline.derived[0]!.digest, toolFingerprint: pipeline.stages.web.toolFingerprint, report: pipeline.stages.web.report },
+  }, options);
+  return EXIT.ok;
+}
+
 export interface RegistryIngestOptions {
   directory: string;
   name: string;
   xodrPath?: string;
+  sourcePath?: string;
+  sourceManifest?: string;
+  reuseMasterDir?: string;
+  workDir?: string;
+  target?: 'private' | 'public';
   registry?: string;
   version?: MapVersion;
   label?: string;
   sourceRef?: string;
-  browserDirectory?: string;
-  browserFingerprint?: string;
-  ktx2Directory?: string;
-  ktx2Fingerprint?: string;
-  nativeDirectory?: string;
-  nativeFingerprint?: string;
+  /** Prebuilt web tier (`3d/**` + `images/*.ktx2`) to publish beside a prebuilt master. */
+  webDirectory?: string;
+  webFingerprint?: string;
+  /** Web tier cell size in metres when the pipeline runs (default 100). */
+  cellSize?: number;
+  /** `master.gltf` files of already-built maps consulted as terrain-texture donors. */
+  donorLibrary?: readonly string[];
   pretty: boolean;
-}
-
-async function optionalDerived(
-  directory: string | undefined,
-  kind: DerivedClosureKind,
-  fingerprint: string | undefined,
-): Promise<DerivedClosureInput | undefined> {
-  if (directory === undefined) return undefined;
-  if (fingerprint === undefined) throw new Error(`${kind} directory requires its tool fingerprint`);
-  return closureFromDirectory(resolve(directory), kind, fingerprint);
 }
 
 function pipelineArtifactInput(artifact: RegistryClosureArtifact): DerivedClosureInput {
@@ -91,54 +127,64 @@ function pipelineArtifactInput(artifact: RegistryClosureArtifact): DerivedClosur
   return { closure: artifact.closure, files };
 }
 
+/**
+ * Publish a map. `directory` is either a prebuilt master (has `master.gltf`;
+ * published as-is, with `--web-dir` for its tier) or a source export
+ * directory (one RoadRunner/Unreal GLB plus its .xodr) that the pipeline
+ * turns into a master and a web tier first.
+ */
 export async function registryMapsIngest(options: RegistryIngestOptions): Promise<number> {
   const directory = resolve(options.directory);
   let prebuilt = true;
   try {
-    await access(join(directory, '3d', 'manifest.json'));
+    await access(join(directory, 'master.gltf'));
   } catch {
     prebuilt = false;
   }
 
-  let pipelineWorkDir: string | undefined;
-  try {
-    let canonical: DerivedClosureInput;
-    let derived: DerivedClosureInput[];
-    if (prebuilt) {
-      canonical = await closureFromDirectory(directory);
-      const candidates = await Promise.all([
-        optionalDerived(options.browserDirectory, 'browser-optimized', options.browserFingerprint),
-        optionalDerived(options.ktx2Directory, 'ktx2', options.ktx2Fingerprint),
-        optionalDerived(options.nativeDirectory, 'native-corpus', options.nativeFingerprint),
-      ]);
-      derived = candidates.filter((value): value is DerivedClosureInput => value !== undefined);
-    } else {
-      pipelineWorkDir = await mkdtemp(join(tmpdir(), 'simforge-map-ingest-'));
-      const pipeline = await runMapPipeline({
-        sourceDir: directory,
-        ...(options.xodrPath ? { xodrPath: resolve(options.xodrPath) } : {}),
-        name: options.name,
-        workDir: pipelineWorkDir,
-      });
-      canonical = pipelineArtifactInput(pipeline.canonical);
-      derived = pipeline.derived.map(pipelineArtifactInput);
+  let canonical: DerivedClosureInput;
+  let derived: DerivedClosureInput[];
+  if (prebuilt) {
+    canonical = await closureFromDirectory(directory);
+    if (options.webDirectory === undefined) throw new Error('publishing a map master requires --web-dir');
+    let fingerprint = options.webFingerprint;
+    if (!fingerprint) {
+      // Use the actual completed build descriptor, not an invented basename fingerprint.
+      const webClosure = JSON.parse(await readFile(join(resolve(options.webDirectory), '..', 'closure.json'), 'utf8')) as MapClosure;
+      if (webClosure.kind !== 'web' || !webClosure.toolFingerprint) throw new Error('prebuilt web tier has no recorded tool fingerprint');
+      fingerprint = webClosure.toolFingerprint;
     }
-
-    const url = registryUrl(options.registry);
-    const published = await publishVersion(writableBackend(url), {
+    derived = [await closureFromDirectory(resolve(options.webDirectory), 'web', fingerprint)];
+  } else {
+    const workDir = options.workDir ?? process.env['SIMFORGE_MAP_WORK_DIR'];
+    if (!workDir) throw new Error('source ingestion requires --work-dir or SIMFORGE_MAP_WORK_DIR for durable resumable builds');
+    const pipeline = await runMapPipeline({
+      sourceDir: directory,
+      ...(options.xodrPath ? { xodrPath: resolve(options.xodrPath) } : {}),
+      ...(options.sourcePath ? { sourcePath: resolve(options.sourcePath) } : {}),
+      ...(options.sourceManifest ? { sourceManifest: resolve(options.sourceManifest) } : {}),
+      ...(options.reuseMasterDir ? { reuseMasterDir: resolve(options.reuseMasterDir) } : {}),
       name: options.name,
-      version: options.version,
-      closure: canonical.closure,
-      files: canonical.files,
-      derived,
-      summary: options.label === undefined ? {} : { label: options.label },
-      sourceRef: options.sourceRef,
+      workDir: resolve(workDir),
+      ...(options.cellSize ? { cellSize: options.cellSize } : {}),
+      ...(options.donorLibrary ? { donorLibrary: options.donorLibrary } : {}),
     });
-    emit({ registry: url, ...published }, options);
-    return EXIT.ok;
-  } finally {
-    if (pipelineWorkDir !== undefined) await rm(pipelineWorkDir, { recursive: true, force: true });
+    canonical = pipelineArtifactInput(pipeline.canonical);
+    derived = pipeline.derived.map(pipelineArtifactInput);
   }
+  const url = options.registry ?? process.env['SIMFORGE_MAPS_REGISTRY'] ?? internalRegistryUrl();
+  const published = await publishVersion(writableBackend(url), {
+    name: options.name,
+    version: options.version,
+    closure: canonical.closure,
+    files: canonical.files,
+    derived,
+    target: options.target ?? 'private',
+    summary: options.label === undefined ? {} : { label: options.label },
+    sourceRef: options.sourceRef,
+  });
+  emit({ registry: url, ...published }, options);
+  return EXIT.ok;
 }
 
 export interface RegistryPullOptions {
@@ -148,35 +194,36 @@ export interface RegistryPullOptions {
   browserRoot?: string;
   devAssetsRoot?: string;
   nativeCorpusRoot?: string;
-  browserFingerprint?: string;
-  ktx2Fingerprint?: string;
-  nativeFingerprint?: string;
+  blobCacheRoot?: string;
+  /** Pull one specific web tier by its tool fingerprint instead of every published one. */
+  webFingerprint?: string;
+  /** Also materialize the verbatim source rasters under dev-assets. */
+  archive?: boolean;
   pretty: boolean;
 }
 
+/**
+ * Pull a map version into the local layouts: `.corpus/<map>` for the native
+ * renderer (master + KTX2 + sidecars), `map-bundles/<map>` for the viewer
+ * (web tier + KTX2) and `dev-assets/<map>` for the sidecars alone.
+ */
 export async function registryMapsPull(options: RegistryPullOptions): Promise<number> {
   const url = registryUrl(options.registry);
   const backend = writableBackend(url);
   const resolved = await resolveVersion(backend, options.reference);
-  const fingerprints: Array<[DerivedClosureKind, string | undefined]> = [
-    ['browser-optimized', options.browserFingerprint],
-    ['ktx2', options.ktx2Fingerprint],
-    ['native-corpus', options.nativeFingerprint],
-  ];
-  const derived: MapClosure[] = [];
-  for (const [kind, fingerprint] of fingerprints) {
-    if (fingerprint !== undefined) {
-      derived.push(await loadDerivedClosure(backend, resolved.name, resolved.record.version, kind, fingerprint));
-    }
-  }
+  const derived: MapClosure[] = options.webFingerprint === undefined
+    ? await listDerivedClosures(backend, resolved.name, resolved.record.version)
+    : [await loadDerivedClosure(backend, resolved.name, resolved.record.version, 'web', options.webFingerprint)];
   const cacheRoot = resolve(options.cacheRoot ?? join(process.env['XDG_DATA_HOME'] ?? join(homedir(), '.local', 'share'), 'simforge', 'maps'));
   const result = await pullVersion(backend, options.reference, {
     layouts: {
       browserBundlesRoot: resolve(options.browserRoot ?? join(cacheRoot, 'map-bundles')),
       devAssetsRoot: resolve(options.devAssetsRoot ?? join(cacheRoot, 'dev-assets')),
       nativeCorpusRoot: resolve(options.nativeCorpusRoot ?? join(cacheRoot, '.corpus')),
+      blobCacheRoot: resolve(options.blobCacheRoot ?? join(cacheRoot, '.blobs')),
     },
-    ...(derived.length === 0 ? {} : { derivedClosures: derived }),
+    derivedClosures: derived,
+    ...(options.archive === true ? { archive: true } : {}),
   });
   emit({ registry: url, ...result }, options);
   return EXIT.ok;
@@ -186,6 +233,7 @@ export interface RegistryPromoteOptions {
   reference: string;
   sourceRegistry?: string;
   destinationRegistry?: string;
+  target?: 'private' | 'public';
   pretty: boolean;
 }
 
@@ -196,6 +244,7 @@ export async function registryMapsPromote(options: RegistryPromoteOptions): Prom
   const result = await promoteVersion(writableBackend(sourceUrl), writableBackend(destinationUrl), {
     reference: options.reference,
     sourceRegistry: sourceUrl,
+    target: options.target ?? 'public',
   });
   emit({ sourceRegistry: sourceUrl, destinationRegistry: destinationUrl, ...result }, options);
   return EXIT.ok;

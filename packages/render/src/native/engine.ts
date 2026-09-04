@@ -167,10 +167,52 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
       });
       const xoscInput = context.inputs.get('scenario.xosc');
       if (!xoscInput) throw new Error('native render requires scenario.xosc');
-      const tileInputs = [...context.inputs.values()]
-        .filter((input) => /^map\.tile\.[A-Za-z0-9._-]+$/.test(input.inputId))
-        .sort((left, right) => left.inputId.localeCompare(right.inputId));
-      if (tileInputs.length === 0) throw new Error('native render requires map.tile.* native-corpus GLBs');
+      const master = context.inputs.get('map.tile.000000');
+      if (!master || master.relativePath !== 'master.gltf') {
+        throw new Error('native render requires map.tile.000000 with relativePath master.gltf and its complete resource closure');
+      }
+      const mapRoot = path.join(context.workspace, 'map');
+      await fs.rm(mapRoot, { recursive: true, force: true });
+      const members = new Set<string>();
+      for (const input of context.inputs.values()) {
+        if (input.inputId !== master.inputId && !/^map\.resource\.[a-f0-9]{64}$/u.test(input.inputId)) continue;
+        const member = input.relativePath;
+        if (!member || /[\\:%?#\u0000-\u001f]/u.test(member)
+          || member.split('/').some((part) => !part || part === '.' || part === '..')) {
+          throw new Error(`unsafe native map member: ${member}`);
+        }
+        if (members.has(member)) throw new Error(`duplicate native map member: ${member}`);
+        members.add(member);
+        const destination = path.join(mapRoot, member);
+        await fs.mkdir(path.dirname(destination), { recursive: true });
+        try {
+          await fs.link(input.path, destination);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'EXDEV') throw error;
+          await fs.copyFile(input.path, destination);
+        }
+      }
+      const masterPath = path.join(mapRoot, master.relativePath);
+      const document = JSON.parse(await fs.readFile(masterPath, 'utf8')) as {
+        buffers?: Array<{ uri?: string }>;
+        images?: Array<{ uri?: string }>;
+        textures?: Array<{ source?: number; extensions?: { KHR_texture_basisu?: { source: number } } }>;
+      };
+      const imageIndices = new Set<number>();
+      for (const texture of document.textures ?? []) {
+        const source = texture.extensions?.KHR_texture_basisu?.source ?? texture.source;
+        if (source !== undefined) imageIndices.add(source);
+      }
+      const resources = [...(document.buffers ?? [])];
+      for (const index of imageIndices) {
+        const image = document.images?.[index];
+        if (!image) throw new Error(`master references missing image ${index}`);
+        resources.push(image);
+      }
+      for (const resource of resources) {
+        if (!resource.uri || resource.uri.startsWith('data:')) continue;
+        if (!members.has(resource.uri)) throw new Error(`master references undeclared map member: ${resource.uri}`);
+      }
       let actorAssets: string | undefined;
       try {
         actorAssets = await ensureActorAssets();
@@ -208,7 +250,7 @@ export function createRenderEngine(options: NativeRenderEngineOptions = {}): Ren
         cloudFixedStepS: 1 / Math.max(1, ...rgbSchedules.map((schedule) => schedule.framesPerSecond)),
       });
       await writeJson(scenePath, {
-        glbs: tileInputs.map((tile) => tile.path),
+        glbs: [masterPath],
         profile: 'cinematic',
         lighting: look.lighting,
         profileConfig: look.profileConfig,

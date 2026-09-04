@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
-import { open, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+
 import type { Document, GLTF, Material, Texture, TextureInfo } from '@gltf-transform/core';
 import { KHRTextureTransform } from '@gltf-transform/extensions';
+import type { Transform as TextureTransform } from '@gltf-transform/extensions';
 
 /**
  * RoadRunner terrain reaches us from Unreal's glTF exporter as one material per
@@ -12,13 +14,15 @@ import { KHRTextureTransform } from '@gltf-transform/extensions';
  * fields render as a single olive or concrete-grey sheet.
  *
  * Every layer of one RoadRunner material shares the same texture set and the
- * same world-scaled UV convention, and the textured siblings are usually in the
- * map - just in another tile. This pass scans the canonical closure once for a
- * textured donor per terrain material base name and gives every untextured
- * sibling that donor's colour/normal/roughness/occlusion textures, samplers,
- * texCoord and KHR_texture_transform, resetting the tint factor to white.
+ * same world-scaled UV convention, and a textured sibling is usually in the
+ * map. This pass gives every untextured layer its sibling's colour, normal,
+ * roughness and occlusion textures, sampler, texCoord and
+ * KHR_texture_transform, resetting the tint factor to white. Bases the map
+ * cannot donate itself may come from a library of other maps' masters:
+ * RoadRunner library materials share one texture set across every export.
  *
- * Presentation-only: derived closures only, the canonical stays verbatim.
+ * Applied to the master as a JSON-level edit; the source export stays verbatim
+ * in the registry and every retextured material is listed in the report.
  */
 
 const TERRAIN_MATERIAL = /_Terrain_/;
@@ -39,7 +43,7 @@ interface DonorTextureRef {
 }
 
 export interface TerrainDonor {
-  /** Tile the textures were taken from; keeps the choice explainable. */
+  /** Master the textures were taken from; keeps the choice explainable. */
   source: string;
   material: string;
   slots: Partial<Record<DonorSlot, DonorTextureRef>>;
@@ -49,14 +53,14 @@ export interface TerrainDonor {
 
 export type TerrainDonorPool = Map<string, TerrainDonor>;
 
-/** `SIMFORGE_TERRAIN_DONOR_DIRS`: path-separated tile directories used as a donor library. */
-export function terrainDonorLibraryDirs(): string[] {
-  const raw = process.env.SIMFORGE_TERRAIN_DONOR_DIRS;
+/** `SIMFORGE_TERRAIN_DONOR_MASTERS`: path-separated `master.gltf` files used as a donor library. */
+export function terrainDonorLibrary(): string[] {
+  const raw = process.env['SIMFORGE_TERRAIN_DONOR_MASTERS'];
   if (!raw) return [];
   return raw.split(path.delimiter).map((entry) => entry.trim()).filter((entry) => entry.length > 0);
 }
 
-/** Content identity of a pool: what was retextured with which bytes. Feeds the derive cache key. */
+/** Content identity of a pool: what was retextured with which bytes. */
 export function terrainDonorPoolDigest(pool: TerrainDonorPool): string {
   const hash = createHash('sha256');
   for (const base of [...pool.keys()].sort()) {
@@ -77,106 +81,61 @@ export function terrainLayerBase(name: string): string | null {
   return name.replace(LAYER_SUFFIX, '');
 }
 
-interface GlbJson {
-  materials?: Array<Record<string, unknown>>;
-  textures?: Array<{ source?: number; sampler?: number }>;
-  images?: Array<{ bufferView?: number; mimeType?: string; uri?: string }>;
-  samplers?: Array<DonorImage['sampler']>;
-  bufferViews?: Array<{ byteOffset?: number; byteLength: number }>;
+/** Terrain bases with at least one untextured layer in the document. */
+function untexturedBases(document: Document): Set<string> {
+  const bases = new Set<string>();
+  for (const material of document.getRoot().listMaterials()) {
+    const base = terrainLayerBase(material.getName());
+    if (base !== null && material.getBaseColorTexture() === null) bases.add(base);
+  }
+  return bases;
 }
 
-/** Header + JSON chunk only; the BIN chunk is read lazily per donor image. */
-async function readGlbJson(file: string): Promise<{ json: GlbJson; binOffset: number } | null> {
-  const handle = await open(file, 'r');
-  try {
-    const header = Buffer.alloc(20);
-    await handle.read(header, 0, 20, 0);
-    if (header.readUInt32LE(0) !== 0x46546c67) return null;
-    const jsonLength = header.readUInt32LE(12);
-    const jsonBytes = Buffer.alloc(jsonLength);
-    await handle.read(jsonBytes, 0, jsonLength, 20);
-    return { json: JSON.parse(jsonBytes.toString('utf8')) as GlbJson, binOffset: 20 + jsonLength + 8 };
-  } finally {
-    await handle.close();
-  }
+interface MasterJson {
+  materials?: Array<Record<string, unknown>>;
+  textures?: Array<{ source?: number; sampler?: number }>;
+  images?: Array<{ mimeType?: string; uri?: string }>;
+  samplers?: Array<DonorImage['sampler']>;
 }
 
 function textureInfoOf(material: Record<string, unknown>, slot: DonorSlot): Record<string, unknown> | undefined {
   if (slot === 'baseColorTexture' || slot === 'metallicRoughnessTexture') {
-    return (material.pbrMetallicRoughness as Record<string, unknown> | undefined)?.[slot] as Record<string, unknown> | undefined;
+    return (material['pbrMetallicRoughness'] as Record<string, unknown> | undefined)?.[slot] as Record<string, unknown> | undefined;
   }
   return material[slot] as Record<string, unknown> | undefined;
 }
 
 /**
- * One scan of every tile in the closure: the first textured layer (by tile
- * path, then material index - deterministic) becomes the donor for its base
- * name. Returns only bases that also have at least one untextured layer, so
- * maps without the export gap allocate nothing.
- *
- * `libraryDirs` are extra tile directories (other maps' canonical closures)
- * consulted, in order, for bases the map itself has no textured layer for:
- * RoadRunner library materials share one texture set across every export,
- * so a `Concrete1_Ground_Terrain_Ground` donor from another map is the same
- * texture the missing layer would have carried. In-map donors win.
+ * Donors for `bases` from a library of other maps' masters, in order; the
+ * first textured layer per base wins. Only the referenced PNGs are read.
  */
-export async function collectTerrainLayerDonors(contentDir: string, libraryDirs: readonly string[] = terrainDonorLibraryDirs()): Promise<TerrainDonorPool> {
-  const tilesDir = path.join(contentDir, '3d', 'tiles');
-  const candidates = new Map<string, { dir: string; file: string; json: GlbJson; binOffset: number; index: number }>();
-  const untextured = new Set<string>();
-  for (const dir of [tilesDir, ...libraryDirs]) {
-    const files = (await readdir(dir).catch(() => [] as string[])).filter((name) => name.toLowerCase().endsWith('.glb')).sort();
-    for (const file of files) {
-      const parsed = await readGlbJson(path.join(dir, file));
-      if (!parsed) continue;
-      (parsed.json.materials ?? []).forEach((material, index) => {
-        const base = terrainLayerBase(String(material.name ?? ''));
-        if (base === null) return;
-        if (textureInfoOf(material, 'baseColorTexture') === undefined) {
-          if (dir === tilesDir) untextured.add(base);
-        } else if (!candidates.has(base)) {
-          candidates.set(base, { dir, file, json: parsed.json, binOffset: parsed.binOffset, index });
-        }
-      });
-    }
-  }
+export async function collectLibraryDonors(bases: ReadonlySet<string>, library: readonly string[] = terrainDonorLibrary()): Promise<TerrainDonorPool> {
   const pool: TerrainDonorPool = new Map();
-  for (const base of [...untextured].sort()) {
-    const candidate = candidates.get(base);
-    if (!candidate) continue;
-    const material = candidate.json.materials![candidate.index]!;
-    const handle = await open(path.join(candidate.dir, candidate.file), 'r');
-    try {
+  for (const masterPath of library) {
+    if (bases.size === pool.size) break;
+    const json = JSON.parse(await readFile(masterPath, 'utf8')) as MasterJson;
+    const directory = path.dirname(masterPath);
+    const images = new Map<number, DonorImage>();
+    for (const [index, material] of (json.materials ?? []).entries()) {
+      const base = terrainLayerBase(String(material['name'] ?? ''));
+      if (base === null || !bases.has(base) || pool.has(base)) continue;
       const slots: TerrainDonor['slots'] = {};
-      const imageCache = new Map<number, DonorImage>();
       for (const slot of DONOR_SLOTS) {
         const info = textureInfoOf(material, slot);
         if (info === undefined) continue;
-        const texture = candidate.json.textures?.[info.index as number];
-        const image = texture?.source === undefined ? undefined : candidate.json.images?.[texture.source];
-        if (!texture || !image || image.bufferView === undefined || !image.mimeType) continue;
-        let donorImage = imageCache.get(texture.source!);
+        const texture = json.textures?.[info['index'] as number];
+        const image = texture?.source === undefined ? undefined : json.images?.[texture.source];
+        if (!texture || !image?.uri || !image.mimeType) continue;
+        let donorImage = images.get(texture.source!);
         if (!donorImage) {
-          const view = candidate.json.bufferViews![image.bufferView]!;
-          const bytes = Buffer.alloc(view.byteLength);
-          await handle.read(bytes, 0, view.byteLength, candidate.binOffset + (view.byteOffset ?? 0));
-          donorImage = { mimeType: image.mimeType, bytes, sampler: texture.sampler === undefined ? {} : (candidate.json.samplers?.[texture.sampler] ?? {}) };
-          imageCache.set(texture.source!, donorImage);
+          donorImage = { mimeType: image.mimeType, bytes: await readFile(path.join(directory, decodeURIComponent(image.uri))), sampler: texture.sampler === undefined ? {} : (json.samplers?.[texture.sampler] ?? {}) };
+          images.set(texture.source!, donorImage);
         }
-        const transform = (info.extensions as Record<string, unknown> | undefined)?.KHR_texture_transform as DonorTextureRef['transform'];
-        slots[slot] = { image: donorImage, texCoord: (info.texCoord as number | undefined) ?? 0, transform };
+        slots[slot] = { image: donorImage, texCoord: (info['texCoord'] as number | undefined) ?? 0, transform: (info['extensions'] as Record<string, unknown> | undefined)?.['KHR_texture_transform'] as DonorTextureRef['transform'] };
       }
       if (slots.baseColorTexture === undefined) continue;
-      const pbr = (material.pbrMetallicRoughness ?? {}) as Record<string, number | undefined>;
-      pool.set(base, {
-        source: path.join(candidate.dir, candidate.file),
-        material: String(material.name),
-        slots,
-        metallicFactor: pbr.metallicFactor ?? 1,
-        roughnessFactor: pbr.roughnessFactor ?? 1,
-      });
-    } finally {
-      await handle.close();
+      const pbr = (material['pbrMetallicRoughness'] ?? {}) as Record<string, number | undefined>;
+      pool.set(base, { source: `${masterPath}#materials/${index}`, material: String(material['name']), slots, metallicFactor: pbr.metallicFactor ?? 1, roughnessFactor: pbr.roughnessFactor ?? 1 });
     }
   }
   return pool;
@@ -184,24 +143,42 @@ export async function collectTerrainLayerDonors(contentDir: string, libraryDirs:
 
 export interface TerrainLayerReport {
   retextured: number;
-  byBase: Record<string, number>;
+  byBase: Record<string, { donor: string; materials: string[] }>;
+  /** Bases with untextured layers that no donor could be found for. */
+  undonated: string[];
 }
 
-/** Apply the pool to one tile document; textures are created once per image per document. */
-export function borrowTerrainLayerTextures(document: Document, pool: TerrainDonorPool): TerrainLayerReport {
-  const report: TerrainLayerReport = { retextured: 0, byBase: {} };
-  if (pool.size === 0) return report;
-  const textures = new Map<DonorImage, Texture>();
-  const transformExtension = document.createExtension(KHRTextureTransform);
+function copyTextureInfo(from: TextureInfo, to: TextureInfo, transforms: ReturnType<Document['createExtension']>): void {
+  to.setTexCoord(from.getTexCoord()).setMagFilter(from.getMagFilter()).setMinFilter(from.getMinFilter()).setWrapS(from.getWrapS()).setWrapT(from.getWrapT());
+  const transform = from.getExtension<TextureTransform>('KHR_texture_transform');
+  if (transform) {
+    to.setExtension('KHR_texture_transform', (transforms as KHRTextureTransform).createTransform().setOffset(transform.getOffset()).setRotation(transform.getRotation()).setScale(transform.getScale()).setTexCoord(transform.getTexCoord()));
+  }
+}
+
+/**
+ * Retexture every untextured terrain layer of `document`. In-map donors (the
+ * first textured layer of the same base, by material order) win; `library`
+ * donors fill the rest. Returns what was changed and what could not be.
+ */
+export function borrowTerrainLayerTextures(document: Document, library: TerrainDonorPool = new Map()): TerrainLayerReport {
+  const report: TerrainLayerReport = { retextured: 0, byBase: {}, undonated: [] };
+  const bases = untexturedBases(document);
+  if (bases.size === 0) return report;
+  const root = document.getRoot();
+  const inMap = new Map<string, Material>();
+  for (const material of root.listMaterials()) {
+    const base = terrainLayerBase(material.getName());
+    if (base !== null && bases.has(base) && material.getBaseColorTexture() !== null && !inMap.has(base)) inMap.set(base, material);
+  }
+  const transforms = document.createExtension(KHRTextureTransform);
+  const libraryTextures = new Map<DonorImage, Texture>();
   const textureFor = (image: DonorImage): Texture => {
-    let texture = textures.get(image);
-    if (!texture) {
-      texture = document.createTexture().setMimeType(image.mimeType).setImage(image.bytes);
-      textures.set(image, texture);
-    }
+    let texture = libraryTextures.get(image);
+    if (!texture) libraryTextures.set(image, (texture = document.createTexture().setMimeType(image.mimeType).setImage(image.bytes)));
     return texture;
   };
-  const bind = (info: TextureInfo | null, ref: DonorTextureRef): void => {
+  const bindLibrary = (info: TextureInfo | null, ref: DonorTextureRef): void => {
     if (info === null) return;
     info.setTexCoord(ref.texCoord);
     const { sampler } = ref.image;
@@ -210,45 +187,61 @@ export function borrowTerrainLayerTextures(document: Document, pool: TerrainDono
     if (sampler.wrapS !== undefined) info.setWrapS(sampler.wrapS);
     if (sampler.wrapT !== undefined) info.setWrapT(sampler.wrapT);
     if (ref.transform) {
-      const transform = transformExtension.createTransform();
+      const transform = transforms.createTransform();
       if (ref.transform.offset) transform.setOffset(ref.transform.offset);
       if (ref.transform.rotation !== undefined) transform.setRotation(ref.transform.rotation);
       if (ref.transform.scale) transform.setScale(ref.transform.scale);
       info.setExtension('KHR_texture_transform', transform);
     }
   };
-  for (const material of document.getRoot().listMaterials()) {
+
+  for (const material of root.listMaterials()) {
     if (material.getBaseColorTexture() !== null) continue;
     const base = terrainLayerBase(material.getName());
-    const donor = base === null ? undefined : pool.get(base);
-    if (!donor) continue;
-    applyDonor(material, donor, textureFor, bind);
+    if (base === null) continue;
+    const sibling = inMap.get(base);
+    const donor = sibling ? undefined : library.get(base);
+    if (!sibling && !donor) {
+      if (!report.undonated.includes(base)) report.undonated.push(base);
+      continue;
+    }
+    if (sibling) {
+      material.setBaseColorTexture(sibling.getBaseColorTexture()).setBaseColorFactor([1, 1, 1, 1]);
+      copyTextureInfo(sibling.getBaseColorTextureInfo()!, material.getBaseColorTextureInfo()!, transforms);
+      if (sibling.getNormalTexture()) {
+        material.setNormalTexture(sibling.getNormalTexture()).setNormalScale(sibling.getNormalScale());
+        copyTextureInfo(sibling.getNormalTextureInfo()!, material.getNormalTextureInfo()!, transforms);
+      }
+      if (sibling.getMetallicRoughnessTexture()) {
+        material.setMetallicRoughnessTexture(sibling.getMetallicRoughnessTexture()).setMetallicFactor(sibling.getMetallicFactor()).setRoughnessFactor(sibling.getRoughnessFactor());
+        copyTextureInfo(sibling.getMetallicRoughnessTextureInfo()!, material.getMetallicRoughnessTextureInfo()!, transforms);
+      }
+      if (sibling.getOcclusionTexture()) {
+        material.setOcclusionTexture(sibling.getOcclusionTexture()).setOcclusionStrength(sibling.getOcclusionStrength());
+        copyTextureInfo(sibling.getOcclusionTextureInfo()!, material.getOcclusionTextureInfo()!, transforms);
+      }
+    } else {
+      const { slots } = donor!;
+      material.setBaseColorTexture(textureFor(slots.baseColorTexture!.image)).setBaseColorFactor([1, 1, 1, 1]);
+      bindLibrary(material.getBaseColorTextureInfo(), slots.baseColorTexture!);
+      if (slots.normalTexture) {
+        material.setNormalTexture(textureFor(slots.normalTexture.image));
+        bindLibrary(material.getNormalTextureInfo(), slots.normalTexture);
+      }
+      if (slots.metallicRoughnessTexture) {
+        material.setMetallicRoughnessTexture(textureFor(slots.metallicRoughnessTexture.image)).setMetallicFactor(donor!.metallicFactor).setRoughnessFactor(donor!.roughnessFactor);
+        bindLibrary(material.getMetallicRoughnessTextureInfo(), slots.metallicRoughnessTexture);
+      }
+      if (slots.occlusionTexture) {
+        material.setOcclusionTexture(textureFor(slots.occlusionTexture.image));
+        bindLibrary(material.getOcclusionTextureInfo(), slots.occlusionTexture);
+      }
+    }
+    const entry = (report.byBase[base] ??= { donor: sibling ? `material:${sibling.getName()}` : donor!.source, materials: [] });
+    entry.materials.push(material.getName());
     report.retextured += 1;
-    report.byBase[base!] = (report.byBase[base!] ?? 0) + 1;
   }
-  if (textures.size === 0) transformExtension.dispose();
+  report.undonated.sort();
+  if (transforms.listProperties().length === 0) transforms.dispose();
   return report;
-}
-
-function applyDonor(
-  material: Material,
-  donor: TerrainDonor,
-  textureFor: (image: DonorImage) => Texture,
-  bind: (info: TextureInfo | null, ref: DonorTextureRef) => void,
-): void {
-  const { slots } = donor;
-  material.setBaseColorTexture(textureFor(slots.baseColorTexture!.image)).setBaseColorFactor([1, 1, 1, 1]);
-  bind(material.getBaseColorTextureInfo(), slots.baseColorTexture!);
-  if (slots.normalTexture) {
-    material.setNormalTexture(textureFor(slots.normalTexture.image));
-    bind(material.getNormalTextureInfo(), slots.normalTexture);
-  }
-  if (slots.metallicRoughnessTexture) {
-    material.setMetallicRoughnessTexture(textureFor(slots.metallicRoughnessTexture.image)).setMetallicFactor(donor.metallicFactor).setRoughnessFactor(donor.roughnessFactor);
-    bind(material.getMetallicRoughnessTextureInfo(), slots.metallicRoughnessTexture);
-  }
-  if (slots.occlusionTexture) {
-    material.setOcclusionTexture(textureFor(slots.occlusionTexture.image));
-    bind(material.getOcclusionTextureInfo(), slots.occlusionTexture);
-  }
 }

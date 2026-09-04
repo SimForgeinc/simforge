@@ -1,6 +1,6 @@
 {
   "name": "@simforge-oss/map-pipeline",
-  "version": "0.1.0-rc.60",
+  "version": "0.1.0-rc.61",
   "description": "Deterministic source-map to registry-closure pipeline.",
   "repository": {
     "type": "git",
@@ -68,6 +68,7 @@
     "meshoptimizer": "1.2.0",
     "mikktspace": "1.1.1",
     "sharp": "0.34.5",
+    "three": "^0.185.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

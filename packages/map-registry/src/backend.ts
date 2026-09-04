@@ -11,9 +11,11 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import { createReadStream } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
 import { copyFile, link, mkdir, open, readFile, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
+import { setTimeout as delay } from 'node:timers/promises';
 
 export interface PutOptions {
   ifAbsent?: boolean;
@@ -50,18 +52,14 @@ function safeFilePath(root: string, key: string): string {
 
 async function writeAtomic(target: string, bytes: Uint8Array, ifAbsent: boolean): Promise<void> {
   await mkdir(dirname(target), { recursive: true });
-  if (ifAbsent) {
-    const handle = await open(target, 'wx');
-    try {
-      await handle.writeFile(bytes);
-    } finally {
-      await handle.close();
-    }
-    return;
+  const temporary = `${target}.tmp-${randomUUID()}`;
+  try {
+    await writeFile(temporary, bytes);
+    if (ifAbsent) await link(temporary, target);
+    else await rename(temporary, target);
+  } finally {
+    await unlink(temporary).catch(() => undefined);
   }
-  const temporary = `${target}.tmp-${process.pid}-${Date.now()}`;
-  await writeFile(temporary, bytes);
-  await rename(temporary, target);
 }
 
 export class FileRegistryBackend implements RegistryBackend {
@@ -80,7 +78,8 @@ export class FileRegistryBackend implements RegistryBackend {
   }
 
   async getVersioned(key: string): Promise<VersionedObject> {
-    return { bytes: await this.get(key) };
+    const bytes = await this.get(key);
+    return { bytes, etag: createHash('sha256').update(bytes).digest('hex') };
   }
 
   async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
@@ -136,26 +135,54 @@ export class FileRegistryBackend implements RegistryBackend {
   }
 
   async put(key: string, bytes: Uint8Array, options: PutOptions = {}): Promise<void> {
-    await writeAtomic(safeFilePath(this.root, key), bytes, options.ifAbsent ?? false);
+    const target = safeFilePath(this.root, key);
+    await mkdir(dirname(target), { recursive: true });
+    const lock = `${target}.lock`;
+    let handle;
+    for (let attempt = 0; attempt < 1000; attempt++) {
+      try {
+        handle = await open(lock, 'wx');
+        await handle.writeFile(String(process.pid));
+        break;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+        try {
+          const owner = Number(await readFile(lock, 'utf8'));
+          if (Number.isSafeInteger(owner) && owner > 0) {
+            try { process.kill(owner, 0); }
+            catch (probe) {
+              if ((probe as NodeJS.ErrnoException).code === 'ESRCH') await unlink(lock).catch(() => undefined);
+            }
+          }
+        } catch (probe) {
+          if ((probe as NodeJS.ErrnoException).code !== 'ENOENT') throw probe;
+        }
+        await delay(10);
+      }
+    }
+    if (!handle) throw new Error(`registry lock timeout: ${key}`);
+    try {
+      if (options.ifMatch) {
+        const current = await this.getVersioned(key);
+        if (current.etag !== options.ifMatch) throw Object.assign(new Error(`registry CAS conflict: ${key}`), { code: 'PreconditionFailed' });
+      }
+      await writeAtomic(target, bytes, options.ifAbsent ?? false);
+    } finally {
+      await handle.close();
+      await unlink(lock);
+    }
   }
 
   async putFile(key: string, sourcePath: string, options: PutOptions & MultipartOptions = {}): Promise<void> {
     const target = safeFilePath(this.root, key);
     await mkdir(dirname(target), { recursive: true });
-    if (options.ifAbsent && (await this.exists(key))) throw new Error(`registry object already exists: ${key}`);
-    const temporary = `${target}.tmp-${process.pid}-${Date.now()}`;
+    const temporary = `${target}.tmp-${randomUUID()}`;
     try {
-      await link(sourcePath, temporary);
-    } catch (error) {
-      if (!['EXDEV', 'EPERM', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
       await copyFile(sourcePath, temporary);
-    }
-    try {
-      if (options.ifAbsent && (await this.exists(key))) throw new Error(`registry object already exists: ${key}`);
-      await rename(temporary, target);
-    } catch (error) {
+      if (options.ifAbsent) await link(temporary, target);
+      else await rename(temporary, target);
+    } finally {
       await unlink(temporary).catch(() => undefined);
-      throw error;
     }
   }
 }
@@ -192,7 +219,7 @@ export function isRegistryWriteConflict(error: unknown): boolean {
   } else if ('statusCode' in error) {
     status = error.statusCode;
   }
-  return status === 409 || status === 412;
+  return status === 409 || status === 412 || ('code' in error && (error.code === 'EEXIST' || error.code === 'PreconditionFailed'));
 }
 
 export class S3RegistryBackend implements RegistryBackend {
@@ -299,6 +326,17 @@ export class S3RegistryBackend implements RegistryBackend {
         throw new Error(`content-addressed blob checksum mismatch for ${key}`);
       }
     }
+    if (response.ChecksumSHA256 === undefined) {
+      const hash = createHash('sha256');
+      for (let offset = 0; offset < expectedBytes;) {
+        const count = Math.min(8 * 1024 * 1024, expectedBytes - offset);
+        const bytes = await this.getRange(key, offset, offset + count - 1);
+        if (bytes.byteLength !== count) throw new Error(`invalid blob range: ${key}`);
+        hash.update(bytes);
+        offset += count;
+      }
+      if (hash.digest('hex') !== expectedDigest) throw new Error(`content-addressed blob checksum mismatch for ${key}`);
+    }
   }
 
   async putFile(key: string, sourcePath: string, options: PutOptions & MultipartOptions = {}): Promise<void> {
@@ -392,11 +430,14 @@ export class S3RegistryBackend implements RegistryBackend {
       if (uploaded.ETag === undefined) throw new Error(`S3 did not return an ETag for part ${partNumber}`);
       completed.set(partNumber, uploaded.ETag);
     }
+    try {
     await this.client.send(
       new CompleteMultipartUploadCommand({
         Bucket: this.bucket,
         Key: objectKey,
         UploadId: state.uploadId,
+        ...(options.ifAbsent ? { IfNoneMatch: '*' } : {}),
+        ...(options.ifMatch ? { IfMatch: options.ifMatch } : {}),
         MultipartUpload: {
           Parts: [...completed.entries()]
             .sort(([left], [right]) => (left ?? 0) - (right ?? 0))
@@ -404,6 +445,12 @@ export class S3RegistryBackend implements RegistryBackend {
         },
       }),
     );
+    } catch (error) {
+      if (!options.ifAbsent || !isRegistryWriteConflict(error)) throw error;
+      await this.client.send(new AbortMultipartUploadCommand({ Bucket: this.bucket, Key: objectKey, UploadId: state.uploadId })).catch(() => undefined);
+      if (!/^blobs\/sha256\/[a-f0-9]{2}\/[a-f0-9]{64}$/u.test(key)) throw error;
+      await this.verifyExistingBlob(key, source.size);
+    }
     if (options.resumeFile !== undefined) await unlink(options.resumeFile).catch(() => undefined);
   }
 }
@@ -432,8 +479,13 @@ export class HttpRegistryBackend implements RegistryBackend {
   async getRange(key: string, start: number, endInclusive?: number): Promise<Uint8Array> {
     const response = await fetch(this.objectUrl(key), {
       headers: { Range: `bytes=${start}-${endInclusive ?? ''}` },
+      signal: AbortSignal.timeout(120_000),
     });
-    if (!response.ok) throw new Error(`registry ranged GET ${key} failed: HTTP ${response.status}`);
+    if (!response.ok) throw Object.assign(new Error(`registry ranged GET ${key} failed: HTTP ${response.status}`), { statusCode: response.status });
+    if (response.status !== 206) {
+      await response.body?.cancel();
+      throw new Error(`registry does not support bounded range reads: ${key}`);
+    }
     return new Uint8Array(await response.arrayBuffer());
   }
 

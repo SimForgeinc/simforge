@@ -186,7 +186,58 @@ pub struct GltfMaterial {
     pub alpha_mode: AlphaMode,
 
     /// The transform applied to the UVs corresponding to `ATTRIBUTE_UV_0` on the mesh before sampling. Default is identity.
+    ///
+    /// glTF `KHR_texture_transform` is declared per texture slot; this is the
+    /// base-colour slot's transform, kept for materials that only transform
+    /// that slot. Every slot also records its own transform below.
     pub uv_transform: Affine2,
+
+    /// `KHR_texture_transform` of the `base_color` slot, if it declares one.
+    pub base_color_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `emissive` slot, if it declares one.
+    pub emissive_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `metallic_roughness` slot, if it declares one.
+    pub metallic_roughness_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `normal_map` slot, if it declares one.
+    pub normal_map_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `occlusion` slot, if it declares one.
+    pub occlusion_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `specular_transmission` slot, if it declares one.
+    #[cfg(feature = "pbr_transmission_textures")]
+    pub specular_transmission_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `thickness` slot, if it declares one.
+    #[cfg(feature = "pbr_transmission_textures")]
+    pub thickness_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `specular` slot, if it declares one.
+    #[cfg(feature = "pbr_specular_textures")]
+    pub specular_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `specular_tint` slot, if it declares one.
+    #[cfg(feature = "pbr_specular_textures")]
+    pub specular_tint_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `clearcoat` slot, if it declares one.
+    #[cfg(feature = "pbr_multi_layer_material_textures")]
+    pub clearcoat_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `clearcoat_roughness` slot, if it declares one.
+    #[cfg(feature = "pbr_multi_layer_material_textures")]
+    pub clearcoat_roughness_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `clearcoat_normal` slot, if it declares one.
+    #[cfg(feature = "pbr_multi_layer_material_textures")]
+    pub clearcoat_normal_uv_transform: Option<Affine2>,
+
+    /// `KHR_texture_transform` of the `anisotropy` slot, if it declares one.
+    #[cfg(feature = "pbr_anisotropy_texture")]
+    pub anisotropy_uv_transform: Option<Affine2>,
 }
 
 impl Default for GltfMaterial {
@@ -261,6 +312,27 @@ impl Default for GltfMaterial {
             unlit: false,
             alpha_mode: AlphaMode::Opaque,
             uv_transform: Affine2::IDENTITY,
+            base_color_uv_transform: None,
+            emissive_uv_transform: None,
+            metallic_roughness_uv_transform: None,
+            normal_map_uv_transform: None,
+            occlusion_uv_transform: None,
+            #[cfg(feature = "pbr_transmission_textures")]
+            specular_transmission_uv_transform: None,
+            #[cfg(feature = "pbr_transmission_textures")]
+            thickness_uv_transform: None,
+            #[cfg(feature = "pbr_specular_textures")]
+            specular_uv_transform: None,
+            #[cfg(feature = "pbr_specular_textures")]
+            specular_tint_uv_transform: None,
+            #[cfg(feature = "pbr_multi_layer_material_textures")]
+            clearcoat_uv_transform: None,
+            #[cfg(feature = "pbr_multi_layer_material_textures")]
+            clearcoat_roughness_uv_transform: None,
+            #[cfg(feature = "pbr_multi_layer_material_textures")]
+            clearcoat_normal_uv_transform: None,
+            #[cfg(feature = "pbr_anisotropy_texture")]
+            anisotropy_uv_transform: None,
         }
     }
 }

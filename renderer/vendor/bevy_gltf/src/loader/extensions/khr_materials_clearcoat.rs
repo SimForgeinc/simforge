@@ -6,7 +6,10 @@ use gltf::Material;
 use serde_json::Value;
 
 #[cfg(feature = "pbr_multi_layer_material_textures")]
-use {crate::loader::gltf_ext::material::parse_material_extension_texture, bevy_mesh::UvChannel};
+use {
+    crate::loader::gltf_ext::material::parse_material_extension_texture, bevy_math::Affine2,
+    bevy_mesh::UvChannel,
+};
 
 /// Parsed data from the `KHR_materials_clearcoat` extension.
 ///
@@ -18,14 +21,20 @@ pub(crate) struct ClearcoatExtension {
     #[cfg(feature = "pbr_multi_layer_material_textures")]
     pub(crate) clearcoat_channel: UvChannel,
     #[cfg(feature = "pbr_multi_layer_material_textures")]
+    pub(crate) clearcoat_uv_transform: Option<Affine2>,
+    #[cfg(feature = "pbr_multi_layer_material_textures")]
     pub(crate) clearcoat_texture: Option<Handle<Image>>,
     pub(crate) clearcoat_roughness_factor: Option<f64>,
     #[cfg(feature = "pbr_multi_layer_material_textures")]
     pub(crate) clearcoat_roughness_channel: UvChannel,
     #[cfg(feature = "pbr_multi_layer_material_textures")]
+    pub(crate) clearcoat_roughness_uv_transform: Option<Affine2>,
+    #[cfg(feature = "pbr_multi_layer_material_textures")]
     pub(crate) clearcoat_roughness_texture: Option<Handle<Image>>,
     #[cfg(feature = "pbr_multi_layer_material_textures")]
     pub(crate) clearcoat_normal_channel: UvChannel,
+    #[cfg(feature = "pbr_multi_layer_material_textures")]
+    pub(crate) clearcoat_normal_uv_transform: Option<Affine2>,
     #[cfg(feature = "pbr_multi_layer_material_textures")]
     pub(crate) clearcoat_normal_texture: Option<Handle<Image>>,
 }
@@ -50,7 +59,7 @@ impl ClearcoatExtension {
             .as_object()?;
 
         #[cfg(feature = "pbr_multi_layer_material_textures")]
-        let (clearcoat_channel, clearcoat_texture) = parse_material_extension_texture(
+        let (clearcoat_sampling, clearcoat_texture) = parse_material_extension_texture(
             material,
             extension,
             "clearcoatTexture",
@@ -60,7 +69,7 @@ impl ClearcoatExtension {
         );
 
         #[cfg(feature = "pbr_multi_layer_material_textures")]
-        let (clearcoat_roughness_channel, clearcoat_roughness_texture) =
+        let (clearcoat_roughness_sampling, clearcoat_roughness_texture) =
             parse_material_extension_texture(
                 material,
                 extension,
@@ -71,7 +80,7 @@ impl ClearcoatExtension {
             );
 
         #[cfg(feature = "pbr_multi_layer_material_textures")]
-        let (clearcoat_normal_channel, clearcoat_normal_texture) = parse_material_extension_texture(
+        let (clearcoat_normal_sampling, clearcoat_normal_texture) = parse_material_extension_texture(
             material,
             extension,
             "clearcoatNormalTexture",
@@ -86,15 +95,21 @@ impl ClearcoatExtension {
                 .get("clearcoatRoughnessFactor")
                 .and_then(Value::as_f64),
             #[cfg(feature = "pbr_multi_layer_material_textures")]
-            clearcoat_channel,
+            clearcoat_channel: clearcoat_sampling.channel,
+            #[cfg(feature = "pbr_multi_layer_material_textures")]
+            clearcoat_uv_transform: clearcoat_sampling.transform,
             #[cfg(feature = "pbr_multi_layer_material_textures")]
             clearcoat_texture,
             #[cfg(feature = "pbr_multi_layer_material_textures")]
-            clearcoat_roughness_channel,
+            clearcoat_roughness_channel: clearcoat_roughness_sampling.channel,
+            #[cfg(feature = "pbr_multi_layer_material_textures")]
+            clearcoat_roughness_uv_transform: clearcoat_roughness_sampling.transform,
             #[cfg(feature = "pbr_multi_layer_material_textures")]
             clearcoat_roughness_texture,
             #[cfg(feature = "pbr_multi_layer_material_textures")]
-            clearcoat_normal_channel,
+            clearcoat_normal_channel: clearcoat_normal_sampling.channel,
+            #[cfg(feature = "pbr_multi_layer_material_textures")]
+            clearcoat_normal_uv_transform: clearcoat_normal_sampling.transform,
             #[cfg(feature = "pbr_multi_layer_material_textures")]
             clearcoat_normal_texture,
         })

@@ -10,6 +10,7 @@
  * - **every error is `{code, path?, reason, detail?}`**, JSON, on stderr.
  */
 
+import { delimiter } from 'node:path';
 import {
   boolFlag,
   listFlag,
@@ -35,6 +36,7 @@ import { exportScenario } from './commands/export.js';
 import { instantiate } from './commands/instantiate.js';
 import { locationsFind, locationsGet, locationsResolve } from './commands/locations.js';
 import {
+  registryMapsBuild,
   registryMapsIngest,
   registryMapsList,
   registryMapsPromote,
@@ -54,7 +56,8 @@ import { corpusBuildCommand, corpusPrewarm } from './commands/corpus.js';
 const COMMANDS = [
   { name: 'maps list', summary: 'list immutable maps and versions in the configured registry' },
   { name: 'maps pull', summary: 'verify and materialize a registry map into local engine cache layouts' },
-  { name: 'maps ingest', summary: 'build and publish FBX/GLB sources, or publish a pre-built closure directory' },
+  { name: 'maps build', summary: 'build a map master + web tier from a RoadRunner/Unreal GLB export into a work directory (no publish)' },
+  { name: 'maps ingest', summary: 'build a map master + web tier from a RoadRunner/Unreal GLB export and publish it, or publish a prebuilt master directory' },
   { name: 'maps promote', summary: 'copy one immutable version between registries' },
   { name: 'maps sources push', summary: 'resumably multipart-upload a raw source archive' },
   { name: 'locations find', summary: 'structured location query: --map --type --facts --near …' },
@@ -230,16 +233,15 @@ async function dispatch(argv: readonly string[]): Promise<number> {
       }
       if (sub === 'pull') {
         const args = parseArgs(argv.slice(2), {
-          booleans: GLOBAL_BOOLEANS,
+          booleans: [...GLOBAL_BOOLEANS, 'archive'],
           values: [
             'registry',
             'cache-root',
             'browser-root',
             'dev-assets-root',
             'native-corpus-root',
-            'browser-fingerprint',
-            'ktx2-fingerprint',
-            'native-fingerprint',
+            'blob-cache-root',
+            'web-fingerprint',
           ],
         });
         return registryMapsPull({
@@ -249,9 +251,27 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           browserRoot: optionalString(args, 'browser-root'),
           devAssetsRoot: optionalString(args, 'dev-assets-root'),
           nativeCorpusRoot: optionalString(args, 'native-corpus-root'),
-          browserFingerprint: optionalString(args, 'browser-fingerprint'),
-          ktx2Fingerprint: optionalString(args, 'ktx2-fingerprint'),
-          nativeFingerprint: optionalString(args, 'native-fingerprint'),
+          blobCacheRoot: optionalString(args, 'blob-cache-root'),
+          webFingerprint: optionalString(args, 'web-fingerprint'),
+          archive: boolFlag(args, 'archive'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      if (sub === 'build') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: ['name', 'xodr', 'glb', 'source-manifest', 'reuse-master', 'work-dir', 'cell-size', 'donor-masters'],
+        });
+        return registryMapsBuild({
+          directory: positional(args, 0, 'source-directory'),
+          name: requireString(args, 'name'),
+          xodrPath: optionalString(args, 'xodr'),
+          sourcePath: optionalString(args, 'glb'),
+          sourceManifest: optionalString(args, 'source-manifest'),
+          reuseMasterDir: optionalString(args, 'reuse-master'),
+          workDir: requireString(args, 'work-dir'),
+          cellSize: optionalNumber(args, 'cell-size'),
+          donorLibrary: optionalString(args, 'donor-masters')?.split(delimiter).filter((entry) => entry.length > 0),
           pretty: boolFlag(args, 'pretty'),
         });
       }
@@ -265,32 +285,40 @@ async function dispatch(argv: readonly string[]): Promise<number> {
             'version',
             'label',
             'source-ref',
-            'browser-dir',
-            'browser-fingerprint',
-            'ktx2-dir',
-            'ktx2-fingerprint',
-            'native-dir',
-            'native-fingerprint',
+            'web-dir',
+            'web-fingerprint',
+            'cell-size',
+            'donor-masters',
+            'glb',
+            'source-manifest',
+            'reuse-master',
+            'work-dir',
+            'target',
           ],
         });
         const version = optionalString(args, 'version');
         if (version !== undefined && !/^v[1-9][0-9]*$/.test(version)) {
           throw new CliError('bad_value', '--version must be v<N>', { path: '--version' });
         }
+        const target = optionalString(args, 'target');
+        if (target !== undefined && target !== 'private' && target !== 'public') throw new CliError('bad_value', '--target must be private or public', { path: '--target' });
         return registryMapsIngest({
           directory: positional(args, 0, 'source-directory'),
           name: requireString(args, 'name'),
           xodrPath: optionalString(args, 'xodr'),
+          sourcePath: optionalString(args, 'glb'),
+          sourceManifest: optionalString(args, 'source-manifest'),
+          reuseMasterDir: optionalString(args, 'reuse-master'),
+          workDir: optionalString(args, 'work-dir'),
+          target: target as 'private' | 'public' | undefined,
           registry: optionalString(args, 'registry'),
           version: version as `v${number}` | undefined,
           label: optionalString(args, 'label'),
           sourceRef: optionalString(args, 'source-ref'),
-          browserDirectory: optionalString(args, 'browser-dir'),
-          browserFingerprint: optionalString(args, 'browser-fingerprint'),
-          ktx2Directory: optionalString(args, 'ktx2-dir'),
-          ktx2Fingerprint: optionalString(args, 'ktx2-fingerprint'),
-          nativeDirectory: optionalString(args, 'native-dir'),
-          nativeFingerprint: optionalString(args, 'native-fingerprint'),
+          webDirectory: optionalString(args, 'web-dir'),
+          webFingerprint: optionalString(args, 'web-fingerprint'),
+          cellSize: optionalNumber(args, 'cell-size'),
+          donorLibrary: optionalString(args, 'donor-masters')?.split(delimiter).filter((entry) => entry.length > 0),
           pretty: boolFlag(args, 'pretty'),
         });
       }
@@ -307,6 +335,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           reference: positional(args, 0, 'name@version'),
           sourceRegistry: optionalString(args, 'from'),
           destinationRegistry: optionalString(args, 'destination-registry'),
+          target: to === 'public' ? 'public' : undefined,
           pretty: boolFlag(args, 'pretty'),
         });
       }

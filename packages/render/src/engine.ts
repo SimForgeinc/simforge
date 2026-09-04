@@ -8,6 +8,7 @@ import type { FixedSchedule } from './schedule.js';
 export interface RenderInputFile {
   readonly inputId: string;
   readonly path: string;
+  readonly relativePath?: string;
   readonly sha256: string;
   readonly sizeBytes: number;
 }

@@ -23,6 +23,8 @@
 //! renders exactly one frame per update.
 use anyhow::{bail, Result};
 use bevy::app::ScheduleRunnerPlugin;
+use bevy::asset::RecursiveDependencyLoadState;
+use crate::readiness::{GpuPending, GPU_IDLE_FRAMES};
 use bevy::camera::visibility::RenderLayers;
 use bevy::camera::RenderTarget;
 use bevy::core_pipeline::tonemapping::Tonemapping;
@@ -51,7 +53,7 @@ use bevy::world_serialization::{WorldAssetRoot, WorldInstance, WorldInstanceSpaw
 use crate::lighting::{self, LightingRung};
 use crate::profiles::{RenderProfile, RenderProfileConfig};
 use crate::weather::Weather;
-use bevy::mesh::{Meshable, SphereKind, SphereMeshBuilder};
+use bevy::mesh::{skinning::SkinnedMesh, Meshable, SphereKind, SphereMeshBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -1635,6 +1637,7 @@ impl SceneApp {
                 ScheduleRunnerPlugin::run_loop(Duration::ZERO),
                 crate::road_detail::RoadDetailPlugin,
                 crate::sky_pass::SkyPassPlugin,
+                crate::readiness::GpuReadinessPlugin,
             ))
             .add_systems(
                 Update,
@@ -3388,6 +3391,7 @@ impl SceneApp {
             return Ok(self.app.world().resource::<Legend>().0.clone());
         }
         let deadline = Instant::now() + Duration::from_secs(300);
+        let mut gpu_idle_frames = 0u32;
         loop {
             self.app.update();
             let world = self.app.world_mut();
@@ -3426,8 +3430,19 @@ impl SceneApp {
                             Some(wi) => spawner.instance_is_ready(**wi),
                             None => false,
                         });
+                    // Scene entities exist; now the render world must have
+                    // compiled every pipeline and bound every material, and
+                    // stay that way for a few frames (each frame can queue
+                    // new permutations).
                     if all_ready {
-                        break;
+                        if world.resource::<GpuPending>().is_idle() {
+                            gpu_idle_frames += 1;
+                        } else {
+                            gpu_idle_frames = 0;
+                        }
+                        if gpu_idle_frames >= GPU_IDLE_FRAMES {
+                            break;
+                        }
                     }
                 }
             } else {
@@ -3436,7 +3451,12 @@ impl SceneApp {
                 while self.receiver.try_recv().is_ok() {}
             }
             if Instant::now() > deadline {
-                bail!("scene failed to become ready within 300 s");
+                let pending = self.app.world().resource::<GpuPending>();
+                bail!(
+                    "scene failed to become ready within 300 s ({} pipelines compiling, {} materials unbound)",
+                    pending.pipelines(),
+                    pending.materials()
+                );
             }
         }
         self.finalize_scene()?;
@@ -3459,8 +3479,19 @@ impl SceneApp {
         // Deterministic instance-ID assignment: sort by mesh name then entity
         // bits (independent of ECS iteration order), then clone each mesh onto
         // render layer 1 under an unlit RGB24-encoded ID material.
-        let mut entries: Vec<(String, u64, Entity, Handle<Mesh>, Option<Entity>, Transform)> =
-            Vec::new();
+        // A clone of a skinned mesh must carry the `SkinnedMesh` component:
+        // the mesh's JOINTS/WEIGHTS attributes select the skinned pipeline
+        // layout, and without the component Bevy binds the model-only bind
+        // group and the draw fails validation (bevy#16929).
+        let mut entries: Vec<(
+            String,
+            u64,
+            Entity,
+            Handle<Mesh>,
+            Option<Entity>,
+            Transform,
+            Option<SkinnedMesh>,
+        )> = Vec::new();
         {
             let mut q = world.query::<(
                 Entity,
@@ -3468,8 +3499,9 @@ impl SceneApp {
                 Option<&Name>,
                 Option<&ChildOf>,
                 Option<&Transform>,
+                Option<&SkinnedMesh>,
             )>();
-            for (e, mesh, name, child_of, transform) in q.iter(world) {
+            for (e, mesh, name, child_of, transform, skin) in q.iter(world) {
                 entries.push((
                     name.map(|n| n.to_string())
                         .unwrap_or_else(|| format!("unnamed_mesh_{e}")),
@@ -3478,6 +3510,7 @@ impl SceneApp {
                     mesh.0.clone(),
                     child_of.map(|c| c.parent()),
                     transform.copied().unwrap_or(Transform::IDENTITY),
+                    skin.cloned(),
                 ));
             }
         }
@@ -3493,12 +3526,13 @@ impl SceneApp {
             Handle<StandardMaterial>,
             Option<Entity>,
             Transform,
+            Option<SkinnedMesh>,
         )> = {
             let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
             entries
                 .into_iter()
                 .enumerate()
-                .map(|(i, (name, _, entity, mesh_h, parent, transform))| {
+                .map(|(i, (name, _, entity, mesh_h, parent, transform, skin))| {
                     let id = (i + 1) as u32; // 0 reserved as background
                     let bytes = id.to_le_bytes();
                     let mat = materials.add(StandardMaterial {
@@ -3506,12 +3540,12 @@ impl SceneApp {
                         unlit: true,
                         ..default()
                     });
-                    (id, name, entity, mesh_h, mat, parent, transform)
+                    (id, name, entity, mesh_h, mat, parent, transform, skin)
                 })
                 .collect()
         };
         let mut legend = Vec::with_capacity(prepared.len());
-        for (id, name, entity, mesh_h, mat, parent, transform) in prepared {
+        for (id, name, entity, mesh_h, mat, parent, transform, skin) in prepared {
             world.entity_mut(entity).insert(InstanceId(id));
             let mut cmd = world.spawn((
                 IdClone,
@@ -3522,6 +3556,9 @@ impl SceneApp {
             ));
             if let Some(p) = parent {
                 cmd.insert(ChildOf(p));
+            }
+            if let Some(skin) = skin {
+                cmd.insert(skin);
             }
             legend.push(LegendEntry { id, name });
         }
@@ -3648,10 +3685,14 @@ impl SceneApp {
 // Main-world systems
 // ---------------------------------------------------------------------------
 
-/// When a queued tile's GLTF resolves, spawn its default scene
-/// (WorldAssetRoot) and mark it loaded.
+/// When a queued tile's glTF and every asset it references (external images,
+/// buffers) have loaded, spawn its default scene (WorldAssetRoot) and mark it
+/// loaded. Gating on the `Gltf` asset alone is not enough: master glTFs keep
+/// their images as external `.ktx2` files that load after the document, and a
+/// frame captured before they land shows fallback materials.
 fn spawn_loaded_tiles(
     mut commands: Commands,
+    server: Res<AssetServer>,
     gltfs: Res<Assets<Gltf>>,
     loads: Query<(Entity, &TileLoad), Without<SceneSpawned>>,
 ) {
@@ -3659,6 +3700,13 @@ fn spawn_loaded_tiles(
         let Some(gltf) = gltfs.get(&tile.0) else {
             continue;
         };
+        match server.recursive_dependency_load_state(tile.0.id()) {
+            RecursiveDependencyLoadState::Loaded => {}
+            RecursiveDependencyLoadState::Failed(error) => {
+                panic!("glTF dependency failed to load: {error}");
+            }
+            RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading => continue,
+        }
         // glTF makes `scene` optional; a file without a default scene is
         // still valid, so fall back to its first scene.
         let Some(scene) = gltf.default_scene.clone().or_else(|| gltf.scenes.first().cloned()) else {

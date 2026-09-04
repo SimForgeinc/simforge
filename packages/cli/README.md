@@ -30,6 +30,13 @@ That 1-vs-2 split is the whole reason an unattended repair loop works: `1` means
 
 ```
 simforge maps list
+simforge maps pull        <name[@version]> [--registry URL --cache-root DIR]
+simforge maps build       <source-dir> --name ID --work-dir DIR
+                       [--glb FILE --xodr FILE --source-manifest FILE --reuse-master DIR]
+simforge maps ingest      <source-dir> --name ID --registry URL --work-dir DIR
+                       [--glb FILE --xodr FILE --source-manifest FILE --target private|public]
+                       [--master-dir DIR --web-dir DIR]
+simforge maps promote     <name@version> --from URL --destination-registry URL --to public
 simforge locations find    --map <id> [--type --subtype --tags --affordances
                                    --facts k=v,k2>=v2 --near <handle>
                                    --within-m N --limit N --diversity-m N]
@@ -63,6 +70,20 @@ simforge batch             <template.json> --maps a,b,c --draws N --out dir/
                        [--concurrency N --min-score --max-sites --force --no-trace]
 simforge schemas           [--name template|anchor|interactions] [--content]
 ```
+
+Only `richmond-field-station` may be promoted publicly. The default read
+registry is the public CloudFront registry; licensed maps need an explicitly
+authorized private registry. Publishing to `s3://simforge-maps-public` enforces
+the same restriction even when `--target private` is supplied.
+
+Builds require Linux `flock`, KTX-Software, an HDR sky and persistent disk.
+`map-source.json` uses schema `simforge.map-source.v1` and selects `name`, `glb`,
+optional `xodr`, `sky`, and `donorMasters`; manifest paths are relative to the
+manifest. Command-line source selections override their manifest counterparts.
+Directories with multiple possible scene or XODR inputs are rejected.
+Publication accepts only a complete native master plus browser tier and writes
+the immutable release descriptor before making the version visible. A retry
+resumes the same release instead of minting another version.
 
 ## Headless scenario debugging
 
@@ -357,18 +378,33 @@ reconciles a ledger left by a hard process loss: stale `running` records become
 `pending`, completed evidence is hash-checked, and the interrupted attempt
 number and deterministic seed are retried rather than consumed.
 
-## Native render-worker map inputs
+## Map masters and render-worker map inputs
 
-`simforge maps pull <name>@<version>` materializes every published derived
-closure by default, including `native-corpus`, under
-`$XDG_DATA_HOME/simforge/maps/.corpus/<name>` (or `--native-corpus-root`).
-The JSON result includes `nativeWorkerInputs`, the sorted GLB closure with
-verified `sha256`/`sizeBytes`, materialized paths, and deterministic lease
-input IDs. IDs are exactly `map.tile.000000`, `map.tile.000001`, and so on in
-native-corpus member-path order. A native render lease contains
-`scenario.xosc` plus this complete `map.tile.*` set; source, browser-optimized,
-or arbitrary GLBs are not interchangeable with decoded/dequantized
-`native-corpus` tiles.
+A published map version is one **master** closure plus one **web** closure.
+The master is `master.gltf` + `geometry.bin` (every accessor byte of the
+RoadRunner/Unreal export, verbatim) + `images/<sha256>.png` (the authored
+rasters) + `images/<sha256>.ktx2` (their UASTC encodes, referenced through
+`KHR_texture_basisu`) + the road sidecars (`map.xodr`, `topology-index.json.gz`,
+`lane-polygons.geojson.gz`, `signals.geojson.gz`, `derived/*`) + `env/sky.hdr`
++ `master-report.json`. The web closure is `3d/manifest.json`, `3d/tiles/*.glb`
+(100 m meshopt cells with `EXT_mesh_gpu_instancing`) and the KTX2 images the
+cells reference.
+
+`simforge maps build <export-dir> --name <slug> --work-dir <dir>` builds both
+stages (content-addressed and cached under `<dir>/master/<key>/content` and
+`<dir>/web/<key>/content`); `simforge maps ingest` runs the same stages and
+publishes them. `simforge maps pull <name>@<version>` materializes, through a
+local blob cache (`--blob-cache-root`, hardlinked into every layout):
+
+- `.corpus/<name>` (`--native-corpus-root`): the master without its PNGs -
+  what the Bevy renderer loads; `nativeWorkerInputs` is exactly one entry,
+  `map.tile.000000` = `master.gltf`, with its verified `sha256`/`sizeBytes`;
+- `map-bundles/<name>` (`--browser-root`): the web closure;
+- `dev-assets/<name>` (`--dev-assets-root`): the sidecars alone, or the whole
+  master including PNGs with `--archive`.
+
+Versions published before the master format (tiled canonical closures) are
+refused by `pull`; re-ingest them.
 
 ## Current execution boundaries
 
