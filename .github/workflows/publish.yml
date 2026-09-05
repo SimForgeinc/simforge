@@ -28,6 +28,8 @@ jobs:
       - name: Install schema and video tools
         run: sudo apt-get update && sudo apt-get install --yes libxml2-utils ffmpeg
       - run: pnpm install --frozen-lockfile
+      - name: Install the browser renderer runtime
+        run: pnpm --filter @simforge-oss/render exec playwright install --with-deps chromium
       - run: pnpm typecheck
       - run: pnpm test:release
       - run: pnpm test:integration

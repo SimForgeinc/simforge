@@ -31,6 +31,8 @@ jobs:
       - name: Install schema and video tools
         run: sudo apt-get update && sudo apt-get install --yes libxml2-utils ffmpeg
       - run: pnpm install --frozen-lockfile
+      - name: Install the browser renderer runtime
+        run: pnpm --filter @simforge-oss/render exec playwright install --with-deps chromium
       - name: Smoke Meshy generation contract
         run: pnpm meshy:smoke
       - name: Smoke Meshy API authentication when configured
