@@ -307,6 +307,12 @@ pub fn convert_attribute(
         gltf::Semantic::TexCoords(1) => {
             Some((Mesh::ATTRIBUTE_UV_1, ConversionMode::TexCoord, false))
         }
+        gltf::Semantic::TexCoords(2) => {
+            Some((Mesh::ATTRIBUTE_UV_2, ConversionMode::TexCoord, false))
+        }
+        gltf::Semantic::TexCoords(3) => {
+            Some((Mesh::ATTRIBUTE_UV_3, ConversionMode::TexCoord, false))
+        }
         gltf::Semantic::Joints(0) => Some((
             Mesh::ATTRIBUTE_JOINT_INDEX,
             ConversionMode::JointIndex,

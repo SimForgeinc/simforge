@@ -33,6 +33,13 @@ pnpm dev
 
 SimForge Studio is then available at <http://localhost:5199>.
 
+On first boot, Studio discovers complete map installations from the common
+`${SIMFORGE_MAPS_CACHE_ROOT:-${XDG_DATA_HOME:-~/.local/share}/simforge/maps}`
+cache populated by `simforge maps pull`. A registry map is published only when
+its semantic, web, and native profiles carry matching verified release receipts.
+When no complete installation exists, Studio generates the compact Starter Road
+from checked-in source assets.
+
 For a production deployment build the packages and Studio once, then serve the
 build (migrations and seed run on every start, as in development):
 
@@ -44,13 +51,6 @@ PORT=5199 HOSTNAME=127.0.0.1 pnpm --filter @simforge-oss/studio start
 
 `NEXT_PUBLIC_*` variables are inlined at build time, so export them before
 `build`, not only before `start`.
-
-On first boot, Studio generates a compact Starter Road from checked-in source
-assets when the optional full development map library is not installed. No
-separate map download or environment variable is required for the quickstart.
-Set `SCEN_DEV_ASSETS` to a full map-bundle directory when you want the larger
-local catalog; Studio continues to use the starter map if that directory is
-unavailable.
 
 The CLI binary is `simforge`; `sf` is its short alias:
 
@@ -72,9 +72,47 @@ sf studio
 CLI output is machine-readable by default, so the same commands can be used in
 local workflows, CI, and unattended dataset generation.
 
+## Map releases
+
+`richmond-field-station` is the only public map. Other exported maps remain in
+the authenticated private registry.
+
+```sh
+simforge maps list
+simforge maps pull richmond-field-station
+```
+
+Each immutable release binds the native `master.gltf` resource closure and its
+browser tier. Pulling reconstructs their external geometry, KTX2 textures,
+decoder runtime, OpenDRIVE, lane topology, signal records, and derived locations.
+Source rasters are archival and are not transferred to render workers.
+Studio also provisions its installed Three Basis JS/WASM pair at `/basis/`
+before starting. Other embedders must serve the matching runtime pair or
+explicitly configure `ktx2TranscoderPath`.
+
+The Linux/A100 source builder requires `flock`, KTX-Software and a durable work
+directory. An optional `map-source.json` (`simforge.map-source.v1`) selects
+`name`, `glb`, `xodr`, `sky`, and `donorMasters` explicitly. Ambiguous GLB/XODR
+directories are rejected.
+
+```sh
+simforge maps ingest /path/to/export --name richmond-field-station \
+  --work-dir /persistent/map-builds --registry s3://simforge-maps-internal \
+  --target private
+```
+
+Scene, semantic, and browser caches are independent. A semantic-only change
+does not re-encode the scene. `--reuse-master /path/to/master/content` can seed
+the scene cache from an explicitly selected, source-matching master.
+Roadway failures and unavailable visual/runtime evidence remain explicit in
+the release; publication never converts missing evidence into a pass.
+Static collision derivatives are built from the canonical master placements,
+not the instanced browser meshes. Their separately cached runtime closure binds
+the exact browser manifest and topology without re-encoding render cells.
+
 ## Architecture
 
-The TypeScript workspace has 13 public packages organized as eight systems.
+The TypeScript workspace has 15 public packages organized as eight systems.
 Every package is released at the same stack version.
 
 | System | Package | Responsibility |
@@ -82,6 +120,8 @@ Every package is released at the same stack version.
 | Scenario | [`@simforge-oss/scenario`](packages/scenario) | Versioned, framework-free portable scenario documents and schemas. |
 | Engine | [`@simforge-oss/engine`](packages/engine) | Fixed-step simulation, deterministic traces, and the `scene-state.v1` serializer exposed at `/scene-state`. |
 | World | [`@simforge-oss/maps`](packages/maps) | OpenDRIVE parsing, georeferencing, lane and signal topology, and scenario-independent map intelligence; parsing is also exposed at `/opendrive`. |
+| World | [`@simforge-oss/map-pipeline`](packages/map-pipeline) | Deterministic master, semantic and browser-tier generation from explicit map sources. |
+| World | [`@simforge-oss/map-registry`](packages/map-registry) | Immutable map releases, content-addressed resources, resumable publication and verified pulls. |
 | World | [`@simforge-oss/compiler`](packages/compiler) | Loads maps and templates, matches logical anchors, selects sites, and materializes concrete simulatable worlds. |
 | Studio runtime | [`@simforge-oss/viewer`](packages/viewer) | Streaming three.js viewport, camera rigs, and framework-neutral actor presentation. |
 | Studio runtime | [`@simforge-oss/editor`](packages/editor) | Authoring documents, editing interactions, validation, and editor state. |

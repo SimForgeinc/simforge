@@ -23,6 +23,7 @@ pub mod fixture;
 pub mod motion_vector;
 pub mod playback;
 pub mod readback;
+pub mod readiness;
 pub mod scene_state;
 pub mod engine;
 pub mod job;

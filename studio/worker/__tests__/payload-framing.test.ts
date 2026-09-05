@@ -50,6 +50,27 @@ describe("payload world bounds", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it("reads accessor bounds from a JSON glTF master", async () => {
+    const root = await mkdtemp(join(tmpdir(), "simforge-gltf-framing-test-"));
+    const fixture = join(root, "master.gltf");
+    try {
+      await writeFile(fixture, JSON.stringify({
+        asset: { version: "2.0" },
+        scene: 0,
+        scenes: [{ nodes: [0] }],
+        nodes: [{ mesh: 0, translation: [7, 11, 13] }],
+        meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+        accessors: [{ min: [-2, -3, -4], max: [2, 3, 4] }],
+      }));
+      assert.deepEqual(await computePayloadWorldBounds([fixture]), {
+        min: [5, 8, 9],
+        max: [9, 14, 17],
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("framePayload", () => {

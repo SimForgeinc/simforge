@@ -29,7 +29,7 @@ import {
   type IncidentDefinition,
 } from './catalog-taxonomy.js';
 import { CliError, EXIT } from './errors.js';
-import { DEV_ASSETS, KNOWN_MAPS, REPO_ROOT, loadMap } from '@simforge-oss/compiler/node';
+import { availableMaps, DEV_ASSETS, REPO_ROOT, loadMap, type MapBundle } from '@simforge-oss/compiler/node';
 import { adaptTemplate } from './adapt.js';
 import { materialize, templateId as canonicalTemplateId } from './materialize.js';
 import { assertMatchableAnchor, catalogExactMatcherPolicy } from '@simforge-oss/compiler/node';
@@ -285,6 +285,8 @@ export interface CatalogValidationReport {
 export interface CreateCatalogOptions {
   readonly repoRoot?: string;
   readonly devAssets?: string;
+  /** Installed maps to include. Defaults to every complete bundle under `devAssets`. */
+  readonly mapIds?: readonly string[];
   readonly namespace?: string;
   /** Relative to the catalog file unless verification supplies an override. */
   readonly evidenceRoot?: string;
@@ -727,10 +729,13 @@ function acceptanceCriteria(incident: IncidentDefinition): string[] {
   ];
 }
 
-function progressFor(slots: readonly ScenarioCatalogSlot[]): CatalogProgressCounts {
+function progressFor(
+  slots: readonly ScenarioCatalogSlot[],
+  target = slots.length,
+): CatalogProgressCounts {
   const atLeast = (statuses: readonly CatalogSlotStatus[]) => slots.filter((slot) => statuses.includes(slot.status)).length;
   return {
-    target: KNOWN_MAPS.length * CATALOG_SLOTS_PER_MAP,
+    target,
     planned: 0,
     authored: slots.length,
     generated: atLeast(['generated', 'simulated', 'rendered', 'visually-accepted']),
@@ -760,7 +765,7 @@ export function refreshScenarioCatalog(
   const withoutDigest: Omit<ScenarioCatalogManifest, 'catalogDigest'> = {
     ...rest,
     slots: refreshedSlots,
-    progress: progressFor(refreshedSlots),
+    progress: progressFor(refreshedSlots, catalog.contract.totalSlots),
   };
   return { ...withoutDigest, catalogDigest: digestPayload(withoutDigest) };
 }
@@ -771,6 +776,21 @@ export async function createScenarioCatalog(
 ): Promise<ScenarioCatalogManifest> {
   const repoRoot = options.repoRoot ?? REPO_ROOT;
   const devAssets = options.devAssets ?? (options.repoRoot ? path.join(repoRoot, 'dev-assets') : DEV_ASSETS);
+  const installedMaps = availableMaps(devAssets);
+  const mapIds = options.mapIds === undefined ? installedMaps : [...options.mapIds];
+  const invalidMapIds = mapIds.filter((mapId, index) =>
+    !isSafeMapId(mapId) ||
+    mapIds.indexOf(mapId) !== index ||
+    !installedMaps.includes(mapId)
+  );
+  if (mapIds.length === 0 || invalidMapIds.length > 0) {
+    throw new CliError('bad_value', mapIds.length === 0
+      ? 'catalog creation requires at least one installed map'
+      : 'catalog maps must be unique, safe, installed map names', {
+      path: '--map',
+      detail: { invalid: invalidMapIds, available: installedMaps },
+    });
+  }
   const namespace = options.namespace ?? DEFAULT_CATALOG_NAMESPACE;
   const root = assertRelativeRoot(options.evidenceRoot ?? 'evidence');
   if (namespace.trim().length === 0) {
@@ -779,10 +799,10 @@ export async function createScenarioCatalog(
 
   const [executableTemplates, contexts] = await Promise.all([
     readExecutableTemplates(repoRoot),
-    Promise.all(KNOWN_MAPS.map((mapId) => readMapContext(devAssets, mapId))),
+    Promise.all(mapIds.map((mapId) => readMapContext(devAssets, mapId))),
   ]);
-  const runtimeBundles = new Map<string, Awaited<ReturnType<typeof loadMap>>>(
-    await Promise.all(KNOWN_MAPS.map(async (mapId) => [mapId, await loadMap(mapId)] as const)),
+  const runtimeBundles = new Map<string, MapBundle>(
+    await Promise.all(mapIds.map(async (mapId) => [mapId, await loadMap(mapId, devAssets)] as const)),
   );
   const templates = executableTemplates.map((entry) => entry.provenance);
   const templateById = new Map(templates.map((template) => [template.id, template]));
@@ -1035,9 +1055,9 @@ export async function createScenarioCatalog(
     kind: CATALOG_KIND,
     version: CATALOG_VERSION,
     contract: {
-      supportedMaps: [...KNOWN_MAPS],
+      supportedMaps: mapIds,
       slotsPerMap: CATALOG_SLOTS_PER_MAP,
-      totalSlots: KNOWN_MAPS.length * CATALOG_SLOTS_PER_MAP,
+      totalSlots: mapIds.length * CATALOG_SLOTS_PER_MAP,
       minimumIncidentTypesPerMap: CATALOG_MIN_INCIDENT_TYPES_PER_MAP,
       minimumDomainsPerMap: 0,
     },
@@ -1053,7 +1073,7 @@ export async function createScenarioCatalog(
     taxonomy: INCIDENT_TAXONOMY,
     templates,
     slots,
-    progress: progressFor(slots),
+    progress: progressFor(slots, mapIds.length * CATALOG_SLOTS_PER_MAP),
   };
   return { ...withoutDigest, catalogDigest: digestPayload(withoutDigest) };
 }
@@ -1086,6 +1106,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function isSafeMapId(value: unknown): value is string {
+  return typeof value === 'string' &&
+    /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/u.test(value);
+}
+
 function isSafeEvidencePath(value: unknown, evidenceRoot: string): value is string {
   if (typeof value !== 'string' || value.length === 0 || value.includes('\\')) return false;
   if (path.posix.isAbsolute(value) || value.split('/').includes('..')) return false;
@@ -1093,7 +1118,7 @@ function isSafeEvidencePath(value: unknown, evidenceRoot: string): value is stri
 }
 
 function emptyProgress(): CatalogProgressCounts {
-  return { target: 500, planned: 0, authored: 0, generated: 0, simulated: 0, rendered: 0, visuallyAccepted: 0, rejected: 0 };
+  return { target: 0, planned: 0, authored: 0, generated: 0, simulated: 0, rendered: 0, visuallyAccepted: 0, rejected: 0 };
 }
 
 export interface ValidateCatalogOptions {
@@ -1125,12 +1150,31 @@ export function validateScenarioCatalog(
     issue(issues, 'invalid_catalog', '$', `kind/version must be ${CATALOG_KIND}@${CATALOG_VERSION}`);
   }
   const contract = isRecord(value['contract']) ? value['contract'] : {};
-  const supported = Array.isArray(contract['supportedMaps']) ? contract['supportedMaps'] : [];
-  if (JSON.stringify(supported) !== JSON.stringify([...KNOWN_MAPS])) {
-    issue(issues, 'wrong_map_inventory', 'contract.supportedMaps', 'catalog must use the canonical five-map inventory', [...KNOWN_MAPS], supported);
+  const supportedRows = Array.isArray(contract['supportedMaps']) ? contract['supportedMaps'] : [];
+  const supported = supportedRows.filter(isSafeMapId);
+  const supportedSet = new Set(supported);
+  if (
+    supported.length === 0 ||
+    supported.length !== supportedRows.length ||
+    supportedSet.size !== supported.length
+  ) {
+    issue(
+      issues,
+      'wrong_map_inventory',
+      'contract.supportedMaps',
+      'supportedMaps must declare at least one unique safe map name',
+    );
   }
-  if (contract['slotsPerMap'] !== CATALOG_SLOTS_PER_MAP || contract['totalSlots'] !== KNOWN_MAPS.length * CATALOG_SLOTS_PER_MAP) {
-    issue(issues, 'wrong_slot_count', 'contract', 'contract must declare exactly 100 slots per map and 500 total');
+  const expectedTotalSlots = supported.length * CATALOG_SLOTS_PER_MAP;
+  if (contract['slotsPerMap'] !== CATALOG_SLOTS_PER_MAP || contract['totalSlots'] !== expectedTotalSlots) {
+    issue(
+      issues,
+      'wrong_slot_count',
+      'contract',
+      `contract must declare exactly ${CATALOG_SLOTS_PER_MAP} slots per supported map`,
+      expectedTotalSlots,
+      contract['totalSlots'],
+    );
   }
   if (contract['minimumIncidentTypesPerMap'] !== CATALOG_MIN_INCIDENT_TYPES_PER_MAP || contract['minimumDomainsPerMap'] !== 0) {
     issue(issues, 'insufficient_taxonomy_breadth', 'contract', `catalog breadth gates must require at least ${CATALOG_MIN_INCIDENT_TYPES_PER_MAP} incident types per map and no domain quota`);
@@ -1170,13 +1214,33 @@ export function validateScenarioCatalog(
 
   const mapRows = Array.isArray(value['maps']) ? value['maps'] : [];
   const mapById = new Map<string, CatalogMapProvenance>();
+  const mapRowIds: string[] = [];
   for (const row of mapRows) {
-    if (isRecord(row) && typeof row['mapId'] === 'string') mapById.set(row['mapId'], row as unknown as CatalogMapProvenance);
+    if (isRecord(row) && isSafeMapId(row['mapId'])) {
+      mapRowIds.push(row['mapId']);
+      mapById.set(row['mapId'], row as unknown as CatalogMapProvenance);
+    }
   }
-  if (mapRows.length !== KNOWN_MAPS.length || KNOWN_MAPS.some((mapId) => !mapById.has(mapId))) {
-    issue(issues, 'wrong_map_inventory', 'maps', 'maps[] must contain each supported map exactly once');
+  if (
+    mapRows.length !== supported.length ||
+    mapRowIds.length !== mapRows.length ||
+    new Set(mapRowIds).size !== mapRowIds.length ||
+    supported.some((mapId) => !mapById.has(mapId)) ||
+    mapRowIds.some((mapId) => !supportedSet.has(mapId))
+  ) {
+    issue(issues, 'wrong_map_inventory', 'maps', 'maps[] must contain each declared supported map exactly once');
   }
   for (const [mapId, map] of mapById) {
+    if (map.slots !== CATALOG_SLOTS_PER_MAP) {
+      issue(
+        issues,
+        'wrong_slot_count',
+        `maps(map=${mapId}).slots`,
+        `map provenance must declare ${CATALOG_SLOTS_PER_MAP} slots`,
+        CATALOG_SLOTS_PER_MAP,
+        map.slots,
+      );
+    }
     if (
       !/^[0-9a-f]{64}$/.test(map.matcherIndexDigest) ||
       !/^[0-9a-f]{64}$/.test(map.engineGraphDigest) ||
@@ -1380,7 +1444,16 @@ export function validateScenarioCatalog(
     }
   });
 
-  if (slots.length !== KNOWN_MAPS.length * CATALOG_SLOTS_PER_MAP) issue(issues, 'wrong_slot_count', 'slots', 'catalog must contain exactly 500 slots', 500, slots.length);
+  if (slots.length !== expectedTotalSlots) {
+    issue(
+      issues,
+      'wrong_slot_count',
+      'slots',
+      `catalog must contain exactly ${CATALOG_SLOTS_PER_MAP} slots per declared supported map`,
+      expectedTotalSlots,
+      slots.length,
+    );
+  }
   const templateBackedCount = slots.filter((slot) => isRecord(slot) && isRecord(slot['implementation']) && slot['implementation']['state'] === 'template-backed').length;
   if (templateBackedCount !== slots.length) {
     issue(issues, 'invalid_provenance', 'slots', 'every delivery catalog slot must be template-backed and executable', slots.length, templateBackedCount);
@@ -1393,7 +1466,7 @@ export function validateScenarioCatalog(
   if (missingIncidentIds.length > 0) {
     issue(issues, 'insufficient_taxonomy_breadth', 'slots', 'catalog must cover every intended mechanism', INCIDENT_TAXONOMY.map((incident) => incident.id), [...coveredIncidentIds]);
   }
-  for (const mapId of KNOWN_MAPS) {
+  for (const mapId of supported) {
     const ordinals = mapOrdinals.get(mapId) ?? new Set<number>();
     if (mapCounts[mapId] !== CATALOG_SLOTS_PER_MAP || ordinals.size !== CATALOG_SLOTS_PER_MAP) {
       issue(issues, 'wrong_slot_count', `slots(map=${mapId})`, 'map must contain each ordinal 0..99 exactly once', CATALOG_SLOTS_PER_MAP, mapCounts[mapId] ?? 0);
@@ -1403,7 +1476,7 @@ export function validateScenarioCatalog(
     }
   }
 
-  const calculatedProgress = progressFor(slots as unknown as ScenarioCatalogSlot[]);
+  const calculatedProgress = progressFor(slots as unknown as ScenarioCatalogSlot[], expectedTotalSlots);
   if (JSON.stringify(value['progress']) !== JSON.stringify(calculatedProgress)) {
     issue(issues, 'invalid_progress_counts', 'progress', 'planned/authored/generated/simulated/rendered/accepted counts must be derived from slot states', calculatedProgress, value['progress']);
   }
@@ -1421,8 +1494,8 @@ export function validateScenarioCatalog(
     slots: slots.length,
     maps: mapCounts,
     statuses: statusCounts,
-    incidentTypesByMap: Object.fromEntries(KNOWN_MAPS.map((mapId) => [mapId, mapIncidents.get(mapId)?.size ?? 0])),
-    domainsByMap: Object.fromEntries(KNOWN_MAPS.map((mapId) => [mapId, mapDomains.get(mapId)?.size ?? 0])),
+    incidentTypesByMap: Object.fromEntries(supported.map((mapId) => [mapId, mapIncidents.get(mapId)?.size ?? 0])),
+    domainsByMap: Object.fromEntries(supported.map((mapId) => [mapId, mapDomains.get(mapId)?.size ?? 0])),
     progress: calculatedProgress,
     evidenceChecked,
     issues,

@@ -6,7 +6,10 @@ use gltf::Material;
 use serde_json::Value;
 
 #[cfg(feature = "pbr_anisotropy_texture")]
-use {crate::loader::gltf_ext::material::parse_material_extension_texture, bevy_mesh::UvChannel};
+use {
+    crate::loader::gltf_ext::material::parse_material_extension_texture, bevy_math::Affine2,
+    bevy_mesh::UvChannel,
+};
 
 /// Parsed data from the `KHR_materials_anisotropy` extension.
 ///
@@ -18,6 +21,8 @@ pub(crate) struct AnisotropyExtension {
     pub(crate) anisotropy_rotation: Option<f64>,
     #[cfg(feature = "pbr_anisotropy_texture")]
     pub(crate) anisotropy_channel: UvChannel,
+    #[cfg(feature = "pbr_anisotropy_texture")]
+    pub(crate) anisotropy_uv_transform: Option<Affine2>,
     #[cfg(feature = "pbr_anisotropy_texture")]
     pub(crate) anisotropy_texture: Option<Handle<Image>>,
 }
@@ -42,7 +47,7 @@ impl AnisotropyExtension {
             .as_object()?;
 
         #[cfg(feature = "pbr_anisotropy_texture")]
-        let (anisotropy_channel, anisotropy_texture) = parse_material_extension_texture(
+        let (anisotropy_sampling, anisotropy_texture) = parse_material_extension_texture(
             material,
             extension,
             "anisotropyTexture",
@@ -55,7 +60,9 @@ impl AnisotropyExtension {
             anisotropy_strength: extension.get("anisotropyStrength").and_then(Value::as_f64),
             anisotropy_rotation: extension.get("anisotropyRotation").and_then(Value::as_f64),
             #[cfg(feature = "pbr_anisotropy_texture")]
-            anisotropy_channel,
+            anisotropy_channel: anisotropy_sampling.channel,
+            #[cfg(feature = "pbr_anisotropy_texture")]
+            anisotropy_uv_transform: anisotropy_sampling.transform,
             #[cfg(feature = "pbr_anisotropy_texture")]
             anisotropy_texture,
         })

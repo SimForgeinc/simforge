@@ -91,7 +91,7 @@ export interface SignalMapBundle {
   readonly signalCatalog: MapSignalCatalog;
 }
 
-interface SignalGeoJson {
+export interface SignalGeoJson {
   readonly features?: Array<{
     readonly properties?: {
       readonly id?: unknown;

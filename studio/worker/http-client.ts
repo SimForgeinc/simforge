@@ -280,7 +280,7 @@ export async function downloadInputs(
         `input ${input.inputId} integrity mismatch: expected ${input.sha256}/${input.sizeBytes}, got ${sha256}/${sizeBytes}`,
       );
     }
-    materialized.set(input.inputId, { inputId: input.inputId, path, sha256, sizeBytes });
+    materialized.set(input.inputId, { inputId: input.inputId, path, sha256, sizeBytes, ...(input.relativePath === undefined ? {} : { relativePath: input.relativePath }) });
   }
   return materialized;
 }

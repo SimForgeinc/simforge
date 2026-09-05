@@ -3,6 +3,8 @@ import { posix } from "node:path";
 
 export const BROWSER_ASSET_SET_CONTRACT = "uniscenario.browser-asset-set/v1";
 
+export const NATIVE_MAP_ASSET_SET_CONTRACT = "simforge.native-map-asset-set.v1";
+
 export const REQUIRED_BROWSER_MEMBERS = Object.freeze([
   "3d/manifest.json",
   "map.xodr",
@@ -60,6 +62,27 @@ export type UploadedMapClosurePlan = {
   members: UploadedMapClosureMember[];
 };
 
+export type NativeMapAssetSetPlan = {
+  contractVersion: typeof NATIVE_MAP_ASSET_SET_CONTRACT;
+  id: string;
+  workspaceId: string;
+  mapVersionId: string;
+  registryReleaseDigest: string;
+  canonicalDigest: string;
+  closureSha256: string;
+  objectCount: number;
+  byteLength: number;
+  members: UploadedMapClosureMember[];
+};
+
+export type PlanNativeMapAssetSetInput = {
+  workspaceId: string;
+  mapVersionId: string;
+  registryReleaseDigest: string;
+  canonicalDigest: string;
+  members: UploadedMapClosureMemberInput[];
+};
+
 export type PlanUploadedMapClosureInput = {
   workspaceId: string;
   sourceMapId: string;
@@ -104,7 +127,7 @@ function role(relativePath: string): UploadedMapClosureMember["role"] {
     return "manifest";
   }
   if (relativePath.startsWith("3d/env/")) return "environment";
-  if (/\.(?:glb|bin)$/i.test(relativePath)) return "geometry";
+  if (/\.(?:gltf|glb|bin)$/i.test(relativePath)) return "geometry";
   if (/\.(?:webp|png|jpe?g|ktx2)$/i.test(relativePath)) return "texture";
   if (/\.(?:js|wasm)$/i.test(relativePath)) return "runtime";
   return "metadata";
@@ -222,6 +245,66 @@ export function planUploadedMapClosure(input: PlanUploadedMapClosureInput): Uplo
     closureSha256,
     sumoNetworkSha256:
       members.find((member) => member.relativePath === "derived/sumo/map.net.xml")?.sha256 ?? null,
+    objectCount: members.length,
+    byteLength: members.reduce((sum, member) => sum + member.byteLength, 0),
+    members,
+  };
+}
+
+export function planNativeMapAssetSet(input: PlanNativeMapAssetSetInput): NativeMapAssetSetPlan {
+  if (
+    !input.workspaceId ||
+    !input.mapVersionId ||
+    !SHA256.test(input.registryReleaseDigest) ||
+    !SHA256.test(input.canonicalDigest)
+  ) {
+    throw new Error("invalid_native_map_asset_set_identity");
+  }
+  const paths = new Set<string>();
+  const sortedInputs = [...input.members].sort((left, right) =>
+    left.relativePath.localeCompare(right.relativePath),
+  );
+  for (const member of sortedInputs) {
+    validateRelativePath(member.relativePath);
+    if (paths.has(member.relativePath)) {
+      throw new Error(`native_map_duplicate_member:${member.relativePath}`);
+    }
+    paths.add(member.relativePath);
+    if (
+      !SHA256.test(member.sha256) ||
+      !Number.isSafeInteger(member.byteLength) ||
+      member.byteLength < 0 ||
+      !member.mediaType ||
+      !member.bucket ||
+      !member.key
+    ) {
+      throw new Error(`native_map_invalid_member:${member.relativePath}`);
+    }
+  }
+  if (!paths.has("master.gltf")) throw new Error("native_map_required_member_missing:master.gltf");
+
+  const members = sortedInputs.map((member): UploadedMapClosureMember => ({
+    ...member,
+    objectVersionId: member.objectVersionId ?? null,
+    role: role(member.relativePath),
+    required: true,
+    blobId: `usnblob_${sha256(`${member.sha256}\0${member.byteLength}\0${member.mediaType}`).slice(0, 32)}`,
+    artifactKind: null,
+    artifactId: null,
+  }));
+  const closureSha256 = sha256(canonicalJson({
+    contractVersion: NATIVE_MAP_ASSET_SET_CONTRACT,
+    members: members.map(({ bucket: _bucket, key: _key, objectVersionId: _objectVersionId,
+      blobId: _blobId, artifactKind: _artifactKind, artifactId: _artifactId, ...member }) => member),
+  }));
+  return {
+    contractVersion: NATIVE_MAP_ASSET_SET_CONTRACT,
+    id: `usnset_${sha256(`${input.workspaceId}\0${input.mapVersionId}\0${closureSha256}`).slice(0, 32)}`,
+    workspaceId: input.workspaceId,
+    mapVersionId: input.mapVersionId,
+    registryReleaseDigest: input.registryReleaseDigest,
+    canonicalDigest: input.canonicalDigest,
+    closureSha256,
     objectCount: members.length,
     byteLength: members.reduce((sum, member) => sum + member.byteLength, 0),
     members,

@@ -270,6 +270,9 @@ importers:
       sharp:
         specifier: 0.34.5
         version: 0.34.5
+      three:
+        specifier: ^0.185.0
+        version: 0.185.1
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -519,6 +522,9 @@ importers:
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(tsx@4.23.12)
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@1.21.7)(tsx@4.23.12)
@@ -752,12 +758,6 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(jiti@1.21.7)(tsx@4.23.12)
-
-  tools/glb-ktx2-repack:
-    dependencies:
-      sharp:
-        specifier: 0.34.5
-        version: 0.34.5
 
   tools/glb-orm-repair: {}
 

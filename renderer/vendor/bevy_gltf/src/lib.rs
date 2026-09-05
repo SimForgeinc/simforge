@@ -24,10 +24,28 @@
 //!    `KHR_materials_transmission.transmissionTexture`, and
 //!    `KHR_materials_volume.thicknessTexture` are linear data, matching the
 //!    clearcoat/anisotropy handling. `specularColorTexture` stays sRGB.
+//! 3. `roughnessFactor` / `metallicFactor` are clamped to the spec range
+//!    [0, 1]; out-of-range values reached the split-sum environment lookup
+//!    unclamped and rendered as a white specular sheet.
+//! 4. Per-slot texture sampling (bevyengine/bevy#15310): every texture slot
+//!    keeps its own `KHR_texture_transform` and `texCoord` instead of
+//!    inheriting the base-colour slot's. The loader fills the sibling
+//!    `bevy_pbr` fork's `StandardMaterial::<slot>_uv_transform` fields and
+//!    `UvChannel::{Uv2, Uv3}` (`TEXCOORD_2`/`TEXCOORD_3` become
+//!    `Mesh::ATTRIBUTE_UV_2`/`ATTRIBUTE_UV_3`, added in the vendored
+//!    `bevy_mesh`). `TEXCOORD_4+` is skipped without a warning.
+//! 5. Image deduplication: textures that reference the same image with the
+//!    same sampler and colour space share one `Handle<Image>`, so a map whose
+//!    N materials sample one 4096² atlas uploads it once.
 //!
 //! Diff surface: `Cargo.toml`, `src/lib.rs` (docs), `src/loader/mod.rs`,
-//! `src/loader/gltf_ext/mod.rs`, `src/loader/gltf_ext/texture.rs`. Rebase by
-//! reapplying those hunks onto the next bevy_gltf release.
+//! `src/loader/gltf_ext/{mod,texture,material}.rs`,
+//! `src/loader/extensions/khr_materials_{specular,clearcoat,anisotropy}.rs`,
+//! `src/material.rs`, `src/vertex_attributes.rs`. The per-slot work depends on
+//! `renderer/vendor/bevy_pbr` (14 slot transforms + packed channels in the
+//! `StandardMaterial` uniform, `standard_material_slot_uv` in
+//! `pbr_types.wgsl`, `VERTEX_UVS_C/D`) and `renderer/vendor/bevy_mesh`. Rebase
+//! by reapplying those hunks onto the next Bevy release.
 //!
 //! Plugin providing an [`AssetLoader`](bevy_asset::AssetLoader) and type definitions
 //! for loading glTF 2.0 (a standard 3D scene definition format) files in Bevy.

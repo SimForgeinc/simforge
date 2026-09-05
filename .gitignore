@@ -58,4 +58,6 @@ tools/bridge-fidelity/.corpus/
 # Next build output
 studio/.next/
 renderer/target/
+renderer/target-*/
 renderer/vendor/bevy_gltf/target/
+studio/public/basis/

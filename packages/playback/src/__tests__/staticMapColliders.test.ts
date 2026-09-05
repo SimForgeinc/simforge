@@ -14,7 +14,7 @@ const DIGEST = `sha256-${'b'.repeat(64)}`;
 
 function artifact(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    schema: 'uniscenarios.static-map-colliders/v1',
+    schema: 'simforge.static-map-colliders/v1',
     mapId: 'test-map',
     sourceManifestSha256: SOURCE_HASH,
     sources: [{ id: 'tile-0', file: 'tile.glb', declaredBytes: 1234 }],

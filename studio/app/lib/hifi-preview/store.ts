@@ -180,38 +180,68 @@ export type MapBrowserPayload = {
   byteLength: number;
 };
 
-/** All verified published 3D members for native-corpus source resolution. */
-export async function getMapBrowserPayloads(
+export type MapNativeSource = {
+  sourceMapAssetId: string;
+  registryReleaseDigest: string;
+  payloads: MapBrowserPayload[];
+};
+
+/**
+ * Immutable map identity plus every verified browser member. Native resolution
+ * uses the source asset id and registry release digest; retaining the complete
+ * browser list includes the published installation receipt and root images
+ * needed to audit master-relative resources.
+ */
+export async function getMapNativeSource(
   workspaceId: string,
   mapVersionId: string,
-): Promise<MapBrowserPayload[]> {
+): Promise<MapNativeSource | null> {
   const rows = await queryRows<{
+    source_map_asset_id: string;
+    registry_release_digest: string;
     relative_path: string;
     storage_bucket: string;
     storage_key: string;
     sha256: string;
     byte_length: number | string;
   }>(
-    `SELECT m.relative_path, b.storage_bucket, b.storage_key, b.sha256, b.byte_length
+    `SELECT mv.source_map_asset_id,
+            mv.descriptor->>'registryReleaseDigest' AS registry_release_digest,
+            m.relative_path, b.storage_bucket, b.storage_key, b.sha256, b.byte_length
      FROM simforge.map_versions mv
      JOIN simforge.browser_asset_sets s ON s.id = mv.browser_asset_set_id
        AND s.workspace_id = mv.workspace_id AND s.map_version_id = mv.id
        AND s.asset_set_state = 'available'
      JOIN simforge.browser_asset_members m ON m.asset_set_id = s.id
-       AND m.relative_path LIKE '3d/%'
      JOIN simforge.browser_asset_blobs b ON b.id = m.blob_id
        AND b.verification_state = 'verified'
      WHERE mv.id = :map_version_id
        AND mv.workspace_id = :workspace_id
        AND mv.retired_at IS NULL
+       AND NULLIF(BTRIM(mv.source_map_asset_id), '') IS NOT NULL
+       AND mv.descriptor->>'registryReleaseDigest' ~ '^[a-f0-9]{64}$'
      ORDER BY m.relative_path`,
     { workspace_id: workspaceId, map_version_id: mapVersionId },
   );
-  return rows.map((row) => ({
-    relativePath: row.relative_path,
-    bucket: row.storage_bucket,
-    key: row.storage_key,
-    sha256: row.sha256,
-    byteLength: Number(row.byte_length),
-  }));
+  const first = rows[0];
+  if (!first) return null;
+  if (rows.some((row) =>
+    row.source_map_asset_id !== first.source_map_asset_id
+    || row.registry_release_digest !== first.registry_release_digest)) {
+    throw new Error(`map version ${mapVersionId} has inconsistent native source identity`);
+  }
+  if (!rows.some((row) => row.relative_path === ".map-release.json")) {
+    throw new Error(`map version ${mapVersionId} has no registered installation receipt`);
+  }
+  return {
+    sourceMapAssetId: first.source_map_asset_id,
+    registryReleaseDigest: first.registry_release_digest,
+    payloads: rows.map((row) => ({
+      relativePath: row.relative_path,
+      bucket: row.storage_bucket,
+      key: row.storage_key,
+      sha256: row.sha256,
+      byteLength: Number(row.byte_length),
+    })),
+  };
 }

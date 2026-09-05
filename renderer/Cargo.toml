@@ -1,17 +1,24 @@
 [workspace]
 resolver = "2"
 members = ["render-core", "sensors", "service"]
-exclude = ["vendor/bevy_gltf"]
+exclude = ["vendor/bevy_gltf", "vendor/bevy_pbr", "vendor/bevy_mesh"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 
-# Native KHR_texture_basisu support (bevyengine/bevy#19104): bevy_gltf 0.19.1
-# vendored with a four-hunk patch (see vendor/bevy_gltf/src/lib.rs header).
+# Vendored Bevy 0.19.1 crates, each carrying a patch intended for upstream
+# (headers in vendor/*/src/lib.rs list the deviations):
+# - bevy_gltf: native KHR_texture_basisu (bevyengine/bevy#19104), per-slot
+#   KHR_texture_transform and TEXCOORD_2/3 (bevyengine/bevy#15310), image
+#   dedup across textures.
+# - bevy_mesh / bevy_pbr: UV channels 2 and 3 and per-slot UV transforms on
+#   StandardMaterial (the material side of bevy#15310).
 # Every other Bevy crate stays pinned to crates.io 0.19.1.
 [patch.crates-io]
 bevy_gltf = { path = "vendor/bevy_gltf" }
+bevy_mesh = { path = "vendor/bevy_mesh" }
+bevy_pbr = { path = "vendor/bevy_pbr" }
 
 [profile.dev]
 opt-level = 1

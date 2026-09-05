@@ -25,10 +25,14 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
           cache: pnpm
-      - name: Install OpenSCENARIO schema validator
-        run: sudo apt-get update && sudo apt-get install --yes libxml2-utils
+      - name: Install schema and video tools
+        run: sudo apt-get update && sudo apt-get install --yes libxml2-utils ffmpeg
       - run: pnpm install --frozen-lockfile
+      - name: Install the browser renderer runtime
+        run: pnpm --filter @simforge-oss/render exec playwright-core install --with-deps chromium
       - run: pnpm typecheck
+      - name: Build the compiled package artifacts
+        run: pnpm --filter "./packages/*" build
       - run: pnpm test:release
       - run: pnpm test:integration
       - run: pnpm test:portable
@@ -54,6 +58,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install schema and video tools
+        run: sudo apt-get update && sudo apt-get install --yes libxml2-utils ffmpeg
       - name: Verify release identity
         run: |
           python - <<'PY'

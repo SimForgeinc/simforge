@@ -1,14 +1,13 @@
 /**
  * The `hifi_preview` job family: leases queued `simforge.hifi_preview_requests`
  * and renders exactly ONE frame per request through `native-render-service`
- * (renderer/service — Bevy) on the PUBLISHED map payloads of the request's
- * map version:
+ * (renderer/service — Bevy) on the receipt-validated native master closure of
+ * the request's immutable map version:
  *
- *   lease -> resolve published 3d tiles (browser_asset_* rows -> local object
- *   files) -> spawn native-render-service with a scene spec (profile from the
- *   request) -> hello / load_scene_state (single scene-state.v1 tick doc) /
- *   render with export_dir -> wait for the async PNG export -> store the PNG
- *   under the studio cloud root -> complete with provenance.
+ *   lease -> resolve .corpus/<source_map_asset_id> and verify every receipt
+ *   member -> spawn native-render-service with master.gltf -> hello /
+ *   load_scene_state (single scene-state.v1 tick doc) / render with export_dir
+ *   -> wait for the async PNG export -> store the PNG with provenance.
  *
  * Transport is the service's framed wire: one u32-LE length-prefixed msgpack
  * document per message, requests `{i, op, ...}`, responses echo `i`
@@ -24,15 +23,15 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { createConnection, type Socket } from "node:net";
 import { homedir, hostname, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 import { decode, encode } from "@msgpack/msgpack";
 
 import { LOCAL_ARTIFACT_BUCKET } from "../app/lib/db/config";
-import { localObjectPath, writeLocalObject } from "../app/lib/s3/s3-object";
+import { writeLocalObject } from "../app/lib/s3/s3-object";
 import {
   HIFI_PREVIEW_PROVENANCE_SCHEMA,
   RENDERER_CONTRACT_VERSION,
@@ -42,10 +41,9 @@ import {
 import {
   completeHifiPreview,
   failHifiPreview,
-  getMapBrowserPayloads,
+  getMapNativeSource,
   leaseNextHifiPreview,
   type LeasedHifiPreview,
-  type MapBrowserPayload,
 } from "../app/lib/hifi-preview/store";
 import {
   HifiPreviewFailure,
@@ -220,99 +218,41 @@ export function resolveServiceBinary(): string | null {
 
 /* ------------------------------------------------------- map payloads */
 
-async function buildNativeCorpus(
-  mapId: string,
-  mapDigest: string,
-  nativeRoot: string,
-  published: MapBrowserPayload[],
-): Promise<string> {
-  await mkdir(nativeRoot, { recursive: true });
-  const buildRoot = await mkdtemp(join(nativeRoot, ".hifi-build-"));
-  const sourceRoot = join(buildRoot, "source", "3d");
-  const cacheDir = join(nativeRoot, mapId, mapDigest);
-  try {
-    for (const payload of published) {
-      const relative = payload.relativePath.replace(/^3d\//, "");
-      const destination = join(sourceRoot, relative);
-      await mkdir(dirname(destination), { recursive: true });
-      await copyFile(localObjectPath(payload.bucket, payload.key), destination);
-    }
-    const repoRoot = resolve(process.cwd(), "..");
-    const build = spawn("pnpm", [
-      "--filter", "@simforge-oss/cli",
-      "simforge",
-      "corpus", "build",
-      "--map", mapId,
-      "--source-root", sourceRoot,
-      "--out-root", join(buildRoot, "corpus"),
-      "--quiet",
-    ], { cwd: repoRoot, stdio: ["ignore", "ignore", "pipe"] });
-    let buildError = "";
-    build.stderr!.setEncoding("utf8");
-    build.stderr!.on("data", (chunk: string) => {
-      buildError = `${buildError}${chunk}`.slice(-8_192);
-    });
-    const exitCode = await new Promise<number | null>((settle, reject) => {
-      build.once("error", reject);
-      build.once("exit", settle);
-    });
-    if (exitCode !== 0) {
-      throw new HifiPreviewFailure(
-        "native_payload_build_failed",
-        `native corpus build exited with code ${exitCode}`,
-        { mapId, mapDigest, stderr: buildError },
-      );
-    }
-    const builtCorpusDir = join(buildRoot, "corpus", mapId);
-    await mkdir(dirname(cacheDir), { recursive: true });
-    try {
-      await rename(builtCorpusDir, cacheDir);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    }
-    return cacheDir;
-  } finally {
-    await rm(buildRoot, { recursive: true, force: true });
-  }
+function mapsCacheRoot(): string {
+  const configured = process.env.SIMFORGE_MAPS_CACHE_ROOT?.trim();
+  if (configured) return resolve(configured);
+  const dataHome = process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
+  return resolve(dataHome, "simforge", "maps");
 }
 
-/**
- * Resolve the published map version through a source-digest-matched sensor
- * corpus. Published GLBs are browser payloads and are never handed to Bevy.
- */
+/** Resolve the exact registry release pinned by the requested map version. */
 async function resolveMapPayloads(
   workspaceId: string,
   mapVersionId: string,
-  mapId: string,
+  requestedMapId: string,
 ): Promise<NativeReadyMap> {
-  const published = await getMapBrowserPayloads(workspaceId, mapVersionId);
-  const manifest = published.find((payload) => payload.relativePath === "3d/manifest.json");
-  if (!manifest) {
+  const source = await getMapNativeSource(workspaceId, mapVersionId);
+  if (!source) {
     throw new HifiPreviewFailure(
       "map_payload_unavailable",
-      `map version ${mapVersionId} has no published 3d/manifest.json`,
+      `map version ${mapVersionId} has no registry-backed native source`,
     );
   }
-
-  const nativeRoot = process.env.SIMFORGE_NATIVE_MAP_ROOT?.trim()
-    || join(homedir(), "simforge-assets", "map-bundles", "native");
-  const configuredCorpusRoot = process.env.SIMFORGE_NATIVE_CORPUS_ROOT?.trim();
-  const roots = [
-    nativeRoot,
-    ...(configuredCorpusRoot ? [configuredCorpusRoot] : []),
-    resolve(process.cwd(), "../.corpus"),
-    resolve(process.cwd(), ".corpus"),
-  ];
-  const allowBuild = process.env.SIMFORGE_HIFI_PREVIEW_ALLOW_NATIVE_BUILD === "1";
+  if (requestedMapId !== source.sourceMapAssetId) {
+    throw new HifiPreviewFailure(
+      "map_payload_identity_mismatch",
+      `requested map ${requestedMapId} does not match immutable map version ${mapVersionId}`,
+      {
+        requestedMapId,
+        sourceMapAssetId: source.sourceMapAssetId,
+        registryReleaseDigest: source.registryReleaseDigest,
+      },
+    );
+  }
   return resolveNativeReadyMap({
-    mapId,
-    mapDigest: manifest.sha256,
-    published,
-    roots,
-    allowBuild,
-    ...(allowBuild
-      ? { build: () => buildNativeCorpus(mapId, manifest.sha256, nativeRoot, published) }
-      : {}),
+    mapId: source.sourceMapAssetId,
+    releaseDigest: source.registryReleaseDigest,
+    corpusRoot: join(mapsCacheRoot(), ".corpus"),
   });
 }
 
@@ -333,7 +273,7 @@ export async function executeHifiPreview(
   }
 
   const nativeMap = await resolveMapPayloads(lease.workspaceId, request.mapVersionId, request.scene.mapId);
-  const worldBounds = await computePayloadWorldBounds(nativeMap.payloads.map((payload) => payload.path));
+  const worldBounds = await computePayloadWorldBounds([nativeMap.masterPath]);
   const framedCamera = framePayload(
     worldBounds,
     request.width / request.height,
@@ -346,7 +286,7 @@ export async function executeHifiPreview(
   const exportRoot = join(workspace, "export");
   const sceneSpecPath = join(workspace, "scene.json");
   await writeFile(sceneSpecPath, JSON.stringify({
-    glbs: nativeMap.payloads.map((payload) => payload.path),
+    glbs: [nativeMap.masterPath],
     profile: request.profile,
     nearM: Math.min(Math.max(request.camera.intrinsics.near, 0.05), 10),
     farM: Math.min(Math.max(request.camera.intrinsics.far, 200), 4000),
@@ -494,11 +434,11 @@ export async function executeHifiPreview(
         sizeBytes: pngBytes.byteLength,
       },
       map: {
-        tileCount: nativeMap.payloads.length,
+        tileCount: 1,
         payloads: nativeMap.payloads.map((payload) => ({
           path: payload.relativePath,
-          sourceSha256: payload.sourceSha256,
           sha256: payload.sha256,
+          sizeBytes: payload.sizeBytes,
         })),
       },
       timings: { prewarmMs, renderMs, totalMs: Date.now() - t0 },

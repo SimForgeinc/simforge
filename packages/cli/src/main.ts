@@ -10,6 +10,7 @@
  * - **every error is `{code, path?, reason, detail?}`**, JSON, on stderr.
  */
 
+import { delimiter } from 'node:path';
 import {
   boolFlag,
   listFlag,
@@ -25,7 +26,7 @@ import type { AmbientTrafficProfile } from '@simforge-oss/engine';
 
 import { CliError, EXIT, exitCodeOf, toStructuredError } from './errors.js';
 import { emit, emitError } from './output.js';
-import { availableMaps, resolveMapSelection, KNOWN_MAPS } from '@simforge-oss/compiler/node';
+import { availableMaps, resolveMapSelection } from '@simforge-oss/compiler/node';
 import { batch } from './commands/batch.js';
 import { catalogCreate, catalogVerify } from './commands/catalog.js';
 import { catalogBatch } from './commands/catalog-batch.js';
@@ -35,6 +36,7 @@ import { exportScenario } from './commands/export.js';
 import { instantiate } from './commands/instantiate.js';
 import { locationsFind, locationsGet, locationsResolve } from './commands/locations.js';
 import {
+  registryMapsBuild,
   registryMapsIngest,
   registryMapsList,
   registryMapsPromote,
@@ -54,7 +56,8 @@ import { corpusBuildCommand, corpusPrewarm } from './commands/corpus.js';
 const COMMANDS = [
   { name: 'maps list', summary: 'list immutable maps and versions in the configured registry' },
   { name: 'maps pull', summary: 'verify and materialize a registry map into local engine cache layouts' },
-  { name: 'maps ingest', summary: 'build and publish FBX/GLB sources, or publish a pre-built closure directory' },
+  { name: 'maps build', summary: 'build a map master + web tier from a RoadRunner/Unreal GLB export into a work directory (no publish)' },
+  { name: 'maps ingest', summary: 'build a map master + web tier from a RoadRunner/Unreal GLB export and publish it, or publish a prebuilt master directory' },
   { name: 'maps promote', summary: 'copy one immutable version between registries' },
   { name: 'maps sources push', summary: 'resumably multipart-upload a raw source archive' },
   { name: 'locations find', summary: 'structured location query: --map --type --facts --near …' },
@@ -70,7 +73,7 @@ const COMMANDS = [
   { name: 'evaluate', summary: 'reject filters over a trace' },
   { name: 'evidence verify', summary: 'prove one instance/trace pair shares the same input hash' },
   { name: 'export', summary: 'concrete instance → native XML 1.4, explicit XML 1.3 esmini compatibility, or DSL 2.2' },
-  { name: 'catalog create', summary: 'reserve exactly 100 deterministic scenario identities per supported map' },
+  { name: 'catalog create', summary: 'reserve exactly 100 deterministic scenario identities per selected installed map' },
   { name: 'catalog verify', summary: 'reject catalog identity, cardinality, provenance, or evidence gaps' },
   { name: 'import', summary: 'OpenSCENARIO XML 1.4 → v2 template draft, with a lossy-feature report' },
   { name: 'catalog batch', summary: 'resumable catalog materialization + simulation with an attempt ledger' },
@@ -85,11 +88,12 @@ const COMMANDS = [
 const GLOBAL_BOOLEANS = ['pretty', 'help'];
 
 function usage(pretty: boolean): number {
+  const maps = availableMaps();
   const payload = {
     bin: 'simforge',
     exitCodes: { 0: 'ok', 1: 'command error', 2: 'validation findings' },
     commands: COMMANDS,
-    maps: availableMaps(),
+    maps,
   };
   if (!pretty) {
     emit(payload, { pretty: false });
@@ -101,7 +105,7 @@ function usage(pretty: boolean): number {
         ...COMMANDS.map((c) => `  simforge ${c.name.padEnd(20)}${c.summary}`),
         '',
         '  --pretty   human-readable rendering of the same result',
-        `  maps: ${availableMaps().join(', ')}`,
+        `  maps: ${maps.join(', ')}`,
         '',
       ].join('\n'),
     );
@@ -230,16 +234,15 @@ async function dispatch(argv: readonly string[]): Promise<number> {
       }
       if (sub === 'pull') {
         const args = parseArgs(argv.slice(2), {
-          booleans: GLOBAL_BOOLEANS,
+          booleans: [...GLOBAL_BOOLEANS, 'archive'],
           values: [
             'registry',
             'cache-root',
             'browser-root',
             'dev-assets-root',
             'native-corpus-root',
-            'browser-fingerprint',
-            'ktx2-fingerprint',
-            'native-fingerprint',
+            'blob-cache-root',
+            'web-fingerprint',
           ],
         });
         return registryMapsPull({
@@ -249,9 +252,27 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           browserRoot: optionalString(args, 'browser-root'),
           devAssetsRoot: optionalString(args, 'dev-assets-root'),
           nativeCorpusRoot: optionalString(args, 'native-corpus-root'),
-          browserFingerprint: optionalString(args, 'browser-fingerprint'),
-          ktx2Fingerprint: optionalString(args, 'ktx2-fingerprint'),
-          nativeFingerprint: optionalString(args, 'native-fingerprint'),
+          blobCacheRoot: optionalString(args, 'blob-cache-root'),
+          webFingerprint: optionalString(args, 'web-fingerprint'),
+          archive: boolFlag(args, 'archive'),
+          pretty: boolFlag(args, 'pretty'),
+        });
+      }
+      if (sub === 'build') {
+        const args = parseArgs(argv.slice(2), {
+          booleans: GLOBAL_BOOLEANS,
+          values: ['name', 'xodr', 'glb', 'source-manifest', 'reuse-master', 'work-dir', 'cell-size', 'donor-masters'],
+        });
+        return registryMapsBuild({
+          directory: positional(args, 0, 'source-directory'),
+          name: requireString(args, 'name'),
+          xodrPath: optionalString(args, 'xodr'),
+          sourcePath: optionalString(args, 'glb'),
+          sourceManifest: optionalString(args, 'source-manifest'),
+          reuseMasterDir: optionalString(args, 'reuse-master'),
+          workDir: requireString(args, 'work-dir'),
+          cellSize: optionalNumber(args, 'cell-size'),
+          donorLibrary: optionalString(args, 'donor-masters')?.split(delimiter).filter((entry) => entry.length > 0),
           pretty: boolFlag(args, 'pretty'),
         });
       }
@@ -265,32 +286,40 @@ async function dispatch(argv: readonly string[]): Promise<number> {
             'version',
             'label',
             'source-ref',
-            'browser-dir',
-            'browser-fingerprint',
-            'ktx2-dir',
-            'ktx2-fingerprint',
-            'native-dir',
-            'native-fingerprint',
+            'web-dir',
+            'web-fingerprint',
+            'cell-size',
+            'donor-masters',
+            'glb',
+            'source-manifest',
+            'reuse-master',
+            'work-dir',
+            'target',
           ],
         });
         const version = optionalString(args, 'version');
         if (version !== undefined && !/^v[1-9][0-9]*$/.test(version)) {
           throw new CliError('bad_value', '--version must be v<N>', { path: '--version' });
         }
+        const target = optionalString(args, 'target');
+        if (target !== undefined && target !== 'private' && target !== 'public') throw new CliError('bad_value', '--target must be private or public', { path: '--target' });
         return registryMapsIngest({
           directory: positional(args, 0, 'source-directory'),
           name: requireString(args, 'name'),
           xodrPath: optionalString(args, 'xodr'),
+          sourcePath: optionalString(args, 'glb'),
+          sourceManifest: optionalString(args, 'source-manifest'),
+          reuseMasterDir: optionalString(args, 'reuse-master'),
+          workDir: optionalString(args, 'work-dir'),
+          target: target as 'private' | 'public' | undefined,
           registry: optionalString(args, 'registry'),
           version: version as `v${number}` | undefined,
           label: optionalString(args, 'label'),
           sourceRef: optionalString(args, 'source-ref'),
-          browserDirectory: optionalString(args, 'browser-dir'),
-          browserFingerprint: optionalString(args, 'browser-fingerprint'),
-          ktx2Directory: optionalString(args, 'ktx2-dir'),
-          ktx2Fingerprint: optionalString(args, 'ktx2-fingerprint'),
-          nativeDirectory: optionalString(args, 'native-dir'),
-          nativeFingerprint: optionalString(args, 'native-fingerprint'),
+          webDirectory: optionalString(args, 'web-dir'),
+          webFingerprint: optionalString(args, 'web-fingerprint'),
+          cellSize: optionalNumber(args, 'cell-size'),
+          donorLibrary: optionalString(args, 'donor-masters')?.split(delimiter).filter((entry) => entry.length > 0),
           pretty: boolFlag(args, 'pretty'),
         });
       }
@@ -307,6 +336,7 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           reference: positional(args, 0, 'name@version'),
           sourceRegistry: optionalString(args, 'from'),
           destinationRegistry: optionalString(args, 'destination-registry'),
+          target: to === 'public' ? 'public' : undefined,
           pretty: boolFlag(args, 'pretty'),
         });
       }
@@ -594,10 +624,19 @@ async function dispatch(argv: readonly string[]): Promise<number> {
       if (sub === 'create') {
         const args = parseArgs(argv.slice(2), {
           booleans: GLOBAL_BOOLEANS,
-          values: ['out', 'namespace', 'evidence-root'],
+          values: ['out', 'map', 'maps', 'dev-assets', 'namespace', 'evidence-root'],
         });
+        const map = optionalString(args, 'map');
+        const maps = listFlag(args, 'maps');
+        if (map !== undefined && maps !== undefined) {
+          throw new CliError('bad_value', 'catalog create accepts only one of --map <id> or --maps a,b,c', {
+            path: '--map',
+          });
+        }
         return catalogCreate({
           out: requireString(args, 'out'),
+          mapIds: map === undefined ? maps : [map],
+          devAssets: optionalString(args, 'dev-assets'),
           namespace: optionalString(args, 'namespace'),
           evidenceRoot: optionalString(args, 'evidence-root'),
           pretty: boolFlag(args, 'pretty'),
@@ -726,9 +765,13 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           });
         }
         const maps = mapFlag !== undefined ? [mapFlag] : (mapsFlag ?? []);
+        const installedMaps = availableMaps();
         for (const mapId of maps) {
-          if (!(KNOWN_MAPS as readonly string[]).includes(mapId)) {
-            throw new CliError('bad_value', `unknown map "${mapId}"`, { path: '--map' });
+          if (!installedMaps.includes(mapId)) {
+            throw new CliError('bad_value', `unknown map "${mapId}"`, {
+              path: '--map',
+              detail: { available: installedMaps },
+            });
           }
         }
         return corpusBuildCommand({

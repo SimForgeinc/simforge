@@ -6,51 +6,30 @@ no large asset is ever baked into an image or committed to git.**
 
 ## Asset root
 
-All large local assets live under one directory, outside every repo and image:
+Pulled maps share one cache outside every repo and image:
 
 ```
-~/simforge-assets/          # override with SIMFORGE_ASSETS
-  hf-cache/                 # HuggingFace hub cache (HF_HOME layout) — e.g. nvidia/Alpamayo-1.5-10B weights
-  models/                   # non-HF model artifacts
-  map-bundles/              # GLB map tiles / static layers AND training/dev map artifacts (per-map subdirs)
-  refs/                     # reference shots (renderer look-parity baselines)
+${SIMFORGE_MAPS_CACHE_ROOT:-${XDG_DATA_HOME:-~/.local/share}/simforge/maps}/
+  dev-assets/<mapId>/       # semantic sidecars
+  map-bundles/<mapId>/      # browser closure and external resources
+  .corpus/<mapId>/          # native master closure
+  .blobs/                   # content-addressed shared blobs
 ```
 
-The layout is described by `scripts/assets/manifest.json`, which records every
-asset with a SHA-256 digest (or an HF revision pin, which is content-addressed
-per blob by the hub protocol). Fetching is idempotent and digest-verified:
 
-```
-node scripts/assets/fetch.mjs status     # honest per-asset report (present / missing / mismatch / pending)
-node scripts/assets/fetch.mjs fetch      # fetch whatever is missing; skips verified assets
-node scripts/assets/fetch.mjs verify     # full digest re-verification (exit 1 on any mismatch)
-```
+### Installed map profiles
 
-`SIMFORGE_ASSETS=/elsewhere node scripts/assets/fetch.mjs status` relocates the
-root; nothing in the repo hardcodes the home-directory path.
+`simforge maps pull <map>@<version>` materializes all three runtime profiles.
+Each profile is activated only with a `.map-release.json` receipt that identifies
+the same immutable registry release. The compiler and Studio discover complete
+installations from the common cache; Studio publishes the browser closure and
+registers the matching native master closure during normal boot.
 
-### Training/dev map artifacts (`map-bundles/<mapId>/`)
-
-The former `dev-assets/` worktree symlink is dead (its target checkout was
-pruned). Its content — per-map `topology-index.json.gz`,
-`derived/topology-derived.json.gz`, `derived/locations.json.gz`,
-`search-index.json.gz`, `browser/topology-index.json.gz`, `3d/`, plus the
-headless `sumo-runtime/` (sumo.mjs/sumo.wasm/runtime-manifest.json) — now
-lives at `~/simforge-assets/map-bundles/<mapId>/`. Engine code resolves it via
-the existing env override:
-
-```
-export SCEN_DEV_ASSETS=~/simforge-assets/map-bundles   # packages/compiler maps.ts
-export SIMFORGE_DEV_ASSETS=~/simforge-assets/map-bundles  # studio seed
-```
-
-(making that the *default* resolution is a pending patch to
-`packages/compiler/src/maps.ts` and `studio/scripts/seed.ts`; until it lands,
-set the env vars). Recovery sources when a map dir is absent:
-(a) `pnpm maps:derivatives -- --map <mapId>` rebuilds derivatives from source
-map data, (b) published bundles in the platform S3 SimForge artifact buckets.
-Repo tests `describe.skipIf` on artifact absence, so `status` output
-tells you exactly which map suites will run.
+`SIMFORGE_MAPS_CACHE_ROOT=/elsewhere` relocates the entire cache consistently.
+Without that variable, `XDG_DATA_HOME` is honored and the fallback is
+`~/.local/share/simforge/maps`. Do not point Studio at an individual profile.
+When the cache has no complete installation, Studio uses its independently
+generated Starter Road.
 
 Rules:
 

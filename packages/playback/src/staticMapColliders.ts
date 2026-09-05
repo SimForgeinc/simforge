@@ -7,7 +7,7 @@ import {
   type StaticMapCollider,
 } from '@simforge-oss/engine';
 
-const SCHEMA = 'uniscenarios.static-map-colliders/v1';
+const SCHEMA = 'simforge.static-map-colliders/v1';
 const CLASSES = new Set<StaticColliderClass>(['building', 'wall', 'barrier', 'prop', 'road-boundary']);
 
 interface DerivativeManifest {

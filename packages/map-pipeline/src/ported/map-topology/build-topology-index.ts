@@ -459,7 +459,7 @@ function pointOnGeom(g: XGeom, t: number): { x: number; y: number; hdg: number }
 }
 
 /** Point on the road's reference line at absolute road `s`. */
-function refLineAt(road: XRoad, s: number): { x: number; y: number; hdg: number } | null {
+export function refLineAt(road: XRoad, s: number): { x: number; y: number; hdg: number } | null {
   if (road.geom.length === 0) return null;
   // Bracket: find the geometry block containing `s`.
   let g = road.geom[0]!;

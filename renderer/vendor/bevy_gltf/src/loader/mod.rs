@@ -27,8 +27,6 @@ use bevy_image::{
 };
 use bevy_light::{DirectionalLight, PointLight, SpotLight};
 use bevy_math::{Mat4, Vec3};
-#[cfg(feature = "pbr_transmission_textures")]
-use bevy_mesh::UvChannel;
 use bevy_mesh::{
     morph::{MeshMorphWeights, MorphAttributes, MorphWeights},
     skinning::{SkinnedMesh, SkinnedMeshInverseBindposes},
@@ -51,7 +49,7 @@ use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use std::{io::Error, sync::Mutex};
 use thiserror::Error;
-use tracing::{error, info_span, warn};
+use tracing::{debug, error, info_span, warn};
 use wgpu_types::Face;
 
 use crate::{
@@ -67,12 +65,12 @@ use self::{
     gltf_ext::{
         check_for_cycles, get_linear_textures,
         material::{
-            alpha_mode, material_label, needs_tangents, uv_channel,
-            warn_on_differing_texture_transforms,
+            alpha_mode, material_label, needs_tangents, raw_extension_slot_sampling,
+            slot_sampling,
         },
         mesh::{primitive_name, primitive_topology},
         scene::{node_name, node_transform},
-        texture::{texture_sampler, texture_source, texture_transform_to_affine2, TextureSource},
+        texture::{texture_sampler, texture_source, TextureSource},
     },
 };
 use crate::convert_coordinates::GltfConvertCoordinates;
@@ -624,37 +622,64 @@ impl GltfLoader {
         // In theory we could store a mapping between texture.index() and handle to use
         // later in the loader when looking up handles for materials. However this would mean
         // that the material's load context would no longer track those images as dependencies.
-        let mut texture_handles = Vec::new();
-        if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
+        //
+        // Textures that reference the same image with the same sampler and
+        // colour space decode and upload one `Image`: glTF allows many
+        // textures per image, and exports routinely emit one texture per
+        // material slot use. `texture_handles` stays indexed by texture.
+        let mut canonical_texture: Vec<usize> = Vec::with_capacity(gltf.textures().len());
+        {
+            let mut first_for_key: HashMap<(usize, Option<usize>, bool), usize> =
+                HashMap::default();
             for texture in gltf.textures() {
-                let image = load_image(
-                    texture.clone(),
-                    &gltf.document,
-                    &buffer_data,
-                    &linear_textures,
-                    load_context.path(),
-                    loader.supported_compressed_formats,
-                    default_sampler,
-                    settings,
-                )
-                .await?;
-                image.process_loaded_texture(load_context, &mut texture_handles);
-                // let extensions handle texture data
-                for extension in extensions.iter_mut() {
-                    extension.on_texture(&texture, texture_handles.last().unwrap().clone());
-                }
+                let key = match texture_source(&texture, &gltf.document) {
+                    TextureSource::Image(image) => Some((
+                        image.index(),
+                        if settings.override_sampler { None } else { texture.sampler().index() },
+                        !linear_textures.contains(&texture.index()),
+                    )),
+                    _ => None,
+                };
+                let canonical = key
+                    .map(|key| *first_for_key.entry(key).or_insert(texture.index()))
+                    .unwrap_or(texture.index());
+                canonical_texture.push(canonical);
             }
+        }
+        let unique_textures: Vec<gltf::Texture> = gltf
+            .textures()
+            .filter(|texture| canonical_texture[texture.index()] == texture.index())
+            .collect();
+        let loaded_images: Vec<ImageOrPath> = if unique_textures.len() == 1 || cfg!(target_arch = "wasm32") {
+            let mut loaded = Vec::with_capacity(unique_textures.len());
+            for texture in &unique_textures {
+                loaded.push(
+                    load_image(
+                        texture.clone(),
+                        &gltf.document,
+                        &buffer_data,
+                        &linear_textures,
+                        load_context.path(),
+                        loader.supported_compressed_formats,
+                        default_sampler,
+                        settings,
+                    )
+                    .await?,
+                );
+            }
+            loaded
         } else {
             // This cfg is redundant, but if we don't explicitly cfg it out, Wasm will compile it
             // and fail.
             #[cfg(not(target_arch = "wasm32"))]
             {
-                let textures = IoTaskPool::get().scope(|scope| {
-                    gltf.textures().for_each(|gltf_texture| {
+                let results = IoTaskPool::get().scope(|scope| {
+                    unique_textures.iter().for_each(|gltf_texture| {
                         let asset_path = load_context.path().clone();
                         let linear_textures = &linear_textures;
                         let buffer_data = &buffer_data;
                         let document = &gltf.document;
+                        let gltf_texture = gltf_texture.clone();
                         scope.spawn(async move {
                             load_image(
                                 gltf_texture,
@@ -671,14 +696,27 @@ impl GltfLoader {
                     });
                 });
                 // order is preserved if the futures are only spawned from the root scope
-                for (result, texture) in textures.into_iter().zip(gltf.textures()) {
-                    result?.process_loaded_texture(load_context, &mut texture_handles);
-                    // let extensions handle texture data
-                    for extension in extensions.iter_mut() {
-                        extension.on_texture(&texture, texture_handles.last().unwrap().clone());
-                    }
-                }
+                results.into_iter().collect::<Result<Vec<_>, _>>()?
             }
+            #[cfg(target_arch = "wasm32")]
+            {
+                unreachable!()
+            }
+        };
+        let mut unique_handles: HashMap<usize, Handle<Image>> = HashMap::default();
+        for (texture, image) in unique_textures.iter().zip(loaded_images) {
+            let mut handles = Vec::with_capacity(1);
+            image.process_loaded_texture(load_context, &mut handles);
+            unique_handles.insert(texture.index(), handles.pop().unwrap());
+        }
+        let mut texture_handles = Vec::with_capacity(gltf.textures().len());
+        for texture in gltf.textures() {
+            let handle = unique_handles[&canonical_texture[texture.index()]].clone();
+            // let extensions handle texture data
+            for extension in extensions.iter_mut() {
+                extension.on_texture(&texture, handle.clone());
+            }
+            texture_handles.push(handle);
         }
 
         let mut materials = vec![];
@@ -769,6 +807,13 @@ impl GltfLoader {
 
                     // Read vertex attributes
                     for (semantic, accessor) in primitive.attributes() {
+                        // TEXCOORD_4+ cannot be sampled by any material slot;
+                        // exports that carry them (RoadRunner/Unreal) do so
+                        // for every primitive, so this is not worth a warning.
+                        if matches!(semantic, Semantic::TexCoords(set) if set > 3) {
+                            debug!("Skipping unsampleable attribute {:?} on {}", semantic, primitive_label);
+                            continue;
+                        }
                         if [Semantic::Joints(0), Semantic::Weights(0)].contains(&semantic) {
                             if !gltf_mesh_on_skinned_nodes {
                                 warn!(
@@ -1283,9 +1328,9 @@ fn load_material(
 
     // TODO: handle missing label handle errors here?
     let color = pbr.base_color_factor();
-    let base_color_channel = pbr
+    let base_color = pbr
         .base_color_texture()
-        .map(|info| uv_channel(material, "base color", info.tex_coord()))
+        .map(|info| slot_sampling(material, "base color", info.tex_coord(), info.texture_transform()))
         .unwrap_or_default();
     let base_color_texture = pbr.base_color_texture().map(|info| {
         textures
@@ -1294,14 +1339,15 @@ fn load_material(
             .unwrap_or_default()
     });
 
-    let uv_transform = pbr
-        .base_color_texture()
-        .and_then(|info| info.texture_transform().map(texture_transform_to_affine2))
-        .unwrap_or_default();
+    // The material-level transform stays the base-colour slot's, as before;
+    // every slot also carries its own (see `GltfMaterial::*_uv_transform`).
+    let uv_transform = base_color.transform.unwrap_or_default();
 
-    let normal_map_channel = material
+    let normal_map = material
         .normal_texture()
-        .map(|info| uv_channel(material, "normal map", info.tex_coord()))
+        .map(|info| {
+            raw_extension_slot_sampling(material, "normal map", info.tex_coord(), info.extensions())
+        })
         .unwrap_or_default();
     let normal_map_texture: Option<Handle<Image>> =
         material.normal_texture().map(|normal_texture| {
@@ -1312,21 +1358,22 @@ fn load_material(
                 .unwrap_or_default()
         });
 
-    let metallic_roughness_channel = pbr
+    let metallic_roughness = pbr
         .metallic_roughness_texture()
-        .map(|info| uv_channel(material, "metallic/roughness", info.tex_coord()))
+        .map(|info| slot_sampling(material, "metallic/roughness", info.tex_coord(), info.texture_transform()))
         .unwrap_or_default();
     let metallic_roughness_texture = pbr.metallic_roughness_texture().map(|info| {
-        warn_on_differing_texture_transforms(material, &info, uv_transform, "metallic/roughness");
         textures
             .get(info.texture().index())
             .cloned()
             .unwrap_or_default()
     });
 
-    let occlusion_channel = material
+    let occlusion = material
         .occlusion_texture()
-        .map(|info| uv_channel(material, "occlusion", info.tex_coord()))
+        .map(|info| {
+            raw_extension_slot_sampling(material, "occlusion", info.tex_coord(), info.extensions())
+        })
         .unwrap_or_default();
     let occlusion_texture = material.occlusion_texture().map(|occlusion_texture| {
         // TODO: handle occlusion_texture.strength() (a scalar multiplier for occlusion strength)
@@ -1336,14 +1383,12 @@ fn load_material(
             .unwrap_or_default()
     });
 
-    let emissive = material.emissive_factor();
-    let emissive_channel = material
+    let emissive_factor = material.emissive_factor();
+    let emissive = material
         .emissive_texture()
-        .map(|info| uv_channel(material, "emissive", info.tex_coord()))
+        .map(|info| slot_sampling(material, "emissive", info.tex_coord(), info.texture_transform()))
         .unwrap_or_default();
     let emissive_texture = material.emissive_texture().map(|info| {
-        // TODO: handle occlusion_texture.strength() (a scalar multiplier for occlusion strength)
-        warn_on_differing_texture_transforms(material, &info, uv_transform, "emissive");
         textures
             .get(info.texture().index())
             .cloned()
@@ -1351,13 +1396,13 @@ fn load_material(
     });
 
     #[cfg(feature = "pbr_transmission_textures")]
-    let (specular_transmission, specular_transmission_channel, specular_transmission_texture) =
+    let (specular_transmission, specular_transmission_sampling, specular_transmission_texture) =
         material
             .transmission()
-            .map_or((0.0, UvChannel::Uv0, None), |transmission| {
+            .map_or((0.0, Default::default(), None), |transmission| {
                 let specular_transmission_channel = transmission
                     .transmission_texture()
-                    .map(|info| uv_channel(material, "specular/transmission", info.tex_coord()))
+                    .map(|info| slot_sampling(material, "specular/transmission", info.tex_coord(), info.texture_transform()))
                     .unwrap_or_default();
                 let transmission_texture: Option<Handle<Image>> = transmission
                     .transmission_texture()
@@ -1381,13 +1426,13 @@ fn load_material(
         .map_or(0.0, |transmission| transmission.transmission_factor());
 
     #[cfg(feature = "pbr_transmission_textures")]
-    let (thickness, thickness_channel, thickness_texture, attenuation_distance, attenuation_color) =
+    let (thickness, thickness_sampling, thickness_texture, attenuation_distance, attenuation_color) =
         material.volume().map_or(
-            (0.0, UvChannel::Uv0, None, f32::INFINITY, [1.0, 1.0, 1.0]),
+            (0.0, Default::default(), None, f32::INFINITY, [1.0, 1.0, 1.0]),
             |volume| {
                 let thickness_channel = volume
                     .thickness_texture()
-                    .map(|info| uv_channel(material, "thickness", info.tex_coord()))
+                    .map(|info| slot_sampling(material, "thickness", info.tex_coord(), info.texture_transform()))
                     .unwrap_or_default();
                 let thickness_texture: Option<Handle<Image>> =
                     volume.thickness_texture().map(|thickness_texture| {
@@ -1434,18 +1479,26 @@ fn load_material(
         SpecularExtension::parse(material, textures, asset_path.clone()).unwrap_or_default();
 
     // We need to operate in the Linear color space and be willing to exceed 1.0 in our channels
-    let base_emissive = LinearRgba::rgb(emissive[0], emissive[1], emissive[2]);
-    let emissive = base_emissive * material.emissive_strength().unwrap_or(1.0);
+    let base_emissive = LinearRgba::rgb(emissive_factor[0], emissive_factor[1], emissive_factor[2]);
+    let emissive_color = base_emissive * material.emissive_strength().unwrap_or(1.0);
 
     let gltf_material = GltfMaterial {
         base_color: Color::linear_rgba(color[0], color[1], color[2], color[3]),
-        base_color_channel,
+        base_color_channel: base_color.channel,
+        base_color_uv_transform: base_color.transform,
         base_color_texture,
-        perceptual_roughness: pbr.roughness_factor(),
-        metallic: pbr.metallic_factor(),
-        metallic_roughness_channel,
+        // glTF bounds both factors to [0, 1]; Unreal's exporter writes
+        // RoadRunner grass with `roughnessFactor: 2`, which the direct-light
+        // BRDF clamps but the split-sum `F_AB` lookup does not, turning the
+        // material into a white sheet. Clamp here so an out-of-spec asset
+        // degrades to "fully rough" instead of blowing up.
+        perceptual_roughness: pbr.roughness_factor().clamp(0.0, 1.0),
+        metallic: pbr.metallic_factor().clamp(0.0, 1.0),
+        metallic_roughness_channel: metallic_roughness.channel,
+        metallic_roughness_uv_transform: metallic_roughness.transform,
         metallic_roughness_texture,
-        normal_map_channel,
+        normal_map_channel: normal_map.channel,
+        normal_map_uv_transform: normal_map.transform,
         normal_map_texture,
         double_sided: material.double_sided(),
         cull_mode: if material.double_sided() {
@@ -1455,19 +1508,25 @@ fn load_material(
         } else {
             Some(Face::Back)
         },
-        occlusion_channel,
+        occlusion_channel: occlusion.channel,
+        occlusion_uv_transform: occlusion.transform,
         occlusion_texture,
-        emissive,
-        emissive_channel,
+        emissive: emissive_color,
+        emissive_channel: emissive.channel,
+        emissive_uv_transform: emissive.transform,
         emissive_texture,
         specular_transmission,
         #[cfg(feature = "pbr_transmission_textures")]
-        specular_transmission_channel,
+        specular_transmission_channel: specular_transmission_sampling.channel,
+        #[cfg(feature = "pbr_transmission_textures")]
+        specular_transmission_uv_transform: specular_transmission_sampling.transform,
         #[cfg(feature = "pbr_transmission_textures")]
         specular_transmission_texture,
         thickness,
         #[cfg(feature = "pbr_transmission_textures")]
-        thickness_channel,
+        thickness_channel: thickness_sampling.channel,
+        #[cfg(feature = "pbr_transmission_textures")]
+        thickness_uv_transform: thickness_sampling.transform,
         #[cfg(feature = "pbr_transmission_textures")]
         thickness_texture,
         ior,
@@ -1486,19 +1545,27 @@ fn load_material(
         #[cfg(feature = "pbr_multi_layer_material_textures")]
         clearcoat_channel: clearcoat.clearcoat_channel,
         #[cfg(feature = "pbr_multi_layer_material_textures")]
+        clearcoat_uv_transform: clearcoat.clearcoat_uv_transform,
+        #[cfg(feature = "pbr_multi_layer_material_textures")]
         clearcoat_texture: clearcoat.clearcoat_texture,
         #[cfg(feature = "pbr_multi_layer_material_textures")]
         clearcoat_roughness_channel: clearcoat.clearcoat_roughness_channel,
         #[cfg(feature = "pbr_multi_layer_material_textures")]
+        clearcoat_roughness_uv_transform: clearcoat.clearcoat_roughness_uv_transform,
+        #[cfg(feature = "pbr_multi_layer_material_textures")]
         clearcoat_roughness_texture: clearcoat.clearcoat_roughness_texture,
         #[cfg(feature = "pbr_multi_layer_material_textures")]
         clearcoat_normal_channel: clearcoat.clearcoat_normal_channel,
+        #[cfg(feature = "pbr_multi_layer_material_textures")]
+        clearcoat_normal_uv_transform: clearcoat.clearcoat_normal_uv_transform,
         #[cfg(feature = "pbr_multi_layer_material_textures")]
         clearcoat_normal_texture: clearcoat.clearcoat_normal_texture,
         anisotropy_strength: anisotropy.anisotropy_strength.unwrap_or_default() as f32,
         anisotropy_rotation: anisotropy.anisotropy_rotation.unwrap_or_default() as f32,
         #[cfg(feature = "pbr_anisotropy_texture")]
         anisotropy_channel: anisotropy.anisotropy_channel,
+        #[cfg(feature = "pbr_anisotropy_texture")]
+        anisotropy_uv_transform: anisotropy.anisotropy_uv_transform,
         #[cfg(feature = "pbr_anisotropy_texture")]
         anisotropy_texture: anisotropy.anisotropy_texture,
         // From the `KHR_materials_specular` spec:
@@ -1507,6 +1574,8 @@ fn load_material(
         #[cfg(feature = "pbr_specular_textures")]
         specular_channel: specular.specular_channel,
         #[cfg(feature = "pbr_specular_textures")]
+        specular_uv_transform: specular.specular_uv_transform,
+        #[cfg(feature = "pbr_specular_textures")]
         specular_texture: specular.specular_texture,
         specular_tint: match specular.specular_color_factor {
             Some(color) => Color::linear_rgb(color[0] as f32, color[1] as f32, color[2] as f32),
@@ -1514,6 +1583,8 @@ fn load_material(
         },
         #[cfg(feature = "pbr_specular_textures")]
         specular_tint_channel: specular.specular_color_channel,
+        #[cfg(feature = "pbr_specular_textures")]
+        specular_tint_uv_transform: specular.specular_color_uv_transform,
         #[cfg(feature = "pbr_specular_textures")]
         specular_tint_texture: specular.specular_color_texture,
     };
@@ -2918,5 +2989,176 @@ mod test {
             state => panic!("Unexpected load state: {state:?}"),
         });
     }
-}
 
+    /// Loads a document whose textures are fake KTX2 files (never decoded) and
+    /// returns the app, root handle and the loaded materials in order.
+    fn load_materials(gltf: &str, images: &[&str]) -> (App, Handle<Gltf>) {
+        let (mut app, dir) = test_app_custom_asset_source();
+        dir.insert_asset_text(Path::new("abc.gltf"), gltf);
+        for image in images {
+            dir.insert_asset_text(Path::new(image), "not a real ktx2");
+        }
+
+        #[derive(TypePath)]
+        struct FakeKtx2Loader;
+
+        impl AssetLoader for FakeKtx2Loader {
+            type Asset = Image;
+            type Error = std::io::Error;
+            type Settings = ImageLoaderSettings;
+
+            async fn load(
+                &self,
+                _reader: &mut dyn bevy_asset::io::Reader,
+                _settings: &Self::Settings,
+                _load_context: &mut LoadContext<'_>,
+            ) -> Result<Self::Asset, Self::Error> {
+                Ok(Image::default())
+            }
+
+            fn extensions(&self) -> &[&str] {
+                &["ktx2"]
+            }
+        }
+
+        app.init_asset::<Image>()
+            .register_asset_loader(FakeKtx2Loader);
+        let asset_server = app.world().resource::<AssetServer>().clone();
+        let handle: Handle<Gltf> = asset_server.load("custom://abc.gltf");
+        run_app_until(&mut app, |_world| {
+            asset_server
+                .is_loaded_with_dependencies(&handle)
+                .then_some(())
+        });
+        (app, handle)
+    }
+
+    /// Every slot keeps its own `KHR_texture_transform` and UV set; the
+    /// transform's `texCoord` override wins over the texture info's.
+    #[test]
+    fn per_slot_texture_transforms_and_uv_sets_survive() {
+        use bevy_math::{Affine2, Vec2};
+        use bevy_mesh::UvChannel;
+
+        let (app, handle) = load_materials(
+            r#"
+{
+    "asset": { "version": "2.0" },
+    "extensionsUsed": ["KHR_texture_basisu", "KHR_texture_transform", "KHR_materials_clearcoat"],
+    "extensionsRequired": ["KHR_texture_basisu"],
+    "materials": [
+        {
+            "name": "slots",
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "index": 0,
+                    "extensions": { "KHR_texture_transform": { "scale": [2.0, 3.0] } }
+                },
+                "metallicRoughnessTexture": {
+                    "index": 0,
+                    "texCoord": 1,
+                    "extensions": { "KHR_texture_transform": { "offset": [0.25, 0.5], "texCoord": 2 } }
+                }
+            },
+            "normalTexture": {
+                "index": 0,
+                "texCoord": 3,
+                "extensions": { "KHR_texture_transform": { "scale": [4.0, 4.0] } }
+            },
+            "occlusionTexture": { "index": 0, "texCoord": 2 },
+            "emissiveTexture": { "index": 0 },
+            "extensions": {
+                "KHR_materials_clearcoat": {
+                    "clearcoatFactor": 1.0,
+                    "clearcoatTexture": {
+                        "index": 0,
+                        "texCoord": 1,
+                        "extensions": { "KHR_texture_transform": { "offset": [0.1, 0.2], "texCoord": 3 } }
+                    }
+                }
+            }
+        }
+    ],
+    "textures": [ { "extensions": { "KHR_texture_basisu": { "source": 0 } } } ],
+    "images": [ { "uri": "abc.ktx2" } ]
+}
+"#,
+            &["abc.ktx2"],
+        );
+        let material_handles = app.world().resource::<Assets<Gltf>>().get(&handle).unwrap().materials.clone();
+        let materials = app.world().resource::<Assets<GltfMaterial>>();
+        let material = materials.get(&material_handles[0]).unwrap();
+
+        let scale = Affine2::from_scale(Vec2::new(2.0, 3.0));
+        assert_eq!(material.uv_transform, scale);
+        assert_eq!(material.base_color_uv_transform, Some(scale));
+        assert_eq!(material.base_color_channel, UvChannel::Uv0);
+
+        // Transform-level texCoord override beats the texture info's.
+        assert_eq!(material.metallic_roughness_channel, UvChannel::Uv2);
+        assert_eq!(
+            material.metallic_roughness_uv_transform,
+            Some(Affine2::from_translation(Vec2::new(0.25, 0.5)))
+        );
+
+        // Normal and occlusion transforms come from raw extension JSON.
+        assert_eq!(material.normal_map_channel, UvChannel::Uv3);
+        assert_eq!(material.normal_map_uv_transform, Some(Affine2::from_scale(Vec2::splat(4.0))));
+        assert_eq!(material.occlusion_channel, UvChannel::Uv2);
+        assert_eq!(material.occlusion_uv_transform, None);
+
+        // A slot without its own transform records none; the renderer falls
+        // back to the material-level transform.
+        assert_eq!(material.emissive_channel, UvChannel::Uv0);
+        assert_eq!(material.emissive_uv_transform, None);
+
+        #[cfg(feature = "pbr_multi_layer_material_textures")]
+        {
+            assert_eq!(material.clearcoat_channel, UvChannel::Uv3);
+            assert_eq!(
+                material.clearcoat_uv_transform,
+                Some(Affine2::from_translation(Vec2::new(0.1, 0.2)))
+            );
+        }
+    }
+
+    /// Two textures over one image with the same sampler share one `Image`.
+    /// (Images loaded by path are additionally keyed by path in the asset
+    /// server, so the sampler distinction only materialises for embedded
+    /// images; that path is exercised by the real maps, not here.)
+    #[test]
+    fn textures_sharing_an_image_and_sampler_share_one_image_asset() {
+        let (app, handle) = load_materials(
+            r#"
+{
+    "asset": { "version": "2.0" },
+    "extensionsUsed": ["KHR_texture_basisu"],
+    "extensionsRequired": ["KHR_texture_basisu"],
+    "materials": [
+        {
+            "name": "a",
+            "pbrMetallicRoughness": { "baseColorTexture": { "index": 0 } },
+            "emissiveTexture": { "index": 1 },
+            "occlusionTexture": { "index": 2 }
+        }
+    ],
+    "samplers": [ { "wrapS": 10497 } ],
+    "textures": [
+        { "sampler": 0, "extensions": { "KHR_texture_basisu": { "source": 0 } } },
+        { "sampler": 0, "extensions": { "KHR_texture_basisu": { "source": 0 } } },
+        { "sampler": 0, "extensions": { "KHR_texture_basisu": { "source": 1 } } }
+    ],
+    "images": [ { "uri": "abc.ktx2" }, { "uri": "def.ktx2" } ]
+}
+"#,
+            &["abc.ktx2", "def.ktx2"],
+        );
+        let material_handles = app.world().resource::<Assets<Gltf>>().get(&handle).unwrap().materials.clone();
+        let materials = app.world().resource::<Assets<GltfMaterial>>();
+        let a = materials.get(&material_handles[0]).unwrap();
+        // Textures 0 and 1: same image, same sampler, both sRGB -> one handle.
+        assert_eq!(a.base_color_texture, a.emissive_texture);
+        // Texture 2: different image -> its own handle.
+        assert_ne!(a.base_color_texture, a.occlusion_texture);
+    }
+}

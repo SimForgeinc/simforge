@@ -18,6 +18,8 @@ import { writeJsonFile } from '@simforge-oss/compiler/node';
 
 export interface CatalogCreateOptions {
   readonly out: string;
+  readonly mapIds?: readonly string[] | undefined;
+  readonly devAssets?: string | undefined;
   readonly namespace?: string | undefined;
   readonly evidenceRoot?: string | undefined;
   readonly pretty: boolean;
@@ -25,6 +27,8 @@ export interface CatalogCreateOptions {
 
 export async function catalogCreate(options: CatalogCreateOptions): Promise<number> {
   const catalog = await createScenarioCatalog({
+    mapIds: options.mapIds,
+    devAssets: options.devAssets,
     namespace: options.namespace,
     evidenceRoot: options.evidenceRoot,
   });

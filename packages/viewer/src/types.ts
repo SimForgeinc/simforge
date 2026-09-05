@@ -43,8 +43,9 @@ export interface ManifestVegetationTile {
   gridZ: number;
   bounds: ManifestBounds;
   lods: ManifestLod[];
-  prototypes: ManifestVegPrototype[];
-  instanceFile: string;
+  /** Prototype-and-sidecar tiles only; web-tier cells carry placed batches in the GLB. */
+  prototypes?: ManifestVegPrototype[];
+  instanceFile?: string;
 }
 
 export interface ManifestStaticLayer {

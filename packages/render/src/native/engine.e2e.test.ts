@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { promises as fs } from 'node:fs';
+import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -9,6 +9,7 @@ import type { RenderIntentV1 } from '@simforge-oss/scenario';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { createFixedSchedules } from '../schedule.js';
+import type { RenderInputFile } from '../engine.js';
 import { createRenderEngine } from './engine.js';
 
 const enabled = process.env.SIMFORGE_NATIVE_E2E === '1';
@@ -25,9 +26,9 @@ suite('native retained service GPU e2e', () => {
   it('spawns the real service and produces playable H.264 video from moving actors', async () => {
     const binary = process.env.SIMFORGE_NATIVE_RENDER_BINARY;
     const xoscPath = process.env.SIMFORGE_NATIVE_E2E_XOSC;
-    const tiles = (process.env.SIMFORGE_NATIVE_E2E_TILES ?? '').split(path.delimiter).filter(Boolean);
-    if (!binary || !xoscPath || tiles.length === 0) {
-      throw new Error('native e2e requires SIMFORGE_NATIVE_RENDER_BINARY, SIMFORGE_NATIVE_E2E_XOSC, and SIMFORGE_NATIVE_E2E_TILES');
+    const mapDirectory = process.env.SIMFORGE_NATIVE_E2E_MAP;
+    if (!binary || !xoscPath || !mapDirectory) {
+      throw new Error('native e2e requires SIMFORGE_NATIVE_RENDER_BINARY, SIMFORGE_NATIVE_E2E_XOSC, and SIMFORGE_NATIVE_E2E_MAP (a complete master directory)');
     }
     await fs.rm(output, { recursive: true, force: true });
     await fs.mkdir(output, { recursive: true });
@@ -84,16 +85,21 @@ suite('native retained service GPU e2e', () => {
       },
       assets: [], seed: 1,
     };
-    const inputRecords = await Promise.all([
+    const inputRecords: RenderInputFile[] = [
       { inputId: 'scenario.xosc', path: xoscPath, sha256: xoscSha256, sizeBytes: xosc.byteLength },
-      ...tiles.map(async (tile, index) => {
-        const bytes = await fs.readFile(tile);
-        return {
-          inputId: `map.tile.${String(index).padStart(6, '0')}`, path: tile,
-          sha256: createHash('sha256').update(bytes).digest('hex'), sizeBytes: bytes.byteLength,
-        };
-      }),
-    ]);
+    ];
+    for (const entry of await fs.readdir(mapDirectory, { recursive: true, withFileTypes: true })) {
+      if (!entry.isFile()) continue;
+      const file = path.join(entry.parentPath, entry.name);
+      const relativePath = path.relative(mapDirectory, file).split(path.sep).join('/');
+      if (/^images\/[^/]+\.(?:png|jpe?g|webp|avif)$/i.test(relativePath)) continue;
+      const digest = createHash('sha256'); let sizeBytes = 0;
+      for await (const chunk of createReadStream(file)) { digest.update(chunk); sizeBytes += chunk.length; }
+      inputRecords.push({
+        inputId: relativePath === 'master.gltf' ? 'map.tile.000000' : `map.resource.${createHash('sha256').update(relativePath).digest('hex')}`,
+        path: file, relativePath, sha256: digest.digest('hex'), sizeBytes,
+      });
+    }
     const manifest = await createRenderEngine({ binary }).execute({
       jobId: 'native-gpu-e2e', attempt: 1, intent, intentSha256: 'd'.repeat(64),
       executionPackageControlSha256: 'e'.repeat(64), schedules: createFixedSchedules(intent),

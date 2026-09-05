@@ -40,9 +40,12 @@ The build writes only under the selected map's ignored `3d/variants/` folder:
   then remove every texture/image payload. Nodes, transforms, mesh primitives,
   and accessor identities are preserved. Each conversion aborts if its geometry
   identity changes or a texture reference remains.
-- `ktx2/` GLBs use the pinned glTF-Transform/UASTC + `toktx` toolchain. A version
-  mismatch blocks the build. The matching Three.js Basis transcoder is copied
-  with checksums and declared in the variant manifest.
+- KTX2 is not a variant any more: the published web tier is KTX2-only (every
+  cell references the map master's `images/<sha256>.ktx2`, UASTC encoded by
+  `packages/map-pipeline/src/ktx2.ts` with the pinned `toktx`), and the viewer
+  always configures `KTX2Loader` (`basis/` beside the page unless the embedder
+  passes `ktx2TranscoderPath`). Cells that reference one image share a single
+  decode and GPU upload through the viewer's KTX2 texture cache.
 - Road tiles are emitted only when every complete road node fits a spatial cell.
   Any hierarchy or boundary-crossing sheet blocks tiling rather than cutting
   geometry, lane markings, or ground continuity heuristically.
@@ -59,9 +62,9 @@ The build writes only under the selected map's ignored `3d/variants/` folder:
 
 The renderer discovers this manifest by convention. Ultra Low selects a
 geometry-only file and fails closed if it is unavailable or invalid, preventing
-a surprise textured-source fetch. Normal modes can select KTX2 only when its
-transcoder is declared and retain source fallback behavior. Starting directly
-in Ultra Low also skips HDR environment and baked-shadow atlas requests.
+a surprise textured-source fetch. Normal modes load the web-tier cells as
+published. Starting directly in Ultra Low also skips HDR environment and
+baked-shadow atlas requests.
 
 The simulation worker also discovers the collider derivative by convention. It
 validates the live map-manifest hash, derivative checksum, schema, and sorted
@@ -104,11 +107,8 @@ also converts a real Belmont asset containing base-color, normal, and packed ORM
 textures and loads the outputs through Three.js `KTX2Loader` with the same Basis
 transcoder used by the renderer.
 
-The tool smoke is green, but map-wide KTX2 generation is intentionally blocked
-for the current production bundles. Their embedded WebP textures are skipped by
-glTF-Transform 4.3's UASTC command, and that command also decodes/re-encodes
-`EXT_meshopt_compression`, changing geometry identity and increasing some files.
-The builder's identity gate rejects this and publishes no KTX2 manifest. A
-future image-only packer must decode WebP and replace only image payloads while
-leaving geometry, accessors, and meshopt byte streams untouched. Geometry-only
-derivatives remain independent and safe to build meanwhile.
+Map-wide KTX2 generation lives in the map pipeline, not in the derivative
+builder: `simforge maps build` writes each distinct authored raster of a map
+once as `images/<sha256>.png` and `images/<sha256>.ktx2` beside the master,
+leaving geometry, accessors and node hierarchy verbatim, and the web tier's
+meshopt cells point at those files by relative URI.

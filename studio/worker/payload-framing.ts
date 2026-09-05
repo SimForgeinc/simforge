@@ -96,12 +96,16 @@ function include(bounds: WorldBounds, point: Vec3): void {
   ];
 }
 
-function parseGlbJson(bytes: Buffer): GltfDocument {
-  if (bytes.length < 20 || bytes.toString("ascii", 0, 4) !== "glTF") throw new Error("payload is not a GLB");
-  const jsonLength = bytes.readUInt32LE(12);
-  const chunkType = bytes.readUInt32LE(16);
-  if (chunkType !== 0x4e4f534a || 20 + jsonLength > bytes.length) throw new Error("GLB has no valid JSON chunk");
-  return JSON.parse(bytes.toString("utf8", 20, 20 + jsonLength).trimEnd()) as GltfDocument;
+function parseGltfJson(bytes: Buffer): GltfDocument {
+  if (bytes.length >= 20 && bytes.toString("ascii", 0, 4) === "glTF") {
+    const jsonLength = bytes.readUInt32LE(12);
+    const chunkType = bytes.readUInt32LE(16);
+    if (chunkType !== 0x4e4f534a || 20 + jsonLength > bytes.length) {
+      throw new Error("GLB has no valid JSON chunk");
+    }
+    return JSON.parse(bytes.toString("utf8", 20, 20 + jsonLength).trimEnd()) as GltfDocument;
+  }
+  return JSON.parse(bytes.toString("utf8")) as GltfDocument;
 }
 
 /**
@@ -112,7 +116,7 @@ function parseGlbJson(bytes: Buffer): GltfDocument {
 export async function computePayloadWorldBounds(paths: readonly string[]): Promise<WorldBounds> {
   const bounds: WorldBounds = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] };
   for (const path of paths) {
-    const gltf = parseGlbJson(await readFile(path));
+    const gltf = parseGltfJson(await readFile(path));
     const nodes = gltf.nodes ?? [];
     const childNodes = new Set(nodes.flatMap((node) => node.children ?? []));
     const roots = gltf.scenes?.[gltf.scene ?? 0]?.nodes ?? nodes.map((_, index) => index).filter((index) => !childNodes.has(index));

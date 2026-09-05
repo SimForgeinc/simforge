@@ -45,6 +45,10 @@ export const NoJobResponseSchema = z.strictObject({
 });
 export const JobInputTransferSchema = z.strictObject({
   inputId: z.string().min(1).max(256),
+  relativePath: z.string().min(1).max(1024).refine((value) =>
+    !/[\\:%?#\u0000-\u001f]/u.test(value)
+    && value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..'),
+  { message: 'must be a safe relative map member path' }).optional(),
   sha256: RenderSha256Schema,
   sizeBytes: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   download: z.strictObject({

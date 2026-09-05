@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SimForge viewer harness</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; }
+      canvas { width: 100vw; height: 100vh; display: block; }
+      #hud { position: fixed; left: 8px; top: 8px; color: #fff; font: 12px monospace; background: rgba(0,0,0,.5); padding: 4px 6px; white-space: pre; }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <div id="hud"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -1,5 +1,7 @@
-import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,37 +15,161 @@ import { LOCAL_ARTIFACT_BUCKET, LOCAL_CLOUD_ROOT } from "../app/lib/db/config";
 import {
   publishDevAssetMap,
   type DevAssetMap,
+  type MapInstallationReceipt,
+  type RegistryMapInstallation,
 } from "../app/lib/map-ingest/server/dev-asset-publication";
 import { registerLocalFile, writeLocalObject } from "../app/lib/s3/s3-object";
 import { SUMO_RUNTIME_VERSION } from "../app/lib/scenario/sumo-runtime";
 import { migrate } from "./migrate";
 import { ensureStarterMapAssets, STARTER_MAP } from "./starter-map";
 
-const FULL_DEV_MAPS: readonly DevAssetMap[] = [
-  ["belmont-office-park-belmont-ca", "Belmont Office Park", "Belmont, California"],
-  ["di-rosa-sf", "Di Rosa", "San Francisco, California"],
-  ["el-camino-rd-palo-alto-ca", "El Camino Road", "Palo Alto, California"],
-  ["page-mill-rd-palo-alto-ca", "Page Mill Road", "Palo Alto, California"],
-  ["richmond-field-station-richmond-ca", "Richmond Field Station", "Richmond, California"],
-  ["san-ramon-phase-1-p1", "San Ramon Phase 1 P1", "San Ramon, California"],
-  ["san-ramon-phase-1-p2", "San Ramon Phase 1 P2", "San Ramon, California"],
-  ["san-ramon-phase-2", "San Ramon Phase 2", "San Ramon, California"],
-  ["saratoga-school-area", "Saratoga School Area", "Saratoga, California"],
-  ["yale-st-palo-alto-ca", "Yale Street", "Palo Alto, California"],
-];
-const configuredAssetsRoot =
-  process.env.SCEN_DEV_ASSETS?.trim() || "/home/path/simforge-assets/map-bundles";
-const fullAssetsAvailable = existsSync(resolve(configuredAssetsRoot, FULL_DEV_MAPS[0]![0]));
-const assetsRoot = fullAssetsAvailable
-  ? configuredAssetsRoot
-  : resolve(LOCAL_CLOUD_ROOT, "starter-map-assets");
-const MAPS: readonly DevAssetMap[] = fullAssetsAvailable ? FULL_DEV_MAPS : [STARTER_MAP];
+const dataHome = process.env.XDG_DATA_HOME?.trim() || resolve(homedir(), ".local/share");
+const mapsCacheRoot =
+  process.env.SIMFORGE_MAPS_CACHE_ROOT?.trim() || resolve(dataHome, "simforge/maps");
+const semanticProfilesRoot = resolve(mapsCacheRoot, "dev-assets");
+const webProfilesRoot = resolve(mapsCacheRoot, "map-bundles");
+const nativeProfilesRoot = resolve(mapsCacheRoot, ".corpus");
+const starterAssetsRoot = resolve(LOCAL_CLOUD_ROOT, "starter-map-assets");
 const catalogArtifactId = "artifact_local_catalog_v2";
 const catalogVersionId = "catalog_local_v2";
 const editorReleaseId = "editor_release_local_dev_assets_v2";
 const catalogDraftId = "usmapdraft_00000000000000000000000000000000";
 
 const sha256 = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
+
+const SHA256 = /^[a-f0-9]{64}$/;
+const MAP_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function assertSafeMemberPath(path: string): void {
+  if (
+    !path ||
+    path.startsWith("/") ||
+    path.includes("\\") ||
+    path.split("/").some((part) => part === "" || part === "." || part === "..") ||
+    /[\u0000-\u001f\u007f]/u.test(path)
+  ) {
+    throw new Error(`unsafe installation member path: ${path}`);
+  }
+}
+
+async function readProfileReceipt(
+  root: string,
+  name: string,
+  profile: MapInstallationReceipt["profile"],
+): Promise<MapInstallationReceipt> {
+  const receipt = JSON.parse(
+    await readFile(resolve(root, ".map-release.json"), "utf8"),
+  ) as MapInstallationReceipt;
+  if (
+    receipt.schema !== "simforge.map-installation.v1" ||
+    receipt.name !== name ||
+    receipt.profile !== profile ||
+    !/^v[1-9][0-9]*$/.test(receipt.version) ||
+    !SHA256.test(receipt.releaseDigest) ||
+    !SHA256.test(receipt.canonicalDigest) ||
+    (receipt.webDigest !== undefined && !SHA256.test(receipt.webDigest)) ||
+    !receipt.members ||
+    typeof receipt.members !== "object" ||
+    Array.isArray(receipt.members)
+  ) {
+    throw new Error(`invalid ${profile} installation receipt`);
+  }
+  for (const [relativePath, member] of Object.entries(receipt.members)) {
+    assertSafeMemberPath(relativePath);
+    if (
+      !member ||
+      !SHA256.test(member.sha256) ||
+      !Number.isSafeInteger(member.bytes) ||
+      member.bytes < 0
+    ) {
+      throw new Error(`invalid ${profile} receipt member: ${relativePath}`);
+    }
+    const memberStat = await stat(resolve(root, relativePath));
+    if (!memberStat.isFile() || memberStat.size !== member.bytes) {
+      throw new Error(`incomplete ${profile} receipt member: ${relativePath}`);
+    }
+  }
+  return receipt;
+}
+
+function mapLabel(name: string): string {
+  return name.split("-").map((word) => `${word[0]!.toUpperCase()}${word.slice(1)}`).join(" ");
+}
+
+async function discoverRegistryMaps(): Promise<Array<{
+  map: DevAssetMap;
+  installation: RegistryMapInstallation;
+}>> {
+  let names: string[];
+  try {
+    names = (await readdir(webProfilesRoot, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory() && MAP_NAME.test(entry.name))
+      .map((entry) => entry.name)
+      .sort();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+  const installed: Array<{ map: DevAssetMap; installation: RegistryMapInstallation }> = [];
+  for (const name of names) {
+    const semanticRoot = resolve(semanticProfilesRoot, name);
+    const webRoot = resolve(webProfilesRoot, name);
+    const nativeRoot = resolve(nativeProfilesRoot, name);
+    try {
+      const [semanticReceipt, webReceipt, nativeReceipt] = await Promise.all([
+        readProfileReceipt(semanticRoot, name, "semantic"),
+        readProfileReceipt(webRoot, name, "web"),
+        readProfileReceipt(nativeRoot, name, "native"),
+      ]);
+      if (
+        semanticReceipt.version !== webReceipt.version ||
+        nativeReceipt.version !== webReceipt.version ||
+        semanticReceipt.releaseDigest !== webReceipt.releaseDigest ||
+        nativeReceipt.releaseDigest !== webReceipt.releaseDigest ||
+        semanticReceipt.canonicalDigest !== webReceipt.canonicalDigest ||
+        nativeReceipt.canonicalDigest !== webReceipt.canonicalDigest ||
+        !webReceipt.webDigest ||
+        (semanticReceipt.webDigest !== undefined &&
+          semanticReceipt.webDigest !== webReceipt.webDigest) ||
+        (nativeReceipt.webDigest !== undefined &&
+          nativeReceipt.webDigest !== webReceipt.webDigest) ||
+        ![
+          "map.xodr",
+          "map.geojson.gz",
+          "topology-index.json.gz",
+          "lane-polygons.geojson.gz",
+          "signals.geojson.gz",
+          "derived/topology-derived.json.gz",
+          "derived/locations.json.gz",
+          "derived/roadway-consistency.json.gz",
+          "derived/map-intel-build-receipt.json",
+          "derived/source-capabilities.json.gz",
+          "derived/thumbnail.webp",
+        ].every((path) => semanticReceipt.members[path]) ||
+        !webReceipt.members["3d/manifest.json"] ||
+        !nativeReceipt.members["master.gltf"]
+      ) {
+        throw new Error("installation profiles do not identify one complete release");
+      }
+      installed.push({
+        map: [name, mapLabel(name), "Installed map"],
+        installation: {
+          semanticRoot,
+          webRoot,
+          nativeRoot,
+          semanticReceipt,
+          webReceipt,
+          nativeReceipt,
+        },
+      });
+    } catch (error) {
+      console.warn(`ignored incomplete installed map ${name}: ${
+        error instanceof Error ? error.message : String(error)
+      }`);
+    }
+  }
+  return installed;
+}
 
 async function seedIdentity(): Promise<void> {
   await withTransaction(async (tx) => {
@@ -146,7 +272,7 @@ async function seedPublicationBinding(): Promise<void> {
         artifact_id: catalogArtifactId,
         sha256: catalogMetadata.checksumSha256Hex,
         toolchain: { source: "local" },
-        provenance: { source: assetsRoot },
+        provenance: { source: mapsCacheRoot },
       },
     );
     await tx.execute(
@@ -166,14 +292,14 @@ async function seedPublicationBinding(): Promise<void> {
         manifest: {
           contractVersion: "simforge.editor-assets-release/v1",
           manifestSha256: releaseManifestSha256,
-          source: assetsRoot,
+          source: mapsCacheRoot,
         },
       },
     );
   });
 }
 
-async function seedSumoRuntime(): Promise<void> {
+async function seedSumoRuntime(assetsRoot: string): Promise<void> {
   const runtimeRoot = resolve(assetsRoot, "sumo-runtime");
   const runtimeFiles = [
     ["sumo.mjs", "text/javascript"],
@@ -197,47 +323,48 @@ async function seedSumoRuntime(): Promise<void> {
 }
 
 export async function seed(): Promise<void> {
-  if (!fullAssetsAvailable) {
-    await ensureStarterMapAssets(assetsRoot);
+  const installedMaps = await discoverRegistryMaps();
+  if (installedMaps.length === 0) {
+    await ensureStarterMapAssets(starterAssetsRoot);
     console.log(
-      `development map bundles were not found at ${configuredAssetsRoot}; generated the bundled Starter Road`,
+      `no complete installed registry maps were found at ${mapsCacheRoot}; generated the bundled Starter Road`,
     );
   }
   await migrate();
   await seedIdentity();
   await seedPublicationBinding();
-  await seedSumoRuntime();
+  await seedSumoRuntime(
+    installedMaps.length > 0 ? semanticProfilesRoot : starterAssetsRoot,
+  );
   let skipped = 0;
-  for (const map of MAPS) {
-    // A dev checkout rarely holds the whole corpus. Skip absent bundles loudly
-    // rather than aborting the boot: one missing map must not deny the operator
-    // every other map, and a silent skip would look like a publish bug.
-    if (!existsSync(resolve(assetsRoot, map[0]))) {
-      console.warn(`skipped ${map[0]}: no bundle at ${resolve(assetsRoot, map[0])}`);
-      skipped += 1;
-      continue;
-    }
+  const publications = installedMaps.length > 0
+    ? installedMaps
+    : [{ map: STARTER_MAP, assetsRoot: starterAssetsRoot }];
+  for (const publication of publications) {
     try {
       const result = await publishDevAssetMap({
-        map,
-        assetsRoot,
+        map: publication.map,
+        ...("installation" in publication
+          ? { installation: publication.installation }
+          : { assetsRoot: publication.assetsRoot }),
         assetCatalogVersionId: catalogVersionId,
         activeReleaseId: editorReleaseId,
       });
       console.log(
-        `published ${map[0]}: ${result.objectCount} members, ${result.byteLength} bytes, `
-        + `SUMO ${result.sumoNetworkSha256 ? "ready" : "unavailable"}, thumbnail ${result.thumbnailBytes} bytes`,
+        `published ${publication.map[0]}: ${result.objectCount} browser members, `
+        + `${result.byteLength} bytes, SUMO ${result.sumoNetworkSha256 ? "ready" : "unavailable"}, `
+        + `thumbnail ${result.thumbnailBytes} bytes`,
       );
     } catch (error) {
-      // An incomplete bundle is normal in a dev checkout: map pipelines rewrite
-      // these directories in place, so members appear and vanish mid-session.
-      // Report it and keep whatever is already published rather than failing the
-      // whole boot, which would take the studio down for one bad map.
       skipped += 1;
-      console.warn(`skipped ${map[0]}: ${error instanceof Error ? error.message : String(error)}`);
+      console.warn(`skipped ${publication.map[0]}: ${
+        error instanceof Error ? error.message : String(error)
+      }`);
     }
   }
-  if (skipped > 0) console.warn(`${skipped}/${MAPS.length} dev asset maps skipped; set SCEN_DEV_ASSETS to a fuller corpus`);
+  if (skipped > 0) {
+    console.warn(`${skipped}/${publications.length} installed maps skipped`);
+  }
   const maps = await queryRows<{ id: string; label: string }>(
     "SELECT id, label FROM simforge.map_versions WHERE retired_at IS NULL ORDER BY label",
   );

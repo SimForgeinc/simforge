@@ -92,6 +92,11 @@ fn default_warmup() -> u32 {
 pub fn prewarm(spec: &SceneSpec) -> Result<SceneApp> {
     let mut app =
         SceneApp::new_with_profile_config(&spec.lighting, spec.profile_config)?;
+    // The constructor spawns the ladder with calibration defaults (IBL gain
+    // 1.0, no EV bias); only a relight resolves the spec's `ambient_scale`,
+    // `ev100_bias`, weather and night controls. A scene that never receives a
+    // `set_lighting` request must still render the lighting it declared.
+    app.apply_lighting(&spec.lighting, spec.profile_config)?;
     app.load_tiles(&spec.glbs)?;
     app.load_vegetation(&spec.veg_glbs)?;
     // Bevy's atmosphere bindings are a per-view mesh layout. Mixing a

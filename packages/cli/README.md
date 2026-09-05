@@ -30,6 +30,13 @@ That 1-vs-2 split is the whole reason an unattended repair loop works: `1` means
 
 ```
 simforge maps list
+simforge maps pull        <name[@version]> [--registry URL --cache-root DIR]
+simforge maps build       <source-dir> --name ID --work-dir DIR
+                       [--glb FILE --xodr FILE --source-manifest FILE --reuse-master DIR]
+simforge maps ingest      <source-dir> --name ID --registry URL --work-dir DIR
+                       [--glb FILE --xodr FILE --source-manifest FILE --target private|public]
+                       [--master-dir DIR --web-dir DIR]
+simforge maps promote     <name@version> --from URL --destination-registry URL --to public
 simforge locations find    --map <id> [--type --subtype --tags --affordances
                                    --facts k=v,k2>=v2 --near <handle>
                                    --within-m N --limit N --diversity-m N]
@@ -63,6 +70,20 @@ simforge batch             <template.json> --maps a,b,c --draws N --out dir/
                        [--concurrency N --min-score --max-sites --force --no-trace]
 simforge schemas           [--name template|anchor|interactions] [--content]
 ```
+
+Only `richmond-field-station` may be promoted publicly. The default read
+registry is the public CloudFront registry; licensed maps need an explicitly
+authorized private registry. Publishing to `s3://simforge-maps-public` enforces
+the same restriction even when `--target private` is supplied.
+
+Builds require Linux `flock`, KTX-Software, an HDR sky and persistent disk.
+`map-source.json` uses schema `simforge.map-source.v1` and selects `name`, `glb`,
+optional `xodr`, `sky`, and `donorMasters`; manifest paths are relative to the
+manifest. Command-line source selections override their manifest counterparts.
+Directories with multiple possible scene or XODR inputs are rejected.
+Publication accepts only a complete native master plus browser tier and writes
+the immutable release descriptor before making the version visible. A retry
+resumes the same release instead of minting another version.
 
 ## Headless scenario debugging
 
@@ -295,21 +316,28 @@ Every instance carries the key that reproduces it:
 older matcher or an older engine is exactly the stale answer a resumable batch
 exists to prevent.
 
-## Deterministic five-map catalog
+## Deterministic installed-map catalog
 
-`simforge catalog create` reserves exactly **100 identities on each of the five
-supported maps** (500 total) before expensive generation begins. Every slot
-carries the map catalog revision and topology digest, template source/digest and
-archetype category, a coordinate-derived SHA-256 seed, status, and reserved
+`simforge catalog create` reserves exactly **100 identities on each selected
+installed map** before expensive generation begins. By default it uses every
+complete map bundle under the configured dev-assets root; `--map <id>` or
+`--maps a,b` selects a subset, and `--dev-assets <root>` selects another
+installed-map inventory. Every slot carries the map catalog revision and
+topology digest, template source/digest and archetype category, a
+coordinate-derived SHA-256 seed, status, and reserved
 instance/trace/result/frame/video/inspection paths. The output has no clock
-field: identical templates and map provenance produce byte-identical JSON.
+field: identical templates, selected map order, and map provenance produce
+byte-identical JSON.
 
-`simforge catalog verify` rejects changed seeds or identities, duplicate identities
-or seeds, missing/duplicate ordinals, anything other than the canonical 5 × 100
-shape, provenance drift, unsafe evidence paths, and a stale catalog digest.
-`reserved` slots do not pretend evidence exists. Advancing status makes evidence
-mandatory (`generated` requires an instance, `simulated` also trace/result,
-`rendered` also frame/video/render manifest, and `visually-proven` also a written
+`simforge catalog verify` validates the catalog's own declared map inventory:
+map names must be unique safe slugs, `maps[]` must contain each declaration
+exactly once, and each declared map must own exactly 100 unique ordinals. It
+also rejects changed seeds or identities, duplicate identities or seeds,
+provenance drift, unsafe evidence paths, and a stale catalog digest. Installing
+additional maps does not invalidate an existing catalog. `authored` slots do
+not pretend evidence exists. Advancing status makes evidence mandatory
+(`generated` requires an instance, `simulated` also trace/result, `rendered`
+also frame/video/render manifest, and `visually-accepted` also a written
 inspection). `--require-evidence` checks every reserved evidence path.
 
 ## Batch
@@ -326,7 +354,7 @@ out/
                    draw-000.result.json
 ```
 
-`catalog batch` is the lifecycle-aware companion for the 500-slot catalog. It
+`catalog batch` is the lifecycle-aware companion for a generated catalog. It
 writes a checkpointed execution ledger, uses each reservation seed for attempt
 zero, records deterministic bounded draws, and advances a slot only after its
 reserved artifacts exist. Unsupported authored mechanisms, template-backed
@@ -345,7 +373,7 @@ wrapper first:
 
 ```bash
 node packages/cli/bin/simforge.js catalog batch \
-  catalog/simforge-oss-five-map-v2.catalog.json \
+  catalog/simforge-oss.catalog.json \
   --ledger catalog/catalog-execution-ledger.json \
   --attempts 3 --concurrency 4 --filter all --pretty
 ```
@@ -357,18 +385,33 @@ reconciles a ledger left by a hard process loss: stale `running` records become
 `pending`, completed evidence is hash-checked, and the interrupted attempt
 number and deterministic seed are retried rather than consumed.
 
-## Native render-worker map inputs
+## Map masters and render-worker map inputs
 
-`simforge maps pull <name>@<version>` materializes every published derived
-closure by default, including `native-corpus`, under
-`$XDG_DATA_HOME/simforge/maps/.corpus/<name>` (or `--native-corpus-root`).
-The JSON result includes `nativeWorkerInputs`, the sorted GLB closure with
-verified `sha256`/`sizeBytes`, materialized paths, and deterministic lease
-input IDs. IDs are exactly `map.tile.000000`, `map.tile.000001`, and so on in
-native-corpus member-path order. A native render lease contains
-`scenario.xosc` plus this complete `map.tile.*` set; source, browser-optimized,
-or arbitrary GLBs are not interchangeable with decoded/dequantized
-`native-corpus` tiles.
+A published map version is one **master** closure plus one **web** closure.
+The master is `master.gltf` + `geometry.bin` (every accessor byte of the
+RoadRunner/Unreal export, verbatim) + `images/<sha256>.png` (the authored
+rasters) + `images/<sha256>.ktx2` (their UASTC encodes, referenced through
+`KHR_texture_basisu`) + the road sidecars (`map.xodr`, `topology-index.json.gz`,
+`lane-polygons.geojson.gz`, `signals.geojson.gz`, `derived/*`) + `env/sky.hdr`
++ `master-report.json`. The web closure is `3d/manifest.json`, `3d/tiles/*.glb`
+(100 m meshopt cells with `EXT_mesh_gpu_instancing`) and the KTX2 images the
+cells reference.
+
+`simforge maps build <export-dir> --name <slug> --work-dir <dir>` builds both
+stages (content-addressed and cached under `<dir>/master/<key>/content` and
+`<dir>/web/<key>/content`); `simforge maps ingest` runs the same stages and
+publishes them. `simforge maps pull <name>@<version>` materializes, through a
+local blob cache (`--blob-cache-root`, hardlinked into every layout):
+
+- `.corpus/<name>` (`--native-corpus-root`): the master without its PNGs -
+  what the Bevy renderer loads; `nativeWorkerInputs` is exactly one entry,
+  `map.tile.000000` = `master.gltf`, with its verified `sha256`/`sizeBytes`;
+- `map-bundles/<name>` (`--browser-root`): the web closure;
+- `dev-assets/<name>` (`--dev-assets-root`): the sidecars alone, or the whole
+  master including PNGs with `--archive`.
+
+Versions published before the master format (tiled canonical closures) are
+refused by `pull`; re-ingest them.
 
 ## Current execution boundaries
 

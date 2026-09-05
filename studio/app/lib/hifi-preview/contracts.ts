@@ -120,6 +120,7 @@ export type HifiPreviewProvenance = {
   tick: number;
   mapVersionId: string;
   mapId: string;
+  /** Registry release identity shared across web, semantic and native profiles. */
   mapDigest: string;
   payloadDigests: string[];
   /** Request camera echoed verbatim for contract auditability. */
@@ -136,8 +137,8 @@ export type HifiPreviewProvenance = {
   frame: { width: number; height: number; pass: "rgb"; sha256: string; sizeBytes: number };
   map: {
     tileCount: number;
-    /** Native-ready corpus payloads, each pinned to its published source digest. */
-    payloads: Array<{ path: string; sourceSha256: string; sha256: string }>;
+    /** Complete receipt-verified native master closure. */
+    payloads: Array<{ path: string; sha256: string; sizeBytes: number }>;
   };
   timings: { prewarmMs: number; renderMs: number; totalMs: number };
   renderedAt: string;
