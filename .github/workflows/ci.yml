@@ -28,8 +28,8 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Install OpenSCENARIO schema validator
-        run: sudo apt-get update && sudo apt-get install --yes libxml2-utils
+      - name: Install schema and video tools
+        run: sudo apt-get update && sudo apt-get install --yes libxml2-utils ffmpeg
       - run: pnpm install --frozen-lockfile
       - name: Smoke Meshy generation contract
         run: pnpm meshy:smoke
@@ -53,8 +53,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install OpenSCENARIO schema validator
-        run: sudo apt-get update && sudo apt-get install --yes libxml2-utils
+      - name: Install schema and video tools
+        run: sudo apt-get update && sudo apt-get install --yes libxml2-utils ffmpeg
       - name: Test and smoke-install public CARLA adapter
         run: |
           python -m pip install "build==1.3.0" "./adapters/carla-exec[dev]"

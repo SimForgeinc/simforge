@@ -22,7 +22,7 @@ export const STACK_PACKAGE_NAMES = [
   'map-registry',
 ];
 
-export const PACKAGE_NAMES = [...STACK_PACKAGE_NAMES];
+export const PACKAGE_NAMES = [...STACK_PACKAGE_NAMES, 'asset-packer'];
 
 
 const REMOVED_PATHS = [

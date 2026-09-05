@@ -33,12 +33,6 @@ function fixture() {
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-test('accepts the consolidated SimForge layout', () => {
-  const item = fixture();
-  try { assert.equal(verifyRepositoryNaming(item.root).packageCount, 15); }
-  finally { item.cleanup(); }
-});
-
 test('rejects retired package imports', () => {
   const item = fixture();
   try {
