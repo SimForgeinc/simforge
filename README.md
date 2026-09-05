@@ -74,6 +74,9 @@ Each immutable release binds the native `master.gltf` resource closure and its
 browser tier. Pulling reconstructs their external geometry, KTX2 textures,
 decoder runtime, OpenDRIVE, lane topology, signal records, and derived locations.
 Source rasters are archival and are not transferred to render workers.
+Studio also provisions its installed Three Basis JS/WASM pair at `/basis/`
+before starting. Other embedders must serve the matching runtime pair or
+explicitly configure `ktx2TranscoderPath`.
 
 The Linux/A100 source builder requires `flock`, KTX-Software and a durable work
 directory. An optional `map-source.json` (`simforge.map-source.v1`) selects
@@ -91,6 +94,9 @@ does not re-encode the scene. `--reuse-master /path/to/master/content` can seed
 the scene cache from an explicitly selected, source-matching master.
 Roadway failures and unavailable visual/runtime evidence remain explicit in
 the release; publication never converts missing evidence into a pass.
+Static collision derivatives are built from the canonical master placements,
+not the instanced browser meshes. Their separately cached runtime closure binds
+the exact browser manifest and topology without re-encoding render cells.
 
 ## Architecture
 

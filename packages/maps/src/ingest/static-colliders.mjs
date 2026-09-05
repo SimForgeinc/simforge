@@ -8,7 +8,10 @@ const COLLIDER_CLASSES = ['building', 'wall', 'barrier', 'prop', 'road-boundary'
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 
 export function extractGlbColliders(buffer, tileId) {
-  const json = readGlbJson(buffer, tileId);
+  return extractJsonColliders(readGlbJson(buffer, tileId), tileId);
+}
+
+function extractJsonColliders(json, tileId) {
   const nodes = json.nodes ?? [];
   const roots = json.scenes?.[json.scene ?? 0]?.nodes ?? nodes.map((_, index) => index);
   const colliders = [];
@@ -46,7 +49,7 @@ export function extractGlbColliders(buffer, tileId) {
  * than a side effect. Published closures are immutable, so nothing already
  * published moves.
  */
-export function buildStaticColliderArtifact({ mapId, sourceManifestSha256, manifest, topology, readSource }) {
+export function buildStaticColliderArtifact({ mapId, sourceManifestSha256, manifest, topology, readSource, canonicalGltf }) {
   if (!Array.isArray(manifest.tiles)) throw new Error('Static collision manifest has no tile list');
   const tileSources = manifest.tiles.map((tile, index) => {
     const lod = [...(tile.lods ?? [])].sort((a, b) => b.level - a.level || a.file.localeCompare(b.file))[0];
@@ -59,15 +62,19 @@ export function buildStaticColliderArtifact({ mapId, sourceManifestSha256, manif
     }
     return { id: layer.id ?? `layer-${index}`, file: layer.file, declaredBytes: layer.fileSize ?? null };
   });
-  const selected = [...tileSources, ...layerSources].sort((a, b) => a.id.localeCompare(b.id));
+  const selected = canonicalGltf
+    ? [{ id: 'canonical-master', file: canonicalGltf.file, declaredBytes: canonicalGltf.bytes.length }]
+    : [...tileSources, ...layerSources].sort((a, b) => a.id.localeCompare(b.id));
   const classes = Object.fromEntries(COLLIDER_CLASSES.map((name) => [name, 0]));
   const travelLaneIndex = buildTravelLaneIndex(topology);
   const colliders = []; const sources = [];
   let rejectedRoadOverlap = 0; let ignored = 0;
   for (const tile of selected) {
-    const bytes = readSource(tile.file);
+    const bytes = canonicalGltf ? canonicalGltf.bytes : readSource(tile.file);
     sources.push({ id: tile.id, file: tile.file, declaredBytes: tile.declaredBytes });
-    const extracted = extractGlbColliders(bytes, tile.id);
+    const extracted = canonicalGltf
+      ? extractJsonColliders(JSON.parse(bytes.toString('utf8')), tile.id)
+      : extractGlbColliders(bytes, tile.id);
     ignored += extracted.ignored;
     for (const collider of extracted.colliders) {
       if (collider.class !== 'road-boundary' && overlapsTravelLane(collider, travelLaneIndex)) { rejectedRoadOverlap += 1; continue; }

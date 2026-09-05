@@ -64,8 +64,10 @@ export function buildStaticColliderArtifact(input: {
       polyline?: Array<[number, number] | { x: number; y: number }>;
     }>;
   };
-  readSource(file: string): Buffer;
-}): StaticColliderArtifact;
+} & (
+  | { readSource(file: string): Buffer; canonicalGltf?: never }
+  | { canonicalGltf: { file: string; bytes: Buffer }; readSource?: never }
+)): StaticColliderArtifact;
 
 export function serializeStaticColliderArtifact(
   artifact: StaticColliderArtifact,

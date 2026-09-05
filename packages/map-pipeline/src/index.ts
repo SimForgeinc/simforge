@@ -1,6 +1,8 @@
 import { cp, link, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { gunzipSync } from 'node:zlib';
+import { buildStaticColliderArtifact, serializeStaticColliderArtifact } from '@simforge-oss/maps/ingest';
 
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -273,7 +275,7 @@ export async function webStage(master: MasterStageResult, options: DeriveClosure
   const cacheKey = sha256(`${inputDigest}\0${toolFingerprint}`);
   const outputDir = path.resolve(options.workDir, 'web', cacheKey);
   const keys = { inputDigest, toolFingerprint, cacheKey };
-  return withStageLock(outputDir, async () => {
+  const geometry = await withStageLock(outputDir, async () => {
     const cached = await cachedStage(outputDir);
     if (cached) {
       const report = JSON.parse(await readFile(path.join(outputDir, 'content', 'web-tier-report.json'), 'utf8')) as WebTierReport;
@@ -291,6 +293,54 @@ export async function webStage(master: MasterStageResult, options: DeriveClosure
     await cp(decoderWasm, path.join(contentDir, '3d', 'runtime', 'basis_transcoder.wasm'));
     const stage = await finishStage('web', outputDir, 'web', keys, { toolFingerprint, viewerOnly: master.viewerOnly });
     return { ...stage, report };
+  });
+  return webRuntimeStage(master, geometry, options);
+}
+
+/** Physics derivatives depend on topology, without invalidating render-cell encoding. */
+async function webRuntimeStage(master: MasterStageResult, geometry: WebStageResult, options: DeriveClosuresOptions): Promise<WebStageResult> {
+  if (master.viewerOnly) return geometry;
+  const topologyMember = master.closure.members['topology-index.json.gz'];
+  const masterMember = master.closure.members['master.gltf'];
+  if (!topologyMember || !masterMember) throw new Error('Scenario-ready web maps require canonical geometry and topology');
+  const toolFingerprint = sha256(`${geometry.toolFingerprint}\0canonical-static-colliders-v1`);
+  const inputDigest = sha256(canonicalJson({ mapId: options.name, geometry: geometry.closureDigest, master: masterMember.sha256, topology: topologyMember.sha256 }));
+  const cacheKey = sha256(`${inputDigest}\0${toolFingerprint}`);
+  const outputDir = path.resolve(options.workDir, 'web-runtime', cacheKey);
+  const keys = { inputDigest, toolFingerprint, cacheKey };
+  return withStageLock(outputDir, async () => {
+    const cached = await cachedStage(outputDir);
+    if (cached) return { ...keys, ...cached, outputDir: path.join(outputDir, 'content'), viewerOnly: false, report: geometry.report };
+    const [manifestBytes, masterBytes, topologyBytes] = await Promise.all([
+      readFile(path.join(geometry.outputDir, '3d', 'manifest.json')),
+      readFile(path.join(master.outputDir, 'master.gltf')),
+      readFile(path.join(master.outputDir, 'topology-index.json.gz')),
+    ]);
+    const sourceManifestSha256 = sha256(manifestBytes);
+    const artifact = buildStaticColliderArtifact({
+      mapId: options.name,
+      sourceManifestSha256,
+      manifest: JSON.parse(manifestBytes.toString('utf8')),
+      topology: JSON.parse(gunzipSync(topologyBytes).toString('utf8')),
+      canonicalGltf: { file: 'master.gltf', bytes: masterBytes },
+    });
+    const colliderBytes = Buffer.from(serializeStaticColliderArtifact(artifact));
+    const contentDir = await resetStageContent(outputDir);
+    await copyMembers(geometry.outputDir, contentDir, Object.keys(geometry.closure.members));
+    const variantsDir = path.join(contentDir, '3d', 'variants');
+    await mkdir(variantsDir, { recursive: true });
+    await writeFile(path.join(variantsDir, 'static-colliders-v1.json'), colliderBytes);
+    await writeFile(path.join(variantsDir, 'manifest.json'), `${canonicalJson({
+      schemaVersion: 1,
+      sourceManifestSha256,
+      variants: { 'static-colliders': {
+        id: 'static-colliders', schemaVersion: 1, file: 'static-colliders-v1.json',
+        digest: artifact.digest, outputSha256: sha256(colliderBytes), bytes: colliderBytes.length,
+        sourceTiles: artifact.statistics.sourceTiles, accepted: artifact.statistics.accepted,
+      } },
+    })}\n`);
+    const stage = await finishStage('web-runtime', outputDir, 'web', keys, { toolFingerprint });
+    return { ...stage, report: geometry.report };
   });
 }
 
