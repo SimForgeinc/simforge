@@ -49,13 +49,19 @@ import {
 } from "@/app/lib/live-world/authored-world-source";
 import { createRemoteWorldSource } from "@/app/lib/live-world/remote-world-source";
 import { createTruthViewerBridge, type TruthViewerBridge } from "@/app/lib/live-world/truth-viewer-bridge";
-import type { WorldSource, WorldSourceStatus } from "@/app/lib/live-world/types";
+import type {
+  WorldClock,
+  WorldReplayCapabilities,
+  WorldSource,
+  WorldSourceStatus,
+} from "@/app/lib/live-world/types";
 import { useWorldSource } from "@/app/lib/live-world/use-world-source";
 import type { ScenarioAuthoringQuality } from "@/app/lib/scenario/contracts";
 import { listScenarioMaps } from "@/app/lib/scenario/editor/api";
 import { useEditorRuntime } from "@/app/lib/scenario/editor/use-editor-runtime";
 import { EditorSceneEnvironmentBridge } from "@/app/dashboard/scenario/editor/EditorSceneEnvironmentBridge";
 import { PoleCameraGrid } from "./cameras/PoleCameraGrid";
+import { HistoryDock } from "./history/HistoryDock";
 import { usePoleCameras } from "./pole-cameras";
 import { actorSpeedKph, formatClipTime } from "./drive-telemetry";
 
@@ -135,7 +141,9 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
   const [quality, setQuality] = useState<ScenarioAuthoringQuality>("high");
   const [view, setView] = useState<DriveView>("world");
   const [cameraFeeds, setCameraFeeds] = useState<CameraFeeds | null>(null);
-  const [clock, setClock] = useState<{ mode: "live" | "replay"; timeIso: string | null; speed: number } | null>(null);
+  const [clock, setClock] = useState<WorldClock | null>(null);
+  const [replay, setReplay] = useState<WorldReplayCapabilities | null>(null);
+  const [replayError, setReplayError] = useState<string | null>(null);
   const [followMode, setFollowMode] = useState<FollowMode>("chase");
   const [egoActorId, setEgoActorId] = useState<string | null>(null);
   const [egoActorLabel, setEgoActorLabel] = useState<string | null>(null);
@@ -228,6 +236,18 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
       return;
     }
     return source.subscribeClock(setClock);
+  }, [source]);
+
+  useEffect(() => {
+    if (!source?.subscribeReplay) {
+      setReplay(null);
+      setReplayError(null);
+      return;
+    }
+    return source.subscribeReplay((capabilities, error) => {
+      setReplay(capabilities);
+      setReplayError(error);
+    });
   }, [source]);
 
   useEffect(() => {
@@ -513,7 +533,15 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
               </div>
               {view === "cameras" ? (
                 <div className="absolute inset-0 overflow-auto bg-background p-4">
-                  <PoleCameraGrid rigs={poleCameras.rigs} features={poleCameras.features} feeds={cameraFeeds} viewer={viewer} />
+                  <PoleCameraGrid
+                    rigs={poleCameras.rigs}
+                    features={poleCameras.features}
+                    feeds={cameraFeeds}
+                    viewer={viewer}
+                    clock={clock}
+                    archiveUrlTemplate={replay?.archiveUrlTemplate}
+                    archiveOffsetSeconds={replay?.archiveOffsetSeconds}
+                  />
                 </div>
               ) : null}
             </div>
@@ -558,7 +586,13 @@ function DriveSurface({ map }: { map: ScenarioMapEntry }) {
               ) : null}
             </div>
           )}
-          floatingOverlay={view === "world" && editorDocument ? (
+          floatingOverlay={source && replay?.coverageUrl && clock ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-auto max-h-[min(65vh,520px)] justify-center px-4" data-testid="floating-history-layer">
+              <div className="pointer-events-auto relative h-auto max-h-[min(65vh,520px)] w-full max-w-[1100px] min-w-0">
+                <HistoryDock source={source} capabilities={replay} clock={clock} replayError={replayError} />
+              </div>
+            </div>
+          ) : view === "world" && editorDocument ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-auto max-h-[min(65vh,520px)] justify-center px-4" data-testid="floating-timeline-layer">
               <div className="pointer-events-auto relative h-auto max-h-[min(65vh,520px)] w-full max-w-[920px] min-w-0">
                 <DriveTimelineDock

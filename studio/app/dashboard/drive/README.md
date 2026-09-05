@@ -44,6 +44,15 @@ Env equivalents: `NEXT_PUBLIC_DRIVE_MAP_MANIFEST_URL`,
 `NEXT_PUBLIC_DRIVE_TWIN_URL`. Camera feeds are proxied same-origin through
 `SIMFORGE_TWIN_HTTP_ORIGIN`.
 
+Set `NEXT_PUBLIC_DRIVE_STANDALONE` to a non-empty value to remove the Studio
+app switcher and route `/` directly to Drive. In standalone mode,
+`NEXT_PUBLIC_DRIVE_HOME_URL` optionally adds a single plain `Home` link to the
+Drive header. Both `NEXT_PUBLIC_*` values are compiled into the client bundle,
+so set them before building Studio.
+
+When exposing `next dev` through another hostname, include that hostname in the
+comma-separated `SIMFORGE_ALLOWED_DEV_ORIGINS` server environment variable.
+
 Direct bundles must have the same complete sidecar closure as published maps.
 The `manifest` must end in `/3d/manifest.json`; `lanes` overrides the topology
 used by the live world. Missing compiler sidecars or invalid digests are surfaced
@@ -61,6 +70,42 @@ locally:
 - **Camera feeds** (`@/app/lib/live-world/camera-feeds`) — one WebSocket carries
   every channel, tagged per channel with its honest feed state. Construct it in
   an effect with cleanup because the class connects in its constructor.
+
+### Historical replay
+
+History is capability-driven; Studio does not contain a deployment-specific
+archive URL. The `/twin` WebSocket advertises it in `twin_hello.replay`:
+
+```json
+{
+  "retention_hours": 72,
+  "archive_offset_seconds": 0,
+  "archive_url_template": "https://twin.example/archive/get?path={channel}&start={start}&duration={duration}&format=mp4",
+  "coverage_url": "https://twin.example/detections/coverage",
+  "history_url": "https://twin.example/detections/history"
+}
+```
+
+All three URLs may be `null`. The history dock is shown only when
+`coverage_url` is non-null. Its UTC epoch clock comes exclusively from
+`twin_mode` and `twin_clock`; both include `replay_speed` (`0` means paused)
+and `tracks`. Studio sends `twin_replay { start, speed }` to seek, pause, or
+resume, and `twin_live {}` to return to the live world.
+
+When replay mode and `archive_url_template` are available, each camera replaces
+the live mux canvas with a muted inline video. A clip is anchored where playback
+starts: `{start}` is the detection clock at the seek, rounded down to a whole
+second, plus `archive_offset_seconds` (default `0` for older servers), and
+`{duration}` is `300`. Playback continues through the clip; a new clip is
+requested when the clock leaves it, jumps (a seek), or the served clip ends
+early because of a recording gap. Anchoring at the seek keeps a progressive
+(non-seekable) MP4 aligned with the clock from its first frame; when the
+browser can seek, drift beyond 0.5 seconds is corrected. A non-seekable clip
+that starts more than 1.5 seconds behind the clock is re-requested once or
+twice with its start led by the measured start-up latency (at most 15 seconds),
+so the first frame of the new clip lands on the clock. The camera mux
+remains connected in the background so returning to Live restores the canvases
+immediately.
 
 ## Aiming a pole camera
 

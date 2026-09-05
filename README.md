@@ -40,6 +40,18 @@ its semantic, web, and native profiles carry matching verified release receipts.
 When no complete installation exists, Studio generates the compact Starter Road
 from checked-in source assets.
 
+For a production deployment build the packages and Studio once, then serve the
+build (migrations and seed run on every start, as in development):
+
+```sh
+pnpm -r --filter './packages/**' build
+pnpm --filter @simforge-oss/studio build
+PORT=5199 HOSTNAME=127.0.0.1 pnpm --filter @simforge-oss/studio start
+```
+
+`NEXT_PUBLIC_*` variables are inlined at build time, so export them before
+`build`, not only before `start`.
+
 The CLI binary is `simforge`; `sf` is its short alias:
 
 ```sh

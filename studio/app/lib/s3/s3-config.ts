@@ -1,6 +1,9 @@
-import { LOCAL_ARTIFACT_BUCKET } from "../db/config";
-
-/** Logical bucket retained in database coordinates for the filesystem store. */
+/**
+ * Logical bucket retained in database coordinates for the filesystem store.
+ * This module is imported by client components, so it must stay free of
+ * Node-only imports; the filesystem layout lives in `../db/config`.
+ */
+export const LOCAL_ARTIFACT_BUCKET = "local-artifacts";
 export const S3_BUCKET = LOCAL_ARTIFACT_BUCKET;
 export const S3_BUCKET_PUBLIC = LOCAL_ARTIFACT_BUCKET;
 export const S3_REGION = "local";

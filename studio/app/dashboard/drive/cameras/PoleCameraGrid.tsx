@@ -29,6 +29,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
+import type { WorldClock } from "@/app/lib/live-world/types";
 import { Separator } from "@/app/components/ui/separator";
 import type { CameraFeedState, CameraFeeds } from "@/app/lib/live-world/camera-feeds";
 import { cn } from "@/app/lib/utils";
@@ -43,6 +44,16 @@ import {
   type CameraAdjustment,
   type CameraAdjustments,
 } from "./camera-adjustments";
+import {
+  archiveClipAt,
+  archiveVideoUrl,
+  CLIP_LAG_TOLERANCE_SECONDS,
+  clipStartupLagSeconds,
+  MAX_CLIP_LEAD_MS,
+  resolveArchiveClip,
+  type ArchiveClipWindow,
+  shouldCorrectVideoDrift,
+} from "../history/replay-helpers";
 
 
 export interface PoleCameraGridProps {
@@ -50,6 +61,9 @@ export interface PoleCameraGridProps {
   features: readonly SignalFeature[];
   /** The surface's sole CityViewer. Camera panes render this viewer's scene. */
   viewer: CityViewer | null;
+  clock?: WorldClock | null;
+  archiveUrlTemplate?: string | null;
+  archiveOffsetSeconds?: number;
   feeds?: CameraFeeds | null;
   onFeedStatus?: (cameraId: string, mode: CameraFeedState) => void;
 }
@@ -195,6 +209,142 @@ function FocusedCameraFeed({
       )}
     </div>
   );
+}
+
+function ArchiveCameraFeed({
+  camera,
+  clock,
+  archiveUrlTemplate,
+  archiveOffsetSeconds,
+  fill = false,
+}: {
+  camera: PoleCamera;
+  clock: WorldClock;
+  archiveUrlTemplate: string;
+  archiveOffsetSeconds: number;
+  fill?: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const clockMs = clock.timeIso === null ? Number.NaN : Date.parse(clock.timeIso);
+  const [clip, setClip] = useState<ArchiveClipWindow | null>(null);
+  const previousClockMs = useRef(Number.NaN);
+  // Measured start-up latency of this feed's clips; MediaMTX playback is not
+  // seekable, so the next request is led by this much instead of being seeked.
+  const leadMs = useRef(0);
+  const leadCorrections = useRef(0);
+
+  useEffect(() => {
+    if (!Number.isFinite(clockMs)) {
+      previousClockMs.current = Number.NaN;
+      setClip(null);
+      return;
+    }
+    setClip((current) => {
+      const next = resolveArchiveClip(current, previousClockMs.current, clockMs, clock.speed, leadMs.current);
+      if (next !== current) leadCorrections.current = 0;
+      return next;
+    });
+    previousClockMs.current = clockMs;
+  }, [clockMs, clock.speed]);
+
+  const src = clip ? archiveVideoUrl(archiveUrlTemplate, camera.id, clip, archiveOffsetSeconds) : null;
+
+  useEffect(() => setUnavailable(false), [src]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (
+      !video
+      || !clip
+      || !Number.isFinite(clockMs)
+      || video.seeking
+      || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+      return;
+    }
+    const targetTime = (clockMs - clip.startMs) / 1_000;
+    if (shouldCorrectVideoDrift(video.currentTime, targetTime)) {
+      if (isVideoTimeSeekable(video, targetTime)) {
+        video.currentTime = targetTime;
+      } else if (clock.speed > 0 && !video.paused && leadCorrections.current < 2) {
+        const lagSeconds = clipStartupLagSeconds(clip, clockMs, video.currentTime);
+        if (lagSeconds > CLIP_LAG_TOLERANCE_SECONDS) {
+          leadCorrections.current += 1;
+          leadMs.current = Math.min(MAX_CLIP_LEAD_MS, leadMs.current + lagSeconds * 1_000);
+          setClip(archiveClipAt(clockMs, leadMs.current));
+          return;
+        }
+      }
+    }
+    if (clock.speed === 0) {
+      video.pause();
+      return;
+    }
+    video.playbackRate = clock.speed;
+    void video.play().catch(() => {
+      // Autoplay can still be gated while metadata loads. The next
+      // authoritative clock sample retries once the muted video is ready.
+    });
+  }, [clip, clock.speed, clockMs]);
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-md border border-border bg-muted",
+        fill && "h-full w-full",
+      )}
+      style={fill ? undefined : { aspectRatio: `${camera.intrinsics.width} / ${camera.intrinsics.height}` }}
+    >
+      <div className="absolute end-2 top-2 z-10">
+        <StatusBadge status={clock.speed === 0 ? "paused" : "replay"} />
+      </div>
+      {src ? (
+        <video
+          ref={videoRef}
+          key={src}
+          src={src}
+          className="block h-full w-full object-contain"
+          muted
+          playsInline
+          preload="auto"
+          data-archive-camera={camera.id}
+          onLoadedMetadata={(event) => {
+            if (!clip || !Number.isFinite(clockMs)) return;
+            const targetTime = (clockMs - clip.startMs) / 1_000;
+            if (isVideoTimeSeekable(event.currentTarget, targetTime)) {
+              event.currentTarget.currentTime = targetTime;
+            }
+            if (clock.speed > 0) {
+              event.currentTarget.playbackRate = clock.speed;
+              void event.currentTarget.play().catch(() => {
+                // A later clock sample retries muted autoplay.
+              });
+            }
+          }}
+          onError={() => setUnavailable(true)}
+          // A recording gap shortens the served clip; re-anchor at the clock.
+          onEnded={() => setClip(null)}
+        />
+      ) : null}
+      {unavailable || !src ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/90 p-4 text-center">
+          <div>
+            <VideoOff className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+            <p className="mt-2 text-xs font-medium text-foreground">No recording</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">No archived video covers this time.</p>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function isVideoTimeSeekable(video: HTMLVideoElement, targetTime: number): boolean {
+  for (let index = 0; index < video.seekable.length; index += 1) {
+    if (video.seekable.start(index) <= targetTime && targetTime <= video.seekable.end(index)) return true;
+  }
+  return false;
 }
 
 function MultiplexedCameraFeed({
@@ -596,6 +746,9 @@ function Comparison({
   onAdjustmentChange,
   registerPane,
   feeds,
+  clock,
+  archiveUrlTemplate,
+  archiveOffsetSeconds,
   feedStatus,
   active,
   mode,
@@ -610,6 +763,9 @@ function Comparison({
   onAdjustmentChange: (adjustment: CameraAdjustment) => void;
   registerPane: (key: string, pane: CameraPane | null) => void;
   feeds?: CameraFeeds | null;
+  clock?: WorldClock | null;
+  archiveUrlTemplate?: string | null;
+  archiveOffsetSeconds: number;
   feedStatus: CameraFeedState;
   active: boolean;
   mode: ComparisonMode;
@@ -617,7 +773,15 @@ function Comparison({
   onOverlayOpacityChange: (opacity: number) => void;
   onFeedStatus?: PoleCameraGridProps["onFeedStatus"];
 }) {
-  const real = feeds ? (
+  const real = clock?.mode === "replay" && archiveUrlTemplate ? (
+    <ArchiveCameraFeed
+      camera={camera}
+      clock={clock}
+      archiveUrlTemplate={archiveUrlTemplate}
+      archiveOffsetSeconds={archiveOffsetSeconds}
+      fill={mode === "overlay"}
+    />
+  ) : feeds ? (
     <MultiplexedCameraFeed camera={camera} feeds={feeds} status={feedStatus} fill={mode === "overlay"} />
   ) : (
     <FocusedCameraFeed camera={camera} active={active} onStatus={onFeedStatus} fill={mode === "overlay"} />
@@ -701,6 +865,9 @@ export function PoleCameraGrid({
   rigs,
   features,
   viewer,
+  clock = null,
+  archiveUrlTemplate = null,
+  archiveOffsetSeconds = 0,
   feeds = null,
   onFeedStatus,
 }: PoleCameraGridProps) {
@@ -946,6 +1113,9 @@ export function PoleCameraGrid({
                       onAdjustmentChange={(nextAdjustment) => persist({ ...adjustments, [key]: nextAdjustment })}
                       registerPane={registerPane}
                       feeds={feeds}
+                      clock={clock}
+                      archiveUrlTemplate={archiveUrlTemplate}
+                      archiveOffsetSeconds={archiveOffsetSeconds}
                       feedStatus={feedStatus}
                       active={focused}
                       mode={focused ? comparisonMode : "split"}

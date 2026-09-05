@@ -8,6 +8,10 @@ import type { NextConfig } from "next";
  * which is better than mounting a rewrite that 502s.
  */
 const twinHttpOrigin = process.env.SIMFORGE_TWIN_HTTP_ORIGIN?.trim();
+const configuredDevOrigins = (process.env.SIMFORGE_ALLOWED_DEV_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const nextConfig: NextConfig = {
   // Deprecated wire alias: pre-SimForge clients are forwarded to the single canonical handler tree.
@@ -27,6 +31,7 @@ const nextConfig: NextConfig = {
     "100.72.252.40",
     "path-b860i-aorus-pro-ice",
     "path-b860i-aorus-pro-ice.tail1cad6a.ts.net",
+    ...configuredDevOrigins,
   ],
   cacheComponents: true,
   partialPrefetching: true,
