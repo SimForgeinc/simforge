@@ -9,6 +9,7 @@ and verify. The `simforge` CLI is the stable surface for every step.
 
 ```sh
 pnpm install
+pnpm --filter "./packages/*" build
 node packages/cli/bin/simforge.js --help        # the command surface, as JSON
 ```
 

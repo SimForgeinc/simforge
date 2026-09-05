@@ -41,6 +41,8 @@ jobs:
         run: pnpm meshy:smoke:live
       - run: pnpm verify:naming
       - run: pnpm typecheck
+      - name: Build the compiled package artifacts
+        run: pnpm --filter "./packages/*" build
       - run: pnpm test:release
       - run: pnpm test:integration
       - run: pnpm test:portable
