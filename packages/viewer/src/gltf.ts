@@ -6,12 +6,12 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 /**
  * Where the Basis transcoder (`basis_transcoder.js` + `.wasm`) is served
- * when the embedder does not say: `basis/` beside the page. The map web tier
+ * when the embedder does not say: `/basis/` at the origin root. The map web tier
  * is KTX2-only (KHR_texture_basisu is required in every cell), so the loader
  * is always configured - a missing transcoder fails the first texture load
  * loudly instead of silently rendering untextured.
  */
-export const DEFAULT_KTX2_TRANSCODER_PATH = 'basis/';
+export const DEFAULT_KTX2_TRANSCODER_PATH = '/basis/';
 
 export function defaultKtx2TranscoderPath(): string {
   if (typeof document !== 'undefined' && document.baseURI) return new URL(DEFAULT_KTX2_TRANSCODER_PATH, document.baseURI).href;
@@ -141,8 +141,8 @@ let sharedKtx2Path = '';
  *   EXT_meshopt_compression, and decoding on the main thread stalls it for
  *   tens of ms).
  * - KTX2 is always wired once a renderer is known: cells carry no other
- *   image encoding. The transcoder path is the embedder's, else `basis/`
- *   beside the page.
+ *   image encoding. The transcoder path is the embedder's, else `/basis/`
+ *   at the origin root, independent of the current application route.
  */
 export function getGLTFLoader(renderer?: WebGLRenderer, ktx2TranscoderPath = ''): GLTFLoader {
   if (!sharedLoader) {

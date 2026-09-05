@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx scripts/boot.ts",
-    "dev:next": "next dev --webpack -p ${PORT:-5199}",
+    "dev": "node scripts/sync-browser-decoders.mjs && tsx scripts/boot.ts",
+    "dev:next": "node scripts/sync-browser-decoders.mjs && next dev --webpack -p ${PORT:-5199}",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
     "worker": "tsx worker/index.ts",
