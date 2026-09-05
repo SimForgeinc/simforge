@@ -316,21 +316,28 @@ Every instance carries the key that reproduces it:
 older matcher or an older engine is exactly the stale answer a resumable batch
 exists to prevent.
 
-## Deterministic five-map catalog
+## Deterministic installed-map catalog
 
-`simforge catalog create` reserves exactly **100 identities on each of the five
-supported maps** (500 total) before expensive generation begins. Every slot
-carries the map catalog revision and topology digest, template source/digest and
-archetype category, a coordinate-derived SHA-256 seed, status, and reserved
+`simforge catalog create` reserves exactly **100 identities on each selected
+installed map** before expensive generation begins. By default it uses every
+complete map bundle under the configured dev-assets root; `--map <id>` or
+`--maps a,b` selects a subset, and `--dev-assets <root>` selects another
+installed-map inventory. Every slot carries the map catalog revision and
+topology digest, template source/digest and archetype category, a
+coordinate-derived SHA-256 seed, status, and reserved
 instance/trace/result/frame/video/inspection paths. The output has no clock
-field: identical templates and map provenance produce byte-identical JSON.
+field: identical templates, selected map order, and map provenance produce
+byte-identical JSON.
 
-`simforge catalog verify` rejects changed seeds or identities, duplicate identities
-or seeds, missing/duplicate ordinals, anything other than the canonical 5 × 100
-shape, provenance drift, unsafe evidence paths, and a stale catalog digest.
-`reserved` slots do not pretend evidence exists. Advancing status makes evidence
-mandatory (`generated` requires an instance, `simulated` also trace/result,
-`rendered` also frame/video/render manifest, and `visually-proven` also a written
+`simforge catalog verify` validates the catalog's own declared map inventory:
+map names must be unique safe slugs, `maps[]` must contain each declaration
+exactly once, and each declared map must own exactly 100 unique ordinals. It
+also rejects changed seeds or identities, duplicate identities or seeds,
+provenance drift, unsafe evidence paths, and a stale catalog digest. Installing
+additional maps does not invalidate an existing catalog. `authored` slots do
+not pretend evidence exists. Advancing status makes evidence mandatory
+(`generated` requires an instance, `simulated` also trace/result, `rendered`
+also frame/video/render manifest, and `visually-accepted` also a written
 inspection). `--require-evidence` checks every reserved evidence path.
 
 ## Batch
@@ -347,7 +354,7 @@ out/
                    draw-000.result.json
 ```
 
-`catalog batch` is the lifecycle-aware companion for the 500-slot catalog. It
+`catalog batch` is the lifecycle-aware companion for a generated catalog. It
 writes a checkpointed execution ledger, uses each reservation seed for attempt
 zero, records deterministic bounded draws, and advances a slot only after its
 reserved artifacts exist. Unsupported authored mechanisms, template-backed
@@ -366,7 +373,7 @@ wrapper first:
 
 ```bash
 node packages/cli/bin/simforge.js catalog batch \
-  catalog/simforge-oss-five-map-v2.catalog.json \
+  catalog/simforge-oss.catalog.json \
   --ledger catalog/catalog-execution-ledger.json \
   --attempts 3 --concurrency 4 --filter all --pretty
 ```

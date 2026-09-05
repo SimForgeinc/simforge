@@ -14,10 +14,11 @@ node packages/cli/bin/simforge.js --help        # the command surface, as JSON
 
 - **Map bundles are required** for anything map-bound. Pull an active immutable
   map version with `simforge maps pull <map>@<version>`; the default cache is
-  `~/.local/share/simforge/maps`, and `SCEN_DEV_ASSETS=<dir>` overrides the
-  canonical bundle root. `richmond-field-station` is the only public map.
-  Other maps require an authorized private registry; pass its URL explicitly
-  with `--registry`. Do not promote another map to the public registry.
+  `${XDG_DATA_HOME:-~/.local/share}/simforge/maps`, and
+  `SIMFORGE_MAPS_CACHE_ROOT=<dir>` relocates it for the CLI, compiler, and
+  Studio. `richmond-field-station` is the only public map. Other maps require
+  an authorized private registry; pass its URL explicitly with `--registry`.
+  Do not promote another map to the public registry.
 - Build a package in isolation: `pnpm --filter @simforge-oss/cli build`.
 - Run one test file: `cd packages/cli && npx vitest run src/__tests__/cli-smoke.test.ts`.
 

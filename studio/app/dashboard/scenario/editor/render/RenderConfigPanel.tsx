@@ -41,7 +41,7 @@ import {
   supportedModalities,
   type AuthoredRenderSensor,
 } from "./render-spec-v3";
-type RenderBackend = "browser" | "carla" | "esmini";
+type RenderBackend = "browser" | "carla" | "native" | "esmini";
 
 const ESMINI_VALIDATOR_VERSION = "3.6.0";
 
@@ -80,6 +80,12 @@ const ENGINE_OPTIONS: {
     label: "Browser",
     icon: MonitorPlay,
     hint: "Optimized Three.js renderer on a registered GPU worker.",
+  },
+  {
+    id: "native",
+    label: "Native",
+    icon: Server,
+    hint: "Bevy retained native renderer on a registered GPU worker.",
   },
   {
     id: "carla",
@@ -129,6 +135,7 @@ const REVIEW_STEP: RenderWizardStep = { id: "review", label: "Review" };
 const STEPS_BY_ENGINE: Record<RenderBackend, readonly RenderWizardStep[]> = {
   browser: [ENGINE_STEP, CAMERA_STEP, OUTPUT_STEP, REVIEW_STEP],
   carla: [ENGINE_STEP, CAMERA_STEP, OUTPUT_STEP, REVIEW_STEP],
+  native: [ENGINE_STEP, CAMERA_STEP, OUTPUT_STEP, REVIEW_STEP],
   esmini: [ENGINE_STEP, REVIEW_STEP],
 };
 
@@ -246,8 +253,10 @@ export function RenderConfigPanel({
   const [backend, setBackend] = useState<RenderBackend>("browser");
   const [stepIndex, setStepIndex] = useState(0);
   const sensorOptions = useMemo(
-    () => managedSensorOptions(currentContent),
-    [currentContent],
+    () => managedSensorOptions(currentContent).filter(
+      (option) => backend !== "native" || option.sensor.type === "dash_camera",
+    ),
+    [backend, currentContent],
   );
   const [selectedSensorKeys, setSelectedSensorKeys] = useState<string[]>([]);
   const [modalitiesBySensor, setModalitiesBySensor] = useState<Record<string, RenderModality[]>>({});
@@ -299,11 +308,13 @@ export function RenderConfigPanel({
   useEffect(() => {
     setModalitiesBySensor((current) => Object.fromEntries(sensorOptions.map((option) => {
       const key = sensorOptionKey(option);
-      const supported = new Set(supportedModalities(option.sensor));
+      const supported = new Set(
+        backend === "native" ? ["rgb" as const] : supportedModalities(option.sensor),
+      );
       const preserved = current[key]?.filter((modality) => supported.has(modality));
-      return [key, preserved && preserved.length > 0 ? preserved : [...defaultModalities(option.sensor)]];
+      return [key, preserved && preserved.length > 0 ? preserved : [...supported]];
     })));
-  }, [sensorOptions]);
+  }, [backend, sensorOptions]);
 
   const selectedSensors = useMemo(() => {
     const selected = new Set(selectedSensorKeys);
@@ -315,10 +326,10 @@ export function RenderConfigPanel({
       actorId: option.actorId,
       sensorId: option.sensor.id,
       modalities: (modalitiesBySensor[sensorOptionKey(option)] ?? []).filter(
-        (modality) => supportedModalities(option.sensor).includes(modality),
+        (modality) => (backend === "native" ? modality === "rgb" : supportedModalities(option.sensor).includes(modality)),
       ),
     })).filter((selection) => selection.modalities.length > 0),
-    [modalitiesBySensor, selectedSensors],
+    [backend, modalitiesBySensor, selectedSensors],
   );
   const sensorHostAssets = useMemo(() => {
     if (!currentContent) return [];
@@ -390,6 +401,7 @@ export function RenderConfigPanel({
 
   function selectBackend(next: RenderBackend) {
     setBackend(next);
+    if (next === "native") setOutputs(["video"]);
     setSubmitError(null);
     setStepIndex(0);
   }
@@ -504,13 +516,13 @@ export function RenderConfigPanel({
           width: resolution.width,
           height: resolution.height,
           fps,
-          container: backend === "carla" ? "mp4" : "webm",
-          codec: backend === "carla" ? "h264" : "vp9",
+          container: backend === "browser" ? "webm" : "mp4",
+          codec: backend === "browser" ? "vp9" : "h264",
           quality: quality === "preview" ? "draft" : quality === "cinematic" ? "high" : quality,
         } : null,
         artifacts: [...new Set([
           ...outputs,
-          "sensorArchive" as const,
+          ...(backend === "native" ? [] : ["sensorArchive" as const]),
           "trace" as const,
           "manifest" as const,
         ])],
@@ -698,7 +710,9 @@ export function RenderConfigPanel({
                 : "None configured"}
               hint={backend === "carla"
                 ? "Up to 18 authored sources can run simultaneously. Select sensors from one vehicle; supported modalities follow each sensor."
-                : "Choose the authored sensors and modalities this browser render should capture."}
+                : backend === "native"
+                  ? "Select authored RGB cameras for the receipt-validated native master scene."
+                  : "Choose the authored sensors and modalities this browser render should capture."}
               title={`Which sensors should ${engineOption.label} capture?`}
             />
             {sensorOptions.length > 0 ? (
@@ -735,7 +749,7 @@ export function RenderConfigPanel({
                         </span>
                       </label>
                       <div className="mt-2 flex flex-wrap gap-1 pl-6">
-                        {supportedModalities(option.sensor).map((modality) => {
+                        {(backend === "native" ? ["rgb" as const] : supportedModalities(option.sensor)).map((modality) => {
                           const enabled = modalitiesBySensor[key]?.includes(modality) ?? false;
                           return (
                             <button
@@ -766,7 +780,7 @@ export function RenderConfigPanel({
             <div className="mt-4">
               <StepHeading hint="What each selected sensor produces." title="Kinds" />
               <div className="flex flex-wrap gap-1.5">
-                {SENSOR_KINDS.map((kind) => {
+                {SENSOR_KINDS.filter((kind) => backend !== "native" || kind.id === "rgb").map((kind) => {
                   const enabled = kinds.includes(kind.id);
                   return (
                     <button
@@ -805,7 +819,7 @@ export function RenderConfigPanel({
               title="What should the render return?"
             />
             <div className="grid gap-1.5 sm:grid-cols-3">
-              {OUTPUT_OPTIONS.map((option) => (
+              {OUTPUT_OPTIONS.filter((option) => backend !== "native" || option.id === "video").map((option) => (
                 <RenderOptionCard
                   hint={option.hint}
                   key={option.id}

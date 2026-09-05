@@ -9,7 +9,7 @@ const LocalRenderSpecV3Schema = z.custom<RenderSpecV3>(
   { message: "Invalid render-spec/v3 payload." },
 ).transform((value) => RenderSpecV3Schema.parse(value));
 
-export const ScenarioRendererEngineSchema = z.enum(["browser", "carla"]);
+export const ScenarioRendererEngineSchema = z.enum(["browser", "carla", "native"]);
 export type ScenarioRendererEngine = z.infer<typeof ScenarioRendererEngineSchema>;
 
 const SensorSourceHostSchema = z.strictObject({
@@ -45,7 +45,7 @@ export const ScenarioRenderIntentSchema = z.strictObject({
     kind: z.enum(["map", "catalog", "texture", "mesh", "other"]),
     sha256: Sha256Schema,
     sizeBytes: z.number().int().nonnegative(),
-  })).max(10_000),
+  })).max(4096),
   seed: z.number().int().nonnegative(),
 }).superRefine((intent, context) => {
   const hostBySourceId = new Map(intent.sensorHosts.map((host) => [host.sourceId, host]));
@@ -140,7 +140,7 @@ export const ScenarioRendererCapabilitySchema = z.strictObject({
 export type ScenarioRendererCapability = z.infer<typeof ScenarioRendererCapabilitySchema>;
 
 const WorkerControlBase = {
-  schema: z.literal("uniscenario.render-worker-control/v2"),
+  schema: z.literal("simforge.render-worker-control/v2"),
 } as const;
 
 export const RegisterRenderWorkerV2Schema = z.strictObject({

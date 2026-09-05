@@ -29,7 +29,6 @@ export {
 export {
   ARTIFACTS,
   DEV_ASSETS,
-  KNOWN_MAPS,
   REPO_ROOT,
   artifactPresence,
   assertKnownMap,

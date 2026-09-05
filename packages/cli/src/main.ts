@@ -26,7 +26,7 @@ import type { AmbientTrafficProfile } from '@simforge-oss/engine';
 
 import { CliError, EXIT, exitCodeOf, toStructuredError } from './errors.js';
 import { emit, emitError } from './output.js';
-import { availableMaps, resolveMapSelection, KNOWN_MAPS } from '@simforge-oss/compiler/node';
+import { availableMaps, resolveMapSelection } from '@simforge-oss/compiler/node';
 import { batch } from './commands/batch.js';
 import { catalogCreate, catalogVerify } from './commands/catalog.js';
 import { catalogBatch } from './commands/catalog-batch.js';
@@ -73,7 +73,7 @@ const COMMANDS = [
   { name: 'evaluate', summary: 'reject filters over a trace' },
   { name: 'evidence verify', summary: 'prove one instance/trace pair shares the same input hash' },
   { name: 'export', summary: 'concrete instance → native XML 1.4, explicit XML 1.3 esmini compatibility, or DSL 2.2' },
-  { name: 'catalog create', summary: 'reserve exactly 100 deterministic scenario identities per supported map' },
+  { name: 'catalog create', summary: 'reserve exactly 100 deterministic scenario identities per selected installed map' },
   { name: 'catalog verify', summary: 'reject catalog identity, cardinality, provenance, or evidence gaps' },
   { name: 'import', summary: 'OpenSCENARIO XML 1.4 → v2 template draft, with a lossy-feature report' },
   { name: 'catalog batch', summary: 'resumable catalog materialization + simulation with an attempt ledger' },
@@ -88,11 +88,12 @@ const COMMANDS = [
 const GLOBAL_BOOLEANS = ['pretty', 'help'];
 
 function usage(pretty: boolean): number {
+  const maps = availableMaps();
   const payload = {
     bin: 'simforge',
     exitCodes: { 0: 'ok', 1: 'command error', 2: 'validation findings' },
     commands: COMMANDS,
-    maps: availableMaps(),
+    maps,
   };
   if (!pretty) {
     emit(payload, { pretty: false });
@@ -104,7 +105,7 @@ function usage(pretty: boolean): number {
         ...COMMANDS.map((c) => `  simforge ${c.name.padEnd(20)}${c.summary}`),
         '',
         '  --pretty   human-readable rendering of the same result',
-        `  maps: ${availableMaps().join(', ')}`,
+        `  maps: ${maps.join(', ')}`,
         '',
       ].join('\n'),
     );
@@ -623,10 +624,19 @@ async function dispatch(argv: readonly string[]): Promise<number> {
       if (sub === 'create') {
         const args = parseArgs(argv.slice(2), {
           booleans: GLOBAL_BOOLEANS,
-          values: ['out', 'namespace', 'evidence-root'],
+          values: ['out', 'map', 'maps', 'dev-assets', 'namespace', 'evidence-root'],
         });
+        const map = optionalString(args, 'map');
+        const maps = listFlag(args, 'maps');
+        if (map !== undefined && maps !== undefined) {
+          throw new CliError('bad_value', 'catalog create accepts only one of --map <id> or --maps a,b,c', {
+            path: '--map',
+          });
+        }
         return catalogCreate({
           out: requireString(args, 'out'),
+          mapIds: map === undefined ? maps : [map],
+          devAssets: optionalString(args, 'dev-assets'),
           namespace: optionalString(args, 'namespace'),
           evidenceRoot: optionalString(args, 'evidence-root'),
           pretty: boolFlag(args, 'pretty'),
@@ -755,9 +765,13 @@ async function dispatch(argv: readonly string[]): Promise<number> {
           });
         }
         const maps = mapFlag !== undefined ? [mapFlag] : (mapsFlag ?? []);
+        const installedMaps = availableMaps();
         for (const mapId of maps) {
-          if (!(KNOWN_MAPS as readonly string[]).includes(mapId)) {
-            throw new CliError('bad_value', `unknown map "${mapId}"`, { path: '--map' });
+          if (!installedMaps.includes(mapId)) {
+            throw new CliError('bad_value', `unknown map "${mapId}"`, {
+              path: '--map',
+              detail: { available: installedMaps },
+            });
           }
         }
         return corpusBuildCommand({

@@ -1,7 +1,7 @@
 import type { AppContext } from "@/app/lib/db/app-context";
 import { withTransaction } from "@/app/lib/db/data-api";
 import type { RenderSpecV3 } from "@simforge-oss/scenario";
-import { canonicalJsonSha256, scenarioId } from "./core";
+import { canonicalJsonSha256, scenarioId, sha256 } from "./core";
 import type { ScenarioRenderJobDto } from "./contracts";
 import {
   ScenarioRenderIntentSchema,
@@ -30,6 +30,19 @@ type ImmutableLineageRow = {
   catalog_artifact_id: string;
   catalog_sha256: string;
   catalog_size: number;
+};
+
+type NativeMapAsset = {
+  inputId: string;
+  sha256: string;
+  sizeBytes: number;
+};
+
+type NativeMapMemberRow = {
+  relative_path: string;
+  sha256: string;
+  byte_length: number | string;
+  object_count: number | string;
 };
 
 type InsertedJob = {
@@ -176,7 +189,11 @@ function selectedSensorHosts(input: SubmitScenarioRenderIntent, lineage: Immutab
   })).sort((left, right) => left.sourceId.localeCompare(right.sourceId));
 }
 
-function buildIntent(input: SubmitScenarioRenderIntent, lineage: ImmutableLineageRow): ScenarioRenderIntent {
+function buildIntent(
+  input: SubmitScenarioRenderIntent,
+  lineage: ImmutableLineageRow,
+  nativeMapAssets: readonly NativeMapAsset[],
+): ScenarioRenderIntent {
   const content = typeof lineage.canonical_content === "string"
     ? JSON.parse(lineage.canonical_content) as Record<string, unknown>
     : lineage.canonical_content;
@@ -187,6 +204,16 @@ function buildIntent(input: SubmitScenarioRenderIntent, lineage: ImmutableLineag
     || input.renderSpec.clip.endSeconds !== clipSeconds
   ) {
     throw new Error("pronto_render_must_cover_full_clip");
+  }
+  if (
+    input.engine === "native"
+    && input.renderSpec.video
+    && (
+      input.renderSpec.video.container !== "mp4"
+      || input.renderSpec.video.codec !== "h264"
+    )
+  ) {
+    throw new Error("native_render_video_format_invalid");
   }
   const sensorHosts = selectedSensorHosts(input, lineage);
   if (
@@ -232,6 +259,12 @@ function buildIntent(input: SubmitScenarioRenderIntent, lineage: ImmutableLineag
         sha256: lineage.catalog_sha256,
         sizeBytes: Number(lineage.catalog_size),
       },
+      ...nativeMapAssets.map((asset) => ({
+        assetId: asset.inputId,
+        kind: "map" as const,
+        sha256: asset.sha256,
+        sizeBytes: asset.sizeBytes,
+      })),
     ],
     seed: Number.parseInt(lineage.scenario_sha256.slice(0, 8), 16),
   });
@@ -315,7 +348,47 @@ export async function createRenderIntentJob(
       },
     );
     if (!lineage) return null;
-    const intent = buildIntent(input, lineage);
+    let nativeMapAssets: NativeMapAsset[] = [];
+    if (input.engine === "native") {
+      const nativeMembers = await tx.queryRows<NativeMapMemberRow>(
+        `SELECT m.relative_path, b.sha256, b.byte_length, s.object_count
+           FROM simforge.map_versions mv
+           JOIN simforge.native_map_asset_sets s
+             ON s.id = mv.native_map_asset_set_id
+            AND s.workspace_id = mv.workspace_id
+            AND s.map_version_id = mv.id
+            AND s.asset_set_state = 'available'
+            AND s.contract_version = 'simforge.native-map-asset-set.v1'
+            AND s.registry_release_digest = mv.descriptor->>'registryReleaseDigest'
+           JOIN simforge.native_map_asset_members m ON m.asset_set_id = s.id
+           JOIN simforge.native_map_asset_blobs b
+             ON b.id = m.blob_id AND b.verification_state = 'verified'
+          WHERE mv.id = :map_version_id
+            AND mv.workspace_id = :workspace_id
+          ORDER BY m.relative_path`,
+        { map_version_id: lineage.map_revision_id, workspace_id: context.workspaceId },
+      );
+      const expectedCount = Number(nativeMembers[0]?.object_count ?? -1);
+      if (expectedCount < 1 || nativeMembers.length !== expectedCount) {
+        throw new Error("native_map_asset_set_incomplete");
+      }
+      const renderMembers = nativeMembers.filter((member) => member.relative_path !== ".map-release.json");
+      if (!renderMembers.some((member) => member.relative_path === "master.gltf")) {
+        throw new Error("native_map_master_unavailable");
+      }
+      if (renderMembers.length > 4093) throw new Error("native_map_asset_set_too_large");
+      nativeMapAssets = renderMembers.map((member) => ({
+        inputId: member.relative_path === "master.gltf"
+          ? "map.tile.000000"
+          : `map.resource.${sha256(member.relative_path)}`,
+        sha256: member.sha256,
+        sizeBytes: Number(member.byte_length),
+      }));
+      if (new Set(nativeMapAssets.map((asset) => asset.inputId)).size !== nativeMapAssets.length) {
+        throw new Error("native_map_input_id_conflict");
+      }
+    }
+    const intent = buildIntent(input, lineage, nativeMapAssets);
     const intentSha256 = canonicalJsonSha256(intent);
     const controlSha256 = canonicalJsonSha256({
       schema: "uniscenario.render-control-lineage/v1",

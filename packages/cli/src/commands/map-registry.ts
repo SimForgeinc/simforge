@@ -214,7 +214,7 @@ export async function registryMapsPull(options: RegistryPullOptions): Promise<nu
   const derived: MapClosure[] = options.webFingerprint === undefined
     ? await listDerivedClosures(backend, resolved.name, resolved.record.version)
     : [await loadDerivedClosure(backend, resolved.name, resolved.record.version, 'web', options.webFingerprint)];
-  const cacheRoot = resolve(options.cacheRoot ?? join(process.env['XDG_DATA_HOME'] ?? join(homedir(), '.local', 'share'), 'simforge', 'maps'));
+  const cacheRoot = resolve(options.cacheRoot ?? process.env['SIMFORGE_MAPS_CACHE_ROOT'] ?? join(process.env['XDG_DATA_HOME'] ?? join(homedir(), '.local', 'share'), 'simforge', 'maps'));
   const result = await pullVersion(backend, options.reference, {
     layouts: {
       browserBundlesRoot: resolve(options.browserRoot ?? join(cacheRoot, 'map-bundles')),

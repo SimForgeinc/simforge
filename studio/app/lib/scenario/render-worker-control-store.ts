@@ -21,7 +21,7 @@ import { simforgeEnv } from "@/lib/compat-env";
 const REQUIRED_CARLA_BASE_IMAGE = "ghcr.io/simforgeinc/carla-rfs-munich-belmont:0.10.0-kia";
 const REQUIRED_CARLA_BASE_IMAGE_INDEX_DIGEST = "sha256:f17c639e5f86fd7458fe1d02d3be1d481deeaa714f3cac30e465187d04ec90e5";
 const REQUIRED_CARLA_BASE_IMAGE_AMD64_DIGEST = "sha256:baed0d038437c55efe0abe52a762d352aeb21acdeeff5b11a15f6bd8a648de64";
-const CONTROL_SCHEMA = "uniscenario.render-worker-control/v2";
+const CONTROL_SCHEMA = "simforge.render-worker-control/v2";
 const INTENT_CONTRACT = "uniscenario.render-intent/v1";
 const LEASE_SECONDS = 900;
 function runtimeEnvironment(): "dev" | "staging" | "prod" {
@@ -118,7 +118,7 @@ export async function registerRenderWorkerV2(input: {
 
 type Candidate = {
   id: string;
-  renderer_engine: "browser" | "carla";
+  renderer_engine: "browser" | "carla" | "native";
   render_intent: unknown;
   intent_sha256: string;
   resource_request: unknown;
@@ -129,7 +129,7 @@ type WorkerRow = {
   registration_id: string;
   worker_version: string;
   image_digest: string;
-  renderer_engine: "browser" | "carla";
+  renderer_engine: "browser" | "carla" | "native";
   base_image_digest: string | null;
   capabilities: string | Record<string, unknown>;
   base_image_platform_digest: string | null;
@@ -189,7 +189,15 @@ type Claimed = {
   expiresAt: string;
   intent: ScenarioRenderIntent;
   intentSha256: string;
-  inputs: Array<{ inputId: string; sha256: string; sizeBytes: number; bucket: string; key: string }>;
+  executionPackageControlSha256: string;
+  inputs: Array<{
+    inputId: string;
+    relativePath?: string;
+    sha256: string;
+    sizeBytes: number;
+    bucket: string;
+    key: string;
+  }>;
 };
 
 async function reapExpiredRenderIntentLeasesV2() {
@@ -280,9 +288,11 @@ export async function claimRenderJobV2(registrationId: string, workerNodeId: str
       if (busy) return null;
       const row = await tx.queryOne<{
         id: string; workspace_id: string; revision_id: string; execution_package_id: string;
-        attempt_count: number; render_intent: string | Record<string, unknown>; intent_sha256: string;
+        execution_package_control_sha256: string; attempt_count: number;
+        render_intent: string | Record<string, unknown>; intent_sha256: string;
       }>(
-        `SELECT id, workspace_id, revision_id, execution_package_id, attempt_count,
+        `SELECT id, workspace_id, revision_id, execution_package_id,
+                execution_package_control_sha256, attempt_count,
                 render_intent::text AS render_intent, intent_sha256
            FROM simforge.render_jobs
           WHERE id = :job_id AND renderer_engine = :renderer_engine
@@ -350,30 +360,113 @@ export async function claimRenderJobV2(registrationId: string, workerNodeId: str
           WHERE id = :job_id`,
         { attempt, job_id: row.id },
       );
-      const inputs = await tx.queryRows<Claimed["inputs"][number]>(
-        `SELECT input_id AS "inputId", sha256, size_bytes AS "sizeBytes", storage_bucket AS bucket, storage_key AS key
-           FROM (
-             SELECT 'openscenario'::text AS input_id, a.sha256, a.byte_length AS size_bytes,
-                    a.storage_bucket, a.storage_key
-               FROM simforge.execution_packages ep JOIN simforge.artifacts a ON a.id = ep.xosc_artifact_id
-              WHERE ep.id = :package_id
-             UNION ALL
-             SELECT 'map', a.sha256, a.byte_length, a.storage_bucket, a.storage_key
-               FROM simforge.execution_packages ep JOIN simforge.artifacts a ON a.id = ep.xodr_artifact_id
-              WHERE ep.id = :package_id
-             UNION ALL
-             SELECT 'catalog', a.sha256, a.byte_length, a.storage_bucket, a.storage_key
-               FROM simforge.execution_packages ep
-               JOIN simforge.asset_catalog_versions c ON c.id = ep.asset_catalog_version_id
-               JOIN simforge.artifacts a ON a.id = c.manifest_artifact_id
-              WHERE ep.id = :package_id
-             UNION ALL
-             SELECT 'execution-package', a.sha256, a.byte_length, a.storage_bucket, a.storage_key
-               FROM simforge.execution_packages ep JOIN simforge.artifacts a ON a.id = ep.package_artifact_id
-              WHERE ep.id = :package_id
-           ) input_rows`,
-        { package_id: row.execution_package_id },
-      );
+      let inputs: Claimed["inputs"];
+      if (worker.renderer_engine === "native") {
+        inputs = await tx.queryRows<Claimed["inputs"][number]>(
+          `SELECT input_id AS "inputId", sha256, size_bytes AS "sizeBytes",
+                  storage_bucket AS bucket, storage_key AS key
+             FROM (
+               SELECT 'scenario.xosc'::text AS input_id, a.sha256, a.byte_length AS size_bytes,
+                      a.storage_bucket, a.storage_key
+                 FROM simforge.execution_packages ep
+                 JOIN simforge.artifacts a ON a.id = ep.xosc_artifact_id
+                WHERE ep.id = :package_id
+               UNION ALL
+               SELECT a.id::text, a.sha256, a.byte_length, a.storage_bucket, a.storage_key
+                 FROM simforge.execution_packages ep
+                 JOIN simforge.artifacts a ON a.id = ep.xodr_artifact_id
+                WHERE ep.id = :package_id
+               UNION ALL
+               SELECT a.id::text, a.sha256, a.byte_length, a.storage_bucket, a.storage_key
+                 FROM simforge.execution_packages ep
+                 JOIN simforge.asset_catalog_versions c ON c.id = ep.asset_catalog_version_id
+                 JOIN simforge.artifacts a ON a.id = c.manifest_artifact_id
+                WHERE ep.id = :package_id
+             ) input_rows`,
+          { package_id: row.execution_package_id },
+        );
+        const nativeMembers = await tx.queryRows<{
+          relative_path: string;
+          sha256: string;
+          byte_length: number | string;
+          storage_bucket: string;
+          storage_key: string;
+          object_count: number | string;
+        }>(
+          `SELECT m.relative_path, b.sha256, b.byte_length, b.storage_bucket, b.storage_key,
+                  s.object_count
+             FROM simforge.revisions r
+             JOIN simforge.map_versions mv
+               ON mv.id = r.map_version_id AND mv.workspace_id = r.workspace_id
+             JOIN simforge.native_map_asset_sets s
+               ON s.id = mv.native_map_asset_set_id
+              AND s.workspace_id = mv.workspace_id
+              AND s.map_version_id = mv.id
+              AND s.asset_set_state = 'available'
+              AND s.contract_version = 'simforge.native-map-asset-set.v1'
+              AND s.registry_release_digest = mv.descriptor->>'registryReleaseDigest'
+             JOIN simforge.native_map_asset_members m ON m.asset_set_id = s.id
+             JOIN simforge.native_map_asset_blobs b
+               ON b.id = m.blob_id AND b.verification_state = 'verified'
+            WHERE r.id = :revision_id AND r.workspace_id = :workspace_id
+            ORDER BY m.relative_path`,
+          { revision_id: row.revision_id, workspace_id: row.workspace_id },
+        );
+        const expectedCount = Number(nativeMembers[0]?.object_count ?? -1);
+        if (expectedCount < 1 || nativeMembers.length !== expectedCount) {
+          throw new Error("native_map_asset_set_incomplete");
+        }
+        const renderMembers = nativeMembers.filter((member) => member.relative_path !== ".map-release.json");
+        if (!renderMembers.some((member) => member.relative_path === "master.gltf")) {
+          throw new Error("native_map_master_unavailable");
+        }
+        if (renderMembers.length > 4093) throw new Error("native_map_asset_set_too_large");
+        inputs.push(...renderMembers.map((member) => ({
+          inputId: member.relative_path === "master.gltf"
+            ? "map.tile.000000"
+            : `map.resource.${sha256(member.relative_path)}`,
+          relativePath: member.relative_path,
+          sha256: member.sha256,
+          sizeBytes: Number(member.byte_length),
+          bucket: member.storage_bucket,
+          key: member.storage_key,
+        })));
+        const byInputId = new Map(inputs.map((input) => [input.inputId, input]));
+        if (byInputId.size !== inputs.length
+          || inputs.length !== intent.assets.length + 1
+          || intent.assets.some((asset) => {
+            const declared = byInputId.get(asset.assetId);
+            return !declared || declared.sha256 !== asset.sha256 || Number(declared.sizeBytes) !== asset.sizeBytes;
+          })) {
+          throw new Error("native_render_input_declaration_mismatch");
+        }
+      } else {
+        inputs = await tx.queryRows<Claimed["inputs"][number]>(
+          `SELECT input_id AS "inputId", sha256, size_bytes AS "sizeBytes",
+                  storage_bucket AS bucket, storage_key AS key
+             FROM (
+               SELECT 'openscenario'::text AS input_id, a.sha256, a.byte_length AS size_bytes,
+                      a.storage_bucket, a.storage_key
+                 FROM simforge.execution_packages ep JOIN simforge.artifacts a ON a.id = ep.xosc_artifact_id
+                WHERE ep.id = :package_id
+               UNION ALL
+               SELECT 'map', a.sha256, a.byte_length, a.storage_bucket, a.storage_key
+                 FROM simforge.execution_packages ep JOIN simforge.artifacts a ON a.id = ep.xodr_artifact_id
+                WHERE ep.id = :package_id
+               UNION ALL
+               SELECT 'catalog', a.sha256, a.byte_length, a.storage_bucket, a.storage_key
+                 FROM simforge.execution_packages ep
+                 JOIN simforge.asset_catalog_versions c ON c.id = ep.asset_catalog_version_id
+                 JOIN simforge.artifacts a ON a.id = c.manifest_artifact_id
+                WHERE ep.id = :package_id
+               UNION ALL
+               SELECT 'execution-package', a.sha256, a.byte_length, a.storage_bucket, a.storage_key
+                 FROM simforge.execution_packages ep JOIN simforge.artifacts a ON a.id = ep.package_artifact_id
+                WHERE ep.id = :package_id
+             ) input_rows`,
+          { package_id: row.execution_package_id },
+        );
+      }
       return {
         jobId: row.id,
         attempt,
@@ -383,6 +476,7 @@ export async function claimRenderJobV2(registrationId: string, workerNodeId: str
         expiresAt: expiry.expires_at,
         intent,
         intentSha256: row.intent_sha256,
+        executionPackageControlSha256: row.execution_package_control_sha256,
         inputs,
       };
     });
@@ -408,8 +502,10 @@ export async function claimResponseV2(registrationId: string, workerNodeId: stri
     },
     intent: claimed.intent,
     intentSha256: claimed.intentSha256,
+    executionPackageControlSha256: claimed.executionPackageControlSha256,
     inputs: await Promise.all(claimed.inputs.map(async (input) => ({
       inputId: input.inputId,
+      ...(input.relativePath === undefined ? {} : { relativePath: input.relativePath }),
       sha256: input.sha256,
       sizeBytes: Number(input.sizeBytes),
       download: {

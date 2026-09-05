@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
 import { withTransaction } from "@/app/lib/db/data-api";
 import type { PublishedMapSummary } from "@/app/lib/map-ingest/contracts";
-import type { UploadedMapClosurePlan } from "./closure";
-import { BROWSER_ASSET_SET_CONTRACT } from "./closure";
+import {
+  BROWSER_ASSET_SET_CONTRACT,
+  type NativeMapAssetSetPlan,
+  type UploadedMapClosurePlan,
+} from "./closure";
 
 const COORDINATE_SYSTEM_ID = "uniscenario.scene-y-up-x-east-z-south/v1";
 const COORDINATE_SYSTEM_SHA256 = createHash("sha256").update(JSON.stringify({
@@ -80,6 +83,8 @@ export type PublishUploadedMapVersionInput = {
   thumbnail: PublishedMapThumbnail;
   mapIntel: PublishedMapIntel;
   triangleCount: number;
+  registryReleaseDigest?: string;
+  nativePlan?: NativeMapAssetSetPlan;
 };
 
 const MAP_UPLOAD_PRODUCER_FAMILY = "map_publication";
@@ -150,6 +155,16 @@ function assertPublicationInput(input: PublishUploadedMapVersionInput) {
     )
   ) {
     throw new Error("invalid_browser_asset_members");
+  }
+  if (
+    (input.registryReleaseDigest === undefined) !== (input.nativePlan === undefined) ||
+    (input.nativePlan && (
+      input.nativePlan.mapVersionId !== plan.mapVersionId ||
+      input.nativePlan.workspaceId !== input.workspaceId ||
+      input.nativePlan.registryReleaseDigest !== input.registryReleaseDigest
+    ))
+  ) {
+    throw new Error("invalid_native_map_asset_set");
   }
 }
 
@@ -301,6 +316,9 @@ export async function publishUploadedMapVersion(
       carlaMapName: input.carlaMapName,
       derivativeReleaseId: input.derivativeReleaseId,
       browserClosureSha256: plan.closureSha256,
+      ...(input.registryReleaseDigest
+        ? { registryReleaseDigest: input.registryReleaseDigest }
+        : {}),
       sumoRequired: false,
       artifactDigests: {
         xodrSha256: digest("map.xodr"),
@@ -387,7 +405,9 @@ export async function publishUploadedMapVersion(
          AND derivative_release_id = :derivative_release_id AND xodr_sha256 = :xodr_sha256
          AND coordinate_system_sha256 = :coordinate_system_sha256
          AND asset_catalog_version_id = :asset_catalog_version_id
-         AND descriptor->>'browserClosureSha256' = :closure_sha256`,
+         AND descriptor->>'browserClosureSha256' = :closure_sha256
+         AND (:registry_release_digest IS NULL
+           OR descriptor->>'registryReleaseDigest' = :registry_release_digest)`,
       {
         id: plan.mapVersionId,
         workspace_id: input.workspaceId,
@@ -396,6 +416,7 @@ export async function publishUploadedMapVersion(
         derivative_release_id: input.derivativeReleaseId,
         xodr_sha256: digest("map.xodr"),
         coordinate_system_sha256: COORDINATE_SYSTEM_SHA256,
+        registry_release_digest: input.registryReleaseDigest ?? null,
         asset_catalog_version_id: input.assetCatalogVersionId,
         closure_sha256: plan.closureSha256,
       },
@@ -486,6 +507,119 @@ export async function publishUploadedMapVersion(
       Number(counts?.byte_length) !== plan.byteLength
     ) {
       throw new Error("browser_asset_set_closure_mismatch");
+    }
+
+    if (input.nativePlan) {
+      const nativePlan = input.nativePlan;
+      await tx.batchExecute(
+        `INSERT INTO simforge.native_map_asset_blobs (
+           id, storage_bucket, storage_key, object_version_id, sha256, byte_length,
+           media_type, verification_state, verified_at
+         ) VALUES (
+           :id, :bucket, :storage_key, :object_version_id, :sha256, :byte_length,
+           :media_type, 'verified', NOW()
+         ) ON CONFLICT (id) DO UPDATE SET
+           verification_state = 'verified', verified_at = NOW()
+         WHERE native_map_asset_blobs.storage_bucket = EXCLUDED.storage_bucket
+           AND native_map_asset_blobs.storage_key = EXCLUDED.storage_key
+           AND native_map_asset_blobs.object_version_id IS NOT DISTINCT FROM EXCLUDED.object_version_id
+           AND native_map_asset_blobs.sha256 = EXCLUDED.sha256
+           AND native_map_asset_blobs.byte_length = EXCLUDED.byte_length
+           AND native_map_asset_blobs.media_type = EXCLUDED.media_type`,
+        nativePlan.members.map((member) => ({
+          id: member.blobId,
+          bucket: member.bucket,
+          storage_key: member.key,
+          object_version_id: member.objectVersionId,
+          sha256: member.sha256,
+          byte_length: member.byteLength,
+          media_type: member.mediaType,
+        })),
+      );
+      await tx.execute(
+        `INSERT INTO simforge.native_map_asset_sets (
+           id, workspace_id, map_version_id, contract_version, closure_sha256,
+           registry_release_digest, canonical_digest, object_count, byte_length,
+           asset_set_state
+         ) VALUES (
+           :id, :workspace_id, :map_version_id, :contract_version, :closure_sha256,
+           :registry_release_digest, :canonical_digest, :object_count, :byte_length,
+           'building'
+         ) ON CONFLICT (workspace_id, map_version_id, registry_release_digest) DO NOTHING`,
+        {
+          id: nativePlan.id,
+          workspace_id: nativePlan.workspaceId,
+          map_version_id: nativePlan.mapVersionId,
+          contract_version: nativePlan.contractVersion,
+          closure_sha256: nativePlan.closureSha256,
+          registry_release_digest: nativePlan.registryReleaseDigest,
+          canonical_digest: nativePlan.canonicalDigest,
+          object_count: nativePlan.objectCount,
+          byte_length: nativePlan.byteLength,
+        },
+      );
+      await tx.batchExecute(
+        `INSERT INTO simforge.native_map_asset_members (
+           asset_set_id, relative_path, blob_id, role, required
+         ) VALUES (
+           :asset_set_id, :relative_path, :blob_id, :role, :required
+         ) ON CONFLICT (asset_set_id, relative_path) DO NOTHING`,
+        nativePlan.members.map((member) => ({
+          asset_set_id: nativePlan.id,
+          relative_path: member.relativePath,
+          blob_id: member.blobId,
+          role: member.role,
+          required: member.required,
+        })),
+      );
+      const nativeCounts = await tx.queryOne<ClosureCountRow>(
+        `SELECT COUNT(*)::int AS object_count,
+           COALESCE(SUM(b.byte_length), 0)::bigint AS byte_length
+         FROM simforge.native_map_asset_members m
+         JOIN simforge.native_map_asset_blobs b
+           ON b.id = m.blob_id AND b.verification_state = 'verified'
+         WHERE m.asset_set_id = :asset_set_id`,
+        { asset_set_id: nativePlan.id },
+      );
+      if (
+        Number(nativeCounts?.object_count) !== nativePlan.objectCount ||
+        Number(nativeCounts?.byte_length) !== nativePlan.byteLength
+      ) {
+        throw new Error("native_map_asset_set_closure_mismatch");
+      }
+      const nativeBound = await tx.queryRows<IdRow>(
+        `UPDATE simforge.map_versions SET native_map_asset_set_id = :asset_set_id
+         WHERE id = :map_version_id AND workspace_id = :workspace_id
+           AND (native_map_asset_set_id IS NULL OR native_map_asset_set_id = :asset_set_id)
+         RETURNING id`,
+        {
+          asset_set_id: nativePlan.id,
+          map_version_id: nativePlan.mapVersionId,
+          workspace_id: nativePlan.workspaceId,
+        },
+      );
+      if (nativeBound.length !== 1) {
+        throw new Error("map_version_already_bound_to_different_native_closure");
+      }
+      const nativeAvailable = await tx.queryRows<IdRow>(
+        `UPDATE simforge.native_map_asset_sets
+         SET asset_set_state = 'available', verified_at = NOW()
+         WHERE id = :asset_set_id AND workspace_id = :workspace_id
+           AND map_version_id = :map_version_id
+           AND closure_sha256 = :closure_sha256
+           AND registry_release_digest = :registry_release_digest
+           AND canonical_digest = :canonical_digest
+         RETURNING id`,
+        {
+          asset_set_id: nativePlan.id,
+          workspace_id: nativePlan.workspaceId,
+          map_version_id: nativePlan.mapVersionId,
+          closure_sha256: nativePlan.closureSha256,
+          registry_release_digest: nativePlan.registryReleaseDigest,
+          canonical_digest: nativePlan.canonicalDigest,
+        },
+      );
+      if (nativeAvailable.length !== 1) throw new Error("native_map_asset_set_identity_conflict");
     }
 
     const bound = await tx.queryRows<IdRow>(

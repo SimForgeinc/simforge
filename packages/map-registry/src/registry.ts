@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { copyFile, link, mkdir, mkdtemp, open, readFile, readdir, rename, rm } from 'node:fs/promises';
+import { copyFile, link, mkdir, mkdtemp, open, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -484,15 +484,29 @@ async function cachedBlob(
   return cached;
 }
 
+/** Local installed-profile receipt, written only after every resource verifies. */
+export interface MapInstallation {
+  schema: 'simforge.map-installation.v1';
+  name: string;
+  version: MapVersion;
+  releaseDigest: string;
+  canonicalDigest: string;
+  webDigest?: string;
+  profile: 'semantic' | 'native' | 'web';
+  members: MapClosure['members'];
+}
+
 async function materializeClosure(
   backend: RegistryBackend,
   closure: MapClosure,
   destination: string,
   blobCacheRoot: string,
-  include: MemberFilter = () => true,
-  concurrency = 8,
-  cached = new Map<string, Promise<string>>(),
+  include: MemberFilter,
+  concurrency: number,
+  cached: Map<string, Promise<string>>,
+  installation: Omit<MapInstallation, 'members'>,
 ): Promise<void> {
+  if (closure.members['.map-release.json']) throw new Error('map closure uses reserved installation receipt path');
   const temporary = `${destination}.pull-${randomUUID()}`;
   await rm(temporary, { recursive: true, force: true });
   await mkdir(temporary, { recursive: true });
@@ -513,6 +527,8 @@ async function materializeClosure(
       await copyFile(source, target);
     }
   });
+  const members = Object.fromEntries(Object.entries(closure.members).filter(([memberPath]) => include(memberPath)));
+  await writeFile(join(temporary, '.map-release.json'), `${canonicalJson({ ...installation, members })}\n`);
   await mkdir(dirname(destination), { recursive: true });
   await rm(destination, { recursive: true, force: true });
   await rename(temporary, destination);
@@ -594,6 +610,11 @@ export async function pullVersion(
   const { layouts } = options;
   const cached = new Map<string, Promise<string>>();
   const derivedClosures = await exactDerivedClosures(backend, resolvedVersion.release, options.derivedClosures);
+  const installation = {
+    schema: 'simforge.map-installation.v1' as const, name, version: resolvedVersion.record.version,
+    releaseDigest: resolvedVersion.record.releaseDigest!, canonicalDigest: resolvedVersion.record.closureDigest,
+    ...(resolvedVersion.release.web ? { webDigest: resolvedVersion.release.web.digest } : {}),
+  };
   const devDestination = join(layouts.devAssetsRoot, name);
   await materializeClosure(
     backend,
@@ -601,10 +622,10 @@ export async function pullVersion(
     devDestination,
     layouts.blobCacheRoot,
     options.archive === true ? () => true : (memberPath) => !isMasterContent(memberPath),
-    options.concurrency ?? 8, cached,
+    options.concurrency ?? 8, cached, { ...installation, profile: 'semantic' },
   );
   const nativeDestination = join(layouts.nativeCorpusRoot, name);
-  await materializeClosure(backend, closure, nativeDestination, layouts.blobCacheRoot, (memberPath) => !isSourceImage(memberPath), options.concurrency ?? 8, cached);
+  await materializeClosure(backend, closure, nativeDestination, layouts.blobCacheRoot, (memberPath) => !isSourceImage(memberPath), options.concurrency ?? 8, cached, { ...installation, profile: 'native' });
   const materialized: Record<string, string> = { canonical: devDestination, native: nativeDestination };
   const nativeWorkerInputs: PullResult['nativeWorkerInputs'] = Object.entries(closure.members)
     .filter(([memberPath]) => !isSourceImage(memberPath))
@@ -621,7 +642,14 @@ export async function pullVersion(
   for (const derived of derivedClosures) {
     assertClosure(derived);
     const destination = join(layouts.browserBundlesRoot, name);
-    await materializeClosure(backend, derived, destination, layouts.blobCacheRoot, () => true, options.concurrency ?? 8, cached);
+    // A browser installation is self-contained for Studio registration: web
+    // geometry/textures plus the same canonical semantics used by the compiler.
+    const semanticMembers = Object.fromEntries(Object.entries(closure.members).filter(([memberPath]) => !isMasterContent(memberPath)));
+    for (const [memberPath, member] of Object.entries(semanticMembers)) {
+      const webMember = derived.members[memberPath];
+      if (webMember && (webMember.sha256 !== member.sha256 || webMember.bytes !== member.bytes)) throw new Error(`web/semantic profile conflict: ${memberPath}`);
+    }
+    await materializeClosure(backend, { ...derived, members: { ...semanticMembers, ...derived.members } }, destination, layouts.blobCacheRoot, () => true, options.concurrency ?? 8, cached, { ...installation, profile: 'web' });
     materialized[derived.kind] = destination;
   }
   return {

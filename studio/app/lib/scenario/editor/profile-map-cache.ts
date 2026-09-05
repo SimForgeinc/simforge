@@ -397,7 +397,7 @@ async function discoverMapAssets(
       for (const lod of reachableLods(tile.lods, profile)) {
         sourceFiles.push({ file: lod.file, bytes: lod.fileSize });
       }
-      if (!hasMergedInstances) {
+      if (!hasMergedInstances && typeof tile.instanceFile === "string" && tile.instanceFile.length > 0) {
         assets.push({
           url: resolveUrl(assetBase, tile.instanceFile),
           bytes: null,
